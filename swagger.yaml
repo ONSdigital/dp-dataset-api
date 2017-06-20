@@ -1,0 +1,217 @@
+swagger: "2.0"
+info:
+  description: "An API used to query information about datasets published by the ONS."
+  version: "1.0.0"
+  title: "ONS Dataset API"
+  license:
+    name: "Open Government Licence v3.0"
+    url: "http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+basePath: "/v1"
+tags:
+- name: "Dataset"
+schemes:
+- "http"
+parameters:
+  id:
+    name: id
+    description: "Id that represents a dataset type"
+    in: path
+    type: string
+    required: true
+  edition:
+    name: edition
+    description: "An edition of a dataset"
+    in: path
+    type: string
+    required: true
+  version:
+    name: version
+    description: "A version of a dataset dataset"
+    in: path
+    type: string
+    required: true
+  dimension:
+    name: dimension
+    description: "A dimension from a dataset"
+    in: path
+    type: string
+    required: true
+paths:
+  /datasets:
+    get:
+      tags:
+      - "Dataset"
+      summary: "Get all datasets"
+      description: "Returns a list of all datasets provided by the ONS that can be filtered using the job API"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "A json list contain datasets which have been published"
+          schema:
+            $ref: '#/definitions/ArrayOfDatasets'
+  /datasets/{id}:
+    get:
+      tags:
+      - "Dataset"
+      summary: "Get the latest edition and version of a dataset"
+      description: ""
+      parameters:
+      - $ref: '#/parameters/id'
+      responses:
+        200:
+          description: "A json object containing the latest edition and version of a dataset"
+          schema:
+            $ref: '#/definitions/Dataset'
+  /datasets/{id}/editions:
+    get:
+      tags:
+      - "Dataset"
+      summary: "Get a list of all editions from a dataset"
+      description: "Get a list of editions from a type of dataset. Each edition will be the latest version"
+      parameters:
+      - $ref: '#/parameters/id'
+      responses:
+        200:
+          description: "A json list contain the latest version of all editions"
+          schema:
+            $ref: '#/definitions/ArrayOfDatasets'
+  /datasets/{id}/editions/{edition}:
+    get:
+      tags:
+      - "Dataset"
+      summary: "Get the latest version of the dataset edition"
+      description: "Get the latest version of the dataset edition"
+      parameters:
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/edition'
+      responses:
+        200:
+          description: "A json object containing the latest version of that dataset edition"
+          schema:
+            $ref: '#/definitions/Dataset'
+  /datasets/{id}/editions/{edition}/versions:
+    get:
+      tags:
+      - "Dataset"
+      summary: "Get a list of all versions from a dataset edition"
+      description: "Get a list of all versions from a dataset edition"
+      parameters:
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/edition'
+      responses:
+        200:
+          description: "A json list containing all version for a set type of dataset and edition"
+          schema:
+            $ref: '#/definitions/ArrayOfDatasets'
+  /datasets/{id}/editions/{edition}/versions/{version}:
+    get:
+      tags:
+      - "Dataset"
+      summary: "Get a specific version and edition of a dataset"
+      description: "Get a specific version and edition of a dataset"
+      parameters:
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/version'
+      responses:
+        200:
+          description: "A json object containing the edition and version of a dataset"
+          schema:
+            $ref: '#/definitions/Dataset'
+  /datasets/{id}/editions/{edition}/versions/{version}/dimensions:
+    get:
+      tags:
+      - "Dataset"
+      summary: "Get all dimensions from a dataset"
+      description: "Get all dimensions which are used in the dataset"
+      parameters:
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/version'
+      responses:
+        200:
+          description: "A json list of dimensions"
+          schema:
+            $ref: '#/definitions/ArrayOfDimensions'
+  /datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}:
+    get:
+      tags:
+      - "Dataset"
+      summary: "Get all values from a dimension"
+      description: "Get a list of all values which appear in this dimension and dataset"
+      parameters:
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/version'
+      - $ref: '#/parameters/dimension'
+      responses:
+        200:
+          description: "Json object containing all values for a dimension"
+          schema:
+            $ref: '#/definitions/DimensionValues'
+definitions:
+  Dataset:
+    type: object
+    description: "An object containing information about published datasets from the ONS"
+    properties:
+      id:
+        type: integer
+        description: "The dataset id"
+      title:
+        type: string
+        description: "The title for the dataset"
+      url:
+        type: string
+        description: "An url to the dataset"
+      releaseDate:
+        type: string
+        description: "The release date of this dataset"
+      edition:
+        type: string
+        description: "The edition of the dataset"
+      version:
+        type: string
+        description: "The version of the dataset"
+      contact:
+        type: object
+        description: "Object containing contact information for this dataset"
+        properties:
+          name:
+            type: string
+            description: "The name of the person"
+          telephone:
+            type: string
+            description: "Telephone number to contact the person"
+          email:
+            type: string
+            description: "An email address to contact the person"
+  ArrayOfDatasets:
+    type: array
+    items:
+      $ref: '#/definitions/Dataset'
+  Dimension:
+    type: object
+    properties:
+      name:
+        type: string
+      type:
+        type: string
+  ArrayOfDimensions:
+    type: array
+    items:
+      $ref: '#/definitions/Dimension'
+  DimensionValues:
+    type: object
+    properties:
+      name:
+        type: string
+      type:
+        type: string
+      values:
+        type: array
+        items:
+          type: string
+externalDocs:
+  description: "Find out more about Swagger"
+  url: "http://swagger.io"
