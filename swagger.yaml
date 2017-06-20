@@ -36,6 +36,13 @@ parameters:
     in: path
     type: string
     required: true
+  filter:
+    name: filter
+    description: "Filter a dataset using its dimensions"
+    in: body
+    schema:
+      $ref: '#/definitions/Filter'
+    required: true
 paths:
   /datasets:
     get:
@@ -150,6 +157,22 @@ paths:
           description: "Json object containing all values for a dimension"
           schema:
             $ref: '#/definitions/DimensionValues'
+  /datasets/{id}/editions/{edition}/versions/{version}/filter:
+    post:
+      tags:
+      - "Dataset"
+      summary: "Filter a dataset using its dimensions"
+      description: "Filter a specific dataset by its dimensions. This operation will currently be asynchronous as processing the dataset may take a along time. By using the jobId returned it will be possible to poll the job api to wait for the process to finish"
+      parameters:
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/version'
+      - $ref: '#/parameters/filter'
+      responses:
+        200:
+          description: "Json object containing the jobId"
+          schema:
+            $ref: '#/definitions/Job'
 definitions:
   Dataset:
     type: object
@@ -188,17 +211,22 @@ definitions:
             description: "An email address to contact the person"
   ArrayOfDatasets:
     type: array
+    description: "An array of Datasets"
     items:
       $ref: '#/definitions/Dataset'
   Dimension:
     type: object
+    description: "A single dimension within a dataset"
     properties:
       name:
         type: string
+        description: "The name of the dimension"
       type:
         type: string
+        description: "The type of dimension"
   ArrayOfDimensions:
     type: array
+    description: "An array of dimensions"
     items:
       $ref: '#/definitions/Dimension'
   DimensionValues:
@@ -206,12 +234,29 @@ definitions:
     properties:
       name:
         type: string
+        description: "The name of the dimension"
       type:
         type: string
+        description: "The type of dimension"
       values:
         type: array
+        description: "A list of values within a dimension"
         items:
           type: string
+  Job:
+    type: object
+    properties:
+      jobId:
+        type: integer
+        description: "An assigned jobId for processing the dataset"
+  Filter:
+    type: object
+    properties:
+      dimensions:
+        type: array
+        description: "An array of dimensions with values which are used to filter a dataset"
+        items:
+          $ref: '#/definitions/DimensionValues'
 externalDocs:
   description: "Find out more about Swagger"
   url: "http://swagger.io"
