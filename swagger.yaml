@@ -43,6 +43,24 @@ parameters:
     schema:
       $ref: '#/definitions/Filter'
     required: true
+  pageSize:
+    name: pageSize
+    description: "Pagination size for returned datasets"
+    in: query
+    type: integer
+    required: true
+  pageNumber:
+    name: pageNumber
+    description: "Pagination page number"
+    in: query
+    type: integer
+    required: true
+  query:
+    name: query
+    description: "Query all published datasets within the ONS"
+    in: body
+    schema:
+      $ref: '#/definitions/Query'
 paths:
   /datasets:
     get:
@@ -50,13 +68,40 @@ paths:
       - "Dataset"
       summary: "Get all datasets"
       description: "Returns a list of all datasets provided by the ONS that can be filtered using the job API"
+      parameters:
+      - $ref: '#/parameters/pageSize'
+      - $ref: '#/parameters/pageNumber'
       produces:
       - "application/json"
       responses:
         200:
           description: "A json list contain datasets which have been published"
           schema:
-            $ref: '#/definitions/ArrayOfDatasets'
+            $ref: '#/definitions/Datasets'
+        500:
+          description: "Failed to process the request due to a internal error"
+  /datasets/search:
+    post:
+      tags:
+      - "Dataset"
+      summary: "Search for datasets"
+      description: "Perform a search on all published datasets by the ONS"
+      parameters:
+      - $ref: '#/parameters/pageSize'
+      - $ref: '#/parameters/pageNumber'
+      - $ref: '#/parameters/query'
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "A json list contain datasets which have been published"
+          schema:
+            $ref: '#/definitions/Datasets'
+        400:
+          description: "Body of the post request is invalid"
+        500:
+          description: "Failed to process the request due to a internal error"
+
   /datasets/{id}:
     get:
       tags:
@@ -70,6 +115,10 @@ paths:
           description: "A json object containing the latest edition and version of a dataset"
           schema:
             $ref: '#/definitions/Dataset'
+        404:
+          description: "No dataset was found using the id provided"
+        500:
+          description: "Failed to process the request due to a internal error"
   /datasets/{id}/editions:
     get:
       tags:
@@ -82,7 +131,11 @@ paths:
         200:
           description: "A json list contain the latest version of all editions"
           schema:
-            $ref: '#/definitions/ArrayOfDatasets'
+            $ref: '#/definitions/Datasets'
+        404:
+          description: "No dataset was found using the id provided"
+        500:
+          description: "Failed to process the request due to a internal error"
   /datasets/{id}/editions/{edition}:
     get:
       tags:
@@ -97,6 +150,10 @@ paths:
           description: "A json object containing the latest version of that dataset edition"
           schema:
             $ref: '#/definitions/Dataset'
+        404:
+          description: "No dataset edition was found using the id and edition provided"
+        500:
+          description: "Failed to process the request due to a internal error"
   /datasets/{id}/editions/{edition}/versions:
     get:
       tags:
@@ -110,7 +167,11 @@ paths:
         200:
           description: "A json list containing all version for a set type of dataset and edition"
           schema:
-            $ref: '#/definitions/ArrayOfDatasets'
+            $ref: '#/definitions/Datasets'
+        404:
+          description: "No dataset edition was found using the id and edition provided"
+        500:
+          description: "Failed to process the request due to a internal error"
   /datasets/{id}/editions/{edition}/versions/{version}:
     get:
       tags:
@@ -126,6 +187,10 @@ paths:
           description: "A json object containing the edition and version of a dataset"
           schema:
             $ref: '#/definitions/Dataset'
+        404:
+          description: "No dataset edition with the specific version was found using the id, edition and version provided"
+        500:
+          description: "Failed to process the request due to a internal error"
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions:
     get:
       tags:
@@ -136,11 +201,17 @@ paths:
       - $ref: '#/parameters/id'
       - $ref: '#/parameters/edition'
       - $ref: '#/parameters/version'
+      - $ref: '#/parameters/pageSize'
+      - $ref: '#/parameters/pageNumber'
       responses:
         200:
           description: "A json list of dimensions"
           schema:
-            $ref: '#/definitions/ArrayOfDimensions'
+            $ref: '#/definitions/Dimensions'
+        404:
+          description: "No dataset edition with the specific version was found using the id, edition and version provided"
+        500:
+          description: "Failed to process the request due to a internal error"
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}:
     get:
       tags:
@@ -157,6 +228,10 @@ paths:
           description: "Json object containing all values for a dimension"
           schema:
             $ref: '#/definitions/DimensionValues'
+        404:
+          description: "No dataset edition with the specific version was found using the id, edition and version provided or the dimension does not exist within the dataset"
+        500:
+          description: "Failed to process the request due to a internal error"
   /datasets/{id}/editions/{edition}/versions/{version}/filter:
     post:
       tags:
@@ -173,6 +248,12 @@ paths:
           description: "Json object containing the jobId"
           schema:
             $ref: '#/definitions/Job'
+        400:
+          description: "Body of the post request is invalid"
+        404:
+          description: "No dataset edition with a version was found using the id, edition and version provided"
+        500:
+          description: "Failed to process the request due to a internal error"
 definitions:
   Dataset:
     type: object
@@ -209,11 +290,17 @@ definitions:
           email:
             type: string
             description: "An email address to contact the person"
-  ArrayOfDatasets:
-    type: array
-    description: "An array of Datasets"
-    items:
-      $ref: '#/definitions/Dataset'
+  Datasets:
+    type: object
+    properties:
+      items:
+        type: array
+        description: "An array of Datasets"
+        items:
+          $ref: '#/definitions/Dataset'
+      numberOfPages:
+        type: integer
+        description: "The number of pages available"
   Dimension:
     type: object
     description: "A single dimension within a dataset"
@@ -224,11 +311,17 @@ definitions:
       type:
         type: string
         description: "The type of dimension"
-  ArrayOfDimensions:
-    type: array
-    description: "An array of dimensions"
-    items:
-      $ref: '#/definitions/Dimension'
+  Dimensions:
+    type: object
+    properties:
+      items:
+        type: array
+        description: "An array of dimensions"
+        items:
+          $ref: '#/definitions/Dimension'
+      numberOfPages:
+        type: integer
+        description: "The number of pages available"
   DimensionValues:
     type: object
     properties:
@@ -257,6 +350,18 @@ definitions:
         description: "An array of dimensions with values which are used to filter a dataset"
         items:
           $ref: '#/definitions/DimensionValues'
+  Query:
+    type: object
+    description: "A query used to search for datasets"
+    properties:
+      contains:
+        description: "Search by checking if dataset contains keywords"
+        type: string
+      topic:
+        description: "Filter search by topic"
+        type: array
+        items:
+          type: string
 externalDocs:
   description: "Find out more about Swagger"
   url: "http://swagger.io"
