@@ -1,6 +1,6 @@
-dp-cmd-dataset-api
+dp-dataset-api
 ==================
-A ONS API used to navigate data sets which are published.
+A ONS API used to navigate datasets which are published.
 
 
  ## API
