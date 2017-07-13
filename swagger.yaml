@@ -43,18 +43,16 @@ parameters:
     schema:
       $ref: '#/definitions/Filter'
     required: true
-  pageSize:
-    name: pageSize
-    description: "Pagination size for returned datasets"
+  offset:
+    name: offset
+    description: "The offset from the start of results. This defaults to 0"
     in: query
     type: integer
-    required: true
-  pageNumber:
-    name: pageNumber
-    description: "Pagination page number"
+  maxResults:
+    name: maxResults
+    description: "Pagination page number. This defaults to 20"
     in: query
     type: integer
-    required: true
   query:
     name: query
     description: "Query all published datasets within the ONS"
@@ -69,8 +67,8 @@ paths:
       summary: "Get all datasets"
       description: "Returns a list of all datasets provided by the ONS that can be filtered using the job API"
       parameters:
-      - $ref: '#/parameters/pageSize'
-      - $ref: '#/parameters/pageNumber'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/maxResults'
       produces:
       - "application/json"
       responses:
@@ -87,8 +85,8 @@ paths:
       summary: "Search for datasets"
       description: "Perform a search on all published datasets by the ONS"
       parameters:
-      - $ref: '#/parameters/pageSize'
-      - $ref: '#/parameters/pageNumber'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/maxResults'
       - $ref: '#/parameters/query'
       produces:
       - "application/json"
@@ -201,8 +199,8 @@ paths:
       - $ref: '#/parameters/id'
       - $ref: '#/parameters/edition'
       - $ref: '#/parameters/version'
-      - $ref: '#/parameters/pageSize'
-      - $ref: '#/parameters/pageNumber'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/maxResults'
       responses:
         200:
           description: "A json list of dimensions"
@@ -308,6 +306,9 @@ definitions:
       name:
         type: string
         description: "The name of the dimension"
+      id:
+        type: string
+        description: "The id of the dimension"
       type:
         type: string
         description: "The type of dimension"
@@ -319,9 +320,6 @@ definitions:
         description: "An array of dimensions"
         items:
           $ref: '#/definitions/Dimension'
-      numberOfPages:
-        type: integer
-        description: "The number of pages available"
   DimensionValues:
     type: object
     properties:
