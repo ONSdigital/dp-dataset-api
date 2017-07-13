@@ -50,7 +50,7 @@ parameters:
     type: integer
   maxResults:
     name: maxResults
-    description: "Pagination page number. This defaults to 20"
+    description: "The maximum number of results to be returned. This defaults to 20"
     in: query
     type: integer
   query:
@@ -303,12 +303,12 @@ definitions:
     type: object
     description: "A single dimension within a dataset"
     properties:
-      name:
-        type: string
-        description: "The name of the dimension"
       id:
         type: string
         description: "The id of the dimension"
+      name:
+        type: string
+        description: "The name of the dimension"
       type:
         type: string
         description: "The type of dimension"
@@ -323,6 +323,9 @@ definitions:
   DimensionValues:
     type: object
     properties:
+      id:
+        type: string
+        description: "The id of the dimension"
       name:
         type: string
         description: "The name of the dimension"
