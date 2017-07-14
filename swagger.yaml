@@ -303,6 +303,9 @@ definitions:
     type: object
     description: "A single dimension within a dataset"
     properties:
+      codeListId:
+        type: string
+        description: "The id of the code list that refers to this dimension"
       id:
         type: string
         description: "The id of the dimension"
@@ -323,6 +326,9 @@ definitions:
   DimensionValues:
     type: object
     properties:
+      codeListId:
+        type: string
+        description: "The id of the code list that refers to this dimension"
       id:
         type: string
         description: "The id of the dimension"
