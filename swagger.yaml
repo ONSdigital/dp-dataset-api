@@ -43,7 +43,7 @@ parameters:
     type: integer
   limit:
     name: limit
-    description: "The maximum number of results to be returned. This defaults to 20"
+    description: "Limit the number of results returned. This defaults to 20"
     in: query
     type: integer
   query:
