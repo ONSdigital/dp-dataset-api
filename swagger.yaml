@@ -316,6 +316,3 @@ definitions:
         description: "A list of values within a dimension"
         items:
           type: string
-externalDocs:
-  description: "Find out more about Swagger"
-  url: "http://swagger.io"
