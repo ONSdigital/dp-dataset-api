@@ -41,17 +41,16 @@ parameters:
     description: "The offset from the start of results. This defaults to 0"
     in: query
     type: integer
-  maxResults:
-    name: maxResults
+  limit:
+    name: limit
     description: "The maximum number of results to be returned. This defaults to 20"
     in: query
     type: integer
   query:
-    name: query
-    description: "Query all published datasets within the ONS"
-    in: body
-    schema:
-      $ref: '#/definitions/Query'
+    name: q
+    description: "The query text to search datasets with"
+    in: query
+    type: string
 paths:
   /datasets:
     get:
@@ -61,7 +60,7 @@ paths:
       description: "Returns a list of all datasets provided by the ONS that can be filtered using the filter API"
       parameters:
       - $ref: '#/parameters/offset'
-      - $ref: '#/parameters/maxResults'
+      - $ref: '#/parameters/limit'
       produces:
       - "application/json"
       responses:
@@ -71,16 +70,16 @@ paths:
             $ref: '#/definitions/Datasets'
         500:
           description: "Failed to process the request due to a internal error"
-  /datasets/search:
-    post:
+  /search/datasets:
+    get:
       tags:
       - "Dataset"
       summary: "Search for datasets"
       description: "Perform a search on all published datasets by the ONS"
       parameters:
-      - $ref: '#/parameters/offset'
-      - $ref: '#/parameters/maxResults'
       - $ref: '#/parameters/query'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/limit'
       produces:
       - "application/json"
       responses:
@@ -193,7 +192,7 @@ paths:
       - $ref: '#/parameters/edition'
       - $ref: '#/parameters/version'
       - $ref: '#/parameters/offset'
-      - $ref: '#/parameters/maxResults'
+      - $ref: '#/parameters/limit'
       responses:
         200:
           description: "A json list of dimensions"
@@ -237,7 +236,7 @@ definitions:
       url:
         type: string
         description: "An url to the dataset"
-      releaseDate:
+      release_date:
         type: string
         description: "The release date of this dataset"
       edition:
@@ -267,9 +266,9 @@ definitions:
         description: "An array of Datasets"
         items:
           $ref: '#/definitions/Dataset'
-      numberOfPages:
+      number_of_results:
         type: integer
-        description: "The number of pages available"
+        description: "The number of results available"
   Dimension:
     type: object
     description: "A single dimension within a dataset"
@@ -294,10 +293,13 @@ definitions:
         description: "An array of dimensions"
         items:
           $ref: '#/definitions/Dimension'
+      number_of_results:
+              type: integer
+              description: "The number of results available"
   DimensionValues:
     type: object
     properties:
-      codeListId:
+      code_list_id:
         type: string
         description: "The id of the code list that refers to this dimension"
       id:
@@ -312,18 +314,6 @@ definitions:
       values:
         type: array
         description: "A list of values within a dimension"
-        items:
-          type: string
-  Query:
-    type: object
-    description: "A query used to search for datasets"
-    properties:
-      contains:
-        description: "Search by checking if dataset contains keywords"
-        type: string
-      topic:
-        description: "Filter search by topic"
-        type: array
         items:
           type: string
 externalDocs:
