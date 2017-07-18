@@ -239,6 +239,9 @@ definitions:
       release_date:
         type: string
         description: "The release date of this dataset"
+      next_release:
+        type: string
+        description: "The next release date for this dataset"
       edition:
         type: string
         description: "The edition of the dataset"
