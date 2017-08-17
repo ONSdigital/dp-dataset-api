@@ -3,14 +3,13 @@ job "dp-dataset-api" {
   region      = "eu"
   type        = "service"
 
-  // Make sure that this API is only ran on the publishing nodes
-  constraint {
-    attribute = "${node.class}"
-    value     = "publishing"
-  }
-
   group "web" {
     count = {{WEB_TASK_COUNT}}
+
+    constraint {
+      attribute = "${node.class}"
+      value     = "web"
+    }
 
     task "dp-dataset-api" {
       driver = "exec"
@@ -55,6 +54,11 @@ job "dp-dataset-api" {
 
   group "publishing" {
     count = {{PUBLISHING_TASK_COUNT}}
+
+    constraint {
+      attribute = "${node.class}"
+      value     = "publishing"
+    }
 
     task "dp-dataset-api" {
       driver = "exec"
