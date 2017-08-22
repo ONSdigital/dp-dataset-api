@@ -16,13 +16,21 @@ type DatasetList struct {
 // Dataset represents information related to a single dataset
 type Dataset struct {
 	Contact     ContactDetails `json:"contact,omitempty"`
-	Edition     string         `json:"edition,omitempty"`
 	ID          string         `json:"id"`
 	NextRelease string         `json:"next_release,omitempty"`
-	ReleaseDate string         `json:"release_date,omitempty"`
-	Title       string         `json:"title,omitempty"`
-	URL         string         `json:"url,omitempty"`
-	Version     string         `json:"version,omitempty"`
+	Name        string         `json:"name,omitempty"`
+	EditionsURL string         `json:"edition_url,omitempty"`
+}
+
+type Edition struct {
+	ID          string `json:"id,omitempty"`
+	VersionsURL string `json"versions_url"`
+}
+
+type Version struct {
+	ID           string `json:"id,omitempty"`
+	ReleaseDate  string `json:"release_date,omitempty"`
+	DimensionURL string `json:"dimension_url"`
 }
 
 // ContactDetails represents an object containing information of the contact
