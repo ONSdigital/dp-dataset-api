@@ -8,9 +8,8 @@ import (
 )
 
 // DatasetList represents a structure for a list of datasets
-type DatasetList struct {
+type DatasetResults struct {
 	Items           []Dataset `json:"items"`
-	NumberOfResults int64     `json:"number_of_results"`
 }
 
 // Dataset represents information related to a single dataset

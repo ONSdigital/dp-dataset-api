@@ -14,6 +14,6 @@ func CreateDatasetAPI(secretKey string, router *mux.Router, dataStore DataStore)
 	router.Path("/healthcheck").Methods("GET").HandlerFunc(healthCheck)
 
 	api := DatasetAPI{internalToken: secretKey, dataStore: dataStore, router: router}
-	api.router.HandleFunc("/datasets", api.getDataset).Methods("GET")
+	api.router.HandleFunc("/datasets", api.getDatasets).Methods("GET")
 	return &api
 }
