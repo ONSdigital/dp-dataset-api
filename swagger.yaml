@@ -206,6 +206,31 @@ paths:
         500:
           description: "Failed to process the request due to a internal error"
 definitions:
+  Contact:
+    type: object
+    description: "Object containing contact information for this dataset"
+    properties:
+      name:
+        type: string
+        description: "The name of the person"
+      telephone:
+        type: string
+        description: "Telephone number to contact the person"
+      email:
+        type: string
+        description: "An email address to contact the person"
+  Publisher:
+    type: object
+    properties:
+      type:
+        type: string
+        description: "The type of publisher"
+      name:
+        type: string
+        description: "The name of the publisher"
+      url:
+        type: string
+        description: "A link to the publishers homepage"
   Dataset:
     type: object
     properties:
@@ -213,26 +238,33 @@ definitions:
         type: string
         description: "An unique id for a dataset"
         example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
-      name:
+      title:
         type: string
-        description: "The name of the dataset"
+        description: "The title of the dataset"
         example: "CPI"
+      description:
+        type: string
+        description: "A description for a dataset"
+      theme:
+        type: string
+        description: "A theme for a dataset"
+      periodicity:
+        type: string
+        description: "The periodicity for a dataset"
+      publisher:
+        description: "The publisher of the dataset"
+        $ref: '#/definitions/Publisher'
+      latest_url:
+        type: string
+        description: "A link to the latest version and edition of the dataset"
       next_release:
         type: string
         description: "The next release date for this dataset"
       contact:
-        type: object
+        type: array
         description: "Object containing contact information for this dataset"
-        properties:
-          name:
-            type: string
-            description: "The name of the person"
-          telephone:
-            type: string
-            description: "Telephone number to contact the person"
-          email:
-            type: string
-            description: "An email address to contact the person"
+        items:
+          $ref: '#/definitions/Contact'
       editions_url:
         type: string
         description: "A URL to all editions for a dataset"
@@ -284,6 +316,9 @@ definitions:
       dimensions_url:
         type: string
         description: "A link to all dimensions within this dataset"
+      license:
+        type: string
+        description: "The type of license for the dataset"
 
   Dimension:
     type: object
