@@ -238,13 +238,6 @@ definitions:
         type: string
         description: "An unique id for a dataset"
         example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
-      title:
-        type: string
-        description: "The title of the dataset"
-        example: "CPI"
-      description:
-        type: string
-        description: "A description for a dataset"
       theme:
         type: string
         description: "A theme for a dataset"
@@ -310,6 +303,13 @@ definitions:
       id:
         type: string
         description: "An unique id for this version of a dataset"
+      title:
+        type: string
+        description: "The title of the dataset"
+        example: "CPI"
+      description:
+        type: string
+        description: "A description for a dataset"
       release_date:
         type: string
         description: "The release date of this dataset"
