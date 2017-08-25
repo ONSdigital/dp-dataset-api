@@ -9,7 +9,12 @@ import (
 
 // DatasetList represents a structure for a list of datasets
 type DatasetResults struct {
-	Items           []Dataset `json:"items"`
+	Items []Dataset `json:"items"`
+}
+
+
+type EditionResults struct {
+	Items []Edition `json:"items"`
 }
 
 // Dataset represents information related to a single dataset
@@ -17,19 +22,21 @@ type Dataset struct {
 	Contact     ContactDetails `json:"contact,omitempty"`
 	ID          string         `json:"id"`
 	NextRelease string         `json:"next_release,omitempty"`
-	Name        string         `json:"name,omitempty"`
 	EditionsURL string         `json:"edition_url,omitempty"`
 }
 
 type Edition struct {
 	ID          string `json:"id,omitempty"`
-	VersionsURL string `json"versions_url"`
+	VersionsURL string `json'versions_url"`
 }
 
 type Version struct {
 	ID           string `json:"id,omitempty"`
+	Title        string `json:"title,omitempty"`
+	Description  string `json:"description,omitempty"`
 	ReleaseDate  string `json:"release_date,omitempty"`
 	DimensionURL string `json:"dimension_url"`
+	License      string `json:"license"`
 }
 
 // ContactDetails represents an object containing information of the contact
