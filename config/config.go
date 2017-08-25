@@ -28,7 +28,7 @@ func Get() (*Configuration, error) {
 		BindAddr:  ":22000",
 		SecretKey: "FD0108EA-825D-411C-9B1D-41EF7727F465",
 		MongoConfig: MongoConfig{
-			BindAddr:   "mongod://127.0.0.1:27017",
+			BindAddr:   "localhost:27017",
 			Collection: "datasets",
 			Database:   "datasets",
 		},
