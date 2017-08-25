@@ -1,13 +1,8 @@
 package api
 
-import (
-	"github.com/ONSdigital/dp-dataset-api/models"
-)
+import "github.com/ONSdigital/dp-dataset-api/datastore"
 
-
-//go:generate moq -out datastoretest/datastore.go -pkg datastoretest . DataStore
-
-// DataStore represents an interface used to store datasets
-type DataStore interface {
-	GetAllDatasets() (*models.DatasetResults, error)
+// DataStore provides a datastore.Backend interface used to store, retrieve, remove or update datasets
+type DataStore struct {
+	Backend datastore.Backend
 }

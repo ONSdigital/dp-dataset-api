@@ -1,12 +1,11 @@
 package main
 
 import (
-	"database/sql"
 	"os"
 
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/config"
-	"github.com/ONSdigital/dp-dataset-api/postgres"
+	"github.com/ONSdigital/dp-dataset-api/datastore"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/server"
 	"github.com/gorilla/mux"
@@ -22,17 +21,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := sql.Open("postgres", cfg.PostgresDatasetsURL)
-	if err != nil {
-		log.ErrorC("DB open error", err, nil)
+	mongo := &datastore.Mongo{
+		Collection: cfg.MongoConfig.Collection,
+		Database:   cfg.MongoConfig.Database,
+		URI:        cfg.MongoConfig.BindAddr,
+	}
+
+	if err := mongo.Init(); err != nil {
+		log.ErrorC("Failed to initialise mongo", err, nil)
 		os.Exit(1)
 	}
 
-	dataStore, err := postgres.NewDatastore(db)
-	if err != nil {
-		log.ErrorC("Create postgres error", err, nil)
-		os.Exit(1)
-	}
+	datastore := api.DataStore{Backend: mongo}
 
 	router := mux.NewRouter()
 
@@ -42,7 +42,7 @@ func main() {
 		"bind_address": cfg.BindAddr,
 	})
 
-	_ = api.CreateDatasetAPI(cfg.SecretKey, router, dataStore)
+	_ = api.CreateDatasetAPI(cfg.SecretKey, router, datastore)
 
 	if err = s.ListenAndServe(); err != nil {
 		log.Error(err, nil)

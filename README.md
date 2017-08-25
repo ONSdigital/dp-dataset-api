@@ -3,11 +3,7 @@ dp-dataset-api
 A ONS API used to navigate datasets which are published.
 
 #### Postgres
-* Run ```brew install postgres```
-* Run ```brew services start postgres```
-* Run ```createuser dp -d -w```
-* Run ```createdb --owner dp Datasets```
-* Run ```psql -U dp Datasets -f scripts/InitDatabase.sql```
+* Run ```brew install mongo```
 
 ### Configuration
 
