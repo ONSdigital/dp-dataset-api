@@ -30,14 +30,14 @@ func (m *Mongo) Init() (err error) {
 	return
 }
 
-// GetAllDatasets retrieves all dataset documents from the configured collection.
+// GetAllDatasets retrieves all dataset documents
 func (m *Mongo) GetAllDatasets() (*models.DatasetResults, error) {
 	s := session.Copy()
 	defer s.Close()
 
 	datasets := &models.DatasetResults{}
 
-	iter := s.DB(m.Database).C(m.Collection).Find(nil).Iter()
+	iter := s.DB(m.Database).C("datasets").Find(nil).Iter()
 
 	results := []models.Dataset{}
 	if err := iter.All(&results); err != nil {
@@ -47,4 +47,40 @@ func (m *Mongo) GetAllDatasets() (*models.DatasetResults, error) {
 	datasets.Items = results
 
 	return datasets, nil
+}
+
+// UpsertDataset adds or overides an existing dataset document
+func (m *Mongo) UpsertDataset(id interface{}, update interface{}) (err error) {
+	s := session.Copy()
+	defer s.Close()
+
+	_, err = s.DB(m.Database).C("datasets").UpsertId(id, update)
+	return
+}
+
+// UpsertEdition adds or overides an existing edition document
+func (m *Mongo) UpsertEdition(id interface{}, update interface{}) (err error) {
+	s := session.Copy()
+	defer s.Close()
+
+	_, err = s.DB(m.Database).C("editions").UpsertId(id, update)
+	return
+}
+
+// UpsertVersion adds or overides an existing version document
+func (m *Mongo) UpsertVersion(id interface{}, update interface{}) (err error) {
+	s := session.Copy()
+	defer s.Close()
+
+	_, err = s.DB(m.Database).C("versions").UpsertId(id, update)
+	return
+}
+
+// UpsertContact adds or overides an existing contact document
+func (m *Mongo) UpsertContact(id interface{}, update interface{}) (err error) {
+	s := session.Copy()
+	defer s.Close()
+
+	_, err = s.DB(m.Database).C("contacts").UpsertId(id, update)
+	return
 }
