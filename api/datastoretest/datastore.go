@@ -13,6 +13,8 @@ var (
 	lockDataStoreMockGetDataset     sync.RWMutex
 	lockDataStoreMockGetEdition     sync.RWMutex
 	lockDataStoreMockGetEditions    sync.RWMutex
+	lockDataStoreMockGetVersion     sync.RWMutex
+	lockDataStoreMockGetVersions    sync.RWMutex
 )
 
 // DataStoreMock is a mock implementation of DataStore.
@@ -33,6 +35,12 @@ var (
 //             GetEditionsFunc: func(id string) (*models.EditionResults, error) {
 // 	               panic("TODO: mock out the GetEditions method")
 //             },
+//             GetVersionFunc: func(datasetID string, editionID string, versionID string) (*models.Version, error) {
+// 	               panic("TODO: mock out the GetVersion method")
+//             },
+//             GetVersionsFunc: func(datasetID string, editionID string) (*models.VersionResults, error) {
+// 	               panic("TODO: mock out the GetVersions method")
+//             },
 //         }
 //
 //         // TODO: use mockedDataStore in code that requires DataStore
@@ -51,6 +59,12 @@ type DataStoreMock struct {
 
 	// GetEditionsFunc mocks the GetEditions method.
 	GetEditionsFunc func(id string) (*models.EditionResults, error)
+
+	// GetVersionFunc mocks the GetVersion method.
+	GetVersionFunc func(datasetID string, editionID string, versionID string) (*models.Version, error)
+
+	// GetVersionsFunc mocks the GetVersions method.
+	GetVersionsFunc func(datasetID string, editionID string) (*models.VersionResults, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -73,6 +87,22 @@ type DataStoreMock struct {
 		GetEditions []struct {
 			// Id is the id argument value.
 			Id string
+		}
+		// GetVersion holds details about calls to the GetVersion method.
+		GetVersion []struct {
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// EditionID is the editionID argument value.
+			EditionID string
+			// VersionID is the versionID argument value.
+			VersionID string
+		}
+		// GetVersions holds details about calls to the GetVersions method.
+		GetVersions []struct {
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// EditionID is the editionID argument value.
+			EditionID string
 		}
 	}
 }
@@ -197,5 +227,79 @@ func (mock *DataStoreMock) GetEditionsCalls() []struct {
 	lockDataStoreMockGetEditions.RLock()
 	calls = mock.calls.GetEditions
 	lockDataStoreMockGetEditions.RUnlock()
+	return calls
+}
+
+// GetVersion calls GetVersionFunc.
+func (mock *DataStoreMock) GetVersion(datasetID string, editionID string, versionID string) (*models.Version, error) {
+	if mock.GetVersionFunc == nil {
+		panic("moq: DataStoreMock.GetVersionFunc is nil but DataStore.GetVersion was just called")
+	}
+	callInfo := struct {
+		DatasetID string
+		EditionID string
+		VersionID string
+	}{
+		DatasetID: datasetID,
+		EditionID: editionID,
+		VersionID: versionID,
+	}
+	lockDataStoreMockGetVersion.Lock()
+	mock.calls.GetVersion = append(mock.calls.GetVersion, callInfo)
+	lockDataStoreMockGetVersion.Unlock()
+	return mock.GetVersionFunc(datasetID, editionID, versionID)
+}
+
+// GetVersionCalls gets all the calls that were made to GetVersion.
+// Check the length with:
+//     len(mockedDataStore.GetVersionCalls())
+func (mock *DataStoreMock) GetVersionCalls() []struct {
+	DatasetID string
+	EditionID string
+	VersionID string
+} {
+	var calls []struct {
+		DatasetID string
+		EditionID string
+		VersionID string
+	}
+	lockDataStoreMockGetVersion.RLock()
+	calls = mock.calls.GetVersion
+	lockDataStoreMockGetVersion.RUnlock()
+	return calls
+}
+
+// GetVersions calls GetVersionsFunc.
+func (mock *DataStoreMock) GetVersions(datasetID string, editionID string) (*models.VersionResults, error) {
+	if mock.GetVersionsFunc == nil {
+		panic("moq: DataStoreMock.GetVersionsFunc is nil but DataStore.GetVersions was just called")
+	}
+	callInfo := struct {
+		DatasetID string
+		EditionID string
+	}{
+		DatasetID: datasetID,
+		EditionID: editionID,
+	}
+	lockDataStoreMockGetVersions.Lock()
+	mock.calls.GetVersions = append(mock.calls.GetVersions, callInfo)
+	lockDataStoreMockGetVersions.Unlock()
+	return mock.GetVersionsFunc(datasetID, editionID)
+}
+
+// GetVersionsCalls gets all the calls that were made to GetVersions.
+// Check the length with:
+//     len(mockedDataStore.GetVersionsCalls())
+func (mock *DataStoreMock) GetVersionsCalls() []struct {
+	DatasetID string
+	EditionID string
+} {
+	var calls []struct {
+		DatasetID string
+		EditionID string
+	}
+	lockDataStoreMockGetVersions.RLock()
+	calls = mock.calls.GetVersions
+	lockDataStoreMockGetVersions.RUnlock()
 	return calls
 }
