@@ -14,29 +14,29 @@ type DatasetResults struct {
 
 // Dataset represents information related to a single dataset
 type Dataset struct {
-	Contact     ContactDetails `json:"contact,omitempty"`
-	ID          string         `json:"_id"`
-	NextRelease string         `json:"next_release,omitempty"`
-	Name        string         `json:"name,omitempty"`
-	EditionsURL string         `json:"edition_url,omitempty"`
+	Contact     ContactDetails `bson:"contact,omitempty"        json:"contact,omitempty"`
+	ID          string         `bson:"_id"                      json:"id"`
+	NextRelease string         `bson:"next_release,omitempty"   json:"next_release,omitempty"`
+	Name        string         `bson:"name,omitempty"           json:"name,omitempty"`
+	EditionsURL string         `bson:"edition_url,omitempty"    json:"edition_url,omitempty"`
 }
 
 type Edition struct {
-	ID          string `json:"id,omitempty"`
-	VersionsURL string `json:"versions_url"`
+	ID          string `bson:"_id,omitempty"     json:"id,omitempty"`
+	VersionsURL string `bson:"version_url"       json:"versions_url"`
 }
 
 type Version struct {
-	ID           string `json:"id,omitempty"`
-	ReleaseDate  string `json:"release_date,omitempty"`
-	DimensionURL string `json:"dimension_url"`
+	ID           string `bson:"_id,omitempty"            json:"id,omitempty"`
+	ReleaseDate  string `bson:"release_date,omitempty"   json:"release_date,omitempty"`
+	DimensionURL string `bson:"dimension_url"            json:"dimension_url"`
 }
 
 // ContactDetails represents an object containing information of the contact
 type ContactDetails struct {
-	Email     string `json:"email,omitempty"`
-	Name      string `json:"name,omitempty"`
-	Telephone string `json:"telephone,omitempty"`
+	Email     string `bson:"email,omitempty"       json:"email,omitempty"`
+	Name      string `bson:"name,omitempty"        json:"name,omitempty"`
+	Telephone string `bson:"telephone,omitempty"   json:"telephone,omitempty"`
 }
 
 // CreateDataset manages the creation of a dataset from a reader
