@@ -25,6 +25,25 @@ db.datasets.insert({
         "telephone": "01633 123456"
     }
 });
+db.datasets.insert({
+    "_id": "456",
+    "name": "CensusEthnicity",
+    "next_release": "2021-04-30",
+    "links": {
+        "self": "/datasets/456",
+        "editions": [
+            {
+                "id": "2011",
+                "url": "/datasets/456/editions/2011"
+            },
+        ]
+    },
+    "contact": {
+        "email": "ldavis@test.co.uk",
+        "name": "lawrence davis",
+        "telephone": "01633 123457"
+    }
+});
 db.editions.insert({
     "_id": "123_2016",
     "name": "CPI",
@@ -57,6 +76,19 @@ db.editions.insert({
         ]
     }
 });
+db.editions.insert({
+    "_id": "456_2011",
+    "name": "CensusEthnicity",
+    "edition": "2011",
+    "links": {
+        "self": "/datasets/456/editions/2011",
+        "versions": [
+            {
+                "id": "1",
+                "url": "/datasets/456/editions/2011/versions/1"
+            }
+        ]
+    }
 db.versions.insert({
     "_id": "123_2016_1",
     "name": "CPI",
@@ -90,11 +122,28 @@ db.versions.insert({
         "dimensions": ""
     }
 });
+db.versions.insert({
+    "_id": "456_2011_1",
+    "name": "CPI",
+    "edition": "2011",
+    "version": "1",
+    "release_date": "2011-04-30",
+    "links": {
+        "self": "/datasets/456/editions/2011/versions/1",
+        "dimensions": ""
+    }
+});
 db.contacts.insert({
     "_id": "1",
     "name": "john sinclair",
     "email": "jsinclair@test.co.uk",
     "telephone": "01633 123456"
+});
+db.contacts.insert({
+    "_id": "2",
+    "name": "lawrence davis",
+    "email": "ldavis@test.co.uk",
+    "telephone": "01633 123457"
 });
 db.createCollection("dimensions")
 EOF
