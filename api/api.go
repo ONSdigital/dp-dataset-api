@@ -19,6 +19,8 @@ func CreateDatasetAPI(secretKey string, router *mux.Router, dataStore DataStore)
 	api.router.HandleFunc("/datasets/{id}/editions", api.getEditions).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}", api.getEdition).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions", api.getVersions).Methods("GET")
+	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.getVersion).Methods("GET")
+
 	api.router.HandleFunc("/datasets/{id}", api.addDataset).Methods("POST")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}", api.addEdition).Methods("POST")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.addVersion).Methods("POST")

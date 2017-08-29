@@ -54,7 +54,7 @@ func (m *Mongo) GetDataset(id string) (*models.Dataset, error) {
 	s := session.Copy()
 	defer s.Clone()
 	var dataset models.Dataset
-	err := s.DB(m.Database).C("datasets").Find(bson.M{"_id": id}).One(&dataset)
+	err := s.DB(m.Database).C("datasets").Find(bson.M{"links.self": "/datasets/" + id}).One(&dataset)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (m *Mongo) GetDataset(id string) (*models.Dataset, error) {
 func (m *Mongo) GetEditions(id string) (*models.EditionResults, error) {
 	s := session.Copy()
 	defer s.Clone()
-	iter := s.DB(m.Database).C("editions").Find(bson.M{"links.dataset": "/dataset/" + id}).Iter()
+	iter := s.DB(m.Database).C("editions").Find(bson.M{"links.dataset": "/datasets/" + id}).Iter()
 
 	var results []models.Edition
 	if err := iter.All(&results); err != nil {
@@ -85,7 +85,16 @@ func (m *Mongo) GetEdition(datasetID, editionID string) (*models.Edition, error)
 	return &edition, nil
 }
 func (m *Mongo) GetVersions(datasetID, editionID string) (*models.VersionResults, error) {
-	return nil, nil
+	s := session.Copy()
+	defer s.Clone()
+	link := "/datasets/" + datasetID + "/editions/" + editionID
+	iter := s.DB(m.Database).C("versions").Find(bson.M{"links.edition": link}).Iter()
+
+	var results []models.Version
+	if err := iter.All(&results); err != nil {
+		return nil, err
+	}
+	return &models.VersionResults{Items: results}, nil
 }
 func (m *Mongo) GetVersion(datasetID, editionID, versionID string) (*models.Version, error) {
 	s := session.Copy()
