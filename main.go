@@ -5,7 +5,6 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/config"
-	"github.com/ONSdigital/dp-dataset-api/datastore"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/server"
 	"github.com/gorilla/mux"
@@ -21,7 +20,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	mongo := &datastore.Mongo{
+	mongo := &api.Mongo{
 		Collection: cfg.MongoConfig.Collection,
 		Database:   cfg.MongoConfig.Database,
 		URI:        cfg.MongoConfig.BindAddr,

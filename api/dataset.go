@@ -11,6 +11,8 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+const publishedState = "published"
+
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	results, err := api.dataStore.Backend.GetAllDatasets()
 	if err != nil {
@@ -38,7 +40,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	dataset.ID = datasetID
+	dataset.DatasetID = datasetID
 	dataset.Links.Self = "/datasets/" + datasetID
 	dataset.Links.Editions = "/datasets/" + datasetID + "/editions"
 
@@ -70,7 +72,7 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	edition.ID = datasetID + "_" + editionID
+	edition.Links.Dataset = "/datasets/" + datasetID
 	edition.Links.Self = "/datasets/" + datasetID + "/editions/" + editionID
 	edition.Links.Versions = "/datasets/" + datasetID + "/editions/" + editionID + "/versions"
 
@@ -103,7 +105,8 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	version.ID = datasetID + "_" + editionID + "_" + versionID
+	version.Links.Dataset = "/datasets/" + datasetID
+	version.Links.Edition = "/datasets/" + datasetID + "/editions/" + editionID
 	version.Links.Self = "/datasets/" + datasetID + "/editions/" + editionID + "/versions/" + versionID
 	version.Links.Dimensions = "/instance/" + versionID + "/dimensions"
 
@@ -118,6 +121,23 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 		log.ErrorR(r, err, nil)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	if version.State == publishedState {
+		updateDataset := bson.M{
+			"$set": bson.M{
+				"links.latest_version": version.Links.Self,
+			},
+			"$setOnInsert": bson.M{
+				"updated_at": time.Now(),
+			},
+		}
+
+		if err := api.dataStore.Backend.UpsertDataset(datasetID, updateDataset); err != nil {
+			log.ErrorC("failed to update dataset document with link to latest version", err, nil)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	setJSONContentType(w)

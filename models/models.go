@@ -6,7 +6,11 @@ import (
 	"io"
 	"io/ioutil"
 	"time"
+
+	uuid "github.com/satori/go.uuid"
 )
+
+const unpublished = "unpublished"
 
 // DatasetResults represents a structure for a list of datasets
 type DatasetResults struct {
@@ -16,16 +20,23 @@ type DatasetResults struct {
 // Dataset represents information related to a single dataset
 type Dataset struct {
 	Contact     ContactDetails `bson:"contact,omitempty"        json:"contact,omitempty"`
+	DatasetID   string         `bson:"dataset_id"               json:"dataset_id"`
+	Description string         `bson:"description"              json:"description"`
 	ID          string         `bson:"_id"                      json:"id"`
-	NextRelease string         `bson:"next_release,omitempty"   json:"next_release,omitempty"`
-	Name        string         `bson:"name,omitempty"           json:"name,omitempty"`
 	Links       DatasetLinks   `bson:"links,omitempty"          json:"links,omitempty"`
+	NextRelease string         `bson:"next_release,omitempty"   json:"next_release,omitempty"`
+	Periodicity string         `bson:"periodicity"              json:"periodicity"`
+	Publisher   Publisher      `bson:"publisher,omitempty"      json:"publisher,omitempty"`
+	State       string         `bson:"state,omitempty"          json:"state,omitempty"`
+	Theme       string         `bson:"theme,omitempty"          json:"thems,omitempty"`
+	Title       string         `bson:"title,omitempty"          json:"title,omitempty"`
 	UpdatedAt   time.Time      `bson:"updated_at,omitempty"     json:"updated_at,omitempty"`
 }
 
 type DatasetLinks struct {
-	Self     string `bson:"self,omitempty"        json:"self,omitempty"`
-	Editions string `bson:"editions,omitempty"    json:"editions,omitempty"`
+	Editions      string `bson:"editions,omitempty"        json:"editions,omitempty"`
+	LatestVersion string `bson:"latest_version,omitempty"  json:"latest_version,omitempty"`
+	Self          string `bson:"self,omitempty"            json:"self,omitempty"`
 }
 
 // ContactDetails represents an object containing information of the contact
@@ -36,30 +47,41 @@ type ContactDetails struct {
 }
 
 type Edition struct {
-	ID        string       `bson:"_id,omitempty"        json:"id,omitempty"`
-	Name      string       `bson:"name,omitempty"       json:"name,omitempty"`
 	Edition   string       `bson:"edition,omitempty"    json:"edition,omitempty"`
+	ID        string       `bson:"_id,omitempty"        json:"id,omitempty"`
 	Links     EditionLinks `bson:"links,omitempty"      json:"links,omitempty"`
+	State     string       `bson:"state,omitempty"      json:"state,omitempty"`
 	UpdatedAt time.Time    `bson:"updated_at,omitempty" json:"updated_at,omitempty"`
 }
 
 type EditionLinks struct {
+	Dataset  string `bson:"dataset,omitempty"     json:"dataset,omitempty"`
 	Self     string `bson:"self,omitempty"        json:"self,omitempty"`
 	Versions string `bson:"versions,omitempty"    json:"versions,omitempty"`
 }
 
+type Publisher struct {
+	Name string `bson:"name,omitempty" json:"name,omitempty"`
+	Type string `bson:"type,omitempty" json:"type,omitempty"`
+	URL  string `bson:"url,omitempty"  json:"url,omitempty"`
+}
+
 type Version struct {
-	ID          string       `bson:"_id,omitempty"          json:"id,omitempty"`
-	Name        string       `bson:"name,omitempty"         json:"name,omitempty"`
 	Edition     string       `bson:"edition,omitempty"      json:"edition,omitempty"`
-	Version     string       `bson:"version,omitempty"      json:"version,omitempty"`
-	ReleaseDate string       `bson:"release_date,omitempty" json:"release_date,omitempty"`
+	ID          string       `bson:"_id,omitempty"          json:"id,omitempty"`
+	License     string       `bson:"license,omitempty"      json:"license,omitempty"`
 	Links       VersionLinks `bson:"links,omitempty"        json:"links,omitempty"`
+	ReleaseDate string       `bson:"release_date,omitempty" json:"release_date,omitempty"`
+	State       string       `bson:"state,omitempty"        json:"state,omitempty"`
+	UpdatedAt   time.Time    `bson:"updated_at,omitempty"   json:"updated_at,omitempty"`
+	Version     string       `bson:"version,omitempty"      json:"version,omitempty"`
 }
 
 type VersionLinks struct {
-	Self       string `bson:"self,omitempty"        json:"self,omitempty"`
+	Dataset    string `bson:"dataset,omitempty"     json:"dataset,omitempty"`
 	Dimensions string `bson:"dimensions,omitempty"  json:"dimensions,omitempty"`
+	Edition    string `bson:"edition,omitempty"     json:"edition,omitempty"`
+	Self       string `bson:"self,omitempty"        json:"self,omitempty"`
 }
 
 // CreateDataset manages the creation of a dataset from a reader
@@ -68,13 +90,19 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
 	}
-	var datset Dataset
-	err = json.Unmarshal(bytes, &datset)
+
+	var dataset Dataset
+	// Create unique id
+	dataset.ID = uuid.NewV4().String()
+	// set default state to be unpublished
+	dataset.State = unpublished
+
+	err = json.Unmarshal(bytes, &dataset)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
 	}
 
-	return &datset, nil
+	return &dataset, nil
 }
 
 // CreateEdition manages the creation of a edition from a reader
@@ -83,7 +111,13 @@ func CreateEdition(reader io.Reader) (*Edition, error) {
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
 	}
+
 	var edition Edition
+	// Create unique id
+	edition.ID = (uuid.NewV4()).String()
+	// set default state to be unpublished
+	edition.State = unpublished
+
 	err = json.Unmarshal(bytes, &edition)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
@@ -98,7 +132,13 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
 	}
+
 	var version Version
+	// Create unique id
+	version.ID = (uuid.NewV4()).String()
+	// set default state to be unpublished
+	version.State = unpublished
+
 	err = json.Unmarshal(bytes, &version)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
