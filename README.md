@@ -7,6 +7,7 @@ A ONS API used to navigate datasets which are published.
 * Run ```sudo mkdir -p /data/db```
 * Run ```sudo chmod 777 /data/db```
 * Run ```mongod &```
+* Run ```./scripts/InitDatabase.sh```
 
 ### Configuration
 

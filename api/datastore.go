@@ -16,6 +16,10 @@ type DataStore interface {
 	GetEdition(datasetID, editionID string) (*models.Edition, error)
 	GetVersions(datasetID, editionID string) (*models.VersionResults, error)
 	GetVersion(datasetID, editionID, versionID string) (*models.Version, error)
+	UpsertDataset(id interface{}, update interface{}) error
+	UpsertEdition(id interface{}, update interface{}) error
+	UpsertVersion(id interface{}, update interface{}) error
+	UpsertContact(id interface{}, update interface{}) error
 }
 
 // DataStore provides a datastore.Backend interface used to store, retrieve, remove or update datasets

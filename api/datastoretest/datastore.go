@@ -9,12 +9,16 @@ import (
 )
 
 var (
-	lockDataStoreMockGetDataset  sync.RWMutex
-	lockDataStoreMockGetDatasets sync.RWMutex
-	lockDataStoreMockGetEdition  sync.RWMutex
-	lockDataStoreMockGetEditions sync.RWMutex
-	lockDataStoreMockGetVersion  sync.RWMutex
-	lockDataStoreMockGetVersions sync.RWMutex
+	lockDataStoreMockGetDataset    sync.RWMutex
+	lockDataStoreMockGetDatasets   sync.RWMutex
+	lockDataStoreMockGetEdition    sync.RWMutex
+	lockDataStoreMockGetEditions   sync.RWMutex
+	lockDataStoreMockGetVersion    sync.RWMutex
+	lockDataStoreMockGetVersions   sync.RWMutex
+	lockDataStoreMockUpsertContact sync.RWMutex
+	lockDataStoreMockUpsertDataset sync.RWMutex
+	lockDataStoreMockUpsertEdition sync.RWMutex
+	lockDataStoreMockUpsertVersion sync.RWMutex
 )
 
 // DataStoreMock is a mock implementation of DataStore.
@@ -41,6 +45,18 @@ var (
 //             GetVersionsFunc: func(datasetID string, editionID string) (*models.VersionResults, error) {
 // 	               panic("TODO: mock out the GetVersions method")
 //             },
+//             UpsertContactFunc: func(id interface{}, update interface{}) error {
+// 	               panic("TODO: mock out the UpsertContact method")
+//             },
+//             UpsertDatasetFunc: func(id interface{}, update interface{}) error {
+// 	               panic("TODO: mock out the UpsertDataset method")
+//             },
+//             UpsertEditionFunc: func(id interface{}, update interface{}) error {
+// 	               panic("TODO: mock out the UpsertEdition method")
+//             },
+//             UpsertVersionFunc: func(id interface{}, update interface{}) error {
+// 	               panic("TODO: mock out the UpsertVersion method")
+//             },
 //         }
 //
 //         // TODO: use mockedDataStore in code that requires DataStore
@@ -65,6 +81,18 @@ type DataStoreMock struct {
 
 	// GetVersionsFunc mocks the GetVersions method.
 	GetVersionsFunc func(datasetID string, editionID string) (*models.VersionResults, error)
+
+	// UpsertContactFunc mocks the UpsertContact method.
+	UpsertContactFunc func(id interface{}, update interface{}) error
+
+	// UpsertDatasetFunc mocks the UpsertDataset method.
+	UpsertDatasetFunc func(id interface{}, update interface{}) error
+
+	// UpsertEditionFunc mocks the UpsertEdition method.
+	UpsertEditionFunc func(id interface{}, update interface{}) error
+
+	// UpsertVersionFunc mocks the UpsertVersion method.
+	UpsertVersionFunc func(id interface{}, update interface{}) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -103,6 +131,34 @@ type DataStoreMock struct {
 			DatasetID string
 			// EditionID is the editionID argument value.
 			EditionID string
+		}
+		// UpsertContact holds details about calls to the UpsertContact method.
+		UpsertContact []struct {
+			// Id is the id argument value.
+			Id interface{}
+			// Update is the update argument value.
+			Update interface{}
+		}
+		// UpsertDataset holds details about calls to the UpsertDataset method.
+		UpsertDataset []struct {
+			// Id is the id argument value.
+			Id interface{}
+			// Update is the update argument value.
+			Update interface{}
+		}
+		// UpsertEdition holds details about calls to the UpsertEdition method.
+		UpsertEdition []struct {
+			// Id is the id argument value.
+			Id interface{}
+			// Update is the update argument value.
+			Update interface{}
+		}
+		// UpsertVersion holds details about calls to the UpsertVersion method.
+		UpsertVersion []struct {
+			// Id is the id argument value.
+			Id interface{}
+			// Update is the update argument value.
+			Update interface{}
 		}
 	}
 }
@@ -301,5 +357,145 @@ func (mock *DataStoreMock) GetVersionsCalls() []struct {
 	lockDataStoreMockGetVersions.RLock()
 	calls = mock.calls.GetVersions
 	lockDataStoreMockGetVersions.RUnlock()
+	return calls
+}
+
+// UpsertContact calls UpsertContactFunc.
+func (mock *DataStoreMock) UpsertContact(id interface{}, update interface{}) error {
+	if mock.UpsertContactFunc == nil {
+		panic("moq: DataStoreMock.UpsertContactFunc is nil but DataStore.UpsertContact was just called")
+	}
+	callInfo := struct {
+		Id     interface{}
+		Update interface{}
+	}{
+		Id:     id,
+		Update: update,
+	}
+	lockDataStoreMockUpsertContact.Lock()
+	mock.calls.UpsertContact = append(mock.calls.UpsertContact, callInfo)
+	lockDataStoreMockUpsertContact.Unlock()
+	return mock.UpsertContactFunc(id, update)
+}
+
+// UpsertContactCalls gets all the calls that were made to UpsertContact.
+// Check the length with:
+//     len(mockedDataStore.UpsertContactCalls())
+func (mock *DataStoreMock) UpsertContactCalls() []struct {
+	Id     interface{}
+	Update interface{}
+} {
+	var calls []struct {
+		Id     interface{}
+		Update interface{}
+	}
+	lockDataStoreMockUpsertContact.RLock()
+	calls = mock.calls.UpsertContact
+	lockDataStoreMockUpsertContact.RUnlock()
+	return calls
+}
+
+// UpsertDataset calls UpsertDatasetFunc.
+func (mock *DataStoreMock) UpsertDataset(id interface{}, update interface{}) error {
+	if mock.UpsertDatasetFunc == nil {
+		panic("moq: DataStoreMock.UpsertDatasetFunc is nil but DataStore.UpsertDataset was just called")
+	}
+	callInfo := struct {
+		Id     interface{}
+		Update interface{}
+	}{
+		Id:     id,
+		Update: update,
+	}
+	lockDataStoreMockUpsertDataset.Lock()
+	mock.calls.UpsertDataset = append(mock.calls.UpsertDataset, callInfo)
+	lockDataStoreMockUpsertDataset.Unlock()
+	return mock.UpsertDatasetFunc(id, update)
+}
+
+// UpsertDatasetCalls gets all the calls that were made to UpsertDataset.
+// Check the length with:
+//     len(mockedDataStore.UpsertDatasetCalls())
+func (mock *DataStoreMock) UpsertDatasetCalls() []struct {
+	Id     interface{}
+	Update interface{}
+} {
+	var calls []struct {
+		Id     interface{}
+		Update interface{}
+	}
+	lockDataStoreMockUpsertDataset.RLock()
+	calls = mock.calls.UpsertDataset
+	lockDataStoreMockUpsertDataset.RUnlock()
+	return calls
+}
+
+// UpsertEdition calls UpsertEditionFunc.
+func (mock *DataStoreMock) UpsertEdition(id interface{}, update interface{}) error {
+	if mock.UpsertEditionFunc == nil {
+		panic("moq: DataStoreMock.UpsertEditionFunc is nil but DataStore.UpsertEdition was just called")
+	}
+	callInfo := struct {
+		Id     interface{}
+		Update interface{}
+	}{
+		Id:     id,
+		Update: update,
+	}
+	lockDataStoreMockUpsertEdition.Lock()
+	mock.calls.UpsertEdition = append(mock.calls.UpsertEdition, callInfo)
+	lockDataStoreMockUpsertEdition.Unlock()
+	return mock.UpsertEditionFunc(id, update)
+}
+
+// UpsertEditionCalls gets all the calls that were made to UpsertEdition.
+// Check the length with:
+//     len(mockedDataStore.UpsertEditionCalls())
+func (mock *DataStoreMock) UpsertEditionCalls() []struct {
+	Id     interface{}
+	Update interface{}
+} {
+	var calls []struct {
+		Id     interface{}
+		Update interface{}
+	}
+	lockDataStoreMockUpsertEdition.RLock()
+	calls = mock.calls.UpsertEdition
+	lockDataStoreMockUpsertEdition.RUnlock()
+	return calls
+}
+
+// UpsertVersion calls UpsertVersionFunc.
+func (mock *DataStoreMock) UpsertVersion(id interface{}, update interface{}) error {
+	if mock.UpsertVersionFunc == nil {
+		panic("moq: DataStoreMock.UpsertVersionFunc is nil but DataStore.UpsertVersion was just called")
+	}
+	callInfo := struct {
+		Id     interface{}
+		Update interface{}
+	}{
+		Id:     id,
+		Update: update,
+	}
+	lockDataStoreMockUpsertVersion.Lock()
+	mock.calls.UpsertVersion = append(mock.calls.UpsertVersion, callInfo)
+	lockDataStoreMockUpsertVersion.Unlock()
+	return mock.UpsertVersionFunc(id, update)
+}
+
+// UpsertVersionCalls gets all the calls that were made to UpsertVersion.
+// Check the length with:
+//     len(mockedDataStore.UpsertVersionCalls())
+func (mock *DataStoreMock) UpsertVersionCalls() []struct {
+	Id     interface{}
+	Update interface{}
+} {
+	var calls []struct {
+		Id     interface{}
+		Update interface{}
+	}
+	lockDataStoreMockUpsertVersion.RLock()
+	calls = mock.calls.UpsertVersion
+	lockDataStoreMockUpsertVersion.RUnlock()
 	return calls
 }
