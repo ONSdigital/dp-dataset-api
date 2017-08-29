@@ -7,7 +7,7 @@ import (
 )
 
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
-	results, err := api.dataStore.GetAllDatasets()
+	results, err := api.dataStore.GetDatasets()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

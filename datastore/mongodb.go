@@ -31,7 +31,7 @@ func (m *Mongo) Init() (err error) {
 }
 
 // GetAllDatasets retrieves all dataset documents from the configured collection.
-func (m *Mongo) GetAllDatasets() (*models.DatasetResults, error) {
+func (m *Mongo) GetDatasets() (*models.DatasetResults, error) {
 	s := session.Copy()
 	defer s.Close()
 

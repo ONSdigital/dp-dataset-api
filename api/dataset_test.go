@@ -20,7 +20,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &datastoretest.DataStoreMock{
-			GetAllDatasetsFunc: func() (*models.DatasetResults, error) {
+			GetDatasetsFunc: func() (*models.DatasetResults, error) {
 				return &models.DatasetResults{}, nil
 			},
 		}
@@ -28,7 +28,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		api := CreateDatasetAPI("123", mux.NewRouter(), mockedDataStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.GetAllDatasetsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -39,7 +39,7 @@ func TestGetDatasetsReturnsInternalError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &datastoretest.DataStoreMock{
-			GetAllDatasetsFunc: func() (*models.DatasetResults, error) {
+			GetDatasetsFunc: func() (*models.DatasetResults, error) {
 				return nil, internalError
 			},
 		}
@@ -47,7 +47,7 @@ func TestGetDatasetsReturnsInternalError(t *testing.T) {
 		api := CreateDatasetAPI("123", mux.NewRouter(), mockedDataStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(len(mockedDataStore.GetAllDatasetsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 	})
 }
 

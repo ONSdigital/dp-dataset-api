@@ -9,12 +9,12 @@ import (
 )
 
 var (
-	lockDataStoreMockGetAllDatasets sync.RWMutex
-	lockDataStoreMockGetDataset     sync.RWMutex
-	lockDataStoreMockGetEdition     sync.RWMutex
-	lockDataStoreMockGetEditions    sync.RWMutex
-	lockDataStoreMockGetVersion     sync.RWMutex
-	lockDataStoreMockGetVersions    sync.RWMutex
+	lockDataStoreMockGetDataset  sync.RWMutex
+	lockDataStoreMockGetDatasets sync.RWMutex
+	lockDataStoreMockGetEdition  sync.RWMutex
+	lockDataStoreMockGetEditions sync.RWMutex
+	lockDataStoreMockGetVersion  sync.RWMutex
+	lockDataStoreMockGetVersions sync.RWMutex
 )
 
 // DataStoreMock is a mock implementation of DataStore.
@@ -23,11 +23,11 @@ var (
 //
 //         // make and configure a mocked DataStore
 //         mockedDataStore := &DataStoreMock{
-//             GetAllDatasetsFunc: func() (*models.DatasetResults, error) {
-// 	               panic("TODO: mock out the GetAllDatasets method")
-//             },
 //             GetDatasetFunc: func(id string) (*models.Dataset, error) {
 // 	               panic("TODO: mock out the GetDataset method")
+//             },
+//             GetDatasetsFunc: func() (*models.DatasetResults, error) {
+// 	               panic("TODO: mock out the GetDatasets method")
 //             },
 //             GetEditionFunc: func(datasetID string, editionID string) (*models.Edition, error) {
 // 	               panic("TODO: mock out the GetEdition method")
@@ -48,11 +48,11 @@ var (
 //
 //     }
 type DataStoreMock struct {
-	// GetAllDatasetsFunc mocks the GetAllDatasets method.
-	GetAllDatasetsFunc func() (*models.DatasetResults, error)
-
 	// GetDatasetFunc mocks the GetDataset method.
 	GetDatasetFunc func(id string) (*models.Dataset, error)
+
+	// GetDatasetsFunc mocks the GetDatasets method.
+	GetDatasetsFunc func() (*models.DatasetResults, error)
 
 	// GetEditionFunc mocks the GetEdition method.
 	GetEditionFunc func(datasetID string, editionID string) (*models.Edition, error)
@@ -68,13 +68,13 @@ type DataStoreMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetAllDatasets holds details about calls to the GetAllDatasets method.
-		GetAllDatasets []struct {
-		}
 		// GetDataset holds details about calls to the GetDataset method.
 		GetDataset []struct {
 			// Id is the id argument value.
 			Id string
+		}
+		// GetDatasets holds details about calls to the GetDatasets method.
+		GetDatasets []struct {
 		}
 		// GetEdition holds details about calls to the GetEdition method.
 		GetEdition []struct {
@@ -107,32 +107,6 @@ type DataStoreMock struct {
 	}
 }
 
-// GetAllDatasets calls GetAllDatasetsFunc.
-func (mock *DataStoreMock) GetAllDatasets() (*models.DatasetResults, error) {
-	if mock.GetAllDatasetsFunc == nil {
-		panic("moq: DataStoreMock.GetAllDatasetsFunc is nil but DataStore.GetAllDatasets was just called")
-	}
-	callInfo := struct {
-	}{}
-	lockDataStoreMockGetAllDatasets.Lock()
-	mock.calls.GetAllDatasets = append(mock.calls.GetAllDatasets, callInfo)
-	lockDataStoreMockGetAllDatasets.Unlock()
-	return mock.GetAllDatasetsFunc()
-}
-
-// GetAllDatasetsCalls gets all the calls that were made to GetAllDatasets.
-// Check the length with:
-//     len(mockedDataStore.GetAllDatasetsCalls())
-func (mock *DataStoreMock) GetAllDatasetsCalls() []struct {
-} {
-	var calls []struct {
-	}
-	lockDataStoreMockGetAllDatasets.RLock()
-	calls = mock.calls.GetAllDatasets
-	lockDataStoreMockGetAllDatasets.RUnlock()
-	return calls
-}
-
 // GetDataset calls GetDatasetFunc.
 func (mock *DataStoreMock) GetDataset(id string) (*models.Dataset, error) {
 	if mock.GetDatasetFunc == nil {
@@ -161,6 +135,32 @@ func (mock *DataStoreMock) GetDatasetCalls() []struct {
 	lockDataStoreMockGetDataset.RLock()
 	calls = mock.calls.GetDataset
 	lockDataStoreMockGetDataset.RUnlock()
+	return calls
+}
+
+// GetDatasets calls GetDatasetsFunc.
+func (mock *DataStoreMock) GetDatasets() (*models.DatasetResults, error) {
+	if mock.GetDatasetsFunc == nil {
+		panic("moq: DataStoreMock.GetDatasetsFunc is nil but DataStore.GetDatasets was just called")
+	}
+	callInfo := struct {
+	}{}
+	lockDataStoreMockGetDatasets.Lock()
+	mock.calls.GetDatasets = append(mock.calls.GetDatasets, callInfo)
+	lockDataStoreMockGetDatasets.Unlock()
+	return mock.GetDatasetsFunc()
+}
+
+// GetDatasetsCalls gets all the calls that were made to GetDatasets.
+// Check the length with:
+//     len(mockedDataStore.GetDatasetsCalls())
+func (mock *DataStoreMock) GetDatasetsCalls() []struct {
+} {
+	var calls []struct {
+	}
+	lockDataStoreMockGetDatasets.RLock()
+	calls = mock.calls.GetDatasets
+	lockDataStoreMockGetDatasets.RUnlock()
 	return calls
 }
 
