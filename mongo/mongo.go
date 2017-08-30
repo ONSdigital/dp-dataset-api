@@ -1,12 +1,14 @@
-package datastore
+package mongo
 
 import (
+	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/models"
+
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
-var _ Backend = &Mongo{}
+var _ api.Backend = &Mongo{}
 var session *mgo.Session
 
 // Mongo represents a simplistic MongoDB configuration.

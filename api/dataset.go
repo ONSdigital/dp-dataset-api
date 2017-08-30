@@ -11,8 +11,10 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+const publishedState = "published"
+
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
-	results, err := api.dataStore.GetDatasets()
+	results, err := api.dataStore.Backend.GetDatasets()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -31,7 +33,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	dataset, err := api.dataStore.GetDataset(id)
+	dataset, err := api.dataStore.Backend.GetDataset(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -52,7 +54,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	results, err := api.dataStore.GetEditions(id)
+	results, err := api.dataStore.Backend.GetEditions(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -72,7 +74,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	editionID := vars["edition"]
-	edition, err := api.dataStore.GetEdition(id, editionID)
+	edition, err := api.dataStore.Backend.GetEdition(id, editionID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -92,7 +94,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	editionID := vars["edition"]
-	results, err := api.dataStore.GetVersions(id, editionID)
+	results, err := api.dataStore.Backend.GetVersions(id, editionID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -113,7 +115,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	editionID := vars["edition"]
 	version := vars["version"]
-	results, err := api.dataStore.GetVersion(id, editionID, version)
+	results, err := api.dataStore.Backend.GetVersion(id, editionID, version)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -139,7 +141,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	dataset.ID = datasetID
+	dataset.DatasetID = datasetID
 	dataset.Links.Self = "/datasets/" + datasetID
 	dataset.Links.Editions = "/datasets/" + datasetID + "/editions"
 
@@ -150,7 +152,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	if err := api.dataStore.UpsertDataset(datasetID, update); err != nil {
+	if err := api.dataStore.Backend.UpsertDataset(datasetID, update); err != nil {
 		log.ErrorR(r, err, nil)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -171,7 +173,7 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	edition.ID = datasetID + "_" + editionID
+	edition.Links.Dataset = "/datasets/" + datasetID
 	edition.Links.Self = "/datasets/" + datasetID + "/editions/" + editionID
 	edition.Links.Versions = "/datasets/" + datasetID + "/editions/" + editionID + "/versions"
 
@@ -182,7 +184,7 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	if err := api.dataStore.UpsertEdition(edition.ID, update); err != nil {
+	if err := api.dataStore.Backend.UpsertEdition(edition.ID, update); err != nil {
 		log.ErrorR(r, err, nil)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -204,7 +206,8 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	version.ID = datasetID + "_" + editionID + "_" + versionID
+	version.Links.Dataset = "/datasets/" + datasetID
+	version.Links.Edition = "/datasets/" + datasetID + "/editions/" + editionID
 	version.Links.Self = "/datasets/" + datasetID + "/editions/" + editionID + "/versions/" + versionID
 	version.Links.Dimensions = "/instance/" + versionID + "/dimensions"
 
@@ -215,10 +218,27 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	if err := api.dataStore.UpsertVersion(version.ID, update); err != nil {
+	if err := api.dataStore.Backend.UpsertVersion(version.ID, update); err != nil {
 		log.ErrorR(r, err, nil)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	if version.State == publishedState {
+		updateDataset := bson.M{
+			"$set": bson.M{
+				"links.latest_version": version.Links.Self,
+			},
+			"$setOnInsert": bson.M{
+				"updated_at": time.Now(),
+			},
+		}
+
+		if err := api.dataStore.Backend.UpsertDataset(datasetID, updateDataset); err != nil {
+			log.ErrorC("failed to update dataset document with link to latest version", err, nil)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	setJSONContentType(w)

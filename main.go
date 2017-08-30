@@ -5,7 +5,7 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/config"
-	"github.com/ONSdigital/dp-dataset-api/datastore"
+	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/server"
 	"github.com/gorilla/mux"
@@ -21,7 +21,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	mongo := &datastore.Mongo{
+	mongo := &mongo.Mongo{
 		Collection: cfg.MongoConfig.Collection,
 		Database:   cfg.MongoConfig.Database,
 		URI:        cfg.MongoConfig.BindAddr,
@@ -42,7 +42,7 @@ func main() {
 		"bind_address": cfg.BindAddr,
 	})
 
-	_ = api.CreateDatasetAPI(cfg.SecretKey, router, mongo)
+	_ = api.CreateDatasetAPI(cfg.SecretKey, router, api.DataStore{Backend: mongo})
 
 	if err = s.ListenAndServe(); err != nil {
 		log.Error(err, nil)

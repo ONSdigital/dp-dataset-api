@@ -1,15 +1,18 @@
 package api
 
 import (
-	"github.com/ONSdigital/dp-dataset-api/datastore"
 	"github.com/ONSdigital/dp-dataset-api/models"
 )
 
+// DataStore provides a datastore.Backend interface used to store, retrieve, remove or update datasets
+type DataStore struct {
+	Backend Backend
+}
 
-//go:generate moq -out datastoretest/datastore.go -pkg datastoretest . DataStore
+//go:generate moq -out datastoretest/datastore.go -pkg backendtest . Backend
 
-// DataStore represents an interface used to store datasets
-type DataStore interface {
+// Backend represents basic data access via Get, Remove and Upsert methods.
+type Backend interface {
 	GetDatasets() (*models.DatasetResults, error)
 	GetDataset(id string) (*models.Dataset, error)
 	GetEditions(id string) (*models.EditionResults, error)
@@ -20,10 +23,4 @@ type DataStore interface {
 	UpsertEdition(id interface{}, update interface{}) error
 	UpsertVersion(id interface{}, update interface{}) error
 	UpsertContact(id interface{}, update interface{}) error
-}
-
-// DataStore provides a datastore.Backend interface used to store, retrieve, remove or update datasets
-type DataStore1 struct {
-	Backend datastore.Backend
-
 }
