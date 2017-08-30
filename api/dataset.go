@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ONSdigital/dp-dataset-api/api-errors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
@@ -16,18 +17,24 @@ const publishedState = "published"
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	results, err := api.dataStore.Backend.GetDatasets()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Error(err, nil)
+		handleErrorType(err, w)
+		return
 	}
 
 	bytes, err := json.Marshal(results)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Error(err, nil)
+		handleErrorType(err, w)
+		return
 	}
 	setJSONContentType(w)
 	_, err = w.Write(bytes)
 	if err != nil {
+		log.Error(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	log.Debug("get all datasets", nil)
 }
 
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
@@ -35,20 +42,25 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	dataset, err := api.dataStore.Backend.GetDataset(id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Error(err, log.Data{"dataset_id": id})
+		handleErrorType(err, w)
+		return
 	}
 
 	bytes, err := json.Marshal(dataset)
 	if err != nil {
+		log.Error(err, log.Data{"dataset_id": id})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	setJSONContentType(w)
 	_, err = w.Write(bytes)
 	if err != nil {
+		log.Error(err, log.Data{"dataset_id": id})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-
+	log.Debug("get dataset", log.Data{"dataset_id": id})
 }
 
 func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
@@ -56,18 +68,24 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	results, err := api.dataStore.Backend.GetEditions(id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Error(err, log.Data{"dataset_id": id})
+		handleErrorType(err, w)
+		return
 	}
 
 	bytes, err := json.Marshal(results)
 	if err != nil {
+		log.Error(err, log.Data{"dataset_id": id})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	setJSONContentType(w)
 	_, err = w.Write(bytes)
 	if err != nil {
+		log.Error(err, log.Data{"dataset_id": id})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	log.Debug("get all editions", log.Data{"dataset_id": id})
 }
 
 func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
@@ -76,18 +94,24 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	editionID := vars["edition"]
 	edition, err := api.dataStore.Backend.GetEdition(id, editionID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
+		handleErrorType(err, w)
+		return
 	}
 
 	bytes, err := json.Marshal(edition)
 	if err != nil {
+		log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	setJSONContentType(w)
 	_, err = w.Write(bytes)
 	if err != nil {
+		log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	log.Debug("get edition", log.Data{"dataset_id": id, "edition": editionID})
 }
 
 func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
@@ -96,18 +120,24 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	editionID := vars["edition"]
 	results, err := api.dataStore.Backend.GetVersions(id, editionID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
+		handleErrorType(err, w)
+		return
 	}
 
 	bytes, err := json.Marshal(results)
 	if err != nil {
+		log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	setJSONContentType(w)
 	_, err = w.Write(bytes)
 	if err != nil {
+		log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	log.Debug("get all versions", log.Data{"dataset_id": id, "edition": editionID})
 }
 
 func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
@@ -117,18 +147,24 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	version := vars["version"]
 	results, err := api.dataStore.Backend.GetVersion(id, editionID, version)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Error(err, log.Data{"dataset_id": id, "edition": editionID, "version": version})
+		handleErrorType(err, w)
+		return
 	}
 
 	bytes, err := json.Marshal(results)
 	if err != nil {
+		log.Error(err, log.Data{"dataset_id": id, "edition": editionID, "version": version})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	setJSONContentType(w)
 	_, err = w.Write(bytes)
 	if err != nil {
+		log.Error(err, log.Data{"dataset_id": id, "edition": editionID, "version": version})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	log.Debug("get version", log.Data{"dataset_id": id, "edition": editionID, "version": version})
 }
 
 func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
@@ -243,6 +279,14 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusCreated)
+}
+
+func handleErrorType(err error, w http.ResponseWriter) {
+	if err == api_errors.DatasetNotFound || err == api_errors.EditionNotFound || err == api_errors.VersionNotFound {
+		http.Error(w, err.Error(), http.StatusNotFound)
+	} else {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func setJSONContentType(w http.ResponseWriter) {

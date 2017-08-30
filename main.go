@@ -32,8 +32,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	//datastore := api.DataStore{Backend: mongo}
-
 	router := mux.NewRouter()
 
 	s := server.New(cfg.BindAddr, router)

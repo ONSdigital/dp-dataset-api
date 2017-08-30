@@ -6,6 +6,7 @@ import (
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"github.com/ONSdigital/dp-dataset-api/api-errors"
 )
 
 var _ api.Backend = &Mongo{}
@@ -44,6 +45,9 @@ func (m *Mongo) GetDatasets() (*models.DatasetResults, error) {
 
 	results := []models.Dataset{}
 	if err := iter.All(&results); err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, api_errors.DatasetNotFound
+		}
 		return nil, err
 	}
 
@@ -58,6 +62,9 @@ func (m *Mongo) GetDataset(id string) (*models.Dataset, error) {
 	var dataset models.Dataset
 	err := s.DB(m.Database).C("datasets").Find(bson.M{"links.self": "/datasets/" + id}).One(&dataset)
 	if err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, api_errors.DatasetNotFound
+		}
 		return nil, err
 	}
 	return &dataset, nil
@@ -70,6 +77,9 @@ func (m *Mongo) GetEditions(id string) (*models.EditionResults, error) {
 
 	var results []models.Edition
 	if err := iter.All(&results); err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, api_errors.EditionNotFound
+		}
 		return nil, err
 	}
 	return &models.EditionResults{Items: results}, nil
@@ -82,6 +92,9 @@ func (m *Mongo) GetEdition(datasetID, editionID string) (*models.Edition, error)
 	link := "/datasets/" + datasetID + "/editions/" + editionID
 	err := s.DB(m.Database).C("editions").Find(bson.M{"links.self": link}).One(&edition)
 	if err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, api_errors.EditionNotFound
+		}
 		return nil, err
 	}
 	return &edition, nil
@@ -94,6 +107,9 @@ func (m *Mongo) GetVersions(datasetID, editionID string) (*models.VersionResults
 
 	var results []models.Version
 	if err := iter.All(&results); err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, api_errors.VersionNotFound
+		}
 		return nil, err
 	}
 	return &models.VersionResults{Items: results}, nil
@@ -105,6 +121,9 @@ func (m *Mongo) GetVersion(datasetID, editionID, versionID string) (*models.Vers
 	link := "/datasets/" + datasetID + "/editions/" + editionID + "/versions/" + versionID
 	err := s.DB(m.Database).C("versions").Find(bson.M{"links.self": link}).One(&version)
 	if err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, api_errors.VersionNotFound
+		}
 		return nil, err
 	}
 	return &version, nil

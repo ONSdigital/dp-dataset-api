@@ -203,3 +203,41 @@ func TestGetVersionsReturnsInternalError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
 	})
 }
+
+func TestGetVersionReturnsOK(t *testing.T) {
+	t.Parallel()
+	Convey("", t, func() {
+		r, err := http.NewRequest("GET", "http://localhost:21800/datasets/123-456/editions/678/versions/1", nil)
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			GetVersionFunc: func(datasetID string, editionID, versionID string) (*models.Version, error) {
+				return &models.Version{}, nil
+			},
+		}
+
+		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestGetVersionReturnsInternalError(t *testing.T) {
+	t.Parallel()
+	Convey("", t, func() {
+		r, err := http.NewRequest("GET", "http://localhost:21800/datasets/123-456/editions/678/versions/1", nil)
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			GetVersionFunc: func(datasetID string, editionID, versionID string) (*models.Version, error) {
+				return nil, internalError
+			},
+		}
+
+		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+	})
+}
