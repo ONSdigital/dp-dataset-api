@@ -8,7 +8,9 @@ info:
     url: "http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
 basePath: "/v1"
 tags:
-- name: "Dataset"
+- name: "Public API"
+- name: "Private user API"
+- name: "Private API"
 schemes:
 - "http"
 parameters:
@@ -41,11 +43,60 @@ parameters:
     description: "The query text to search datasets with"
     in: query
     type: string
+  instance_id:
+    name: instance_id
+    in: path
+    description: "A unique id for an instance"
+    type: string
+    required: true
+  instance:
+    name: instance
+    description: "A state of an instance"
+    schema:
+      $ref: '#/definitions/Instance'
+    in: body
+    required: true
+  event:
+    name: event
+    description: "An import event when publishing a dataset"
+    in: body
+    schema:
+      $ref: '#/definitions/Event'
+  inserted_observations:
+    name: inserted_observations
+    description: "A value to increment the inserted_observations within an instance"
+    type: integer
+    in: path
+    required: true
+  value:
+   name: value
+   description: "A value to set within a type"
+   type: string
+   in: path
+   required: true
+  node_id:
+   name: node_id
+   description: "An unique node id"
+   type: string
+   in: path
+   required: true
+
+securityDefinitions:
+  FlorenceAPIKey:
+    description: "API key used to allow florence users to create and query the progress of importing a dataset"
+    type: apiKey
+    in: header
+    name: florence-token
+  InternalAPIKey:
+    description: "API key used to allow only internal services to update the state of an import job"
+    type: apiKey
+    in: header
+    name: internal-token
 paths:
   /search/datasets:
     get:
       tags:
-      - "Dataset"
+      - "Public API"
       summary: "Search for datasets"
       description: "Perform a search on all published datasets by the ONS"
       parameters:
@@ -64,7 +115,7 @@ paths:
   /datasets:
     get:
       tags:
-      - "Dataset"
+      - "Public API"
       summary: "Get a list of datasets"
       description: "Returns a list of all datasets provided by the ONS that can be filtered using the filter API"
       produces:
@@ -80,7 +131,7 @@ paths:
   /datasets/{id}:
     get:
       tags:
-      - "Dataset"
+      - "Public API"
       summary: "Get a dataset"
       description: "The dataset contains all high level information, for additional details see editions or versions of a dataset"
       parameters:
@@ -97,7 +148,7 @@ paths:
   /datasets/{id}/editions:
     get:
       tags:
-      - "Dataset"
+      - "Public API"
       summary: "Get a list of all editions from a dataset"
       description: "Get a list of editions from a type of dataset"
       parameters:
@@ -114,7 +165,7 @@ paths:
   /datasets/{id}/editions/{edition}:
     get:
       tags:
-      - "Dataset"
+      - "Public API"
       summary: "Get an edition of a dataset"
       description: "The edition contains a link to all versions"
       parameters:
@@ -132,7 +183,7 @@ paths:
   /datasets/{id}/editions/{edition}/versions:
     get:
       tags:
-      - "Dataset"
+      - "Public API"
       summary: "Get a list of all versions from a dataset edition"
       description: "Get a list of all versions from a dataset edition"
       parameters:
@@ -150,7 +201,7 @@ paths:
   /datasets/{id}/editions/{edition}/versions/{version}:
     get:
       tags:
-      - "Dataset"
+      - "Public API"
       summary: "Get a specific version and edition of a dataset"
       description: "Get a specific version and edition of a dataset"
       parameters:
@@ -169,7 +220,7 @@ paths:
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions:
     get:
       tags:
-      - "Dataset"
+      - "Public API"
       summary: "Get all dimensions from a dataset"
       description: "Get all dimensions which are used in the dataset"
       parameters:
@@ -188,7 +239,7 @@ paths:
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}:
     get:
       tags:
-      - "Dataset"
+      - "Public API"
       summary: "Get all values from a dimension"
       description: "Get a list of all values which appear in this dimension and dataset"
       parameters:
@@ -205,6 +256,219 @@ paths:
           description: "No dataset edition with the specific version was found using the id, edition and version provided or the dimension does not exist within the dataset"
         500:
           description: "Failed to process the request due to an internal error"
+  /instances/{instance_id}:
+    get:
+      tags:
+      - "Private user API"
+      summary: "Get Information about an instance"
+      description: "Get the current state of an instance, this includes all events which have happened."
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      produces:
+      - "application/json"
+      security:
+      - FlorenceAPIKey: []
+      responses:
+        200:
+          description: "Return a single instance state"
+          schema:
+            $ref: '#/definitions/Instance'
+        404:
+          description: "InstanceId does not match any import jobs"
+        500:
+          $ref: '#/responses/InternalError'
+  /instances/{instance_id}/dimensions:
+    get:
+      tags:
+      - "Private user API"
+      summary: "Get all dimensions from an instance"
+      description: "Get all dimensions from an instance"
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      produces:
+      - "application/json"
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "Return a list of dimensions"
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/DimensionNode'
+        404:
+          description: "InstanceId does not match any instances"
+        500:
+          $ref: '#/responses/InternalError'
+  /instances/{instance_id}/dimensions/{dimension}/options:
+    get:
+      tags:
+      - "Private user API"
+      summary: "Get all unique values from a dimension"
+      description: "Get all unique values from a dimension"
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/dimension'
+      produces:
+      - "application/json"
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "Return a list of unique values"
+          schema:
+            type: object
+            properties:
+              dimension_id:
+                description: "The name of the dimension"
+                type: string
+              values:
+                description: "A list of all unique values within a dimension"
+                type: array
+                items:
+                  type: string
+        400:
+          description: "instance_id does not match any instances"
+        404:
+          description: "dimension_id does not match any dimensions within the instance"
+        500:
+          $ref: '#/responses/InternalError'
+    put:
+      tags:
+      - "Private API"
+      summary: "Update the number of observations within this instance"
+      description: "Update the number of observations within this instance"
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/instance'
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "The event was added to the instance"
+        400:
+          description: "Invalid json message sent"
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
+        404:
+          description: "InstanceId does not match any instances"
+        500:
+          $ref: '#/responses/InternalError'
+  /instances/{instance_id}/events:
+    post:
+      tags:
+       - "Private API"
+      summary: "Add an event to an instance"
+      description: |
+        Add a new event into an instance. Events can be for information or error messages.
+        Each event must contain a type of event (Info or Error), a message to explain
+        the event, time of the event and finally the message offset in kafka
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/event'
+      security:
+      - InternalAPIKey: []
+      responses:
+        201:
+          description: "The event was added to the instance"
+        400:
+          description: "Invalid json message sent"
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
+        404:
+          description: "InstanceId does not match any instances"
+        500:
+          $ref: '#/responses/InternalError'
+  /instances/{instance_id}/inserted_observations/{inserted_observations}:
+    put:
+      tags:
+      - "Private API"
+      summary: "Increment the observation inserted count"
+      description: "This will add to the number already store in the api"
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/inserted_observations'
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "Added value to inserted observation"
+        400:
+          description: "Invalid value provided for inserted_observations"
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
+        404:
+          description: "InstanceId does not match any instances"
+        500:
+          $ref: '#/responses/InternalError'
+
+
+  /instances/{instance_id}/dimensions/{dimension}/options/{value}:
+    put:
+      tags:
+      - "Private API"
+      summary: "Add a dimension for the instance"
+      description: |
+        Add a dimension found in the V4 data.
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/dimension'
+      - $ref: '#/parameters/value'
+      produces:
+      - "application/json"
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "The dimension was added"
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
+        404:
+          description: "InstanceId does not match any instances"
+        500:
+          $ref: '#/responses/InternalError'
+  /instances/{instance_id}/dimensions/{dimension}/options/{value}/node_id/{node_id}:
+    put:
+      tags:
+      - "Private API"
+      summary: "Update a dimension with the node_id"
+      description: |
+        Update the dimension with a nodeId
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/dimension'
+      - $ref: '#/parameters/value'
+      - $ref: '#/parameters/node_id'
+      produces:
+      - "application/json"
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "Updated the dimension with the nodeId"
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
+        404:
+          description: "InstanceId does not match any instances"
+        500:
+          $ref: '#/responses/InternalError'
+responses:
+  InternalError:
+    description: "Failed to process the request due to an internal error"
+  ForbiddenError:
+    description: "No header with a token key was provided"
+  UnauthorisedError:
+    description: "The token provided is unauthorised to carry out this operation"
 definitions:
   Contact:
     type: object
@@ -321,7 +585,69 @@ definitions:
       license:
         type: string
         description: "The type of license for the dataset"
-
+  Instance:
+    type: object
+    properties:
+      instance_id:
+        type: string
+        readOnly: true
+        description: "A unique id for a job"
+      job:
+        description: "An object describing the ID and URL of the job containing this instance"
+        type: object
+        readOnly: true
+        properties:
+          id:
+            type: string
+            description: "The ID of the job containing this instance"
+            example: 042e216a-7822-4fa0-a3d6-e3f5248ffc35
+          link:
+            type: string
+            description: "The URL for the job containing this instance"
+            example: 'http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35'
+      state:
+        type: string
+        description: |
+          The state of the import job
+      events:
+        type: array
+        readOnly: true
+        description: "A list of events took place for this job"
+        items:
+          $ref: '#/definitions/Event'
+      number_of_observations:
+        type: integer
+        description: "The number of observations in this instance"
+      headers:
+        type: array
+        description: "The header information from a V4 file"
+        items:
+          type: string
+      last_updated:
+        type: string
+        readOnly: true
+        description: "The last time an event happened"
+  Event:
+    type: object
+    properties:
+      type:
+        type: string
+        description: |
+          The type of event, this can be;
+          * Info - for an information event
+          * Error - for an error event
+      service:
+        type: string
+        description: "The name of the service which triggered the event"
+      time:
+        type: string
+        description: "The time of the event in ISO 8601 format"
+      message:
+        type: string
+        description: "A description of the event"
+      message_offset:
+        type: string
+        description: "The kafka message offset (Used to locate the kafka message)"
   Dimension:
     type: object
     description: "A single dimension within a dataset"
@@ -369,3 +695,17 @@ definitions:
         description: "A list of values within a dimension"
         items:
           type: string
+  DimensionNode:
+    type: object
+    description: "A cached dimension. (Only used by the Private API)"
+    properties:
+      dimension_id:
+        description: "The name of the dimension"
+        type: string
+      value:
+        description: "The value of the dimension"
+        type: string
+      node_id:
+        description: "The id of the node"
+        type: string
+        
