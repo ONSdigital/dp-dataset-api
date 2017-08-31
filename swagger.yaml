@@ -8,81 +8,82 @@ info:
     url: "http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
 basePath: "/v1"
 tags:
-- name: "External Dataset API"
-- name: "Internal Dataset API"
+- name: "Public API"
+- name: "Private user API"
+- name: "Private"
 schemes:
 - "http"
 parameters:
-  id:
-    name: id
-    description: "Id that represents a dataset type"
-    in: path
-    type: string
-    required: true
-  edition:
-    name: edition
-    description: "An edition of a dataset"
-    in: path
-    type: string
-    required: true
-  version:
-    name: version
-    description: "A version of a dataset"
-    in: path
-    type: string
-    required: true
   dimension:
     name: dimension
     description: "A dimension from a dataset"
     in: path
-    type: string
     required: true
+    type: string
+  edition:
+    name: edition
+    description: "An edition of a dataset"
+    in: path
+    required: true
+    type: string
+  id:
+    name: id
+    description: "Id that represents a dataset type"
+    in: path
+    required: true
+    type: string
   items_per_page:
     name: items_per_page
     description: "The number of datasets to be returned"
     in: query
     type: integer
-  start_index:
-    name: start_index
-    description: "The first row of datasets to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
-    in: query
-    type: integer
+  new_dataset:
+    name: dataset
+    description: "A new dataset"
+    in: body
+    required: true
+    schema:
+      $ref: '#/definitions/Dataset'
+  new_edition:
+    name: new_edition
+    description: "A new edition of the dataset"
+    in: body
+    required: true
+    schema:
+      $ref: '#/definitions/Edition'
+  new_version:
+    name: new_version
+    description: "A new version of the dataset edition"
+    in: body
+    required: true
+    schema:
+      $ref: '#/definitions/Version'
   query:
     name: q
     description: "The query text to search datasets with"
     in: query
     type: string
-  new_dataset:
-    name: dataset
-    description: "A new dataset"
-    in: body
-    schema:
-      $ref: '#/definitions/Dataset'
+  start_index:
+    name: start_index
+    description: "The first row of datasets to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
+    in: query
+    type: integer
+  version:
+    name: version
+    description: "A version of a dataset"
+    in: path
     required: true
-  new_edition:
-    name: new_edition
-    description: "A new edition of the dataset"
-    in: body
-    schema:
-      $ref: '#/definitions/Edition'
-    required: true
-  new_version:
-    name: new_version
-    description: "A new version of the dataset edition"
-    in: body
-    schema:
-      $ref: '#/definitions/Version'
-    required: true
+    type: string
 paths:
   /search/datasets:
     get:
       tags:
-      - "External Dataset API"
+      - "Public API"
       summary: "Search for datasets"
       description: "Perform a search on all published datasets by the ONS"
       parameters:
-      - $ref: '#/parameters/query'
       - $ref: '#/parameters/items_per_page'
+      - $ref: '#/parameters/query'
       - $ref: '#/parameters/start_index'
       produces:
       - "application/json"
@@ -98,7 +99,7 @@ paths:
   /datasets:
     post:
       tags:
-      - "Internal Dataset API"
+      - "Private user API"
       summary: "Create a dataset"
       description: "Create a dataset provided by the ONS that can be filtered using the filter API"
       parameters:
@@ -114,7 +115,7 @@ paths:
           $ref: '#/responses/InternalError'
     get:
       tags:
-      - "External Dataset API"
+      - "Public API"
       summary: "Get a list of datasets"
       description: "Returns a list of all datasets provided by the ONS that can be filtered using the filter API"
       produces:
@@ -129,7 +130,7 @@ paths:
   /datasets/{id}:
     get:
       tags:
-      - "External Dataset API"
+      - "Public API"
       summary: "Get a dataset"
       description: "The dataset contains all high level information, for additional details see editions or versions of a dataset"
       parameters:
@@ -146,7 +147,7 @@ paths:
   /datasets/{id}/editions:
     get:
       tags:
-      - "External Dataset API"
+      - "Public API"
       summary: "Get a list of all editions from a dataset"
       description: "Get a list of editions from a type of dataset"
       parameters:
@@ -163,12 +164,12 @@ paths:
   /datasets/{id}/editions/{edition}:
     post:
       tags:
-      - "Internal Dataset API"
+      - "Private user API"
       summary: "Create an edition of a dataset"
       description: "Create an edition of a dataset"
       parameters:
-      - $ref: '#/parameters/id'
       - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/id'
       - $ref: '#/parameters/new_edition'
       responses:
         201:
@@ -181,12 +182,12 @@ paths:
           $ref: '#/responses/InternalError'
     get:
       tags:
-      - "External Dataset API"
+      - "Public API"
       summary: "Get an edition of a dataset"
       description: "The edition contains a link to all versions"
       parameters:
-      - $ref: '#/parameters/id'
       - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/id'
       responses:
         200:
           description: "A json object containing an edition"
@@ -199,12 +200,12 @@ paths:
   /datasets/{id}/editions/{edition}/versions:
     get:
       tags:
-      - "External Dataset API"
+      - "Public API"
       summary: "Get a list of all versions from a dataset edition"
       description: "Get a list of all versions from a dataset edition"
       parameters:
-      - $ref: '#/parameters/id'
       - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/id'
       responses:
         200:
           description: "A json list containing all versions for a set type of dataset and edition"
@@ -217,13 +218,13 @@ paths:
   /datasets/{id}/editions/{edition}/versions/{version}:
     post:
       tags:
-      - "Internal Dataset API"
+      - "Private user API"
       summary: "Create a version of a dataset edition"
       description: "Create a version of a dataset edition"
       parameters:
       - $ref: '#/parameters/id'
-      - $ref: '#/parameters/version'
       - $ref: '#/parameters/new_version'
+      - $ref: '#/parameters/version'
       responses:
         201:
           description: "A json object containing a version"
@@ -235,12 +236,12 @@ paths:
           $ref: '#/responses/InternalError'
     get:
       tags:
-      - "External Dataset API"
+      - "Public API"
       summary: "Get a specific version and edition of a dataset"
       description: "Get a specific version and edition of a dataset"
       parameters:
-      - $ref: '#/parameters/id'
       - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/id'
       - $ref: '#/parameters/version'
       responses:
         200:
@@ -254,12 +255,12 @@ paths:
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions:
     get:
       tags:
-      - "External Dataset API"
+      - "Public API"
       summary: "Get all dimensions from a dataset"
       description: "Get all dimensions which are used in the dataset"
       parameters:
-      - $ref: '#/parameters/id'
       - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/id'
       - $ref: '#/parameters/version'
       responses:
         200:
@@ -273,14 +274,14 @@ paths:
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}:
     get:
       tags:
-      - "External Dataset API"
+      - "Public API"
       summary: "Get all values from a dimension"
       description: "Get a list of all values which appear in this dimension and dataset"
       parameters:
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/version'
       - $ref: '#/parameters/dimension'
+      - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/version'
       responses:
         200:
           description: "Json object containing all values for a dimension"
@@ -295,34 +296,43 @@ responses:
     description: "Failed to process the request due to an internal error"
 definitions:
   Contact:
-    type: object
     description: "Object containing contact information for this dataset"
+    type: object
     properties:
-      name:
-        type: string
-        description: "The name of the person"
-      telephone:
-        type: string
-        description: "Telephone number to contact the person"
       email:
-        type: string
         description: "An email address to contact the person"
-  Publisher:
-    type: object
-    description: "The publisher of the dataset"
-    properties:
-      type:
         type: string
-        description: "The type of publisher"
       name:
+        description: "The name of the person"
         type: string
-        description: "The name of the publisher"
-      url:
+      telephone:
+        description: "Telephone number to contact the person"
         type: string
-        description: "A link to the publishers homepage"
-  Dataset:
+  Datasets:
+    description: "A list of datasets"
     type: object
+    properties:
+      count:
+        description: "The number of datasets returned"
+        readOnly: true
+        type: integer
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Dataset'
+      items_per_page:
+        description: "The number of datasets requested"
+        type: integer
+      start_index:
+        description: "The first row of datasets to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
+        type: integer
+      total_count:
+        description: "The total number of datasets"
+        readOnly: true
+        type: integer
+  Dataset:
     description: "The dataset"
+    type: object
     properties:
       contact:
         type: array
@@ -361,39 +371,32 @@ definitions:
         type: string
         description: "The time and date in which the resource was last updated"
         example: "2017-10-23T15:09:11.829+01:00"
-  Datasets:
+  DatasetLinks:
+    description: "A list of links related to this resource"
+    readOnly: true
     type: object
-    description: "A list of datasets"
     properties:
-      count:
-        description: "The number of datasets returned"
-        readOnly: true
-        type: integer
-      items:
-        type: array
-        items:
-          $ref: '#/definitions/Dataset'
-      items_per_page:
-        description: "The number of datasets requested"
-        type: integer
-      start_index:
-        description: "The first row of datasets to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
-        type: integer
-      total_count:
-        description: "The total number of datasets"
-        readOnly: true
-        type: integer
+      editions:
+        description: "A URL to all editions for this dataset"
+        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions"
+        type: string
+      latest_version:
+        description: "A link to the latest version and edition of the dataset"
+        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2"
+        type: string
+      self:
+        $ref: '#/definitions/SelfLink'
   Edition:
     type: object
     properties:
       edition:
-        type: string
         description: "The edition of the dataset"
         example: "2017"
+        type: string
       id:
+        description: "An unique id for a dataset edtion"
         readOnly: true
         type: string
-        description: "An unique id for a dataset edtion"
       links:
         $ref: '#/definitions/EditionLinks'
       state:
@@ -425,40 +428,38 @@ definitions:
     properties:
       dataset:
         description: "A URL to the editions parent dataset"
-        type: string
         example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
+        type: string
       self:
         $ref: '#/definitions/SelfLink'
       versions:
         description: "A URL to all versions of this dataset edition"
-        type: string
         example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/edition/2017/versions"
-  DatasetLinks:
-    readOnly: true
+        type: string
+  Publisher:
+    description: "The publisher of the dataset"
     type: object
-    description: "A list of links related to this resource"
     properties:
-      editions:
+      name:
+        description: "The name of the publisher"
         type: string
-        description: "A URL to all editions for this dataset"
-        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions"
-      latest_version:
+      type:
+        description: "The type of publisher"
         type: string
-        description: "A link to the latest version and edition of the dataset"
-        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2"
-      self:
-        $ref: '#/definitions/SelfLink'
+      url:
+        description: "A link to the publishers homepage"
+        type: string
   SelfLink:
+    description: "A link to this resource"
     readOnly: true
     type: string
-    description: "A link to this resource"
   State:
-    type: string
     description: |
       The state of the resource, can only be one of the following:
         * created
         * associated
         * published
+    type: string
   Versions:
     type: object
     properties:
@@ -467,8 +468,8 @@ definitions:
         readOnly: true
         type: integer
       items:
-        type: array
         description: "An array of Datasets"
+        type: array
         items:
           $ref: '#/definitions/Version'
       items_per_page:
@@ -482,29 +483,29 @@ definitions:
         readOnly: true
         type: integer
   Version:
-    type: object
     description: "An object containing information about published datasets from the ONS"
+    type: object
     properties:
       edition:
-        type: string
         description: "The dataset edition for this version"
-      license:
         type: string
+      license:
         description: "The type of license for the dataset"
+        type: string
       links:
         $ref: '#/definitions/VersionLinks'
       release_date:
-        type: string
         description: "The release date of this dataset"
+        type: string
       state:
         $ref: '#/definitions/State'
       version:
-        type: integer
         description: "The number of the dataset edition version"
+        type: integer
   VersionLinks:
+    description: "A list of links related to this resource"
     readOnly: true
     type: object
-    description: "A list of links related to this resource"
     properties:
       dataset:
         $ref: '#/definitions/DatasetLink'
@@ -515,57 +516,57 @@ definitions:
       self:
         $ref: '#/definitions/SelfLink'
   DatasetLink:
+    description: "An object containing the dataset id and link"
     readOnly: true
     type: object
-    description: "An object containing the dataset id and link"
     properties:
       id:
-        type: string
         description: "The dataset id"
-      link:
         type: string
+      link:
         description: "A URL to the dataset for this version"
         example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
+        type: string
   DimensionLink:
+    description: "An object containing the dimension id and link"
     readOnly: true
     type: object
-    description: "An object containing the dimension id and link"
     properties:
       id:
-        type: string
         description: "The dimension id"
-      link:
         type: string
+      link:
         description: "A URL to list dimensions for this version"
         example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2/dimensions"
+        type: string
   EditionLink:
+    description: "An object containing the edition and link"
     readOnly: true
     type: object
-    description: "An object containing the edition and link"
     properties:
       id:
-        type: string
         description: "The version dataset edition"
-      link:
         type: string
+      link:
         description: "A URL to the dataset edition for this version"
         example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017"
+        type: string
   Dimension:
-    type: object
     description: "A single dimension within a dataset"
+    type: object
     properties:
       codeListId:
-        type: string
         description: "The id of the code list that refers to this dimension"
+        type: string
       id:
-        type: string
         description: "The id of the dimension"
+        type: string
       name:
-        type: string
         description: "The name of the dimension"
-      type:
         type: string
+      type:
         description: "The type of dimension"
+        type: string
   Dimensions:
     type: object
     properties:
@@ -574,8 +575,8 @@ definitions:
         readOnly: true
         type: integer
       items:
-        type: array
         description: "An array of dimensions"
+        type: array
         items:
           $ref: '#/definitions/Dimension'
       items_per_page:
@@ -592,19 +593,19 @@ definitions:
     type: object
     properties:
       code_list_id:
-        type: string
         description: "The id of the code list that refers to this dimension"
+        type: string
       id:
-        type: string
         description: "The id of the dimension"
+        type: string
       name:
-        type: string
         description: "The name of the dimension"
-      type:
         type: string
+      type:
         description: "The type of dimension"
+        type: string
       values:
-        type: array
         description: "A list of values within a dimension"
+        type: array
         items:
           type: string
