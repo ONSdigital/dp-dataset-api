@@ -2,105 +2,137 @@ swagger: "2.0"
 info:
   description: "An API used to query information about datasets published by the ONS."
   version: "1.0.0"
-  title: "ONS Dataset API"
+  title: "Dataset API"
   license:
     name: "Open Government Licence v3.0"
     url: "http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
 basePath: "/v1"
 tags:
-- name: "Public API"
-- name: "Private user API"
-- name: "Private API"
+- name: "Public"
+- name: "Private user"
+- name: "Private"
 schemes:
 - "http"
 parameters:
-  id:
-    name: id
-    description: "Id that represents a dataset type"
-    in: path
-    type: string
-    required: true
-  edition:
-    name: edition
-    description: "An edition of a dataset"
-    in: path
-    type: string
-    required: true
-  version:
-    name: version
-    description: "A version of a dataset"
-    in: path
-    type: string
-    required: true
   dimension:
     name: dimension
     description: "A dimension from a dataset"
     in: path
-    type: string
     required: true
-  query:
-    name: q
-    description: "The query text to search datasets with"
-    in: query
     type: string
-  instance_id:
-    name: instance_id
+  edition:
+    name: edition
+    description: "An edition of a dataset"
     in: path
-    description: "A unique id for an instance"
+    required: true
     type: string
-    required: true
-  instance:
-    name: instance
-    description: "A state of an instance"
-    schema:
-      $ref: '#/definitions/Instance'
-    in: body
-    required: true
   event:
     name: event
     description: "An import event when publishing a dataset"
     in: body
     schema:
       $ref: '#/definitions/Event'
+  id:
+    name: id
+    description: "Id that represents a dataset type"
+    in: path
+    required: true
+    type: string
   inserted_observations:
     name: inserted_observations
     description: "A value to increment the inserted_observations within an instance"
-    type: integer
     in: path
     required: true
-  value:
-   name: value
-   description: "A value to set within a type"
-   type: string
-   in: path
-   required: true
+    type: integer
+  instance_id:
+    name: instance_id
+    description: "A unique id for an instance"
+    in: path
+    required: true
+    type: string
+  instance:
+    name: instance
+    description: "A state of an instance"
+    in: body
+    required: true
+    schema:
+      $ref: '#/definitions/Instance'
+  items_per_page:
+    name: items_per_page
+    description: "The number of datasets to be returned"
+    in: query
+    type: integer
+  new_dataset:
+    name: dataset
+    description: "A new dataset"
+    in: body
+    required: true
+    schema:
+      $ref: '#/definitions/Dataset'
+  new_edition:
+    name: new_edition
+    description: "A new edition of the dataset"
+    in: body
+    required: true
+    schema:
+      $ref: '#/definitions/Edition'
+  new_version:
+    name: new_version
+    description: "A new version of the dataset edition"
+    in: body
+    required: true
+    schema:
+      $ref: '#/definitions/Version'
   node_id:
    name: node_id
    description: "An unique node id"
-   type: string
    in: path
    required: true
-
+   type: string
+  query:
+    name: q
+    description: "The query text to search datasets with"
+    in: query
+    type: string
+  start_index:
+    name: start_index
+    description: "The first row of datasets to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
+    in: query
+    type: integer
+  value:
+   name: value
+   description: "A value to set within a type"
+   in: path
+   required: true
+   type: string
+  version:
+    name: version
+    description: "A version of a dataset"
+    in: path
+    required: true
+    type: string
 securityDefinitions:
   FlorenceAPIKey:
-    description: "API key used to allow florence users to create and query the progress of importing a dataset"
-    type: apiKey
-    in: header
     name: florence-token
-  InternalAPIKey:
-    description: "API key used to allow only internal services to update the state of an import job"
-    type: apiKey
+    description: "API key used to allow florence users to create and query the progress of importing a dataset"
     in: header
+    type: apiKey
+  InternalAPIKey:
     name: internal-token
+    description: "API key used to allow only internal services to update the state of an import job"
+    in: header
+    type: apiKey
 paths:
   /search/datasets:
     get:
       tags:
-      - "Public API"
+      - "Public"
       summary: "Search for datasets"
       description: "Perform a search on all published datasets by the ONS"
       parameters:
+      - $ref: '#/parameters/items_per_page'
       - $ref: '#/parameters/query'
+      - $ref: '#/parameters/start_index'
       produces:
       - "application/json"
       responses:
@@ -113,9 +145,25 @@ paths:
         500:
           description: "Failed to process the request due to an internal error"
   /datasets:
+    post:
+      tags:
+      - "Private user"
+      summary: "Create a dataset"
+      description: "Create a dataset provided by the ONS that can be filtered using the filter API"
+      parameters:
+      - $ref: '#/parameters/new_dataset'
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "A json list containing datasets which have been published"
+        400:
+          description: "Invalid request body"
+        500:
+          $ref: '#/responses/InternalError'
     get:
       tags:
-      - "Public API"
+      - "Public"
       summary: "Get a list of datasets"
       description: "Returns a list of all datasets provided by the ONS that can be filtered using the filter API"
       produces:
@@ -126,12 +174,11 @@ paths:
           schema:
             $ref: '#/definitions/Datasets'
         500:
-          description: "Failed to process the request due to an internal error"
-
+          $ref: '#/responses/InternalError'
   /datasets/{id}:
     get:
       tags:
-      - "Public API"
+      - "Public"
       summary: "Get a dataset"
       description: "The dataset contains all high level information, for additional details see editions or versions of a dataset"
       parameters:
@@ -144,11 +191,11 @@ paths:
         404:
           description: "No dataset was found using the id provided"
         500:
-          description: "Failed to process the request due to an internal error"
+          $ref: '#/responses/InternalError'
   /datasets/{id}/editions:
     get:
       tags:
-      - "Public API"
+      - "Public"
       summary: "Get a list of all editions from a dataset"
       description: "Get a list of editions from a type of dataset"
       parameters:
@@ -161,16 +208,34 @@ paths:
         404:
           description: "No dataset was found using the id provided"
         500:
-          description: "Failed to process the request due to an internal error"
+          $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}:
+    post:
+      tags:
+      - "Private user"
+      summary: "Create an edition of a dataset"
+      description: "Create an edition of a dataset"
+      parameters:
+      - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/new_edition'
+      responses:
+        201:
+          description: "A json object containing an edition"
+        400:
+          description: "Invalid request body"
+        404:
+          description: "No dataset was found using the id provided"
+        500:
+          $ref: '#/responses/InternalError'
     get:
       tags:
-      - "Public API"
+      - "Public"
       summary: "Get an edition of a dataset"
       description: "The edition contains a link to all versions"
       parameters:
-      - $ref: '#/parameters/id'
       - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/id'
       responses:
         200:
           description: "A json object containing an edition"
@@ -179,16 +244,16 @@ paths:
         404:
           description: "No dataset edition was found using the id and edition provided"
         500:
-          description: "Failed to process the request due to an internal error"
+          $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}/versions:
     get:
       tags:
-      - "Public API"
+      - "Public"
       summary: "Get a list of all versions from a dataset edition"
       description: "Get a list of all versions from a dataset edition"
       parameters:
-      - $ref: '#/parameters/id'
       - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/id'
       responses:
         200:
           description: "A json list containing all versions for a set type of dataset and edition"
@@ -197,16 +262,34 @@ paths:
         404:
           description: "No dataset edition was found using the id and edition provided"
         500:
-          description: "Failed to process the request due to an internal error"
+          $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}/versions/{version}:
+    post:
+      tags:
+      - "Private user"
+      summary: "Create a version of a dataset edition"
+      description: "Create a version of a dataset edition"
+      parameters:
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/new_version'
+      - $ref: '#/parameters/version'
+      responses:
+        201:
+          description: "A json object containing a version"
+        400:
+          description: "Invalid request body"
+        404:
+          description: "No dataset edition was found using the id and edition provided"
+        500:
+          $ref: '#/responses/InternalError'
     get:
       tags:
-      - "Public API"
+      - "Public"
       summary: "Get a specific version and edition of a dataset"
       description: "Get a specific version and edition of a dataset"
       parameters:
-      - $ref: '#/parameters/id'
       - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/id'
       - $ref: '#/parameters/version'
       responses:
         200:
@@ -216,16 +299,16 @@ paths:
         404:
           description: "No dataset edition with the specific version was found using the id, edition and version provided"
         500:
-          description: "Failed to process the request due to an internal error"
+          $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions:
     get:
       tags:
-      - "Public API"
+      - "Public"
       summary: "Get all dimensions from a dataset"
       description: "Get all dimensions which are used in the dataset"
       parameters:
-      - $ref: '#/parameters/id'
       - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/id'
       - $ref: '#/parameters/version'
       responses:
         200:
@@ -235,18 +318,18 @@ paths:
         404:
           description: "No dataset edition with the specific version was found using the id, edition and version provided"
         500:
-          description: "Failed to process the request due to an internal error"
+          $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}:
     get:
       tags:
-      - "Public API"
+      - "Public"
       summary: "Get all values from a dimension"
       description: "Get a list of all values which appear in this dimension and dataset"
       parameters:
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/version'
       - $ref: '#/parameters/dimension'
+      - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/version'
       responses:
         200:
           description: "Json object containing all values for a dimension"
@@ -255,11 +338,11 @@ paths:
         404:
           description: "No dataset edition with the specific version was found using the id, edition and version provided or the dimension does not exist within the dataset"
         500:
-          description: "Failed to process the request due to an internal error"
+          $ref: '#/responses/InternalError'
   /instances/{instance_id}:
     get:
       tags:
-      - "Private user API"
+      - "Private user"
       summary: "Get Information about an instance"
       description: "Get the current state of an instance, this includes all events which have happened."
       parameters:
@@ -280,7 +363,7 @@ paths:
   /instances/{instance_id}/dimensions:
     get:
       tags:
-      - "Private user API"
+      - "Private user"
       summary: "Get all dimensions from an instance"
       description: "Get all dimensions from an instance"
       parameters:
@@ -303,7 +386,7 @@ paths:
   /instances/{instance_id}/dimensions/{dimension}/options:
     get:
       tags:
-      - "Private user API"
+      - "Private user"
       summary: "Get all unique values from a dimension"
       description: "Get all unique values from a dimension"
       parameters:
@@ -335,7 +418,7 @@ paths:
           $ref: '#/responses/InternalError'
     put:
       tags:
-      - "Private API"
+      - "Private"
       summary: "Update the number of observations within this instance"
       description: "Update the number of observations within this instance"
       parameters:
@@ -359,7 +442,7 @@ paths:
   /instances/{instance_id}/events:
     post:
       tags:
-       - "Private API"
+       - "Private"
       summary: "Add an event to an instance"
       description: |
         Add a new event into an instance. Events can be for information or error messages.
@@ -386,7 +469,7 @@ paths:
   /instances/{instance_id}/inserted_observations/{inserted_observations}:
     put:
       tags:
-      - "Private API"
+      - "Private"
       summary: "Increment the observation inserted count"
       description: "This will add to the number already store in the api"
       parameters:
@@ -408,11 +491,10 @@ paths:
         500:
           $ref: '#/responses/InternalError'
 
-
   /instances/{instance_id}/dimensions/{dimension}/options/{value}:
     put:
       tags:
-      - "Private API"
+      - "Private"
       summary: "Add a dimension for the instance"
       description: |
         Add a dimension found in the V4 data.
@@ -438,15 +520,15 @@ paths:
   /instances/{instance_id}/dimensions/{dimension}/options/{value}/node_id/{node_id}:
     put:
       tags:
-      - "Private API"
+      - "Private"
       summary: "Update a dimension with the node_id"
       description: |
         Update the dimension with a nodeId
       parameters:
       - $ref: '#/parameters/instance_id'
       - $ref: '#/parameters/dimension'
-      - $ref: '#/parameters/value'
       - $ref: '#/parameters/node_id'
+      - $ref: '#/parameters/value'
       produces:
       - "application/json"
       security:
@@ -471,120 +553,167 @@ responses:
     description: "The token provided is unauthorised to carry out this operation"
 definitions:
   Contact:
-    type: object
     description: "Object containing contact information for this dataset"
+    type: object
     properties:
-      name:
-        type: string
-        description: "The name of the person"
-      telephone:
-        type: string
-        description: "Telephone number to contact the person"
       email:
-        type: string
         description: "An email address to contact the person"
-  Publisher:
-    type: object
-    properties:
-      type:
         type: string
-        description: "The type of publisher"
       name:
+        description: "The name of the person"
         type: string
-        description: "The name of the publisher"
-      url:
+      telephone:
+        description: "Telephone number to contact the person"
         type: string
-        description: "A link to the publishers homepage"
-  Dataset:
+  Datasets:
+    description: "A list of datasets"
     type: object
     properties:
-      id:
-        type: string
-        description: "An unique id for a dataset"
-        example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
-      title:
-        type: string
-        description: "The title of the dataset"
-        example: "CPI"
-      description:
-        type: string
-        description: "A description for a dataset"
-      theme:
-        type: string
-        description: "The release date of this dataset"
-      next_release:
-        type: string
-        description: "The next release date for this dataset"
-      edition:
-        description: "A theme for a dataset"
-      periodicity:
-        type: string
-        description: "The periodicity for a dataset"
-      publisher:
-        description: "The publisher of the dataset"
-        $ref: '#/definitions/Publisher'
-      latest_url:
-        type: string
-        description: "A link to the latest version and edition of the dataset"
+      count:
+        description: "The number of datasets returned"
+        readOnly: true
+        type: integer
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Dataset'
+      items_per_page:
+        description: "The number of datasets requested"
+        type: integer
+      start_index:
+        description: "The first row of datasets to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
+        type: integer
+      total_count:
+        description: "The total number of datasets"
+        readOnly: true
+        type: integer
+  Dataset:
+    description: "The dataset"
+    type: object
+    properties:
       contact:
         type: array
         description: "Object containing contact information for this dataset"
         items:
           $ref: '#/definitions/Contact'
-      editions_url:
+      description:
         type: string
-        description: "A URL to all editions for a dataset"
-        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions"
-  Datasets:
+        description: "A description for a dataset"
+      _id:
+        readOnly: true
+        type: string
+        description: "An unique id for a dataset"
+        example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
+      links:
+        $ref: '#/definitions/DatasetLinks'
+      next_release:
+        type: string
+        description: "The next release date for this dataset"
+      periodicity:
+        type: string
+        description: "The periodicity for a dataset"
+      publisher:
+        $ref: '#/definitions/Publisher'
+      state:
+        $ref: '#/definitions/State'
+      theme:
+        type: string
+        description: "A theme for a dataset"
+      title:
+        type: string
+        description: "The title of the dataset"
+        example: "CPI"
+      updated_at:
+        readOnly: true
+        type: string
+        description: "The time and date in which the resource was last updated"
+        example: "2017-10-23T15:09:11.829+01:00"
+  DatasetLinks:
+    description: "A list of links related to this resource"
+    readOnly: true
     type: object
     properties:
-      items:
-        type: array
-        description: "A list of datasets"
-        items:
-          $ref: '#/definitions/Dataset'
+      editions:
+        description: "A URL to all editions for this dataset"
+        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions"
+        type: string
+      latest_version:
+        description: "A link to the latest version and edition of the dataset"
+        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2"
+        type: string
+      self:
+        $ref: '#/definitions/SelfLink'
   Edition:
     type: object
     properties:
-      id:
-        type: string
-        description: "An unique id for a dataset edtion"
+      edition:
+        description: "The edition of the dataset"
         example: "2017"
-      versions_url:
         type: string
-        description: "A URL to all versions for this dataset edition"
-        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions"
+      id:
+        description: "An unique id for a dataset edtion"
+        readOnly: true
+        type: string
+      links:
+        $ref: '#/definitions/EditionLinks'
+      state:
+        $ref: '#/definitions/State'
   Editions:
     type: object
     properties:
+      count:
+        description: "The number of editions returned for a dataset"
+        readOnly: true
+        type: integer
       items:
         type: array
         items:
           $ref: '#/definitions/Edition'
-  Versions:
+      items_per_page:
+        description: "The number of editions requested for a dataset"
+        type: integer
+      start_index:
+        description: "The first row of editions for a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
+        type: integer
+      total_count:
+        description: "The total number of editions against a dataset"
+        readOnly: true
+        type: integer
+  EditionLinks:
+    readOnly: true
     type: object
     properties:
-      items:
-        type: array
-        description: "An array of Datasets"
-        items:
-          $ref: '#/definitions/Version'
-  Version:
+      dataset:
+        description: "A URL to the editions parent dataset"
+        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
+        type: string
+      self:
+        $ref: '#/definitions/SelfLink'
+      versions:
+        description: "A URL to all versions of this dataset edition"
+        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/edition/2017/versions"
+        type: string
+  Event:
     type: object
-    description: "An object containing information about published datasets from the ONS"
     properties:
-      id:
+      type:
         type: string
-        description: "An unique id for this version of a dataset"
-      release_date:
+        description: |
+          The type of event, this can be;
+          * Info - for an information event
+          * Error - for an error event
+      service:
         type: string
-        description: "The release date of this dataset"
-      dimensions_url:
+        description: "The name of the service which triggered the event"
+      time:
         type: string
-        description: "A link to all dimensions within this dataset"
-      license:
+        description: "The time of the event in ISO 8601 format"
+      message:
         type: string
-        description: "The type of license for the dataset"
+        description: "A description of the event"
+      message_offset:
+        type: string
+        description: "The kafka message offset (Used to locate the kafka message)"
   Instance:
     type: object
     properties:
@@ -627,72 +756,177 @@ definitions:
         type: string
         readOnly: true
         description: "The last time an event happened"
-  Event:
+  Publisher:
+    description: "The publisher of the dataset"
     type: object
     properties:
+      name:
+        description: "The name of the publisher"
+        type: string
       type:
+        description: "The type of publisher"
         type: string
-        description: |
-          The type of event, this can be;
-          * Info - for an information event
-          * Error - for an error event
-      service:
+      url:
+        description: "A link to the publishers homepage"
         type: string
-        description: "The name of the service which triggered the event"
-      time:
-        type: string
-        description: "The time of the event in ISO 8601 format"
-      message:
-        type: string
-        description: "A description of the event"
-      message_offset:
-        type: string
-        description: "The kafka message offset (Used to locate the kafka message)"
-  Dimension:
+  SelfLink:
+    description: "A link to this resource"
+    readOnly: true
+    type: string
+  State:
+    description: |
+      The state of the resource, can only be one of the following:
+        * created
+        * associated
+        * published
+    type: string
+  Versions:
     type: object
+    properties:
+      count:
+        description: "The number of versions returned for a dataset edition"
+        readOnly: true
+        type: integer
+      items:
+        description: "An array of Datasets"
+        type: array
+        items:
+          $ref: '#/definitions/Version'
+      items_per_page:
+        description: "The number of versions requested for a dataset edition"
+        type: integer
+      start_index:
+        description: "The first row of versions for a dataset edition to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
+        type: integer
+      total_count:
+        description: "The total number of versions against a dataset edition"
+        readOnly: true
+        type: integer
+  Version:
+    description: "An object containing information about published datasets from the ONS"
+    type: object
+    properties:
+      edition:
+        description: "The dataset edition for this version"
+        type: string
+      license:
+        description: "The type of license for the dataset"
+        type: string
+      links:
+        $ref: '#/definitions/VersionLinks'
+      release_date:
+        description: "The release date of this dataset"
+        type: string
+      state:
+        $ref: '#/definitions/State'
+      version:
+        description: "The number of the dataset edition version"
+        type: integer
+  VersionLinks:
+    description: "A list of links related to this resource"
+    readOnly: true
+    type: object
+    properties:
+      dataset:
+        $ref: '#/definitions/DatasetLink'
+      dimensions:
+        $ref: '#/definitions/DimensionLink'
+      edition:
+        $ref: '#/definitions/EditionLink'
+      self:
+        $ref: '#/definitions/SelfLink'
+  DatasetLink:
+    description: "An object containing the dataset id and link"
+    readOnly: true
+    type: object
+    properties:
+      id:
+        description: "The dataset id"
+        type: string
+      link:
+        description: "A URL to the dataset for this version"
+        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
+        type: string
+  DimensionLink:
+    description: "An object containing the dimension id and link"
+    readOnly: true
+    type: object
+    properties:
+      id:
+        description: "The dimension id"
+        type: string
+      link:
+        description: "A URL to list dimensions for this version"
+        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2/dimensions"
+        type: string
+  EditionLink:
+    description: "An object containing the edition and link"
+    readOnly: true
+    type: object
+    properties:
+      id:
+        description: "The version dataset edition"
+        type: string
+      link:
+        description: "A URL to the dataset edition for this version"
+        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017"
+        type: string
+  Dimension:
     description: "A single dimension within a dataset"
+    type: object
     properties:
       codeListId:
-        type: string
         description: "The id of the code list that refers to this dimension"
+        type: string
       id:
-        type: string
         description: "The id of the dimension"
+        type: string
       name:
-        type: string
         description: "The name of the dimension"
-      type:
         type: string
+      type:
         description: "The type of dimension"
+        type: string
   Dimensions:
     type: object
     properties:
+      count:
+        description: "The number of dimensions returned for a version from a dataset edition"
+        readOnly: true
+        type: integer
       items:
-        type: array
         description: "An array of dimensions"
+        type: array
         items:
           $ref: '#/definitions/Dimension'
-      number_of_results:
-              type: integer
-              description: "The number of results available"
+      items_per_page:
+        description: "The number of dimensions requested for a version from a dataset edition"
+        type: integer
+      start_index:
+        description: "The first row of dimension for a version from a dataset edition to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
+        type: integer
+      total_count:
+        description: "The total number of dimensions against a version from a dataset edition"
+        readOnly: true
+        type: integer
   DimensionValues:
     type: object
     properties:
       code_list_id:
-        type: string
         description: "The id of the code list that refers to this dimension"
+        type: string
       id:
-        type: string
         description: "The id of the dimension"
+        type: string
       name:
-        type: string
         description: "The name of the dimension"
-      type:
         type: string
+      type:
         description: "The type of dimension"
+        type: string
       values:
-        type: array
         description: "A list of values within a dimension"
+        type: array
         items:
           type: string
   DimensionNode:
@@ -708,4 +942,3 @@ definitions:
       node_id:
         description: "The id of the node"
         type: string
-        
