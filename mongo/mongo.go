@@ -60,7 +60,7 @@ func (m *Mongo) GetDataset(id string) (*models.Dataset, error) {
 	s := session.Copy()
 	defer s.Clone()
 	var dataset models.Dataset
-	err := s.DB(m.Database).C("datasets").Find(bson.M{"links.self": "/datasets/" + id}).One(&dataset)
+	err := s.DB(m.Database).C("datasets").Find(bson.M{"_id": id}).One(&dataset)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, api_errors.DatasetNotFound
@@ -73,7 +73,7 @@ func (m *Mongo) GetDataset(id string) (*models.Dataset, error) {
 func (m *Mongo) GetEditions(id string) (*models.EditionResults, error) {
 	s := session.Copy()
 	defer s.Clone()
-	iter := s.DB(m.Database).C("editions").Find(bson.M{"links.dataset": "/datasets/" + id}).Iter()
+	iter := s.DB(m.Database).C("editions").Find(bson.M{"links.dataset.id": id}).Iter()
 
 	var results []models.Edition
 	if err := iter.All(&results); err != nil {
@@ -89,8 +89,7 @@ func (m *Mongo) GetEdition(datasetID, editionID string) (*models.Edition, error)
 	s := session.Copy()
 	defer s.Clone()
 	var edition models.Edition
-	link := "/datasets/" + datasetID + "/editions/" + editionID
-	err := s.DB(m.Database).C("editions").Find(bson.M{"links.self": link}).One(&edition)
+	err := s.DB(m.Database).C("editions").Find(bson.M{"links.dataset.id": datasetID, "edition": editionID}).One(&edition)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, api_errors.EditionNotFound
@@ -102,8 +101,7 @@ func (m *Mongo) GetEdition(datasetID, editionID string) (*models.Edition, error)
 func (m *Mongo) GetVersions(datasetID, editionID string) (*models.VersionResults, error) {
 	s := session.Copy()
 	defer s.Clone()
-	link := "/datasets/" + datasetID + "/editions/" + editionID
-	iter := s.DB(m.Database).C("versions").Find(bson.M{"links.edition": link}).Iter()
+	iter := s.DB(m.Database).C("versions").Find(bson.M{"links.dataset.id": datasetID, "edition": editionID}).Iter()
 
 	var results []models.Version
 	if err := iter.All(&results); err != nil {
@@ -118,8 +116,8 @@ func (m *Mongo) GetVersion(datasetID, editionID, versionID string) (*models.Vers
 	s := session.Copy()
 	defer s.Clone()
 	var version models.Version
-	link := "/datasets/" + datasetID + "/editions/" + editionID + "/versions/" + versionID
-	err := s.DB(m.Database).C("versions").Find(bson.M{"links.self": link}).One(&version)
+	//link := "/datasets/" + datasetID + "/editions/" + editionID + "/versions/" + versionID
+	err := s.DB(m.Database).C("versions").Find(bson.M{"links.dataset.id": datasetID, "edition": editionID, "version": versionID}).One(&version)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, api_errors.VersionNotFound
