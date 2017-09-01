@@ -19,8 +19,8 @@ type Backend interface {
 	GetEdition(datasetID, editionID string) (*models.Edition, error)
 	GetVersions(datasetID, editionID string) (*models.VersionResults, error)
 	GetVersion(datasetID, editionID, versionID string) (*models.Version, error)
-	UpsertDataset(id interface{}, update interface{}) error
-	UpsertEdition(id interface{}, update interface{}) error
-	UpsertVersion(id interface{}, update interface{}) error
-	UpsertContact(id interface{}, update interface{}) error
+	UpsertDataset(id string, update interface{}) error
+	UpsertEdition(id string, update interface{}) error
+	UpsertVersion(id string, update interface{}) error
+	UpsertContact(id string, update interface{}) error
 }

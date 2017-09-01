@@ -70,7 +70,7 @@
 			"revisionTime": "2017-06-03T22:54:54Z"
 		},
 		{
-			"checksumSHA1": "Gk3jTNQ5uGDUE0WMJFWcYz9PMps=",
+			"checksumSHA1": "q5SZBWFVC3wOIzftf+l/h5WLG1k=",
 			"path": "github.com/lib/pq/oid",
 			"revision": "8837942c3e09574accbc5f150e2c5e057189cace",
 			"revisionTime": "2017-06-03T22:54:54Z"
@@ -81,6 +81,12 @@
 			"path": "github.com/mgutz/ansi",
 			"revision": "c493b1568574c9720d7805f23ce6271ac445dc57",
 			"revisionTime": "2017-07-28T08:24:17Z"
+		},
+		{
+			"checksumSHA1": "zmC8/3V4ls53DJlNTKDZwPSC/dA=",
+			"path": "github.com/satori/go.uuid",
+			"revision": "5bf94b69c6b68ee1b541973bb8e1144db23a194b",
+			"revisionTime": "2017-03-21T23:07:31Z"
 		},
 		{
 			"checksumSHA1": "AikWjAOvWHSJ8G1iU+wNReZnyCk=",

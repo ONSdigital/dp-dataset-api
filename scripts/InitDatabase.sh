@@ -204,6 +204,5 @@ db.editions.ensureIndex({"edition":1, "links.dataset.id":1},{"background":true})
 db.versions.ensureIndex({"links.dataset.id":1},{"background":true});
 db.versions.ensureIndex({"edition":1,"links.dataset.id":1},{"background":true});
 db.versions.ensureIndex({"version":1,"edition":1,"links.dataset.id":1},{"background":true});
-db.versions.ensureIndex({"links.edition.id":1},{"background":true})
 db.versions.ensureIndex({"version":1,"links.edition.id":1},{"background":true})
 EOF

@@ -45,16 +45,16 @@ var (
 //             GetVersionsFunc: func(datasetID string, editionID string) (*models.VersionResults, error) {
 // 	               panic("TODO: mock out the GetVersions method")
 //             },
-//             UpsertContactFunc: func(id interface{}, update interface{}) error {
+//             UpsertContactFunc: func(id string, update interface{}) error {
 // 	               panic("TODO: mock out the UpsertContact method")
 //             },
-//             UpsertDatasetFunc: func(id interface{}, update interface{}) error {
+//             UpsertDatasetFunc: func(id string, update interface{}) error {
 // 	               panic("TODO: mock out the UpsertDataset method")
 //             },
-//             UpsertEditionFunc: func(id interface{}, update interface{}) error {
+//             UpsertEditionFunc: func(id string, update interface{}) error {
 // 	               panic("TODO: mock out the UpsertEdition method")
 //             },
-//             UpsertVersionFunc: func(id interface{}, update interface{}) error {
+//             UpsertVersionFunc: func(id string, update interface{}) error {
 // 	               panic("TODO: mock out the UpsertVersion method")
 //             },
 //         }
@@ -83,16 +83,16 @@ type BackendMock struct {
 	GetVersionsFunc func(datasetID string, editionID string) (*models.VersionResults, error)
 
 	// UpsertContactFunc mocks the UpsertContact method.
-	UpsertContactFunc func(id interface{}, update interface{}) error
+	UpsertContactFunc func(id string, update interface{}) error
 
 	// UpsertDatasetFunc mocks the UpsertDataset method.
-	UpsertDatasetFunc func(id interface{}, update interface{}) error
+	UpsertDatasetFunc func(id string, update interface{}) error
 
 	// UpsertEditionFunc mocks the UpsertEdition method.
-	UpsertEditionFunc func(id interface{}, update interface{}) error
+	UpsertEditionFunc func(id string, update interface{}) error
 
 	// UpsertVersionFunc mocks the UpsertVersion method.
-	UpsertVersionFunc func(id interface{}, update interface{}) error
+	UpsertVersionFunc func(id string, update interface{}) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -135,28 +135,28 @@ type BackendMock struct {
 		// UpsertContact holds details about calls to the UpsertContact method.
 		UpsertContact []struct {
 			// Id is the id argument value.
-			Id interface{}
+			Id string
 			// Update is the update argument value.
 			Update interface{}
 		}
 		// UpsertDataset holds details about calls to the UpsertDataset method.
 		UpsertDataset []struct {
 			// Id is the id argument value.
-			Id interface{}
+			Id string
 			// Update is the update argument value.
 			Update interface{}
 		}
 		// UpsertEdition holds details about calls to the UpsertEdition method.
 		UpsertEdition []struct {
 			// Id is the id argument value.
-			Id interface{}
+			Id string
 			// Update is the update argument value.
 			Update interface{}
 		}
 		// UpsertVersion holds details about calls to the UpsertVersion method.
 		UpsertVersion []struct {
 			// Id is the id argument value.
-			Id interface{}
+			Id string
 			// Update is the update argument value.
 			Update interface{}
 		}
@@ -361,12 +361,12 @@ func (mock *BackendMock) GetVersionsCalls() []struct {
 }
 
 // UpsertContact calls UpsertContactFunc.
-func (mock *BackendMock) UpsertContact(id interface{}, update interface{}) error {
+func (mock *BackendMock) UpsertContact(id string, update interface{}) error {
 	if mock.UpsertContactFunc == nil {
 		panic("moq: BackendMock.UpsertContactFunc is nil but Backend.UpsertContact was just called")
 	}
 	callInfo := struct {
-		Id     interface{}
+		Id     string
 		Update interface{}
 	}{
 		Id:     id,
@@ -382,11 +382,11 @@ func (mock *BackendMock) UpsertContact(id interface{}, update interface{}) error
 // Check the length with:
 //     len(mockedBackend.UpsertContactCalls())
 func (mock *BackendMock) UpsertContactCalls() []struct {
-	Id     interface{}
+	Id     string
 	Update interface{}
 } {
 	var calls []struct {
-		Id     interface{}
+		Id     string
 		Update interface{}
 	}
 	lockBackendMockUpsertContact.RLock()
@@ -396,12 +396,12 @@ func (mock *BackendMock) UpsertContactCalls() []struct {
 }
 
 // UpsertDataset calls UpsertDatasetFunc.
-func (mock *BackendMock) UpsertDataset(id interface{}, update interface{}) error {
+func (mock *BackendMock) UpsertDataset(id string, update interface{}) error {
 	if mock.UpsertDatasetFunc == nil {
 		panic("moq: BackendMock.UpsertDatasetFunc is nil but Backend.UpsertDataset was just called")
 	}
 	callInfo := struct {
-		Id     interface{}
+		Id     string
 		Update interface{}
 	}{
 		Id:     id,
@@ -417,11 +417,11 @@ func (mock *BackendMock) UpsertDataset(id interface{}, update interface{}) error
 // Check the length with:
 //     len(mockedBackend.UpsertDatasetCalls())
 func (mock *BackendMock) UpsertDatasetCalls() []struct {
-	Id     interface{}
+	Id     string
 	Update interface{}
 } {
 	var calls []struct {
-		Id     interface{}
+		Id     string
 		Update interface{}
 	}
 	lockBackendMockUpsertDataset.RLock()
@@ -431,12 +431,12 @@ func (mock *BackendMock) UpsertDatasetCalls() []struct {
 }
 
 // UpsertEdition calls UpsertEditionFunc.
-func (mock *BackendMock) UpsertEdition(id interface{}, update interface{}) error {
+func (mock *BackendMock) UpsertEdition(id string, update interface{}) error {
 	if mock.UpsertEditionFunc == nil {
 		panic("moq: BackendMock.UpsertEditionFunc is nil but Backend.UpsertEdition was just called")
 	}
 	callInfo := struct {
-		Id     interface{}
+		Id     string
 		Update interface{}
 	}{
 		Id:     id,
@@ -452,11 +452,11 @@ func (mock *BackendMock) UpsertEdition(id interface{}, update interface{}) error
 // Check the length with:
 //     len(mockedBackend.UpsertEditionCalls())
 func (mock *BackendMock) UpsertEditionCalls() []struct {
-	Id     interface{}
+	Id     string
 	Update interface{}
 } {
 	var calls []struct {
-		Id     interface{}
+		Id     string
 		Update interface{}
 	}
 	lockBackendMockUpsertEdition.RLock()
@@ -466,12 +466,12 @@ func (mock *BackendMock) UpsertEditionCalls() []struct {
 }
 
 // UpsertVersion calls UpsertVersionFunc.
-func (mock *BackendMock) UpsertVersion(id interface{}, update interface{}) error {
+func (mock *BackendMock) UpsertVersion(id string, update interface{}) error {
 	if mock.UpsertVersionFunc == nil {
 		panic("moq: BackendMock.UpsertVersionFunc is nil but Backend.UpsertVersion was just called")
 	}
 	callInfo := struct {
-		Id     interface{}
+		Id     string
 		Update interface{}
 	}{
 		Id:     id,
@@ -487,11 +487,11 @@ func (mock *BackendMock) UpsertVersion(id interface{}, update interface{}) error
 // Check the length with:
 //     len(mockedBackend.UpsertVersionCalls())
 func (mock *BackendMock) UpsertVersionCalls() []struct {
-	Id     interface{}
+	Id     string
 	Update interface{}
 } {
 	var calls []struct {
-		Id     interface{}
+		Id     string
 		Update interface{}
 	}
 	lockBackendMockUpsertVersion.RLock()

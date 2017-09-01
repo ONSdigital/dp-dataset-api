@@ -168,19 +168,16 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	datasetID := vars["id"]
-
 	dataset, err := models.CreateDataset(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 	defer r.Body.Close()
 
-	dataset.DatasetID = datasetID
+	datasetID := dataset.ID
+	dataset.ID = datasetID
 	dataset.Links.Self = "/datasets/" + datasetID
 	dataset.Links.Editions = "/datasets/" + datasetID + "/editions"
-
 	update := bson.M{
 		"$set": dataset,
 		"$setOnInsert": bson.M{
@@ -209,7 +206,8 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	edition.Links.Dataset = "/datasets/" + datasetID
+	edition.Links.Dataset.ID = datasetID
+	edition.Links.Dataset.Link = "/datasets/" + datasetID
 	edition.Links.Self = "/datasets/" + datasetID + "/editions/" + editionID
 	edition.Links.Versions = "/datasets/" + datasetID + "/editions/" + editionID + "/versions"
 
@@ -242,8 +240,10 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	version.Links.Dataset = "/datasets/" + datasetID
-	version.Links.Edition = "/datasets/" + datasetID + "/editions/" + editionID
+	version.Links.Dataset.ID = datasetID
+	version.Links.Dataset.Link = "/datasets/" + datasetID
+	version.Links.Edition.Link = editionID
+	version.Links.Edition.Link = "/datasets/" + datasetID + "/editions/" + editionID
 	version.Links.Self = "/datasets/" + datasetID + "/editions/" + editionID + "/versions/" + versionID
 	version.Links.Dimensions = "/instance/" + versionID + "/dimensions"
 
@@ -263,7 +263,8 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 	if version.State == publishedState {
 		updateDataset := bson.M{
 			"$set": bson.M{
-				"links.latest_version": version.Links.Self,
+				"links.latest_version.link": version.Links.Self,
+				"links.latest_version.id":   version.ID,
 			},
 			"$setOnInsert": bson.M{
 				"updated_at": time.Now(),

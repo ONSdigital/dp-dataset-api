@@ -4,9 +4,9 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/models"
 
+	"github.com/ONSdigital/dp-dataset-api/api-errors"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"github.com/ONSdigital/dp-dataset-api/api-errors"
 )
 
 var _ api.Backend = &Mongo{}
@@ -34,7 +34,7 @@ func (m *Mongo) Init() (err error) {
 	return
 }
 
-// GetAllDatasets retrieves all dataset documents
+// GetDatasets retrieves all dataset documents
 func (m *Mongo) GetDatasets() (*models.DatasetResults, error) {
 	s := session.Copy()
 	defer s.Close()
@@ -56,6 +56,7 @@ func (m *Mongo) GetDatasets() (*models.DatasetResults, error) {
 	return datasets, nil
 }
 
+// GetDataset retrieves a dataset document
 func (m *Mongo) GetDataset(id string) (*models.Dataset, error) {
 	s := session.Copy()
 	defer s.Clone()
@@ -70,6 +71,7 @@ func (m *Mongo) GetDataset(id string) (*models.Dataset, error) {
 	return &dataset, nil
 }
 
+// GetEditions retrieves all edition documents for a dataset
 func (m *Mongo) GetEditions(id string) (*models.EditionResults, error) {
 	s := session.Copy()
 	defer s.Clone()
@@ -85,6 +87,7 @@ func (m *Mongo) GetEditions(id string) (*models.EditionResults, error) {
 	return &models.EditionResults{Items: results}, nil
 }
 
+// GetEdition retrieves an edition document for a dataset
 func (m *Mongo) GetEdition(datasetID, editionID string) (*models.Edition, error) {
 	s := session.Copy()
 	defer s.Clone()
@@ -98,6 +101,8 @@ func (m *Mongo) GetEdition(datasetID, editionID string) (*models.Edition, error)
 	}
 	return &edition, nil
 }
+
+// GetVersions retrieves all version documents for a dataset edition
 func (m *Mongo) GetVersions(datasetID, editionID string) (*models.VersionResults, error) {
 	s := session.Copy()
 	defer s.Clone()
@@ -112,6 +117,8 @@ func (m *Mongo) GetVersions(datasetID, editionID string) (*models.VersionResults
 	}
 	return &models.VersionResults{Items: results}, nil
 }
+
+// GetVersion retrieves a version document for a dataset edition
 func (m *Mongo) GetVersion(datasetID, editionID, versionID string) (*models.Version, error) {
 	s := session.Copy()
 	defer s.Clone()
@@ -128,7 +135,7 @@ func (m *Mongo) GetVersion(datasetID, editionID, versionID string) (*models.Vers
 }
 
 // UpsertDataset adds or overides an existing dataset document
-func (m *Mongo) UpsertDataset(id interface{}, update interface{}) (err error) {
+func (m *Mongo) UpsertDataset(id string, update interface{}) (err error) {
 	s := session.Copy()
 	defer s.Close()
 
@@ -137,7 +144,7 @@ func (m *Mongo) UpsertDataset(id interface{}, update interface{}) (err error) {
 }
 
 // UpsertEdition adds or overides an existing edition document
-func (m *Mongo) UpsertEdition(id interface{}, update interface{}) (err error) {
+func (m *Mongo) UpsertEdition(id string, update interface{}) (err error) {
 	s := session.Copy()
 	defer s.Close()
 
@@ -146,7 +153,7 @@ func (m *Mongo) UpsertEdition(id interface{}, update interface{}) (err error) {
 }
 
 // UpsertVersion adds or overides an existing version document
-func (m *Mongo) UpsertVersion(id interface{}, update interface{}) (err error) {
+func (m *Mongo) UpsertVersion(id string, update interface{}) (err error) {
 	s := session.Copy()
 	defer s.Close()
 
@@ -155,7 +162,7 @@ func (m *Mongo) UpsertVersion(id interface{}, update interface{}) (err error) {
 }
 
 // UpsertContact adds or overides an existing contact document
-func (m *Mongo) UpsertContact(id interface{}, update interface{}) (err error) {
+func (m *Mongo) UpsertContact(id string, update interface{}) (err error) {
 	s := session.Copy()
 	defer s.Close()
 

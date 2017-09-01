@@ -28,7 +28,6 @@ type VersionResults struct {
 // Dataset represents information related to a single dataset
 type Dataset struct {
 	Contact     ContactDetails `bson:"contact,omitempty"        json:"contact,omitempty"`
-	DatasetID   string         `bson:"dataset_id"               json:"dataset_id"`
 	Description string         `bson:"description"              json:"description"`
 	ID          string         `bson:"_id"                      json:"id"`
 	Links       DatasetLinks   `bson:"links,omitempty"          json:"links,omitempty"`
@@ -36,15 +35,20 @@ type Dataset struct {
 	Periodicity string         `bson:"periodicity"              json:"periodicity"`
 	Publisher   Publisher      `bson:"publisher,omitempty"      json:"publisher,omitempty"`
 	State       string         `bson:"state,omitempty"          json:"state,omitempty"`
-	Theme       string         `bson:"theme,omitempty"          json:"thems,omitempty"`
+	Theme       string         `bson:"theme,omitempty"          json:"theme,omitempty"`
 	Title       string         `bson:"title,omitempty"          json:"title,omitempty"`
-	UpdatedAt   time.Time      `bson:"updated_at,omitempty"     json:"updated_at,omitempty"`
+	UpdatedAt   time.Time      `bson:"updated_at,omitempty"`
 }
 
 type DatasetLinks struct {
-	Editions      string `bson:"editions,omitempty"        json:"editions,omitempty"`
-	LatestVersion string `bson:"latest_version,omitempty"  json:"latest_version,omitempty"`
-	Self          string `bson:"self,omitempty"            json:"self,omitempty"`
+	Editions      string     `bson:"editions,omitempty"        json:"editions,omitempty"`
+	LatestVersion LinkObject `bson:"latest_version,omitempty"  json:"latest_version,omitempty"`
+	Self          string     `bson:"self,omitempty"            json:"self,omitempty"`
+}
+
+type LinkObject struct {
+	ID   string `bson:"id,omitempty"    json:"id,omitempty"`
+	Link string `bson:"link,omitempty"  json:"link,omitempty"`
 }
 
 // ContactDetails represents an object containing information of the contact
@@ -63,9 +67,9 @@ type Edition struct {
 }
 
 type EditionLinks struct {
-	Dataset  string `bson:"dataset,omitempty"     json:"dataset,omitempty"`
-	Self     string `bson:"self,omitempty"        json:"self,omitempty"`
-	Versions string `bson:"versions,omitempty"    json:"versions,omitempty"`
+	Dataset  LinkObject `bson:"dataset,omitempty"     json:"dataset,omitempty"`
+	Self     string     `bson:"self,omitempty"        json:"self,omitempty"`
+	Versions string     `bson:"versions,omitempty"    json:"versions,omitempty"`
 }
 
 type Publisher struct {
@@ -86,10 +90,10 @@ type Version struct {
 }
 
 type VersionLinks struct {
-	Dataset    string `bson:"dataset,omitempty"     json:"dataset,omitempty"`
-	Dimensions string `bson:"dimensions,omitempty"  json:"dimensions,omitempty"`
-	Edition    string `bson:"edition,omitempty"     json:"edition,omitempty"`
-	Self       string `bson:"self,omitempty"        json:"self,omitempty"`
+	Dataset    LinkObject `bson:"dataset,omitempty"     json:"dataset,omitempty"`
+	Dimensions string     `bson:"dimensions,omitempty"  json:"dimensions,omitempty"`
+	Edition    LinkObject `bson:"edition,omitempty"     json:"edition,omitempty"`
+	Self       string     `bson:"self,omitempty"        json:"self,omitempty"`
 }
 
 // CreateDataset manages the creation of a dataset from a reader
