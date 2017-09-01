@@ -205,4 +205,15 @@ db.versions.ensureIndex({"links.dataset.id":1},{"background":true});
 db.versions.ensureIndex({"edition":1,"links.dataset.id":1},{"background":true});
 db.versions.ensureIndex({"version":1,"edition":1,"links.dataset.id":1},{"background":true});
 db.versions.ensureIndex({"version":1,"links.edition.id":1},{"background":true})
+db.createCollection("instances");
+db.instances.insert({
+    "_id": "2",
+    "id": "3b45921b-0efa-4844-a16e-3f9f30df4f88",
+    "job": {"id": "4ce2ee5c-d50b-469f-b005-ddfed3f5072b", "link": "http://localhost:22000/jobs/4ce2ee5c-d50b-469f-b005-ddfed3f5072b"},
+    "state": "created",
+    "number_of_observations": 0,
+    "headers": ["V4_1", "time", "age"],
+    "telephone": "01633 123457",
+    "updated_at": "2017-08-25T15:09:11.829+01:00",
+});
 EOF
