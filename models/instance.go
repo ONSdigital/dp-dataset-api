@@ -34,6 +34,10 @@ type Event struct {
 	MessageOffset string `bson:"message_offset,omitempty" json:"message_offset"`
 }
 
+type InstanceResults struct {
+	Items []Instance `json:"items"`
+}
+
 func (i *Instance) Defaults() error {
 	if i.Job.ID == "" || i.Job.Link == "" {
 		return errors.New("Missing job properties")

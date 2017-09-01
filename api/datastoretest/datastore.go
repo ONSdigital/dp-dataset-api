@@ -9,10 +9,12 @@ import (
 )
 
 var (
+	lockBackendMockAddInstance   sync.RWMutex
 	lockBackendMockGetDataset    sync.RWMutex
 	lockBackendMockGetDatasets   sync.RWMutex
 	lockBackendMockGetEdition    sync.RWMutex
 	lockBackendMockGetEditions   sync.RWMutex
+	lockBackendMockGetInstances  sync.RWMutex
 	lockBackendMockGetVersion    sync.RWMutex
 	lockBackendMockGetVersions   sync.RWMutex
 	lockBackendMockUpsertContact sync.RWMutex
@@ -27,6 +29,9 @@ var (
 //
 //         // make and configure a mocked Backend
 //         mockedBackend := &BackendMock{
+//             AddInstanceFunc: func(instance *models.Instance) (*models.Instance, error) {
+// 	               panic("TODO: mock out the AddInstance method")
+//             },
 //             GetDatasetFunc: func(id string) (*models.Dataset, error) {
 // 	               panic("TODO: mock out the GetDataset method")
 //             },
@@ -38,6 +43,9 @@ var (
 //             },
 //             GetEditionsFunc: func(id string) (*models.EditionResults, error) {
 // 	               panic("TODO: mock out the GetEditions method")
+//             },
+//             GetInstancesFunc: func() (*models.InstanceResults, error) {
+// 	               panic("TODO: mock out the GetInstances method")
 //             },
 //             GetVersionFunc: func(datasetID string, editionID string, versionID string) (*models.Version, error) {
 // 	               panic("TODO: mock out the GetVersion method")
@@ -64,6 +72,9 @@ var (
 //
 //     }
 type BackendMock struct {
+	// AddInstanceFunc mocks the AddInstance method.
+	AddInstanceFunc func(instance *models.Instance) (*models.Instance, error)
+
 	// GetDatasetFunc mocks the GetDataset method.
 	GetDatasetFunc func(id string) (*models.Dataset, error)
 
@@ -75,6 +86,9 @@ type BackendMock struct {
 
 	// GetEditionsFunc mocks the GetEditions method.
 	GetEditionsFunc func(id string) (*models.EditionResults, error)
+
+	// GetInstancesFunc mocks the GetInstances method.
+	GetInstancesFunc func() (*models.InstanceResults, error)
 
 	// GetVersionFunc mocks the GetVersion method.
 	GetVersionFunc func(datasetID string, editionID string, versionID string) (*models.Version, error)
@@ -96,6 +110,11 @@ type BackendMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AddInstance holds details about calls to the AddInstance method.
+		AddInstance []struct {
+			// Instance is the instance argument value.
+			Instance *models.Instance
+		}
 		// GetDataset holds details about calls to the GetDataset method.
 		GetDataset []struct {
 			// Id is the id argument value.
@@ -115,6 +134,9 @@ type BackendMock struct {
 		GetEditions []struct {
 			// Id is the id argument value.
 			Id string
+		}
+		// GetInstances holds details about calls to the GetInstances method.
+		GetInstances []struct {
 		}
 		// GetVersion holds details about calls to the GetVersion method.
 		GetVersion []struct {
@@ -161,6 +183,37 @@ type BackendMock struct {
 			Update interface{}
 		}
 	}
+}
+
+// AddInstance calls AddInstanceFunc.
+func (mock *BackendMock) AddInstance(instance *models.Instance) (*models.Instance, error) {
+	if mock.AddInstanceFunc == nil {
+		panic("moq: BackendMock.AddInstanceFunc is nil but Backend.AddInstance was just called")
+	}
+	callInfo := struct {
+		Instance *models.Instance
+	}{
+		Instance: instance,
+	}
+	lockBackendMockAddInstance.Lock()
+	mock.calls.AddInstance = append(mock.calls.AddInstance, callInfo)
+	lockBackendMockAddInstance.Unlock()
+	return mock.AddInstanceFunc(instance)
+}
+
+// AddInstanceCalls gets all the calls that were made to AddInstance.
+// Check the length with:
+//     len(mockedBackend.AddInstanceCalls())
+func (mock *BackendMock) AddInstanceCalls() []struct {
+	Instance *models.Instance
+} {
+	var calls []struct {
+		Instance *models.Instance
+	}
+	lockBackendMockAddInstance.RLock()
+	calls = mock.calls.AddInstance
+	lockBackendMockAddInstance.RUnlock()
+	return calls
 }
 
 // GetDataset calls GetDatasetFunc.
@@ -283,6 +336,32 @@ func (mock *BackendMock) GetEditionsCalls() []struct {
 	lockBackendMockGetEditions.RLock()
 	calls = mock.calls.GetEditions
 	lockBackendMockGetEditions.RUnlock()
+	return calls
+}
+
+// GetInstances calls GetInstancesFunc.
+func (mock *BackendMock) GetInstances() (*models.InstanceResults, error) {
+	if mock.GetInstancesFunc == nil {
+		panic("moq: BackendMock.GetInstancesFunc is nil but Backend.GetInstances was just called")
+	}
+	callInfo := struct {
+	}{}
+	lockBackendMockGetInstances.Lock()
+	mock.calls.GetInstances = append(mock.calls.GetInstances, callInfo)
+	lockBackendMockGetInstances.Unlock()
+	return mock.GetInstancesFunc()
+}
+
+// GetInstancesCalls gets all the calls that were made to GetInstances.
+// Check the length with:
+//     len(mockedBackend.GetInstancesCalls())
+func (mock *BackendMock) GetInstancesCalls() []struct {
+} {
+	var calls []struct {
+	}
+	lockBackendMockGetInstances.RLock()
+	calls = mock.calls.GetInstances
+	lockBackendMockGetInstances.RUnlock()
 	return calls
 }
 
