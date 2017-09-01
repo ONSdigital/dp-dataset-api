@@ -623,11 +623,6 @@ definitions:
         type: string
         description: "The title of the dataset"
         example: "CPI"
-      updated_at:
-        readOnly: true
-        type: string
-        description: "The time and date in which the resource was last updated"
-        example: "2017-10-23T15:09:11.829+01:00"
   DatasetLinks:
     description: "A list of links related to this resource"
     readOnly: true
@@ -638,11 +633,20 @@ definitions:
         example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions"
         type: string
       latest_version:
+        $ref: '#/definitions/LatestVersionLink'
+      self:
+        $ref: '#/definitions/SelfLink'
+  LatestVersionLink:
+    type: object
+    readOnly: true
+    properties:
+      id:
+        description: "The unique id for the latest version of a dataset"
+        type: "string"
+      link:
         description: "A link to the latest version and edition of the dataset"
         example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2"
         type: string
-      self:
-        $ref: '#/definitions/SelfLink'
   Edition:
     type: object
     properties:
@@ -680,13 +684,12 @@ definitions:
         readOnly: true
         type: integer
   EditionLinks:
+    description: "A list of links related to this resource"
     readOnly: true
     type: object
     properties:
       dataset:
-        description: "A URL to the editions parent dataset"
-        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
-        type: string
+        $ref: '#/definitions/DatasetLink'
       self:
         $ref: '#/definitions/SelfLink'
       versions:
@@ -830,7 +833,9 @@ definitions:
       dataset:
         $ref: '#/definitions/DatasetLink'
       dimensions:
-        $ref: '#/definitions/DimensionLink'
+        description: "A URL to list dimensions for this version"
+        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2/dimensions"
+        type: string
       edition:
         $ref: '#/definitions/EditionLink'
       self:
@@ -841,23 +846,11 @@ definitions:
     type: object
     properties:
       id:
-        description: "The dataset id"
+        description: "The unique id for the dataset of this version"
         type: string
       link:
-        description: "A URL to the dataset for this version"
+        description: "A URL to the parent dataset for this resource"
         example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
-        type: string
-  DimensionLink:
-    description: "An object containing the dimension id and link"
-    readOnly: true
-    type: object
-    properties:
-      id:
-        description: "The dimension id"
-        type: string
-      link:
-        description: "A URL to list dimensions for this version"
-        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2/dimensions"
         type: string
   EditionLink:
     description: "An object containing the edition and link"
@@ -865,7 +858,7 @@ definitions:
     type: object
     properties:
       id:
-        description: "The version dataset edition"
+        description: "The uniqie id for the dataset edition of this version"
         type: string
       link:
         description: "A URL to the dataset edition for this version"
