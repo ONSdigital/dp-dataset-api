@@ -9,18 +9,20 @@ import (
 )
 
 var (
-	lockBackendMockAddInstance   sync.RWMutex
-	lockBackendMockGetDataset    sync.RWMutex
-	lockBackendMockGetDatasets   sync.RWMutex
-	lockBackendMockGetEdition    sync.RWMutex
-	lockBackendMockGetEditions   sync.RWMutex
-	lockBackendMockGetInstances  sync.RWMutex
-	lockBackendMockGetVersion    sync.RWMutex
-	lockBackendMockGetVersions   sync.RWMutex
-	lockBackendMockUpsertContact sync.RWMutex
-	lockBackendMockUpsertDataset sync.RWMutex
-	lockBackendMockUpsertEdition sync.RWMutex
-	lockBackendMockUpsertVersion sync.RWMutex
+	lockBackendMockAddEventToInstance sync.RWMutex
+	lockBackendMockAddInstance        sync.RWMutex
+	lockBackendMockGetDataset         sync.RWMutex
+	lockBackendMockGetDatasets        sync.RWMutex
+	lockBackendMockGetEdition         sync.RWMutex
+	lockBackendMockGetEditions        sync.RWMutex
+	lockBackendMockGetInstance        sync.RWMutex
+	lockBackendMockGetInstances       sync.RWMutex
+	lockBackendMockGetVersion         sync.RWMutex
+	lockBackendMockGetVersions        sync.RWMutex
+	lockBackendMockUpsertContact      sync.RWMutex
+	lockBackendMockUpsertDataset      sync.RWMutex
+	lockBackendMockUpsertEdition      sync.RWMutex
+	lockBackendMockUpsertVersion      sync.RWMutex
 )
 
 // BackendMock is a mock implementation of Backend.
@@ -29,6 +31,9 @@ var (
 //
 //         // make and configure a mocked Backend
 //         mockedBackend := &BackendMock{
+//             AddEventToInstanceFunc: func(instanceId string, event *models.Event) error {
+// 	               panic("TODO: mock out the AddEventToInstance method")
+//             },
 //             AddInstanceFunc: func(instance *models.Instance) (*models.Instance, error) {
 // 	               panic("TODO: mock out the AddInstance method")
 //             },
@@ -43,6 +48,9 @@ var (
 //             },
 //             GetEditionsFunc: func(id string) (*models.EditionResults, error) {
 // 	               panic("TODO: mock out the GetEditions method")
+//             },
+//             GetInstanceFunc: func(ID string) (*models.Instance, error) {
+// 	               panic("TODO: mock out the GetInstance method")
 //             },
 //             GetInstancesFunc: func() (*models.InstanceResults, error) {
 // 	               panic("TODO: mock out the GetInstances method")
@@ -72,6 +80,9 @@ var (
 //
 //     }
 type BackendMock struct {
+	// AddEventToInstanceFunc mocks the AddEventToInstance method.
+	AddEventToInstanceFunc func(instanceId string, event *models.Event) error
+
 	// AddInstanceFunc mocks the AddInstance method.
 	AddInstanceFunc func(instance *models.Instance) (*models.Instance, error)
 
@@ -86,6 +97,9 @@ type BackendMock struct {
 
 	// GetEditionsFunc mocks the GetEditions method.
 	GetEditionsFunc func(id string) (*models.EditionResults, error)
+
+	// GetInstanceFunc mocks the GetInstance method.
+	GetInstanceFunc func(ID string) (*models.Instance, error)
 
 	// GetInstancesFunc mocks the GetInstances method.
 	GetInstancesFunc func() (*models.InstanceResults, error)
@@ -110,6 +124,13 @@ type BackendMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AddEventToInstance holds details about calls to the AddEventToInstance method.
+		AddEventToInstance []struct {
+			// InstanceId is the instanceId argument value.
+			InstanceId string
+			// Event is the event argument value.
+			Event *models.Event
+		}
 		// AddInstance holds details about calls to the AddInstance method.
 		AddInstance []struct {
 			// Instance is the instance argument value.
@@ -134,6 +155,11 @@ type BackendMock struct {
 		GetEditions []struct {
 			// Id is the id argument value.
 			Id string
+		}
+		// GetInstance holds details about calls to the GetInstance method.
+		GetInstance []struct {
+			// ID is the ID argument value.
+			ID string
 		}
 		// GetInstances holds details about calls to the GetInstances method.
 		GetInstances []struct {
@@ -183,6 +209,41 @@ type BackendMock struct {
 			Update interface{}
 		}
 	}
+}
+
+// AddEventToInstance calls AddEventToInstanceFunc.
+func (mock *BackendMock) AddEventToInstance(instanceId string, event *models.Event) error {
+	if mock.AddEventToInstanceFunc == nil {
+		panic("moq: BackendMock.AddEventToInstanceFunc is nil but Backend.AddEventToInstance was just called")
+	}
+	callInfo := struct {
+		InstanceId string
+		Event      *models.Event
+	}{
+		InstanceId: instanceId,
+		Event:      event,
+	}
+	lockBackendMockAddEventToInstance.Lock()
+	mock.calls.AddEventToInstance = append(mock.calls.AddEventToInstance, callInfo)
+	lockBackendMockAddEventToInstance.Unlock()
+	return mock.AddEventToInstanceFunc(instanceId, event)
+}
+
+// AddEventToInstanceCalls gets all the calls that were made to AddEventToInstance.
+// Check the length with:
+//     len(mockedBackend.AddEventToInstanceCalls())
+func (mock *BackendMock) AddEventToInstanceCalls() []struct {
+	InstanceId string
+	Event      *models.Event
+} {
+	var calls []struct {
+		InstanceId string
+		Event      *models.Event
+	}
+	lockBackendMockAddEventToInstance.RLock()
+	calls = mock.calls.AddEventToInstance
+	lockBackendMockAddEventToInstance.RUnlock()
+	return calls
 }
 
 // AddInstance calls AddInstanceFunc.
@@ -336,6 +397,37 @@ func (mock *BackendMock) GetEditionsCalls() []struct {
 	lockBackendMockGetEditions.RLock()
 	calls = mock.calls.GetEditions
 	lockBackendMockGetEditions.RUnlock()
+	return calls
+}
+
+// GetInstance calls GetInstanceFunc.
+func (mock *BackendMock) GetInstance(ID string) (*models.Instance, error) {
+	if mock.GetInstanceFunc == nil {
+		panic("moq: BackendMock.GetInstanceFunc is nil but Backend.GetInstance was just called")
+	}
+	callInfo := struct {
+		ID string
+	}{
+		ID: ID,
+	}
+	lockBackendMockGetInstance.Lock()
+	mock.calls.GetInstance = append(mock.calls.GetInstance, callInfo)
+	lockBackendMockGetInstance.Unlock()
+	return mock.GetInstanceFunc(ID)
+}
+
+// GetInstanceCalls gets all the calls that were made to GetInstance.
+// Check the length with:
+//     len(mockedBackend.GetInstanceCalls())
+func (mock *BackendMock) GetInstanceCalls() []struct {
+	ID string
+} {
+	var calls []struct {
+		ID string
+	}
+	lockBackendMockGetInstance.RLock()
+	calls = mock.calls.GetInstance
+	lockBackendMockGetInstance.RUnlock()
 	return calls
 }
 

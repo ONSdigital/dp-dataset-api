@@ -26,6 +26,8 @@ func CreateDatasetAPI(secretKey string, router *mux.Router, dataStore DataStore)
 
 	api.router.HandleFunc("/instances", api.getInstances).Methods("GET")
 	api.router.HandleFunc("/instances", api.addInstance).Methods("POST")
+	api.router.HandleFunc("/instances/{id}", api.getInstance).Methods("GET")
+	api.router.HandleFunc("/instances/{id}/events", api.addEventToInstance).Methods("POST")
 
 	return &api
 }

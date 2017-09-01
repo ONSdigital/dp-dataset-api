@@ -28,10 +28,10 @@ type IDLink struct {
 
 // Event which has happened to an instance
 type Event struct {
-	Type          string `bson:"type,omitempty"           json:"type"`
-	Time          string `bson:"time,omitempty"           json:"time"`
-	Message       string `bson:"message,omitempty"        json:"message"`
-	MessageOffset string `bson:"message_offset,omitempty" json:"message_offset"`
+	Type          string     `bson:"type,omitempty"           json:"type"`
+	Time          *time.Time `bson:"time,omitempty"           json:"time"`
+	Message       string     `bson:"message,omitempty"        json:"message"`
+	MessageOffset string     `bson:"message_offset,omitempty" json:"message_offset"`
 }
 
 type InstanceResults struct {
@@ -53,6 +53,13 @@ func (i *Instance) Defaults() error {
 	return nil
 }
 
+func (e *Event) Validate() error {
+	if e.Message == "" || e.MessageOffset == "" || e.Time == nil || e.Type == "" {
+		return errors.New("Missing properties")
+	}
+	return nil
+}
+
 func CreateInstance(reader io.Reader) (*Instance, error) {
 	bytes, err := ioutil.ReadAll(reader)
 	if err != nil {
@@ -64,4 +71,17 @@ func CreateInstance(reader io.Reader) (*Instance, error) {
 		return nil, errors.New("Failed to parse json body")
 	}
 	return &instance, err
+}
+
+func CreateEvent(reader io.Reader) (*Event, error) {
+	bytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, errors.New("Failed to read message body")
+	}
+	var event Event
+	err = json.Unmarshal(bytes, &event)
+	if err != nil {
+		return nil, errors.New("Failed to parse json body")
+	}
+	return &event, err
 }

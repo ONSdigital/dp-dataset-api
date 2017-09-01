@@ -25,5 +25,7 @@ type Backend interface {
 	UpsertContact(id string, update interface{}) error
 
 	GetInstances() (*models.InstanceResults, error)
+	GetInstance(ID string) (*models.Instance, error)
 	AddInstance(instance *models.Instance) (*models.Instance, error)
+	AddEventToInstance(instanceId string, event *models.Event) (error)
 }
