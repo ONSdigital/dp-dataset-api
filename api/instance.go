@@ -6,6 +6,7 @@ import (
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
 	"net/http"
+	"strconv"
 )
 
 func (api *DatasetAPI) getInstances(w http.ResponseWriter, r *http.Request) {
@@ -103,6 +104,71 @@ func (api *DatasetAPI) addEventToInstance(w http.ResponseWriter, r *http.Request
 	}
 	log.Debug("add event to instance", log.Data{"instance": id})
 
+}
+
+func (api *DatasetAPI) addDimensionToInstance(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	dimensionName := vars["dimension"]
+	value := vars["value"]
+	dim := models.DimensionNode{Name: dimensionName, Value: value}
+	err := api.dataStore.Backend.AddDimensionToInstance(id, &dim)
+	if err != nil {
+		log.Error(err, nil)
+		handleErrorType(err, w)
+		return
+	}
+}
+
+func (api *DatasetAPI) addNodeIdToDimension(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	dimensionName := vars["dimension"]
+	value := vars["value"]
+	nodeId := vars["node_id"]
+	dim := models.DimensionNode{Name: dimensionName, Value: value, NodeId: nodeId}
+	err := api.dataStore.Backend.AddDimensionToInstance(id, &dim)
+	if err != nil {
+		log.Error(err, nil)
+		handleErrorType(err, w)
+		return
+	}
+}
+
+func (api *DatasetAPI) updateObservations(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	observations, err := strconv.ParseInt(vars["inserted_observations"], 10, 64)
+	if err != nil {
+		log.Error(err, nil)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = api.dataStore.Backend.UpdateObservationInserted(id, observations)
+	if err != nil {
+		log.Error(err, nil)
+		handleErrorType(err, w)
+		return
+	}
+}
+
+func (api *DatasetAPI) getDimensionNodes(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	results, err := api.dataStore.Backend.GetDimensionNodesFromInstance(id)
+	if err != nil {
+		log.Error(err, nil)
+		handleErrorType(err, w)
+		return
+	}
+	bytes, err := json.Marshal(results)
+	if err != nil {
+		log.Error(err, nil)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeBody(w, bytes)
+	log.Debug("get dimension nodes", log.Data{"instance": id})
 }
 
 func writeBody(w http.ResponseWriter, bytes []byte) {

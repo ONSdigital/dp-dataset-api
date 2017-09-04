@@ -9,20 +9,23 @@ import (
 )
 
 var (
-	lockBackendMockAddEventToInstance sync.RWMutex
-	lockBackendMockAddInstance        sync.RWMutex
-	lockBackendMockGetDataset         sync.RWMutex
-	lockBackendMockGetDatasets        sync.RWMutex
-	lockBackendMockGetEdition         sync.RWMutex
-	lockBackendMockGetEditions        sync.RWMutex
-	lockBackendMockGetInstance        sync.RWMutex
-	lockBackendMockGetInstances       sync.RWMutex
-	lockBackendMockGetVersion         sync.RWMutex
-	lockBackendMockGetVersions        sync.RWMutex
-	lockBackendMockUpsertContact      sync.RWMutex
-	lockBackendMockUpsertDataset      sync.RWMutex
-	lockBackendMockUpsertEdition      sync.RWMutex
-	lockBackendMockUpsertVersion      sync.RWMutex
+	lockBackendMockAddDimensionToInstance        sync.RWMutex
+	lockBackendMockAddEventToInstance            sync.RWMutex
+	lockBackendMockAddInstance                   sync.RWMutex
+	lockBackendMockGetDataset                    sync.RWMutex
+	lockBackendMockGetDatasets                   sync.RWMutex
+	lockBackendMockGetDimensionNodesFromInstance sync.RWMutex
+	lockBackendMockGetEdition                    sync.RWMutex
+	lockBackendMockGetEditions                   sync.RWMutex
+	lockBackendMockGetInstance                   sync.RWMutex
+	lockBackendMockGetInstances                  sync.RWMutex
+	lockBackendMockGetVersion                    sync.RWMutex
+	lockBackendMockGetVersions                   sync.RWMutex
+	lockBackendMockUpdateObservationInserted     sync.RWMutex
+	lockBackendMockUpsertContact                 sync.RWMutex
+	lockBackendMockUpsertDataset                 sync.RWMutex
+	lockBackendMockUpsertEdition                 sync.RWMutex
+	lockBackendMockUpsertVersion                 sync.RWMutex
 )
 
 // BackendMock is a mock implementation of Backend.
@@ -31,6 +34,9 @@ var (
 //
 //         // make and configure a mocked Backend
 //         mockedBackend := &BackendMock{
+//             AddDimensionToInstanceFunc: func(id string, dimension *models.DimensionNode) error {
+// 	               panic("TODO: mock out the AddDimensionToInstance method")
+//             },
 //             AddEventToInstanceFunc: func(instanceId string, event *models.Event) error {
 // 	               panic("TODO: mock out the AddEventToInstance method")
 //             },
@@ -42,6 +48,9 @@ var (
 //             },
 //             GetDatasetsFunc: func() (*models.DatasetResults, error) {
 // 	               panic("TODO: mock out the GetDatasets method")
+//             },
+//             GetDimensionNodesFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
+// 	               panic("TODO: mock out the GetDimensionNodesFromInstance method")
 //             },
 //             GetEditionFunc: func(datasetID string, editionID string) (*models.Edition, error) {
 // 	               panic("TODO: mock out the GetEdition method")
@@ -60,6 +69,9 @@ var (
 //             },
 //             GetVersionsFunc: func(datasetID string, editionID string) (*models.VersionResults, error) {
 // 	               panic("TODO: mock out the GetVersions method")
+//             },
+//             UpdateObservationInsertedFunc: func(id string, observationInserted int64) error {
+// 	               panic("TODO: mock out the UpdateObservationInserted method")
 //             },
 //             UpsertContactFunc: func(id string, update interface{}) error {
 // 	               panic("TODO: mock out the UpsertContact method")
@@ -80,6 +92,9 @@ var (
 //
 //     }
 type BackendMock struct {
+	// AddDimensionToInstanceFunc mocks the AddDimensionToInstance method.
+	AddDimensionToInstanceFunc func(id string, dimension *models.DimensionNode) error
+
 	// AddEventToInstanceFunc mocks the AddEventToInstance method.
 	AddEventToInstanceFunc func(instanceId string, event *models.Event) error
 
@@ -91,6 +106,9 @@ type BackendMock struct {
 
 	// GetDatasetsFunc mocks the GetDatasets method.
 	GetDatasetsFunc func() (*models.DatasetResults, error)
+
+	// GetDimensionNodesFromInstanceFunc mocks the GetDimensionNodesFromInstance method.
+	GetDimensionNodesFromInstanceFunc func(id string) (*models.DimensionNodeResults, error)
 
 	// GetEditionFunc mocks the GetEdition method.
 	GetEditionFunc func(datasetID string, editionID string) (*models.Edition, error)
@@ -110,6 +128,9 @@ type BackendMock struct {
 	// GetVersionsFunc mocks the GetVersions method.
 	GetVersionsFunc func(datasetID string, editionID string) (*models.VersionResults, error)
 
+	// UpdateObservationInsertedFunc mocks the UpdateObservationInserted method.
+	UpdateObservationInsertedFunc func(id string, observationInserted int64) error
+
 	// UpsertContactFunc mocks the UpsertContact method.
 	UpsertContactFunc func(id string, update interface{}) error
 
@@ -124,6 +145,13 @@ type BackendMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AddDimensionToInstance holds details about calls to the AddDimensionToInstance method.
+		AddDimensionToInstance []struct {
+			// Id is the id argument value.
+			Id string
+			// Dimension is the dimension argument value.
+			Dimension *models.DimensionNode
+		}
 		// AddEventToInstance holds details about calls to the AddEventToInstance method.
 		AddEventToInstance []struct {
 			// InstanceId is the instanceId argument value.
@@ -143,6 +171,11 @@ type BackendMock struct {
 		}
 		// GetDatasets holds details about calls to the GetDatasets method.
 		GetDatasets []struct {
+		}
+		// GetDimensionNodesFromInstance holds details about calls to the GetDimensionNodesFromInstance method.
+		GetDimensionNodesFromInstance []struct {
+			// Id is the id argument value.
+			Id string
 		}
 		// GetEdition holds details about calls to the GetEdition method.
 		GetEdition []struct {
@@ -180,6 +213,13 @@ type BackendMock struct {
 			// EditionID is the editionID argument value.
 			EditionID string
 		}
+		// UpdateObservationInserted holds details about calls to the UpdateObservationInserted method.
+		UpdateObservationInserted []struct {
+			// Id is the id argument value.
+			Id string
+			// ObservationInserted is the observationInserted argument value.
+			ObservationInserted int64
+		}
 		// UpsertContact holds details about calls to the UpsertContact method.
 		UpsertContact []struct {
 			// Id is the id argument value.
@@ -209,6 +249,41 @@ type BackendMock struct {
 			Update interface{}
 		}
 	}
+}
+
+// AddDimensionToInstance calls AddDimensionToInstanceFunc.
+func (mock *BackendMock) AddDimensionToInstance(id string, dimension *models.DimensionNode) error {
+	if mock.AddDimensionToInstanceFunc == nil {
+		panic("moq: BackendMock.AddDimensionToInstanceFunc is nil but Backend.AddDimensionToInstance was just called")
+	}
+	callInfo := struct {
+		Id        string
+		Dimension *models.DimensionNode
+	}{
+		Id:        id,
+		Dimension: dimension,
+	}
+	lockBackendMockAddDimensionToInstance.Lock()
+	mock.calls.AddDimensionToInstance = append(mock.calls.AddDimensionToInstance, callInfo)
+	lockBackendMockAddDimensionToInstance.Unlock()
+	return mock.AddDimensionToInstanceFunc(id, dimension)
+}
+
+// AddDimensionToInstanceCalls gets all the calls that were made to AddDimensionToInstance.
+// Check the length with:
+//     len(mockedBackend.AddDimensionToInstanceCalls())
+func (mock *BackendMock) AddDimensionToInstanceCalls() []struct {
+	Id        string
+	Dimension *models.DimensionNode
+} {
+	var calls []struct {
+		Id        string
+		Dimension *models.DimensionNode
+	}
+	lockBackendMockAddDimensionToInstance.RLock()
+	calls = mock.calls.AddDimensionToInstance
+	lockBackendMockAddDimensionToInstance.RUnlock()
+	return calls
 }
 
 // AddEventToInstance calls AddEventToInstanceFunc.
@@ -331,6 +406,37 @@ func (mock *BackendMock) GetDatasetsCalls() []struct {
 	lockBackendMockGetDatasets.RLock()
 	calls = mock.calls.GetDatasets
 	lockBackendMockGetDatasets.RUnlock()
+	return calls
+}
+
+// GetDimensionNodesFromInstance calls GetDimensionNodesFromInstanceFunc.
+func (mock *BackendMock) GetDimensionNodesFromInstance(id string) (*models.DimensionNodeResults, error) {
+	if mock.GetDimensionNodesFromInstanceFunc == nil {
+		panic("moq: BackendMock.GetDimensionNodesFromInstanceFunc is nil but Backend.GetDimensionNodesFromInstance was just called")
+	}
+	callInfo := struct {
+		Id string
+	}{
+		Id: id,
+	}
+	lockBackendMockGetDimensionNodesFromInstance.Lock()
+	mock.calls.GetDimensionNodesFromInstance = append(mock.calls.GetDimensionNodesFromInstance, callInfo)
+	lockBackendMockGetDimensionNodesFromInstance.Unlock()
+	return mock.GetDimensionNodesFromInstanceFunc(id)
+}
+
+// GetDimensionNodesFromInstanceCalls gets all the calls that were made to GetDimensionNodesFromInstance.
+// Check the length with:
+//     len(mockedBackend.GetDimensionNodesFromInstanceCalls())
+func (mock *BackendMock) GetDimensionNodesFromInstanceCalls() []struct {
+	Id string
+} {
+	var calls []struct {
+		Id string
+	}
+	lockBackendMockGetDimensionNodesFromInstance.RLock()
+	calls = mock.calls.GetDimensionNodesFromInstance
+	lockBackendMockGetDimensionNodesFromInstance.RUnlock()
 	return calls
 }
 
@@ -528,6 +634,41 @@ func (mock *BackendMock) GetVersionsCalls() []struct {
 	lockBackendMockGetVersions.RLock()
 	calls = mock.calls.GetVersions
 	lockBackendMockGetVersions.RUnlock()
+	return calls
+}
+
+// UpdateObservationInserted calls UpdateObservationInsertedFunc.
+func (mock *BackendMock) UpdateObservationInserted(id string, observationInserted int64) error {
+	if mock.UpdateObservationInsertedFunc == nil {
+		panic("moq: BackendMock.UpdateObservationInsertedFunc is nil but Backend.UpdateObservationInserted was just called")
+	}
+	callInfo := struct {
+		Id                  string
+		ObservationInserted int64
+	}{
+		Id:                  id,
+		ObservationInserted: observationInserted,
+	}
+	lockBackendMockUpdateObservationInserted.Lock()
+	mock.calls.UpdateObservationInserted = append(mock.calls.UpdateObservationInserted, callInfo)
+	lockBackendMockUpdateObservationInserted.Unlock()
+	return mock.UpdateObservationInsertedFunc(id, observationInserted)
+}
+
+// UpdateObservationInsertedCalls gets all the calls that were made to UpdateObservationInserted.
+// Check the length with:
+//     len(mockedBackend.UpdateObservationInsertedCalls())
+func (mock *BackendMock) UpdateObservationInsertedCalls() []struct {
+	Id                  string
+	ObservationInserted int64
+} {
+	var calls []struct {
+		Id                  string
+		ObservationInserted int64
+	}
+	lockBackendMockUpdateObservationInserted.RLock()
+	calls = mock.calls.UpdateObservationInserted
+	lockBackendMockUpdateObservationInserted.RUnlock()
 	return calls
 }
 

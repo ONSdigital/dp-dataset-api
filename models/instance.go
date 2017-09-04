@@ -34,10 +34,24 @@ type Event struct {
 	MessageOffset string     `bson:"message_offset,omitempty" json:"message_offset"`
 }
 
+// DimensionNode which is cached for the import process
+type DimensionNode struct {
+	Name   string `bson:"name,omitempty"           json:"dimension_id"`
+	Value  string `bson:"value,omitempty"          json:"value"`
+	NodeId string `bson:"node_id,omitempty"        json:"node_id"`
+}
+
+// InstanceResults wraps instances objects for pagination
 type InstanceResults struct {
 	Items []Instance `json:"items"`
 }
 
+// DimensionNodeResults wraps dimension node objects for pagination
+type DimensionNodeResults struct {
+	Items []DimensionNode `json:"items"`
+}
+
+// Defaults setup values for an empty instance
 func (i *Instance) Defaults() error {
 	if i.Job.ID == "" || i.Job.Link == "" {
 		return errors.New("Missing job properties")
@@ -53,6 +67,7 @@ func (i *Instance) Defaults() error {
 	return nil
 }
 
+// Validate the event structure
 func (e *Event) Validate() error {
 	if e.Message == "" || e.MessageOffset == "" || e.Time == nil || e.Type == "" {
 		return errors.New("Missing properties")
@@ -60,6 +75,7 @@ func (e *Event) Validate() error {
 	return nil
 }
 
+// CreateInstance using a byte buffer
 func CreateInstance(reader io.Reader) (*Instance, error) {
 	bytes, err := ioutil.ReadAll(reader)
 	if err != nil {
@@ -73,6 +89,7 @@ func CreateInstance(reader io.Reader) (*Instance, error) {
 	return &instance, err
 }
 
+// CreateEvent using a byte buffer
 func CreateEvent(reader io.Reader) (*Event, error) {
 	bytes, err := ioutil.ReadAll(reader)
 	if err != nil {

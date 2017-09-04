@@ -289,7 +289,7 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleErrorType(err error, w http.ResponseWriter) {
-	if err == api_errors.DatasetNotFound || err == api_errors.EditionNotFound || err == api_errors.VersionNotFound {
+	if err == api_errors.DatasetNotFound || err == api_errors.EditionNotFound || err == api_errors.VersionNotFound || err == api_errors.DimensionNodeNotFound || err == api_errors.InstanceNotFound{
 		http.Error(w, err.Error(), http.StatusNotFound)
 	} else {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
