@@ -599,7 +599,7 @@ definitions:
       description:
         type: string
         description: "A description for a dataset"
-      _id:
+      id:
         readOnly: true
         type: string
         description: "An unique id for a dataset"
@@ -653,9 +653,10 @@ definitions:
       edition:
         description: "The edition of the dataset"
         example: "2017"
+        readOnly: true
         type: string
       id:
-        description: "An unique id for a dataset edtion"
+        description: "An unique id for a dataset edition"
         readOnly: true
         type: string
       links:
@@ -808,9 +809,17 @@ definitions:
   Version:
     description: "An object containing information about published datasets from the ONS"
     type: object
+    required: [
+      license,
+      release_date,
+    ]
     properties:
       edition:
         description: "The dataset edition for this version"
+        type: string
+        readOnly: true
+      instance_id:
+        description: "The instance identifier for this version of the dataset edition"
         type: string
       license:
         description: "The type of license for the dataset"
@@ -824,6 +833,7 @@ definitions:
         $ref: '#/definitions/State'
       version:
         description: "The number of the dataset edition version"
+        readOnly: true
         type: integer
   VersionLinks:
     description: "A list of links related to this resource"
