@@ -1,8 +1,11 @@
 package mongo
 
 import (
+	"strconv"
+
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/go-ns/log"
 
 	"github.com/ONSdigital/dp-dataset-api/api-errors"
 	"gopkg.in/mgo.v2"
@@ -100,6 +103,30 @@ func (m *Mongo) GetEdition(datasetID, editionID string) (*models.Edition, error)
 		return nil, err
 	}
 	return &edition, nil
+}
+
+// GetNextVersion retrieves the latest version for an edition of a dataset
+func (m *Mongo) GetNextVersion(datasetID, editionID string) (int, error) {
+	s := session.Copy()
+	defer s.Clone()
+	var version models.Version
+	var nextVersion int
+	err := s.DB(m.Database).C("versions").Find(bson.M{"links.dataset.id": datasetID, "edition": editionID}).Sort("-version").One(&version)
+	if err != nil {
+		if err == mgo.ErrNotFound {
+			return 1, nil
+		}
+		return nextVersion, err
+	}
+	currentVersion, err := strconv.Atoi(version.Version)
+	if err != nil {
+		log.ErrorC("Cannot convert version number to integer", err, nil)
+		return nextVersion, err
+	}
+
+	nextVersion = currentVersion + 1
+
+	return nextVersion, nil
 }
 
 // GetVersions retrieves all version documents for a dataset edition

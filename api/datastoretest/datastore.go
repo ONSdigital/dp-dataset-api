@@ -9,16 +9,17 @@ import (
 )
 
 var (
-	lockBackendMockGetDataset    sync.RWMutex
-	lockBackendMockGetDatasets   sync.RWMutex
-	lockBackendMockGetEdition    sync.RWMutex
-	lockBackendMockGetEditions   sync.RWMutex
-	lockBackendMockGetVersion    sync.RWMutex
-	lockBackendMockGetVersions   sync.RWMutex
-	lockBackendMockUpsertContact sync.RWMutex
-	lockBackendMockUpsertDataset sync.RWMutex
-	lockBackendMockUpsertEdition sync.RWMutex
-	lockBackendMockUpsertVersion sync.RWMutex
+	lockBackendMockGetDataset     sync.RWMutex
+	lockBackendMockGetDatasets    sync.RWMutex
+	lockBackendMockGetEdition     sync.RWMutex
+	lockBackendMockGetEditions    sync.RWMutex
+	lockBackendMockGetNextVersion sync.RWMutex
+	lockBackendMockGetVersion     sync.RWMutex
+	lockBackendMockGetVersions    sync.RWMutex
+	lockBackendMockUpsertContact  sync.RWMutex
+	lockBackendMockUpsertDataset  sync.RWMutex
+	lockBackendMockUpsertEdition  sync.RWMutex
+	lockBackendMockUpsertVersion  sync.RWMutex
 )
 
 // BackendMock is a mock implementation of Backend.
@@ -38,6 +39,9 @@ var (
 //             },
 //             GetEditionsFunc: func(id string) (*models.EditionResults, error) {
 // 	               panic("TODO: mock out the GetEditions method")
+//             },
+//             GetNextVersionFunc: func(datasetID string, editionID string) (int, error) {
+// 	               panic("TODO: mock out the GetNextVersion method")
 //             },
 //             GetVersionFunc: func(datasetID string, editionID string, versionID string) (*models.Version, error) {
 // 	               panic("TODO: mock out the GetVersion method")
@@ -75,6 +79,9 @@ type BackendMock struct {
 
 	// GetEditionsFunc mocks the GetEditions method.
 	GetEditionsFunc func(id string) (*models.EditionResults, error)
+
+	// GetNextVersionFunc mocks the GetNextVersion method.
+	GetNextVersionFunc func(datasetID string, editionID string) (int, error)
 
 	// GetVersionFunc mocks the GetVersion method.
 	GetVersionFunc func(datasetID string, editionID string, versionID string) (*models.Version, error)
@@ -115,6 +122,13 @@ type BackendMock struct {
 		GetEditions []struct {
 			// Id is the id argument value.
 			Id string
+		}
+		// GetNextVersion holds details about calls to the GetNextVersion method.
+		GetNextVersion []struct {
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// EditionID is the editionID argument value.
+			EditionID string
 		}
 		// GetVersion holds details about calls to the GetVersion method.
 		GetVersion []struct {
@@ -283,6 +297,41 @@ func (mock *BackendMock) GetEditionsCalls() []struct {
 	lockBackendMockGetEditions.RLock()
 	calls = mock.calls.GetEditions
 	lockBackendMockGetEditions.RUnlock()
+	return calls
+}
+
+// GetNextVersion calls GetNextVersionFunc.
+func (mock *BackendMock) GetNextVersion(datasetID string, editionID string) (int, error) {
+	if mock.GetNextVersionFunc == nil {
+		panic("moq: BackendMock.GetNextVersionFunc is nil but Backend.GetNextVersion was just called")
+	}
+	callInfo := struct {
+		DatasetID string
+		EditionID string
+	}{
+		DatasetID: datasetID,
+		EditionID: editionID,
+	}
+	lockBackendMockGetNextVersion.Lock()
+	mock.calls.GetNextVersion = append(mock.calls.GetNextVersion, callInfo)
+	lockBackendMockGetNextVersion.Unlock()
+	return mock.GetNextVersionFunc(datasetID, editionID)
+}
+
+// GetNextVersionCalls gets all the calls that were made to GetNextVersion.
+// Check the length with:
+//     len(mockedBackend.GetNextVersionCalls())
+func (mock *BackendMock) GetNextVersionCalls() []struct {
+	DatasetID string
+	EditionID string
+} {
+	var calls []struct {
+		DatasetID string
+		EditionID string
+	}
+	lockBackendMockGetNextVersion.RLock()
+	calls = mock.calls.GetNextVersion
+	lockBackendMockGetNextVersion.RUnlock()
 	return calls
 }
 

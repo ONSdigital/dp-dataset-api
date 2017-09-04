@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/api-errors"
@@ -235,7 +236,6 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
 	editionID := vars["edition"]
-	versionID := vars["version"]
 
 	version, err := models.CreateVersion(r.Body)
 	if err != nil {
@@ -244,12 +244,20 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	nextVersion, err := api.dataStore.Backend.GetNextVersion(datasetID, editionID)
+	if err != nil {
+		log.ErrorR(r, err, nil)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	versionID := nextVersion
 	version.Links.Dataset.ID = datasetID
 	version.Links.Dataset.Link = "/datasets/" + datasetID
 	version.Links.Edition.Link = editionID
 	version.Links.Edition.Link = "/datasets/" + datasetID + "/editions/" + editionID
-	version.Links.Self = "/datasets/" + datasetID + "/editions/" + editionID + "/versions/" + versionID
-	version.Links.Dimensions = "/instance/" + versionID + "/dimensions"
+	version.Links.Self = "/datasets/" + datasetID + "/editions/" + editionID + "/versions/" + strconv.Itoa(versionID)
+	version.Links.Dimensions = "/instance/" + strconv.Itoa(versionID) + "/dimensions"
 
 	update := bson.M{
 		"$set": version,
