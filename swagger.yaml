@@ -78,7 +78,7 @@ parameters:
       $ref: '#/definitions/Edition'
   new_version:
     name: new_version
-    description: "A new version of the dataset edition"
+    description: "A new version for an edition of a dataset"
     in: body
     required: true
     schema:
@@ -158,9 +158,13 @@ paths:
         201:
           description: "A json object containing a dataset which has been published"
           schema:
-            $ref: '#/definitions/NewDatasetResponse'
+            $ref: '#/definitions/DatasetResponse'
         400:
           description: "Invalid request body"
+        401:
+          description: "Unauthorised to create/overwrite dataset"
+        403:
+          description: "Forbidden to overwrite dataset, already published"
         500:
           $ref: '#/responses/InternalError'
     get:
@@ -192,6 +196,27 @@ paths:
             $ref: '#/definitions/DatasetResponse'
         404:
           description: "No dataset was foundusing the id provided"
+        500:
+          $ref: '#/responses/InternalError'
+    put:
+      tags:
+      - "Private user"
+      summary: "Update a dataset"
+      description: "Update the meta data for the next release of the dataset. The dataset contains all high level information, for additional details see editions or versions of a dataset."
+      parameters:
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/new_dataset'
+      responses:
+        200:
+          description: "A json object for a single Dataset"
+          schema:
+            $ref: '#/definitions/NewDatasetResponse'
+        400:
+          description: "Bad Request due to invalid json in request body"
+        401:
+          description: "Unauthorised to update dataset"
+        404:
+          description: "No dataset was found using the id provided"
         500:
           $ref: '#/responses/InternalError'
   /datasets/{id}/editions:
@@ -228,6 +253,8 @@ paths:
             $ref: '#/definitions/Edition'
         400:
           description: "Invalid request body"
+        401:
+          description: "Unauthorised to create/overwrite edition"
         404:
           description: "No dataset was found using the id provided"
         500:
@@ -246,15 +273,15 @@ paths:
           schema:
             $ref: '#/definitions/Edition'
         404:
-          description: "No dataset edition was found using the id and edition provided"
+          description: "No edition of a dataset was found using the id and edition provided"
         500:
           $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}/versions:
     post:
       tags:
       - "Private user"
-      summary: "Create a version of a dataset edition"
-      description: "Create a version of a dataset edition"
+      summary: "Create a version for an edition of a dataset"
+      description: "Create a version for an edition of a dataset"
       parameters:
       - $ref: '#/parameters/id'
       - $ref: '#/parameters/new_version'
@@ -265,15 +292,19 @@ paths:
             $ref: '#/definitions/NewVersionResponse'
         400:
           description: "Invalid request body"
+        401:
+          description: "Unauthorised to create/overwrite version of dataset"
+        403:
+          description: "Forbidden to overwrite version of dataset, already published"
         404:
-          description: "No dataset edition was found using the id and edition provided"
+          description: "No edition for a dataset was found using the id and edition provided"
         500:
           $ref: '#/responses/InternalError'
     get:
       tags:
       - "Public"
-      summary: "Get a list of all versions from a dataset edition"
-      description: "Get a list of all versions from a dataset edition"
+      summary: "Get a list of all versions from an edition of a dataset"
+      description: "Get a list of all versions for an edition of a dataset"
       parameters:
       - $ref: '#/parameters/edition'
       - $ref: '#/parameters/id'
@@ -287,6 +318,29 @@ paths:
         500:
           $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}/versions/{version}:
+    put:
+      tags:
+      - "Private user"
+      summary: "Update a version for an edition of a dataset"
+      description: "Update a version for an edition of a dataset, if the state is changed to associated or published, the parent documents(dataset and edition resources) will also be updated"
+      parameters:
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/new_version'
+      responses:
+        201:
+          description: "A json object containing a version"
+          schema:
+            $ref: '#/definitions/NewVersionResponse'
+        400:
+          description: "Invalid request body"
+        401:
+          description: "Unauthorised to update version of dataset"
+        403:
+          description: "Forbidden to overwrite version of dataset, already published"
+        404:
+          description: "No edition was found for a dataset using the id and edition provided"
+        500:
+          $ref: '#/responses/InternalError'
     get:
       tags:
       - "Public"
@@ -302,7 +356,7 @@ paths:
           schema:
             $ref: '#/definitions/Version'
         404:
-          description: "No dataset edition with the specific version was found using the id, edition and version provided"
+          description: "No version was found for an edition of a dataset using the id, edition and version provided"
         500:
           $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions:
@@ -321,7 +375,7 @@ paths:
           schema:
             $ref: '#/definitions/Dimensions'
         404:
-          description: "No dataset edition with the specific version was found using the id, edition and version provided"
+          description: "No version was found for an edition of a dataset using the id, edition and version provided"
         500:
           $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}:
@@ -341,7 +395,7 @@ paths:
           schema:
             $ref: '#/definitions/DimensionValues'
         404:
-          description: "No dataset edition with the specific version was found using the id, edition and version provided or the dimension does not exist within the dataset"
+          description: "No version was found for an edition of a dataset using the id, edition and version provided or the dimension does not exist within the dataset"
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}:
@@ -705,7 +759,7 @@ definitions:
       self:
         $ref: '#/definitions/SelfLink'
       versions:
-        description: "A URL to all versions of this dataset edition"
+        description: "A URL to all versions dor an edition of a dataset"
         example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/edition/2017/versions"
         type: string
   Event:
@@ -780,11 +834,23 @@ definitions:
         description: "An unique id for a dataset"
         example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
       current:
-        $ref: "#/definitions/Dataset"
+        allOf:
+        - type: object
+          properties:
+            collection_id:
+              description: "The unique identifier for a collection of datasets that this dataset belongs"
+              type: string
+        - $ref: "#/definitions/Dataset"
       next:
-        $ref: "#/definitions/Dataset"
+        allOf:
+        - type: object
+          properties:
+            collection_id:
+              description: "The unique identifier for a collection of datasets that this dataset belongs"
+              type: string
+        - $ref: "#/definitions/Dataset"
   NewVersionResponse:
-    description: "A model for the response body when creating a new version of a dataset edition"
+    description: "A model for the response body when creating a new version for an edition of a dataset"
     allOf:
       - type: object
         properties:
@@ -792,6 +858,9 @@ definitions:
             type: string
             description: "An unique id for a dataset"
             example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91CD"
+          collection_id:
+            description: "The unique identifier for a collection of datasets that this dataset belongs"
+            type: string
       - $ref: "#/definitions/Version"
   Publisher:
     description: "The publisher of the dataset"
@@ -821,7 +890,7 @@ definitions:
     type: object
     properties:
       count:
-        description: "The number of versions returned for a dataset edition"
+        description: "The number of versions returned for an edition of a dataset"
         readOnly: true
         type: integer
       items:
@@ -830,13 +899,13 @@ definitions:
         items:
           $ref: '#/definitions/Version'
       items_per_page:
-        description: "The number of versions requested for a dataset edition"
+        description: "The number of versions requested for an edition of a dataset"
         type: integer
       start_index:
-        description: "The first row of versions for a dataset edition to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
+        description: "The first row of versions for an edition of a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
         type: integer
       total_count:
-        description: "The total number of versions against a dataset edition"
+        description: "The total number of versions for an edition of a dataset"
         readOnly: true
         type: integer
   Version:
@@ -852,7 +921,7 @@ definitions:
         type: string
         readOnly: true
       instance_id:
-        description: "The instance identifier for this version of the dataset edition"
+        description: "The instance identifier for this version of an edition for a dataset"
         type: string
       license:
         description: "The type of license for the dataset"
@@ -865,7 +934,7 @@ definitions:
       state:
         $ref: '#/definitions/State'
       version:
-        description: "The number of the dataset edition version"
+        description: "A number identifying the version for an edition from a dataset"
         example: 1
         readOnly: true
         type: integer
@@ -902,10 +971,10 @@ definitions:
     type: object
     properties:
       id:
-        description: "The uniqie id for the dataset edition of this version"
+        description: "The unique id for the dataset edition for a version"
         type: string
       link:
-        description: "A URL to the dataset edition for this version"
+        description: "A URL to the dataset edition for a version"
         example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017"
         type: string
   Dimension:
@@ -928,7 +997,7 @@ definitions:
     type: object
     properties:
       count:
-        description: "The number of dimensions returned for a version from a dataset edition"
+        description: "The number of dimensions returned for a version from an edition of a dataset"
         readOnly: true
         type: integer
       items:
@@ -937,13 +1006,13 @@ definitions:
         items:
           $ref: '#/definitions/Dimension'
       items_per_page:
-        description: "The number of dimensions requested for a version from a dataset edition"
+        description: "The number of dimensions requested for a version from an edition of a dataset"
         type: integer
       start_index:
-        description: "The first row of dimension for a version from a dataset edition to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
+        description: "The first row of dimension for a version from an edition of a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
         type: integer
       total_count:
-        description: "The total number of dimensions against a version from a dataset edition"
+        description: "The total number of dimensions against a version from an edition of a dataset"
         readOnly: true
         type: integer
   DimensionValues:
