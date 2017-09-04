@@ -228,4 +228,13 @@ db.instances.insert({
     "telephone": "01633 123457",
     "updated_at": "2017-08-25T15:09:11.829+01:00",
 });
+db.createCollection("dimension.nodes");
+db.dimension.nodes.insert({
+     "_id":"1",
+     "id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
+     "dimensions": [
+       { "dimension_id": "age", "value": "32", "node_id":80 },
+       { "dimension_id": "age", "value": "33", "node_id":80 },
+     ],
+});
 EOF

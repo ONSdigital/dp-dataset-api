@@ -27,8 +27,10 @@ type Backend interface {
 	GetInstances() (*models.InstanceResults, error)
 	GetInstance(ID string) (*models.Instance, error)
 	AddInstance(instance *models.Instance) (*models.Instance, error)
-	AddEventToInstance(instanceId string, event *models.Event) (error)
+	AddEventToInstance(instanceId string, event *models.Event) error
 	AddDimensionToInstance(id string, dimension *models.DimensionNode) error
 	UpdateObservationInserted(id string, observationInserted int64) error
 	GetDimensionNodesFromInstance(id string) (*models.DimensionNodeResults, error)
+	UpdateDimensionNodeID(id string, dimension *models.DimensionNode) error
+	GetUniqueDimensionValues(id, dimension string) (*models.DimensionValues, error)
 }

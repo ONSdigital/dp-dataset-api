@@ -29,9 +29,9 @@ func CreateDatasetAPI(secretKey string, router *mux.Router, dataStore DataStore)
 	api.router.HandleFunc("/instances/{id}", api.getInstance).Methods("GET")
 	api.router.HandleFunc("/instances/{id}/events", api.addEventToInstance).Methods("POST")
 	api.router.HandleFunc("/instances/{id}/dimensions", api.getDimensionNodes).Methods("GET")
-	api.router.HandleFunc("/instances/{id}/dimensions/{dimensions}/options/{value}", api.addDimensionToInstance).Methods("PUT")
-	api.router.HandleFunc("/instances/{id}/dimensions/{dimensions}/options/{value}/node_id/{node_id}", api.addNodeIdToDimension).Methods("PUT")
-	api.router.HandleFunc("/instances/{instance_id}/inserted_observations/{inserted_observations}", api.updateObservations).Methods("PUT")
-	// /instances/{instance_id}/inserted_observations/{inserted_observations}
+	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options", api.getUniqueDimensions).Methods("GET")
+	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}", api.addDimensionToInstance).Methods("PUT")
+	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}/node_id/{node_id}", api.addNodeIdToDimension).Methods("PUT")
+	api.router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", api.updateObservations).Methods("PUT")
 	return &api
 }

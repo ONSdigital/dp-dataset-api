@@ -19,8 +19,7 @@ func (api *DatasetAPI) getInstances(w http.ResponseWriter, r *http.Request) {
 
 	bytes, err := json.Marshal(results)
 	if err != nil {
-		log.Error(err, nil)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		InternalError(w, err)
 		return
 	}
 	writeBody(w, bytes)
@@ -39,8 +38,7 @@ func (api *DatasetAPI) getInstance(w http.ResponseWriter, r *http.Request) {
 
 	bytes, err := json.Marshal(instance)
 	if err != nil {
-		log.Error(err, nil)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		InternalError(w, err)
 		return
 	}
 	writeBody(w, bytes)
@@ -63,15 +61,13 @@ func (api *DatasetAPI) addInstance(w http.ResponseWriter, r *http.Request) {
 	}
 	instance, err = api.dataStore.Backend.AddInstance(instance)
 	if err != nil {
-		log.Error(err, nil)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		InternalError(w, err)
 		return
 	}
 
 	bytes, err := json.Marshal(instance)
 	if err != nil {
-		log.Error(err, nil)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		InternalError(w, err)
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
@@ -127,7 +123,7 @@ func (api *DatasetAPI) addNodeIdToDimension(w http.ResponseWriter, r *http.Reque
 	value := vars["value"]
 	nodeId := vars["node_id"]
 	dim := models.DimensionNode{Name: dimensionName, Value: value, NodeId: nodeId}
-	err := api.dataStore.Backend.AddDimensionToInstance(id, &dim)
+	err := api.dataStore.Backend.UpdateDimensionNodeID(id, &dim)
 	if err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
@@ -163,12 +159,37 @@ func (api *DatasetAPI) getDimensionNodes(w http.ResponseWriter, r *http.Request)
 	}
 	bytes, err := json.Marshal(results)
 	if err != nil {
-		log.Error(err, nil)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		InternalError(w, err)
 		return
 	}
 	writeBody(w, bytes)
 	log.Debug("get dimension nodes", log.Data{"instance": id})
+}
+
+func (api *DatasetAPI) getUniqueDimensions(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	dimension := vars["dimension"]
+	values, err := api.dataStore.Backend.GetUniqueDimensionValues(id, dimension)
+	if err != nil {
+		log.Error(err, nil)
+		handleErrorType(err, w)
+		return
+	}
+
+	bytes, err := json.Marshal(values)
+	if err != nil {
+		InternalError(w, err)
+		return
+	}
+	writeBody(w, bytes)
+	log.Debug("get dimension values", log.Data{"instance": id})
+
+}
+
+func InternalError(w http.ResponseWriter, err error) {
+	log.Error(err, nil)
+	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
 func writeBody(w http.ResponseWriter, bytes []byte) {

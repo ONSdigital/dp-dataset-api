@@ -24,7 +24,7 @@ func TestGetInstancesReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
@@ -43,7 +43,7 @@ func TestGetInstancesReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
@@ -62,7 +62,7 @@ func TestGetInstanceReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
@@ -81,7 +81,7 @@ func TestGetInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
@@ -101,7 +101,7 @@ func TestAddInstancesReturnsCreated(t *testing.T) {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusCreated)
 		So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 1)
@@ -121,7 +121,7 @@ func TestAddInstancesReturnsBadRequest(t *testing.T) {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
@@ -136,7 +136,7 @@ func TestAddInstancesReturnsBadRequest(t *testing.T) {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
@@ -155,7 +155,7 @@ func TestAddInstancesReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 1)
@@ -175,7 +175,7 @@ func TestAddEventToInstanceReturnsOk(t *testing.T) {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.AddEventToInstanceCalls()), ShouldEqual, 1)
@@ -191,7 +191,7 @@ func TestAddEventToInstanceReturnsBadRequest(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
@@ -202,7 +202,7 @@ func TestAddEventToInstanceReturnsBadRequest(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
@@ -221,7 +221,7 @@ func TestAddEventToInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.AddEventToInstanceCalls()), ShouldEqual, 1)
@@ -240,7 +240,7 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
@@ -259,7 +259,7 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
@@ -278,7 +278,7 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
@@ -292,15 +292,15 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T)  {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			AddDimensionToInstanceFunc: func(id string, event *models.DimensionNode) error {
+			UpdateDimensionNodeIDFunc: func(id string, event *models.DimensionNode) error {
 				return nil
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -311,15 +311,15 @@ func TestAddNodeIDToDimensionReturnsBadRequest(t *testing.T)  {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			AddDimensionToInstanceFunc: func(id string, event *models.DimensionNode) error {
+			UpdateDimensionNodeIDFunc: func(id string, event *models.DimensionNode) error {
 				return api_errors.DimensionNodeNotFound
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -330,15 +330,15 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T)  {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			AddDimensionToInstanceFunc: func(id string, event *models.DimensionNode) error {
+			UpdateDimensionNodeIDFunc: func(id string, event *models.DimensionNode) error {
 				return internalError
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -354,7 +354,7 @@ func TestInsertObservationsReturnsOk(t *testing.T)  {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
@@ -369,7 +369,7 @@ func TestInsertObservationsReturnsBadRequest(t *testing.T)  {
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
@@ -387,7 +387,7 @@ func TestInsertObservationsReturnsNotFound(t *testing.T)  {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
@@ -406,7 +406,7 @@ func TestGetDimensionNodesReturnsOk(t *testing.T)  {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDimensionNodesFromInstanceCalls()), ShouldEqual, 1)
@@ -425,7 +425,7 @@ func TestGetDimensionNodesReturnsNotFound(t *testing.T)  {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.GetDimensionNodesFromInstanceCalls()), ShouldEqual, 1)
@@ -444,9 +444,66 @@ func TestGetDimensionNodesReturnsInternalError(t *testing.T)  {
 			},
 		}
 
-		api := CreateDatasetAPI("123", mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetDimensionNodesFromInstanceCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestGetUniqueDimensionValuesReturnsOk(t *testing.T)  {
+	t.Parallel()
+	Convey("", t, func() {
+		r, err := http.NewRequest("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			GetUniqueDimensionValuesFunc: func(id, dimension string) (*models.DimensionValues, error) {
+				return &models.DimensionValues{}, nil
+			},
+		}
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.GetUniqueDimensionValuesCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestGetUniqueDimensionValuesReturnsNotFound(t *testing.T)  {
+	t.Parallel()
+	Convey("", t, func() {
+		r, err := http.NewRequest("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			GetUniqueDimensionValuesFunc: func(id, dimension string) (*models.DimensionValues, error) {
+				return nil, api_errors.InstanceNotFound
+			},
+		}
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(len(mockedDataStore.GetUniqueDimensionValuesCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestGetUniqueDimensionValuesReturnsInternalError(t *testing.T)  {
+	t.Parallel()
+	Convey("", t, func() {
+		r, err := http.NewRequest("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			GetUniqueDimensionValuesFunc: func(id, dimension string) (*models.DimensionValues, error) {
+				return nil, internalError
+			},
+		}
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.GetUniqueDimensionValuesCalls()), ShouldEqual, 1)
 	})
 }

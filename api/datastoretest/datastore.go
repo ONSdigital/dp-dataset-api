@@ -19,8 +19,10 @@ var (
 	lockBackendMockGetEditions                   sync.RWMutex
 	lockBackendMockGetInstance                   sync.RWMutex
 	lockBackendMockGetInstances                  sync.RWMutex
+	lockBackendMockGetUniqueDimensionValues      sync.RWMutex
 	lockBackendMockGetVersion                    sync.RWMutex
 	lockBackendMockGetVersions                   sync.RWMutex
+	lockBackendMockUpdateDimensionNodeID         sync.RWMutex
 	lockBackendMockUpdateObservationInserted     sync.RWMutex
 	lockBackendMockUpsertContact                 sync.RWMutex
 	lockBackendMockUpsertDataset                 sync.RWMutex
@@ -64,11 +66,17 @@ var (
 //             GetInstancesFunc: func() (*models.InstanceResults, error) {
 // 	               panic("TODO: mock out the GetInstances method")
 //             },
+//             GetUniqueDimensionValuesFunc: func(id string, dimension string) (*models.DimensionValues, error) {
+// 	               panic("TODO: mock out the GetUniqueDimensionValues method")
+//             },
 //             GetVersionFunc: func(datasetID string, editionID string, versionID string) (*models.Version, error) {
 // 	               panic("TODO: mock out the GetVersion method")
 //             },
 //             GetVersionsFunc: func(datasetID string, editionID string) (*models.VersionResults, error) {
 // 	               panic("TODO: mock out the GetVersions method")
+//             },
+//             UpdateDimensionNodeIDFunc: func(id string, dimension *models.DimensionNode) error {
+// 	               panic("TODO: mock out the UpdateDimensionNodeID method")
 //             },
 //             UpdateObservationInsertedFunc: func(id string, observationInserted int64) error {
 // 	               panic("TODO: mock out the UpdateObservationInserted method")
@@ -122,11 +130,17 @@ type BackendMock struct {
 	// GetInstancesFunc mocks the GetInstances method.
 	GetInstancesFunc func() (*models.InstanceResults, error)
 
+	// GetUniqueDimensionValuesFunc mocks the GetUniqueDimensionValues method.
+	GetUniqueDimensionValuesFunc func(id string, dimension string) (*models.DimensionValues, error)
+
 	// GetVersionFunc mocks the GetVersion method.
 	GetVersionFunc func(datasetID string, editionID string, versionID string) (*models.Version, error)
 
 	// GetVersionsFunc mocks the GetVersions method.
 	GetVersionsFunc func(datasetID string, editionID string) (*models.VersionResults, error)
+
+	// UpdateDimensionNodeIDFunc mocks the UpdateDimensionNodeID method.
+	UpdateDimensionNodeIDFunc func(id string, dimension *models.DimensionNode) error
 
 	// UpdateObservationInsertedFunc mocks the UpdateObservationInserted method.
 	UpdateObservationInsertedFunc func(id string, observationInserted int64) error
@@ -197,6 +211,13 @@ type BackendMock struct {
 		// GetInstances holds details about calls to the GetInstances method.
 		GetInstances []struct {
 		}
+		// GetUniqueDimensionValues holds details about calls to the GetUniqueDimensionValues method.
+		GetUniqueDimensionValues []struct {
+			// Id is the id argument value.
+			Id string
+			// Dimension is the dimension argument value.
+			Dimension string
+		}
 		// GetVersion holds details about calls to the GetVersion method.
 		GetVersion []struct {
 			// DatasetID is the datasetID argument value.
@@ -212,6 +233,13 @@ type BackendMock struct {
 			DatasetID string
 			// EditionID is the editionID argument value.
 			EditionID string
+		}
+		// UpdateDimensionNodeID holds details about calls to the UpdateDimensionNodeID method.
+		UpdateDimensionNodeID []struct {
+			// Id is the id argument value.
+			Id string
+			// Dimension is the dimension argument value.
+			Dimension *models.DimensionNode
 		}
 		// UpdateObservationInserted holds details about calls to the UpdateObservationInserted method.
 		UpdateObservationInserted []struct {
@@ -563,6 +591,41 @@ func (mock *BackendMock) GetInstancesCalls() []struct {
 	return calls
 }
 
+// GetUniqueDimensionValues calls GetUniqueDimensionValuesFunc.
+func (mock *BackendMock) GetUniqueDimensionValues(id string, dimension string) (*models.DimensionValues, error) {
+	if mock.GetUniqueDimensionValuesFunc == nil {
+		panic("moq: BackendMock.GetUniqueDimensionValuesFunc is nil but Backend.GetUniqueDimensionValues was just called")
+	}
+	callInfo := struct {
+		Id        string
+		Dimension string
+	}{
+		Id:        id,
+		Dimension: dimension,
+	}
+	lockBackendMockGetUniqueDimensionValues.Lock()
+	mock.calls.GetUniqueDimensionValues = append(mock.calls.GetUniqueDimensionValues, callInfo)
+	lockBackendMockGetUniqueDimensionValues.Unlock()
+	return mock.GetUniqueDimensionValuesFunc(id, dimension)
+}
+
+// GetUniqueDimensionValuesCalls gets all the calls that were made to GetUniqueDimensionValues.
+// Check the length with:
+//     len(mockedBackend.GetUniqueDimensionValuesCalls())
+func (mock *BackendMock) GetUniqueDimensionValuesCalls() []struct {
+	Id        string
+	Dimension string
+} {
+	var calls []struct {
+		Id        string
+		Dimension string
+	}
+	lockBackendMockGetUniqueDimensionValues.RLock()
+	calls = mock.calls.GetUniqueDimensionValues
+	lockBackendMockGetUniqueDimensionValues.RUnlock()
+	return calls
+}
+
 // GetVersion calls GetVersionFunc.
 func (mock *BackendMock) GetVersion(datasetID string, editionID string, versionID string) (*models.Version, error) {
 	if mock.GetVersionFunc == nil {
@@ -634,6 +697,41 @@ func (mock *BackendMock) GetVersionsCalls() []struct {
 	lockBackendMockGetVersions.RLock()
 	calls = mock.calls.GetVersions
 	lockBackendMockGetVersions.RUnlock()
+	return calls
+}
+
+// UpdateDimensionNodeID calls UpdateDimensionNodeIDFunc.
+func (mock *BackendMock) UpdateDimensionNodeID(id string, dimension *models.DimensionNode) error {
+	if mock.UpdateDimensionNodeIDFunc == nil {
+		panic("moq: BackendMock.UpdateDimensionNodeIDFunc is nil but Backend.UpdateDimensionNodeID was just called")
+	}
+	callInfo := struct {
+		Id        string
+		Dimension *models.DimensionNode
+	}{
+		Id:        id,
+		Dimension: dimension,
+	}
+	lockBackendMockUpdateDimensionNodeID.Lock()
+	mock.calls.UpdateDimensionNodeID = append(mock.calls.UpdateDimensionNodeID, callInfo)
+	lockBackendMockUpdateDimensionNodeID.Unlock()
+	return mock.UpdateDimensionNodeIDFunc(id, dimension)
+}
+
+// UpdateDimensionNodeIDCalls gets all the calls that were made to UpdateDimensionNodeID.
+// Check the length with:
+//     len(mockedBackend.UpdateDimensionNodeIDCalls())
+func (mock *BackendMock) UpdateDimensionNodeIDCalls() []struct {
+	Id        string
+	Dimension *models.DimensionNode
+} {
+	var calls []struct {
+		Id        string
+		Dimension *models.DimensionNode
+	}
+	lockBackendMockUpdateDimensionNodeID.RLock()
+	calls = mock.calls.UpdateDimensionNodeID
+	lockBackendMockUpdateDimensionNodeID.RUnlock()
 	return calls
 }
 
