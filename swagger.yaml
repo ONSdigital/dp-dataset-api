@@ -155,8 +155,10 @@ paths:
       produces:
       - "application/json"
       responses:
-        200:
-          description: "A json list containing datasets which have been published"
+        201:
+          description: "A json object containing a dataset which has been published"
+          schema:
+            $ref: '#/definitions/NewDatasetResponse'
         400:
           description: "Invalid request body"
         500:
@@ -172,7 +174,7 @@ paths:
         200:
           description: "A json list containing datasets which have been published"
           schema:
-            $ref: '#/definitions/Datasets'
+            $ref: '#/definitions/DatasetResponse'
         500:
           $ref: '#/responses/InternalError'
   /datasets/{id}:
@@ -187,9 +189,9 @@ paths:
         200:
           description: "A json object for a single Dataset"
           schema:
-            $ref: '#/definitions/Dataset'
+            $ref: '#/definitions/DatasetResponse'
         404:
-          description: "No dataset was found using the id provided"
+          description: "No dataset was foundusing the id provided"
         500:
           $ref: '#/responses/InternalError'
   /datasets/{id}/editions:
@@ -222,6 +224,8 @@ paths:
       responses:
         201:
           description: "A json object containing an edition"
+          schema:
+            $ref: '#/definitions/Edition'
         400:
           description: "Invalid request body"
         404:
@@ -246,6 +250,25 @@ paths:
         500:
           $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}/versions:
+    post:
+      tags:
+      - "Private user"
+      summary: "Create a version of a dataset edition"
+      description: "Create a version of a dataset edition"
+      parameters:
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/new_version'
+      responses:
+        201:
+          description: "A json object containing a version"
+          schema:
+            $ref: '#/definitions/NewVersionResponse'
+        400:
+          description: "Invalid request body"
+        404:
+          description: "No dataset edition was found using the id and edition provided"
+        500:
+          $ref: '#/responses/InternalError'
     get:
       tags:
       - "Public"
@@ -264,24 +287,6 @@ paths:
         500:
           $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}/versions/{version}:
-    post:
-      tags:
-      - "Private user"
-      summary: "Create a version of a dataset edition"
-      description: "Create a version of a dataset edition"
-      parameters:
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/new_version'
-      - $ref: '#/parameters/version'
-      responses:
-        201:
-          description: "A json object containing a version"
-        400:
-          description: "Invalid request body"
-        404:
-          description: "No dataset edition was found using the id and edition provided"
-        500:
-          $ref: '#/responses/InternalError'
     get:
       tags:
       - "Public"
@@ -576,7 +581,7 @@ definitions:
       items:
         type: array
         items:
-          $ref: '#/definitions/Dataset'
+          $ref: '#/definitions/DatasetResponse'
       items_per_page:
         description: "The number of datasets requested"
         type: integer
@@ -587,6 +592,17 @@ definitions:
         description: "The total number of datasets"
         readOnly: true
         type: integer
+  DatasetResponse:
+    description: ""
+    allOf:
+    - type: object
+      properties:
+        id:
+          readOnly: true
+          type: string
+          description: "An unique id for a dataset"
+          example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
+    - $ref: "#/definitions/Dataset"
   Dataset:
     description: "The dataset"
     type: object
@@ -599,11 +615,6 @@ definitions:
       description:
         type: string
         description: "A description for a dataset"
-      id:
-        readOnly: true
-        type: string
-        description: "An unique id for a dataset"
-        example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
       links:
         $ref: '#/definitions/DatasetLinks'
       next_release:
@@ -760,6 +771,28 @@ definitions:
         type: string
         readOnly: true
         description: "The last time an event happened"
+  NewDatasetResponse:
+    description: "A model for the response body when creating a new dataset"
+    type: object
+    properties:
+      id:
+        type: string
+        description: "An unique id for a dataset"
+        example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
+      current:
+        $ref: "#/definitions/Dataset"
+      next:
+        $ref: "#/definitions/Dataset"
+  NewVersionResponse:
+    description: "A model for the response body when creating a new version of a dataset edition"
+    allOf:
+      - type: object
+        properties:
+          id:
+            type: string
+            description: "An unique id for a dataset"
+            example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91CD"
+      - $ref: "#/definitions/Version"
   Publisher:
     description: "The publisher of the dataset"
     type: object
@@ -833,6 +866,7 @@ definitions:
         $ref: '#/definitions/State'
       version:
         description: "The number of the dataset edition version"
+        example: 1
         readOnly: true
         type: integer
   VersionLinks:
