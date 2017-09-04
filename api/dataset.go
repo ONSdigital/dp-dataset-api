@@ -12,7 +12,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-const publishedState = "published"
+const state = "published"
 
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	results, err := api.dataStore.Backend.GetDatasets()
@@ -171,11 +171,11 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	dataset, err := models.CreateDataset(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 	defer r.Body.Close()
 
 	datasetID := dataset.ID
-	dataset.ID = datasetID
 	dataset.Links.Self = "/datasets/" + datasetID
 	dataset.Links.Editions = "/datasets/" + datasetID + "/editions"
 	update := bson.M{
@@ -193,6 +193,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusCreated)
+	log.Debug("upsert dataset", log.Data{"dataset_id": datasetID})
 }
 
 func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
@@ -203,6 +204,7 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 	edition, err := models.CreateEdition(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 	defer r.Body.Close()
 
@@ -226,6 +228,7 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusCreated)
+	log.Debug("upsert edition", log.Data{"dataset_id": datasetID, "edition": editionID})
 }
 
 func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
@@ -237,6 +240,7 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 	version, err := models.CreateVersion(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 	defer r.Body.Close()
 
@@ -260,7 +264,7 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if version.State == publishedState {
+	if version.State == state {
 		updateDataset := bson.M{
 			"$set": bson.M{
 				"links.latest_version.link": version.Links.Self,
@@ -280,6 +284,8 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusCreated)
+
+	log.Debug("upsert version", log.Data{"dataset_id": datasetID, "edition": editionID, "version": version})
 }
 
 func handleErrorType(err error, w http.ResponseWriter) {

@@ -55,7 +55,7 @@ db.datasets.insert({
     },
     "theme": "population",
     "title": "CensusEthnicity",
-    "state": "unpublished",
+    "state": "created",
     "updated_at": "2017-08-25T15:09:11.829+01:00"
 });
 db.editions.insert({
@@ -83,7 +83,7 @@ db.editions.insert({
         "self": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017",
         "versions": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017/versions"
     },
-    "state": "unpublished",
+    "state": "created",
     "updated_at": "2017-08-25T15:09:11.829+01:00"
 });
 db.editions.insert({
@@ -97,7 +97,7 @@ db.editions.insert({
         "self": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34/editions/2011",
         "versions": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34/editions/2011/versions"
     },
-    "state": "unpublished",
+    "state": "created",
     "updated_at": "2017-08-25T15:09:11.829+01:00"
 });
 db.versions.insert({
@@ -138,7 +138,7 @@ db.versions.insert({
         "dimensions": ""
     },
     "release_date": "2016-08-24",
-    "state": "unpublished",
+    "state": "created",
     "updated_at": "2017-08-25T15:09:11.829+01:00",
     "version": "2"
 });
@@ -159,7 +159,7 @@ db.versions.insert({
         "dimensions": ""
     },
     "release_date": "2017-08-23",
-    "state": "unpublished",
+    "state": "created",
     "updated_at": "2017-08-25T15:09:11.829+01:00",
     "version": "1"
 });
@@ -180,7 +180,7 @@ db.versions.insert({
         "dimensions": ""
     },
     "release_date": "2011-04-30",
-    "state": "unpublished",
+    "state": "created",
     "updated_at": "2017-08-25T15:09:11.829+01:00",
     "version": "1"
 });

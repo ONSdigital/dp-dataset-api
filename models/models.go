@@ -10,7 +10,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-const unpublished = "unpublished"
+const created = "created"
 
 // DatasetResults represents a structure for a list of datasets
 type DatasetResults struct {
@@ -107,7 +107,7 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 	// Create unique id
 	dataset.ID = uuid.NewV4().String()
 	// set default state to be unpublished
-	dataset.State = unpublished
+	dataset.State = created
 
 	err = json.Unmarshal(bytes, &dataset)
 	if err != nil {
@@ -127,8 +127,8 @@ func CreateEdition(reader io.Reader) (*Edition, error) {
 	var edition Edition
 	// Create unique id
 	edition.ID = (uuid.NewV4()).String()
-	// set default state to be unpublished
-	edition.State = unpublished
+	// set default state to be created
+	edition.State = created
 
 	err = json.Unmarshal(bytes, &edition)
 	if err != nil {
@@ -149,7 +149,7 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 	// Create unique id
 	version.ID = (uuid.NewV4()).String()
 	// set default state to be unpublished
-	version.State = unpublished
+	version.State = created
 
 	err = json.Unmarshal(bytes, &version)
 	if err != nil {

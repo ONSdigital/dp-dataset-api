@@ -1,10 +1,14 @@
 package api
 
 import (
+	"bytes"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
+
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/ONSdigital/dp-dataset-api/api/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -14,7 +18,14 @@ import (
 
 const secretKey = "coffee"
 
-var internalError = errors.New("internal error")
+var (
+	internalError   = errors.New("internal error")
+	badRequestError = errors.New("bad request")
+
+	datasetPayload = "{\"contact\":{\"email\":\"testing@hotmail.com\",\"name\":\"John Cox\",\"telephone\":\"01623 456789\"},\"description\":\"census\",\"title\":\"CensusEthnicity\",\"theme\":\"population\",\"periodicity\":\"yearly\",\"state\":\"completed\",\"next_release\":\"2016-04-04\",\"publisher\":{\"name\":\"The office of national statistics\",\"type\":\"government department\",\"url\":\"https://www.ons.gov.uk/\"}}"
+	editionPayload = "{\"edition\":\"2017\",\"state\":\"created\"}"
+	versionPayload = "{\"edition\":\"2017\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
+)
 
 func TestGetDatasetsReturnsOK(t *testing.T) {
 	t.Parallel()
@@ -241,5 +252,290 @@ func TestGetVersionReturnsInternalError(t *testing.T) {
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestPostDatasetsReturnsCreated(t *testing.T) {
+	t.Parallel()
+	Convey("", t, func() {
+		var b string
+		b = datasetPayload
+		r, err := http.NewRequest("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			UpsertDatasetFunc: func(string, interface{}) error {
+				return nil
+			},
+		}
+
+		update := bson.M{
+			"$set": bson.M{
+				"state": "created",
+			},
+			"$setOnInsert": bson.M{
+				"updated_at": time.Now(),
+			},
+		}
+		mockedDataStore.UpsertDataset("123", update)
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusCreated)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
+	})
+}
+
+func TestPostDatasetReturnsError(t *testing.T) {
+	t.Parallel()
+	Convey("When the request contain malformed json a bad request status is returned", t, func() {
+		var b string
+		b = "{"
+		r, err := http.NewRequest("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			UpsertDatasetFunc: func(string, interface{}) error {
+				return badRequestError
+			},
+		}
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
+		var b string
+		b = datasetPayload
+		r, err := http.NewRequest("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			UpsertDatasetFunc: func(string, interface{}) error {
+				return internalError
+			},
+		}
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestPostEditionReturnsCreated(t *testing.T) {
+	t.Parallel()
+	Convey("", t, func() {
+		var b string
+		b = editionPayload
+		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			UpsertEditionFunc: func(string, interface{}) error {
+				return nil
+			},
+		}
+
+		update := bson.M{
+			"$set": bson.M{
+				"state": "created",
+			},
+			"$setOnInsert": bson.M{
+				"updated_at": time.Now(),
+			},
+		}
+		mockedDataStore.UpsertEdition("2017", update)
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusCreated)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 2)
+	})
+}
+
+func TestPostEditionReturnsError(t *testing.T) {
+	t.Parallel()
+	Convey("When the request contain malformed json a bad request status is returned", t, func() {
+		var b string
+		b = "{"
+		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			UpsertEditionFunc: func(string, interface{}) error {
+				return badRequestError
+			},
+		}
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
+		var b string
+		b = editionPayload
+		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			UpsertEditionFunc: func(string, interface{}) error {
+				return internalError
+			},
+		}
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestPostVersionReturnsCreated(t *testing.T) {
+	t.Parallel()
+	Convey("When the json body does not contain a state", t, func() {
+		var b string
+		b = versionPayload
+		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			UpsertVersionFunc: func(string, interface{}) error {
+				return nil
+			},
+		}
+
+		update := bson.M{
+			"$set": bson.M{
+				"state": "created",
+			},
+			"$setOnInsert": bson.M{
+				"updated_at": time.Now(),
+			},
+		}
+		mockedDataStore.UpsertVersion("1", update)
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusCreated)
+		So(len(mockedDataStore.UpsertVersionCalls()), ShouldEqual, 2)
+	})
+
+	Convey("When the json body contains a state of published", t, func() {
+		var b string
+		b = "{\"edition\":\"2017\",\"state\":\"published\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
+		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			UpsertVersionFunc: func(string, interface{}) error {
+				return nil
+			},
+			UpsertDatasetFunc: func(string, interface{}) error {
+				return nil
+			},
+		}
+
+		update := bson.M{
+			"$set": bson.M{
+				"state": "published",
+			},
+			"$setOnInsert": bson.M{
+				"updated_at": time.Now(),
+			},
+		}
+		mockedDataStore.UpsertVersion("1", update)
+
+		updateDataset := bson.M{
+			"$set": bson.M{
+				"links.latest_version.link": "http://localhost:22000/datasets/123/edition/2017/versions/1",
+				"links.latest_version.id":   "1",
+			},
+			"$setOnInsert": bson.M{
+				"updated_at": time.Now(),
+			},
+		}
+		mockedDataStore.UpsertDataset("123", updateDataset)
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusCreated)
+		So(len(mockedDataStore.UpsertVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
+	})
+}
+
+func TestPostVersionReturnsError(t *testing.T) {
+	t.Parallel()
+	Convey("When the request contain malformed json a bad request status is returned", t, func() {
+		var b string
+		b = "{"
+		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			UpsertVersionFunc: func(string, interface{}) error {
+				return badRequestError
+			},
+		}
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.UpsertVersionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
+		var b string
+		b = versionPayload
+		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			UpsertVersionFunc: func(string, interface{}) error {
+				return internalError
+			},
+		}
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.UpsertVersionCalls()), ShouldEqual, 1)
+	})
+
+	Convey("When the api cannot connect to datastore to update dataset resource return an internal server error", t, func() {
+		var b string
+		b = "{\"edition\":\"2017\",\"state\":\"published\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
+		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			UpsertVersionFunc: func(string, interface{}) error {
+				return nil
+			},
+			UpsertDatasetFunc: func(string, interface{}) error {
+				return internalError
+			},
+		}
+
+		update := bson.M{
+			"$set": bson.M{
+				"state": "published",
+			},
+			"$setOnInsert": bson.M{
+				"updated_at": time.Now(),
+			},
+		}
+		mockedDataStore.UpsertVersion("1", update)
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.UpsertVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 	})
 }
