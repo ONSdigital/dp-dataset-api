@@ -26,6 +26,7 @@ type Backend interface {
 
 	GetInstances() (*models.InstanceResults, error)
 	GetInstance(ID string) (*models.Instance, error)
+	UpdateInstance(id string, instance *models.Instance) error
 	AddInstance(instance *models.Instance) (*models.Instance, error)
 	AddEventToInstance(instanceId string, event *models.Event) error
 	AddDimensionToInstance(dimension *models.DimensionNode) error

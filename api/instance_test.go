@@ -162,6 +162,61 @@ func TestAddInstancesReturnsInternalError(t *testing.T) {
 	})
 }
 
+func TestUpdateInstancesReturnsOk(t *testing.T) {
+	t.Parallel()
+	Convey("update to an instance returns an internal error", t, func() {
+		body := strings.NewReader(`{"state":  "completed"}`)
+		r, err := http.NewRequest("PUT", "http://localhost:21800/instances/123", body)
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			UpdateInstanceFunc: func(id string, i *models.Instance) (error) {
+				return nil
+			},
+		}
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestUpdateInstancesReturnsBadRequest(t *testing.T) {
+	t.Parallel()
+	Convey("update to an instance returns an bad request error", t, func() {
+		body := strings.NewReader(`{"state":`)
+		r, err := http.NewRequest("PUT", "http://localhost:21800/instances/123", body)
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{}
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+}
+
+func TestUpdateInstancesReturnsInternalError(t *testing.T) {
+	t.Parallel()
+	Convey("update to an instance returns an internal error", t, func() {
+		body := strings.NewReader(`{"state":  "completed"}`)
+		r, err := http.NewRequest("PUT", "http://localhost:21800/instances/123", body)
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			UpdateInstanceFunc: func(id string, i *models.Instance) (error) {
+				return internalError
+			},
+		}
+
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
+	})
+}
+
 func TestAddEventToInstanceReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("", t, func() {

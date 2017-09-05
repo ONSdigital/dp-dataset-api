@@ -59,6 +59,24 @@ func (m *Mongo) AddInstance(instance *models.Instance) (*models.Instance, error)
 	return instance, nil
 }
 
+// UpdateInstance with new properties
+func (m *Mongo) UpdateInstance(id string, instance *models.Instance) (error) {
+	s := session.Copy()
+	defer s.Close()
+
+	instance.InstanceID = uuid.NewV4().String()
+
+	info, err := s.DB(m.Database).C(INSTANCE_COLLECTION).Upsert(bson.M{"id": id}, bson.M{"$set": &instance})
+	if err != nil {
+		return err
+	}
+	if info.Updated == 0 {
+		return api_errors.InstanceNotFound
+	}
+
+	return nil
+}
+
 // AddEventToInstance to the instance collection
 func (m *Mongo) AddEventToInstance(instanceId string, event *models.Event) error {
 	s := session.Copy()
@@ -135,5 +153,16 @@ func (m *Mongo) GetDimensionNodesFromInstance(id string) (*models.DimensionNodeR
 
 // GetUniqueDimensionValues which are stored in mongodb collection
 func (m *Mongo) GetUniqueDimensionValues(id, dimension string) (*models.DimensionValues, error) {
-	return nil, nil
+	s := session.Copy()
+	defer s.Close()
+	var values []string
+	err := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Find(bson.M{"id": id, "name": dimension}).Distinct("value", &values)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(values) == 0 {
+		return nil, api_errors.DimensionNodeNotFound
+	}
+	return &models.DimensionValues{Name: dimension, Values: values}, nil
 }

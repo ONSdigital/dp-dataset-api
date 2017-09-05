@@ -75,6 +75,25 @@ func (api *DatasetAPI) addInstance(w http.ResponseWriter, r *http.Request) {
 	log.Debug("add instance", log.Data{"instance": instance})
 }
 
+func (api *DatasetAPI) updateInstance(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	defer r.Body.Close()
+	instance, err := models.CreateInstance(r.Body)
+	id := vars["id"]
+	if err != nil {
+		log.Error(err, nil)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = api.dataStore.Backend.UpdateInstance(id, instance)
+	if err != nil {
+		log.Error(err, nil)
+		handleErrorType(err, w)
+		return
+	}
+	log.Debug("updated instance", log.Data{"instance": id})
+}
+
 func (api *DatasetAPI) addEventToInstance(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
