@@ -232,9 +232,17 @@ db.createCollection("dimension.nodes");
 db.dimension.nodes.insert({
      "_id":"1",
      "id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
-     "dimensions": [
-       { "dimension_id": "age", "value": "32", "node_id":80 },
-       { "dimension_id": "age", "value": "33", "node_id":80 },
-     ],
+     "name": "age",
+     "value": "32",
+     "node_id":"80",
+
+});
+db.dimension.nodes.insert({
+     "_id":"2",
+     "id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
+     "name": "age",
+     "value": "37",
+     "node_id":"88",
+
 });
 EOF

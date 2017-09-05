@@ -107,8 +107,8 @@ func (api *DatasetAPI) addDimensionToInstance(w http.ResponseWriter, r *http.Req
 	id := vars["id"]
 	dimensionName := vars["dimension"]
 	value := vars["value"]
-	dim := models.DimensionNode{Name: dimensionName, Value: value}
-	err := api.dataStore.Backend.AddDimensionToInstance(id, &dim)
+	dim := models.DimensionNode{Name: dimensionName, Value: value, InstanceID: id}
+	err := api.dataStore.Backend.AddDimensionToInstance(&dim)
 	if err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
@@ -122,8 +122,8 @@ func (api *DatasetAPI) addNodeIdToDimension(w http.ResponseWriter, r *http.Reque
 	dimensionName := vars["dimension"]
 	value := vars["value"]
 	nodeId := vars["node_id"]
-	dim := models.DimensionNode{Name: dimensionName, Value: value, NodeId: nodeId}
-	err := api.dataStore.Backend.UpdateDimensionNodeID(id, &dim)
+	dim := models.DimensionNode{Name: dimensionName, Value: value, NodeId: nodeId, InstanceID: id}
+	err := api.dataStore.Backend.UpdateDimensionNodeID(&dim)
 	if err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)

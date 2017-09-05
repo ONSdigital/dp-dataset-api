@@ -235,7 +235,7 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			AddDimensionToInstanceFunc: func(id string, event *models.DimensionNode) error {
+			AddDimensionToInstanceFunc: func(event *models.DimensionNode) error {
 				return nil
 			},
 		}
@@ -254,7 +254,7 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			AddDimensionToInstanceFunc: func(id string, event *models.DimensionNode) error {
+			AddDimensionToInstanceFunc: func(event *models.DimensionNode) error {
 				return api_errors.DimensionNodeNotFound
 			},
 		}
@@ -273,7 +273,7 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			AddDimensionToInstanceFunc: func(id string, event *models.DimensionNode) error {
+			AddDimensionToInstanceFunc: func(event *models.DimensionNode) error {
 				return internalError
 			},
 		}
@@ -285,14 +285,14 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 	})
 }
 
-func TestAddNodeIDToDimensionReturnsOK(t *testing.T)  {
+func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("", t, func() {
 		r, err := http.NewRequest("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			UpdateDimensionNodeIDFunc: func(id string, event *models.DimensionNode) error {
+			UpdateDimensionNodeIDFunc: func(event *models.DimensionNode) error {
 				return nil
 			},
 		}
@@ -304,14 +304,14 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T)  {
 	})
 }
 
-func TestAddNodeIDToDimensionReturnsBadRequest(t *testing.T)  {
+func TestAddNodeIDToDimensionReturnsBadRequest(t *testing.T) {
 	t.Parallel()
 	Convey("", t, func() {
 		r, err := http.NewRequest("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			UpdateDimensionNodeIDFunc: func(id string, event *models.DimensionNode) error {
+			UpdateDimensionNodeIDFunc: func(event *models.DimensionNode) error {
 				return api_errors.DimensionNodeNotFound
 			},
 		}
@@ -323,14 +323,14 @@ func TestAddNodeIDToDimensionReturnsBadRequest(t *testing.T)  {
 	})
 }
 
-func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T)  {
+func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("", t, func() {
 		r, err := http.NewRequest("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			UpdateDimensionNodeIDFunc: func(id string, event *models.DimensionNode) error {
+			UpdateDimensionNodeIDFunc: func(event *models.DimensionNode) error {
 				return internalError
 			},
 		}
@@ -342,7 +342,7 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T)  {
 	})
 }
 
-func TestInsertObservationsReturnsOk(t *testing.T)  {
+func TestInsertObservationsReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("", t, func() {
 		r, err := http.NewRequest("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
@@ -361,7 +361,7 @@ func TestInsertObservationsReturnsOk(t *testing.T)  {
 	})
 }
 
-func TestInsertObservationsReturnsBadRequest(t *testing.T)  {
+func TestInsertObservationsReturnsBadRequest(t *testing.T) {
 	t.Parallel()
 	Convey("", t, func() {
 		r, err := http.NewRequest("PUT", "http://localhost:21800/instances/123/inserted_observations/aa12a", nil)
@@ -375,7 +375,7 @@ func TestInsertObservationsReturnsBadRequest(t *testing.T)  {
 	})
 }
 
-func TestInsertObservationsReturnsNotFound(t *testing.T)  {
+func TestInsertObservationsReturnsNotFound(t *testing.T) {
 	t.Parallel()
 	Convey("", t, func() {
 		r, err := http.NewRequest("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
@@ -394,7 +394,7 @@ func TestInsertObservationsReturnsNotFound(t *testing.T)  {
 	})
 }
 
-func TestGetDimensionNodesReturnsOk(t *testing.T)  {
+func TestGetDimensionNodesReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("", t, func() {
 		r, err := http.NewRequest("GET", "http://localhost:21800/instances/123/dimensions", nil)
@@ -413,7 +413,7 @@ func TestGetDimensionNodesReturnsOk(t *testing.T)  {
 	})
 }
 
-func TestGetDimensionNodesReturnsNotFound(t *testing.T)  {
+func TestGetDimensionNodesReturnsNotFound(t *testing.T) {
 	t.Parallel()
 	Convey("", t, func() {
 		r, err := http.NewRequest("GET", "http://localhost:21800/instances/123/dimensions", nil)
@@ -432,7 +432,7 @@ func TestGetDimensionNodesReturnsNotFound(t *testing.T)  {
 	})
 }
 
-func TestGetDimensionNodesReturnsInternalError(t *testing.T)  {
+func TestGetDimensionNodesReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("", t, func() {
 		r, err := http.NewRequest("GET", "http://localhost:21800/instances/123/dimensions", nil)
@@ -451,7 +451,7 @@ func TestGetDimensionNodesReturnsInternalError(t *testing.T)  {
 	})
 }
 
-func TestGetUniqueDimensionValuesReturnsOk(t *testing.T)  {
+func TestGetUniqueDimensionValuesReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("", t, func() {
 		r, err := http.NewRequest("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
@@ -470,7 +470,7 @@ func TestGetUniqueDimensionValuesReturnsOk(t *testing.T)  {
 	})
 }
 
-func TestGetUniqueDimensionValuesReturnsNotFound(t *testing.T)  {
+func TestGetUniqueDimensionValuesReturnsNotFound(t *testing.T) {
 	t.Parallel()
 	Convey("", t, func() {
 		r, err := http.NewRequest("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
@@ -489,7 +489,7 @@ func TestGetUniqueDimensionValuesReturnsNotFound(t *testing.T)  {
 	})
 }
 
-func TestGetUniqueDimensionValuesReturnsInternalError(t *testing.T)  {
+func TestGetUniqueDimensionValuesReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("", t, func() {
 		r, err := http.NewRequest("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)

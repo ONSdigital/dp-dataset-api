@@ -76,30 +76,28 @@ func (m *Mongo) AddEventToInstance(instanceId string, event *models.Event) error
 }
 
 // AddDimensionToInstance to the dimension collection
-func (m *Mongo) AddDimensionToInstance(id string, dimension *models.DimensionNode) error {
+func (m *Mongo) AddDimensionToInstance(dimension *models.DimensionNode) error {
 	s := session.Copy()
 	defer s.Close()
-	info, err := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Upsert(bson.M{"id": id}, bson.M{"$addToSet": bson.M{"dimensions": &dimension}})
+	_, err := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Upsert(bson.M{"id": dimension.InstanceID, "name": dimension.Name,
+		"value": dimension.Value}, &dimension)
 	if err != nil {
 		return err
-	}
-	if info.Updated == 0 {
-		return api_errors.InstanceNotFound
 	}
 	return nil
 }
 
 // UpdateDimensionNodeID to cache the id for other import processes
-func (m *Mongo) UpdateDimensionNodeID(id string, dimension *models.DimensionNode) error {
+func (m *Mongo) UpdateDimensionNodeID(dimension *models.DimensionNode) error {
 	s := session.Copy()
 	defer s.Close()
-	info, err := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Upsert(bson.M{"id": id, "dimensions.name": dimension.Name,
-		"dimensions.value": dimension.Value}, bson.M{"$set": bson.M{"dimensions.$.node_id": &dimension.NodeId}})
+	err := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Update(bson.M{"id": dimension.InstanceID, "name": dimension.Name,
+		"value": dimension.Value}, bson.M{"$set": bson.M{"node_id": &dimension.NodeId}})
+	if err == mgo.ErrNotFound {
+		return api_errors.InstanceNotFound
+	}
 	if err != nil {
 		return err
-	}
-	if info.Updated == 0 {
-		return api_errors.DatasetNotFound
 	}
 	return nil
 }
@@ -125,16 +123,17 @@ func (m *Mongo) UpdateObservationInserted(id string, observationInserted int64) 
 func (m *Mongo) GetDimensionNodesFromInstance(id string) (*models.DimensionNodeResults, error) {
 	s := session.Copy()
 	defer s.Close()
-	var dimensions models.DimensionNodeInformation
-	err := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Find(bson.M{"id": id}).Select(bson.M{"dimensions": 1}).One(&dimensions)
+	var dimensions []models.DimensionNode
+	iter := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Find(bson.M{"id": id}).Select(bson.M{"id": 0}).Iter()
+	err := iter.All(&dimensions)
 	if err != nil {
 		return nil, err
 	}
-	return &models.DimensionNodeResults{Items: dimensions.Dimensions}, nil
+
+	return &models.DimensionNodeResults{Items: dimensions}, nil
 }
 
 // GetUniqueDimensionValues which are stored in mongodb collection
 func (m *Mongo) GetUniqueDimensionValues(id, dimension string) (*models.DimensionValues, error) {
-
 	return nil, nil
 }

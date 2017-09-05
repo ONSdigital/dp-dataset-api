@@ -36,7 +36,7 @@ var (
 //
 //         // make and configure a mocked Backend
 //         mockedBackend := &BackendMock{
-//             AddDimensionToInstanceFunc: func(id string, dimension *models.DimensionNode) error {
+//             AddDimensionToInstanceFunc: func(dimension *models.DimensionNode) error {
 // 	               panic("TODO: mock out the AddDimensionToInstance method")
 //             },
 //             AddEventToInstanceFunc: func(instanceId string, event *models.Event) error {
@@ -75,7 +75,7 @@ var (
 //             GetVersionsFunc: func(datasetID string, editionID string) (*models.VersionResults, error) {
 // 	               panic("TODO: mock out the GetVersions method")
 //             },
-//             UpdateDimensionNodeIDFunc: func(id string, dimension *models.DimensionNode) error {
+//             UpdateDimensionNodeIDFunc: func(dimension *models.DimensionNode) error {
 // 	               panic("TODO: mock out the UpdateDimensionNodeID method")
 //             },
 //             UpdateObservationInsertedFunc: func(id string, observationInserted int64) error {
@@ -101,7 +101,7 @@ var (
 //     }
 type BackendMock struct {
 	// AddDimensionToInstanceFunc mocks the AddDimensionToInstance method.
-	AddDimensionToInstanceFunc func(id string, dimension *models.DimensionNode) error
+	AddDimensionToInstanceFunc func(dimension *models.DimensionNode) error
 
 	// AddEventToInstanceFunc mocks the AddEventToInstance method.
 	AddEventToInstanceFunc func(instanceId string, event *models.Event) error
@@ -140,7 +140,7 @@ type BackendMock struct {
 	GetVersionsFunc func(datasetID string, editionID string) (*models.VersionResults, error)
 
 	// UpdateDimensionNodeIDFunc mocks the UpdateDimensionNodeID method.
-	UpdateDimensionNodeIDFunc func(id string, dimension *models.DimensionNode) error
+	UpdateDimensionNodeIDFunc func(dimension *models.DimensionNode) error
 
 	// UpdateObservationInsertedFunc mocks the UpdateObservationInserted method.
 	UpdateObservationInsertedFunc func(id string, observationInserted int64) error
@@ -161,8 +161,6 @@ type BackendMock struct {
 	calls struct {
 		// AddDimensionToInstance holds details about calls to the AddDimensionToInstance method.
 		AddDimensionToInstance []struct {
-			// Id is the id argument value.
-			Id string
 			// Dimension is the dimension argument value.
 			Dimension *models.DimensionNode
 		}
@@ -236,8 +234,6 @@ type BackendMock struct {
 		}
 		// UpdateDimensionNodeID holds details about calls to the UpdateDimensionNodeID method.
 		UpdateDimensionNodeID []struct {
-			// Id is the id argument value.
-			Id string
 			// Dimension is the dimension argument value.
 			Dimension *models.DimensionNode
 		}
@@ -280,32 +276,28 @@ type BackendMock struct {
 }
 
 // AddDimensionToInstance calls AddDimensionToInstanceFunc.
-func (mock *BackendMock) AddDimensionToInstance(id string, dimension *models.DimensionNode) error {
+func (mock *BackendMock) AddDimensionToInstance(dimension *models.DimensionNode) error {
 	if mock.AddDimensionToInstanceFunc == nil {
 		panic("moq: BackendMock.AddDimensionToInstanceFunc is nil but Backend.AddDimensionToInstance was just called")
 	}
 	callInfo := struct {
-		Id        string
 		Dimension *models.DimensionNode
 	}{
-		Id:        id,
 		Dimension: dimension,
 	}
 	lockBackendMockAddDimensionToInstance.Lock()
 	mock.calls.AddDimensionToInstance = append(mock.calls.AddDimensionToInstance, callInfo)
 	lockBackendMockAddDimensionToInstance.Unlock()
-	return mock.AddDimensionToInstanceFunc(id, dimension)
+	return mock.AddDimensionToInstanceFunc(dimension)
 }
 
 // AddDimensionToInstanceCalls gets all the calls that were made to AddDimensionToInstance.
 // Check the length with:
 //     len(mockedBackend.AddDimensionToInstanceCalls())
 func (mock *BackendMock) AddDimensionToInstanceCalls() []struct {
-	Id        string
 	Dimension *models.DimensionNode
 } {
 	var calls []struct {
-		Id        string
 		Dimension *models.DimensionNode
 	}
 	lockBackendMockAddDimensionToInstance.RLock()
@@ -701,32 +693,28 @@ func (mock *BackendMock) GetVersionsCalls() []struct {
 }
 
 // UpdateDimensionNodeID calls UpdateDimensionNodeIDFunc.
-func (mock *BackendMock) UpdateDimensionNodeID(id string, dimension *models.DimensionNode) error {
+func (mock *BackendMock) UpdateDimensionNodeID(dimension *models.DimensionNode) error {
 	if mock.UpdateDimensionNodeIDFunc == nil {
 		panic("moq: BackendMock.UpdateDimensionNodeIDFunc is nil but Backend.UpdateDimensionNodeID was just called")
 	}
 	callInfo := struct {
-		Id        string
 		Dimension *models.DimensionNode
 	}{
-		Id:        id,
 		Dimension: dimension,
 	}
 	lockBackendMockUpdateDimensionNodeID.Lock()
 	mock.calls.UpdateDimensionNodeID = append(mock.calls.UpdateDimensionNodeID, callInfo)
 	lockBackendMockUpdateDimensionNodeID.Unlock()
-	return mock.UpdateDimensionNodeIDFunc(id, dimension)
+	return mock.UpdateDimensionNodeIDFunc(dimension)
 }
 
 // UpdateDimensionNodeIDCalls gets all the calls that were made to UpdateDimensionNodeID.
 // Check the length with:
 //     len(mockedBackend.UpdateDimensionNodeIDCalls())
 func (mock *BackendMock) UpdateDimensionNodeIDCalls() []struct {
-	Id        string
 	Dimension *models.DimensionNode
 } {
 	var calls []struct {
-		Id        string
 		Dimension *models.DimensionNode
 	}
 	lockBackendMockUpdateDimensionNodeID.RLock()

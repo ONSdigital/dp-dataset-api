@@ -34,16 +34,12 @@ type Event struct {
 	MessageOffset string     `bson:"message_offset,omitempty" json:"message_offset"`
 }
 
-type DimensionNodeInformation struct {
-	ID string  `bson:"id,omitempty"`
-	Dimensions []DimensionNode  `bson:"dimensions,omitempty"`
-}
-
 // DimensionNode which is cached for the import process
 type DimensionNode struct {
-	Name   string `bson:"name,omitempty"           json:"dimension_id"`
-	Value  string `bson:"value,omitempty"          json:"value"`
-	NodeId string `bson:"node_id,omitempty"        json:"node_id"`
+	Name       string `bson:"name,omitempty"           json:"dimension_id"`
+	Value      string `bson:"value,omitempty"          json:"value"`
+	NodeId     string `bson:"node_id,omitempty"        json:"node_id"`
+	InstanceID string `bson:"id,omitempty"             json:"instance_id,omitempty"`
 }
 
 // InstanceResults wraps instances objects for pagination
