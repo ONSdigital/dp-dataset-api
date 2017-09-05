@@ -57,8 +57,8 @@ parameters:
     required: true
     schema:
       $ref: '#/definitions/Instance'
-  items_per_page:
-    name: items_per_page
+  limit:
+    name: limit
     description: "The number of datasets to be returned"
     in: query
     type: integer
@@ -89,16 +89,16 @@ parameters:
    in: path
    required: true
    type: string
+  offset:
+    name: offset
+    description: "The first row of datasets to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
+    in: query
+    type: integer
   query:
     name: q
     description: "The query text to search datasets with"
     in: query
     type: string
-  start_index:
-    name: start_index
-    description: "The first row of datasets to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
-    in: query
-    type: integer
   value:
    name: value
    description: "A value to set within a type"
@@ -130,9 +130,9 @@ paths:
       summary: "Search for datasets"
       description: "Perform a search on all published datasets by the ONS"
       parameters:
-      - $ref: '#/parameters/items_per_page'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
       - $ref: '#/parameters/query'
-      - $ref: '#/parameters/start_index'
       produces:
       - "application/json"
       responses:
@@ -158,7 +158,7 @@ paths:
         201:
           description: "A json object containing a dataset which has been published"
           schema:
-            $ref: '#/definitions/DatasetResponse'
+            $ref: '#/definitions/NewDatasetResponse'
         400:
           description: "Invalid request body"
         401:
@@ -178,7 +178,7 @@ paths:
         200:
           description: "A json list containing datasets which have been published"
           schema:
-            $ref: '#/definitions/DatasetResponse'
+            $ref: '#/definitions/Datasets'
         500:
           $ref: '#/responses/InternalError'
   /datasets/{id}:
@@ -636,18 +636,18 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/DatasetResponse'
-      items_per_page:
+      limit:
         description: "The number of datasets requested"
         type: integer
-      start_index:
-        description: "The first row of datasets to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
+      offset:
+        description: "The first row of datasets to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
         type: integer
       total_count:
         description: "The total number of datasets"
         readOnly: true
         type: integer
   DatasetResponse:
-    description: ""
+    description: "A model for the response body when getting a dataset"
     allOf:
     - type: object
       properties:
@@ -739,11 +739,11 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Edition'
-      items_per_page:
+      limit:
         description: "The number of editions requested for a dataset"
         type: integer
-      start_index:
-        description: "The first row of editions for a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
+      offset:
+        description: "The first row of editions for a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
         type: integer
       total_count:
         description: "The total number of editions against a dataset"
@@ -898,11 +898,11 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Version'
-      items_per_page:
+      limit:
         description: "The number of versions requested for an edition of a dataset"
         type: integer
-      start_index:
-        description: "The first row of versions for an edition of a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
+      offset:
+        description: "The first row of versions for an edition of a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
         type: integer
       total_count:
         description: "The total number of versions for an edition of a dataset"
@@ -1005,11 +1005,11 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Dimension'
-      items_per_page:
+      limit:
         description: "The number of dimensions requested for a version from an edition of a dataset"
         type: integer
-      start_index:
-        description: "The first row of dimension for a version from an edition of a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the items_per_page parameter"
+      offset:
+        description: "The first row of dimension for a version from an edition of a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
         type: integer
       total_count:
         description: "The total number of dimensions against a version from an edition of a dataset"
