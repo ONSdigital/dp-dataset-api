@@ -57,6 +57,13 @@ parameters:
     required: true
     schema:
       $ref: '#/definitions/Instance'
+  import_job:
+    name: import_job
+    description: "A job to link to an instance"
+    in: body
+    required: true
+    schema:
+      $ref: '#/definitions/ImportJob'
   limit:
     name: limit
     description: "The number of datasets to be returned"
@@ -97,6 +104,11 @@ parameters:
   query:
     name: q
     description: "The query text to search datasets with"
+    in: query
+    type: string
+  state:
+    name: "state"
+    description: "Query data based of there state"
     in: query
     type: string
   value:
@@ -398,6 +410,43 @@ paths:
           description: "No version was found for an edition of a dataset using the id, edition and version provided or the dimension does not exist within the dataset"
         500:
           $ref: '#/responses/InternalError'
+  /instances:
+    get:
+      tags:
+      - "Private user"
+      summary: "Get a list of instances"
+      description: "Get a list of instances which has been paged"
+      parameters:
+        - $ref: '#/parameters/limit'
+        - $ref: '#/parameters/offset'
+        - $ref: '#/parameters/state'
+      produces:
+      - "application/json"
+      security:
+      - FlorenceAPIKey: []
+      responses:
+        200:
+          description: "Return a list of instance state"
+          schema:
+            $ref: '#/definitions/Instances'
+        500:
+          $ref: '#/responses/InternalError'
+    post:
+      tags:
+      - "Private"
+      summary: "Create an instance"
+      description: "Create an instance which will be imported"
+      parameters:
+      - $ref: '#/parameters/import_job'
+      produces:
+      - "application/json"
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "Create an instance then returned it"
+        500:
+          $ref: '#/responses/InternalError'
   /instances/{instance_id}:
     get:
       tags:
@@ -415,6 +464,25 @@ paths:
           description: "Return a single instance state"
           schema:
             $ref: '#/definitions/Instance'
+        404:
+          description: "InstanceId does not match any import jobs"
+        500:
+          $ref: '#/responses/InternalError'
+    put:
+      tags:
+      - "Private"
+      summary: "Update an instances properties"
+      description: "Update an instance by providing an unique id and a set of properties to over write"
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/instance'
+      produces:
+      - "application/json"
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "The instance has been updated"
         404:
           description: "InstanceId does not match any import jobs"
         500:
@@ -804,9 +872,7 @@ definitions:
             description: "The URL for the job containing this instance"
             example: 'http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35'
       state:
-        type: string
-        description: |
-          The state of the import job
+        $ref: '#/definitions/State'
       events:
         type: array
         readOnly: true
@@ -825,6 +891,35 @@ definitions:
         type: string
         readOnly: true
         description: "The last time an event happened"
+  Instances:
+    type: object
+    properties:
+      count:
+        description: "The number of editions returned for a dataset"
+        type: integer
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Instance'
+      limit:
+        description: "The number of editions requested for a dataset"
+        type: integer
+      offset:
+        description: "The first row of editions for a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
+        type: integer
+      total_count:
+        description: "The total number of editions against a dataset"
+        type: integer
+  ImportJob:
+    description: "A import job used to link to an instance"
+    type: object
+    properties:
+      job:
+        type: string
+        description: "A url to an import job"
+      id:
+        type: string
+        description: "The unique id for the job"
   NewDatasetResponse:
     description: "A model for the response body when creating a new dataset"
     type: object
@@ -883,6 +978,7 @@ definitions:
     description: |
       The state of the resource, can only be one of the following:
         * created
+        * completed (instances only)
         * associated
         * published
     type: string
