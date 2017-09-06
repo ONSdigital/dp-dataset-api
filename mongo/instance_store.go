@@ -12,11 +12,14 @@ const INSTANCE_COLLECTION = "instances"
 const DIMENSION_NODE_COLLECTION = "dimension.nodes"
 
 // GetInstances from a mongo collection
-func (m *Mongo) GetInstances() (*models.InstanceResults, error) {
+func (m *Mongo) GetInstances(filter string) (*models.InstanceResults, error) {
 	s := session.Copy()
 	defer s.Close()
-
-	iter := s.DB(m.Database).C(INSTANCE_COLLECTION).Find(nil).Iter()
+	query := bson.M{}
+	if filter != "" {
+		query["state"] = filter
+	}
+	iter := s.DB(m.Database).C(INSTANCE_COLLECTION).Find(query).Iter()
 	defer iter.Close()
 
 	results := []models.Instance{}

@@ -10,7 +10,10 @@ import (
 )
 
 func (api *DatasetAPI) getInstances(w http.ResponseWriter, r *http.Request) {
-	results, err := api.dataStore.Backend.GetInstances()
+
+	stateFilter := r.URL.Query().Get("state")
+
+	results, err := api.dataStore.Backend.GetInstances(stateFilter)
 	if err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
@@ -23,7 +26,7 @@ func (api *DatasetAPI) getInstances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeBody(w, bytes)
-	log.Debug("get all instances", nil)
+	log.Debug("get all instances", log.Data{"query": stateFilter})
 }
 
 func (api *DatasetAPI) getInstance(w http.ResponseWriter, r *http.Request) {

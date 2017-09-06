@@ -19,7 +19,7 @@ func TestGetInstancesReturnsOK(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetInstancesFunc: func() (*models.InstanceResults, error) {
+			GetInstancesFunc: func(string) (*models.InstanceResults, error) {
 				return &models.InstanceResults{}, nil
 			},
 		}
@@ -38,7 +38,7 @@ func TestGetInstancesReturnsInternalError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetInstancesFunc: func() (*models.InstanceResults, error) {
+			GetInstancesFunc: func(string) (*models.InstanceResults, error) {
 				return nil, internalError
 			},
 		}

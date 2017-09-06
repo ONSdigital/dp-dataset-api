@@ -64,7 +64,7 @@ var (
 //             GetInstanceFunc: func(ID string) (*models.Instance, error) {
 // 	               panic("TODO: mock out the GetInstance method")
 //             },
-//             GetInstancesFunc: func() (*models.InstanceResults, error) {
+//             GetInstancesFunc: func(in1 string) (*models.InstanceResults, error) {
 // 	               panic("TODO: mock out the GetInstances method")
 //             },
 //             GetUniqueDimensionValuesFunc: func(id string, dimension string) (*models.DimensionValues, error) {
@@ -132,7 +132,7 @@ type BackendMock struct {
 	GetInstanceFunc func(ID string) (*models.Instance, error)
 
 	// GetInstancesFunc mocks the GetInstances method.
-	GetInstancesFunc func() (*models.InstanceResults, error)
+	GetInstancesFunc func(in1 string) (*models.InstanceResults, error)
 
 	// GetUniqueDimensionValuesFunc mocks the GetUniqueDimensionValues method.
 	GetUniqueDimensionValuesFunc func(id string, dimension string) (*models.DimensionValues, error)
@@ -215,6 +215,8 @@ type BackendMock struct {
 		}
 		// GetInstances holds details about calls to the GetInstances method.
 		GetInstances []struct {
+			// In1 is the in1 argument value.
+			In1 string
 		}
 		// GetUniqueDimensionValues holds details about calls to the GetUniqueDimensionValues method.
 		GetUniqueDimensionValues []struct {
@@ -572,24 +574,29 @@ func (mock *BackendMock) GetInstanceCalls() []struct {
 }
 
 // GetInstances calls GetInstancesFunc.
-func (mock *BackendMock) GetInstances() (*models.InstanceResults, error) {
+func (mock *BackendMock) GetInstances(in1 string) (*models.InstanceResults, error) {
 	if mock.GetInstancesFunc == nil {
 		panic("moq: BackendMock.GetInstancesFunc is nil but Backend.GetInstances was just called")
 	}
 	callInfo := struct {
-	}{}
+		In1 string
+	}{
+		In1: in1,
+	}
 	lockBackendMockGetInstances.Lock()
 	mock.calls.GetInstances = append(mock.calls.GetInstances, callInfo)
 	lockBackendMockGetInstances.Unlock()
-	return mock.GetInstancesFunc()
+	return mock.GetInstancesFunc(in1)
 }
 
 // GetInstancesCalls gets all the calls that were made to GetInstances.
 // Check the length with:
 //     len(mockedBackend.GetInstancesCalls())
 func (mock *BackendMock) GetInstancesCalls() []struct {
+	In1 string
 } {
 	var calls []struct {
+		In1 string
 	}
 	lockBackendMockGetInstances.RLock()
 	calls = mock.calls.GetInstances
