@@ -14,12 +14,14 @@ type DataStore struct {
 // Backend represents basic data access via Get, Remove and Upsert methods.
 type Backend interface {
 	GetDatasets() (*models.DatasetResults, error)
-	GetDataset(id string) (*models.Dataset, error)
-	GetEditions(id string) (*models.EditionResults, error)
-	GetEdition(datasetID, editionID string) (*models.Edition, error)
+	GetDataset(id string) (*models.DatasetUpdate, error)
+	GetEditions(id string, selector interface{}) (*models.EditionResults, error)
+	GetEdition(selector interface{}) (*models.Edition, error)
 	GetNextVersion(datasetID, editionID string) (int, error)
-	GetVersions(datasetID, editionID string) (*models.VersionResults, error)
-	GetVersion(datasetID, editionID, versionID string) (*models.Version, error)
+	GetVersions(selector interface{}) (*models.VersionResults, error)
+	GetVersion(selector interface{}) (*models.Version, error)
+	UpdateDataset(id string, update interface{}) error
+	UpdateEdition(id string, update interface{}) error
 	UpsertDataset(id string, update interface{}) error
 	UpsertEdition(id string, update interface{}) error
 	UpsertVersion(id string, update interface{}) error

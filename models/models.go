@@ -14,38 +14,50 @@ const created = "created"
 
 // DatasetResults represents a structure for a list of datasets
 type DatasetResults struct {
-	Items []Dataset `json:"items"`
+	Items []*Dataset `json:"items"`
 }
 
+// EditionResults represents a structure for a list of editions for a dataset
 type EditionResults struct {
 	Items []Edition `json:"items"`
 }
 
+// VersionResults represents a structure for a list of versions for an edition of a dataset
 type VersionResults struct {
 	Items []Version `json:"items"`
 }
 
-// Dataset represents information related to a single dataset
-type Dataset struct {
-	Contact     ContactDetails `bson:"contact,omitempty"        json:"contact,omitempty"`
-	Description string         `bson:"description"              json:"description"`
-	ID          string         `bson:"_id"                      json:"id"`
-	Links       DatasetLinks   `bson:"links,omitempty"          json:"links,omitempty"`
-	NextRelease string         `bson:"next_release,omitempty"   json:"next_release,omitempty"`
-	Periodicity string         `bson:"periodicity"              json:"periodicity"`
-	Publisher   Publisher      `bson:"publisher,omitempty"      json:"publisher,omitempty"`
-	State       string         `bson:"state,omitempty"          json:"state,omitempty"`
-	Theme       string         `bson:"theme,omitempty"          json:"theme,omitempty"`
-	Title       string         `bson:"title,omitempty"          json:"title,omitempty"`
-	UpdatedAt   time.Time      `bson:"updated_at,omitempty"`
+// DatasetUpdate represents an evolving dataset with the current dataset and the updated dataset
+type DatasetUpdate struct {
+	ID      string   `bson:"_id,omitempty"         json:"id,omitempty"`
+	Current *Dataset `bson:"current,omitempty"     json:"current,omitempty"`
+	Next    *Dataset `bson:"next,omitempty"        json:"next,omitempty"`
 }
 
+// Dataset represents information related to a single dataset
+type Dataset struct {
+	Contact      ContactDetails `bson:"contact,omitempty"        json:"contact,omitempty"`
+	CollectionID string         `bson:"collection_id,omitempty"  json:"collection_id,omitempty"`
+	Description  string         `bson:"description,omitempty"    json:"description,omitempty"`
+	ID           string         `bson:"_id,omitempty"            json:"id,omitempty"`
+	Links        DatasetLinks   `bson:"links,omitempty"          json:"links,omitempty"`
+	NextRelease  string         `bson:"next_release,omitempty"   json:"next_release,omitempty"`
+	Periodicity  string         `bson:"periodicity,omitempty"    json:"periodicity,omitempty"`
+	Publisher    Publisher      `bson:"publisher,omitempty"      json:"publisher,omitempty"`
+	State        string         `bson:"state,omitempty"          json:"state,omitempty"`
+	Theme        string         `bson:"theme,omitempty"          json:"theme,omitempty"`
+	Title        string         `bson:"title,omitempty"          json:"title,omitempty"`
+	LastUpdated  time.Time      `bson:"last_updated,omitempty"   json:"last_updated,omitempty"`
+}
+
+// DatasetLinks represents a list of specific links related to the dataset resource
 type DatasetLinks struct {
 	Editions      string     `bson:"editions,omitempty"        json:"editions,omitempty"`
 	LatestVersion LinkObject `bson:"latest_version,omitempty"  json:"latest_version,omitempty"`
 	Self          string     `bson:"self,omitempty"            json:"self,omitempty"`
 }
 
+// LinkObject represents a generic structure for all links
 type LinkObject struct {
 	ID   string `bson:"id,omitempty"    json:"id,omitempty"`
 	Link string `bson:"link,omitempty"  json:"link,omitempty"`
@@ -58,37 +70,44 @@ type ContactDetails struct {
 	Telephone string `bson:"telephone,omitempty"  json:"telephone,omitempty"`
 }
 
+// Edition represents information related to a single edition for a dataset
 type Edition struct {
-	Edition   string       `bson:"edition,omitempty"    json:"edition,omitempty"`
-	ID        string       `bson:"_id,omitempty"        json:"id,omitempty"`
-	Links     EditionLinks `bson:"links,omitempty"      json:"links,omitempty"`
-	State     string       `bson:"state,omitempty"      json:"state,omitempty"`
-	UpdatedAt time.Time    `bson:"updated_at,omitempty" json:"updated_at,omitempty"`
+	Edition     string       `bson:"edition,omitempty"      json:"edition,omitempty"`
+	ID          string       `bson:"_id,omitempty"          json:"id,omitempty"`
+	Links       EditionLinks `bson:"links,omitempty"        json:"links,omitempty"`
+	State       string       `bson:"state,omitempty"        json:"state,omitempty"`
+	LastUpdated time.Time    `bson:"last_updated,omitempty" json:"last_updated,omitempty"`
 }
 
+// EditionLinks represents a list of specific links related to the edition resource of a dataset
 type EditionLinks struct {
 	Dataset  LinkObject `bson:"dataset,omitempty"     json:"dataset,omitempty"`
 	Self     string     `bson:"self,omitempty"        json:"self,omitempty"`
 	Versions string     `bson:"versions,omitempty"    json:"versions,omitempty"`
 }
 
+// Publisher represents an object containing information of the publisher
 type Publisher struct {
 	Name string `bson:"name,omitempty" json:"name,omitempty"`
 	Type string `bson:"type,omitempty" json:"type,omitempty"`
 	URL  string `bson:"url,omitempty"  json:"url,omitempty"`
 }
 
+// Version represents information related to a single version for an edition of a dataset
 type Version struct {
-	Edition     string       `bson:"edition,omitempty"      json:"edition,omitempty"`
-	ID          string       `bson:"_id,omitempty"          json:"id,omitempty"`
-	License     string       `bson:"license,omitempty"      json:"license,omitempty"`
-	Links       VersionLinks `bson:"links,omitempty"        json:"links,omitempty"`
-	ReleaseDate string       `bson:"release_date,omitempty" json:"release_date,omitempty"`
-	State       string       `bson:"state,omitempty"        json:"state,omitempty"`
-	UpdatedAt   time.Time    `bson:"updated_at,omitempty"   json:"updated_at,omitempty"`
-	Version     string       `bson:"version,omitempty"      json:"version,omitempty"`
+	CollectionID string       `bson:"collection_id,omitempty" json:"collection_id,omitempty"`
+	Edition      string       `bson:"edition,omitempty"       json:"edition,omitempty"`
+	ID           string       `bson:"_id,omitempty"           json:"id,omitempty"`
+	InstanceID   string       `bson:"instance_id,omitempty" json:"instance_id,omitempty"`
+	License      string       `bson:"license,omitempty"       json:"license,omitempty"`
+	Links        VersionLinks `bson:"links,omitempty"         json:"links,omitempty"`
+	ReleaseDate  string       `bson:"release_date,omitempty"  json:"release_date,omitempty"`
+	State        string       `bson:"state,omitempty"         json:"state,omitempty"`
+	LastUpdated  time.Time    `bson:"last_updated,omitempty"  json:"last_updated,omitempty"`
+	Version      string       `bson:"version,omitempty"       json:"version,omitempty"`
 }
 
+// VersionLinks represents a list of specific links related to the version resource for an edition of a dataset
 type VersionLinks struct {
 	Dataset    LinkObject `bson:"dataset,omitempty"     json:"dataset,omitempty"`
 	Dimensions string     `bson:"dimensions,omitempty"  json:"dimensions,omitempty"`
