@@ -445,6 +445,8 @@ paths:
       responses:
         200:
           description: "Create an instance then returned it"
+          schema:
+            $ref: '#/definitions/Instance'
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}:
