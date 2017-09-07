@@ -29,9 +29,9 @@ type Backend interface {
 	UpdateInstance(id string, instance *models.Instance) error
 	AddInstance(instance *models.Instance) (*models.Instance, error)
 	AddEventToInstance(instanceId string, event *models.Event) error
-	AddDimensionToInstance(dimension *models.DimensionNode) error
+	AddDimensionToInstance(dimension *models.Dimension) error
 	UpdateObservationInserted(id string, observationInserted int64) error
 	GetDimensionNodesFromInstance(id string) (*models.DimensionNodeResults, error)
-	UpdateDimensionNodeID(dimension *models.DimensionNode) error
+	UpdateDimensionNodeID(dimension *models.Dimension) error
 	GetUniqueDimensionValues(id, dimension string) (*models.DimensionValues, error)
 }

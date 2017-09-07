@@ -34,12 +34,12 @@ type Event struct {
 	MessageOffset string     `bson:"message_offset,omitempty" json:"message_offset"`
 }
 
-// DimensionNode which is cached for the import process
-type DimensionNode struct {
+// Dimension which is cached for the import process
+type Dimension struct {
 	Name       string `bson:"name,omitempty"           json:"dimension_id"`
 	Value      string `bson:"value,omitempty"          json:"value"`
 	NodeId     string `bson:"node_id,omitempty"        json:"node_id"`
-	InstanceID string `bson:"id,omitempty"             json:"instance_id,omitempty"`
+	InstanceID string `bson:"instance_id,omitempty"             json:"instance_id,omitempty"`
 }
 
 // InstanceResults wraps instances objects for pagination
@@ -49,7 +49,7 @@ type InstanceResults struct {
 
 // DimensionNodeResults wraps dimension node objects for pagination
 type DimensionNodeResults struct {
-	Items []DimensionNode `json:"items"`
+	Items []Dimension `json:"items"`
 }
 
 // DimensionValues holds all unique values for a dimension

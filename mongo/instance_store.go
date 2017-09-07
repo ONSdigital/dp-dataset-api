@@ -9,7 +9,7 @@ import (
 )
 
 const INSTANCE_COLLECTION = "instances"
-const DIMENSION_NODE_COLLECTION = "dimension.nodes"
+const DIMENSION_NODE_COLLECTION = "dimensions"
 
 // GetInstances from a mongo collection
 func (m *Mongo) GetInstances(filter string) (*models.InstanceResults, error) {
@@ -63,7 +63,7 @@ func (m *Mongo) AddInstance(instance *models.Instance) (*models.Instance, error)
 }
 
 // UpdateInstance with new properties
-func (m *Mongo) UpdateInstance(id string, instance *models.Instance) (error) {
+func (m *Mongo) UpdateInstance(id string, instance *models.Instance) error {
 	s := session.Copy()
 	defer s.Close()
 
@@ -97,10 +97,10 @@ func (m *Mongo) AddEventToInstance(instanceId string, event *models.Event) error
 }
 
 // AddDimensionToInstance to the dimension collection
-func (m *Mongo) AddDimensionToInstance(dimension *models.DimensionNode) error {
+func (m *Mongo) AddDimensionToInstance(dimension *models.Dimension) error {
 	s := session.Copy()
 	defer s.Close()
-	_, err := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Upsert(bson.M{"id": dimension.InstanceID, "name": dimension.Name,
+	_, err := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Upsert(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
 		"value": dimension.Value}, &dimension)
 	if err != nil {
 		return err
@@ -109,10 +109,10 @@ func (m *Mongo) AddDimensionToInstance(dimension *models.DimensionNode) error {
 }
 
 // UpdateDimensionNodeID to cache the id for other import processes
-func (m *Mongo) UpdateDimensionNodeID(dimension *models.DimensionNode) error {
+func (m *Mongo) UpdateDimensionNodeID(dimension *models.Dimension) error {
 	s := session.Copy()
 	defer s.Close()
-	err := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Update(bson.M{"id": dimension.InstanceID, "name": dimension.Name,
+	err := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Update(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
 		"value": dimension.Value}, bson.M{"$set": bson.M{"node_id": &dimension.NodeId}})
 	if err == mgo.ErrNotFound {
 		return api_errors.InstanceNotFound
@@ -144,8 +144,8 @@ func (m *Mongo) UpdateObservationInserted(id string, observationInserted int64) 
 func (m *Mongo) GetDimensionNodesFromInstance(id string) (*models.DimensionNodeResults, error) {
 	s := session.Copy()
 	defer s.Close()
-	var dimensions []models.DimensionNode
-	iter := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Find(bson.M{"id": id}).Select(bson.M{"id": 0}).Iter()
+	var dimensions []models.Dimension
+	iter := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Find(bson.M{"instance_id": id}).Select(bson.M{"id": 0}).Iter()
 	err := iter.All(&dimensions)
 	if err != nil {
 		return nil, err
@@ -159,7 +159,7 @@ func (m *Mongo) GetUniqueDimensionValues(id, dimension string) (*models.Dimensio
 	s := session.Copy()
 	defer s.Close()
 	var values []string
-	err := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Find(bson.M{"id": id, "name": dimension}).Distinct("value", &values)
+	err := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Find(bson.M{"instance_id": id, "name": dimension}).Distinct("value", &values)
 	if err != nil {
 		return nil, err
 	}
