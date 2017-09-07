@@ -209,7 +209,7 @@ db.createCollection("instances");
 db.instances.insert({
     "_id": "AB3BAE9B-5C4D-4640-8936-8502D0DB954D",
     "id": "3b45921b-0efa-4844-a16e-3f9f30df4f88",
-    "job": {"id": "4ce2ee5c-d50b-469f-b005-ddfed3f5072b", "link": "http://localhost:22000/jobs/4ce2ee5c-d50b-469f-b005-ddfed3f5072b"},
+    "links": {"job": {"id": "260EDB0F-2BCD-4006-B441-571F504273E0", "link": "http://localhost:22000/jobs/260EDB0F-2BCD-4006-B441-571F504273E0"},},
     "state": "created",
     "total_observations": 0,
     "total_inserted_observations": 0,
@@ -220,7 +220,7 @@ db.instances.insert({
 db.instances.insert({
     "_id": "0F06AB0E-A5D1-409A-8183-BACDF2326205",
     "id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
-    "job": {"id": "260EDB0F-2BCD-4006-B441-571F504273E0", "link": "http://localhost:22000/jobs/260EDB0F-2BCD-4006-B441-571F504273E0"},
+    "links": {"job": {"id": "260EDB0F-2BCD-4006-B441-571F504273E0", "href": "http://localhost:22000/jobs/260EDB0F-2BCD-4006-B441-571F504273E0"}},
     "state": "created",
     "total_observations": 0,
     "total_inserted_observations": 0,

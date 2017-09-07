@@ -33,10 +33,10 @@ func TestCreateInstanceWithEmptyJson(t *testing.T) {
 
 func TestCreateInstance(t *testing.T) {
 	Convey("Create an instance with the required fields", t, func() {
-		instance, err := CreateInstance(strings.NewReader(`{"job": { "id":"123-456", "link":"http://localhost:2200/jobs/123-456" } }`))
+		instance, err := CreateInstance(strings.NewReader(`{"links":{ "job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } } }`))
 		So(err, ShouldBeNil)
 		So(instance.Defaults(), ShouldBeNil)
-		So(instance.Job.ID, ShouldEqual, "123-456")
+		So(instance.Links.Job.ID, ShouldEqual, "123-456")
 	})
 }
 

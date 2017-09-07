@@ -10,20 +10,25 @@ import (
 
 // Instance which presents a single dataset being imported
 type Instance struct {
-	InstanceID           string    `bson:"id,omitempty"                          json:"id,omitempty"`
-	Job                  IDLink    `bson:"job,omitempty"                         json:"job,omitempty"`
-	State                string    `bson:"state,omitempty"                       json:"state,omitempty"`
-	Events               *[]Event  `bson:"events,omitempty"                      json:"events,omitempty"`
-	TotalObservations    *int      `bson:"total_observations,omitempty"          json:"total_observations,omitempty"`
-	InsertedObservations *int      `bson:"total_inserted_observations,omitempty" json:"total_inserted_observations,omitempty"`
-	Headers              *[]string `bson:"headers,omitempty"                     json:"headers,omitempty"`
-	LastUpdated          time.Time `bson:"last_updated,omitempty"                json:"last_updated,omitempty"`
+	InstanceID           string        `bson:"id,omitempty"                          json:"id,omitempty"`
+	Links                InstanceLinks `bson:"links,omitempty"                       json:"links,omitempty"`
+	State                string        `bson:"state,omitempty"                       json:"state,omitempty"`
+	Events               *[]Event      `bson:"events,omitempty"                      json:"events,omitempty"`
+	TotalObservations    *int          `bson:"total_observations,omitempty"          json:"total_observations,omitempty"`
+	InsertedObservations *int          `bson:"total_inserted_observations,omitempty" json:"total_inserted_observations,omitempty"`
+	Headers              *[]string     `bson:"headers,omitempty"                     json:"headers,omitempty"`
+	LastUpdated          time.Time     `bson:"last_updated,omitempty"                json:"last_updated,omitempty"`
+}
+
+// InstanceLinks holds all links for an instance
+type InstanceLinks struct {
+	Job IDLink `bson:"job,omitempty"   json:"job"`
 }
 
 // IDLink holds the id and a link to the resource
 type IDLink struct {
 	ID   string `bson:"id,omitempty"   json:"id"`
-	Link string `bson:"link,omitempty" json:"link"`
+	HRef string `bson:"href,omitempty" json:"href"`
 }
 
 // Event which has happened to an instance
@@ -61,7 +66,7 @@ type DimensionValues struct {
 
 // Defaults setup values for an empty instance
 func (i *Instance) Defaults() error {
-	if i.Job.ID == "" || i.Job.Link == "" {
+	if i.Links.Job.ID == "" || i.Links.Job.HRef == "" {
 		return errors.New("Missing job properties")
 	}
 	if i.State == "" {

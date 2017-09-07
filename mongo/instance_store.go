@@ -6,6 +6,7 @@ import (
 	"github.com/satori/go.uuid"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"time"
 )
 
 const INSTANCE_COLLECTION = "instances"
@@ -53,7 +54,7 @@ func (m *Mongo) AddInstance(instance *models.Instance) (*models.Instance, error)
 	defer s.Close()
 
 	instance.InstanceID = uuid.NewV4().String()
-
+	instance.LastUpdated = time.Now().UTC()
 	err := s.DB(m.Database).C(INSTANCE_COLLECTION).Insert(&instance)
 	if err != nil {
 		return nil, err
@@ -68,6 +69,7 @@ func (m *Mongo) UpdateInstance(id string, instance *models.Instance) error {
 	defer s.Close()
 
 	instance.InstanceID = uuid.NewV4().String()
+	instance.LastUpdated = time.Now().UTC()
 
 	info, err := s.DB(m.Database).C(INSTANCE_COLLECTION).Upsert(bson.M{"id": id}, bson.M{"$set": &instance})
 	if err != nil {
@@ -85,7 +87,8 @@ func (m *Mongo) AddEventToInstance(instanceId string, event *models.Event) error
 	s := session.Copy()
 	defer s.Close()
 
-	info, err := s.DB(m.Database).C(INSTANCE_COLLECTION).Upsert(bson.M{"id": instanceId}, bson.M{"$push": bson.M{"events": &event}})
+	info, err := s.DB(m.Database).C(INSTANCE_COLLECTION).Upsert(bson.M{"id": instanceId},
+		bson.M{"$push": bson.M{"events": &event}, "$set": bson.M{"last_updated": time.Now().UTC()}})
 	if err != nil {
 		return err
 	}
@@ -100,6 +103,7 @@ func (m *Mongo) AddEventToInstance(instanceId string, event *models.Event) error
 func (m *Mongo) AddDimensionToInstance(dimension *models.Dimension) error {
 	s := session.Copy()
 	defer s.Close()
+	dimension.LastUpdated = time.Now().UTC()
 	_, err := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Upsert(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
 		"value": dimension.Value}, &dimension)
 	if err != nil {
@@ -113,7 +117,7 @@ func (m *Mongo) UpdateDimensionNodeID(dimension *models.Dimension) error {
 	s := session.Copy()
 	defer s.Close()
 	err := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Update(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
-		"value": dimension.Value}, bson.M{"$set": bson.M{"node_id": &dimension.NodeId}})
+		"value": dimension.Value}, bson.M{"$set": bson.M{"node_id": &dimension.NodeId, "last_updated": time.Now().UTC()}})
 	if err == mgo.ErrNotFound {
 		return api_errors.InstanceNotFound
 	}
@@ -128,7 +132,7 @@ func (m *Mongo) UpdateObservationInserted(id string, observationInserted int64) 
 	s := session.Copy()
 	defer s.Close()
 	err := s.DB(m.Database).C(INSTANCE_COLLECTION).Update(bson.M{"id": id},
-		bson.M{"$inc": bson.M{"total_inserted_observations": observationInserted}})
+		bson.M{"$inc": bson.M{"total_inserted_observations": observationInserted},"$set": bson.M{"last_updated": time.Now().UTC()}})
 
 	if err == mgo.ErrNotFound {
 		return api_errors.InstanceNotFound
