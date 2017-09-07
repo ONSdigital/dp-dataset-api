@@ -981,7 +981,7 @@ definitions:
       The state of the resource, can only be one of the following:
         * created
         * completed (instances only)
-        * associated
+        * associated (except editions)
         * published
     type: string
   Versions:
