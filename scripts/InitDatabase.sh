@@ -215,7 +215,7 @@ db.instances.insert({
     "total_inserted_observations": 0,
     "headers": ["V4_1", "time", "age"],
     "telephone": "01633 123457",
-    "updated_at": "2017-08-25T15:09:11.829+01:00",
+    "last_updated": "2017-08-25T15:09:11.829+01:00",
 });
 db.instances.insert({
     "_id": "0F06AB0E-A5D1-409A-8183-BACDF2326205",
@@ -226,7 +226,7 @@ db.instances.insert({
     "total_inserted_observations": 0,
     "headers": ["V4_1", "time", "age"],
     "telephone": "01633 123457",
-    "updated_at": "2017-08-25T15:09:11.829+01:00",
+    "last_updated": "2017-08-25T15:09:11.829+01:00",
 });
 db.createCollection("dimensions");
 db.dimensions.insert({
@@ -242,5 +242,6 @@ db.dimensions.insert({
      "name": "age",
      "value": "37",
      "node_id":"88",
+     "last_updated": "2017-08-25T15:09:11.829+01:00",
 });
 EOF

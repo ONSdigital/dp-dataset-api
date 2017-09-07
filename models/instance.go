@@ -36,10 +36,11 @@ type Event struct {
 
 // Dimension which is cached for the import process
 type Dimension struct {
-	Name       string `bson:"name,omitempty"           json:"dimension_id"`
-	Value      string `bson:"value,omitempty"          json:"value"`
-	NodeId     string `bson:"node_id,omitempty"        json:"node_id"`
-	InstanceID string `bson:"instance_id,omitempty"             json:"instance_id,omitempty"`
+	Name        string    `bson:"name,omitempty"           json:"dimension_id"`
+	Value       string    `bson:"value,omitempty"          json:"value"`
+	NodeId      string    `bson:"node_id,omitempty"        json:"node_id"`
+	InstanceID  string    `bson:"instance_id,omitempty"    json:"instance_id,omitempty"`
+	LastUpdated time.Time `bson:"last_updated,omitempty"   json:"omitempty"`
 }
 
 // InstanceResults wraps instances objects for pagination
