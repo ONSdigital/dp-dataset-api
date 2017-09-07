@@ -28,13 +28,13 @@ parameters:
     type: string
   event:
     name: event
-    description: "An import event when publishing a dataset"
+    description: "An event that occurs when importing a dataset"
     in: body
     schema:
       $ref: '#/definitions/Event'
   id:
     name: id
-    description: "Id that represents a dataset type"
+    description: "Id that represents a dataset"
     in: path
     required: true
     type: string
@@ -207,7 +207,7 @@ paths:
           schema:
             $ref: '#/definitions/DatasetResponse'
         404:
-          description: "No dataset was foundusing the id provided"
+          description: "No dataset was found using the id provided"
         500:
           $ref: '#/responses/InternalError'
     put:
@@ -467,7 +467,7 @@ paths:
           schema:
             $ref: '#/definitions/Instance'
         404:
-          description: "InstanceId does not match any import jobs"
+          $ref: '#/responses/InstanceNotFound'
         500:
           $ref: '#/responses/InternalError'
     put:
@@ -486,7 +486,7 @@ paths:
         200:
           description: "The instance has been updated"
         404:
-          description: "InstanceId does not match any import jobs"
+          $ref: '#/responses/InstanceNotFound'
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}/dimensions:
@@ -509,7 +509,7 @@ paths:
             items:
               $ref: '#/definitions/DimensionNode'
         404:
-          description: "InstanceId does not match any instances"
+          $ref: '#/responses/InstanceNotFound'
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}/dimensions/{dimension}/options:
@@ -543,29 +543,6 @@ paths:
           description: "instance_id does not match any instances"
         404:
           description: "dimension_id does not match any dimensions within the instance"
-        500:
-          $ref: '#/responses/InternalError'
-    put:
-      tags:
-      - "Private"
-      summary: "Update the number of observations within this instance"
-      description: "Update the number of observations within this instance"
-      parameters:
-      - $ref: '#/parameters/instance_id'
-      - $ref: '#/parameters/instance'
-      security:
-      - InternalAPIKey: []
-      responses:
-        200:
-          description: "The event was added to the instance"
-        400:
-          description: "Invalid json message sent"
-        401:
-          $ref: '#/responses/UnauthorisedError'
-        403:
-          $ref: '#/responses/ForbiddenError'
-        404:
-          description: "InstanceId does not match any instances"
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}/events:
@@ -624,9 +601,9 @@ paths:
     put:
       tags:
       - "Private"
-      summary: "Add a dimension for the instance"
+      summary: "Add an option to a dimension within the instance"
       description: |
-        Add a dimension found in the V4 data.
+        Add a option to a dimension which has been found in the V4 data
       parameters:
       - $ref: '#/parameters/instance_id'
       - $ref: '#/parameters/dimension'
@@ -680,6 +657,8 @@ responses:
     description: "No header with a token key was provided"
   UnauthorisedError:
     description: "The token provided is unauthorised to carry out this operation"
+  InstanceNotFound:
+    description: "The instance was not found"
 definitions:
   Contact:
     description: "Object containing contact information for this dataset"
@@ -981,7 +960,7 @@ definitions:
       The state of the resource, can only be one of the following:
         * created
         * completed (instances only)
-        * associated (except editions)
+        * associated
         * published
     type: string
   Versions:
