@@ -743,9 +743,12 @@ definitions:
     type: object
     properties:
       editions:
-        description: "A URL to all editions for this dataset"
-        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions"
-        type: string
+        type: object
+        properties:
+          href:
+            description: "A URL to all editions for this dataset"
+            example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions"
+            type: string
       latest_version:
         $ref: '#/definitions/LatestVersionLink'
       self:
@@ -757,7 +760,7 @@ definitions:
       id:
         description: "The unique id for the latest version of a dataset"
         type: "string"
-      link:
+      href:
         description: "A link to the latest version and edition of the dataset"
         example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2"
         type: string
@@ -808,9 +811,12 @@ definitions:
       self:
         $ref: '#/definitions/SelfLink'
       versions:
-        description: "A URL to all versions dor an edition of a dataset"
-        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/edition/2017/versions"
-        type: string
+        type: object
+        properties:
+          href:
+            description: "A URL to all versions dor an edition of a dataset"
+            example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/edition/2017/versions"
+            type: string
   Event:
     type: object
     properties:
@@ -848,7 +854,7 @@ definitions:
             type: string
             description: "The ID of the job containing this instance"
             example: 042e216a-7822-4fa0-a3d6-e3f5248ffc35
-          link:
+          href:
             type: string
             description: "The URL for the job containing this instance"
             example: 'http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35'
@@ -895,7 +901,7 @@ definitions:
     description: "A import job used to link to an instance"
     type: object
     properties:
-      job:
+      href:
         type: string
         description: "A url to an import job"
       id:
@@ -948,13 +954,16 @@ definitions:
       type:
         description: "The type of publisher"
         type: string
-      url:
+      href:
         description: "A link to the publishers homepage"
         type: string
   SelfLink:
     description: "A link to this resource"
     readOnly: true
-    type: string
+    type: object
+    properties:
+      href:
+        type: string
   State:
     description: |
       The state of the resource, can only be one of the following:
@@ -1038,7 +1047,7 @@ definitions:
       id:
         description: "The unique id for the dataset of this version"
         type: string
-      link:
+      href:
         description: "A URL to the parent dataset for this resource"
         example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
         type: string
