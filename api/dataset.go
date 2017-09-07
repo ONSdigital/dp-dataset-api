@@ -271,19 +271,10 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	dataset.LastUpdated = time.Now()
 
 	var datasetDoc *models.DatasetUpdate
-	// Do we need this functionality? Do we want the internal user to be able to publish
-	// a dataset with no editions or versions. Once a version is published then an update
-	// to the edition and dataset resources can occur
-	if dataset.State == publishedState {
-		datasetDoc = &models.DatasetUpdate{
-			ID:      datasetID,
-			Current: dataset,
-		}
-	} else {
-		datasetDoc = &models.DatasetUpdate{
-			ID:   datasetID,
-			Next: dataset,
-		}
+
+	datasetDoc = &models.DatasetUpdate{
+		ID:   datasetID,
+		Next: dataset,
 	}
 
 	if err := api.dataStore.Backend.UpsertDataset(datasetID, bson.M{"$set": datasetDoc}); err != nil {
@@ -395,7 +386,9 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 			"last_updated": time.Now(),
 		},
 	}
+	log.Debug("got here", log.Data{"version": version})
 
+	// TODO Move validation to models package?
 	if version.State != "created" && version.CollectionID == "" {
 		log.Error(errors.New("Missing association between version and a collection"), nil)
 		w.WriteHeader(http.StatusBadRequest)
@@ -414,6 +407,7 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+
 		if err := api.updateDataset(datasetID, version); err != nil {
 			log.ErrorC("failed to update dataset document once version state changes to publish", err, nil)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -457,8 +451,10 @@ func (api *DatasetAPI) updateDataset(id string, version *models.Version) error {
 		log.ErrorC("Unable to update dataset", err, log.Data{"dataset_id": id})
 		return err
 	}
+	log.Info("got here", nil)
 
 	currentDataset.Next.CollectionID = version.CollectionID
+	log.Info("got here", nil)
 	currentDataset.Next.Links.LatestVersion.ID = version.ID
 	currentDataset.Next.Links.LatestVersion.Link = version.Links.Self
 	currentDataset.Next.State = publishedState
@@ -467,13 +463,17 @@ func (api *DatasetAPI) updateDataset(id string, version *models.Version) error {
 	// newDataset.Next will not be cleaned up due to keeping request to mongo
 	// idempotent; for instance if an authorised user double clicked to update
 	// dataset, the next sub document would not exist to create the correct
-	// current sub document
+	// current sub document on the second click
 	newDataset := models.DatasetUpdate{
 		ID:      currentDataset.ID,
 		Current: currentDataset.Next,
+		Next:    currentDataset.Next,
 	}
 
+	log.Info("got here", nil)
+
 	if err := api.dataStore.Backend.UpsertDataset(id, bson.M{"$set": newDataset}); err != nil {
+		log.Debug("errored", nil)
 		log.ErrorC("Unable to update dataset", err, log.Data{"dataset_id": id})
 		return err
 	}

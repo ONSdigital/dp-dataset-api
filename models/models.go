@@ -125,13 +125,14 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 	var dataset Dataset
 	// Create unique id
 	dataset.ID = uuid.NewV4().String()
-	// set default state to be unpublished
-	dataset.State = created
 
 	err = json.Unmarshal(bytes, &dataset)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
 	}
+
+	// Overwrite state to created
+	dataset.State = created
 
 	return &dataset, nil
 }
@@ -146,13 +147,14 @@ func CreateEdition(reader io.Reader) (*Edition, error) {
 	var edition Edition
 	// Create unique id
 	edition.ID = (uuid.NewV4()).String()
-	// set default state to be created
-	edition.State = created
 
 	err = json.Unmarshal(bytes, &edition)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
 	}
+
+	// Overwrite state to created
+	edition.State = created
 
 	return &edition, nil
 }
