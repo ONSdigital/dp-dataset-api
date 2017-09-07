@@ -6,6 +6,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
+	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/server"
 	"github.com/gorilla/mux"
@@ -40,7 +41,7 @@ func main() {
 		"bind_address": cfg.BindAddr,
 	})
 
-	_ = api.CreateDatasetAPI(cfg.SecretKey, router, api.DataStore{Backend: mongo})
+	_ = api.CreateDatasetAPI(cfg.SecretKey, router, store.DataStore{Backend: mongo})
 
 	if err = s.ListenAndServe(); err != nil {
 		log.Error(err, nil)

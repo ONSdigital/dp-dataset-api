@@ -1,10 +1,7 @@
 package models
 
 import (
-	"encoding/json"
 	"errors"
-	"io"
-	"io/ioutil"
 	"time"
 )
 
@@ -58,54 +55,10 @@ type DimensionValues struct {
 	Values []string `json:"values"`
 }
 
-// Defaults setup values for an empty instance
-func (i *Instance) Defaults() error {
-	if i.Job.ID == "" || i.Job.Link == "" {
-		return errors.New("Missing job properties")
-	}
-	if i.State == "" {
-		i.State = "created"
-	}
-	i.TotalObservations = new(int)
-	i.InsertedObservations = new(int)
-	i.Events = new([]Event)
-	i.Headers = new([]string)
-
-	return nil
-}
-
 // Validate the event structure
 func (e *Event) Validate() error {
 	if e.Message == "" || e.MessageOffset == "" || e.Time == nil || e.Type == "" {
 		return errors.New("Missing properties")
 	}
 	return nil
-}
-
-// CreateInstance using a byte buffer
-func CreateInstance(reader io.Reader) (*Instance, error) {
-	bytes, err := ioutil.ReadAll(reader)
-	if err != nil {
-		return nil, errors.New("Failed to read message body")
-	}
-	var instance Instance
-	err = json.Unmarshal(bytes, &instance)
-	if err != nil {
-		return nil, errors.New("Failed to parse json body")
-	}
-	return &instance, err
-}
-
-// CreateEvent using a byte buffer
-func CreateEvent(reader io.Reader) (*Event, error) {
-	bytes, err := ioutil.ReadAll(reader)
-	if err != nil {
-		return nil, errors.New("Failed to read message body")
-	}
-	var event Event
-	err = json.Unmarshal(bytes, &event)
-	if err != nil {
-		return nil, errors.New("Failed to parse json body")
-	}
-	return &event, err
 }
