@@ -50,7 +50,7 @@ func TestUnmarshalInstanceWithEmptyJson(t *testing.T) {
 
 func TestUnmarshalInstanceWithMissingFields(t *testing.T) {
 	Convey("Create an instance with no id", t, func() {
-		instance, err := unmarshalInstance(strings.NewReader(`{"job": { "link":"http://localhost:2200/jobs/123-456" } }`), true)
+		instance, err := unmarshalInstance(strings.NewReader(`{"job": { "href":"http://localhost:2200/jobs/123-456" } }`), true)
 		So(instance, ShouldBeNil)
 		So(err.Error(), ShouldEqual, "Missing job properties")
 	})
@@ -62,7 +62,7 @@ func TestUnmarshalInstanceWithMissingFields(t *testing.T) {
 	})
 
 	Convey("Update an instance with no id", t, func() {
-		instance, err := unmarshalInstance(strings.NewReader(`{"job": { "link":"http://localhost:2200/jobs/123-456" } }`), false)
+		instance, err := unmarshalInstance(strings.NewReader(`{"job": { "href":"http://localhost:2200/jobs/123-456" } }`), false)
 		So(instance, ShouldNotBeNil)
 		So(err, ShouldBeNil)
 	})
@@ -76,7 +76,7 @@ func TestUnmarshalInstanceWithMissingFields(t *testing.T) {
 
 func TestUnmarshalInstance(t *testing.T) {
 	Convey("Create an instance with the required fields", t, func() {
-		instance, err := unmarshalInstance(strings.NewReader(`{"job": { "id":"123-456", "link":"http://localhost:2200/jobs/123-456" } }`), true)
+		instance, err := unmarshalInstance(strings.NewReader(`{"job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } }`), true)
 		So(err, ShouldBeNil)
 		So(instance.Job.ID, ShouldEqual, "123-456")
 	})

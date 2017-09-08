@@ -156,7 +156,7 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 	}
 
 	if post {
-		if instance.Job.ID == "" || instance.Job.Link == "" {
+		if instance.Job.ID == "" || instance.Job.HRef == "" {
 			return nil, errors.New("Missing job properties")
 		}
 

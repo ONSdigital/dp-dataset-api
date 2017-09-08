@@ -109,7 +109,7 @@ func TestGetInstanceReturnsInternalError(t *testing.T) {
 func TestAddInstancesReturnsCreated(t *testing.T) {
 	t.Parallel()
 	Convey("Add instance returns a created code", t, func() {
-		body := strings.NewReader(`{"job": { "id":"123-456", "link":"http://localhost:2200/jobs/123-456" } }`)
+		body := strings.NewReader(`{"job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } }`)
 		r := createRequestWithToken("POST", "http://localhost:21800/instances", body)
 		w := httptest.NewRecorder()
 
@@ -166,7 +166,7 @@ func TestAddInstancesReturnsBadRequest(t *testing.T) {
 func TestAddInstancesReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("Add instance returns an internal error", t, func() {
-		body := strings.NewReader(`{"job": { "id":"123-456", "link":"http://localhost:2200/jobs/123-456" } }`)
+		body := strings.NewReader(`{"job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } }`)
 		r := createRequestWithToken("POST", "http://localhost:21800/instances", body)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{

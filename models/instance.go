@@ -20,7 +20,7 @@ type Instance struct {
 // IDLink holds the id and a link to the resource
 type IDLink struct {
 	ID   string `bson:"id,omitempty"   json:"id"`
-	Link string `bson:"link,omitempty" json:"link"`
+	HRef string `bson:"href,omitempty" json:"href"`
 }
 
 // Event which has happened to an instance

@@ -209,7 +209,7 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	edition.Links.Dataset.ID = datasetID
-	edition.Links.Dataset.Link = "/datasets/" + datasetID
+	edition.Links.Dataset.HRef = "/datasets/" + datasetID
 	edition.Links.Self = "/datasets/" + datasetID + "/editions/" + editionID
 	edition.Links.Versions = "/datasets/" + datasetID + "/editions/" + editionID + "/versions"
 
@@ -245,9 +245,9 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	version.Links.Dataset.ID = datasetID
-	version.Links.Dataset.Link = "/datasets/" + datasetID
-	version.Links.Edition.Link = editionID
-	version.Links.Edition.Link = "/datasets/" + datasetID + "/editions/" + editionID
+	version.Links.Dataset.HRef = "/datasets/" + datasetID
+	version.Links.Edition.HRef = editionID
+	version.Links.Edition.HRef = "/datasets/" + datasetID + "/editions/" + editionID
 	version.Links.Self = "/datasets/" + datasetID + "/editions/" + editionID + "/versions/" + versionID
 	version.Links.Dimensions = "/instance/" + versionID + "/dimensions"
 

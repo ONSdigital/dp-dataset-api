@@ -48,7 +48,7 @@ type DatasetLinks struct {
 
 type LinkObject struct {
 	ID   string `bson:"id,omitempty"    json:"id,omitempty"`
-	Link string `bson:"link,omitempty"  json:"link,omitempty"`
+	HRef string `bson:"href,omitempty"  json:"href,omitempty"`
 }
 
 // ContactDetails represents an object containing information of the contact
