@@ -57,13 +57,6 @@ parameters:
     required: true
     schema:
       $ref: '#/definitions/Instance'
-  import_job:
-    name: import_job
-    description: "A job to link to an instance"
-    in: body
-    required: true
-    schema:
-      $ref: '#/definitions/ImportJob'
   limit:
     name: limit
     description: "The number of datasets to be returned"
@@ -168,7 +161,7 @@ paths:
       - "application/json"
       responses:
         201:
-          description: "A json object containing a dataset which has been published"
+          description: "A json object containing a dataset which has been created"
           schema:
             $ref: '#/definitions/NewDatasetResponse'
         400:
@@ -198,7 +191,7 @@ paths:
       tags:
       - "Public"
       summary: "Get a dataset"
-      description: "The dataset contains all high level information, for additional details see editions or versions of a dataset"
+      description: "The dataset contains all high level information, for additional details see editions or versions of a dataset. For unpublished datasets a privater user can access them but a public user will be returned a 403 forbidden code"
       parameters:
       - $ref: '#/parameters/id'
       responses:
@@ -206,6 +199,10 @@ paths:
           description: "A json object for a single Dataset"
           schema:
             $ref: '#/definitions/DatasetResponse'
+        401:
+          description: "The token provided is unauthorised to carry out this operation"
+        403:
+          description: "No header with a token key was provided"
         404:
           description: "No dataset was found using the id provided"
         500:
@@ -334,7 +331,7 @@ paths:
       tags:
       - "Private user"
       summary: "Update a version for an edition of a dataset"
-      description: "Update a version for an edition of a dataset, if the state is changed to associated or published, the parent documents(dataset and edition resources) will also be updated"
+      description: "Update a version for an edition of a dataset, if the state is changed to associated or published, the parent documents(dataset and edition resources) will also be updated. A version can only be updated if the state is not published"
       parameters:
       - $ref: '#/parameters/id'
       - $ref: '#/parameters/new_version'
@@ -407,7 +404,7 @@ paths:
           schema:
             $ref: '#/definitions/DimensionValues'
         404:
-          description: "No version was found for an edition of a dataset using the id, edition and version provided or the dimension does not exist within the dataset"
+          description: "No dimension was found in the dataset"
         500:
           $ref: '#/responses/InternalError'
   /instances:
@@ -429,15 +426,20 @@ paths:
           description: "Return a list of instance state"
           schema:
             $ref: '#/definitions/Instances'
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
         500:
           $ref: '#/responses/InternalError'
     post:
       tags:
       - "Private"
       summary: "Create an instance"
-      description: "Create an instance which will be imported"
+      description:  |
+        Create an instance which will be imported. To create an instance a import job id and href is required. This is to allow a link back to the import job
       parameters:
-      - $ref: '#/parameters/import_job'
+      - $ref: '#/parameters/instance'
       produces:
       - "application/json"
       security:
@@ -447,6 +449,10 @@ paths:
           description: "Create an instance then returned it"
           schema:
             $ref: '#/definitions/Instance'
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}:
@@ -466,6 +472,10 @@ paths:
           description: "Return a single instance state"
           schema:
             $ref: '#/definitions/Instance'
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
         404:
           $ref: '#/responses/InstanceNotFound'
         500:
@@ -485,6 +495,10 @@ paths:
       responses:
         200:
           description: "The instance has been updated"
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
         404:
           $ref: '#/responses/InstanceNotFound'
         500:
@@ -508,6 +522,10 @@ paths:
             type: array
             items:
               $ref: '#/definitions/DimensionNode'
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
         404:
           $ref: '#/responses/InstanceNotFound'
         500:
@@ -541,6 +559,10 @@ paths:
                   type: string
         400:
           description: "instance_id does not match any instances"
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
         404:
           description: "dimension_id does not match any dimensions within the instance"
         500:
@@ -845,19 +867,22 @@ definitions:
         type: string
         readOnly: true
         description: "A unique id for a job"
-      job:
-        description: "An object describing the ID and URL of the job containing this instance"
+      links:
         type: object
-        readOnly: true
         properties:
-          id:
-            type: string
-            description: "The ID of the job containing this instance"
-            example: 042e216a-7822-4fa0-a3d6-e3f5248ffc35
-          href:
-            type: string
-            description: "The URL for the job containing this instance"
-            example: 'http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35'
+          job:
+            description: "An object describing the ID and URL of the job containing this instance"
+            type: object
+            required: ["id", "href"]
+            properties:
+              id:
+                type: string
+                description: "The ID of the job containing this instance"
+                example: 042e216a-7822-4fa0-a3d6-e3f5248ffc35
+              href:
+                type: string
+                description: "The URL for the job containing this instance"
+                example: 'http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35'
       state:
         $ref: '#/definitions/State'
       events:
@@ -882,31 +907,21 @@ definitions:
     type: object
     properties:
       count:
-        description: "The number of editions returned for a dataset"
+        description: "The number of instances returned"
         type: integer
       items:
         type: array
         items:
           $ref: '#/definitions/Instance'
       limit:
-        description: "The number of editions requested for a dataset"
+        description: "The number of instances requested"
         type: integer
       offset:
-        description: "The first row of editions for a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
+        description: "The first row of instances to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
         type: integer
       total_count:
-        description: "The total number of editions against a dataset"
+        description: "The total number of instances"
         type: integer
-  ImportJob:
-    description: "A import job used to link to an instance"
-    type: object
-    properties:
-      href:
-        type: string
-        description: "A url to an import job"
-      id:
-        type: string
-        description: "The unique id for the job"
   NewDatasetResponse:
     description: "A model for the response body when creating a new dataset"
     type: object
@@ -1032,9 +1047,12 @@ definitions:
       dataset:
         $ref: '#/definitions/DatasetLink'
       dimensions:
-        description: "A URL to list dimensions for this version"
-        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2/dimensions"
-        type: string
+        type: object
+        properties:
+          href:
+            description: "A URL to list dimensions for this version"
+            example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2/dimensions"
+            type: string
       edition:
         $ref: '#/definitions/EditionLink'
       self:
@@ -1059,7 +1077,7 @@ definitions:
       id:
         description: "The unique id for the dataset edition for a version"
         type: string
-      link:
+      href:
         description: "A URL to the dataset edition for a version"
         example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017"
         type: string
