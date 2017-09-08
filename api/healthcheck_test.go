@@ -1,10 +1,12 @@
 package api
 
 import (
-	"testing"
 	"net/http"
 	"net/http/httptest"
-	"github.com/ONSdigital/dp-dataset-api/api/datastoretest"
+	"testing"
+
+	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/gorilla/mux"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -18,7 +20,7 @@ func TestHealthCheckReturnsOK(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 	})

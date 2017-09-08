@@ -117,7 +117,7 @@ func (m *Mongo) UpdateDimensionNodeID(dimension *models.Dimension) error {
 	s := session.Copy()
 	defer s.Close()
 	err := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Update(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
-		"value": dimension.Value}, bson.M{"$set": bson.M{"node_id": &dimension.NodeId, "last_updated": time.Now().UTC()}})
+		"value": dimension.Value}, bson.M{"$set": bson.M{"node_id": &dimension.NodeID, "last_updated": time.Now().UTC()}})
 	if err == mgo.ErrNotFound {
 		return api_errors.InstanceNotFound
 	}

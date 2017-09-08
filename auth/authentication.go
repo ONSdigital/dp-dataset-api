@@ -1,34 +1,30 @@
-package api
+package auth
 
 import (
-	"net/http"
-	"github.com/ONSdigital/go-ns/log"
 	"errors"
+	"net/http"
+
+	"github.com/ONSdigital/go-ns/log"
 )
 
 // Authenticator structure which holds the secret key for validating clients. This will be replaced in the future, after the `thin-slices` has been delivered
 type Authenticator struct {
-	secretKey string
-	headerName string
-}
-
-// NewAuthenticator is created
-func NewAuthenticator(key, headerName string) Authenticator {
-	return Authenticator{ secretKey: key, headerName: headerName}
+	SecretKey  string
+	HeaderName string
 }
 
 // Check wraps a HTTP handle. If authentication fails an error code is returned else the HTTP handler is called
 func (a *Authenticator) Check(handle func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		key := r.Header.Get(a.headerName)
+		key := r.Header.Get(a.HeaderName)
 		if key == "" {
 			http.Error(w, "No authentication header provided", http.StatusForbidden)
-			log.Error(errors.New("client missing token"), log.Data{"header":a.headerName})
+			log.Error(errors.New("client missing token"), log.Data{"header": a.HeaderName})
 			return
 		}
-		if key != a.secretKey {
+		if key != a.SecretKey {
 			http.Error(w, "Unauthorised access to API", http.StatusUnauthorized)
-			log.Error(errors.New("unauthorised access to API"), log.Data{"header":a.headerName})
+			log.Error(errors.New("unauthorised access to API"), log.Data{"header": a.HeaderName})
 			return
 		}
 		// The request has been authenticated, now run the clients request
@@ -40,8 +36,8 @@ func (a *Authenticator) Check(handle func(http.ResponseWriter, *http.Request)) h
 func (a *Authenticator) ManualCheck(handle func(http.ResponseWriter, *http.Request, bool)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		isAuthenticated := false
-		key := r.Header.Get(a.headerName)
-		if key == a.secretKey {
+		key := r.Header.Get(a.HeaderName)
+		if key == a.SecretKey {
 			isAuthenticated = true
 		}
 		handle(w, r, isAuthenticated)
