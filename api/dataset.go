@@ -15,7 +15,7 @@ import (
 const state = "published"
 
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
-	results, err := api.DataStore.Backend.GetDatasets()
+	results, err := api.dataStore.Backend.GetDatasets()
 	if err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
@@ -40,7 +40,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	dataset, err := api.DataStore.Backend.GetDataset(id)
+	dataset, err := api.dataStore.Backend.GetDataset(id)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": id})
 		handleErrorType(err, w)
@@ -66,7 +66,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	results, err := api.DataStore.Backend.GetEditions(id)
+	results, err := api.dataStore.Backend.GetEditions(id)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": id})
 		handleErrorType(err, w)
@@ -92,7 +92,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	editionID := vars["edition"]
-	edition, err := api.DataStore.Backend.GetEdition(id, editionID)
+	edition, err := api.dataStore.Backend.GetEdition(id, editionID)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
 		handleErrorType(err, w)
@@ -118,7 +118,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	editionID := vars["edition"]
-	results, err := api.DataStore.Backend.GetVersions(id, editionID)
+	results, err := api.dataStore.Backend.GetVersions(id, editionID)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
 		handleErrorType(err, w)
@@ -145,7 +145,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	editionID := vars["edition"]
 	version := vars["version"]
-	results, err := api.DataStore.Backend.GetVersion(id, editionID, version)
+	results, err := api.dataStore.Backend.GetVersion(id, editionID, version)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": id, "edition": editionID, "version": version})
 		handleErrorType(err, w)
@@ -185,7 +185,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	if err := api.DataStore.Backend.UpsertDataset(datasetID, update); err != nil {
+	if err := api.dataStore.Backend.UpsertDataset(datasetID, update); err != nil {
 		log.ErrorR(r, err, nil)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -220,7 +220,7 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	if err := api.DataStore.Backend.UpsertEdition(edition.ID, update); err != nil {
+	if err := api.dataStore.Backend.UpsertEdition(edition.ID, update); err != nil {
 		log.ErrorR(r, err, nil)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -258,7 +258,7 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	if err := api.DataStore.Backend.UpsertVersion(version.ID, update); err != nil {
+	if err := api.dataStore.Backend.UpsertVersion(version.ID, update); err != nil {
 		log.ErrorR(r, err, nil)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -275,7 +275,7 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 
-		if err := api.DataStore.Backend.UpsertDataset(datasetID, updateDataset); err != nil {
+		if err := api.dataStore.Backend.UpsertDataset(datasetID, updateDataset); err != nil {
 			log.ErrorC("failed to update dataset document with link to latest version", err, nil)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -289,7 +289,7 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleErrorType(err error, w http.ResponseWriter) {
-	if err == api_errors.DatasetNotFound || err == api_errors.EditionNotFound || err == api_errors.VersionNotFound || err == api_errors.DimensionNodeNotFound || err == api_errors.InstanceNotFound{
+	if err == api_errors.DatasetNotFound || err == api_errors.EditionNotFound || err == api_errors.VersionNotFound || err == api_errors.DimensionNodeNotFound || err == api_errors.InstanceNotFound {
 		http.Error(w, err.Error(), http.StatusNotFound)
 	} else {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

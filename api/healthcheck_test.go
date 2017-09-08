@@ -21,7 +21,7 @@ func TestHealthCheckReturnsOK(t *testing.T) {
 		mockedDataStore := &backendtest.BackendMock{}
 
 		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
-		api.Router.ServeHTTP(w, r)
+		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 	})
 }

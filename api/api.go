@@ -8,13 +8,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// DatasetAPI manages importing filters against a dataset
-type DatasetAPI struct {
-	DataStore   store.DataStore
-	Router      mux.Router
-	PrivateAuth *auth.Authenticator
-}
-
 //go:generate moq -out apitest/api.go -pkg apitest . API
 
 //API provides an interface for the routes
@@ -22,32 +15,39 @@ type API interface {
 	CreateDatasetAPI(string, *mux.Router, store.DataStore) *DatasetAPI
 }
 
+// DatasetAPI manages importing filters against a dataset
+type DatasetAPI struct {
+	dataStore   store.DataStore
+	router      mux.Router
+	privateAuth *auth.Authenticator
+}
+
 // CreateDatasetAPI manages all the routes configured to API
 func CreateDatasetAPI(secretKey string, router *mux.Router, dataStore store.DataStore) *DatasetAPI {
 	router.Path("/healthcheck").Methods("GET").HandlerFunc(healthCheck)
 
-	api := DatasetAPI{PrivateAuth: &auth.Authenticator{SecretKey: secretKey, HeaderName: "internal-token"}, DataStore: dataStore, Router: *router}
-	api.Router.HandleFunc("/datasets", api.getDatasets).Methods("GET")
-	api.Router.HandleFunc("/datasets", api.addDataset).Methods("POST")
-	api.Router.HandleFunc("/datasets/{id}", api.getDataset).Methods("GET")
-	api.Router.HandleFunc("/datasets/{id}/editions", api.getEditions).Methods("GET")
-	api.Router.HandleFunc("/datasets/{id}/editions/{edition}", api.getEdition).Methods("GET")
-	api.Router.HandleFunc("/datasets/{id}/editions/{edition}", api.addEdition).Methods("POST")
-	api.Router.HandleFunc("/datasets/{id}/editions/{edition}/versions", api.getVersions).Methods("GET")
-	api.Router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.getVersion).Methods("GET")
-	api.Router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.addVersion).Methods("POST")
+	api := DatasetAPI{privateAuth: &auth.Authenticator{SecretKey: secretKey, HeaderName: "internal-token"}, dataStore: dataStore, router: *router}
+	api.router.HandleFunc("/datasets", api.getDatasets).Methods("GET")
+	api.router.HandleFunc("/datasets", api.addDataset).Methods("POST")
+	api.router.HandleFunc("/datasets/{id}", api.getDataset).Methods("GET")
+	api.router.HandleFunc("/datasets/{id}/editions", api.getEditions).Methods("GET")
+	api.router.HandleFunc("/datasets/{id}/editions/{edition}", api.getEdition).Methods("GET")
+	api.router.HandleFunc("/datasets/{id}/editions/{edition}", api.addEdition).Methods("POST")
+	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions", api.getVersions).Methods("GET")
+	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.getVersion).Methods("GET")
+	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.addVersion).Methods("POST")
 
-	instance := instance.Store{api.DataStore.Backend}
-	dimension := dimension.Store{api.DataStore.Backend}
-	api.Router.HandleFunc("/instances", instance.GetList).Methods("GET")
-	api.Router.HandleFunc("/instances", api.PrivateAuth.Check(instance.Add)).Methods("POST")
-	api.Router.HandleFunc("/instances/{id}", instance.Get).Methods("GET")
-	api.Router.HandleFunc("/instances/{id}", api.PrivateAuth.Check(instance.Update)).Methods("PUT")
-	api.Router.HandleFunc("/instances/{id}/events", api.PrivateAuth.Check(instance.AddEvent)).Methods("POST")
-	api.Router.HandleFunc("/instances/{id}/dimensions", api.PrivateAuth.Check(dimension.GetNodes)).Methods("GET")
-	api.Router.HandleFunc("/instances/{id}/dimensions/{dimension}/options", dimension.GetUnique).Methods("GET")
-	api.Router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}", api.PrivateAuth.Check(instance.AddDimension)).Methods("PUT")
-	api.Router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}/node_id/{node_id}", api.PrivateAuth.Check(dimension.AddNodeID)).Methods("PUT")
-	api.Router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", api.PrivateAuth.Check(instance.UpdateObservations)).Methods("PUT")
+	instance := instance.Store{api.dataStore.Backend}
+	dimension := dimension.Store{api.dataStore.Backend}
+	api.router.HandleFunc("/instances", instance.GetList).Methods("GET")
+	api.router.HandleFunc("/instances", api.privateAuth.Check(instance.Add)).Methods("POST")
+	api.router.HandleFunc("/instances/{id}", instance.Get).Methods("GET")
+	api.router.HandleFunc("/instances/{id}", api.privateAuth.Check(instance.Update)).Methods("PUT")
+	api.router.HandleFunc("/instances/{id}/events", api.privateAuth.Check(instance.AddEvent)).Methods("POST")
+	api.router.HandleFunc("/instances/{id}/dimensions", api.privateAuth.Check(dimension.GetNodes)).Methods("GET")
+	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options", dimension.GetUnique).Methods("GET")
+	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}", api.privateAuth.Check(instance.AddDimension)).Methods("PUT")
+	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}/node_id/{node_id}", api.privateAuth.Check(dimension.AddNodeID)).Methods("PUT")
+	api.router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", api.privateAuth.Check(instance.UpdateObservations)).Methods("PUT")
 	return &api
 }
