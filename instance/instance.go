@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"strings"
 
+	"github.com/ONSdigital/dp-dataset-api/api-errors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/go-ns/log"
@@ -171,11 +171,13 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 }
 
 func handleErrorType(err error, w http.ResponseWriter) {
-	if strings.Contains(err.Error(), "not found") { // == api_errors.DatasetNotFound || err == api_errors.EditionNotFound || err == api_errors.VersionNotFound || err == api_errors.DimensionNodeNotFound || err == api_errors.InstanceNotFound {
-		http.Error(w, err.Error(), http.StatusNotFound)
-	} else {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	status := http.StatusInternalServerError
+
+	if err == api_errors.DatasetNotFound || err == api_errors.EditionNotFound || err == api_errors.VersionNotFound || err == api_errors.DimensionNodeNotFound || err == api_errors.InstanceNotFound {
+		status = http.StatusNotFound
 	}
+
+	http.Error(w, err.Error(), status)
 }
 
 func internalError(w http.ResponseWriter, err error) {
