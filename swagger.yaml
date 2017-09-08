@@ -191,7 +191,7 @@ paths:
       tags:
       - "Public"
       summary: "Get a dataset"
-      description: "The dataset contains all high level information, for additional details see editions or versions of a dataset. For unpublished datasets a privater user can access them but a public user will be returned a 403 forbidden code"
+      description: "The dataset contains all high level information, for additional details see editions or versions of a dataset. "
       parameters:
       - $ref: '#/parameters/id'
       responses:
@@ -199,10 +199,6 @@ paths:
           description: "A json object for a single Dataset"
           schema:
             $ref: '#/definitions/DatasetResponse'
-        401:
-          description: "The token provided is unauthorised to carry out this operation"
-        403:
-          description: "No header with a token key was provided"
         404:
           description: "No dataset was found using the id provided"
         500:
