@@ -193,11 +193,11 @@ func (m *Mongo) UpsertDataset(id string, update interface{}) (err error) {
 }
 
 // UpsertEdition adds or overides an existing edition document
-func (m *Mongo) UpsertEdition(id string, update interface{}) (err error) {
+func (m *Mongo) UpsertEdition(edition string, update interface{}) (err error) {
 	s := session.Copy()
 	defer s.Close()
 
-	_, err = s.DB(m.Database).C("editions").UpsertId(id, update)
+	_, err = s.DB(m.Database).C("editions").Upsert(bson.M{"edition": edition}, update)
 	return
 }
 

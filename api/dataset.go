@@ -302,24 +302,39 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
-	editionID := vars["edition"]
+	edition := vars["edition"]
 	if r.Header.Get(internalToken) != api.internalToken {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	edition, err := models.CreateEdition(r.Body)
+	// Check if edition already exists and if it has been published return a status of Forbidden
+	currentEdition, err := api.dataStore.Backend.GetEdition(bson.M{"links.dataset.id": datasetID, "edition": edition})
+	if err != nil {
+		if err != api_errors.EditionNotFound {
+			log.Error(err, log.Data{"dataset_id": datasetID, "edition": edition})
+			handleErrorType(err, w)
+			return
+		}
+	} else {
+		if currentEdition.State == publishedState {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+	}
+
+	editionDoc, err := models.CreateEdition(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
 
-	edition.Edition = editionID
-	edition.Links.Dataset.ID = datasetID
-	edition.Links.Dataset.Href = api.host + "/datasets/" + datasetID
-	edition.Links.Self.Href = api.host + "/datasets/" + datasetID + "/editions/" + editionID
-	edition.Links.Versions.Href = api.host + "/datasets/" + datasetID + "/editions/" + editionID + "/versions"
+	editionDoc.Edition = edition
+	editionDoc.Links.Dataset.ID = datasetID
+	editionDoc.Links.Dataset.Href = api.host + "/datasets/" + datasetID
+	editionDoc.Links.Self.Href = api.host + "/datasets/" + datasetID + "/editions/" + edition
+	editionDoc.Links.Versions.Href = api.host + "/datasets/" + datasetID + "/editions/" + edition + "/versions"
 
 	update := bson.M{
 		"$set": edition,
@@ -328,7 +343,7 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	if err := api.dataStore.Backend.UpsertEdition(edition.ID, update); err != nil {
+	if err := api.dataStore.Backend.UpsertEdition(edition, update); err != nil {
 		log.ErrorR(r, err, nil)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -336,7 +351,7 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusCreated)
-	log.Debug("upsert edition", log.Data{"dataset_id": datasetID, "edition": editionID})
+	log.Debug("upsert edition", log.Data{"dataset_id": datasetID, "edition": edition})
 }
 
 func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
@@ -391,7 +406,6 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 			"last_updated": time.Now(),
 		},
 	}
-	log.Debug("got here", log.Data{"version": version})
 
 	if err := api.dataStore.Backend.UpsertVersion(version.ID, update); err != nil {
 		log.ErrorR(r, err, nil)

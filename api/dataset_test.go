@@ -544,10 +544,15 @@ func TestPostEditionReturnsCreated(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
+			GetEditionFunc: func(interface{}) (*models.Edition, error) {
+				return nil, api_errors.EditionNotFound
+			},
 			UpsertEditionFunc: func(string, interface{}) error {
 				return nil
 			},
 		}
+
+		mockedDataStore.GetEdition(bson.M{"links.dataset.id": "123", "edition": "2017"})
 
 		update := bson.M{
 			"$set": bson.M{
@@ -562,6 +567,7 @@ func TestPostEditionReturnsCreated(t *testing.T) {
 		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusCreated)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 2)
 	})
 }
@@ -576,14 +582,19 @@ func TestPostEditionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
+			GetEditionFunc: func(interface{}) (*models.Edition, error) {
+				return &models.Edition{State: "created"}, nil
+			},
 			UpsertEditionFunc: func(string, interface{}) error {
 				return badRequestError
 			},
 		}
+		mockedDataStore.GetEdition(bson.M{"links.dataset.id": "123", "edition": "2017"})
 
 		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 	})
 
@@ -595,15 +606,19 @@ func TestPostEditionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
+			GetEditionFunc: func(interface{}) (*models.Edition, error) {
+				return nil, internalError
+			},
 			UpsertEditionFunc: func(string, interface{}) error {
-				return internalError
+				return nil
 			},
 		}
 
 		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the request does not contain a valid internal token return status unauthorised", t, func() {
@@ -613,6 +628,9 @@ func TestPostEditionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
+			GetEditionFunc: func(interface{}) (*models.Edition, error) {
+				return nil, internalError
+			},
 			UpsertEditionFunc: func(string, interface{}) error {
 				return nil
 			},
@@ -621,6 +639,30 @@ func TestPostEditionReturnsError(t *testing.T) {
 		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the edition is already published return status forbidden", t, func() {
+		var b string
+		b = datasetPayload
+		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017", bytes.NewBufferString(b))
+		r.Header.Add("internal_token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &backendtest.BackendMock{
+			GetEditionFunc: func(interface{}) (*models.Edition, error) {
+				return &models.Edition{State: publishedState}, nil
+			},
+			UpsertEditionFunc: func(string, interface{}) error {
+				return nil
+			},
+		}
+
+		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 	})
 }
