@@ -13,19 +13,23 @@ db.datasets.insert({
         },
         "description": "census covers the ethnicity of people living in the uk",
         "links": {
-            "editions": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions",
+            "editions": {
+                "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions"
+            },
             "latest_version": {
                 "id": "63294ed7-dccf-4f30-ad57-62365f038fb7",
-                "link": "/dataset/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/1"
+                "href": "http://localhost:22000/dataset/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/1"
             },
-            "self": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+            "self": {
+                "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+            }
         },
         "next_release": "2017-08-23",
         "periodicity": "yearly",
         "publisher": {
             "name": "The office of national statistics",
             "type": "goverment department",
-            "url": "https://www.ons.gov.uk/"
+            "href": "https://www.ons.gov.uk/"
         },
         "state": "published",
         "theme": "population",
@@ -40,19 +44,23 @@ db.datasets.insert({
         },
         "description": "census covers the ethnicity of people living in the uk",
         "links": {
-            "editions": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions",
+            "editions": {
+                "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions"
+            },
             "latest_version": {
                 "id": "679ebe5f-d9cd-4d6e-8afc-6a2a4f991ccf",
-                "link": "/dataset/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017/versions/1"
+                "href": "http://localhost:22000/dataset/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017/versions/1"
             },
-            "self": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+            "self": {
+                "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+            }
         },
         "next_release": "2018-08-23",
         "periodicity": "yearly",
         "publisher": {
             "name": "The office of national statistics",
             "type": "goverment department",
-            "url": "https://www.ons.gov.uk/"
+            "href": "https://www.ons.gov.uk/"
         },
         "state": "created",
         "theme": "population",
@@ -70,19 +78,23 @@ db.datasets.insert({
         },
         "description": "census covers the ethnicity of people living in the uk",
         "links": {
-            "editions": "http://localhost:22000/datasets/456/editions",
+            "editions": {
+                "href": "http://localhost:22000/datasets/456/editions"
+            },
             "latest_version": {
                 "id": "3b45921b-0efa-4844-a16e-3f9f30df4f88",
-                "link": "/dataset/a9fa845c-0c05-4954-aed7-752b8208da34/editions/2011/versions/1"
+                "href": "http://localhost:22000/dataset/a9fa845c-0c05-4954-aed7-752b8208da34/editions/2011/versions/1"
             },
-            "self": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34"
+            "self": {
+                "href": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34"
+            }
         },
         "next_release": "2021-04-30",
         "periodicity": "yearly",
         "publisher": {
             "name": "The office of national statistics",
             "type": "goverment department",
-            "url": "https://www.ons.gov.uk/"
+            "href": "https://www.ons.gov.uk/"
         },
         "theme": "population",
         "title": "CensusEthnicity",
@@ -96,10 +108,14 @@ db.editions.insert({
     "links": {
         "dataset": {
             "id": "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
-            "link": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
         },
-        "self": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016",
-        "versions": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions"
+        "self": {
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016"
+        },
+        "versions": {
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions"
+        }
     },
     "state": "published",
     "last_updated": "2017-08-25T15:09:11.829+01:00"
@@ -110,10 +126,14 @@ db.editions.insert({
     "links": {
         "dataset": {
             "id": "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
-            "link": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
         },
-        "self": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017",
-        "versions": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017/versions"
+        "self": {
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017"
+        },
+        "versions": {
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017/versions"
+        }
     },
     "state": "created",
     "last_updated": "2017-08-25T15:09:11.829+01:00"
@@ -124,10 +144,14 @@ db.editions.insert({
     "links": {
         "dataset": {
             "id": "a9fa845c-0c05-4954-aed7-752b8208da34",
-            "link": "http://localhost:22000/datasets/456"
+            "href": "http://localhost:22000/datasets/456"
         },
-        "self": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34/editions/2011",
-        "versions": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34/editions/2011/versions"
+        "self": {
+            "href": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34/editions/2011"
+        },
+        "versions": {
+            "href": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34/editions/2011/versions"
+        }
     },
     "state": "created",
     "last_updated": "2017-08-25T15:09:11.829+01:00"
@@ -141,14 +165,18 @@ db.versions.insert({
     "links": {
         "dataset": {
             "id": "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
-            "link": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
         },
         "edition": {
             "id": "a051a058-58a9-4ba4-8374-fbb7315d3b78",
-            "link": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016"
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016"
         },
-        "self": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/1",
-        "dimensions": ""
+        "self": {
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/1"
+        },
+        "dimensions": {
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/1/dimensions"
+        }
     },
     "release_date": "2016-08-23",
     "state": "published",
@@ -163,14 +191,18 @@ db.versions.insert({
     "links": {
         "dataset": {
             "id": "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
-            "link": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
         },
         "edition": {
             "id": "a051a058-58a9-4ba4-8374-fbb7315d3b78",
-            "link": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016"
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016"
         },
-        "self": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/2",
-        "dimensions": ""
+        "self": {
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/2"
+        },
+        "dimensions": {
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/2/dimensions"
+        }
     },
     "release_date": "2016-08-24",
     "state": "created",
@@ -185,14 +217,18 @@ db.versions.insert({
     "links": {
         "dataset": {
             "id": "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
-            "link": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
         },
         "edition": {
             "id": "8af20615-c4c5-4bb9-af35-a2530e5a2433",
-            "link": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017"
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017"
         },
-        "self": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017/versions/1",
-        "dimensions": ""
+        "self": {
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017/versions/1"
+        },
+        "dimensions": {
+            "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017/versions/1/dimensions"
+        }
     },
     "release_date": "2017-08-23",
     "state": "created",
@@ -207,14 +243,18 @@ db.versions.insert({
     "links": {
         "dataset": {
             "id": "a9fa845c-0c05-4954-aed7-752b8208da34",
-            "link": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34"
+            "href": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34"
         },
         "edition": {
             "id": "2dc3a321-2c31-4a8a-9a8d-7962d7590ed3",
-            "link": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34/editions/2011"
+            "href": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34/editions/2011"
         },
-        "self": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34/editions/2011/versions/1",
-        "dimensions": ""
+        "self": {
+            "href": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34/editions/2011/versions/1"
+        },
+        "dimensions": {
+            "href": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34/editions/2011/versions/1/dimensions"
+        }
     },
     "release_date": "2011-04-30",
     "state": "created",

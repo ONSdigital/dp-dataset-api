@@ -40,7 +40,7 @@ func main() {
 		"bind_address": cfg.BindAddr,
 	})
 
-	_ = api.CreateDatasetAPI(cfg.SecretKey, router, api.DataStore{Backend: mongo})
+	_ = api.CreateDatasetAPI(cfg.DatasetAPIURL, cfg.SecretKey, router, api.DataStore{Backend: mongo})
 
 	if err = s.ListenAndServe(); err != nil {
 		log.Error(err, nil)

@@ -4,9 +4,10 @@ import "github.com/ian-kent/gofigure"
 
 // Configuration structure which hold information for configuring the import API
 type Configuration struct {
-	BindAddr    string `env:"BIND_ADDR" flag:"bind-addr" flagDesc:"The port to bind to"`
-	SecretKey   string `env:"SECRET_KEY" flag:"secret-key" flagDesc:"A secret key used authentication"`
-	MongoConfig MongoConfig
+	BindAddr      string `env:"BIND_ADDR" flag:"bind-addr" flagDesc:"The port to bind to"`
+	DatasetAPIURL string `env:"DATASET_API_URL" flag:"dataset-api-url" flagDesc:"The host and port this API is run on"`
+	SecretKey     string `env:"SECRET_KEY" flag:"secret-key" flagDesc:"A secret key used authentication"`
+	MongoConfig   MongoConfig
 }
 
 // MongoConfig contains the config required to connect to MongoDB.
@@ -25,8 +26,9 @@ func Get() (*Configuration, error) {
 	}
 
 	cfg = &Configuration{
-		BindAddr:  ":22000",
-		SecretKey: "FD0108EA-825D-411C-9B1D-41EF7727F465",
+		BindAddr:      ":22000",
+		DatasetAPIURL: "http://localhost:22000",
+		SecretKey:     "FD0108EA-825D-411C-9B1D-41EF7727F465",
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",

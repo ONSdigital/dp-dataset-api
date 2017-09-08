@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -266,8 +265,8 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	datasetID := dataset.ID
-	dataset.Links.Self = "/datasets/" + datasetID
-	dataset.Links.Editions = "/datasets/" + datasetID + "/editions"
+	dataset.Links.Self.Href = api.host + "/datasets/" + datasetID
+	dataset.Links.Editions.Href = api.host + "/datasets/" + datasetID + "/editions"
 	dataset.LastUpdated = time.Now()
 
 	var datasetDoc *models.DatasetUpdate
@@ -318,9 +317,9 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 
 	edition.Edition = editionID
 	edition.Links.Dataset.ID = datasetID
-	edition.Links.Dataset.Link = "/datasets/" + datasetID
-	edition.Links.Self = "/datasets/" + datasetID + "/editions/" + editionID
-	edition.Links.Versions = "/datasets/" + datasetID + "/editions/" + editionID + "/versions"
+	edition.Links.Dataset.Href = api.host + "/datasets/" + datasetID
+	edition.Links.Self.Href = api.host + "/datasets/" + datasetID + "/editions/" + editionID
+	edition.Links.Versions.Href = api.host + "/datasets/" + datasetID + "/editions/" + editionID + "/versions"
 
 	update := bson.M{
 		"$set": edition,
@@ -356,6 +355,12 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	if err = models.ValidateVersion(version); err != nil {
+		log.ErrorR(r, err, nil)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	editionDoc, err := api.dataStore.Backend.GetEdition(bson.M{"links.dataset.id": datasetID, "edition": edition})
 	if err != nil {
 		log.ErrorR(r, err, nil)
@@ -374,11 +379,11 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 	version.Version = versionID
 	version.Edition = edition
 	version.Links.Dataset.ID = datasetID
-	version.Links.Dataset.Link = "/datasets/" + datasetID
-	version.Links.Edition.Link = "/datasets/" + datasetID + "/editions/" + edition
+	version.Links.Dataset.Href = api.host + "/datasets/" + datasetID
+	version.Links.Edition.Href = api.host + "/datasets/" + datasetID + "/editions/" + edition
 	version.Links.Edition.ID = editionDoc.ID
-	version.Links.Self = "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + versionID
-	version.Links.Dimensions = "/instance/" + versionID + "/dimensions"
+	version.Links.Self.Href = api.host + "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + versionID
+	version.Links.Dimensions.Href = api.host + "/instance/" + versionID + "/dimensions"
 
 	update := bson.M{
 		"$set": version,
@@ -387,13 +392,6 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	log.Debug("got here", log.Data{"version": version})
-
-	// TODO Move validation to models package?
-	if version.State != "created" && version.CollectionID == "" {
-		log.Error(errors.New("Missing association between version and a collection"), nil)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
 
 	if err := api.dataStore.Backend.UpsertVersion(version.ID, update); err != nil {
 		log.ErrorR(r, err, nil)
@@ -451,12 +449,10 @@ func (api *DatasetAPI) updateDataset(id string, version *models.Version) error {
 		log.ErrorC("Unable to update dataset", err, log.Data{"dataset_id": id})
 		return err
 	}
-	log.Info("got here", nil)
 
 	currentDataset.Next.CollectionID = version.CollectionID
-	log.Info("got here", nil)
 	currentDataset.Next.Links.LatestVersion.ID = version.ID
-	currentDataset.Next.Links.LatestVersion.Link = version.Links.Self
+	currentDataset.Next.Links.LatestVersion.Href = version.Links.Self.Href
 	currentDataset.Next.State = publishedState
 	currentDataset.Next.LastUpdated = time.Now()
 
@@ -470,10 +466,7 @@ func (api *DatasetAPI) updateDataset(id string, version *models.Version) error {
 		Next:    currentDataset.Next,
 	}
 
-	log.Info("got here", nil)
-
 	if err := api.dataStore.Backend.UpsertDataset(id, bson.M{"$set": newDataset}); err != nil {
-		log.Debug("errored", nil)
 		log.ErrorC("Unable to update dataset", err, log.Data{"dataset_id": id})
 		return err
 	}
