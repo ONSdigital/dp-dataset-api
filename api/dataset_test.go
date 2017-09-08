@@ -10,8 +10,9 @@ import (
 
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/ONSdigital/dp-dataset-api/api/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -33,13 +34,13 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetDatasetsFunc: func() (*models.DatasetResults, error) {
 				return &models.DatasetResults{}, nil
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
@@ -52,13 +53,13 @@ func TestGetDatasetsReturnsInternalError(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetDatasetsFunc: func() (*models.DatasetResults, error) {
 				return nil, internalError
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
@@ -71,13 +72,13 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(id string) (*models.Dataset, error) {
 				return &models.Dataset{ID: "123"}, nil
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -90,13 +91,13 @@ func TestGetDatasetReturnsInternalError(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(id string) (*models.Dataset, error) {
 				return nil, internalError
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -109,13 +110,13 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetEditionsFunc: func(id string) (*models.EditionResults, error) {
 				return &models.EditionResults{}, nil
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
@@ -128,13 +129,13 @@ func TestGetEditionsReturnsInternalError(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetEditionsFunc: func(id string) (*models.EditionResults, error) {
 				return nil, internalError
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
@@ -147,13 +148,13 @@ func TestGetEditionReturnsOK(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(datasetID string, editionID string) (*models.Edition, error) {
 				return &models.Edition{}, nil
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
@@ -166,13 +167,13 @@ func TestGetEditionReturnsInternalError(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(datasetID string, editionID string) (*models.Edition, error) {
 				return nil, internalError
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
@@ -185,13 +186,13 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetVersionsFunc: func(datasetID string, editionID string) (*models.VersionResults, error) {
 				return &models.VersionResults{}, nil
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -204,13 +205,13 @@ func TestGetVersionsReturnsInternalError(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetVersionsFunc: func(datasetID string, editionID string) (*models.VersionResults, error) {
 				return nil, internalError
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -223,13 +224,13 @@ func TestGetVersionReturnsOK(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(datasetID string, editionID, versionID string) (*models.Version, error) {
 				return &models.Version{}, nil
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -242,13 +243,13 @@ func TestGetVersionReturnsInternalError(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(datasetID string, editionID, versionID string) (*models.Version, error) {
 				return nil, internalError
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -263,7 +264,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertDatasetFunc: func(string, interface{}) error {
 				return nil
 			},
@@ -279,7 +280,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		}
 		mockedDataStore.UpsertDataset("123", update)
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusCreated)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
@@ -294,13 +295,13 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertDatasetFunc: func(string, interface{}) error {
 				return badRequestError
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -312,13 +313,13 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertDatasetFunc: func(string, interface{}) error {
 				return internalError
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
@@ -333,7 +334,7 @@ func TestPostEditionReturnsCreated(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertEditionFunc: func(string, interface{}) error {
 				return nil
 			},
@@ -349,7 +350,7 @@ func TestPostEditionReturnsCreated(t *testing.T) {
 		}
 		mockedDataStore.UpsertEdition("2017", update)
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusCreated)
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 2)
@@ -364,13 +365,13 @@ func TestPostEditionReturnsError(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertEditionFunc: func(string, interface{}) error {
 				return badRequestError
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
@@ -382,13 +383,13 @@ func TestPostEditionReturnsError(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertEditionFunc: func(string, interface{}) error {
 				return internalError
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
@@ -403,7 +404,7 @@ func TestPostVersionReturnsCreated(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertVersionFunc: func(string, interface{}) error {
 				return nil
 			},
@@ -419,7 +420,7 @@ func TestPostVersionReturnsCreated(t *testing.T) {
 		}
 		mockedDataStore.UpsertVersion("1", update)
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusCreated)
 		So(len(mockedDataStore.UpsertVersionCalls()), ShouldEqual, 2)
@@ -431,7 +432,7 @@ func TestPostVersionReturnsCreated(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertVersionFunc: func(string, interface{}) error {
 				return nil
 			},
@@ -461,7 +462,7 @@ func TestPostVersionReturnsCreated(t *testing.T) {
 		}
 		mockedDataStore.UpsertDataset("123", updateDataset)
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusCreated)
 		So(len(mockedDataStore.UpsertVersionCalls()), ShouldEqual, 2)
@@ -477,13 +478,13 @@ func TestPostVersionReturnsError(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertVersionFunc: func(string, interface{}) error {
 				return badRequestError
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.UpsertVersionCalls()), ShouldEqual, 0)
@@ -495,13 +496,13 @@ func TestPostVersionReturnsError(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertVersionFunc: func(string, interface{}) error {
 				return internalError
 			},
 		}
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.UpsertVersionCalls()), ShouldEqual, 1)
@@ -513,7 +514,7 @@ func TestPostVersionReturnsError(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertVersionFunc: func(string, interface{}) error {
 				return nil
 			},
@@ -532,7 +533,7 @@ func TestPostVersionReturnsError(t *testing.T) {
 		}
 		mockedDataStore.UpsertVersion("1", update)
 
-		api := CreateDatasetAPI(secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
+		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.UpsertVersionCalls()), ShouldEqual, 2)
