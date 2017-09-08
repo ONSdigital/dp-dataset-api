@@ -25,6 +25,7 @@ func unmarshalEvent(reader io.Reader) (*models.Event, error) {
 	return &event, err
 }
 
+//AddEvent details to an instance
 func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -36,7 +37,7 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := event.Validate(); err != nil {
+	if err = event.Validate(); err != nil {
 		log.Error(err, nil)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

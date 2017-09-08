@@ -16,6 +16,8 @@ type DatasetAPI struct {
 }
 
 //go:generate moq -out apitest/api.go -pkg apitest . API
+
+//API provides an interface for the routes
 type API interface {
 	CreateDatasetAPI(string, *mux.Router, store.DataStore) *DatasetAPI
 }
@@ -24,7 +26,7 @@ type API interface {
 func CreateDatasetAPI(secretKey string, router *mux.Router, dataStore store.DataStore) *DatasetAPI {
 	router.Path("/healthcheck").Methods("GET").HandlerFunc(healthCheck)
 
-	api := DatasetAPI{PrivateAuth: &auth.Authenticator{secretKey, "internal-token"}, DataStore: dataStore, Router: *router}
+	api := DatasetAPI{PrivateAuth: &auth.Authenticator{SecretKey: secretKey, HeaderName: "internal-token"}, DataStore: dataStore, Router: *router}
 	api.Router.HandleFunc("/datasets", api.getDatasets).Methods("GET")
 	api.Router.HandleFunc("/datasets", api.addDataset).Methods("POST")
 	api.Router.HandleFunc("/datasets/{id}", api.getDataset).Methods("GET")

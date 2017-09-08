@@ -12,6 +12,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -19,17 +20,16 @@ const secretKey = "coffee"
 
 var internalError = errors.New("internal error")
 
-func createRequestWithToken(method, url string, body io.Reader) (*http.Request, error) {
-	r, err := http.NewRequest(method, url, body)
+func createRequestWithToken(method, url string, body io.Reader) *http.Request {
+	r := httptest.NewRequest(method, url, body)
 	r.Header.Add("internal-token", secretKey)
-	return r, err
+	return r
 }
 
 func TestGetInstancesReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("Get instances returns a ok status code", t, func() {
-		r, err := http.NewRequest("GET", "http://localhost:21800/instances", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &backendtest.BackendMock{
@@ -49,8 +49,7 @@ func TestGetInstancesReturnsOK(t *testing.T) {
 func TestGetInstancesReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("Get instances returns an internal error", t, func() {
-		r, err := http.NewRequest("GET", "http://localhost:21800/instances", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &backendtest.BackendMock{
@@ -70,8 +69,7 @@ func TestGetInstancesReturnsInternalError(t *testing.T) {
 func TestGetInstanceReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("Get instance returns a ok status code", t, func() {
-		r, err := http.NewRequest("GET", "http://localhost:21800/instances/123", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &backendtest.BackendMock{
@@ -91,8 +89,7 @@ func TestGetInstanceReturnsOK(t *testing.T) {
 func TestGetInstanceReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("Get instance returns an internal error", t, func() {
-		r, err := http.NewRequest("GET", "http://localhost:21800/instances/123", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &backendtest.BackendMock{
@@ -113,8 +110,7 @@ func TestAddInstancesReturnsCreated(t *testing.T) {
 	t.Parallel()
 	Convey("Add instance returns a created code", t, func() {
 		body := strings.NewReader(`{"job": { "id":"123-456", "link":"http://localhost:2200/jobs/123-456" } }`)
-		r, err := createRequestWithToken("POST", "http://localhost:21800/instances", body)
-		So(err, ShouldBeNil)
+		r := createRequestWithToken("POST", "http://localhost:21800/instances", body)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &backendtest.BackendMock{
@@ -135,8 +131,7 @@ func TestAddInstancesReturnsBadRequest(t *testing.T) {
 	t.Parallel()
 	Convey("Add instance returns a bad request with invalid json", t, func() {
 		body := strings.NewReader(`{`)
-		r, err := createRequestWithToken("POST", "http://localhost:21800/instances", body)
-		So(err, ShouldBeNil)
+		r := createRequestWithToken("POST", "http://localhost:21800/instances", body)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &backendtest.BackendMock{
@@ -152,8 +147,7 @@ func TestAddInstancesReturnsBadRequest(t *testing.T) {
 	})
 	Convey("Add instance returns a bad request with a empty json", t, func() {
 		body := strings.NewReader(`{}`)
-		r, err := createRequestWithToken("POST", "http://localhost:21800/instances", body)
-		So(err, ShouldBeNil)
+		r := createRequestWithToken("POST", "http://localhost:21800/instances", body)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &backendtest.BackendMock{
@@ -173,8 +167,7 @@ func TestAddInstancesReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("Add instance returns an internal error", t, func() {
 		body := strings.NewReader(`{"job": { "id":"123-456", "link":"http://localhost:2200/jobs/123-456" } }`)
-		r, err := createRequestWithToken("POST", "http://localhost:21800/instances", body)
-		So(err, ShouldBeNil)
+		r := createRequestWithToken("POST", "http://localhost:21800/instances", body)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
 			AddInstanceFunc: func(*models.Instance) (*models.Instance, error) {
@@ -190,12 +183,71 @@ func TestAddInstancesReturnsInternalError(t *testing.T) {
 	})
 }
 
+func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
+	t.Parallel()
+	Convey("Add a dimension to an instance returns ok", t, func() {
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &backendtest.BackendMock{
+			AddDimensionToInstanceFunc: func(event *models.Dimension) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{mockedDataStore}
+		instance.AddDimension(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
+	t.Parallel()
+	Convey("Add a dimension to an instance returns not found", t, func() {
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &backendtest.BackendMock{
+			AddDimensionToInstanceFunc: func(event *models.Dimension) error {
+				return api_errors.DimensionNodeNotFound
+			},
+		}
+
+		instance := &instance.Store{mockedDataStore}
+		instance.AddDimension(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
+	t.Parallel()
+	Convey("Add a dimension to an instance returns internal error", t, func() {
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &backendtest.BackendMock{
+			AddDimensionToInstanceFunc: func(event *models.Dimension) error {
+				return internalError
+			},
+		}
+
+		instance := &instance.Store{mockedDataStore}
+		instance.AddDimension(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
+	})
+}
+
 func TestUpdateInstanceReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("update to an instance returns an internal error", t, func() {
-		body := strings.NewReader(`{"state":  "completed"}`)
-		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
-		So(err, ShouldBeNil)
+		body := strings.NewReader(`{"state":"completed"}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &backendtest.BackendMock{
@@ -216,8 +268,7 @@ func TestUpdateInstanceReturnsBadRequest(t *testing.T) {
 	t.Parallel()
 	Convey("update to an instance returns an bad request error", t, func() {
 		body := strings.NewReader(`{"state":`)
-		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
-		So(err, ShouldBeNil)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{}
 
@@ -231,9 +282,8 @@ func TestUpdateInstanceReturnsBadRequest(t *testing.T) {
 func TestUpdateInstanceReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("update to an instance returns an internal error", t, func() {
-		body := strings.NewReader(`{"state":  "completed"}`)
-		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
-		So(err, ShouldBeNil)
+		body := strings.NewReader(`{"state":"completed"}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &backendtest.BackendMock{
@@ -250,74 +300,10 @@ func TestUpdateInstanceReturnsInternalError(t *testing.T) {
 	})
 }
 
-func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
-	t.Parallel()
-	Convey("Add a dimension to an instance returns ok", t, func() {
-		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55", nil)
-		So(err, ShouldBeNil)
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &backendtest.BackendMock{
-			AddDimensionToInstanceFunc: func(event *models.Dimension) error {
-				return nil
-			},
-		}
-
-		instance := &instance.Store{mockedDataStore}
-		instance.AddDimension(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
-	})
-}
-
-func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
-	t.Parallel()
-	Convey("Add a dimension to an instance returns not found", t, func() {
-		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55", nil)
-		So(err, ShouldBeNil)
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &backendtest.BackendMock{
-			AddDimensionToInstanceFunc: func(event *models.Dimension) error {
-				return api_errors.DimensionNodeNotFound
-			},
-		}
-
-		instance := &instance.Store{mockedDataStore}
-		instance.AddDimension(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
-	})
-}
-
-func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
-	t.Parallel()
-	Convey("Add a dimension to an instance returns internal error", t, func() {
-		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55", nil)
-		So(err, ShouldBeNil)
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &backendtest.BackendMock{
-			AddDimensionToInstanceFunc: func(event *models.Dimension) error {
-				return internalError
-			},
-		}
-
-		instance := &instance.Store{mockedDataStore}
-		instance.AddDimension(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
-	})
-}
-
 func TestInsertedObservationsReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("Updateding the inserted observations returns ok", t, func() {
-		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &backendtest.BackendMock{
@@ -325,9 +311,11 @@ func TestInsertedObservationsReturnsOk(t *testing.T) {
 				return nil
 			},
 		}
-
 		instance := &instance.Store{mockedDataStore}
-		instance.UpdateObservations(w, r)
+
+		router := mux.NewRouter()
+		router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", instance.UpdateObservations).Methods("PUT")
+		router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
@@ -337,8 +325,7 @@ func TestInsertedObservationsReturnsOk(t *testing.T) {
 func TestInsertedObservationsReturnsBadRequest(t *testing.T) {
 	t.Parallel()
 	Convey("Updateding the inserted observations returns bad request", t, func() {
-		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/aa12a", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/aa12a", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{}
 
@@ -352,8 +339,7 @@ func TestInsertedObservationsReturnsBadRequest(t *testing.T) {
 func TestInsertedObservationsReturnsNotFound(t *testing.T) {
 	t.Parallel()
 	Convey("Updating the inserted observations returns not found", t, func() {
-		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &backendtest.BackendMock{
@@ -363,7 +349,10 @@ func TestInsertedObservationsReturnsNotFound(t *testing.T) {
 		}
 
 		instance := &instance.Store{mockedDataStore}
-		instance.UpdateObservations(w, r)
+
+		router := mux.NewRouter()
+		router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", instance.UpdateObservations).Methods("PUT")
+		router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)

@@ -16,8 +16,7 @@ func TestAddEventReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("Add an event to an instance returns ok", t, func() {
 		body := strings.NewReader(`{"message": "321", "type": "error", "message_offset":"00", "time":"2017-08-25T15:09:11.829+01:00" }`)
-		r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
-		So(err, ShouldBeNil)
+		r := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &backendtest.BackendMock{
@@ -38,8 +37,7 @@ func TestAddEventToInstanceReturnsBadRequest(t *testing.T) {
 	t.Parallel()
 	Convey("Add an event to an instance returns bad request", t, func() {
 		body := strings.NewReader(`{"message": "321", "type": "error", "message_offset":"00" }`)
-		r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
-		So(err, ShouldBeNil)
+		r := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{}
 
@@ -50,8 +48,7 @@ func TestAddEventToInstanceReturnsBadRequest(t *testing.T) {
 	})
 	Convey("Add an event to an instance returns bad request", t, func() {
 		body := strings.NewReader(`{`)
-		r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
-		So(err, ShouldBeNil)
+		r := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{}
 
@@ -66,8 +63,7 @@ func TestAddEventToInstanceReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("Add an event to an instance returns internal error", t, func() {
 		body := strings.NewReader(`{"message": "321", "type": "error", "message_offset":"00", "time":"2017-08-25T15:09:11.829+01:00" }`)
-		r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
-		So(err, ShouldBeNil)
+		r := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &backendtest.BackendMock{

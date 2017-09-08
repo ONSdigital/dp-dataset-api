@@ -35,7 +35,7 @@ type Event struct {
 type Dimension struct {
 	Name       string `bson:"name,omitempty"           json:"dimension_id"`
 	Value      string `bson:"value,omitempty"          json:"value"`
-	NodeId     string `bson:"node_id,omitempty"        json:"node_id"`
+	NodeID     string `bson:"node_id,omitempty"        json:"node_id"`
 	InstanceID string `bson:"instance_id,omitempty"             json:"instance_id,omitempty"`
 }
 

@@ -11,10 +11,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
+//Store provides a backend for dimensions
 type Store struct {
 	store.Storer
 }
 
+//GetNodes list from a specified instance
 func (s *Store) GetNodes(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -26,13 +28,14 @@ func (s *Store) GetNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	bytes, err := json.Marshal(results)
 	if err != nil {
-		InternalError(w, err)
+		internalError(w, err)
 		return
 	}
 	writeBody(w, bytes)
 	log.Debug("get dimension nodes", log.Data{"instance": id})
 }
 
+//GetUnique dimension values from a specified dimension
 func (s *Store) GetUnique(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -46,7 +49,7 @@ func (s *Store) GetUnique(w http.ResponseWriter, r *http.Request) {
 
 	bytes, err := json.Marshal(values)
 	if err != nil {
-		InternalError(w, err)
+		internalError(w, err)
 		return
 	}
 	writeBody(w, bytes)
@@ -54,13 +57,14 @@ func (s *Store) GetUnique(w http.ResponseWriter, r *http.Request) {
 
 }
 
+//AddNodeID against a specific value for dimension
 func (s *Store) AddNodeID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	dimensionName := vars["dimension"]
 	value := vars["value"]
-	nodeId := vars["node_id"]
-	dim := models.Dimension{Name: dimensionName, Value: value, NodeId: nodeId, InstanceID: id}
+	nodeID := vars["node_id"]
+	dim := models.Dimension{Name: dimensionName, Value: value, NodeID: nodeID, InstanceID: id}
 	err := s.UpdateDimensionNodeID(&dim)
 	if err != nil {
 		log.Error(err, nil)
@@ -77,7 +81,7 @@ func handleErrorType(err error, w http.ResponseWriter) {
 	}
 }
 
-func InternalError(w http.ResponseWriter, err error) {
+func internalError(w http.ResponseWriter, err error) {
 	log.Error(err, nil)
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }

@@ -15,10 +15,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
+//Store provides a backend for instances
 type Store struct {
 	store.Storer
 }
 
+//GetList a list of all instances
 func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 
 	stateFilter := r.URL.Query().Get("state")
@@ -32,13 +34,14 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 
 	bytes, err := json.Marshal(results)
 	if err != nil {
-		InternalError(w, err)
+		internalError(w, err)
 		return
 	}
 	writeBody(w, bytes)
 	log.Debug("get all instances", log.Data{"query": stateFilter})
 }
 
+//Get a single instance by id
 func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -51,16 +54,17 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 
 	bytes, err := json.Marshal(instance)
 	if err != nil {
-		InternalError(w, err)
+		internalError(w, err)
 		return
 	}
 	writeBody(w, bytes)
 	log.Debug("get all instances", nil)
 }
 
+//Add an instance
 func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	instance, err := unmarshalInstance(r.Body)
+	instance, err := unmarshalInstance(r.Body, true)
 	if err != nil {
 		log.Error(err, nil)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -69,13 +73,13 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 
 	instance, err = s.AddInstance(instance)
 	if err != nil {
-		InternalError(w, err)
+		internalError(w, err)
 		return
 	}
 
 	bytes, err := json.Marshal(instance)
 	if err != nil {
-		InternalError(w, err)
+		internalError(w, err)
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
@@ -83,11 +87,13 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	log.Debug("add instance", log.Data{"instance": instance})
 }
 
+//Update a specific instance
 func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	defer r.Body.Close()
-	instance, err := unmarshalInstance(r.Body)
 	id := vars["id"]
+	defer r.Body.Close()
+
+	instance, err := unmarshalInstance(r.Body, false)
 	if err != nil {
 		log.Error(err, nil)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -102,6 +108,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	log.Debug("updated instance", log.Data{"instance": id})
 }
 
+//AddDimension to a specific instance
 func (s *Store) AddDimension(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -116,10 +123,13 @@ func (s *Store) AddDimension(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//UpdateObservations increments the count of inserted_observations against
+//an instance
 func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	observations, err := strconv.ParseInt(vars["inserted_observations"], 10, 64)
+	insert := vars["inserted_observations"]
+	observations, err := strconv.ParseInt(insert, 10, 64)
 	if err != nil {
 		log.Error(err, nil)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -133,7 +143,7 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func unmarshalInstance(reader io.Reader) (*models.Instance, error) {
+func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 	bytes, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
@@ -145,12 +155,14 @@ func unmarshalInstance(reader io.Reader) (*models.Instance, error) {
 		return nil, errors.New("Failed to parse json body: " + err.Error())
 	}
 
-	if instance.Job.ID == "" || instance.Job.Link == "" {
-		return nil, errors.New("Missing job properties")
-	}
+	if post {
+		if instance.Job.ID == "" || instance.Job.Link == "" {
+			return nil, errors.New("Missing job properties")
+		}
 
-	if instance.State == "" {
-		instance.State = "created"
+		if instance.State == "" {
+			instance.State = "created"
+		}
 	}
 	return &instance, nil
 }
@@ -163,7 +175,7 @@ func handleErrorType(err error, w http.ResponseWriter) {
 	}
 }
 
-func InternalError(w http.ResponseWriter, err error) {
+func internalError(w http.ResponseWriter, err error) {
 	log.Error(err, nil)
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
