@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/ONSdigital/dp-dataset-api/api-errors"
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/go-ns/log"
@@ -61,6 +61,20 @@ func (s *Store) GetUnique(w http.ResponseWriter, r *http.Request) {
 	log.Debug("get dimension values", log.Data{"instance": id})
 }
 
+//AddDimension to a specific instance
+func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	dimensionName := vars["dimension"]
+	value := vars["value"]
+
+	dim := models.Dimension{Name: dimensionName, Value: value, InstanceID: id}
+	if err := s.AddDimensionToInstance(&dim); err != nil {
+		log.Error(err, nil)
+		handleErrorType(err, w)
+	}
+}
+
 //AddNodeID against a specific value for dimension
 func (s *Store) AddNodeID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -79,7 +93,7 @@ func (s *Store) AddNodeID(w http.ResponseWriter, r *http.Request) {
 func handleErrorType(err error, w http.ResponseWriter) {
 	status := http.StatusInternalServerError
 
-	if err == api_errors.DatasetNotFound || err == api_errors.EditionNotFound || err == api_errors.VersionNotFound || err == api_errors.DimensionNodeNotFound || err == api_errors.InstanceNotFound {
+	if err == errs.DatasetNotFound || err == errs.EditionNotFound || err == errs.VersionNotFound || err == errs.DimensionNodeNotFound || err == errs.InstanceNotFound {
 		status = http.StatusNotFound
 	}
 

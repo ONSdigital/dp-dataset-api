@@ -38,16 +38,17 @@ func CreateDatasetAPI(secretKey string, router *mux.Router, dataStore store.Data
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.addVersion).Methods("POST")
 
 	instance := instance.Store{api.dataStore.Backend}
-	dimension := dimension.Store{api.dataStore.Backend}
 	api.router.HandleFunc("/instances", instance.GetList).Methods("GET")
 	api.router.HandleFunc("/instances", api.privateAuth.Check(instance.Add)).Methods("POST")
 	api.router.HandleFunc("/instances/{id}", instance.Get).Methods("GET")
 	api.router.HandleFunc("/instances/{id}", api.privateAuth.Check(instance.Update)).Methods("PUT")
 	api.router.HandleFunc("/instances/{id}/events", api.privateAuth.Check(instance.AddEvent)).Methods("POST")
+	api.router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", api.privateAuth.Check(instance.UpdateObservations)).Methods("PUT")
+
+	dimension := dimension.Store{api.dataStore.Backend}
 	api.router.HandleFunc("/instances/{id}/dimensions", api.privateAuth.Check(dimension.GetNodes)).Methods("GET")
 	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options", dimension.GetUnique).Methods("GET")
-	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}", api.privateAuth.Check(instance.AddDimension)).Methods("PUT")
+	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}", api.privateAuth.Check(dimension.Add)).Methods("PUT")
 	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}/node_id/{node_id}", api.privateAuth.Check(dimension.AddNodeID)).Methods("PUT")
-	api.router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", api.privateAuth.Check(instance.UpdateObservations)).Methods("PUT")
 	return &api
 }

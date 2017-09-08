@@ -1,12 +1,13 @@
 package mongo
 
 import (
-	"github.com/ONSdigital/dp-dataset-api/api-errors"
+	"time"
+
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/satori/go.uuid"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"time"
 )
 
 const INSTANCE_COLLECTION = "instances"
@@ -26,7 +27,7 @@ func (m *Mongo) GetInstances(filter string) (*models.InstanceResults, error) {
 	results := []models.Instance{}
 	if err := iter.All(&results); err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, api_errors.DatasetNotFound
+			return nil, errs.DatasetNotFound
 		}
 		return nil, err
 	}
@@ -42,7 +43,7 @@ func (m *Mongo) GetInstance(ID string) (*models.Instance, error) {
 	err := s.DB(m.Database).C(INSTANCE_COLLECTION).Find(bson.M{"id": ID}).One(&instance)
 
 	if err == mgo.ErrNotFound {
-		return nil, api_errors.InstanceNotFound
+		return nil, errs.InstanceNotFound
 	}
 
 	return &instance, err
@@ -76,7 +77,7 @@ func (m *Mongo) UpdateInstance(id string, instance *models.Instance) error {
 		return err
 	}
 	if info.Updated == 0 {
-		return api_errors.InstanceNotFound
+		return errs.InstanceNotFound
 	}
 
 	return nil
@@ -93,7 +94,7 @@ func (m *Mongo) AddEventToInstance(instanceId string, event *models.Event) error
 		return err
 	}
 	if info.Updated == 0 {
-		return api_errors.InstanceNotFound
+		return errs.InstanceNotFound
 	}
 
 	return nil
@@ -119,7 +120,7 @@ func (m *Mongo) UpdateDimensionNodeID(dimension *models.Dimension) error {
 	err := s.DB(m.Database).C(DIMENSION_NODE_COLLECTION).Update(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
 		"value": dimension.Value}, bson.M{"$set": bson.M{"node_id": &dimension.NodeID, "last_updated": time.Now().UTC()}})
 	if err == mgo.ErrNotFound {
-		return api_errors.InstanceNotFound
+		return errs.InstanceNotFound
 	}
 	if err != nil {
 		return err
@@ -132,10 +133,10 @@ func (m *Mongo) UpdateObservationInserted(id string, observationInserted int64) 
 	s := session.Copy()
 	defer s.Close()
 	err := s.DB(m.Database).C(INSTANCE_COLLECTION).Update(bson.M{"id": id},
-		bson.M{"$inc": bson.M{"total_inserted_observations": observationInserted},"$set": bson.M{"last_updated": time.Now().UTC()}})
+		bson.M{"$inc": bson.M{"total_inserted_observations": observationInserted}, "$set": bson.M{"last_updated": time.Now().UTC()}})
 
 	if err == mgo.ErrNotFound {
-		return api_errors.InstanceNotFound
+		return errs.InstanceNotFound
 	}
 
 	if err != nil {
@@ -169,7 +170,7 @@ func (m *Mongo) GetUniqueDimensionValues(id, dimension string) (*models.Dimensio
 	}
 
 	if len(values) == 0 {
-		return nil, api_errors.DimensionNodeNotFound
+		return nil, errs.DimensionNodeNotFound
 	}
 	return &models.DimensionValues{Name: dimension, Values: values}, nil
 }

@@ -4,7 +4,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 
-	"github.com/ONSdigital/dp-dataset-api/api-errors"
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -46,7 +46,7 @@ func (m *Mongo) GetDatasets() (*models.DatasetResults, error) {
 	results := []models.Dataset{}
 	if err := iter.All(&results); err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, api_errors.DatasetNotFound
+			return nil, errs.DatasetNotFound
 		}
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (m *Mongo) GetDataset(id string) (*models.Dataset, error) {
 	err := s.DB(m.Database).C("datasets").Find(bson.M{"_id": id}).One(&dataset)
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, api_errors.DatasetNotFound
+			return nil, errs.DatasetNotFound
 		}
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (m *Mongo) GetEditions(id string) (*models.EditionResults, error) {
 	var results []models.Edition
 	if err := iter.All(&results); err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, api_errors.EditionNotFound
+			return nil, errs.EditionNotFound
 		}
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (m *Mongo) GetEdition(datasetID, editionID string) (*models.Edition, error)
 	err := s.DB(m.Database).C("editions").Find(bson.M{"links.dataset.id": datasetID, "edition": editionID}).One(&edition)
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, api_errors.EditionNotFound
+			return nil, errs.EditionNotFound
 		}
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (m *Mongo) GetVersions(datasetID, editionID string) (*models.VersionResults
 	var results []models.Version
 	if err := iter.All(&results); err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, api_errors.VersionNotFound
+			return nil, errs.VersionNotFound
 		}
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (m *Mongo) GetVersion(datasetID, editionID, versionID string) (*models.Vers
 	err := s.DB(m.Database).C("versions").Find(bson.M{"links.dataset.id": datasetID, "edition": editionID, "version": versionID}).One(&version)
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, api_errors.VersionNotFound
+			return nil, errs.VersionNotFound
 		}
 		return nil, err
 	}

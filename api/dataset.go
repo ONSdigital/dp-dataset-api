@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ONSdigital/dp-dataset-api/api-errors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
 	"gopkg.in/mgo.v2/bson"
@@ -289,7 +290,7 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleErrorType(err error, w http.ResponseWriter) {
-	if err == api_errors.DatasetNotFound || err == api_errors.EditionNotFound || err == api_errors.VersionNotFound || err == api_errors.DimensionNodeNotFound || err == api_errors.InstanceNotFound {
+	if err == errs.DatasetNotFound || err == errs.EditionNotFound || err == errs.VersionNotFound || err == errs.DimensionNodeNotFound || err == errs.InstanceNotFound {
 		http.Error(w, err.Error(), http.StatusNotFound)
 	} else {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ONSdigital/dp-dataset-api/api-errors"
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
@@ -183,66 +183,6 @@ func TestAddInstancesReturnsInternalError(t *testing.T) {
 	})
 }
 
-func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
-	t.Parallel()
-	Convey("Add a dimension to an instance returns ok", t, func() {
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55", nil)
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			AddDimensionToInstanceFunc: func(event *models.Dimension) error {
-				return nil
-			},
-		}
-
-		instance := &instance.Store{mockedDataStore}
-		instance.AddDimension(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
-	})
-}
-
-func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
-	t.Parallel()
-	Convey("Add a dimension to an instance returns not found", t, func() {
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55", nil)
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			AddDimensionToInstanceFunc: func(event *models.Dimension) error {
-				return api_errors.DimensionNodeNotFound
-			},
-		}
-
-		instance := &instance.Store{mockedDataStore}
-		instance.AddDimension(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
-	})
-}
-
-func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
-	t.Parallel()
-	Convey("Add a dimension to an instance returns internal error", t, func() {
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55", nil)
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			AddDimensionToInstanceFunc: func(event *models.Dimension) error {
-				return internalError
-			},
-		}
-
-		instance := &instance.Store{mockedDataStore}
-		instance.AddDimension(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
-	})
-}
-
 func TestUpdateInstanceReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("update to an instance returns an internal error", t, func() {
@@ -344,7 +284,7 @@ func TestInsertedObservationsReturnsNotFound(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{
 			UpdateObservationInsertedFunc: func(id string, ob int64) error {
-				return api_errors.InstanceNotFound
+				return errs.InstanceNotFound
 			},
 		}
 

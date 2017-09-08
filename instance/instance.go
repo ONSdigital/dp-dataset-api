@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ONSdigital/dp-dataset-api/api-errors"
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/go-ns/log"
@@ -22,7 +22,6 @@ type Store struct {
 
 //GetList a list of all instances
 func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
-
 	stateFilter := r.URL.Query().Get("state")
 
 	results, err := s.GetInstances(stateFilter)
@@ -112,20 +111,6 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	log.Debug("updated instance", log.Data{"instance": id})
 }
 
-//AddDimension to a specific instance
-func (s *Store) AddDimension(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
-	dimensionName := vars["dimension"]
-	value := vars["value"]
-
-	dim := models.Dimension{Name: dimensionName, Value: value, InstanceID: id}
-	if err := s.AddDimensionToInstance(&dim); err != nil {
-		log.Error(err, nil)
-		handleErrorType(err, w)
-	}
-}
-
 //UpdateObservations increments the count of inserted_observations against
 //an instance
 func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
@@ -173,7 +158,7 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 func handleErrorType(err error, w http.ResponseWriter) {
 	status := http.StatusInternalServerError
 
-	if err == api_errors.DatasetNotFound || err == api_errors.EditionNotFound || err == api_errors.VersionNotFound || err == api_errors.DimensionNodeNotFound || err == api_errors.InstanceNotFound {
+	if err == errs.DatasetNotFound || err == errs.EditionNotFound || err == errs.VersionNotFound || err == errs.DimensionNodeNotFound || err == errs.InstanceNotFound {
 		status = http.StatusNotFound
 	}
 
