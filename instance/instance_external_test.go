@@ -11,7 +11,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/api-errors"
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -32,7 +32,7 @@ func TestGetInstancesReturnsOK(t *testing.T) {
 		r := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetInstancesFunc: func(string) (*models.InstanceResults, error) {
 				return &models.InstanceResults{}, nil
 			},
@@ -52,7 +52,7 @@ func TestGetInstancesReturnsInternalError(t *testing.T) {
 		r := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetInstancesFunc: func(string) (*models.InstanceResults, error) {
 				return nil, internalError
 			},
@@ -72,7 +72,7 @@ func TestGetInstanceReturnsOK(t *testing.T) {
 		r := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{}, nil
 			},
@@ -92,7 +92,7 @@ func TestGetInstanceReturnsInternalError(t *testing.T) {
 		r := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return nil, internalError
 			},
@@ -113,7 +113,7 @@ func TestAddInstancesReturnsCreated(t *testing.T) {
 		r := createRequestWithToken("POST", "http://localhost:21800/instances", body)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			AddInstanceFunc: func(*models.Instance) (*models.Instance, error) {
 				return &models.Instance{}, nil
 			},
@@ -134,7 +134,7 @@ func TestAddInstancesReturnsBadRequest(t *testing.T) {
 		r := createRequestWithToken("POST", "http://localhost:21800/instances", body)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			AddInstanceFunc: func(*models.Instance) (*models.Instance, error) {
 				return &models.Instance{}, nil
 			},
@@ -150,7 +150,7 @@ func TestAddInstancesReturnsBadRequest(t *testing.T) {
 		r := createRequestWithToken("POST", "http://localhost:21800/instances", body)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			AddInstanceFunc: func(*models.Instance) (*models.Instance, error) {
 				return &models.Instance{}, nil
 			},
@@ -169,7 +169,7 @@ func TestAddInstancesReturnsInternalError(t *testing.T) {
 		body := strings.NewReader(`{"links": {"job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } } }`)
 		r := createRequestWithToken("POST", "http://localhost:21800/instances", body)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			AddInstanceFunc: func(*models.Instance) (*models.Instance, error) {
 				return nil, internalError
 			},
@@ -189,7 +189,7 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55", nil)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			AddDimensionToInstanceFunc: func(event *models.Dimension) error {
 				return nil
 			},
@@ -209,7 +209,7 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55", nil)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			AddDimensionToInstanceFunc: func(event *models.Dimension) error {
 				return api_errors.DimensionNodeNotFound
 			},
@@ -229,7 +229,7 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55", nil)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			AddDimensionToInstanceFunc: func(event *models.Dimension) error {
 				return internalError
 			},
@@ -250,7 +250,7 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpdateInstanceFunc: func(id string, i *models.Instance) error {
 				return nil
 			},
@@ -270,7 +270,7 @@ func TestUpdateInstanceReturnsBadRequest(t *testing.T) {
 		body := strings.NewReader(`{"state":`)
 		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{}
+		mockedDataStore := &storetest.StorerMock{}
 
 		instance := &instance.Store{mockedDataStore}
 		instance.Update(w, r)
@@ -286,7 +286,7 @@ func TestUpdateInstanceReturnsInternalError(t *testing.T) {
 		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpdateInstanceFunc: func(id string, i *models.Instance) error {
 				return internalError
 			},
@@ -306,7 +306,7 @@ func TestInsertedObservationsReturnsOk(t *testing.T) {
 		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpdateObservationInsertedFunc: func(id string, ob int64) error {
 				return nil
 			},
@@ -327,7 +327,7 @@ func TestInsertedObservationsReturnsBadRequest(t *testing.T) {
 	Convey("Updateding the inserted observations returns bad request", t, func() {
 		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/aa12a", nil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{}
+		mockedDataStore := &storetest.StorerMock{}
 
 		instance := &instance.Store{mockedDataStore}
 		instance.UpdateObservations(w, r)
@@ -342,7 +342,7 @@ func TestInsertedObservationsReturnsNotFound(t *testing.T) {
 		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpdateObservationInsertedFunc: func(id string, ob int64) error {
 				return api_errors.InstanceNotFound
 			},

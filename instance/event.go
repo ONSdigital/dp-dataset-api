@@ -30,6 +30,7 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	defer r.Body.Close()
+
 	event, err := unmarshalEvent(r.Body)
 	if err != nil {
 		log.Error(err, nil)
@@ -43,12 +44,11 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.AddEventToInstance(id, event)
-	if err != nil {
+	if err = s.AddEventToInstance(id, event); err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
 		return
 	}
-	log.Debug("add event to instance", log.Data{"instance": id})
 
+	log.Debug("add event to instance", log.Data{"instance": id})
 }

@@ -34,7 +34,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetDatasetsFunc: func() (*models.DatasetResults, error) {
 				return &models.DatasetResults{}, nil
 			},
@@ -53,7 +53,7 @@ func TestGetDatasetsReturnsInternalError(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetDatasetsFunc: func() (*models.DatasetResults, error) {
 				return nil, internalError
 			},
@@ -72,7 +72,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(id string) (*models.Dataset, error) {
 				return &models.Dataset{ID: "123"}, nil
 			},
@@ -91,7 +91,7 @@ func TestGetDatasetReturnsInternalError(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(id string) (*models.Dataset, error) {
 				return nil, internalError
 			},
@@ -110,7 +110,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetEditionsFunc: func(id string) (*models.EditionResults, error) {
 				return &models.EditionResults{}, nil
 			},
@@ -129,7 +129,7 @@ func TestGetEditionsReturnsInternalError(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetEditionsFunc: func(id string) (*models.EditionResults, error) {
 				return nil, internalError
 			},
@@ -148,7 +148,7 @@ func TestGetEditionReturnsOK(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(datasetID string, editionID string) (*models.Edition, error) {
 				return &models.Edition{}, nil
 			},
@@ -167,7 +167,7 @@ func TestGetEditionReturnsInternalError(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(datasetID string, editionID string) (*models.Edition, error) {
 				return nil, internalError
 			},
@@ -186,7 +186,7 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetVersionsFunc: func(datasetID string, editionID string) (*models.VersionResults, error) {
 				return &models.VersionResults{}, nil
 			},
@@ -205,7 +205,7 @@ func TestGetVersionsReturnsInternalError(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetVersionsFunc: func(datasetID string, editionID string) (*models.VersionResults, error) {
 				return nil, internalError
 			},
@@ -224,7 +224,7 @@ func TestGetVersionReturnsOK(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(datasetID string, editionID, versionID string) (*models.Version, error) {
 				return &models.Version{}, nil
 			},
@@ -243,7 +243,7 @@ func TestGetVersionReturnsInternalError(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(datasetID string, editionID, versionID string) (*models.Version, error) {
 				return nil, internalError
 			},
@@ -264,7 +264,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertDatasetFunc: func(string, interface{}) error {
 				return nil
 			},
@@ -295,7 +295,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertDatasetFunc: func(string, interface{}) error {
 				return badRequestError
 			},
@@ -313,7 +313,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertDatasetFunc: func(string, interface{}) error {
 				return internalError
 			},
@@ -334,7 +334,7 @@ func TestPostEditionReturnsCreated(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertEditionFunc: func(string, interface{}) error {
 				return nil
 			},
@@ -365,7 +365,7 @@ func TestPostEditionReturnsError(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertEditionFunc: func(string, interface{}) error {
 				return badRequestError
 			},
@@ -383,7 +383,7 @@ func TestPostEditionReturnsError(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertEditionFunc: func(string, interface{}) error {
 				return internalError
 			},
@@ -404,7 +404,7 @@ func TestPostVersionReturnsCreated(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertVersionFunc: func(string, interface{}) error {
 				return nil
 			},
@@ -432,7 +432,7 @@ func TestPostVersionReturnsCreated(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertVersionFunc: func(string, interface{}) error {
 				return nil
 			},
@@ -478,7 +478,7 @@ func TestPostVersionReturnsError(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertVersionFunc: func(string, interface{}) error {
 				return badRequestError
 			},
@@ -496,7 +496,7 @@ func TestPostVersionReturnsError(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertVersionFunc: func(string, interface{}) error {
 				return internalError
 			},
@@ -514,7 +514,7 @@ func TestPostVersionReturnsError(t *testing.T) {
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpsertVersionFunc: func(string, interface{}) error {
 				return nil
 			},

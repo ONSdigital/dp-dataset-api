@@ -20,7 +20,6 @@ type DatasetAPI struct {
 	dataStore   store.DataStore
 	router      *mux.Router
 	privateAuth *auth.Authenticator
-	instanceStore instance.Store
 }
 
 // CreateDatasetAPI manages all the routes configured to API

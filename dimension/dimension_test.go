@@ -31,7 +31,7 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpdateDimensionNodeIDFunc: func(event *models.Dimension) error {
 				return nil
 			},
@@ -52,7 +52,7 @@ func TestAddNodeIDToDimensionReturnsBadRequest(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpdateDimensionNodeIDFunc: func(event *models.Dimension) error {
 				return api_errors.DimensionNodeNotFound
 			},
@@ -73,7 +73,7 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			UpdateDimensionNodeIDFunc: func(event *models.Dimension) error {
 				return internalError
 			},
@@ -94,7 +94,7 @@ func TestGetDimensionNodesReturnsOk(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetDimensionNodesFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
 				return &models.DimensionNodeResults{}, nil
 			},
@@ -115,7 +115,7 @@ func TestGetDimensionNodesReturnsNotFound(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetDimensionNodesFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
 				return nil, api_errors.InstanceNotFound
 			},
@@ -136,7 +136,7 @@ func TestGetDimensionNodesReturnsInternalError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetDimensionNodesFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
 				return nil, internalError
 			},
@@ -157,7 +157,7 @@ func TestGetUniqueDimensionValuesReturnsOk(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetUniqueDimensionValuesFunc: func(id, dimension string) (*models.DimensionValues, error) {
 				return &models.DimensionValues{}, nil
 			},
@@ -177,7 +177,7 @@ func TestGetUniqueDimensionValuesReturnsNotFound(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetUniqueDimensionValuesFunc: func(id, dimension string) (*models.DimensionValues, error) {
 				return nil, api_errors.InstanceNotFound
 			},
@@ -197,7 +197,7 @@ func TestGetUniqueDimensionValuesReturnsInternalError(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			GetUniqueDimensionValuesFunc: func(id, dimension string) (*models.DimensionValues, error) {
 				return nil, internalError
 			},

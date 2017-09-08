@@ -37,6 +37,7 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 		internalError(w, err)
 		return
 	}
+
 	writeBody(w, bytes)
 	log.Debug("get all instances", log.Data{"query": stateFilter})
 }
@@ -57,6 +58,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		internalError(w, err)
 		return
 	}
+
 	writeBody(w, bytes)
 	log.Debug("get all instances", nil)
 }
@@ -82,6 +84,7 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 		internalError(w, err)
 		return
 	}
+
 	w.WriteHeader(http.StatusCreated)
 	writeBody(w, bytes)
 	log.Debug("add instance", log.Data{"instance": instance})
@@ -99,12 +102,13 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = s.UpdateInstance(id, instance)
-	if err != nil {
+
+	if err = s.UpdateInstance(id, instance); err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
 		return
 	}
+
 	log.Debug("updated instance", log.Data{"instance": id})
 }
 
@@ -114,12 +118,11 @@ func (s *Store) AddDimension(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	dimensionName := vars["dimension"]
 	value := vars["value"]
+
 	dim := models.Dimension{Name: dimensionName, Value: value, InstanceID: id}
-	err := s.AddDimensionToInstance(&dim)
-	if err != nil {
+	if err := s.AddDimensionToInstance(&dim); err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
-		return
 	}
 }
 
@@ -129,6 +132,7 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	insert := vars["inserted_observations"]
+
 	observations, err := strconv.ParseInt(insert, 10, 64)
 	if err != nil {
 		log.Error(err, nil)
@@ -139,7 +143,6 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 	if err = s.UpdateObservationInserted(id, observations); err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
-		return
 	}
 }
 

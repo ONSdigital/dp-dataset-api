@@ -9,7 +9,7 @@ type DataStore struct {
 	Backend Storer
 }
 
-//go:generate moq -out datastoretest/datastore.go -pkg backendtest . Storer
+//go:generate moq -out datastoretest/datastore.go -pkg storetest . Storer
 
 // Storer represents basic data access via Get, Remove and Upsert methods.
 type Storer interface {
@@ -24,11 +24,11 @@ type Storer interface {
 	UpsertVersion(id string, update interface{}) error
 	UpsertContact(id string, update interface{}) error
 
-	GetInstances(string) (*models.InstanceResults, error)
-	GetInstance(ID string) (*models.Instance, error)
+	GetInstances(filter string) (*models.InstanceResults, error)
+	GetInstance(id string) (*models.Instance, error)
 	UpdateInstance(id string, instance *models.Instance) error
 	AddInstance(instance *models.Instance) (*models.Instance, error)
-	AddEventToInstance(instanceId string, event *models.Event) error
+	AddEventToInstance(instanceID string, event *models.Event) error
 	AddDimensionToInstance(dimension *models.Dimension) error
 	UpdateObservationInserted(id string, observationInserted int64) error
 	GetDimensionNodesFromInstance(id string) (*models.DimensionNodeResults, error)

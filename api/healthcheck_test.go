@@ -18,7 +18,7 @@ func TestHealthCheckReturnsOK(t *testing.T) {
 		r, err := http.NewRequest("GET", "http://localhost:22000/healthcheck", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{}
+		mockedDataStore := &storetest.StorerMock{}
 
 		api := CreateDatasetAPI(secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)

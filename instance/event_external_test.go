@@ -19,7 +19,7 @@ func TestAddEventReturnsOk(t *testing.T) {
 		r := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			AddEventToInstanceFunc: func(id string, event *models.Event) error {
 				return nil
 			},
@@ -39,7 +39,7 @@ func TestAddEventToInstanceReturnsBadRequest(t *testing.T) {
 		body := strings.NewReader(`{"message": "321", "type": "error", "message_offset":"00" }`)
 		r := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{}
+		mockedDataStore := &storetest.StorerMock{}
 
 		instance := &instance.Store{mockedDataStore}
 		instance.AddEvent(w, r)
@@ -50,7 +50,7 @@ func TestAddEventToInstanceReturnsBadRequest(t *testing.T) {
 		body := strings.NewReader(`{`)
 		r := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
 		w := httptest.NewRecorder()
-		mockedDataStore := &backendtest.BackendMock{}
+		mockedDataStore := &storetest.StorerMock{}
 
 		instance := &instance.Store{mockedDataStore}
 		instance.AddEvent(w, r)
@@ -66,7 +66,7 @@ func TestAddEventToInstanceReturnsInternalError(t *testing.T) {
 		r := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &backendtest.BackendMock{
+		mockedDataStore := &storetest.StorerMock{
 			AddEventToInstanceFunc: func(id string, event *models.Event) error {
 				return internalError
 			},

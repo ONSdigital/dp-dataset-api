@@ -20,17 +20,20 @@ type Store struct {
 func (s *Store) GetNodes(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
+
 	results, err := s.GetDimensionNodesFromInstance(id)
 	if err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
 		return
 	}
+
 	bytes, err := json.Marshal(results)
 	if err != nil {
 		internalError(w, err)
 		return
 	}
+
 	writeBody(w, bytes)
 	log.Debug("get dimension nodes", log.Data{"instance": id})
 }
@@ -40,6 +43,7 @@ func (s *Store) GetUnique(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	dimension := vars["dimension"]
+
 	values, err := s.GetUniqueDimensionValues(id, dimension)
 	if err != nil {
 		log.Error(err, nil)
@@ -52,9 +56,9 @@ func (s *Store) GetUnique(w http.ResponseWriter, r *http.Request) {
 		internalError(w, err)
 		return
 	}
+
 	writeBody(w, bytes)
 	log.Debug("get dimension values", log.Data{"instance": id})
-
 }
 
 //AddNodeID against a specific value for dimension
@@ -64,12 +68,11 @@ func (s *Store) AddNodeID(w http.ResponseWriter, r *http.Request) {
 	dimensionName := vars["dimension"]
 	value := vars["value"]
 	nodeID := vars["node_id"]
+
 	dim := models.Dimension{Name: dimensionName, Value: value, NodeID: nodeID, InstanceID: id}
-	err := s.UpdateDimensionNodeID(&dim)
-	if err != nil {
+	if err := s.UpdateDimensionNodeID(&dim); err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
-		return
 	}
 }
 
