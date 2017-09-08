@@ -441,6 +441,35 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 	log.Debug("upsert version", log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 }
 
+func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	datasetID := vars["id"]
+
+	if r.Header.Get(internalToken) != api.internalToken {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	dataset, err := models.CreateDataset(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	updates := createDatasetUpdateQuery(dataset)
+
+	if err := api.dataStore.Backend.UpdateDataset(datasetID, bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}}); err != nil {
+		log.ErrorC("Unable to update dataset", err, log.Data{"dataset_id": datasetID})
+		handleErrorType(err, w)
+		return
+	}
+
+	setJSONContentType(w)
+	w.WriteHeader(http.StatusOK)
+	log.Debug("update dataset", log.Data{"dataset_id": datasetID})
+}
+
 func (api *DatasetAPI) updateEdition(id string) error {
 	update := bson.M{
 		"$set": bson.M{
@@ -516,4 +545,57 @@ func handleErrorType(err error, w http.ResponseWriter) {
 
 func setJSONContentType(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
+}
+
+func createDatasetUpdateQuery(dataset *models.Dataset) bson.M {
+	updates := make(bson.M, 0)
+
+	if dataset.CollectionID != "" {
+		updates["next.collection_id"] = dataset.CollectionID
+	}
+
+	if dataset.Contact.Email != "" {
+		updates["next.contact.email"] = dataset.Contact.Email
+	}
+
+	if dataset.Contact.Name != "" {
+		updates["next.contact.name"] = dataset.Contact.Name
+	}
+
+	if dataset.Contact.Telephone != "" {
+		updates["next.contact.telephone"] = dataset.Contact.Telephone
+	}
+
+	if dataset.Description != "" {
+		updates["next.description"] = dataset.Description
+	}
+
+	if dataset.NextRelease != "" {
+		updates["next.next_release"] = dataset.NextRelease
+	}
+
+	if dataset.Periodicity != "" {
+		updates["next.periodicity"] = dataset.Periodicity
+	}
+
+	if dataset.Publisher.Href != "" {
+		updates["next.publisher.href"] = dataset.Publisher.Href
+	}
+
+	if dataset.Publisher.Name != "" {
+		updates["next.publisher.name"] = dataset.Publisher.Name
+	}
+
+	if dataset.Publisher.Type != "" {
+		updates["next.publisher.type"] = dataset.Publisher.Type
+	}
+
+	if dataset.Theme != "" {
+		updates["next.theme"] = dataset.Theme
+	}
+
+	if dataset.Title != "" {
+		updates["next.title"] = dataset.Title
+	}
+	return updates
 }
