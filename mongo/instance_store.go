@@ -69,7 +69,7 @@ func (m *Mongo) UpdateInstance(id string, instance *models.Instance) error {
 	s := session.Copy()
 	defer s.Close()
 
-	instance.InstanceID = uuid.NewV4().String()
+	instance.InstanceID = id
 	instance.LastUpdated = time.Now().UTC()
 
 	info, err := s.DB(m.Database).C(INSTANCE_COLLECTION).Upsert(bson.M{"id": id}, bson.M{"$set": &instance})
