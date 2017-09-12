@@ -18,7 +18,7 @@ db.datasets.insert({
             },
             "latest_version": {
                 "id": "63294ed7-dccf-4f30-ad57-62365f038fb7",
-                "href": "http://localhost:22000/dataset/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/1"
+                "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/1"
             },
             "self": {
                 "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
@@ -49,7 +49,7 @@ db.datasets.insert({
             },
             "latest_version": {
                 "id": "679ebe5f-d9cd-4d6e-8afc-6a2a4f991ccf",
-                "href": "http://localhost:22000/dataset/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017/versions/1"
+                "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017/versions/1"
             },
             "self": {
                 "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
@@ -83,7 +83,7 @@ db.datasets.insert({
             },
             "latest_version": {
                 "id": "3b45921b-0efa-4844-a16e-3f9f30df4f88",
-                "href": "http://localhost:22000/dataset/a9fa845c-0c05-4954-aed7-752b8208da34/editions/2011/versions/1"
+                "href": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34/editions/2011/versions/1"
             },
             "self": {
                 "href": "http://localhost:22000/datasets/a9fa845c-0c05-4954-aed7-752b8208da34"

@@ -230,8 +230,8 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	datasetID := dataset.ID
-	dataset.Links.Self.HRef = api.host + "/datasets/" + datasetID
-	dataset.Links.Editions.HRef = api.host + "/datasets/" + datasetID + "/editions"
+	dataset.Links.Self.HRef = fmt.Sprintf("%s/datasets/%s", api.host, datasetID)
+	dataset.Links.Editions.HRef = fmt.Sprintf("%s/datasets/%s/editions", api.host, datasetID)
 	dataset.LastUpdated = time.Now()
 
 	datasetDoc := &models.DatasetUpdate{
@@ -295,9 +295,9 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 
 	editionDoc.Edition = edition
 	editionDoc.Links.Dataset.ID = datasetID
-	editionDoc.Links.Dataset.HRef = api.host + "/datasets/" + datasetID
-	editionDoc.Links.Self.HRef = api.host + "/datasets/" + datasetID + "/editions/" + edition
-	editionDoc.Links.Versions.HRef = api.host + "/datasets/" + datasetID + "/editions/" + edition + "/versions"
+	editionDoc.Links.Dataset.HRef = fmt.Sprintf("%s/datasets/%s", api.host, datasetID)
+	editionDoc.Links.Self.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s", api.host, datasetID, edition)
+	editionDoc.Links.Versions.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions", api.host, datasetID, edition)
 
 	if err := api.dataStore.Backend.UpsertEdition(editionDoc.ID, editionDoc); err != nil {
 		log.ErrorR(r, err, nil)
