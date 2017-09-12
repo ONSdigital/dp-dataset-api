@@ -4,10 +4,11 @@
 package apitest
 
 import (
+	"sync"
+
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/ONSdigital/dp-dataset-api/vendor/github.com/gorilla/mux"
-	"sync"
+	"github.com/gorilla/mux"
 )
 
 var (
