@@ -1,19 +1,17 @@
 package mongo
 
 import (
-	"strconv"
 	"time"
 
-	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/dp-dataset-api/store"
 
-	"github.com/ONSdigital/dp-dataset-api/api-errors"
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
-var _ api.Backend = &Mongo{}
+var _ store.Storer = &Mongo{}
 var session *mgo.Session
 
 // Mongo represents a simplistic MongoDB configuration.
@@ -46,11 +44,12 @@ func (m *Mongo) GetDatasets() (*models.DatasetResults, error) {
 	datasets := &models.DatasetResults{}
 
 	iter := s.DB(m.Database).C("datasets").Find(nil).Iter()
+	defer iter.Close()
 
 	results := []models.DatasetUpdate{}
 	if err := iter.All(&results); err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, api_errors.DatasetNotFound
+			return nil, errs.DatasetNotFound
 		}
 		return nil, err
 	}
@@ -80,7 +79,7 @@ func (m *Mongo) GetDataset(id string) (*models.DatasetUpdate, error) {
 	err := s.DB(m.Database).C("datasets").Find(bson.M{"_id": id}).One(&dataset)
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, api_errors.DatasetNotFound
+			return nil, errs.DatasetNotFound
 		}
 		return nil, err
 	}
@@ -93,6 +92,26 @@ func (m *Mongo) GetEditions(id, state string) (*models.EditionResults, error) {
 	s := session.Copy()
 	defer s.Clone()
 
+	selector := buildEditionsQuery(id, state)
+
+	iter := s.DB(m.Database).C("editions").Find(selector).Iter()
+	defer iter.Close()
+
+	var results []models.Edition
+	if err := iter.All(&results); err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, errs.EditionNotFound
+		}
+		return nil, err
+	}
+
+	if len(results) < 1 {
+		return nil, errs.EditionNotFound
+	}
+	return &models.EditionResults{Items: results}, nil
+}
+
+func buildEditionsQuery(id, state string) bson.M {
 	var selector bson.M
 	if state != "" {
 		selector = bson.M{
@@ -105,20 +124,7 @@ func (m *Mongo) GetEditions(id, state string) (*models.EditionResults, error) {
 		}
 	}
 
-	iter := s.DB(m.Database).C("editions").Find(selector).Iter()
-
-	var results []models.Edition
-	if err := iter.All(&results); err != nil {
-		if err == mgo.ErrNotFound {
-			return nil, api_errors.EditionNotFound
-		}
-		return nil, err
-	}
-
-	if len(results) < 1 {
-		return nil, api_errors.EditionNotFound
-	}
-	return &models.EditionResults{Items: results}, nil
+	return selector
 }
 
 // GetEdition retrieves an edition document for a dataset
@@ -126,8 +132,22 @@ func (m *Mongo) GetEdition(id, editionID, state string) (*models.Edition, error)
 	s := session.Copy()
 	defer s.Clone()
 
+	selector := buildEditionQuery(id, editionID, state)
+
+	var edition models.Edition
+	err := s.DB(m.Database).C("editions").Find(selector).One(&edition)
+	if err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, errs.EditionNotFound
+		}
+		return nil, err
+	}
+	return &edition, nil
+}
+
+func buildEditionQuery(id, editionID, state string) bson.M {
 	var selector bson.M
-	if state != "" {
+	if state == "" {
 		selector = bson.M{
 			"links.dataset.id": id,
 			"edition":          editionID,
@@ -140,15 +160,7 @@ func (m *Mongo) GetEdition(id, editionID, state string) (*models.Edition, error)
 		}
 	}
 
-	var edition models.Edition
-	err := s.DB(m.Database).C("editions").Find(selector).One(&edition)
-	if err != nil {
-		if err == mgo.ErrNotFound {
-			return nil, api_errors.EditionNotFound
-		}
-		return nil, err
-	}
-	return &edition, nil
+	return selector
 }
 
 // GetNextVersion retrieves the latest version for an edition of a dataset
@@ -164,13 +176,8 @@ func (m *Mongo) GetNextVersion(datasetID, editionID string) (int, error) {
 		}
 		return nextVersion, err
 	}
-	currentVersion, err := strconv.Atoi(version.Version)
-	if err != nil {
-		log.ErrorC("Cannot convert version number to integer", err, nil)
-		return nextVersion, err
-	}
 
-	nextVersion = currentVersion + 1
+	nextVersion = version.Version + 1
 
 	return nextVersion, nil
 }
@@ -180,8 +187,29 @@ func (m *Mongo) GetVersions(id, editionID, state string) (*models.VersionResults
 	s := session.Copy()
 	defer s.Clone()
 
+	selector := buildVersionsQuery(id, editionID, state)
+
+	iter := s.DB(m.Database).C("versions").Find(selector).Iter()
+	defer iter.Close()
+
+	var results []models.Version
+	if err := iter.All(&results); err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, errs.VersionNotFound
+		}
+		return nil, err
+	}
+
+	if len(results) < 1 {
+		return nil, errs.VersionNotFound
+	}
+
+	return &models.VersionResults{Items: results}, nil
+}
+
+func buildVersionsQuery(id, editionID, state string) bson.M {
 	var selector bson.M
-	if state != "" {
+	if state == "" {
 		selector = bson.M{
 			"links.dataset.id": id,
 			"edition":          editionID,
@@ -194,21 +222,7 @@ func (m *Mongo) GetVersions(id, editionID, state string) (*models.VersionResults
 		}
 	}
 
-	iter := s.DB(m.Database).C("versions").Find(selector).Iter()
-
-	var results []models.Version
-	if err := iter.All(&results); err != nil {
-		if err == mgo.ErrNotFound {
-			return nil, api_errors.VersionNotFound
-		}
-		return nil, err
-	}
-
-	if len(results) < 1 {
-		return nil, api_errors.VersionNotFound
-	}
-
-	return &models.VersionResults{Items: results}, nil
+	return selector
 }
 
 // GetVersion retrieves a version document for a dataset edition
@@ -216,8 +230,22 @@ func (m *Mongo) GetVersion(id, editionID, versionID, state string) (*models.Vers
 	s := session.Copy()
 	defer s.Clone()
 
+	selector := buildVersionQuery(id, editionID, versionID, state)
+
+	var version models.Version
+	err := s.DB(m.Database).C("versions").Find(selector).One(&version)
+	if err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, errs.VersionNotFound
+		}
+		return nil, err
+	}
+	return &version, nil
+}
+
+func buildVersionQuery(id, editionID, versionID, state string) bson.M {
 	var selector bson.M
-	if state != "" {
+	if state == "" {
 		selector = bson.M{
 			"links.dataset.id": id,
 			"version":          versionID,
@@ -232,15 +260,7 @@ func (m *Mongo) GetVersion(id, editionID, versionID, state string) (*models.Vers
 		}
 	}
 
-	var version models.Version
-	err := s.DB(m.Database).C("versions").Find(selector).One(&version)
-	if err != nil {
-		if err == mgo.ErrNotFound {
-			return nil, api_errors.VersionNotFound
-		}
-		return nil, err
-	}
-	return &version, nil
+	return selector
 }
 
 // UpsertDataset adds or overides an existing dataset document
@@ -248,7 +268,14 @@ func (m *Mongo) UpsertDataset(id string, datasetDoc *models.DatasetUpdate) (err 
 	s := session.Copy()
 	defer s.Close()
 
-	_, err = s.DB(m.Database).C("datasets").UpsertId(id, bson.M{"$set": datasetDoc})
+	update := bson.M{
+		"$set": datasetDoc,
+		"$setOnInsert": bson.M{
+			"last_updated": time.Now(),
+		},
+	}
+
+	_, err = s.DB(m.Database).C("datasets").UpsertId(id, update)
 	return
 }
 

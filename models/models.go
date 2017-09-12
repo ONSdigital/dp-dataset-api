@@ -48,7 +48,7 @@ type Dataset struct {
 	State        string         `bson:"state,omitempty"          json:"state,omitempty"`
 	Theme        string         `bson:"theme,omitempty"          json:"theme,omitempty"`
 	Title        string         `bson:"title,omitempty"          json:"title,omitempty"`
-	LastUpdated  time.Time      `bson:"last_updated,omitempty"   json:"last_updated,omitempty"`
+	LastUpdated  time.Time      `bson:"last_updated,omitempty"   json:"-"`
 }
 
 // DatasetLinks represents a list of specific links related to the dataset resource
@@ -67,7 +67,7 @@ type LinkObject struct {
 type Contact struct {
 	ID          string    `bson:"_id,omitempty"            json:"id,omitempty"`
 	Email       string    `bson:"email,omitempty"          json:"email,omitempty"`
-	LastUpdated time.Time `bson:"last_updated,omitempty"   json:"last_updated,omitempty"`
+	LastUpdated time.Time `bson:"last_updated,omitempty"   json:"-"`
 	Name        string    `bson:"name,omitempty"           json:"name,omitempty"`
 	Telephone   string    `bson:"telephone,omitempty"      json:"telephone,omitempty"`
 }
@@ -85,7 +85,7 @@ type Edition struct {
 	ID          string       `bson:"_id,omitempty"          json:"id,omitempty"`
 	Links       EditionLinks `bson:"links,omitempty"        json:"links,omitempty"`
 	State       string       `bson:"state,omitempty"        json:"state,omitempty"`
-	LastUpdated time.Time    `bson:"last_updated,omitempty" json:"last_updated,omitempty"`
+	LastUpdated time.Time    `bson:"last_updated,omitempty" json:"-"`
 }
 
 // EditionLinks represents a list of specific links related to the edition resource of a dataset
@@ -112,8 +112,8 @@ type Version struct {
 	Links        VersionLinks `bson:"links,omitempty"         json:"links,omitempty"`
 	ReleaseDate  string       `bson:"release_date,omitempty"  json:"release_date,omitempty"`
 	State        string       `bson:"state,omitempty"         json:"state,omitempty"`
-	LastUpdated  time.Time    `bson:"last_updated,omitempty"  json:"last_updated,omitempty"`
-	Version      string       `bson:"version,omitempty"       json:"version,omitempty"`
+	LastUpdated  time.Time    `bson:"last_updated,omitempty"  json:"-"`
+	Version      int          `bson:"version,omitempty"       json:"version,omitempty"`
 }
 
 // VersionLinks represents a list of specific links related to the version resource for an edition of a dataset

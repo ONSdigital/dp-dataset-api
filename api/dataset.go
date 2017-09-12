@@ -7,8 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ONSdigital/dp-dataset-api/api-errors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
 )
@@ -56,7 +57,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	var bytes []byte
 	if r.Header.Get(internalToken) != api.internalToken {
 		if dataset.Current == nil {
-			handleErrorType(api_errors.DatasetNotFound, w)
+			handleErrorType(errs.DatasetNotFound, w)
 			return
 		}
 		bytes, err = json.Marshal(dataset.Current)
@@ -67,7 +68,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		if dataset == nil {
-			handleErrorType(api_errors.DatasetNotFound, w)
+			handleErrorType(errs.DatasetNotFound, w)
 		}
 		bytes, err = json.Marshal(dataset)
 		if err != nil {
@@ -273,7 +274,7 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 	// Check if edition already exists and if it has been published return a status of Forbidden
 	currentEdition, err := api.dataStore.Backend.GetEdition(datasetID, edition, "")
 	if err != nil {
-		if err != api_errors.EditionNotFound {
+		if err != errs.EditionNotFound {
 			log.Error(err, log.Data{"dataset_id": datasetID, "edition": edition})
 			handleErrorType(err, w)
 			return
@@ -298,7 +299,7 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 	editionDoc.Links.Self.HRef = api.host + "/datasets/" + datasetID + "/editions/" + edition
 	editionDoc.Links.Versions.HRef = api.host + "/datasets/" + datasetID + "/editions/" + edition + "/versions"
 
-	if err := api.dataStore.Backend.UpsertEdition(edition, editionDoc); err != nil {
+	if err := api.dataStore.Backend.UpsertEdition(editionDoc.ID, editionDoc); err != nil {
 		log.ErrorR(r, err, nil)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -345,8 +346,7 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	versionID := strconv.Itoa(nextVersion)
-	api.reviseVersionWithAdditionalFields(*version, editionDoc, datasetID, edition, versionID)
+	version = api.reviseVersionWithAdditionalFields(version, editionDoc, datasetID, edition, nextVersion)
 
 	if err := api.dataStore.Backend.UpsertVersion(version.ID, version); err != nil {
 		log.ErrorR(r, err, nil)
@@ -413,8 +413,9 @@ func (api *DatasetAPI) updateDataset(id string, version *models.Version) error {
 	return nil
 }
 
-func (api *DatasetAPI) reviseVersionWithAdditionalFields(version models.Version, editionDoc *models.Edition, datasetID, edition, versionID string) {
-	version.Version = versionID
+func (api *DatasetAPI) reviseVersionWithAdditionalFields(version *models.Version, editionDoc *models.Edition, datasetID, edition string, nextVersion int) *models.Version {
+	versionID := strconv.Itoa(nextVersion)
+	version.Version = nextVersion
 	version.Edition = edition
 	version.Links.Dataset.ID = datasetID
 	version.Links.Dataset.HRef = fmt.Sprintf("%s/datasets/%s", api.host, datasetID)
@@ -422,10 +423,11 @@ func (api *DatasetAPI) reviseVersionWithAdditionalFields(version models.Version,
 	version.Links.Edition.ID = editionDoc.ID
 	version.Links.Self.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", api.host, datasetID, edition, versionID)
 	version.Links.Dimensions.HRef = fmt.Sprintf("%s/instance/%s/dimensions/", api.host, versionID)
+	return version
 }
 
 func handleErrorType(err error, w http.ResponseWriter) {
-	if err == api_errors.DatasetNotFound || err == api_errors.EditionNotFound || err == api_errors.VersionNotFound {
+	if err == errs.DatasetNotFound || err == errs.EditionNotFound || err == errs.VersionNotFound || err == errs.DimensionNodeNotFound || err == errs.InstanceNotFound {
 		http.Error(w, err.Error(), http.StatusNotFound)
 	} else {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
