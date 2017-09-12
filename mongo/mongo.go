@@ -1,6 +1,7 @@
 package mongo
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -230,10 +231,14 @@ func (m *Mongo) GetVersion(id, editionID, versionID, state string) (*models.Vers
 	s := session.Copy()
 	defer s.Clone()
 
-	selector := buildVersionQuery(id, editionID, versionID, state)
+	versionNumber, err := strconv.Atoi(versionID)
+	if err != nil {
+		return nil, err
+	}
+	selector := buildVersionQuery(id, editionID, state, versionNumber)
 
 	var version models.Version
-	err := s.DB(m.Database).C("versions").Find(selector).One(&version)
+	err = s.DB(m.Database).C("versions").Find(selector).One(&version)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, errs.VersionNotFound
@@ -243,9 +248,9 @@ func (m *Mongo) GetVersion(id, editionID, versionID, state string) (*models.Vers
 	return &version, nil
 }
 
-func buildVersionQuery(id, editionID, versionID, state string) bson.M {
+func buildVersionQuery(id, editionID, state string, versionID int) bson.M {
 	var selector bson.M
-	if state == "" {
+	if state != "published" {
 		selector = bson.M{
 			"links.dataset.id": id,
 			"version":          versionID,
@@ -374,7 +379,7 @@ func (m *Mongo) UpdateDatasetWithAssociation(id, state string, version *models.V
 		},
 	}
 
-	err = s.DB(m.Database).C("dataset").UpdateId(id, update)
+	err = s.DB(m.Database).C("datasets").UpdateId(id, update)
 	return
 }
 

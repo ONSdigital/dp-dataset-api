@@ -88,10 +88,10 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 	})
 
-	Convey("When dataset document has only a next sub document and request contains valid internal_token return status 200", t, func() {
+	Convey("When dataset document has only a next sub document and request contains valid internal-token return status 200", t, func() {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456", nil)
 		So(err, ShouldBeNil)
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(id string) (*models.DatasetUpdate, error) {
@@ -197,7 +197,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 	Convey("When no editions exist against an existing dataset return status not found", t, func() {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
 		So(err, ShouldBeNil)
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
@@ -267,7 +267,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 	Convey("When edition does not exist for a dataset return status not found", t, func() {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -338,7 +338,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 	Convey("When version does not exist for an edition of a dataset returns status not found", t, func() {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -409,7 +409,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 	Convey("When version does not exist for an edition of a dataset return status not found", t, func() {
 		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -447,7 +447,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		var b string
 		b = datasetPayload
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -470,7 +470,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		var b string
 		b = "{"
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -489,7 +489,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		var b string
 		b = datasetPayload
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -529,7 +529,7 @@ func TestPostEditionReturnsCreated(t *testing.T) {
 		var b string
 		b = editionPayload
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -562,7 +562,7 @@ func TestPostEditionReturnsError(t *testing.T) {
 		var b string
 		b = "{"
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -586,7 +586,7 @@ func TestPostEditionReturnsError(t *testing.T) {
 		var b string
 		b = editionPayload
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -631,7 +631,7 @@ func TestPostEditionReturnsError(t *testing.T) {
 		var b string
 		b = datasetPayload
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -657,7 +657,7 @@ func TestPostVersionReturnsCreated(t *testing.T) {
 		var b string
 		b = versionPayload
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := setUp("created")
@@ -678,7 +678,7 @@ func TestPostVersionReturnsCreated(t *testing.T) {
 		var b string
 		b = versionAssociatedPayload
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := setUp(associatedState)
@@ -700,7 +700,7 @@ func TestPostVersionReturnsCreated(t *testing.T) {
 		var b string
 		b = versionPublishedPayload
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := setUp(publishedState)
@@ -724,7 +724,7 @@ func TestPostVersionReturnsError(t *testing.T) {
 		var b string
 		b = "{"
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -743,7 +743,7 @@ func TestPostVersionReturnsError(t *testing.T) {
 		var b string
 		b = versionPayload
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -763,7 +763,7 @@ func TestPostVersionReturnsError(t *testing.T) {
 		var b string
 		b = versionPayload
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -817,7 +817,7 @@ func TestPostVersionReturnsError(t *testing.T) {
 		var b string
 		b = `{"edition":"2017","state":"associated","license":"ONS","release_date":"2017-04-04"}`
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -839,7 +839,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		var b string
 		b = datasetPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -866,7 +866,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		var b string
 		b = "{"
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -885,7 +885,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		var b string
 		b = versionPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -909,7 +909,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		var b string
 		b = datasetPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		r.Header.Add("internal_token", "coffee")
+		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{

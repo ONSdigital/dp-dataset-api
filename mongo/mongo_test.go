@@ -13,7 +13,7 @@ var (
 	id        = "123"
 	editionID = "2017"
 	state     = "published"
-	versionID = "2"
+	versionID = 2
 )
 
 func TestBuildEditionsQuery(t *testing.T) {
@@ -108,7 +108,7 @@ func TestBuildVersionQuery(t *testing.T) {
 			"version":          versionID,
 		}
 
-		selector := buildVersionQuery(id, editionID, versionID, "")
+		selector := buildVersionQuery(id, editionID, "", versionID)
 		So(selector, ShouldNotBeNil)
 		So(selector, ShouldResemble, expectedSelector)
 	})
@@ -122,7 +122,7 @@ func TestBuildVersionQuery(t *testing.T) {
 			"state":            state,
 		}
 
-		selector := buildVersionQuery(id, editionID, versionID, state)
+		selector := buildVersionQuery(id, editionID, state, versionID)
 		So(selector, ShouldNotBeNil)
 		So(selector, ShouldResemble, expectedSelector)
 	})

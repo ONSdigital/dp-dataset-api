@@ -18,7 +18,7 @@ const (
 	publishedState  = "published"
 	associatedState = "associated"
 
-	internalToken = "internal_token"
+	internalToken = "internal-token"
 )
 
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
