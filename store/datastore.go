@@ -27,6 +27,8 @@ type Storer interface {
 	UpsertVersion(id string, versionDoc *models.Version) error
 	UpsertContact(id string, update interface{}) error
 
+	GetDimensions(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error)
+
 	GetInstances(filter string) (*models.InstanceResults, error)
 	GetInstance(id string) (*models.Instance, error)
 	UpdateInstance(id string, instance *models.Instance) error

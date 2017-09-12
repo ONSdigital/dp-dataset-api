@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -887,4 +888,52 @@ func setUp(state string) *storetest.StorerMock {
 	}
 
 	return mockedDataStore
+}
+
+func TestGetDimensionsReturnsOk(t *testing.T) {
+	t.Parallel()
+	Convey("When the request contain valid ids return dimension information", t, func() {
+		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDimensionsFunc: func(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error) {
+				return &models.DatasetDimensionResults{}, nil
+			},
+		}
+		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusOK)
+	})
+}
+
+func TestGetDimensionsReturnsErrors(t *testing.T) {
+	t.Parallel()
+
+	Convey("When the request contain invalid ids return not found error", t, func() {
+		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDimensionsFunc: func(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error) {
+				return nil, apierrors.DatasetNotFound
+			},
+		}
+		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+	})
+	Convey("When the api cannot connect to datastore to get dimension resource return an internal server error", t, func() {
+		r, err := http.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDimensionsFunc: func(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error) {
+				return nil, internalError
+			},
+		}
+		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
 }

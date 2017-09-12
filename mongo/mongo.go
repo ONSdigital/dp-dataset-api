@@ -9,6 +9,8 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"strings"
+	"strconv"
 )
 
 var _ store.Storer = &Mongo{}
@@ -344,7 +346,10 @@ func (m *Mongo) UpsertVersion(id string, version *models.Version) (err error) {
 		},
 	}
 
-	_, err = s.DB(m.Database).C("versions").UpsertId(id, update)
+	info, err := s.DB(m.Database).C("versions").UpsertId(id, update)
+	if info.Updated == 0 {
+		m.createDimensionsFromInstance(version.Links.Dataset.ID, version.Edition, version.Version, version.InstanceID)
+	}
 	return
 }
 
@@ -355,4 +360,50 @@ func (m *Mongo) UpsertContact(id string, update interface{}) (err error) {
 
 	_, err = s.DB(m.Database).C("contacts").UpsertId(id, update)
 	return
+}
+
+// CreateDimensionsFromInstance adds multiple dimensions into mongo and relates the dimensions to a code list
+func (m *Mongo) createDimensionsFromInstance(datasetID, editionID string, versionID int, instanceID string) error {
+	s := session.Copy()
+	defer s.Close()
+	var instance models.Instance
+	err := s.DB(m.Database).C(INSTANCE_COLLECTION).Find(bson.M{"id": instanceID}).One(&instance)
+	if err != nil {
+		return err
+	}
+
+	for _, column := range *instance.Headers {
+		if !strings.Contains(column, "V4_") && strings.Contains(column, "_") {
+
+			split := strings.Split(column, "_")
+			name := split[0]
+			codeID := split[1]
+			codeListURL := "http://localhost:22400/code-lists" + "/" + codeID
+			time := time.Now().UTC()
+			dimension := models.DatasetDimension{Name: name, Dataset: datasetID, Edition: editionID, Version: versionID,
+				CodeList: models.LinkObject{ID: codeID, HRef: codeListURL}, LastUpdated: &time}
+			err = s.DB(m.Database).C("dimensions").Insert(&dimension)
+			if err != nil {
+				return nil
+			}
+		}
+	}
+	return nil
+}
+
+// GetDimensions returns a list of all dimensions from a dataset
+func (m *Mongo) GetDimensions(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error) {
+	version, err := strconv.ParseInt(versionID, 10, 64)
+	s := session.Copy()
+	defer s.Close()
+	iter := s.DB(m.Database).C("dimensions").Find(bson.M{"dataset": datasetID, "edition": editionID, "version": version}).
+		Select(bson.M{"dataset": 0, "edition": 0, "version": 0, "last_updated": 0}).
+		Iter()
+	defer iter.Close()
+	var results []models.DatasetDimension
+	err = iter.All(&results)
+	if err != nil {
+		return nil, err
+	}
+	return &models.DatasetDimensionResults{Items: results}, nil
 }

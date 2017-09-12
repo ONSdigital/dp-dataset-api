@@ -11,7 +11,7 @@ import (
 )
 
 const INSTANCE_COLLECTION = "instances"
-const DIMENSION_NODE_COLLECTION = "dimensions"
+const DIMENSION_NODE_COLLECTION = "dimension.options"
 
 // GetInstances from a mongo collection
 func (m *Mongo) GetInstances(filter string) (*models.InstanceResults, error) {

@@ -181,7 +181,7 @@ db.versions.insert({
     "release_date": "2016-08-23",
     "state": "published",
     "last_updated": "2017-08-25T15:09:11.829+01:00",
-    "version": "1"
+    "version": 1
 });
 db.versions.insert({
     "_id": "4ce2ee5c-d50b-469f-b005-ddfed3f5072b",
@@ -207,7 +207,7 @@ db.versions.insert({
     "release_date": "2016-08-24",
     "state": "created",
     "last_updated": "2017-08-25T15:09:11.829+01:00",
-    "version": "2"
+    "version": 2
 });
 db.versions.insert({
     "_id": "679ebe5f-d9cd-4d6e-8afc-6a2a4f991ccf",
@@ -233,7 +233,7 @@ db.versions.insert({
     "release_date": "2017-08-23",
     "state": "created",
     "last_updated": "2017-08-25T15:09:11.829+01:00",
-    "version": "1"
+    "version": 1
 });
 db.versions.insert({
     "_id": "3b45921b-0efa-4844-a16e-3f9f30df4f88",
@@ -288,8 +288,7 @@ db.instances.insert({
     "state": "created",
     "total_observations": 0,
     "total_inserted_observations": 0,
-    "headers": ["V4_1", "time", "age"],
-    "telephone": "01633 123457",
+    "headers": ["V4_0", "time_64d384f1-ea3b-445c-8fb8-aa453f96e58a", "time", "Geography_65107A9F-7DA3-4B41-A410-6F6D9FBD68C3", "Geography", "Aggregate_e44de4c4-d39e-4e2f-942b-3ca10584d078", "Aggregate"],
     "last_updated": "2017-08-25T15:09:11.829+01:00",
 });
 db.instances.insert({
@@ -299,23 +298,59 @@ db.instances.insert({
     "state": "created",
     "total_observations": 0,
     "total_inserted_observations": 0,
-    "headers": ["V4_1", "time", "age"],
-    "telephone": "01633 123457",
+    "headers": ["V4_0", "time_64d384f1-ea3b-445c-8fb8-aa453f96e58a", "time", "Geography_65107A9F-7DA3-4B41-A410-6F6D9FBD68C3", "Geography", "Aggregate_e44de4c4-d39e-4e2f-942b-3ca10584d078", "Aggregate"],
     "last_updated": "2017-08-25T15:09:11.829+01:00",
 });
-db.dimensions.insert({
+db.dimension.options.insert({
      "_id":"0F06AB0E-A5D1-409A-8183-BACDF2326205",
      "instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
      "name": "age",
      "value": "32",
      "node_id":"80",
 });
-db.dimensions.insert({
+db.dimension.options.insert({
      "_id":"AB3BAE9B-5C4D-4640-8936-8502D0DB954D",
      "instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
      "name": "age",
      "value": "37",
      "node_id":"88",
      "last_updated": "2017-08-25T15:09:11.829+01:00",
+});
+
+db.dimensions.insert({
+  "_id" : "1D5A87B8-6322-4904-AB92-65EC9E2A565F",
+  "code_list" : {
+    "id" : "64d384f1-ea3b-445c-8fb8-aa453f96e58a",
+    "href" : "http://localhost:22400/code-lists/64d384f1-ea3b-445c-8fb8-aa453f96e58a"
+    },
+  "name" : "time",
+  "dataset" : "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
+  "edition" : "2016",
+  "version" : 1,
+  "last_updated" : ISODate("2017-09-12T13:46:50.074Z")
+});
+db.dimensions.insert({
+  "_id" : "1C176122-1D54-4CD6-BBB1-65326FB1B2BB",
+  "code_list" : {
+    "id" : "65107A9F-7DA3-4B41-A410-6F6D9FBD68C3",
+    "href" : "http://localhost:22400/code-lists/65107A9F-7DA3-4B41-A410-6F6D9FBD68C3"
+    },
+  "name" : "Geography",
+  "dataset" : "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
+  "edition" : "2016",
+  "version" : 1,
+  "last_updated" : ISODate("2017-09-12T13:46:50.074Z")
+});
+db.dimensions.insert({
+  "_id" : "CB1B1777-141C-49D7-9083-DF86D7050489",
+  "code_list" : {
+    "id" : "e44de4c4-d39e-4e2f-942b-3ca10584d078",
+    "href" : "http://localhost:22400/code-lists/e44de4c4-d39e-4e2f-942b-3ca10584d078"
+    },
+  "name" : "Aggregate",
+  "dataset" : "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
+  "edition" : "2016",
+  "version" : 1,
+  "last_updated" : ISODate("2017-09-12T13:46:50.074Z")
 });
 EOF
