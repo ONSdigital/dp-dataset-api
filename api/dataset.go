@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -10,7 +11,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
-	"gopkg.in/mgo.v2/bson"
 )
 
 const (
@@ -57,6 +57,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get(internalToken) != api.internalToken {
 		if dataset.Current == nil {
 			handleErrorType(api_errors.DatasetNotFound, w)
+			return
 		}
 		bytes, err = json.Marshal(dataset.Current)
 		if err != nil {
@@ -89,20 +90,12 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	var selector bson.M
-
-	if r.Header.Get(internalToken) == api.internalToken {
-		selector = bson.M{
-			"links.dataset.id": id,
-		}
-	} else {
-		selector = bson.M{
-			"links.dataset.id": id,
-			"state":            publishedState,
-		}
+	var state string
+	if r.Header.Get(internalToken) != api.internalToken {
+		state = publishedState
 	}
 
-	results, err := api.dataStore.Backend.GetEditions(id, selector)
+	results, err := api.dataStore.Backend.GetEditions(id, state)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": id})
 		handleErrorType(err, w)
@@ -129,21 +122,12 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	editionID := vars["edition"]
 
-	var selector bson.M
-	if r.Header.Get(internalToken) == api.internalToken {
-		selector = bson.M{
-			"links.dataset.id": id,
-			"edition":          editionID,
-		}
-	} else {
-		selector = bson.M{
-			"links.dataset.id": id,
-			"edition":          editionID,
-			"state":            publishedState,
-		}
+	var state string
+	if r.Header.Get(internalToken) != api.internalToken {
+		state = publishedState
 	}
 
-	edition, err := api.dataStore.Backend.GetEdition(selector)
+	edition, err := api.dataStore.Backend.GetEdition(id, editionID, state)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
 		handleErrorType(err, w)
@@ -171,21 +155,12 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	editionID := vars["edition"]
 
-	var selector bson.M
-	if r.Header.Get(internalToken) == api.internalToken {
-		selector = bson.M{
-			"links.dataset.id": id,
-			"edition":          editionID,
-		}
-	} else {
-		selector = bson.M{
-			"links.dataset.id": id,
-			"edition":          editionID,
-			"state":            publishedState,
-		}
+	var state string
+	if r.Header.Get(internalToken) != api.internalToken {
+		state = publishedState
 	}
 
-	results, err := api.dataStore.Backend.GetVersions(selector)
+	results, err := api.dataStore.Backend.GetVersions(id, editionID, state)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
 		handleErrorType(err, w)
@@ -213,23 +188,12 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	editionID := vars["edition"]
 	version := vars["version"]
 
-	var selector bson.M
-	if r.Header.Get(internalToken) == api.internalToken {
-		selector = bson.M{
-			"links.dataset.id": id,
-			"version":          version,
-			"edition":          editionID,
-		}
-	} else {
-		selector = bson.M{
-			"links.dataset.id": id,
-			"edition":          editionID,
-			"version":          version,
-			"state":            publishedState,
-		}
+	var state string
+	if r.Header.Get(internalToken) != api.internalToken {
+		state = publishedState
 	}
 
-	results, err := api.dataStore.Backend.GetVersion(selector)
+	results, err := api.dataStore.Backend.GetVersion(id, editionID, version, state)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": id, "edition": editionID, "version": version})
 		handleErrorType(err, w)
@@ -265,18 +229,16 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	datasetID := dataset.ID
-	dataset.Links.Self.Href = api.host + "/datasets/" + datasetID
-	dataset.Links.Editions.Href = api.host + "/datasets/" + datasetID + "/editions"
+	dataset.Links.Self.HRef = api.host + "/datasets/" + datasetID
+	dataset.Links.Editions.HRef = api.host + "/datasets/" + datasetID + "/editions"
 	dataset.LastUpdated = time.Now()
 
-	var datasetDoc *models.DatasetUpdate
-
-	datasetDoc = &models.DatasetUpdate{
+	datasetDoc := &models.DatasetUpdate{
 		ID:   datasetID,
 		Next: dataset,
 	}
 
-	if err := api.dataStore.Backend.UpsertDataset(datasetID, bson.M{"$set": datasetDoc}); err != nil {
+	if err := api.dataStore.Backend.UpsertDataset(datasetID, datasetDoc); err != nil {
 		log.ErrorR(r, err, nil)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -309,7 +271,7 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if edition already exists and if it has been published return a status of Forbidden
-	currentEdition, err := api.dataStore.Backend.GetEdition(bson.M{"links.dataset.id": datasetID, "edition": edition})
+	currentEdition, err := api.dataStore.Backend.GetEdition(datasetID, edition, "")
 	if err != nil {
 		if err != api_errors.EditionNotFound {
 			log.Error(err, log.Data{"dataset_id": datasetID, "edition": edition})
@@ -332,18 +294,11 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 
 	editionDoc.Edition = edition
 	editionDoc.Links.Dataset.ID = datasetID
-	editionDoc.Links.Dataset.Href = api.host + "/datasets/" + datasetID
-	editionDoc.Links.Self.Href = api.host + "/datasets/" + datasetID + "/editions/" + edition
-	editionDoc.Links.Versions.Href = api.host + "/datasets/" + datasetID + "/editions/" + edition + "/versions"
+	editionDoc.Links.Dataset.HRef = api.host + "/datasets/" + datasetID
+	editionDoc.Links.Self.HRef = api.host + "/datasets/" + datasetID + "/editions/" + edition
+	editionDoc.Links.Versions.HRef = api.host + "/datasets/" + datasetID + "/editions/" + edition + "/versions"
 
-	update := bson.M{
-		"$set": edition,
-		"$setOnInsert": bson.M{
-			"last_updatedt": time.Now(),
-		},
-	}
-
-	if err := api.dataStore.Backend.UpsertEdition(edition, update); err != nil {
+	if err := api.dataStore.Backend.UpsertEdition(edition, editionDoc); err != nil {
 		log.ErrorR(r, err, nil)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -376,7 +331,7 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	editionDoc, err := api.dataStore.Backend.GetEdition(bson.M{"links.dataset.id": datasetID, "edition": edition})
+	editionDoc, err := api.dataStore.Backend.GetEdition(datasetID, edition, "")
 	if err != nil {
 		log.ErrorR(r, err, nil)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -391,30 +346,16 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	versionID := strconv.Itoa(nextVersion)
-	version.Version = versionID
-	version.Edition = edition
-	version.Links.Dataset.ID = datasetID
-	version.Links.Dataset.Href = api.host + "/datasets/" + datasetID
-	version.Links.Edition.Href = api.host + "/datasets/" + datasetID + "/editions/" + edition
-	version.Links.Edition.ID = editionDoc.ID
-	version.Links.Self.Href = api.host + "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + versionID
-	version.Links.Dimensions.Href = api.host + "/instance/" + versionID + "/dimensions"
+	api.reviseVersionWithAdditionalFields(*version, editionDoc, datasetID, edition, versionID)
 
-	update := bson.M{
-		"$set": version,
-		"$setOnInsert": bson.M{
-			"last_updated": time.Now(),
-		},
-	}
-
-	if err := api.dataStore.Backend.UpsertVersion(version.ID, update); err != nil {
+	if err := api.dataStore.Backend.UpsertVersion(version.ID, version); err != nil {
 		log.ErrorR(r, err, nil)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if version.State == publishedState {
-		if err := api.updateEdition(editionDoc.ID); err != nil {
+		if err := api.dataStore.Backend.UpdateEdition(editionDoc.ID, version.State); err != nil {
 			log.ErrorC("failed to update the state of edition document to published", err, nil)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -428,7 +369,7 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if version.State == associatedState {
-		if err := api.updateDatasetWithAssociation(datasetID, version); err != nil {
+		if err := api.dataStore.Backend.UpdateDatasetWithAssociation(datasetID, associatedState, version); err != nil {
 			log.ErrorC("failed to update dataset document after a version of a dataset has been associated with a collection", err, nil)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -441,22 +382,6 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 	log.Debug("upsert version", log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 }
 
-func (api *DatasetAPI) updateEdition(id string) error {
-	update := bson.M{
-		"$set": bson.M{
-			"state": publishedState,
-		},
-		"$setOnInsert": bson.M{
-			"last_updated": time.Now(),
-		},
-	}
-
-	if err := api.dataStore.Backend.UpdateEdition(id, update); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (api *DatasetAPI) updateDataset(id string, version *models.Version) error {
 	currentDataset, err := api.dataStore.Backend.GetDataset(id)
 	if err != nil {
@@ -466,7 +391,7 @@ func (api *DatasetAPI) updateDataset(id string, version *models.Version) error {
 
 	currentDataset.Next.CollectionID = version.CollectionID
 	currentDataset.Next.Links.LatestVersion.ID = version.ID
-	currentDataset.Next.Links.LatestVersion.Href = version.Links.Self.Href
+	currentDataset.Next.Links.LatestVersion.HRef = version.Links.Self.HRef
 	currentDataset.Next.State = publishedState
 	currentDataset.Next.LastUpdated = time.Now()
 
@@ -474,13 +399,13 @@ func (api *DatasetAPI) updateDataset(id string, version *models.Version) error {
 	// idempotent; for instance if an authorised user double clicked to update
 	// dataset, the next sub document would not exist to create the correct
 	// current sub document on the second click
-	newDataset := models.DatasetUpdate{
+	newDataset := &models.DatasetUpdate{
 		ID:      currentDataset.ID,
 		Current: currentDataset.Next,
 		Next:    currentDataset.Next,
 	}
 
-	if err := api.dataStore.Backend.UpsertDataset(id, bson.M{"$set": newDataset}); err != nil {
+	if err := api.dataStore.Backend.UpsertDataset(id, newDataset); err != nil {
 		log.ErrorC("Unable to update dataset", err, log.Data{"dataset_id": id})
 		return err
 	}
@@ -488,22 +413,15 @@ func (api *DatasetAPI) updateDataset(id string, version *models.Version) error {
 	return nil
 }
 
-func (api *DatasetAPI) updateDatasetWithAssociation(id string, version *models.Version) error {
-	update := bson.M{
-		"$set": bson.M{
-			"next.state":                     associatedState,
-			"next.collection_id":             version.CollectionID,
-			"next.links.latest_version.link": version.Links.Self,
-			"next.links.latest_version.id":   version.ID,
-			"next.last_updated":              time.Now(),
-		},
-	}
-
-	if err := api.dataStore.Backend.UpdateDataset(id, update); err != nil {
-		return err
-	}
-
-	return nil
+func (api *DatasetAPI) reviseVersionWithAdditionalFields(version models.Version, editionDoc *models.Edition, datasetID, edition, versionID string) {
+	version.Version = versionID
+	version.Edition = edition
+	version.Links.Dataset.ID = datasetID
+	version.Links.Dataset.HRef = fmt.Sprintf("%s/datasets/%s", api.host, datasetID)
+	version.Links.Edition.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s", api.host, datasetID, edition)
+	version.Links.Edition.ID = editionDoc.ID
+	version.Links.Self.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", api.host, datasetID, edition, versionID)
+	version.Links.Dimensions.HRef = fmt.Sprintf("%s/instance/%s/dimensions/", api.host, versionID)
 }
 
 func handleErrorType(err error, w http.ResponseWriter) {

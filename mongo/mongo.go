@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -54,8 +55,7 @@ func (m *Mongo) GetDatasets() (*models.DatasetResults, error) {
 		return nil, err
 	}
 
-	items := mapResults(results)
-	datasets.Items = items
+	datasets.Items = mapResults(results)
 
 	return datasets, nil
 }
@@ -89,9 +89,22 @@ func (m *Mongo) GetDataset(id string) (*models.DatasetUpdate, error) {
 }
 
 // GetEditions retrieves all edition documents for a dataset
-func (m *Mongo) GetEditions(id string, selector interface{}) (*models.EditionResults, error) {
+func (m *Mongo) GetEditions(id, state string) (*models.EditionResults, error) {
 	s := session.Copy()
 	defer s.Clone()
+
+	var selector bson.M
+	if state != "" {
+		selector = bson.M{
+			"links.dataset.id": id,
+			"state":            state,
+		}
+	} else {
+		selector = bson.M{
+			"links.dataset.id": id,
+		}
+	}
+
 	iter := s.DB(m.Database).C("editions").Find(selector).Iter()
 
 	var results []models.Edition
@@ -109,9 +122,24 @@ func (m *Mongo) GetEditions(id string, selector interface{}) (*models.EditionRes
 }
 
 // GetEdition retrieves an edition document for a dataset
-func (m *Mongo) GetEdition(selector interface{}) (*models.Edition, error) {
+func (m *Mongo) GetEdition(id, editionID, state string) (*models.Edition, error) {
 	s := session.Copy()
 	defer s.Clone()
+
+	var selector bson.M
+	if state != "" {
+		selector = bson.M{
+			"links.dataset.id": id,
+			"edition":          editionID,
+		}
+	} else {
+		selector = bson.M{
+			"links.dataset.id": id,
+			"edition":          editionID,
+			"state":            state,
+		}
+	}
+
 	var edition models.Edition
 	err := s.DB(m.Database).C("editions").Find(selector).One(&edition)
 	if err != nil {
@@ -148,9 +176,24 @@ func (m *Mongo) GetNextVersion(datasetID, editionID string) (int, error) {
 }
 
 // GetVersions retrieves all version documents for a dataset edition
-func (m *Mongo) GetVersions(selector interface{}) (*models.VersionResults, error) {
+func (m *Mongo) GetVersions(id, editionID, state string) (*models.VersionResults, error) {
 	s := session.Copy()
 	defer s.Clone()
+
+	var selector bson.M
+	if state != "" {
+		selector = bson.M{
+			"links.dataset.id": id,
+			"edition":          editionID,
+		}
+	} else {
+		selector = bson.M{
+			"links.dataset.id": id,
+			"edition":          editionID,
+			"state":            state,
+		}
+	}
+
 	iter := s.DB(m.Database).C("versions").Find(selector).Iter()
 
 	var results []models.Version
@@ -169,9 +212,26 @@ func (m *Mongo) GetVersions(selector interface{}) (*models.VersionResults, error
 }
 
 // GetVersion retrieves a version document for a dataset edition
-func (m *Mongo) GetVersion(selector interface{}) (*models.Version, error) {
+func (m *Mongo) GetVersion(id, editionID, versionID, state string) (*models.Version, error) {
 	s := session.Copy()
 	defer s.Clone()
+
+	var selector bson.M
+	if state != "" {
+		selector = bson.M{
+			"links.dataset.id": id,
+			"version":          versionID,
+			"edition":          editionID,
+		}
+	} else {
+		selector = bson.M{
+			"links.dataset.id": id,
+			"edition":          editionID,
+			"version":          versionID,
+			"state":            state,
+		}
+	}
+
 	var version models.Version
 	err := s.DB(m.Database).C("versions").Find(selector).One(&version)
 	if err != nil {
@@ -184,45 +244,78 @@ func (m *Mongo) GetVersion(selector interface{}) (*models.Version, error) {
 }
 
 // UpsertDataset adds or overides an existing dataset document
-func (m *Mongo) UpsertDataset(id string, update interface{}) (err error) {
+func (m *Mongo) UpsertDataset(id string, datasetDoc *models.DatasetUpdate) (err error) {
 	s := session.Copy()
 	defer s.Close()
 
-	_, err = s.DB(m.Database).C("datasets").UpsertId(id, update)
+	_, err = s.DB(m.Database).C("datasets").UpsertId(id, bson.M{"$set": datasetDoc})
 	return
 }
 
 // UpsertEdition adds or overides an existing edition document
-func (m *Mongo) UpsertEdition(edition string, update interface{}) (err error) {
+func (m *Mongo) UpsertEdition(editionID string, editionDoc *models.Edition) (err error) {
 	s := session.Copy()
 	defer s.Close()
 
-	_, err = s.DB(m.Database).C("editions").Upsert(bson.M{"edition": edition}, update)
+	update := bson.M{
+		"$set": editionDoc,
+		"$setOnInsert": bson.M{
+			"last_updated": time.Now(),
+		},
+	}
+
+	_, err = s.DB(m.Database).C("editions").Upsert(bson.M{"edition": editionID}, update)
 	return
 }
 
-// UpdateDataset updates an existing dataset document
-func (m *Mongo) UpdateDataset(id string, update interface{}) (err error) {
+// UpdateDatasetWithAssociation updates an existing dataset document
+func (m *Mongo) UpdateDatasetWithAssociation(id, state string, version *models.Version) (err error) {
 	s := session.Copy()
 	defer s.Close()
+
+	update := bson.M{
+		"$set": bson.M{
+			"next.state":                     state,
+			"next.collection_id":             version.CollectionID,
+			"next.links.latest_version.link": version.Links.Self,
+			"next.links.latest_version.id":   version.ID,
+			"next.last_updated":              time.Now(),
+		},
+	}
 
 	err = s.DB(m.Database).C("dataset").UpdateId(id, update)
 	return
 }
 
 // UpdateEdition updates an existing edition document
-func (m *Mongo) UpdateEdition(id string, update interface{}) (err error) {
+func (m *Mongo) UpdateEdition(id, state string) (err error) {
 	s := session.Copy()
 	defer s.Close()
+
+	update := bson.M{
+		"$set": bson.M{
+			"state": state,
+		},
+		"$setOnInsert": bson.M{
+			"last_updated": time.Now(),
+		},
+	}
 
 	err = s.DB(m.Database).C("editions").UpdateId(id, update)
 	return
 }
 
 // UpsertVersion adds or overides an existing version document
-func (m *Mongo) UpsertVersion(id string, update interface{}) (err error) {
+func (m *Mongo) UpsertVersion(id string, version *models.Version) (err error) {
 	s := session.Copy()
 	defer s.Close()
+
+	update := bson.M{
+		"$set": version,
+		"$setOnInsert": bson.M{
+			"last_updated": time.Now(),
+		},
+	}
 
 	_, err = s.DB(m.Database).C("versions").UpsertId(id, update)
 	return

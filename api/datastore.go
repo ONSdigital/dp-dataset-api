@@ -15,15 +15,15 @@ type DataStore struct {
 type Backend interface {
 	GetDatasets() (*models.DatasetResults, error)
 	GetDataset(id string) (*models.DatasetUpdate, error)
-	GetEditions(id string, selector interface{}) (*models.EditionResults, error)
-	GetEdition(selector interface{}) (*models.Edition, error)
+	GetEditions(id, state string) (*models.EditionResults, error)
+	GetEdition(id, editionID, state string) (*models.Edition, error)
 	GetNextVersion(datasetID, editionID string) (int, error)
-	GetVersions(selector interface{}) (*models.VersionResults, error)
-	GetVersion(selector interface{}) (*models.Version, error)
-	UpdateDataset(id string, update interface{}) error
-	UpdateEdition(id string, update interface{}) error
-	UpsertDataset(id string, update interface{}) error
-	UpsertEdition(id string, update interface{}) error
-	UpsertVersion(id string, update interface{}) error
+	GetVersions(datasetID, editionID, state string) (*models.VersionResults, error)
+	GetVersion(datasetID, editionID, version, state string) (*models.Version, error)
+	UpdateDatasetWithAssociation(id, state string, version *models.Version) error
+	UpdateEdition(id, state string) error
+	UpsertDataset(id string, datasetDoc *models.DatasetUpdate) error
+	UpsertEdition(id string, editionDoc *models.Edition) error
+	UpsertVersion(id string, versionDoc *models.Version) error
 	UpsertContact(id string, update interface{}) error
 }

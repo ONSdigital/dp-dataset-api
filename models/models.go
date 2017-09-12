@@ -61,7 +61,7 @@ type DatasetLinks struct {
 // LinkObject represents a generic structure for all links
 type LinkObject struct {
 	ID   string `bson:"id,omitempty"    json:"id,omitempty"`
-	Href string `bson:"href,omitempty"  json:"href,omitempty"`
+	HRef string `bson:"href,omitempty"  json:"href,omitempty"`
 }
 
 type Contact struct {
@@ -99,7 +99,7 @@ type EditionLinks struct {
 type Publisher struct {
 	Name string `bson:"name,omitempty" json:"name,omitempty"`
 	Type string `bson:"type,omitempty" json:"type,omitempty"`
-	Href string `bson:"href,omitempty"  json:"href,omitempty"`
+	HRef string `bson:"href,omitempty"  json:"href,omitempty"`
 }
 
 // Version represents information related to a single version for an edition of a dataset
@@ -222,7 +222,7 @@ func ValidateVersion(version *Version) error {
 	}
 
 	if hasAssociation && version.CollectionID == "" {
-		return errors.New("Missing association between version and a collection")
+		return errors.New("Missing collection_id for association between version and a collection")
 	}
 
 	var missingFields []string

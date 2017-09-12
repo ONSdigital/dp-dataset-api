@@ -9,19 +9,19 @@ import (
 )
 
 var (
-	lockBackendMockGetDataset     sync.RWMutex
-	lockBackendMockGetDatasets    sync.RWMutex
-	lockBackendMockGetEdition     sync.RWMutex
-	lockBackendMockGetEditions    sync.RWMutex
-	lockBackendMockGetNextVersion sync.RWMutex
-	lockBackendMockGetVersion     sync.RWMutex
-	lockBackendMockGetVersions    sync.RWMutex
-	lockBackendMockUpdateDataset  sync.RWMutex
-	lockBackendMockUpdateEdition  sync.RWMutex
-	lockBackendMockUpsertContact  sync.RWMutex
-	lockBackendMockUpsertDataset  sync.RWMutex
-	lockBackendMockUpsertEdition  sync.RWMutex
-	lockBackendMockUpsertVersion  sync.RWMutex
+	lockBackendMockGetDataset                   sync.RWMutex
+	lockBackendMockGetDatasets                  sync.RWMutex
+	lockBackendMockGetEdition                   sync.RWMutex
+	lockBackendMockGetEditions                  sync.RWMutex
+	lockBackendMockGetNextVersion               sync.RWMutex
+	lockBackendMockGetVersion                   sync.RWMutex
+	lockBackendMockGetVersions                  sync.RWMutex
+	lockBackendMockUpdateDatasetWithAssociation sync.RWMutex
+	lockBackendMockUpdateEdition                sync.RWMutex
+	lockBackendMockUpsertContact                sync.RWMutex
+	lockBackendMockUpsertDataset                sync.RWMutex
+	lockBackendMockUpsertEdition                sync.RWMutex
+	lockBackendMockUpsertVersion                sync.RWMutex
 )
 
 // BackendMock is a mock implementation of Backend.
@@ -36,37 +36,37 @@ var (
 //             GetDatasetsFunc: func() (*models.DatasetResults, error) {
 // 	               panic("TODO: mock out the GetDatasets method")
 //             },
-//             GetEditionFunc: func(selector interface{}) (*models.Edition, error) {
+//             GetEditionFunc: func(id string, editionID string, state string) (*models.Edition, error) {
 // 	               panic("TODO: mock out the GetEdition method")
 //             },
-//             GetEditionsFunc: func(id string, selector interface{}) (*models.EditionResults, error) {
+//             GetEditionsFunc: func(id string, state string) (*models.EditionResults, error) {
 // 	               panic("TODO: mock out the GetEditions method")
 //             },
 //             GetNextVersionFunc: func(datasetID string, editionID string) (int, error) {
 // 	               panic("TODO: mock out the GetNextVersion method")
 //             },
-//             GetVersionFunc: func(selector interface{}) (*models.Version, error) {
+//             GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
 // 	               panic("TODO: mock out the GetVersion method")
 //             },
-//             GetVersionsFunc: func(selector interface{}) (*models.VersionResults, error) {
+//             GetVersionsFunc: func(datasetID string, editionID string, state string) (*models.VersionResults, error) {
 // 	               panic("TODO: mock out the GetVersions method")
 //             },
-//             UpdateDatasetFunc: func(id string, update interface{}) error {
-// 	               panic("TODO: mock out the UpdateDataset method")
+//             UpdateDatasetWithAssociationFunc: func(id string, state string, version *models.Version) error {
+// 	               panic("TODO: mock out the UpdateDatasetWithAssociation method")
 //             },
-//             UpdateEditionFunc: func(id string, update interface{}) error {
+//             UpdateEditionFunc: func(id string, state string) error {
 // 	               panic("TODO: mock out the UpdateEdition method")
 //             },
 //             UpsertContactFunc: func(id string, update interface{}) error {
 // 	               panic("TODO: mock out the UpsertContact method")
 //             },
-//             UpsertDatasetFunc: func(id string, update interface{}) error {
+//             UpsertDatasetFunc: func(id string, datasetDoc *models.DatasetUpdate) error {
 // 	               panic("TODO: mock out the UpsertDataset method")
 //             },
-//             UpsertEditionFunc: func(id string, update interface{}) error {
+//             UpsertEditionFunc: func(id string, editionDoc *models.Edition) error {
 // 	               panic("TODO: mock out the UpsertEdition method")
 //             },
-//             UpsertVersionFunc: func(id string, update interface{}) error {
+//             UpsertVersionFunc: func(id string, versionDoc *models.Version) error {
 // 	               panic("TODO: mock out the UpsertVersion method")
 //             },
 //         }
@@ -83,37 +83,37 @@ type BackendMock struct {
 	GetDatasetsFunc func() (*models.DatasetResults, error)
 
 	// GetEditionFunc mocks the GetEdition method.
-	GetEditionFunc func(selector interface{}) (*models.Edition, error)
+	GetEditionFunc func(id string, editionID string, state string) (*models.Edition, error)
 
 	// GetEditionsFunc mocks the GetEditions method.
-	GetEditionsFunc func(id string, selector interface{}) (*models.EditionResults, error)
+	GetEditionsFunc func(id string, state string) (*models.EditionResults, error)
 
 	// GetNextVersionFunc mocks the GetNextVersion method.
 	GetNextVersionFunc func(datasetID string, editionID string) (int, error)
 
 	// GetVersionFunc mocks the GetVersion method.
-	GetVersionFunc func(selector interface{}) (*models.Version, error)
+	GetVersionFunc func(datasetID string, editionID string, version string, state string) (*models.Version, error)
 
 	// GetVersionsFunc mocks the GetVersions method.
-	GetVersionsFunc func(selector interface{}) (*models.VersionResults, error)
+	GetVersionsFunc func(datasetID string, editionID string, state string) (*models.VersionResults, error)
 
-	// UpdateDatasetFunc mocks the UpdateDataset method.
-	UpdateDatasetFunc func(id string, update interface{}) error
+	// UpdateDatasetWithAssociationFunc mocks the UpdateDatasetWithAssociation method.
+	UpdateDatasetWithAssociationFunc func(id string, state string, version *models.Version) error
 
 	// UpdateEditionFunc mocks the UpdateEdition method.
-	UpdateEditionFunc func(id string, update interface{}) error
+	UpdateEditionFunc func(id string, state string) error
 
 	// UpsertContactFunc mocks the UpsertContact method.
 	UpsertContactFunc func(id string, update interface{}) error
 
 	// UpsertDatasetFunc mocks the UpsertDataset method.
-	UpsertDatasetFunc func(id string, update interface{}) error
+	UpsertDatasetFunc func(id string, datasetDoc *models.DatasetUpdate) error
 
 	// UpsertEditionFunc mocks the UpsertEdition method.
-	UpsertEditionFunc func(id string, update interface{}) error
+	UpsertEditionFunc func(id string, editionDoc *models.Edition) error
 
 	// UpsertVersionFunc mocks the UpsertVersion method.
-	UpsertVersionFunc func(id string, update interface{}) error
+	UpsertVersionFunc func(id string, versionDoc *models.Version) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -127,15 +127,19 @@ type BackendMock struct {
 		}
 		// GetEdition holds details about calls to the GetEdition method.
 		GetEdition []struct {
-			// Selector is the selector argument value.
-			Selector interface{}
+			// Id is the id argument value.
+			Id string
+			// EditionID is the editionID argument value.
+			EditionID string
+			// State is the state argument value.
+			State string
 		}
 		// GetEditions holds details about calls to the GetEditions method.
 		GetEditions []struct {
 			// Id is the id argument value.
 			Id string
-			// Selector is the selector argument value.
-			Selector interface{}
+			// State is the state argument value.
+			State string
 		}
 		// GetNextVersion holds details about calls to the GetNextVersion method.
 		GetNextVersion []struct {
@@ -146,27 +150,39 @@ type BackendMock struct {
 		}
 		// GetVersion holds details about calls to the GetVersion method.
 		GetVersion []struct {
-			// Selector is the selector argument value.
-			Selector interface{}
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// EditionID is the editionID argument value.
+			EditionID string
+			// Version is the version argument value.
+			Version string
+			// State is the state argument value.
+			State string
 		}
 		// GetVersions holds details about calls to the GetVersions method.
 		GetVersions []struct {
-			// Selector is the selector argument value.
-			Selector interface{}
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// EditionID is the editionID argument value.
+			EditionID string
+			// State is the state argument value.
+			State string
 		}
-		// UpdateDataset holds details about calls to the UpdateDataset method.
-		UpdateDataset []struct {
+		// UpdateDatasetWithAssociation holds details about calls to the UpdateDatasetWithAssociation method.
+		UpdateDatasetWithAssociation []struct {
 			// Id is the id argument value.
 			Id string
-			// Update is the update argument value.
-			Update interface{}
+			// State is the state argument value.
+			State string
+			// Version is the version argument value.
+			Version *models.Version
 		}
 		// UpdateEdition holds details about calls to the UpdateEdition method.
 		UpdateEdition []struct {
 			// Id is the id argument value.
 			Id string
-			// Update is the update argument value.
-			Update interface{}
+			// State is the state argument value.
+			State string
 		}
 		// UpsertContact holds details about calls to the UpsertContact method.
 		UpsertContact []struct {
@@ -179,22 +195,22 @@ type BackendMock struct {
 		UpsertDataset []struct {
 			// Id is the id argument value.
 			Id string
-			// Update is the update argument value.
-			Update interface{}
+			// DatasetDoc is the datasetDoc argument value.
+			DatasetDoc *models.DatasetUpdate
 		}
 		// UpsertEdition holds details about calls to the UpsertEdition method.
 		UpsertEdition []struct {
 			// Id is the id argument value.
 			Id string
-			// Update is the update argument value.
-			Update interface{}
+			// EditionDoc is the editionDoc argument value.
+			EditionDoc *models.Edition
 		}
 		// UpsertVersion holds details about calls to the UpsertVersion method.
 		UpsertVersion []struct {
 			// Id is the id argument value.
 			Id string
-			// Update is the update argument value.
-			Update interface{}
+			// VersionDoc is the versionDoc argument value.
+			VersionDoc *models.Version
 		}
 	}
 }
@@ -257,29 +273,37 @@ func (mock *BackendMock) GetDatasetsCalls() []struct {
 }
 
 // GetEdition calls GetEditionFunc.
-func (mock *BackendMock) GetEdition(selector interface{}) (*models.Edition, error) {
+func (mock *BackendMock) GetEdition(id string, editionID string, state string) (*models.Edition, error) {
 	if mock.GetEditionFunc == nil {
 		panic("moq: BackendMock.GetEditionFunc is nil but Backend.GetEdition was just called")
 	}
 	callInfo := struct {
-		Selector interface{}
+		Id        string
+		EditionID string
+		State     string
 	}{
-		Selector: selector,
+		Id:        id,
+		EditionID: editionID,
+		State:     state,
 	}
 	lockBackendMockGetEdition.Lock()
 	mock.calls.GetEdition = append(mock.calls.GetEdition, callInfo)
 	lockBackendMockGetEdition.Unlock()
-	return mock.GetEditionFunc(selector)
+	return mock.GetEditionFunc(id, editionID, state)
 }
 
 // GetEditionCalls gets all the calls that were made to GetEdition.
 // Check the length with:
 //     len(mockedBackend.GetEditionCalls())
 func (mock *BackendMock) GetEditionCalls() []struct {
-	Selector interface{}
+	Id        string
+	EditionID string
+	State     string
 } {
 	var calls []struct {
-		Selector interface{}
+		Id        string
+		EditionID string
+		State     string
 	}
 	lockBackendMockGetEdition.RLock()
 	calls = mock.calls.GetEdition
@@ -288,33 +312,33 @@ func (mock *BackendMock) GetEditionCalls() []struct {
 }
 
 // GetEditions calls GetEditionsFunc.
-func (mock *BackendMock) GetEditions(id string, selector interface{}) (*models.EditionResults, error) {
+func (mock *BackendMock) GetEditions(id string, state string) (*models.EditionResults, error) {
 	if mock.GetEditionsFunc == nil {
 		panic("moq: BackendMock.GetEditionsFunc is nil but Backend.GetEditions was just called")
 	}
 	callInfo := struct {
-		Id       string
-		Selector interface{}
+		Id    string
+		State string
 	}{
-		Id:       id,
-		Selector: selector,
+		Id:    id,
+		State: state,
 	}
 	lockBackendMockGetEditions.Lock()
 	mock.calls.GetEditions = append(mock.calls.GetEditions, callInfo)
 	lockBackendMockGetEditions.Unlock()
-	return mock.GetEditionsFunc(id, selector)
+	return mock.GetEditionsFunc(id, state)
 }
 
 // GetEditionsCalls gets all the calls that were made to GetEditions.
 // Check the length with:
 //     len(mockedBackend.GetEditionsCalls())
 func (mock *BackendMock) GetEditionsCalls() []struct {
-	Id       string
-	Selector interface{}
+	Id    string
+	State string
 } {
 	var calls []struct {
-		Id       string
-		Selector interface{}
+		Id    string
+		State string
 	}
 	lockBackendMockGetEditions.RLock()
 	calls = mock.calls.GetEditions
@@ -358,29 +382,41 @@ func (mock *BackendMock) GetNextVersionCalls() []struct {
 }
 
 // GetVersion calls GetVersionFunc.
-func (mock *BackendMock) GetVersion(selector interface{}) (*models.Version, error) {
+func (mock *BackendMock) GetVersion(datasetID string, editionID string, version string, state string) (*models.Version, error) {
 	if mock.GetVersionFunc == nil {
 		panic("moq: BackendMock.GetVersionFunc is nil but Backend.GetVersion was just called")
 	}
 	callInfo := struct {
-		Selector interface{}
+		DatasetID string
+		EditionID string
+		Version   string
+		State     string
 	}{
-		Selector: selector,
+		DatasetID: datasetID,
+		EditionID: editionID,
+		Version:   version,
+		State:     state,
 	}
 	lockBackendMockGetVersion.Lock()
 	mock.calls.GetVersion = append(mock.calls.GetVersion, callInfo)
 	lockBackendMockGetVersion.Unlock()
-	return mock.GetVersionFunc(selector)
+	return mock.GetVersionFunc(datasetID, editionID, version, state)
 }
 
 // GetVersionCalls gets all the calls that were made to GetVersion.
 // Check the length with:
 //     len(mockedBackend.GetVersionCalls())
 func (mock *BackendMock) GetVersionCalls() []struct {
-	Selector interface{}
+	DatasetID string
+	EditionID string
+	Version   string
+	State     string
 } {
 	var calls []struct {
-		Selector interface{}
+		DatasetID string
+		EditionID string
+		Version   string
+		State     string
 	}
 	lockBackendMockGetVersion.RLock()
 	calls = mock.calls.GetVersion
@@ -389,29 +425,37 @@ func (mock *BackendMock) GetVersionCalls() []struct {
 }
 
 // GetVersions calls GetVersionsFunc.
-func (mock *BackendMock) GetVersions(selector interface{}) (*models.VersionResults, error) {
+func (mock *BackendMock) GetVersions(datasetID string, editionID string, state string) (*models.VersionResults, error) {
 	if mock.GetVersionsFunc == nil {
 		panic("moq: BackendMock.GetVersionsFunc is nil but Backend.GetVersions was just called")
 	}
 	callInfo := struct {
-		Selector interface{}
+		DatasetID string
+		EditionID string
+		State     string
 	}{
-		Selector: selector,
+		DatasetID: datasetID,
+		EditionID: editionID,
+		State:     state,
 	}
 	lockBackendMockGetVersions.Lock()
 	mock.calls.GetVersions = append(mock.calls.GetVersions, callInfo)
 	lockBackendMockGetVersions.Unlock()
-	return mock.GetVersionsFunc(selector)
+	return mock.GetVersionsFunc(datasetID, editionID, state)
 }
 
 // GetVersionsCalls gets all the calls that were made to GetVersions.
 // Check the length with:
 //     len(mockedBackend.GetVersionsCalls())
 func (mock *BackendMock) GetVersionsCalls() []struct {
-	Selector interface{}
+	DatasetID string
+	EditionID string
+	State     string
 } {
 	var calls []struct {
-		Selector interface{}
+		DatasetID string
+		EditionID string
+		State     string
 	}
 	lockBackendMockGetVersions.RLock()
 	calls = mock.calls.GetVersions
@@ -419,69 +463,73 @@ func (mock *BackendMock) GetVersionsCalls() []struct {
 	return calls
 }
 
-// UpdateDataset calls UpdateDatasetFunc.
-func (mock *BackendMock) UpdateDataset(id string, update interface{}) error {
-	if mock.UpdateDatasetFunc == nil {
-		panic("moq: BackendMock.UpdateDatasetFunc is nil but Backend.UpdateDataset was just called")
+// UpdateDatasetWithAssociation calls UpdateDatasetWithAssociationFunc.
+func (mock *BackendMock) UpdateDatasetWithAssociation(id string, state string, version *models.Version) error {
+	if mock.UpdateDatasetWithAssociationFunc == nil {
+		panic("moq: BackendMock.UpdateDatasetWithAssociationFunc is nil but Backend.UpdateDatasetWithAssociation was just called")
 	}
 	callInfo := struct {
-		Id     string
-		Update interface{}
+		Id      string
+		State   string
+		Version *models.Version
 	}{
-		Id:     id,
-		Update: update,
+		Id:      id,
+		State:   state,
+		Version: version,
 	}
-	lockBackendMockUpdateDataset.Lock()
-	mock.calls.UpdateDataset = append(mock.calls.UpdateDataset, callInfo)
-	lockBackendMockUpdateDataset.Unlock()
-	return mock.UpdateDatasetFunc(id, update)
+	lockBackendMockUpdateDatasetWithAssociation.Lock()
+	mock.calls.UpdateDatasetWithAssociation = append(mock.calls.UpdateDatasetWithAssociation, callInfo)
+	lockBackendMockUpdateDatasetWithAssociation.Unlock()
+	return mock.UpdateDatasetWithAssociationFunc(id, state, version)
 }
 
-// UpdateDatasetCalls gets all the calls that were made to UpdateDataset.
+// UpdateDatasetWithAssociationCalls gets all the calls that were made to UpdateDatasetWithAssociation.
 // Check the length with:
-//     len(mockedBackend.UpdateDatasetCalls())
-func (mock *BackendMock) UpdateDatasetCalls() []struct {
-	Id     string
-	Update interface{}
+//     len(mockedBackend.UpdateDatasetWithAssociationCalls())
+func (mock *BackendMock) UpdateDatasetWithAssociationCalls() []struct {
+	Id      string
+	State   string
+	Version *models.Version
 } {
 	var calls []struct {
-		Id     string
-		Update interface{}
+		Id      string
+		State   string
+		Version *models.Version
 	}
-	lockBackendMockUpdateDataset.RLock()
-	calls = mock.calls.UpdateDataset
-	lockBackendMockUpdateDataset.RUnlock()
+	lockBackendMockUpdateDatasetWithAssociation.RLock()
+	calls = mock.calls.UpdateDatasetWithAssociation
+	lockBackendMockUpdateDatasetWithAssociation.RUnlock()
 	return calls
 }
 
 // UpdateEdition calls UpdateEditionFunc.
-func (mock *BackendMock) UpdateEdition(id string, update interface{}) error {
+func (mock *BackendMock) UpdateEdition(id string, state string) error {
 	if mock.UpdateEditionFunc == nil {
 		panic("moq: BackendMock.UpdateEditionFunc is nil but Backend.UpdateEdition was just called")
 	}
 	callInfo := struct {
-		Id     string
-		Update interface{}
+		Id    string
+		State string
 	}{
-		Id:     id,
-		Update: update,
+		Id:    id,
+		State: state,
 	}
 	lockBackendMockUpdateEdition.Lock()
 	mock.calls.UpdateEdition = append(mock.calls.UpdateEdition, callInfo)
 	lockBackendMockUpdateEdition.Unlock()
-	return mock.UpdateEditionFunc(id, update)
+	return mock.UpdateEditionFunc(id, state)
 }
 
 // UpdateEditionCalls gets all the calls that were made to UpdateEdition.
 // Check the length with:
 //     len(mockedBackend.UpdateEditionCalls())
 func (mock *BackendMock) UpdateEditionCalls() []struct {
-	Id     string
-	Update interface{}
+	Id    string
+	State string
 } {
 	var calls []struct {
-		Id     string
-		Update interface{}
+		Id    string
+		State string
 	}
 	lockBackendMockUpdateEdition.RLock()
 	calls = mock.calls.UpdateEdition
@@ -525,33 +573,33 @@ func (mock *BackendMock) UpsertContactCalls() []struct {
 }
 
 // UpsertDataset calls UpsertDatasetFunc.
-func (mock *BackendMock) UpsertDataset(id string, update interface{}) error {
+func (mock *BackendMock) UpsertDataset(id string, datasetDoc *models.DatasetUpdate) error {
 	if mock.UpsertDatasetFunc == nil {
 		panic("moq: BackendMock.UpsertDatasetFunc is nil but Backend.UpsertDataset was just called")
 	}
 	callInfo := struct {
-		Id     string
-		Update interface{}
+		Id         string
+		DatasetDoc *models.DatasetUpdate
 	}{
-		Id:     id,
-		Update: update,
+		Id:         id,
+		DatasetDoc: datasetDoc,
 	}
 	lockBackendMockUpsertDataset.Lock()
 	mock.calls.UpsertDataset = append(mock.calls.UpsertDataset, callInfo)
 	lockBackendMockUpsertDataset.Unlock()
-	return mock.UpsertDatasetFunc(id, update)
+	return mock.UpsertDatasetFunc(id, datasetDoc)
 }
 
 // UpsertDatasetCalls gets all the calls that were made to UpsertDataset.
 // Check the length with:
 //     len(mockedBackend.UpsertDatasetCalls())
 func (mock *BackendMock) UpsertDatasetCalls() []struct {
-	Id     string
-	Update interface{}
+	Id         string
+	DatasetDoc *models.DatasetUpdate
 } {
 	var calls []struct {
-		Id     string
-		Update interface{}
+		Id         string
+		DatasetDoc *models.DatasetUpdate
 	}
 	lockBackendMockUpsertDataset.RLock()
 	calls = mock.calls.UpsertDataset
@@ -560,33 +608,33 @@ func (mock *BackendMock) UpsertDatasetCalls() []struct {
 }
 
 // UpsertEdition calls UpsertEditionFunc.
-func (mock *BackendMock) UpsertEdition(id string, update interface{}) error {
+func (mock *BackendMock) UpsertEdition(id string, editionDoc *models.Edition) error {
 	if mock.UpsertEditionFunc == nil {
 		panic("moq: BackendMock.UpsertEditionFunc is nil but Backend.UpsertEdition was just called")
 	}
 	callInfo := struct {
-		Id     string
-		Update interface{}
+		Id         string
+		EditionDoc *models.Edition
 	}{
-		Id:     id,
-		Update: update,
+		Id:         id,
+		EditionDoc: editionDoc,
 	}
 	lockBackendMockUpsertEdition.Lock()
 	mock.calls.UpsertEdition = append(mock.calls.UpsertEdition, callInfo)
 	lockBackendMockUpsertEdition.Unlock()
-	return mock.UpsertEditionFunc(id, update)
+	return mock.UpsertEditionFunc(id, editionDoc)
 }
 
 // UpsertEditionCalls gets all the calls that were made to UpsertEdition.
 // Check the length with:
 //     len(mockedBackend.UpsertEditionCalls())
 func (mock *BackendMock) UpsertEditionCalls() []struct {
-	Id     string
-	Update interface{}
+	Id         string
+	EditionDoc *models.Edition
 } {
 	var calls []struct {
-		Id     string
-		Update interface{}
+		Id         string
+		EditionDoc *models.Edition
 	}
 	lockBackendMockUpsertEdition.RLock()
 	calls = mock.calls.UpsertEdition
@@ -595,33 +643,33 @@ func (mock *BackendMock) UpsertEditionCalls() []struct {
 }
 
 // UpsertVersion calls UpsertVersionFunc.
-func (mock *BackendMock) UpsertVersion(id string, update interface{}) error {
+func (mock *BackendMock) UpsertVersion(id string, versionDoc *models.Version) error {
 	if mock.UpsertVersionFunc == nil {
 		panic("moq: BackendMock.UpsertVersionFunc is nil but Backend.UpsertVersion was just called")
 	}
 	callInfo := struct {
-		Id     string
-		Update interface{}
+		Id         string
+		VersionDoc *models.Version
 	}{
-		Id:     id,
-		Update: update,
+		Id:         id,
+		VersionDoc: versionDoc,
 	}
 	lockBackendMockUpsertVersion.Lock()
 	mock.calls.UpsertVersion = append(mock.calls.UpsertVersion, callInfo)
 	lockBackendMockUpsertVersion.Unlock()
-	return mock.UpsertVersionFunc(id, update)
+	return mock.UpsertVersionFunc(id, versionDoc)
 }
 
 // UpsertVersionCalls gets all the calls that were made to UpsertVersion.
 // Check the length with:
 //     len(mockedBackend.UpsertVersionCalls())
 func (mock *BackendMock) UpsertVersionCalls() []struct {
-	Id     string
-	Update interface{}
+	Id         string
+	VersionDoc *models.Version
 } {
 	var calls []struct {
-		Id     string
-		Update interface{}
+		Id         string
+		VersionDoc *models.Version
 	}
 	lockBackendMockUpsertVersion.RLock()
 	calls = mock.calls.UpsertVersion

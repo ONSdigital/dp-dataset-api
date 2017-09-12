@@ -6,9 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
-
-	"gopkg.in/mgo.v2/bson"
 
 	"github.com/ONSdigital/dp-dataset-api/api-errors"
 	"github.com/ONSdigital/dp-dataset-api/api/datastoretest"
@@ -27,11 +24,11 @@ var (
 	badRequestError = errors.New("bad request")
 	notFoundError   = errors.New("not found")
 
-	datasetPayload           = "{\"contact\":{\"email\":\"testing@hotmail.com\",\"name\":\"John Cox\",\"telephone\":\"01623 456789\"},\"description\":\"census\",\"title\":\"CensusEthnicity\",\"theme\":\"population\",\"periodicity\":\"yearly\",\"state\":\"completed\",\"next_release\":\"2016-04-04\",\"publisher\":{\"name\":\"The office of national statistics\",\"type\":\"government department\",\"url\":\"https://www.ons.gov.uk/\"}}"
-	editionPayload           = "{\"edition\":\"2017\",\"state\":\"created\"}"
-	versionPayload           = "{\"instance_id\":\"a1b2c3\",\"edition\":\"2017\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
-	versionAssociatedPayload = "{\"instance_id\":\"a1b2c3\",\"edition\":\"2017\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\",\"state\":\"associated\",\"collection_id\":\"12345\"}"
-	versionPublishedPayload  = "{\"instance_id\":\"a1b2c3\",\"edition\":\"2017\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\",\"state\":\"published\",\"collection_id\":\"12345\"}"
+	datasetPayload           = `{"contact":{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"},"description":"census","title":"CensusEthnicity","theme":"population","periodicity":"yearly","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"}}`
+	editionPayload           = `{"edition":"2017","state":"created"}`
+	versionPayload           = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","version":"1"}`
+	versionAssociatedPayload = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","version":"1","state":"associated","collection_id":"12345"}`
+	versionPublishedPayload  = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","version":"1","state":"published","collection_id":"12345"}`
 )
 
 func TestGetDatasetsReturnsOK(t *testing.T) {
@@ -166,7 +163,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionsFunc: func(id string, selector interface{}) (*models.EditionResults, error) {
+			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
 				return &models.EditionResults{}, nil
 			},
 		}
@@ -185,7 +182,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionsFunc: func(id string, selector interface{}) (*models.EditionResults, error) {
+			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
 				return nil, internalError
 			},
 		}
@@ -202,7 +199,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		r.Header.Add("internal_token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionsFunc: func(id string, selector interface{}) (*models.EditionResults, error) {
+			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
 				return nil, api_errors.EditionNotFound
 			},
 		}
@@ -218,7 +215,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionsFunc: func(id string, selector interface{}) (*models.EditionResults, error) {
+			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
 				return nil, api_errors.EditionNotFound
 			},
 		}
@@ -237,7 +234,7 @@ func TestGetEditionReturnsOK(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionFunc: func(selector interface{}) (*models.Edition, error) {
+			GetEditionFunc: func(id, editionID, state string) (*models.Edition, error) {
 				return &models.Edition{}, nil
 			},
 		}
@@ -256,7 +253,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionFunc: func(selector interface{}) (*models.Edition, error) {
+			GetEditionFunc: func(id, editionID, state string) (*models.Edition, error) {
 				return nil, internalError
 			},
 		}
@@ -273,7 +270,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionFunc: func(selector interface{}) (*models.Edition, error) {
+			GetEditionFunc: func(id, editionID, state string) (*models.Edition, error) {
 				return nil, api_errors.EditionNotFound
 			},
 		}
@@ -289,7 +286,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionFunc: func(selector interface{}) (*models.Edition, error) {
+			GetEditionFunc: func(id, editionID, state string) (*models.Edition, error) {
 				return nil, api_errors.EditionNotFound
 			},
 		}
@@ -308,7 +305,7 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetVersionsFunc: func(selector interface{}) (*models.VersionResults, error) {
+			GetVersionsFunc: func(datasetID, editionID, state string) (*models.VersionResults, error) {
 				return &models.VersionResults{}, nil
 			},
 		}
@@ -327,7 +324,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetVersionsFunc: func(selector interface{}) (*models.VersionResults, error) {
+			GetVersionsFunc: func(id, editionID, state string) (*models.VersionResults, error) {
 				return nil, internalError
 			},
 		}
@@ -344,7 +341,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetVersionsFunc: func(selector interface{}) (*models.VersionResults, error) {
+			GetVersionsFunc: func(datasetID, editionID, state string) (*models.VersionResults, error) {
 				return nil, api_errors.VersionNotFound
 			},
 		}
@@ -360,7 +357,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetVersionsFunc: func(selector interface{}) (*models.VersionResults, error) {
+			GetVersionsFunc: func(datasetID, editionID, state string) (*models.VersionResults, error) {
 				return nil, api_errors.VersionNotFound
 			},
 		}
@@ -379,7 +376,7 @@ func TestGetVersionReturnsOK(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetVersionFunc: func(selector interface{}) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
 				return &models.Version{}, nil
 			},
 		}
@@ -398,7 +395,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetVersionFunc: func(selector interface{}) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
 				return nil, internalError
 			},
 		}
@@ -415,7 +412,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetVersionFunc: func(selector interface{}) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
 				return nil, api_errors.VersionNotFound
 			},
 		}
@@ -431,7 +428,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetVersionFunc: func(selector interface{}) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
 				return nil, api_errors.VersionNotFound
 			},
 		}
@@ -453,20 +450,11 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			UpsertDatasetFunc: func(string, interface{}) error {
+			UpsertDatasetFunc: func(id string, datasetDoc *models.DatasetUpdate) error {
 				return nil
 			},
 		}
-
-		update := bson.M{
-			"$set": bson.M{
-				"state": "created",
-			},
-			"$setOnInsert": bson.M{
-				"updated_at": time.Now(),
-			},
-		}
-		mockedDataStore.UpsertDataset("123", update)
+		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{})
 
 		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
@@ -485,7 +473,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			UpsertDatasetFunc: func(string, interface{}) error {
+			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
 				return badRequestError
 			},
 		}
@@ -504,7 +492,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			UpsertDatasetFunc: func(string, interface{}) error {
+			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
 				return internalError
 			},
 		}
@@ -522,7 +510,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			UpsertDatasetFunc: func(string, interface{}) error {
+			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
 				return nil
 			},
 		}
@@ -544,25 +532,21 @@ func TestPostEditionReturnsCreated(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionFunc: func(interface{}) (*models.Edition, error) {
+			GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 				return nil, api_errors.EditionNotFound
 			},
-			UpsertEditionFunc: func(string, interface{}) error {
+			UpsertEditionFunc: func(string, *models.Edition) error {
 				return nil
 			},
 		}
 
-		mockedDataStore.GetEdition(bson.M{"links.dataset.id": "123", "edition": "2017"})
+		mockedDataStore.GetEdition("123", "2017", "created")
 
-		update := bson.M{
-			"$set": bson.M{
-				"state": "created",
-			},
-			"$setOnInsert": bson.M{
-				"updated_at": time.Now(),
-			},
+		editionDoc := &models.Edition{
+			State: "created",
 		}
-		mockedDataStore.UpsertEdition("2017", update)
+
+		mockedDataStore.UpsertEdition("2017", editionDoc)
 
 		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
@@ -582,14 +566,14 @@ func TestPostEditionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionFunc: func(interface{}) (*models.Edition, error) {
+			GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 				return &models.Edition{State: "created"}, nil
 			},
-			UpsertEditionFunc: func(string, interface{}) error {
+			UpsertEditionFunc: func(string, *models.Edition) error {
 				return badRequestError
 			},
 		}
-		mockedDataStore.GetEdition(bson.M{"links.dataset.id": "123", "edition": "2017"})
+		mockedDataStore.GetEdition("123", "2017", "created")
 
 		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
@@ -606,10 +590,10 @@ func TestPostEditionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionFunc: func(interface{}) (*models.Edition, error) {
+			GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 				return nil, internalError
 			},
-			UpsertEditionFunc: func(string, interface{}) error {
+			UpsertEditionFunc: func(string, *models.Edition) error {
 				return nil
 			},
 		}
@@ -628,10 +612,10 @@ func TestPostEditionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionFunc: func(interface{}) (*models.Edition, error) {
+			GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 				return nil, internalError
 			},
-			UpsertEditionFunc: func(string, interface{}) error {
+			UpsertEditionFunc: func(string, *models.Edition) error {
 				return nil
 			},
 		}
@@ -651,10 +635,10 @@ func TestPostEditionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionFunc: func(interface{}) (*models.Edition, error) {
+			GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 				return &models.Edition{State: publishedState}, nil
 			},
-			UpsertEditionFunc: func(string, interface{}) error {
+			UpsertEditionFunc: func(string, *models.Edition) error {
 				return nil
 			},
 		}
@@ -684,7 +668,7 @@ func TestPostVersionReturnsCreated(t *testing.T) {
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.GetNextVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpsertVersionCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -705,7 +689,7 @@ func TestPostVersionReturnsCreated(t *testing.T) {
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.GetNextVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpsertVersionCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -730,7 +714,7 @@ func TestPostVersionReturnsCreated(t *testing.T) {
 		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 	})
 }
 
@@ -744,7 +728,7 @@ func TestPostVersionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			UpsertVersionFunc: func(string, interface{}) error {
+			UpsertVersionFunc: func(string, *models.Version) error {
 				return badRequestError
 			},
 		}
@@ -763,11 +747,11 @@ func TestPostVersionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionFunc: func(interface{}) (*models.Edition, error) {
+			GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 				return nil, internalError
 			},
 		}
-		mockedDataStore.GetEdition(bson.M{"links.dataset.id": "123", "edition": "2017"})
+		mockedDataStore.GetEdition("123", "2017", "created")
 
 		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
@@ -783,30 +767,25 @@ func TestPostVersionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionFunc: func(interface{}) (*models.Edition, error) {
+			GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 				return &models.Edition{}, nil
 			},
 			GetNextVersionFunc: func(string, string) (int, error) {
 				return 1, nil
 			},
-			UpsertVersionFunc: func(string, interface{}) error {
+			UpsertVersionFunc: func(string, *models.Version) error {
 				return internalError
 			},
 		}
 
-		mockedDataStore.GetEdition(bson.M{"links.dataset.id": "123", "edition": "2017"})
+		mockedDataStore.GetEdition("123", "2017", "created")
 		mockedDataStore.GetNextVersion("123", "2017")
 
-		update := bson.M{
-			"$set": bson.M{
-				"state":         "published",
-				"collection_id": "12345",
-			},
-			"$setOnInsert": bson.M{
-				"updated_at": time.Now(),
-			},
+		versionDoc := &models.Version{
+			State:        "published",
+			CollectionID: "12345",
 		}
-		mockedDataStore.UpsertVersion("1", update)
+		mockedDataStore.UpsertVersion("1", versionDoc)
 
 		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
@@ -818,12 +797,12 @@ func TestPostVersionReturnsError(t *testing.T) {
 
 	Convey("When the request does not contain a valid internal token return status unauthorised", t, func() {
 		var b string
-		b = "{\"edition\":\"2017\",\"state\":\"created\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
+		b = `{"edition":"2017","state":"created","license":"ONS","release_date":"2017-04-04","version":"1"}`
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionFunc: func(interface{}) (*models.Edition, error) {
+			GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 				return &models.Edition{}, nil
 			},
 		}
@@ -836,13 +815,13 @@ func TestPostVersionReturnsError(t *testing.T) {
 
 	Convey("When a request missing the collection_id to create version document to be associated with a collection return status bad request", t, func() {
 		var b string
-		b = "{\"edition\":\"2017\",\"state\":\"associated\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
+		b = `{"edition":"2017","state":"associated","license":"ONS","release_date":"2017-04-04","version":"1"}`
 		r, err := http.NewRequest("POST", "http://localhost:22000/datasets/123/editions/2017/versions", bytes.NewBufferString(b))
 		r.Header.Add("internal_token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &backendtest.BackendMock{
-			GetEditionFunc: func(interface{}) (*models.Edition, error) {
+			GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 				return &models.Edition{}, nil
 			},
 		}
@@ -859,68 +838,52 @@ func setUp(state string) *backendtest.BackendMock {
 		GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 			return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{}}, nil
 		},
-		GetEditionFunc: func(interface{}) (*models.Edition, error) {
+		GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 			return &models.Edition{}, nil
 		},
 		GetNextVersionFunc: func(string, string) (int, error) {
 			return 1, nil
 		},
-		UpdateDatasetFunc: func(string, interface{}) error {
+		UpdateDatasetWithAssociationFunc: func(string, string, *models.Version) error {
 			return nil
 		},
-		UpdateEditionFunc: func(string, interface{}) error {
+		UpdateEditionFunc: func(string, string) error {
 			return nil
 		},
-		UpsertDatasetFunc: func(string, interface{}) error {
+		UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
 			return nil
 		},
-		UpsertVersionFunc: func(string, interface{}) error {
+		UpsertVersionFunc: func(string, *models.Version) error {
 			return nil
 		},
 	}
 
-	selector := bson.M{
-		"links.dataset.id": "123",
-		"edition":          "2017",
-	}
-	mockedDataStore.GetEdition(selector)
+	mockedDataStore.GetEdition("123", "2017", state)
 
 	mockedDataStore.GetNextVersion("123", "2017")
 
-	update := bson.M{
-		"$set": bson.M{
-			"state": state,
-		},
-		"$setOnInsert": bson.M{
-			"updated_at": time.Now(),
-		},
+	versionDoc := &models.Version{
+		State: state,
 	}
-	mockedDataStore.UpsertVersion("1", update)
+	mockedDataStore.UpsertVersion("1", versionDoc)
 
 	if state == publishedState {
-		update := bson.M{
-			"$set": bson.M{
-				"state": state,
-			},
-			"$setOnInsert": bson.M{
-				"updated_at": time.Now(),
+		datasetDoc := &models.DatasetUpdate{
+			ID: "123",
+			Next: &models.Dataset{
+				State: state,
 			},
 		}
-		mockedDataStore.UpdateEdition("123", update)
+		mockedDataStore.UpdateEdition("123", state)
 		mockedDataStore.GetDataset("123")
-		mockedDataStore.UpsertDataset("123", update)
+		mockedDataStore.UpsertDataset("123", datasetDoc)
 	}
 
 	if state == associatedState {
-		update := bson.M{
-			"$set": bson.M{
-				"state": state,
-			},
-			"$setOnInsert": bson.M{
-				"updated_at": time.Now(),
-			},
+		versionDoc := &models.Version{
+			State: state,
 		}
-		mockedDataStore.UpdateDataset("123", update)
+		mockedDataStore.UpdateDatasetWithAssociation("123", state, versionDoc)
 	}
 
 	return mockedDataStore
