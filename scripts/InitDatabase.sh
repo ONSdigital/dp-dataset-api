@@ -275,11 +275,47 @@ db.contacts.insert({
     "telephone": "01633 123457",
     "last_updated": "2017-08-25T15:09:11.829+01:00"
 });
-db.createCollection("dimensions");
 db.editions.ensureIndex({"links.dataset.id":1},{"background":true});
 db.editions.ensureIndex({"edition":1, "links.dataset.id":1},{"background":true});
 db.versions.ensureIndex({"links.dataset.id":1},{"background":true});
 db.versions.ensureIndex({"edition":1,"links.dataset.id":1},{"background":true});
 db.versions.ensureIndex({"version":1,"edition":1,"links.dataset.id":1},{"background":true});
 db.versions.ensureIndex({"version":1,"links.edition.id":1},{"background":true})
+db.instances.insert({
+    "_id": "AB3BAE9B-5C4D-4640-8936-8502D0DB954D",
+    "id": "3b45921b-0efa-4844-a16e-3f9f30df4f88",
+    "links": {"job": {"id": "260EDB0F-2BCD-4006-B441-571F504273E0", "link": "http://localhost:22000/jobs/260EDB0F-2BCD-4006-B441-571F504273E0"},},
+    "state": "created",
+    "total_observations": 0,
+    "total_inserted_observations": 0,
+    "headers": ["V4_1", "time", "age"],
+    "telephone": "01633 123457",
+    "last_updated": "2017-08-25T15:09:11.829+01:00",
+});
+db.instances.insert({
+    "_id": "0F06AB0E-A5D1-409A-8183-BACDF2326205",
+    "id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
+    "links": {"job": {"id": "260EDB0F-2BCD-4006-B441-571F504273E0", "href": "http://localhost:22000/jobs/260EDB0F-2BCD-4006-B441-571F504273E0"}},
+    "state": "created",
+    "total_observations": 0,
+    "total_inserted_observations": 0,
+    "headers": ["V4_1", "time", "age"],
+    "telephone": "01633 123457",
+    "last_updated": "2017-08-25T15:09:11.829+01:00",
+});
+db.dimensions.insert({
+     "_id":"0F06AB0E-A5D1-409A-8183-BACDF2326205",
+     "instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
+     "name": "age",
+     "value": "32",
+     "node_id":"80",
+});
+db.dimensions.insert({
+     "_id":"AB3BAE9B-5C4D-4640-8936-8502D0DB954D",
+     "instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
+     "name": "age",
+     "value": "37",
+     "node_id":"88",
+     "last_updated": "2017-08-25T15:09:11.829+01:00",
+});
 EOF

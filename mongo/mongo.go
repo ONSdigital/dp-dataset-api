@@ -1,18 +1,17 @@
 package mongo
 
 import (
-	"strconv"
+	"time"
 
-	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/dp-dataset-api/store"
 
-	"github.com/ONSdigital/dp-dataset-api/api-errors"
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
-var _ api.Backend = &Mongo{}
+var _ store.Storer = &Mongo{}
 var session *mgo.Session
 
 // Mongo represents a simplistic MongoDB configuration.
@@ -45,17 +44,17 @@ func (m *Mongo) GetDatasets() (*models.DatasetResults, error) {
 	datasets := &models.DatasetResults{}
 
 	iter := s.DB(m.Database).C("datasets").Find(nil).Iter()
+	defer iter.Close()
 
 	results := []models.DatasetUpdate{}
 	if err := iter.All(&results); err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, api_errors.DatasetNotFound
+			return nil, errs.DatasetNotFound
 		}
 		return nil, err
 	}
 
-	items := mapResults(results)
-	datasets.Items = items
+	datasets.Items = mapResults(results)
 
 	return datasets, nil
 }
@@ -80,7 +79,7 @@ func (m *Mongo) GetDataset(id string) (*models.DatasetUpdate, error) {
 	err := s.DB(m.Database).C("datasets").Find(bson.M{"_id": id}).One(&dataset)
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, api_errors.DatasetNotFound
+			return nil, errs.DatasetNotFound
 		}
 		return nil, err
 	}
@@ -89,38 +88,79 @@ func (m *Mongo) GetDataset(id string) (*models.DatasetUpdate, error) {
 }
 
 // GetEditions retrieves all edition documents for a dataset
-func (m *Mongo) GetEditions(id string, selector interface{}) (*models.EditionResults, error) {
+func (m *Mongo) GetEditions(id, state string) (*models.EditionResults, error) {
 	s := session.Copy()
 	defer s.Clone()
+
+	selector := buildEditionsQuery(id, state)
+
 	iter := s.DB(m.Database).C("editions").Find(selector).Iter()
+	defer iter.Close()
 
 	var results []models.Edition
 	if err := iter.All(&results); err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, api_errors.EditionNotFound
+			return nil, errs.EditionNotFound
 		}
 		return nil, err
 	}
 
 	if len(results) < 1 {
-		return nil, api_errors.EditionNotFound
+		return nil, errs.EditionNotFound
 	}
 	return &models.EditionResults{Items: results}, nil
 }
 
+func buildEditionsQuery(id, state string) bson.M {
+	var selector bson.M
+	if state != "" {
+		selector = bson.M{
+			"links.dataset.id": id,
+			"state":            state,
+		}
+	} else {
+		selector = bson.M{
+			"links.dataset.id": id,
+		}
+	}
+
+	return selector
+}
+
 // GetEdition retrieves an edition document for a dataset
-func (m *Mongo) GetEdition(selector interface{}) (*models.Edition, error) {
+func (m *Mongo) GetEdition(id, editionID, state string) (*models.Edition, error) {
 	s := session.Copy()
 	defer s.Clone()
+
+	selector := buildEditionQuery(id, editionID, state)
+
 	var edition models.Edition
 	err := s.DB(m.Database).C("editions").Find(selector).One(&edition)
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, api_errors.EditionNotFound
+			return nil, errs.EditionNotFound
 		}
 		return nil, err
 	}
 	return &edition, nil
+}
+
+func buildEditionQuery(id, editionID, state string) bson.M {
+	var selector bson.M
+	if state == "" {
+		selector = bson.M{
+			"links.dataset.id": id,
+			"edition":          editionID,
+		}
+	} else {
+		selector = bson.M{
+			"links.dataset.id": id,
+			"edition":          editionID,
+			"state":            state,
+		}
+	}
+
+	return selector
 }
 
 // GetNextVersion retrieves the latest version for an edition of a dataset
@@ -136,93 +176,237 @@ func (m *Mongo) GetNextVersion(datasetID, editionID string) (int, error) {
 		}
 		return nextVersion, err
 	}
-	currentVersion, err := strconv.Atoi(version.Version)
-	if err != nil {
-		log.ErrorC("Cannot convert version number to integer", err, nil)
-		return nextVersion, err
-	}
 
-	nextVersion = currentVersion + 1
+	nextVersion = version.Version + 1
 
 	return nextVersion, nil
 }
 
 // GetVersions retrieves all version documents for a dataset edition
-func (m *Mongo) GetVersions(selector interface{}) (*models.VersionResults, error) {
+func (m *Mongo) GetVersions(id, editionID, state string) (*models.VersionResults, error) {
 	s := session.Copy()
 	defer s.Clone()
+
+	selector := buildVersionsQuery(id, editionID, state)
+
 	iter := s.DB(m.Database).C("versions").Find(selector).Iter()
+	defer iter.Close()
 
 	var results []models.Version
 	if err := iter.All(&results); err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, api_errors.VersionNotFound
+			return nil, errs.VersionNotFound
 		}
 		return nil, err
 	}
 
 	if len(results) < 1 {
-		return nil, api_errors.VersionNotFound
+		return nil, errs.VersionNotFound
 	}
 
 	return &models.VersionResults{Items: results}, nil
 }
 
+func buildVersionsQuery(id, editionID, state string) bson.M {
+	var selector bson.M
+	if state == "" {
+		selector = bson.M{
+			"links.dataset.id": id,
+			"edition":          editionID,
+		}
+	} else {
+		selector = bson.M{
+			"links.dataset.id": id,
+			"edition":          editionID,
+			"state":            state,
+		}
+	}
+
+	return selector
+}
+
 // GetVersion retrieves a version document for a dataset edition
-func (m *Mongo) GetVersion(selector interface{}) (*models.Version, error) {
+func (m *Mongo) GetVersion(id, editionID, versionID, state string) (*models.Version, error) {
 	s := session.Copy()
 	defer s.Clone()
+
+	selector := buildVersionQuery(id, editionID, versionID, state)
+
 	var version models.Version
 	err := s.DB(m.Database).C("versions").Find(selector).One(&version)
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, api_errors.VersionNotFound
+			return nil, errs.VersionNotFound
 		}
 		return nil, err
 	}
 	return &version, nil
 }
 
+func buildVersionQuery(id, editionID, versionID, state string) bson.M {
+	var selector bson.M
+	if state == "" {
+		selector = bson.M{
+			"links.dataset.id": id,
+			"version":          versionID,
+			"edition":          editionID,
+		}
+	} else {
+		selector = bson.M{
+			"links.dataset.id": id,
+			"edition":          editionID,
+			"version":          versionID,
+			"state":            state,
+		}
+	}
+
+	return selector
+}
+
 // UpsertDataset adds or overides an existing dataset document
-func (m *Mongo) UpsertDataset(id string, update interface{}) (err error) {
+func (m *Mongo) UpsertDataset(id string, datasetDoc *models.DatasetUpdate) (err error) {
 	s := session.Copy()
 	defer s.Close()
+
+	update := bson.M{
+		"$set": datasetDoc,
+		"$setOnInsert": bson.M{
+			"last_updated": time.Now(),
+		},
+	}
 
 	_, err = s.DB(m.Database).C("datasets").UpsertId(id, update)
 	return
 }
 
 // UpsertEdition adds or overides an existing edition document
-func (m *Mongo) UpsertEdition(edition string, update interface{}) (err error) {
+func (m *Mongo) UpsertEdition(editionID string, editionDoc *models.Edition) (err error) {
 	s := session.Copy()
 	defer s.Close()
 
-	_, err = s.DB(m.Database).C("editions").Upsert(bson.M{"edition": edition}, update)
+	update := bson.M{
+		"$set": editionDoc,
+		"$setOnInsert": bson.M{
+			"last_updated": time.Now(),
+		},
+	}
+
+	_, err = s.DB(m.Database).C("editions").Upsert(bson.M{"edition": editionID}, update)
 	return
 }
 
 // UpdateDataset updates an existing dataset document
-func (m *Mongo) UpdateDataset(id string, update interface{}) (err error) {
+func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset) (err error) {
 	s := session.Copy()
 	defer s.Close()
+
+	updates := createDatasetUpdateQuery(dataset)
+
+	err = s.DB(m.Database).C("dataset").UpdateId(id, bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}})
+	return
+}
+
+func createDatasetUpdateQuery(dataset *models.Dataset) bson.M {
+	updates := make(bson.M, 0)
+
+	if dataset.CollectionID != "" {
+		updates["next.collection_id"] = dataset.CollectionID
+	}
+
+	if dataset.Contact.Email != "" {
+		updates["next.contact.email"] = dataset.Contact.Email
+	}
+
+	if dataset.Contact.Name != "" {
+		updates["next.contact.name"] = dataset.Contact.Name
+	}
+
+	if dataset.Contact.Telephone != "" {
+		updates["next.contact.telephone"] = dataset.Contact.Telephone
+	}
+
+	if dataset.Description != "" {
+		updates["next.description"] = dataset.Description
+	}
+
+	if dataset.NextRelease != "" {
+		updates["next.next_release"] = dataset.NextRelease
+	}
+
+	if dataset.Periodicity != "" {
+		updates["next.periodicity"] = dataset.Periodicity
+	}
+
+	if dataset.Publisher.HRef != "" {
+		updates["next.publisher.href"] = dataset.Publisher.HRef
+	}
+
+	if dataset.Publisher.Name != "" {
+		updates["next.publisher.name"] = dataset.Publisher.Name
+	}
+
+	if dataset.Publisher.Type != "" {
+		updates["next.publisher.type"] = dataset.Publisher.Type
+	}
+
+	if dataset.Theme != "" {
+		updates["next.theme"] = dataset.Theme
+	}
+
+	if dataset.Title != "" {
+		updates["next.title"] = dataset.Title
+	}
+	return updates
+}
+
+// UpdateDatasetWithAssociation updates an existing dataset document with collection data
+func (m *Mongo) UpdateDatasetWithAssociation(id, state string, version *models.Version) (err error) {
+	s := session.Copy()
+	defer s.Close()
+
+	update := bson.M{
+		"$set": bson.M{
+			"next.state":                     state,
+			"next.collection_id":             version.CollectionID,
+			"next.links.latest_version.link": version.Links.Self,
+			"next.links.latest_version.id":   version.ID,
+			"next.last_updated":              time.Now(),
+		},
+	}
 
 	err = s.DB(m.Database).C("dataset").UpdateId(id, update)
 	return
 }
 
 // UpdateEdition updates an existing edition document
-func (m *Mongo) UpdateEdition(id string, update interface{}) (err error) {
+func (m *Mongo) UpdateEdition(id, state string) (err error) {
 	s := session.Copy()
 	defer s.Close()
+
+	update := bson.M{
+		"$set": bson.M{
+			"state": state,
+		},
+		"$setOnInsert": bson.M{
+			"last_updated": time.Now(),
+		},
+	}
 
 	err = s.DB(m.Database).C("editions").UpdateId(id, update)
 	return
 }
 
 // UpsertVersion adds or overides an existing version document
-func (m *Mongo) UpsertVersion(id string, update interface{}) (err error) {
+func (m *Mongo) UpsertVersion(id string, version *models.Version) (err error) {
 	s := session.Copy()
 	defer s.Close()
+
+	update := bson.M{
+		"$set": version,
+		"$setOnInsert": bson.M{
+			"last_updated": time.Now(),
+		},
+	}
 
 	_, err = s.DB(m.Database).C("versions").UpsertId(id, update)
 	return

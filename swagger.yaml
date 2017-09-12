@@ -26,7 +26,7 @@ parameters:
     required: true
   version:
     name: version
-    description: "A version of a dataset dataset"
+    description: "A version of a dataset"
     in: path
     type: string
     required: true
@@ -36,16 +36,6 @@ parameters:
     in: path
     type: string
     required: true
-  offset:
-    name: offset
-    description: "The offset from the start of results. This defaults to 0"
-    in: query
-    type: integer
-  limit:
-    name: limit
-    description: "Limit the number of results returned. This defaults to 20"
-    in: query
-    type: integer
   query:
     name: q
     description: "The query text to search datasets with"
@@ -60,44 +50,39 @@ paths:
       description: "Perform a search on all published datasets by the ONS"
       parameters:
       - $ref: '#/parameters/query'
-      - $ref: '#/parameters/offset'
-      - $ref: '#/parameters/limit'
       produces:
       - "application/json"
       responses:
         200:
-          description: "A json list contain datasets which have been published"
+          description: "A json list containing datasets which have been published"
           schema:
             $ref: '#/definitions/Datasets'
         400:
           description: "Body of the post request is invalid"
         500:
-          description: "Failed to process the request due to a internal error"
+          description: "Failed to process the request due to an internal error"
   /datasets:
     get:
       tags:
       - "Dataset"
       summary: "Get a list of datasets"
       description: "Returns a list of all datasets provided by the ONS that can be filtered using the filter API"
-      parameters:
-      - $ref: '#/parameters/offset'
-      - $ref: '#/parameters/limit'
       produces:
       - "application/json"
       responses:
         200:
-          description: "A json list contain datasets which have been published"
+          description: "A json list containing datasets which have been published"
           schema:
             $ref: '#/definitions/Datasets'
         500:
-          description: "Failed to process the request due to a internal error"
+          description: "Failed to process the request due to an internal error"
 
   /datasets/{id}:
     get:
       tags:
       - "Dataset"
       summary: "Get a dataset"
-      description: "The dataset contains the name of it and a link to all editions"
+      description: "The dataset contains all high level information, for additional details see editions or versions of a dataset"
       parameters:
       - $ref: '#/parameters/id'
       responses:
@@ -108,7 +93,7 @@ paths:
         404:
           description: "No dataset was found using the id provided"
         500:
-          description: "Failed to process the request due to a internal error"
+          description: "Failed to process the request due to an internal error"
   /datasets/{id}/editions:
     get:
       tags:
@@ -119,18 +104,18 @@ paths:
       - $ref: '#/parameters/id'
       responses:
         200:
-          description: "A json list contain all editions for a dataset"
+          description: "A json list containing all editions for a dataset"
           schema:
             $ref: '#/definitions/Editions'
         404:
           description: "No dataset was found using the id provided"
         500:
-          description: "Failed to process the request due to a internal error"
+          description: "Failed to process the request due to an internal error"
   /datasets/{id}/editions/{edition}:
     get:
       tags:
       - "Dataset"
-      summary: "Get a edition of a dataset"
+      summary: "Get an edition of a dataset"
       description: "The edition contains a link to all versions"
       parameters:
       - $ref: '#/parameters/id'
@@ -143,7 +128,7 @@ paths:
         404:
           description: "No dataset edition was found using the id and edition provided"
         500:
-          description: "Failed to process the request due to a internal error"
+          description: "Failed to process the request due to an internal error"
   /datasets/{id}/editions/{edition}/versions:
     get:
       tags:
@@ -155,13 +140,13 @@ paths:
       - $ref: '#/parameters/edition'
       responses:
         200:
-          description: "A json list containing all version for a set type of dataset and edition"
+          description: "A json list containing all versions for a set type of dataset and edition"
           schema:
             $ref: '#/definitions/Versions'
         404:
           description: "No dataset edition was found using the id and edition provided"
         500:
-          description: "Failed to process the request due to a internal error"
+          description: "Failed to process the request due to an internal error"
   /datasets/{id}/editions/{edition}/versions/{version}:
     get:
       tags:
@@ -176,11 +161,11 @@ paths:
         200:
           description: "A json object containing the edition and version of a dataset"
           schema:
-            $ref: '#/definitions/DatasetDetails'
+            $ref: '#/definitions/Version'
         404:
           description: "No dataset edition with the specific version was found using the id, edition and version provided"
         500:
-          description: "Failed to process the request due to a internal error"
+          description: "Failed to process the request due to an internal error"
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions:
     get:
       tags:
@@ -191,8 +176,6 @@ paths:
       - $ref: '#/parameters/id'
       - $ref: '#/parameters/edition'
       - $ref: '#/parameters/version'
-      - $ref: '#/parameters/offset'
-      - $ref: '#/parameters/limit'
       responses:
         200:
           description: "A json list of dimensions"
@@ -201,7 +184,7 @@ paths:
         404:
           description: "No dataset edition with the specific version was found using the id, edition and version provided"
         500:
-          description: "Failed to process the request due to a internal error"
+          description: "Failed to process the request due to an internal error"
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}:
     get:
       tags:
@@ -221,8 +204,33 @@ paths:
         404:
           description: "No dataset edition with the specific version was found using the id, edition and version provided or the dimension does not exist within the dataset"
         500:
-          description: "Failed to process the request due to a internal error"
+          description: "Failed to process the request due to an internal error"
 definitions:
+  Contact:
+    type: object
+    description: "Object containing contact information for this dataset"
+    properties:
+      name:
+        type: string
+        description: "The name of the person"
+      telephone:
+        type: string
+        description: "Telephone number to contact the person"
+      email:
+        type: string
+        description: "An email address to contact the person"
+  Publisher:
+    type: object
+    properties:
+      type:
+        type: string
+        description: "The type of publisher"
+      name:
+        type: string
+        description: "The name of the publisher"
+      url:
+        type: string
+        description: "A link to the publishers homepage"
   Dataset:
     type: object
     properties:
@@ -230,10 +238,35 @@ definitions:
         type: string
         description: "An unique id for a dataset"
         example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
-      name:
+      title:
         type: string
-        description: "The name of the dataset"
+        description: "The title of the dataset"
         example: "CPI"
+      description:
+        type: string
+        description: "A description for a dataset"
+      theme:
+        type: string
+        description: "The release date of this dataset"
+      next_release:
+        type: string
+        description: "The next release date for this dataset"
+      edition:
+        description: "A theme for a dataset"
+      periodicity:
+        type: string
+        description: "The periodicity for a dataset"
+      publisher:
+        description: "The publisher of the dataset"
+        $ref: '#/definitions/Publisher'
+      latest_url:
+        type: string
+        description: "A link to the latest version and edition of the dataset"
+      contact:
+        type: array
+        description: "Object containing contact information for this dataset"
+        items:
+          $ref: '#/definitions/Contact'
       editions_url:
         type: string
         description: "A URL to all editions for a dataset"
@@ -251,15 +284,7 @@ definitions:
     properties:
       id:
         type: string
-        description: "An unique id for a dataset"
-        example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
-      name:
-        type: string
-        description: "The name of the dataset"
-        example: "CPI"
-      edition:
-        type: string
-        description: "The dataset edtion"
+        description: "An unique id for a dataset edtion"
         example: "2017"
       versions_url:
         type: string
@@ -279,66 +304,24 @@ definitions:
         type: array
         description: "An array of Datasets"
         items:
-          type: object
-          properties:
-            id:
-              type: string
-              description: "An unique id for a dataset"
-              example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
-            name:
-              type: string
-              description: "The name of the dataset"
-              example: "CPI"
-            edition:
-              type: string
-              description: "The edition of the dataset"
-              example: "2017"
-            version:
-               type: integer
-               description: "The version of a dataset edition"
-               example: "3"
-            dataset_url:
-              type: string
-              description: "A URL to a full description of the dataset"
-              example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/3"
-  DatasetDetails:
+          $ref: '#/definitions/Version'
+  Version:
     type: object
     description: "An object containing information about published datasets from the ONS"
     properties:
       id:
-        type: integer
-        description: "The dataset id"
-      title:
         type: string
-        description: "The title for the dataset"
+        description: "An unique id for this version of a dataset"
       release_date:
         type: string
         description: "The release date of this dataset"
-      next_release:
-        type: string
-        description: "The next release date for this dataset"
-      edition:
-        type: string
-        description: "The edition of the dataset"
-      version:
-        type: string
-        description: "The version of the dataset"
-      dimensions:
+      dimensions_url:
         type: string
         description: "A link to all dimensions within this dataset"
-      contact:
-        type: object
-        description: "Object containing contact information for this dataset"
-        properties:
-          name:
-            type: string
-            description: "The name of the person"
-          telephone:
-            type: string
-            description: "Telephone number to contact the person"
-          email:
-            type: string
-            description: "An email address to contact the person"
+      license:
+        type: string
+        description: "The type of license for the dataset"
+
   Dimension:
     type: object
     description: "A single dimension within a dataset"
