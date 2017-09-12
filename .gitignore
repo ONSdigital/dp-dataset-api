@@ -1,0 +1,5 @@
+.DS_STORE
+debug
+*.tar.gz
+build
+.idea
