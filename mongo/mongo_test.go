@@ -171,3 +171,29 @@ func TestDatasetUpdateQuery(t *testing.T) {
 		So(selector, ShouldResemble, expectedUpdate)
 	})
 }
+
+func TestVersionUpdateQuery(t *testing.T) {
+	t.Parallel()
+	Convey("When all possible fields exist", t, func() {
+
+		expectedUpdate := bson.M{
+			"collection_id": "12345678",
+			"instance_id":   "87654321",
+			"license":       "ONS License",
+			"release_date":  "2017-09-09",
+			"state":         "published",
+		}
+
+		version := &models.Version{
+			CollectionID: "12345678",
+			InstanceID:   "87654321",
+			License:      "ONS License",
+			ReleaseDate:  "2017-09-09",
+			State:        "published",
+		}
+
+		selector := createVersionUpdateQuery(version)
+		So(selector, ShouldNotBeNil)
+		So(selector, ShouldResemble, expectedUpdate)
+	})
+}

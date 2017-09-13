@@ -860,7 +860,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 	})
 }
 
-func TestPutVersionReturnsError(t *testing.T) {
+func TestPutDatasetReturnsError(t *testing.T) {
 	t.Parallel()
 	Convey("When the request contain malformed json a bad request status is returned", t, func() {
 		var b string
@@ -945,6 +945,294 @@ func TestPutVersionReturnsError(t *testing.T) {
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
+	})
+}
+
+func TestPutVersionReturnsSuccessfully(t *testing.T) {
+	t.Parallel()
+	Convey("When state is unchanged", t, func() {
+		var b string
+		b = versionPayload
+		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		r.Header.Add("internal-token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					ID:         "789",
+					InstanceID: "87654321",
+					License:    "ONS License",
+					Links: models.VersionLinks{
+						Dataset: models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+						Dimensions: models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
+						},
+						Edition: models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017",
+							ID:   "456",
+						},
+						Self: models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+						},
+					},
+					ReleaseDate: "2017-12-12",
+					State:       "created",
+				}, nil
+			},
+			UpdateVersionFunc: func(string, *models.Version) error {
+				return nil
+			},
+		}
+		mockedDataStore.GetVersion("123", "2017", "1", "")
+		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
+
+		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When state is set to associated", t, func() {
+		var b string
+		b = versionAssociatedPayload
+		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		r.Header.Add("internal-token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					State: "associated",
+				}, nil
+			},
+			UpdateVersionFunc: func(string, *models.Version) error {
+				return nil
+			},
+			UpdateDatasetWithAssociationFunc: func(string, string, *models.Version) error {
+				return nil
+			},
+		}
+		mockedDataStore.GetVersion("123", "2017", "1", "")
+		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
+		mockedDataStore.UpdateDatasetWithAssociation("123", "associated", &models.Version{})
+
+		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When state is set to published", t, func() {
+		var b string
+		b = versionPublishedPayload
+		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		r.Header.Add("internal-token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					ID:         "789",
+					InstanceID: "87654321",
+					License:    "ONS License",
+					Links: models.VersionLinks{
+						Dataset: models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+						Dimensions: models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
+						},
+						Edition: models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017",
+							ID:   "456",
+						},
+						Self: models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+						},
+					},
+					ReleaseDate: "2017-12-12",
+					State:       "created",
+				}, nil
+			},
+			UpdateVersionFunc: func(string, *models.Version) error {
+				return nil
+			},
+			UpdateEditionFunc: func(string, string) error {
+				return nil
+			},
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID:      "123",
+					Next:    &models.Dataset{},
+					Current: &models.Dataset{},
+				}, nil
+			},
+			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+		mockedDataStore.GetVersion("789", "2017", "1", "")
+		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
+		mockedDataStore.UpdateEdition("456", "published")
+		mockedDataStore.GetDataset("123")
+		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{})
+
+		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
+	})
+}
+
+func TestPutVersionReturnsError(t *testing.T) {
+	t.Parallel()
+	Convey("When the request contain malformed json a bad request status is returned", t, func() {
+		var b string
+		b = "{"
+		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		r.Header.Add("internal-token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+				return &models.Version{}, nil
+			},
+		}
+
+		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
+		var b string
+		b = versionPayload
+		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		r.Header.Add("internal-token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+				return nil, internalError
+			},
+			UpdateVersionFunc: func(string, *models.Version) error {
+				return nil
+			},
+		}
+
+		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the version document cannot be found return status not found", t, func() {
+		var b string
+		b = versionPayload
+		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		r.Header.Add("internal-token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+				return nil, errs.VersionNotFound
+			},
+			UpdateVersionFunc: func(string, *models.Version) error {
+				return nil
+			},
+		}
+
+		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the request does not contain a valid internal token return status unauthorised", t, func() {
+		var b string
+		b = versionPayload
+		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+				return &models.Version{}, nil
+			},
+		}
+
+		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the version document has already been published return status forbidden", t, func() {
+		var b string
+		b = versionPayload
+		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		r.Header.Add("internal-token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					State: "published",
+				}, nil
+			},
+			UpdateVersionFunc: func(string, *models.Version) error {
+				return nil
+			},
+		}
+
+		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the request body is invalid return status not found", t, func() {
+		var b string
+		b = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"associated"}`
+		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		r.Header.Add("internal-token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+				return &models.Version{}, nil
+			},
+			UpdateVersionFunc: func(string, *models.Version) error {
+				return nil
+			},
+		}
+
+		api := CreateDatasetAPI(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 	})
 }
 

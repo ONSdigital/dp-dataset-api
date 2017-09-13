@@ -268,38 +268,6 @@ func buildVersionQuery(id, editionID, state string, versionID int) bson.M {
 	return selector
 }
 
-// UpsertDataset adds or overides an existing dataset document
-func (m *Mongo) UpsertDataset(id string, datasetDoc *models.DatasetUpdate) (err error) {
-	s := session.Copy()
-	defer s.Close()
-
-	update := bson.M{
-		"$set": datasetDoc,
-		"$setOnInsert": bson.M{
-			"last_updated": time.Now(),
-		},
-	}
-
-	_, err = s.DB(m.Database).C("datasets").UpsertId(id, update)
-	return
-}
-
-// UpsertEdition adds or overides an existing edition document
-func (m *Mongo) UpsertEdition(editionID string, editionDoc *models.Edition) (err error) {
-	s := session.Copy()
-	defer s.Close()
-
-	update := bson.M{
-		"$set": editionDoc,
-		"$setOnInsert": bson.M{
-			"last_updated": time.Now(),
-		},
-	}
-
-	_, err = s.DB(m.Database).C("editions").Upsert(bson.M{"edition": editionID}, update)
-	return
-}
-
 // UpdateDataset updates an existing dataset document
 func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset) (err error) {
 	s := session.Copy()
@@ -307,7 +275,7 @@ func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset) (err error) {
 
 	updates := createDatasetUpdateQuery(dataset)
 
-	err = s.DB(m.Database).C("dataset").UpdateId(id, bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}})
+	err = s.DB(m.Database).C("datasets").UpdateId(id, bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}})
 	return
 }
 
@@ -398,6 +366,75 @@ func (m *Mongo) UpdateEdition(id, state string) (err error) {
 	}
 
 	err = s.DB(m.Database).C("editions").UpdateId(id, update)
+	return
+}
+
+// UpdateVersion updates an existing version document
+func (m *Mongo) UpdateVersion(id string, version *models.Version) (err error) {
+	s := session.Copy()
+	defer s.Close()
+
+	updates := createVersionUpdateQuery(version)
+
+	err = s.DB(m.Database).C("versions").UpdateId(id, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}})
+	return
+}
+
+func createVersionUpdateQuery(version *models.Version) bson.M {
+	updates := make(bson.M, 0)
+
+	if version.CollectionID != "" {
+		updates["collection_id"] = version.CollectionID
+	}
+
+	if version.InstanceID != "" {
+		updates["instance_id"] = version.InstanceID
+	}
+
+	if version.License != "" {
+		updates["license"] = version.License
+	}
+
+	if version.ReleaseDate != "" {
+		updates["release_date"] = version.ReleaseDate
+	}
+
+	if version.State != "" {
+		updates["state"] = version.State
+	}
+
+	return updates
+}
+
+// UpsertDataset adds or overides an existing dataset document
+func (m *Mongo) UpsertDataset(id string, datasetDoc *models.DatasetUpdate) (err error) {
+	s := session.Copy()
+	defer s.Close()
+
+	update := bson.M{
+		"$set": datasetDoc,
+		"$setOnInsert": bson.M{
+			"last_updated": time.Now(),
+		},
+	}
+
+	_, err = s.DB(m.Database).C("datasets").UpsertId(id, update)
+	return
+}
+
+// UpsertEdition adds or overides an existing edition document
+func (m *Mongo) UpsertEdition(editionID string, editionDoc *models.Edition) (err error) {
+	s := session.Copy()
+	defer s.Close()
+
+	update := bson.M{
+		"$set": editionDoc,
+		"$setOnInsert": bson.M{
+			"last_updated": time.Now(),
+		},
+	}
+
+	_, err = s.DB(m.Database).C("editions").Upsert(bson.M{"edition": editionID}, update)
 	return
 }
 
