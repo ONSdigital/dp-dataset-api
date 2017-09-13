@@ -34,9 +34,9 @@ type Storer interface {
 	UpdateInstance(id string, instance *models.Instance) error
 	AddInstance(instance *models.Instance) (*models.Instance, error)
 	AddEventToInstance(instanceID string, event *models.Event) error
-	AddDimensionToInstance(dimension *models.Dimension) error
+	AddDimensionToInstance(dimension *models.CachedDimension) error
 	UpdateObservationInserted(id string, observationInserted int64) error
 	GetDimensionNodesFromInstance(id string) (*models.DimensionNodeResults, error)
-	UpdateDimensionNodeID(dimension *models.Dimension) error
+	UpdateDimensionNodeID(dimension *models.CachedDimension) error
 	GetUniqueDimensionValues(id, dimension string) (*models.DimensionValues, error)
 }

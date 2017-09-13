@@ -1,4 +1,4 @@
-package dimension
+package dimensioncache
 
 import (
 	"encoding/json"
@@ -68,7 +68,7 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	dimensionName := vars["dimension"]
 	value := vars["value"]
 
-	dim := models.Dimension{Name: dimensionName, Value: value, InstanceID: id}
+	dim := models.CachedDimension{Name: dimensionName, Value: value, InstanceID: id}
 	if err := s.AddDimensionToInstance(&dim); err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
@@ -83,7 +83,7 @@ func (s *Store) AddNodeID(w http.ResponseWriter, r *http.Request) {
 	value := vars["value"]
 	nodeID := vars["node_id"]
 
-	dim := models.Dimension{Name: dimensionName, Value: value, NodeID: nodeID, InstanceID: id}
+	dim := models.CachedDimension{Name: dimensionName, Value: value, NodeID: nodeID, InstanceID: id}
 	if err := s.UpdateDimensionNodeID(&dim); err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)

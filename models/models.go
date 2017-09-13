@@ -20,7 +20,7 @@ type DatasetResults struct {
 
 // DatasetDimensionResults represents a structure for a list of dimensions
 type DatasetDimensionResults struct {
-	Items []DatasetDimension `json:"items"`
+	Items []Dimension `json:"items"`
 }
 
 // EditionResults represents a structure for a list of editions for a dataset
@@ -63,8 +63,9 @@ type DatasetLinks struct {
 	Self          LinkObject `bson:"self,omitempty"            json:"self,omitempty"`
 }
 
-// DatasetDimension represents an overview for a single dimension
-type DatasetDimension struct {
+// Dimension represents an overview for a single dimension. This includes a link to the code list API
+// which provides metadata about the dimension and all possible values.
+type Dimension struct {
 	Links struct {
 		CodeList LinkObject `bson:"code_list,omitempty"     json:"code_list,omitempty"`
 		Dataset  LinkObject `bson:"dataset,omitempty"       json:"dataset,omitempty"`

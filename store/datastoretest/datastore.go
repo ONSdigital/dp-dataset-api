@@ -41,7 +41,7 @@ var (
 //
 //         // make and configure a mocked Storer
 //         mockedStorer := &StorerMock{
-//             AddDimensionToInstanceFunc: func(dimension *models.Dimension) error {
+//             AddDimensionToInstanceFunc: func(dimension *models.CachedDimension) error {
 // 	               panic("TODO: mock out the AddDimensionToInstance method")
 //             },
 //             AddEventToInstanceFunc: func(instanceID string, event *models.Event) error {
@@ -89,7 +89,7 @@ var (
 //             UpdateDatasetWithAssociationFunc: func(id string, state string, version *models.Version) error {
 // 	               panic("TODO: mock out the UpdateDatasetWithAssociation method")
 //             },
-//             UpdateDimensionNodeIDFunc: func(dimension *models.Dimension) error {
+//             UpdateDimensionNodeIDFunc: func(dimension *models.CachedDimension) error {
 // 	               panic("TODO: mock out the UpdateDimensionNodeID method")
 //             },
 //             UpdateEditionFunc: func(id string, state string) error {
@@ -121,7 +121,7 @@ var (
 //     }
 type StorerMock struct {
 	// AddDimensionToInstanceFunc mocks the AddDimensionToInstance method.
-	AddDimensionToInstanceFunc func(dimension *models.Dimension) error
+	AddDimensionToInstanceFunc func(dimension *models.CachedDimension) error
 
 	// AddEventToInstanceFunc mocks the AddEventToInstance method.
 	AddEventToInstanceFunc func(instanceID string, event *models.Event) error
@@ -169,7 +169,7 @@ type StorerMock struct {
 	UpdateDatasetWithAssociationFunc func(id string, state string, version *models.Version) error
 
 	// UpdateDimensionNodeIDFunc mocks the UpdateDimensionNodeID method.
-	UpdateDimensionNodeIDFunc func(dimension *models.Dimension) error
+	UpdateDimensionNodeIDFunc func(dimension *models.CachedDimension) error
 
 	// UpdateEditionFunc mocks the UpdateEdition method.
 	UpdateEditionFunc func(id string, state string) error
@@ -196,8 +196,8 @@ type StorerMock struct {
 	calls struct {
 		// AddDimensionToInstance holds details about calls to the AddDimensionToInstance method.
 		AddDimensionToInstance []struct {
-			// Dimension is the dimension argument value.
-			Dimension *models.Dimension
+			// CachedDimension is the dimension argument value.
+			Dimension *models.CachedDimension
 		}
 		// AddEventToInstance holds details about calls to the AddEventToInstance method.
 		AddEventToInstance []struct {
@@ -270,7 +270,7 @@ type StorerMock struct {
 		GetUniqueDimensionValues []struct {
 			// Id is the id argument value.
 			Id string
-			// Dimension is the dimension argument value.
+			// CachedDimension is the dimension argument value.
 			Dimension string
 		}
 		// GetVersion holds details about calls to the GetVersion method.
@@ -304,8 +304,8 @@ type StorerMock struct {
 		}
 		// UpdateDimensionNodeID holds details about calls to the UpdateDimensionNodeID method.
 		UpdateDimensionNodeID []struct {
-			// Dimension is the dimension argument value.
-			Dimension *models.Dimension
+			// CachedDimension is the dimension argument value.
+			Dimension *models.CachedDimension
 		}
 		// UpdateEdition holds details about calls to the UpdateEdition method.
 		UpdateEdition []struct {
@@ -360,12 +360,12 @@ type StorerMock struct {
 }
 
 // AddDimensionToInstance calls AddDimensionToInstanceFunc.
-func (mock *StorerMock) AddDimensionToInstance(dimension *models.Dimension) error {
+func (mock *StorerMock) AddDimensionToInstance(dimension *models.CachedDimension) error {
 	if mock.AddDimensionToInstanceFunc == nil {
 		panic("moq: StorerMock.AddDimensionToInstanceFunc is nil but Storer.AddDimensionToInstance was just called")
 	}
 	callInfo := struct {
-		Dimension *models.Dimension
+		Dimension *models.CachedDimension
 	}{
 		Dimension: dimension,
 	}
@@ -379,10 +379,10 @@ func (mock *StorerMock) AddDimensionToInstance(dimension *models.Dimension) erro
 // Check the length with:
 //     len(mockedStorer.AddDimensionToInstanceCalls())
 func (mock *StorerMock) AddDimensionToInstanceCalls() []struct {
-	Dimension *models.Dimension
+	Dimension *models.CachedDimension
 } {
 	var calls []struct {
-		Dimension *models.Dimension
+		Dimension *models.CachedDimension
 	}
 	lockStorerMockAddDimensionToInstance.RLock()
 	calls = mock.calls.AddDimensionToInstance
@@ -911,12 +911,12 @@ func (mock *StorerMock) UpdateDatasetWithAssociationCalls() []struct {
 }
 
 // UpdateDimensionNodeID calls UpdateDimensionNodeIDFunc.
-func (mock *StorerMock) UpdateDimensionNodeID(dimension *models.Dimension) error {
+func (mock *StorerMock) UpdateDimensionNodeID(dimension *models.CachedDimension) error {
 	if mock.UpdateDimensionNodeIDFunc == nil {
 		panic("moq: StorerMock.UpdateDimensionNodeIDFunc is nil but Storer.UpdateDimensionNodeID was just called")
 	}
 	callInfo := struct {
-		Dimension *models.Dimension
+		Dimension *models.CachedDimension
 	}{
 		Dimension: dimension,
 	}
@@ -930,10 +930,10 @@ func (mock *StorerMock) UpdateDimensionNodeID(dimension *models.Dimension) error
 // Check the length with:
 //     len(mockedStorer.UpdateDimensionNodeIDCalls())
 func (mock *StorerMock) UpdateDimensionNodeIDCalls() []struct {
-	Dimension *models.Dimension
+	Dimension *models.CachedDimension
 } {
 	var calls []struct {
-		Dimension *models.Dimension
+		Dimension *models.CachedDimension
 	}
 	lockStorerMockUpdateDimensionNodeID.RLock()
 	calls = mock.calls.UpdateDimensionNodeID

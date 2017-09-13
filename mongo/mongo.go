@@ -382,7 +382,7 @@ func (m *Mongo) createDimensionsFromInstance(datasetID, editionID string, versio
 			name := split[0]
 			codeID := split[1]
 			time := time.Now().UTC()
-			dimension := models.DatasetDimension{}
+			dimension := models.Dimension{}
 			dimension.Name = name
 			dimension.Links.CodeList = models.LinkObject{ID: codeID, HRef: m.CodeListURL + "/code-lists/" + codeID}
 			dimension.Links.Dataset = models.LinkObject{ID: datasetID, HRef: m.DatasetURL + "/datasets/" + datasetID}
@@ -408,7 +408,7 @@ func (m *Mongo) GetDimensions(datasetID, editionID, versionID string) (*models.D
 		Select(bson.M{"last_updated": 0}).
 		Iter()
 	defer iter.Close()
-	var results []models.DatasetDimension
+	var results []models.Dimension
 	err := iter.All(&results)
 	if err != nil {
 		return nil, err
