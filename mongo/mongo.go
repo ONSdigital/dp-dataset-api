@@ -9,8 +9,8 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 var _ store.Storer = &Mongo{}
@@ -18,9 +18,11 @@ var session *mgo.Session
 
 // Mongo represents a simplistic MongoDB configuration.
 type Mongo struct {
-	Collection string
-	Database   string
-	URI        string
+	Collection  string
+	Database    string
+	URI         string
+	CodeListURL string
+	DatasetURL  string
 }
 
 // Init creates a new mgo.Session with a strong consistency and a write mode of "majortiy".
@@ -371,6 +373,7 @@ func (m *Mongo) createDimensionsFromInstance(datasetID, editionID string, versio
 	if err != nil {
 		return err
 	}
+	version := strconv.Itoa(versionID)
 
 	for _, column := range *instance.Headers {
 		if !strings.Contains(column, "V4_") && strings.Contains(column, "_") {
@@ -378,10 +381,15 @@ func (m *Mongo) createDimensionsFromInstance(datasetID, editionID string, versio
 			split := strings.Split(column, "_")
 			name := split[0]
 			codeID := split[1]
-			codeListURL := "http://localhost:22400/code-lists" + "/" + codeID
 			time := time.Now().UTC()
-			dimension := models.DatasetDimension{Name: name, Dataset: datasetID, Edition: editionID, Version: versionID,
-				CodeList: models.LinkObject{ID: codeID, HRef: codeListURL}, LastUpdated: &time}
+			dimension := models.DatasetDimension{}
+			dimension.Name = name
+			dimension.Links.CodeList = models.LinkObject{ID: codeID, HRef: m.CodeListURL + "/code-lists/" + codeID}
+			dimension.Links.Dataset = models.LinkObject{ID: datasetID, HRef: m.DatasetURL + "/datasets/" + datasetID}
+			dimension.Links.Edition = models.LinkObject{ID: editionID, HRef: m.DatasetURL + "/datasets/" + datasetID + "/editions/" + editionID}
+			dimension.Links.Version = models.LinkObject{ID: version, HRef: m.DatasetURL + "/datasets/" + datasetID + "/editions/" + editionID + "/versions/" + version}
+			dimension.LastUpdated = &time
+
 			err = s.DB(m.Database).C("dimensions").Insert(&dimension)
 			if err != nil {
 				return nil
@@ -393,15 +401,15 @@ func (m *Mongo) createDimensionsFromInstance(datasetID, editionID string, versio
 
 // GetDimensions returns a list of all dimensions from a dataset
 func (m *Mongo) GetDimensions(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error) {
-	version, err := strconv.ParseInt(versionID, 10, 64)
+	//version, err := strconv.ParseInt(versionID, 10, 64)
 	s := session.Copy()
 	defer s.Close()
-	iter := s.DB(m.Database).C("dimensions").Find(bson.M{"dataset": datasetID, "edition": editionID, "version": version}).
-		Select(bson.M{"dataset": 0, "edition": 0, "version": 0, "last_updated": 0}).
+	iter := s.DB(m.Database).C("dimensions").Find(bson.M{"links.dataset.id": datasetID, "links.edition.id": editionID, "links.version.id": versionID}).
+		Select(bson.M{"last_updated": 0}).
 		Iter()
 	defer iter.Close()
 	var results []models.DatasetDimension
-	err = iter.All(&results)
+	err := iter.All(&results)
 	if err != nil {
 		return nil, err
 	}

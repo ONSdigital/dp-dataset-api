@@ -26,6 +26,8 @@ func main() {
 		Collection: cfg.MongoConfig.Collection,
 		Database:   cfg.MongoConfig.Database,
 		URI:        cfg.MongoConfig.BindAddr,
+		DatasetURL: cfg.DatasetAPIURL,
+		CodeListURL: cfg.CodeListAPIURL,
 	}
 
 	if err := mongo.Init(); err != nil {

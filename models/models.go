@@ -65,11 +65,13 @@ type DatasetLinks struct {
 
 // DatasetDimension represents an overview for a single dimension
 type DatasetDimension struct {
-	CodeList    LinkObject `bson:"code_list,omitempty"     json:"code_list,omitempty"`
+	Links struct {
+		CodeList LinkObject `bson:"code_list,omitempty"     json:"code_list,omitempty"`
+		Dataset  LinkObject `bson:"dataset,omitempty"       json:"dataset,omitempty"`
+		Edition  LinkObject `bson:"edition,omitempty"       json:"edition,omitempty"`
+		Version  LinkObject `bson:"version,omitempty"       json:"version,omitempty"`
+	} `bson:"links,omitempty"     json:"links,omitempty"`
 	Name        string     `bson:"name,omitempty"          json:"name,omitempty"`
-	Dataset     string     `bson:"dataset,omitempty"       json:"dataset,omitempty"`
-	Edition     string     `bson:"edition,omitempty"       json:"edition,omitempty"`
-	Version     int        `bson:"version,omitempty"       json:"version,omitempty"`
 	LastUpdated *time.Time `bson:"last_updated,omitempty"  json:"last_updated,omitempty"`
 }
 

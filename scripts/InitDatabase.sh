@@ -319,38 +319,73 @@ db.dimension.options.insert({
 
 db.dimensions.insert({
   "_id" : "1D5A87B8-6322-4904-AB92-65EC9E2A565F",
-  "code_list" : {
-    "id" : "64d384f1-ea3b-445c-8fb8-aa453f96e58a",
-    "href" : "http://localhost:22400/code-lists/64d384f1-ea3b-445c-8fb8-aa453f96e58a"
-    },
+  "links": {
+     "code_list" : {
+       "id" : "64d384f1-ea3b-445c-8fb8-aa453f96e58a",
+       "href" : "http://localhost:22400/code-lists/64d384f1-ea3b-445c-8fb8-aa453f96e58a"
+     },
+     "dataset" : {
+       "id" : "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
+       "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+     },
+     "edition" : {
+       "id" : "2016",
+       "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016"
+     },
+     "version" : {
+       "id": "1",
+       "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/1"
+      },
+   },
   "name" : "time",
-  "dataset" : "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
-  "edition" : "2016",
-  "version" : 1,
   "last_updated" : ISODate("2017-09-12T13:46:50.074Z")
 });
 db.dimensions.insert({
   "_id" : "1C176122-1D54-4CD6-BBB1-65326FB1B2BB",
-  "code_list" : {
-    "id" : "65107A9F-7DA3-4B41-A410-6F6D9FBD68C3",
-    "href" : "http://localhost:22400/code-lists/65107A9F-7DA3-4B41-A410-6F6D9FBD68C3"
-    },
+
+  "links": {
+     "code_list" : {
+       "id" : "65107A9F-7DA3-4B41-A410-6F6D9FBD68C3",
+       "href" : "http://localhost:22400/code-lists/65107A9F-7DA3-4B41-A410-6F6D9FBD68C3"
+     },
+     "dataset" : {
+       "id" : "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
+       "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+     },
+     "edition" : {
+       "id" : "2016",
+       "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016"
+     },
+     "version" : {
+       "id": "1",
+       "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/1"
+      },
+   },
   "name" : "Geography",
-  "dataset" : "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
-  "edition" : "2016",
-  "version" : 1,
   "last_updated" : ISODate("2017-09-12T13:46:50.074Z")
 });
 db.dimensions.insert({
   "_id" : "CB1B1777-141C-49D7-9083-DF86D7050489",
-  "code_list" : {
-    "id" : "e44de4c4-d39e-4e2f-942b-3ca10584d078",
-    "href" : "http://localhost:22400/code-lists/e44de4c4-d39e-4e2f-942b-3ca10584d078"
+  "links": {
+    "code_list" : {
+      "id" : "e44de4c4-d39e-4e2f-942b-3ca10584d078",
+      "href" : "http://localhost:22400/code-lists/e44de4c4-d39e-4e2f-942b-3ca10584d078"
     },
+    "dataset" : {
+      "id" : "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
+      "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+    },
+    "edition" : {
+      "id" : "2016",
+      "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016"
+      },
+    "version" : {
+      "id": "1",
+      "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/1"
+      }
+
+  },
   "name" : "Aggregate",
-  "dataset" : "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
-  "edition" : "2016",
-  "version" : 1,
   "last_updated" : ISODate("2017-09-12T13:46:50.074Z")
 });
 EOF

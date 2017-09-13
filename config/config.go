@@ -6,6 +6,7 @@ import "github.com/ian-kent/gofigure"
 type Configuration struct {
 	BindAddr      string `env:"BIND_ADDR" flag:"bind-addr" flagDesc:"The port to bind to"`
 	DatasetAPIURL string `env:"DATASET_API_URL" flag:"dataset-api-url" flagDesc:"The host and port this API is run on"`
+	CodeListAPIURL string `env:"CODE_LIST_API_URL" flag:"code-list-api-url" flagDesc:"The host and port for the code list API"`
 	SecretKey     string `env:"SECRET_KEY" flag:"secret-key" flagDesc:"A secret key used authentication"`
 	MongoConfig   MongoConfig
 }
@@ -28,6 +29,7 @@ func Get() (*Configuration, error) {
 	cfg = &Configuration{
 		BindAddr:      ":22000",
 		DatasetAPIURL: "http://localhost:22000",
+		CodeListAPIURL: "http://localhost:22400",
 		SecretKey:     "FD0108EA-825D-411C-9B1D-41EF7727F465",
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
