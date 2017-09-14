@@ -104,8 +104,7 @@ func (m *Mongo) AddEventToInstance(instanceId string, event *models.Event) error
 func (m *Mongo) AddDimensionToInstance(dimension *models.CachedDimension) error {
 	s := session.Copy()
 	defer s.Close()
-	now := time.Now().UTC()
-	dimension.LastUpdated = &now
+	dimension.LastUpdated = time.Now().UTC()
 	_, err := s.DB(m.Database).C(CACHED_DIMENSION_COLLECTION).Upsert(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
 		"value": dimension.Value}, &dimension)
 	if err != nil {

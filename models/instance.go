@@ -45,7 +45,7 @@ type CachedDimension struct {
 	Value       string     `bson:"value,omitempty"          json:"value"`
 	NodeID      string     `bson:"node_id,omitempty"        json:"node_id"`
 	InstanceID  string     `bson:"instance_id,omitempty"    json:"instance_id,omitempty"`
-	LastUpdated *time.Time `bson:"last_updated,omitempty"   json:"last_updated,omitempty"`
+	LastUpdated time.Time `bson:"last_updated,omitempty"    json:"-"`
 }
 
 // InstanceResults wraps instances objects for pagination

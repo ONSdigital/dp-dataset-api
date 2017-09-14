@@ -6,6 +6,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 
+	"fmt"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -349,6 +350,8 @@ func (m *Mongo) UpsertVersion(id string, version *models.Version) (err error) {
 	}
 
 	info, err := s.DB(m.Database).C("versions").UpsertId(id, update)
+	// Dimensions only need to be created when a new version is created, if a version has been updated don't recreate
+	// the dimensions.
 	if info.Updated == 0 {
 		m.createDimensionsFromInstance(version.Links.Dataset.ID, version.Edition, version.Version, version.InstanceID)
 	}
@@ -384,11 +387,11 @@ func (m *Mongo) createDimensionsFromInstance(datasetID, editionID string, versio
 			time := time.Now().UTC()
 			dimension := models.Dimension{}
 			dimension.Name = name
-			dimension.Links.CodeList = models.LinkObject{ID: codeID, HRef: m.CodeListURL + "/code-lists/" + codeID}
-			dimension.Links.Dataset = models.LinkObject{ID: datasetID, HRef: m.DatasetURL + "/datasets/" + datasetID}
-			dimension.Links.Edition = models.LinkObject{ID: editionID, HRef: m.DatasetURL + "/datasets/" + datasetID + "/editions/" + editionID}
-			dimension.Links.Version = models.LinkObject{ID: version, HRef: m.DatasetURL + "/datasets/" + datasetID + "/editions/" + editionID + "/versions/" + version}
-			dimension.LastUpdated = &time
+			dimension.Links.CodeList = models.LinkObject{ID: codeID, HRef: fmt.Sprintf("%s/code-lists/%s", m.CodeListURL, codeID)}
+			dimension.Links.Dataset = models.LinkObject{ID: datasetID, HRef: fmt.Sprintf("%s/datasets/%s", m.DatasetURL, datasetID)}
+			dimension.Links.Edition = models.LinkObject{ID: editionID, HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", m.DatasetURL, datasetID, editionID)}
+			dimension.Links.Version = models.LinkObject{ID: version, HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", m.DatasetURL, datasetID, editionID, version)}
+			dimension.LastUpdated = time
 
 			err = s.DB(m.Database).C("dimensions").Insert(&dimension)
 			if err != nil {
@@ -401,7 +404,6 @@ func (m *Mongo) createDimensionsFromInstance(datasetID, editionID string, versio
 
 // GetDimensions returns a list of all dimensions from a dataset
 func (m *Mongo) GetDimensions(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error) {
-	//version, err := strconv.ParseInt(versionID, 10, 64)
 	s := session.Copy()
 	defer s.Close()
 	iter := s.DB(m.Database).C("dimensions").Find(bson.M{"links.dataset.id": datasetID, "links.edition.id": editionID, "links.version.id": versionID}).

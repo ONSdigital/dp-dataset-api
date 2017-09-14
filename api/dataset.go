@@ -450,7 +450,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 		log.Error(err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	log.Debug("get version", log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
+	log.Debug("get dimensions", log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
 
 }
 
