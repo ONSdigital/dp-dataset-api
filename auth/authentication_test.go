@@ -10,13 +10,13 @@ import (
 
 func TestMiddleWareAuthenticationReturnsForbidden(t *testing.T) {
 	t.Parallel()
-	Convey("When no access token is provide, forbidden status code is returned", t, func() {
+	Convey("When no access token is provide, unauthorised status code is returned", t, func() {
 		auth := &Authenticator{"123", "internal-token"}
 		r, err := http.NewRequest("POST", "http://localhost:21800/instances", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		auth.Check(mockHTTPHandler).ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
 	})
 }
 

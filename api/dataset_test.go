@@ -10,7 +10,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -1233,6 +1233,53 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
+	})
+}
+
+func TestCreateNewVersionDoc(t *testing.T) {
+	t.Parallel()
+	Convey("Check the version has the new collection id when request contains a collection_id", t, func() {
+		currentVersion := &models.Version{}
+		version := &models.Version{
+			CollectionID: "4321",
+		}
+
+		newVersion := createNewVersionDoc(currentVersion, version)
+		So(newVersion.CollectionID, ShouldNotBeNil)
+		So(newVersion.CollectionID, ShouldEqual, "4321")
+	})
+
+	Convey("Check the version collection id does not get replaced by the current collection id when request contains a collection_id", t, func() {
+		currentVersion := &models.Version{
+			CollectionID: "1234",
+		}
+		version := &models.Version{
+			CollectionID: "4321",
+		}
+
+		newVersion := createNewVersionDoc(currentVersion, version)
+		So(newVersion.CollectionID, ShouldNotBeNil)
+		So(newVersion.CollectionID, ShouldEqual, "4321")
+	})
+
+	Convey("Check the version has the old collection id when request is missing a collection_id", t, func() {
+		currentVersion := &models.Version{
+			CollectionID: "1234",
+		}
+		version := &models.Version{}
+
+		newVersion := createNewVersionDoc(currentVersion, version)
+		So(newVersion.CollectionID, ShouldNotBeNil)
+		So(newVersion.CollectionID, ShouldEqual, "1234")
+	})
+
+	Convey("check the version collection id is not set when both request body and current version document are missing a collection id", t, func() {
+		currentVersion := &models.Version{}
+		version := &models.Version{}
+
+		newVersion := createNewVersionDoc(currentVersion, version)
+		So(newVersion.CollectionID, ShouldNotBeNil)
+		So(newVersion.CollectionID, ShouldEqual, "")
 	})
 }
 

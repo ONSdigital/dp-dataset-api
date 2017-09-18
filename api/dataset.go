@@ -217,11 +217,6 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get(internalToken) != api.internalToken {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
 	dataset, err := models.CreateDataset(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -266,10 +261,6 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
 	edition := vars["edition"]
-	if r.Header.Get(internalToken) != api.internalToken {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
 
 	// Check if edition already exists and if it has been published return a status of Forbidden
 	currentEdition, err := api.dataStore.Backend.GetEdition(datasetID, edition, "")
@@ -314,10 +305,6 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
 	edition := vars["edition"]
-	if r.Header.Get(internalToken) != api.internalToken {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
 
 	version, err := models.CreateVersion(r.Body)
 	if err != nil {
@@ -386,11 +373,6 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
 
-	if r.Header.Get(internalToken) != api.internalToken {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
 	dataset, err := models.CreateDataset(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -413,11 +395,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	datasetID := vars["id"]
 	editionID := vars["edition"]
 	versionID := vars["version"]
-
-	if r.Header.Get(internalToken) != api.internalToken {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
 
 	version, err := models.CreateVersion(r.Body)
 	if err != nil {
@@ -482,19 +459,19 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func createNewVersionDoc(currentVersion *models.Version, version *models.Version) *models.Version {
-	if version.CollectionID == "" && currentVersion.CollectionID != "" {
+	if version.CollectionID == "" {
 		version.CollectionID = currentVersion.CollectionID
 	}
 
-	if version.InstanceID == "" && currentVersion.InstanceID != "" {
+	if version.InstanceID == "" {
 		version.InstanceID = currentVersion.InstanceID
 	}
 
-	if version.License == "" && currentVersion.License != "" {
+	if version.License == "" {
 		version.License = currentVersion.License
 	}
 
-	if version.ReleaseDate == "" && currentVersion.ReleaseDate != "" {
+	if version.ReleaseDate == "" {
 		version.ReleaseDate = currentVersion.ReleaseDate
 	}
 
