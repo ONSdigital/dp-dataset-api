@@ -349,13 +349,8 @@ func (m *Mongo) UpsertVersion(id string, version *models.Version) (err error) {
 		},
 	}
 
-	info, err := s.DB(m.Database).C("versions").UpsertId(id, update)
-	// Dimensions only need to be created when a new version is created, if a version has been updated don't recreate
-	// the dimensions.
-	if info.Updated == 0 {
-		m.createDimensionsFromInstance(version.Links.Dataset.ID, version.Edition, version.Version, version.InstanceID)
-	}
-	return
+	_, err = s.DB(m.Database).C("versions").UpsertId(id, update)
+	return err
 }
 
 // UpsertContact adds or overides an existing contact document
@@ -365,55 +360,4 @@ func (m *Mongo) UpsertContact(id string, update interface{}) (err error) {
 
 	_, err = s.DB(m.Database).C("contacts").UpsertId(id, update)
 	return
-}
-
-// CreateDimensionsFromInstance adds multiple dimensions into mongo and relates the dimensions to a code list
-func (m *Mongo) createDimensionsFromInstance(datasetID, editionID string, versionID int, instanceID string) error {
-	s := session.Copy()
-	defer s.Close()
-	var instance models.Instance
-	err := s.DB(m.Database).C(INSTANCE_COLLECTION).Find(bson.M{"id": instanceID}).One(&instance)
-	if err != nil {
-		return err
-	}
-	version := strconv.Itoa(versionID)
-
-	for _, column := range *instance.Headers {
-		if !strings.Contains(column, "V4_") && strings.Contains(column, "_") {
-
-			split := strings.Split(column, "_")
-			name := split[0]
-			codeID := split[1]
-			time := time.Now().UTC()
-			dimension := models.Dimension{}
-			dimension.Name = name
-			dimension.Links.CodeList = models.LinkObject{ID: codeID, HRef: fmt.Sprintf("%s/code-lists/%s", m.CodeListURL, codeID)}
-			dimension.Links.Dataset = models.LinkObject{ID: datasetID, HRef: fmt.Sprintf("%s/datasets/%s", m.DatasetURL, datasetID)}
-			dimension.Links.Edition = models.LinkObject{ID: editionID, HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", m.DatasetURL, datasetID, editionID)}
-			dimension.Links.Version = models.LinkObject{ID: version, HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", m.DatasetURL, datasetID, editionID, version)}
-			dimension.LastUpdated = time
-
-			err = s.DB(m.Database).C("dimensions").Insert(&dimension)
-			if err != nil {
-				return nil
-			}
-		}
-	}
-	return nil
-}
-
-// GetDimensions returns a list of all dimensions from a dataset
-func (m *Mongo) GetDimensions(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error) {
-	s := session.Copy()
-	defer s.Close()
-	iter := s.DB(m.Database).C("dimensions").Find(bson.M{"links.dataset.id": datasetID, "links.edition.id": editionID, "links.version.id": versionID}).
-		Select(bson.M{"last_updated": 0}).
-		Iter()
-	defer iter.Close()
-	var results []models.Dimension
-	err := iter.All(&results)
-	if err != nil {
-		return nil, err
-	}
-	return &models.DatasetDimensionResults{Items: results}, nil
 }

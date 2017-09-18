@@ -301,18 +301,58 @@ db.instances.insert({
     "headers": ["V4_0", "time_64d384f1-ea3b-445c-8fb8-aa453f96e58a", "time", "Geography_65107A9F-7DA3-4B41-A410-6F6D9FBD68C3", "Geography", "Aggregate_e44de4c4-d39e-4e2f-942b-3ca10584d078", "Aggregate"],
     "last_updated": "2017-08-25T15:09:11.829+01:00",
 });
-db.cached.dimension.insert({
+db.dimension.options.insert({
      "_id":"0F06AB0E-A5D1-409A-8183-BACDF2326205",
      "instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
-     "name": "age",
-     "value": "32",
+     "name": "time",
+     "value": "2000.04",
+     "label": "",
+     "links": {
+         "code": {
+           "id": "2000.04",
+           "href": "/code-lists/64d384f1-ea3b-445c-8fb8-aa453f96e58a/codes/2000.04",
+         },
+         "code_list": {
+           "id": "64d384f1-ea3b-445c-8fb8-aa453f96e58a",
+           "href": "/code-lists/64d384f1-ea3b-445c-8fb8-aa453f96e58a",
+         },
+     },
      "node_id":"80",
 });
-db.cached.dimension.insert({
+db.dimension.options.insert({
+     "_id":"4C56297E-8424-42AE-B9E1-0F2AE1BF9B30",
+     "instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
+     "name": "time",
+     "value": "2000.05",
+     "label": "",
+     "links": {
+         "code": {
+           "id": "2000.05",
+           "href": "/code-lists/64d384f1-ea3b-445c-8fb8-aa453f96e58a/codes/2000.04",
+         },
+         "code_list": {
+           "id": "64d384f1-ea3b-445c-8fb8-aa453f96e58a",
+           "href": "/code-lists/64d384f1-ea3b-445c-8fb8-aa453f96e58a",
+         },
+     },
+     "node_id":"88",
+});
+db.dimension.options.insert({
      "_id":"AB3BAE9B-5C4D-4640-8936-8502D0DB954D",
      "instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
-     "name": "age",
-     "value": "37",
+     "name": "aggregate",
+     "value": "CI_0004263",
+     "label": "02.1.1 Spirits",
+     "links": {
+        "code": {
+          "id": "CI_0004263",
+          "href": "/code-lists/e44de4c4-d39e-4e2f-942b-3ca10584d078/codes/CI_0004263",
+        },
+        "code_list": {
+          "id": "e44de4c4-d39e-4e2f-942b-3ca10584d078",
+          "href": "/code-lists/e44de4c4-d39e-4e2f-942b-3ca10584d078",
+        },
+     },
      "node_id":"88",
      "last_updated": "2017-08-25T15:09:11.829+01:00",
 });

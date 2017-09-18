@@ -13,13 +13,14 @@ type DataStore struct {
 
 // Storer represents basic data access via Get, Remove and Upsert methods.
 type Storer interface {
-	AddDimensionToInstance(dimension *models.CachedDimension) error
+	AddDimensionToInstance(dimension *models.CachedDimensionOption) error
 	AddEventToInstance(instanceID string, event *models.Event) error
 	AddInstance(instance *models.Instance) (*models.Instance, error)
 	GetDataset(id string) (*models.DatasetUpdate, error)
 	GetDatasets() (*models.DatasetResults, error)
 	GetDimensionNodesFromInstance(id string) (*models.DimensionNodeResults, error)
 	GetDimensions(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error)
+	GetDimensionOptions(datasetID, editionID, versionID, dimension string) (*models.DimensionOptionResults, error)
 	GetEdition(id, editionID, state string) (*models.Edition, error)
 	GetEditions(id, state string) (*models.EditionResults, error)
 	GetInstances(filter string) (*models.InstanceResults, error)
@@ -31,7 +32,7 @@ type Storer interface {
 	UpsertContact(id string, update interface{}) error
 	UpsertDataset(id string, datasetDoc *models.DatasetUpdate) error
 	UpdateDatasetWithAssociation(id, state string, version *models.Version) error
-	UpdateDimensionNodeID(dimension *models.CachedDimension) error
+	UpdateDimensionNodeID(dimension *models.DimensionOption) error
 	UpdateEdition(id, state string) error
 	UpsertEdition(id string, editionDoc *models.Edition) error
 	UpdateInstance(id string, instance *models.Instance) error

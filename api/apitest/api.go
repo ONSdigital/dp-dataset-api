@@ -6,7 +6,7 @@ package apitest
 import (
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/gorilla/mux"
+	"github.com/ONSdigital/dp-dataset-api/vendor/github.com/gorilla/mux"
 	"sync"
 )
 

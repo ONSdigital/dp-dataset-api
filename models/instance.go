@@ -36,32 +36,9 @@ type Event struct {
 	MessageOffset string     `bson:"message_offset,omitempty" json:"message_offset"`
 }
 
-// CachedDimension is stored for the import process only. Each unique value for a dimension within a dataset is stored in the cache.
-// A cached dimension is different to a dimension which is used by a client, the main difference is the client will have links to the
-// code list API to get dimension values and meta data. This will return all possible values for a dataset, the cached dimensions could
-// only be a subset. In the future it may contain information which can used, but the nodeID must be kept private.
-type CachedDimension struct {
-	Name        string     `bson:"name,omitempty"           json:"dimension_id"`
-	Value       string     `bson:"value,omitempty"          json:"value"`
-	NodeID      string     `bson:"node_id,omitempty"        json:"node_id"`
-	InstanceID  string     `bson:"instance_id,omitempty"    json:"instance_id,omitempty"`
-	LastUpdated time.Time `bson:"last_updated,omitempty"    json:"-"`
-}
-
 // InstanceResults wraps instances objects for pagination
 type InstanceResults struct {
 	Items []Instance `json:"items"`
-}
-
-// DimensionNodeResults wraps dimension node objects for pagination
-type DimensionNodeResults struct {
-	Items []CachedDimension `json:"items"`
-}
-
-// DimensionValues holds all unique values for a dimension
-type DimensionValues struct {
-	Name   string   `json:"dimension_id"`
-	Values []string `json:"values"`
 }
 
 // Validate the event structure

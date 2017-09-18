@@ -18,11 +18,6 @@ type DatasetResults struct {
 	Items []*Dataset `json:"items"`
 }
 
-// DatasetDimensionResults represents a structure for a list of dimensions
-type DatasetDimensionResults struct {
-	Items []Dimension `json:"items"`
-}
-
 // EditionResults represents a structure for a list of editions for a dataset
 type EditionResults struct {
 	Items []Edition `json:"items"`
@@ -61,22 +56,6 @@ type DatasetLinks struct {
 	Editions      LinkObject `bson:"editions,omitempty"        json:"editions,omitempty"`
 	LatestVersion LinkObject `bson:"latest_version,omitempty"  json:"latest_version,omitempty"`
 	Self          LinkObject `bson:"self,omitempty"            json:"self,omitempty"`
-}
-
-// Dimension represents an overview for a single dimension. This includes a link to the code list API
-// which provides metadata about the dimension and all possible values.
-type Dimension struct {
-	Links       DimensionLink `bson:"links,omitempty"     json:"links,omitempty"`
-	Name        string        `bson:"name,omitempty"          json:"name,omitempty"`
-	LastUpdated time.Time    `bson:"last_updated,omitempty"  json:"-"`
-}
-
-// DimensionLink contains all links needed for a dimension
-type DimensionLink struct {
-	CodeList LinkObject `bson:"code_list,omitempty"     json:"code_list,omitempty"`
-	Dataset  LinkObject `bson:"dataset,omitempty"       json:"dataset,omitempty"`
-	Edition  LinkObject `bson:"edition,omitempty"       json:"edition,omitempty"`
-	Version  LinkObject `bson:"version,omitempty"       json:"version,omitempty"`
 }
 
 // LinkObject represents a generic structure for all links
