@@ -31,9 +31,11 @@ type Storer interface {
 	GetVersions(datasetID, editionID, state string) (*models.VersionResults, error)
 	UpsertContact(id string, update interface{}) error
 	UpsertDataset(id string, datasetDoc *models.DatasetUpdate) error
+	UpdateDataset(id string, dataset *models.Dataset) error
 	UpdateDatasetWithAssociation(id, state string, version *models.Version) error
 	UpdateDimensionNodeID(dimension *models.DimensionOption) error
 	UpdateEdition(id, state string) error
+	UpdateVersion(id string, version *models.Version) error
 	UpsertEdition(id string, editionDoc *models.Edition) error
 	UpdateInstance(id string, instance *models.Instance) error
 	UpdateObservationInserted(id string, observationInserted int64) error

@@ -108,7 +108,8 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 	t.Parallel()
 	Convey("Add a dimension to an instance returns not found", t, func() {
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions", nil)
+		json := strings.NewReader(`{"value":"24", "code_list":"123-456", "dimension_id": "test"}`)
+		r := createRequestWithToken("POST", "http://localhost:21800/instances/123/dimensions", json)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -128,7 +129,8 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("Add a dimension to an instance returns internal error", t, func() {
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions", nil)
+		json := strings.NewReader(`{"value":"24", "code_list":"123-456", "dimension_id": "test"}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions", json)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
