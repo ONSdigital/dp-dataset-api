@@ -20,8 +20,10 @@ type Storer interface {
 	GetNextVersion(datasetID, editionID string) (int, error)
 	GetVersions(datasetID, editionID, state string) (*models.VersionResults, error)
 	GetVersion(datasetID, editionID, version, state string) (*models.Version, error)
+	UpdateDataset(id string, dataset *models.Dataset) error
 	UpdateDatasetWithAssociation(id, state string, version *models.Version) error
 	UpdateEdition(id, state string) error
+	UpdateVersion(id string, version *models.Version) error
 	UpsertDataset(id string, datasetDoc *models.DatasetUpdate) error
 	UpsertEdition(id string, editionDoc *models.Edition) error
 	UpsertVersion(id string, versionDoc *models.Version) error

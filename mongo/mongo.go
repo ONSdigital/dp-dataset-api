@@ -1,6 +1,7 @@
 package mongo
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -230,10 +231,14 @@ func (m *Mongo) GetVersion(id, editionID, versionID, state string) (*models.Vers
 	s := session.Copy()
 	defer s.Clone()
 
-	selector := buildVersionQuery(id, editionID, versionID, state)
+	versionNumber, err := strconv.Atoi(versionID)
+	if err != nil {
+		return nil, err
+	}
+	selector := buildVersionQuery(id, editionID, state, versionNumber)
 
 	var version models.Version
-	err := s.DB(m.Database).C("versions").Find(selector).One(&version)
+	err = s.DB(m.Database).C("versions").Find(selector).One(&version)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, errs.VersionNotFound
@@ -243,9 +248,9 @@ func (m *Mongo) GetVersion(id, editionID, versionID, state string) (*models.Vers
 	return &version, nil
 }
 
-func buildVersionQuery(id, editionID, versionID, state string) bson.M {
+func buildVersionQuery(id, editionID, state string, versionID int) bson.M {
 	var selector bson.M
-	if state == "" {
+	if state != "published" {
 		selector = bson.M{
 			"links.dataset.id": id,
 			"version":          versionID,
@@ -261,6 +266,144 @@ func buildVersionQuery(id, editionID, versionID, state string) bson.M {
 	}
 
 	return selector
+}
+
+// UpdateDataset updates an existing dataset document
+func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset) (err error) {
+	s := session.Copy()
+	defer s.Close()
+
+	updates := createDatasetUpdateQuery(dataset)
+
+	err = s.DB(m.Database).C("datasets").UpdateId(id, bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}})
+	return
+}
+
+func createDatasetUpdateQuery(dataset *models.Dataset) bson.M {
+	updates := make(bson.M, 0)
+
+	if dataset.CollectionID != "" {
+		updates["next.collection_id"] = dataset.CollectionID
+	}
+
+	if dataset.Contact.Email != "" {
+		updates["next.contact.email"] = dataset.Contact.Email
+	}
+
+	if dataset.Contact.Name != "" {
+		updates["next.contact.name"] = dataset.Contact.Name
+	}
+
+	if dataset.Contact.Telephone != "" {
+		updates["next.contact.telephone"] = dataset.Contact.Telephone
+	}
+
+	if dataset.Description != "" {
+		updates["next.description"] = dataset.Description
+	}
+
+	if dataset.NextRelease != "" {
+		updates["next.next_release"] = dataset.NextRelease
+	}
+
+	if dataset.Periodicity != "" {
+		updates["next.periodicity"] = dataset.Periodicity
+	}
+
+	if dataset.Publisher.HRef != "" {
+		updates["next.publisher.href"] = dataset.Publisher.HRef
+	}
+
+	if dataset.Publisher.Name != "" {
+		updates["next.publisher.name"] = dataset.Publisher.Name
+	}
+
+	if dataset.Publisher.Type != "" {
+		updates["next.publisher.type"] = dataset.Publisher.Type
+	}
+
+	if dataset.Theme != "" {
+		updates["next.theme"] = dataset.Theme
+	}
+
+	if dataset.Title != "" {
+		updates["next.title"] = dataset.Title
+	}
+	return updates
+}
+
+// UpdateDatasetWithAssociation updates an existing dataset document with collection data
+func (m *Mongo) UpdateDatasetWithAssociation(id, state string, version *models.Version) (err error) {
+	s := session.Copy()
+	defer s.Close()
+
+	update := bson.M{
+		"$set": bson.M{
+			"next.state":                     state,
+			"next.collection_id":             version.CollectionID,
+			"next.links.latest_version.link": version.Links.Self,
+			"next.links.latest_version.id":   version.ID,
+			"next.last_updated":              time.Now(),
+		},
+	}
+
+	err = s.DB(m.Database).C("datasets").UpdateId(id, update)
+	return
+}
+
+// UpdateEdition updates an existing edition document
+func (m *Mongo) UpdateEdition(id, state string) (err error) {
+	s := session.Copy()
+	defer s.Close()
+
+	update := bson.M{
+		"$set": bson.M{
+			"state": state,
+		},
+		"$setOnInsert": bson.M{
+			"last_updated": time.Now(),
+		},
+	}
+
+	err = s.DB(m.Database).C("editions").UpdateId(id, update)
+	return
+}
+
+// UpdateVersion updates an existing version document
+func (m *Mongo) UpdateVersion(id string, version *models.Version) (err error) {
+	s := session.Copy()
+	defer s.Close()
+
+	updates := createVersionUpdateQuery(version)
+
+	err = s.DB(m.Database).C("versions").UpdateId(id, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}})
+	return
+}
+
+func createVersionUpdateQuery(version *models.Version) bson.M {
+	updates := make(bson.M, 0)
+
+	if version.CollectionID != "" {
+		updates["collection_id"] = version.CollectionID
+	}
+
+	if version.InstanceID != "" {
+		updates["instance_id"] = version.InstanceID
+	}
+
+	if version.License != "" {
+		updates["license"] = version.License
+	}
+
+	if version.ReleaseDate != "" {
+		updates["release_date"] = version.ReleaseDate
+	}
+
+	if version.State != "" {
+		updates["state"] = version.State
+	}
+
+	return updates
 }
 
 // UpsertDataset adds or overides an existing dataset document
@@ -292,43 +435,6 @@ func (m *Mongo) UpsertEdition(editionID string, editionDoc *models.Edition) (err
 	}
 
 	_, err = s.DB(m.Database).C("editions").Upsert(bson.M{"edition": editionID}, update)
-	return
-}
-
-// UpdateDatasetWithAssociation updates an existing dataset document
-func (m *Mongo) UpdateDatasetWithAssociation(id, state string, version *models.Version) (err error) {
-	s := session.Copy()
-	defer s.Close()
-
-	update := bson.M{
-		"$set": bson.M{
-			"next.state":                     state,
-			"next.collection_id":             version.CollectionID,
-			"next.links.latest_version.link": version.Links.Self,
-			"next.links.latest_version.id":   version.ID,
-			"next.last_updated":              time.Now(),
-		},
-	}
-
-	err = s.DB(m.Database).C("dataset").UpdateId(id, update)
-	return
-}
-
-// UpdateEdition updates an existing edition document
-func (m *Mongo) UpdateEdition(id, state string) (err error) {
-	s := session.Copy()
-	defer s.Close()
-
-	update := bson.M{
-		"$set": bson.M{
-			"state": state,
-		},
-		"$setOnInsert": bson.M{
-			"last_updated": time.Now(),
-		},
-	}
-
-	err = s.DB(m.Database).C("editions").UpdateId(id, update)
 	return
 }
 

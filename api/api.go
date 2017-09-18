@@ -30,14 +30,16 @@ func CreateDatasetAPI(host string, secretKey string, router *mux.Router, dataSto
 
 	api := DatasetAPI{privateAuth: &auth.Authenticator{SecretKey: secretKey, HeaderName: "internal-token"}, dataStore: dataStore, host: host, internalToken: secretKey, router: router}
 	api.router.HandleFunc("/datasets", api.getDatasets).Methods("GET")
-	api.router.HandleFunc("/datasets", api.addDataset).Methods("POST")
+	api.router.HandleFunc("/datasets", api.privateAuth.Check(api.addDataset)).Methods("POST")
 	api.router.HandleFunc("/datasets/{id}", api.getDataset).Methods("GET")
+	api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.putDataset)).Methods("PUT")
 	api.router.HandleFunc("/datasets/{id}/editions", api.getEditions).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}", api.getEdition).Methods("GET")
-	api.router.HandleFunc("/datasets/{id}/editions/{edition}", api.addEdition).Methods("POST")
+	api.router.HandleFunc("/datasets/{id}/editions/{edition}", api.privateAuth.Check(api.addEdition)).Methods("POST")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions", api.getVersions).Methods("GET")
-	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions", api.addVersion).Methods("POST")
+	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions", api.privateAuth.Check(api.addVersion)).Methods("POST")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.getVersion).Methods("GET")
+	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.privateAuth.Check(api.putVersion)).Methods("PUT")
 
 	instance := instance.Store{api.dataStore.Backend}
 	api.router.HandleFunc("/instances", instance.GetList).Methods("GET")
