@@ -12,12 +12,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const (
-	gracefulShutdownMsg = "graceful shutdown of http server complete"
-)
-
 var httpServer *server.Server
-var serverErrors chan error
 
 //API provides an interface for the routes
 type API interface {
@@ -36,7 +31,7 @@ type DatasetAPI struct {
 // CreateDatasetAPI manages all the routes configured to API
 func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStore, errorChan chan error) {
 	router := mux.NewRouter()
-	_ = routes(host, secretKey, router, dataStore)
+	routes(host, secretKey, router, dataStore)
 
 	httpServer = server.New(bindAddr, router)
 	// Disable this here to allow main to manage graceful shutdown of the entire app.
@@ -84,7 +79,10 @@ func routes(host, secretKey string, router *mux.Router, dataStore store.DataStor
 	return &api
 }
 
-func Close(ctx context.Context) {
-	httpServer.Shutdown(ctx)
-	log.Info(gracefulShutdownMsg, nil)
+func Close(ctx context.Context) error {
+	if err := httpServer.Shutdown(ctx); err != nil {
+		return err
+	}
+	log.Info("graceful shutdown of http server complete", nil)
+	return nil
 }

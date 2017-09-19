@@ -17,7 +17,7 @@ import (
 func main() {
 	log.Namespace = "dp-dataset-api"
 
-	signals := make(chan os.Signal)
+	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
 	cfg, err := config.Get()
@@ -41,7 +41,7 @@ func main() {
 		"bind_address": cfg.BindAddr,
 	})
 
-	apiErrors := make(chan error)
+	apiErrors := make(chan error, 1)
 
 	api.CreateDatasetAPI(cfg.DatasetAPIURL, cfg.BindAddr, cfg.SecretKey, store.DataStore{Backend: mongo}, apiErrors)
 
@@ -49,11 +49,12 @@ func main() {
 	gracefulShutdown := func() {
 		log.Info(fmt.Sprintf("Shutdown with timeout: %s", cfg.ShutdownTimeout), nil)
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
-		defer cancel()
 
 		api.Close(ctx)
 
 		log.Info("Shutdown complete", nil)
+
+		cancel()
 		os.Exit(1)
 	}
 

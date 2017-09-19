@@ -30,13 +30,11 @@ func Get() (*Configuration, error) {
 		return cfg, nil
 	}
 
-	defaultTimeout := time.Duration(5 * time.Second)
-
 	cfg = &Configuration{
 		BindAddr:        ":22000",
 		DatasetAPIURL:   "http://localhost:22000",
 		SecretKey:       "FD0108EA-825D-411C-9B1D-41EF7727F465",
-		ShutdownTimeout: defaultTimeout,
+		ShutdownTimeout: 5 * time.Second,
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",
