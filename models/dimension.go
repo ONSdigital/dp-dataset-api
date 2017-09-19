@@ -15,23 +15,22 @@ type DimensionOptionResults struct {
 // Dimension represents an overview for a single dimension. This includes a link to the code list API
 // which provides metadata about the dimension and all possible values.
 type Dimension struct {
-	Links       DimensionLink `bson:"links,omitempty"     json:"links,omitempty"`
-	Name        string        `bson:"name,omitempty"          json:"name,omitempty"`
+	Links       DimensionLink `bson:"links,omitempty"         json:"links,omitempty"`
+	Name        string        `bson:"name,omitempty"          json:"dimension_id,omitempty"`
 	LastUpdated time.Time     `bson:"last_updated,omitempty"  json:"-"`
 }
 
 // DimensionLink contains all links needed for a dimension
 type DimensionLink struct {
 	CodeList LinkObject `bson:"code_list,omitempty"     json:"code_list,omitempty"`
-	Dataset  LinkObject `bson:"dataset,omitempty"       json:"dataset,omitempty"`
-	Edition  LinkObject `bson:"edition,omitempty"       json:"edition,omitempty"`
+	Options  LinkObject `bson:"options,omitempty"       json:"options,omitempty"`
 	Version  LinkObject `bson:"version,omitempty"       json:"version,omitempty"`
 }
 
 //
 type CachedDimensionOption struct {
 	Name       string `bson:"name,omitempty"           json:"dimension_id"`
-	Label      string `bson:"label,omitempty"          json:"label"`
+	Code       string `bson:"code,omitempty"           json:"code"`
 	NodeID     string `bson:"node_id,omitempty"        json:"node_id"`
 	InstanceID string `bson:"instance_id,omitempty"    json:"instance_id,omitempty"`
 	CodeList   string `bson:"code_list,omitempty"      json:"code_list,omitempty"`
@@ -58,8 +57,9 @@ type PublicDimensionOption struct {
 }
 
 type DimensionOptionLinks struct {
-	Code     LinkObject `bson:"code,omitempty"                json:"code"`
-	CodeList LinkObject `bson:"code_list,omitempty"           json:"code_list"`
+	Code     LinkObject `bson:"code,omitempty"              json:"code"`
+	Version  LinkObject `bson:"version,omitempty"           json:"version"`
+	CodeList LinkObject `bson:"code_list,omitempty"         json:"code_list"`
 }
 
 // DimensionNodeResults wraps dimension node objects for pagination

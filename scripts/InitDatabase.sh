@@ -159,7 +159,7 @@ db.editions.insert({
 db.versions.insert({
     "_id": "63294ed7-dccf-4f30-ad57-62365f038fb7",
     "edition": "2016",
-    "instance_id": "63294ed7-dccf-4f30-ad57-62365f038111",
+    "instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
     "collection_id": "95c4669b-3ae9-4ba7-b690-87e890a1c543",
     "license": "ONS",
     "links": {
@@ -186,7 +186,7 @@ db.versions.insert({
 db.versions.insert({
     "_id": "4ce2ee5c-d50b-469f-b005-ddfed3f5072b",
     "edition": "2016",
-    "instance_id": "4ce2ee5c-d50b-469f-b005-ddfed3f50111",
+    "instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
     "license": "ONS",
     "links": {
         "dataset": {
@@ -212,7 +212,7 @@ db.versions.insert({
 db.versions.insert({
     "_id": "679ebe5f-d9cd-4d6e-8afc-6a2a4f991ccf",
     "edition": "2017",
-    "instance_id": "679ebe5f-d9cd-4d6e-8afc-6a2a4f991111",
+    "instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
     "license": "ONS",
     "links": {
         "dataset": {

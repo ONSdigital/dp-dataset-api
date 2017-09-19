@@ -44,9 +44,10 @@ func (m *Mongo) GetUniqueDimensionValues(id, dimension string) (*models.Dimensio
 func (m *Mongo) AddDimensionToInstance(opt *models.CachedDimensionOption) error {
 	s := session.Copy()
 	defer s.Close()
-	option := models.DimensionOption{InstanceID: opt.InstanceID, Value: opt.Value, Label: opt.Label}
-	option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/%s", m.CodeListURL, opt.CodeList)}
-	option.Links.Code = models.LinkObject{ID: opt.Value, HRef: fmt.Sprintf("%s/%s/codes/%s", m.CodeListURL, opt.CodeList, opt.Value)}
+	option := models.DimensionOption{InstanceID: opt.InstanceID, Value: opt.Value, Name: opt.Name}
+	option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/code-lists/%s", m.CodeListURL, opt.CodeList)}
+	option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.CodeListURL, opt.CodeList, opt.Code)}
+
 	option.LastUpdated = time.Now().UTC()
 	_, err := s.DB(m.Database).C(DIMENSION_OPTIONS).Upsert(bson.M{"instance_id": option.InstanceID, "name": option.Name,
 		"value": option.Value}, &option)
@@ -60,25 +61,29 @@ func (m *Mongo) AddDimensionToInstance(opt *models.CachedDimensionOption) error 
 func (m *Mongo) GetDimensions(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error) {
 	s := session.Copy()
 	defer s.Close()
-	//version, err := m.GetVersion(datasetID, editionID, versionID, "published")
-	//if err != nil {
-	//	return nil, err
-	//}
+	version, err := m.GetVersion(datasetID, editionID, versionID, "published")
+	if err != nil {
+		return nil, err
+	}
 	var results []models.Dimension
-	match := bson.M{"$match": bson.M{"instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE"}}
+	// To get all unique values an aggregation is needed, as using distinct() will only return the distinct values and
+	// not the documents.
+	// Match by instance_id
+	match := bson.M{"$match": bson.M{"instance_id": version.InstanceID}}
+	// Then group the values by name.
 	group := bson.M{"$group": bson.M{"_id": "$name", "doc": bson.M{"$first": "$$ROOT"}}}
 	res := []bson.M{}
-	err := s.DB(m.Database).C(DIMENSION_OPTIONS).Pipe([]bson.M{match, group}).All(&res)
+	err = s.DB(m.Database).C(DIMENSION_OPTIONS).Pipe([]bson.M{match, group}).All(&res)
 	if err != nil {
 		return nil, err
 	}
 	for _, dim := range res {
-		opt :=  convertBSonToDimension(dim["doc"])
+		opt := convertBSonToDimension(dim["doc"])
 		dimension := models.Dimension{Name: opt.Name}
 		dimension.Links.CodeList = opt.Links.CodeList
-		//dimension.Links.Edition = version.Links.Edition
-		//dimension.Links.Dataset = version.Links.Dataset
-		//dimension.Links.Version = version.Links.Self
+		dimension.Links.Options = models.LinkObject{ID: opt.Name, HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s/dimensions/%s/options",
+			m.DatasetURL, version.Links.Dataset.ID, version.Edition, versionID, opt.Name)}
+		dimension.Links.Version = version.Links.Self
 		results = append(results, dimension)
 	}
 	return &models.DatasetDimensionResults{Items: results}, nil
@@ -88,16 +93,18 @@ func (m *Mongo) GetDimensions(datasetID, editionID, versionID string) (*models.D
 func (m *Mongo) GetDimensionOptions(datasetID, editionID, versionID, dimension string) (*models.DimensionOptionResults, error) {
 	s := session.Copy()
 	defer s.Close()
-	//version, err := m.GetVersion(datasetID, editionID, versionID, "published")
-	//if err != nil {
-	//	return nil, err
-	//}
-	instanceId := "665BEE8A-D88F-448C-BF29-186D18B8DABE" //version.InstanceID
-	var values []models.PublicDimensionOption
-	iter := s.DB(m.Database).C(DIMENSION_OPTIONS).Find(bson.M{"instance_id": instanceId, "name": dimension}).Iter()
-	err := iter.All(&values)
+	version, err := m.GetVersion(datasetID, editionID, versionID, "published")
 	if err != nil {
 		return nil, err
+	}
+	var values []models.PublicDimensionOption
+	iter := s.DB(m.Database).C(DIMENSION_OPTIONS).Find(bson.M{"instance_id": version.InstanceID, "name": dimension}).Iter()
+	err = iter.All(&values)
+	if err != nil {
+		return nil, err
+	}
+	for i :=0; i < len(values); i++ {
+		values[i].Links.Version = version.Links.Self
 	}
 
 	return &models.DimensionOptionResults{Items: values}, nil
@@ -105,7 +112,7 @@ func (m *Mongo) GetDimensionOptions(datasetID, editionID, versionID, dimension s
 
 func convertBSonToDimension(data interface{}) *models.DimensionOption {
 	var dim models.DimensionOption
-    bytes , err:= bson.Marshal(data)
+	bytes, err := bson.Marshal(data)
 	if err != nil {
 
 	}

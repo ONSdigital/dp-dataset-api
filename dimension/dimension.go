@@ -69,10 +69,10 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	option, err := unmarshalDimensionCache(r.Body)
-    if err != nil {
+	if err != nil {
 		log.Error(err, nil)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-
+		return
 	}
 	option.InstanceID = id
 	if err := s.AddDimensionToInstance(option); err != nil {
@@ -159,8 +159,10 @@ func unmarshalDimensionCache(reader io.Reader) (*models.CachedDimensionOption, e
 	err = json.Unmarshal(bytes, &option)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
+
 	}
-	if option.Name == "" || option.Value == "" || option.CodeList == "" {
+	if option.Name == "" || (option.Value == "" && option.CodeList == "") {
+		log.Debug(".....", log.Data{"data": option})
 		return nil, errors.New("Missing properties in JSON")
 	}
 
