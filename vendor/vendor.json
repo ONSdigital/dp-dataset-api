@@ -5,8 +5,8 @@
 		{
 			"checksumSHA1": "J9OiPnhPHFPhQ+R+dq6LFj+dTxE=",
 			"path": "github.com/ONSdigital/go-ns/handlers/requestID",
-			"revision": "c493b1568574c9720d7805f23ce6271ac445dc57",
-			"revisionTime": "2017-07-28T08:24:17Z"
+			"revision": "5c4e318aa10e56921c4e39fd5735c95868281d33",
+			"revisionTime": "2017-09-07T12:17:38Z"
 		},
 		{
 			"checksumSHA1": "HgL/HLG5D1WNPb1lrb/hpywtm9o=",
@@ -17,14 +17,14 @@
 		{
 			"checksumSHA1": "AjbjbhFVAOP/1NU5HL+uy+X/yJo=",
 			"path": "github.com/ONSdigital/go-ns/log",
-			"revision": "c493b1568574c9720d7805f23ce6271ac445dc57",
-			"revisionTime": "2017-07-28T08:24:17Z"
+			"revision": "5c4e318aa10e56921c4e39fd5735c95868281d33",
+			"revisionTime": "2017-09-07T12:17:38Z"
 		},
 		{
-			"checksumSHA1": "iz7DRbcFPAK2UUXpmFs2byjTwm0=",
+			"checksumSHA1": "Wc0l6IlAATaN3qFb2ECwcjcHH4I=",
 			"path": "github.com/ONSdigital/go-ns/server",
-			"revision": "c493b1568574c9720d7805f23ce6271ac445dc57",
-			"revisionTime": "2017-07-28T08:24:17Z"
+			"revision": "5c4e318aa10e56921c4e39fd5735c95868281d33",
+			"revisionTime": "2017-09-07T12:17:38Z"
 		},
 		{
 			"checksumSHA1": "hIbmXmNbwyP44fi1hh6zJrMcYws=",
@@ -60,8 +60,8 @@
 			"checksumSHA1": "OBvAHqWjdI4NQVAqTkcQAdTuCFY=",
 			"origin": "github.com/ONSdigital/go-ns/vendor/github.com/justinas/alice",
 			"path": "github.com/justinas/alice",
-			"revision": "c493b1568574c9720d7805f23ce6271ac445dc57",
-			"revisionTime": "2017-07-28T08:24:17Z"
+			"revision": "5c4e318aa10e56921c4e39fd5735c95868281d33",
+			"revisionTime": "2017-09-07T12:17:38Z"
 		},
 		{
 			"checksumSHA1": "Wh2YCiWY/VIAEEQGLS7sMB9isXk=",
@@ -79,8 +79,8 @@
 			"checksumSHA1": "hBgLmZ/4mCxmnH88mqFKBkpJFUY=",
 			"origin": "github.com/ONSdigital/go-ns/vendor/github.com/mgutz/ansi",
 			"path": "github.com/mgutz/ansi",
-			"revision": "c493b1568574c9720d7805f23ce6271ac445dc57",
-			"revisionTime": "2017-07-28T08:24:17Z"
+			"revision": "5c4e318aa10e56921c4e39fd5735c95868281d33",
+			"revisionTime": "2017-09-07T12:17:38Z"
 		},
 		{
 			"checksumSHA1": "zmC8/3V4ls53DJlNTKDZwPSC/dA=",
