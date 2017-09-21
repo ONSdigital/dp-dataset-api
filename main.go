@@ -52,6 +52,11 @@ func main() {
 
 		api.Close(ctx)
 
+		// mongo.Close() may use all remaining time in the context - do this last!
+		if err = mongo.Close(ctx); err != nil {
+			log.Error(err, nil)
+		}
+
 		log.Info("Shutdown complete", nil)
 
 		cancel()

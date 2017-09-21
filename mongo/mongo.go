@@ -1,6 +1,8 @@
 package mongo
 
 import (
+	"context"
+	"errors"
 	"strconv"
 	"time"
 
@@ -461,4 +463,25 @@ func (m *Mongo) UpsertContact(id string, update interface{}) (err error) {
 
 	_, err = s.DB(m.Database).C("contacts").UpsertId(id, update)
 	return
+}
+
+func (m *Mongo) Close(ctx context.Context) error {
+	closedChannel := make(chan bool)
+	defer close(closedChannel)
+	go func() {
+		session.Close()
+		closedChannel <- true
+	}()
+	timeLeft := 1000 * time.Millisecond
+	if deadline, ok := ctx.Deadline(); ok {
+		timeLeft = deadline.Sub(time.Now())
+	}
+	for {
+		select {
+		case <-time.After(timeLeft):
+			return errors.New("closing mongo timed out")
+		case <-closedChannel:
+			return nil
+		}
+	}
 }
