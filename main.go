@@ -12,6 +12,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/go-ns/log"
+	mongoclosure "github.com/ONSdigital/go-ns/mongo"
 )
 
 func main() {
@@ -32,10 +33,13 @@ func main() {
 		URI:        cfg.MongoConfig.BindAddr,
 	}
 
-	if err := mongo.Init(); err != nil {
+	session, err := mongo.Init()
+	if err != nil {
 		log.ErrorC("Failed to initialise mongo", err, nil)
 		os.Exit(1)
 	}
+
+	mongo.Session = session
 
 	log.Debug("listening...", log.Data{
 		"bind_address": cfg.BindAddr,
@@ -53,7 +57,7 @@ func main() {
 		api.Close(ctx)
 
 		// mongo.Close() may use all remaining time in the context - do this last!
-		if err = mongo.Close(ctx); err != nil {
+		if err = mongoclosure.Close(ctx, session); err != nil {
 			log.Error(err, nil)
 		}
 
