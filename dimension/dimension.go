@@ -89,7 +89,7 @@ func (s *Store) AddNodeID(w http.ResponseWriter, r *http.Request) {
 	value := vars["value"]
 	nodeID := vars["node_id"]
 
-	dim := models.DimensionOption{Name: dimensionName, Value: value, NodeID: nodeID, InstanceID: id}
+	dim := models.DimensionOption{Name: dimensionName, Option: value, NodeID: nodeID, InstanceID: id}
 	if err := s.UpdateDimensionNodeID(&dim); err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
@@ -161,8 +161,7 @@ func unmarshalDimensionCache(reader io.Reader) (*models.CachedDimensionOption, e
 		return nil, errors.New("Failed to parse json body")
 
 	}
-	if option.Name == "" || (option.Value == "" && option.CodeList == "") {
-		log.Debug(".....", log.Data{"data": option})
+	if option.Name == "" || (option.Option == "" && option.CodeList == "") {
 		return nil, errors.New("Missing properties in JSON")
 	}
 

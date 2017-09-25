@@ -27,33 +27,33 @@ type DimensionLink struct {
 	Version  LinkObject `bson:"version,omitempty"       json:"version,omitempty"`
 }
 
-//
+// CachedDimensionOption contains information used to create a dimension option
 type CachedDimensionOption struct {
 	Name       string `bson:"name,omitempty"           json:"dimension_id"`
 	Code       string `bson:"code,omitempty"           json:"code"`
 	NodeID     string `bson:"node_id,omitempty"        json:"node_id"`
 	InstanceID string `bson:"instance_id,omitempty"    json:"instance_id,omitempty"`
 	CodeList   string `bson:"code_list,omitempty"      json:"code_list,omitempty"`
-	Value      string `bson:"value,omitempty"          json:"value"`
+	Option     string `bson:"option,omitempty"         json:"option"`
 }
 
-// DimensionOption
+// DimensionOption contains unique information and metadata used when processing the data
 type DimensionOption struct {
 	Name        string               `bson:"name,omitempty"           json:"dimension_id"`
 	Label       string               `bson:"label,omitempty"          json:"label"`
 	Links       DimensionOptionLinks `bson:"links,omitempty"          json:"links"`
-	Value       string               `bson:"value,omitempty"          json:"value"`
+	Option      string               `bson:"option,omitempty"         json:"option"`
 	NodeID      string               `bson:"node_id,omitempty"        json:"node_id"`
 	InstanceID  string               `bson:"instance_id,omitempty"    json:"instance_id,omitempty"`
-	LastUpdated time.Time            `bson:"last_updated,omitempty"    json:"-"`
+	LastUpdated time.Time            `bson:"last_updated,omitempty"   json:"-"`
 }
 
-// DimensionOption
+// PublicDimensionOption hides values which are only used by interval services
 type PublicDimensionOption struct {
-	Name  string               `bson:"name,omitempty"           json:"dimension_id"`
-	Label string               `bson:"label,omitempty"          json:"label"`
-	Links DimensionOptionLinks `bson:"links,omitempty"          json:"links"`
-	Value string               `bson:"value,omitempty"          json:"value"`
+	Name   string               `bson:"name,omitempty"           json:"dimension_id"`
+	Label  string               `bson:"label,omitempty"          json:"label"`
+	Links  DimensionOptionLinks `bson:"links,omitempty"          json:"links"`
+	Option string               `bson:"option,omitempty"         json:"option"`
 }
 
 type DimensionOptionLinks struct {

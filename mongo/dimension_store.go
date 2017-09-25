@@ -44,13 +44,13 @@ func (m *Mongo) GetUniqueDimensionValues(id, dimension string) (*models.Dimensio
 func (m *Mongo) AddDimensionToInstance(opt *models.CachedDimensionOption) error {
 	s := session.Copy()
 	defer s.Close()
-	option := models.DimensionOption{InstanceID: opt.InstanceID, Value: opt.Value, Name: opt.Name}
+	option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name}
 	option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/code-lists/%s", m.CodeListURL, opt.CodeList)}
 	option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.CodeListURL, opt.CodeList, opt.Code)}
 
 	option.LastUpdated = time.Now().UTC()
 	_, err := s.DB(m.Database).C(DIMENSION_OPTIONS).Upsert(bson.M{"instance_id": option.InstanceID, "name": option.Name,
-		"value": option.Value}, &option)
+		"value": option.Option}, &option)
 	if err != nil {
 		return err
 	}
