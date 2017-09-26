@@ -5,8 +5,8 @@
 		{
 			"checksumSHA1": "J9OiPnhPHFPhQ+R+dq6LFj+dTxE=",
 			"path": "github.com/ONSdigital/go-ns/handlers/requestID",
-			"revision": "1f895fac778efbbe0fc3b2126a0a914e90c16880",
-			"revisionTime": "2017-09-22T12:57:45Z"
+			"revision": "5c4e318aa10e56921c4e39fd5735c95868281d33",
+			"revisionTime": "2017-09-07T12:17:38Z"
 		},
 		{
 			"checksumSHA1": "AjbjbhFVAOP/1NU5HL+uy+X/yJo=",
@@ -19,6 +19,18 @@
 			"path": "github.com/ONSdigital/go-ns/server",
 			"revision": "1f895fac778efbbe0fc3b2126a0a914e90c16880",
 			"revisionTime": "2017-09-22T12:57:45Z"
+		},
+		{
+			"checksumSHA1": "yIkYzW7bzAD81zHyuCNmEj4+oxQ=",
+			"path": "github.com/gopherjs/gopherjs/js",
+			"revision": "b40cd48c38f9a18eb3db20d163bad78de12cf0b7",
+			"revisionTime": "2017-09-06T18:39:36Z"
+		},
+		{
+			"checksumSHA1": "iIUYZyoanCQQTUaWsu8b+iOSPt4=",
+			"path": "github.com/gorilla/context",
+			"revision": "aed02d124ae4a0e94fea4541c8effd05bf0c8296",
+			"revisionTime": "2016-05-25T20:33:19Z"
 		},
 		{
 			"checksumSHA1": "hIbmXmNbwyP44fi1hh6zJrMcYws=",
@@ -36,8 +48,14 @@
 			"checksumSHA1": "OBvAHqWjdI4NQVAqTkcQAdTuCFY=",
 			"origin": "github.com/ONSdigital/go-ns/vendor/github.com/justinas/alice",
 			"path": "github.com/justinas/alice",
-			"revision": "1f895fac778efbbe0fc3b2126a0a914e90c16880",
-			"revisionTime": "2017-09-22T12:57:45Z"
+			"revision": "5c4e318aa10e56921c4e39fd5735c95868281d33",
+			"revisionTime": "2017-09-07T12:17:38Z"
+		},
+		{
+			"checksumSHA1": "Jrjxy16tD9mUgr/jbhXwbHVeSa0=",
+			"path": "github.com/kelseyhightower/envconfig",
+			"revision": "462fda1f11d8cad3660e52737b8beefd27acfb3f",
+			"revisionTime": "2017-09-18T16:15:10Z"
 		},
 		{
 			"checksumSHA1": "hBgLmZ/4mCxmnH88mqFKBkpJFUY=",
