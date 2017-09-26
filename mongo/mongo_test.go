@@ -131,39 +131,85 @@ func TestBuildVersionQuery(t *testing.T) {
 func TestDatasetUpdateQuery(t *testing.T) {
 	t.Parallel()
 	Convey("When all possible fields exist", t, func() {
+		contact := models.ContactDetails{
+			Email:     "njarrod@test.com",
+			Name:      "natalie jarrod",
+			Telephone: "01658 234567",
+		}
+
+		var contacts []models.ContactDetails
+		contacts = append(contacts, contact)
+
+		methodology := models.GeneralDetails{
+			Description: "some methodology description",
+			HRef:        "http://localhost:22000//datasets/123/methodologies",
+			Title:       "some methodology title",
+		}
+
+		publication := models.GeneralDetails{
+			Description: "some publication description",
+			HRef:        "http://localhost:22000//datasets/123/publications",
+			Title:       "some publication title",
+		}
+
+		qmi := models.GeneralDetails{
+			Description: "some qmi description",
+			HRef:        "http://localhost:22000//datasets/123/qmi",
+			Title:       "some qmi title",
+		}
+
+		relatedDataset := models.GeneralDetails{
+			HRef:  "http://localhost:22000//datasets/432",
+			Title: "some dataset title",
+		}
+
+		var methodologies, publications, relatedDatasets []models.GeneralDetails
+		methodologies = append(methodologies, methodology)
+		publications = append(publications, publication)
+		relatedDatasets = append(relatedDatasets, relatedDataset)
 
 		expectedUpdate := bson.M{
-			"next.collection_id":     "12345678",
-			"next.contact.email":     "njarrod@test.com",
-			"next.contact.name":      "natalie jarrod",
-			"next.contact.telephone": "01658 234567",
-			"next.description":       "test description",
-			"next.next_release":      "2018-05-05",
-			"next.periodicity":       "yearly",
-			"next.publisher.href":    "http://ons.gov.uk",
-			"next.publisher.name":    "Office of National Statistics",
-			"next.publisher.type":    "Public",
-			"next.theme":             "construction",
-			"next.title":             "CPI",
+			"next.collection_id":      "12345678",
+			"next.contacts":           contacts,
+			"next.description":        "test description",
+			"next.keywords":           []string{"statistics", "national"},
+			"next.methodologies":      methodologies,
+			"next.national_statistic": true,
+			"next.next_release":       "2018-05-05",
+			"next.publications":       publications,
+			"next.publisher.href":     "http://ons.gov.uk",
+			"next.publisher.name":     "Office of National Statistics",
+			"next.publisher.type":     "Public",
+			"next.qmi.description":    "some qmi description",
+			"next.qmi.href":           "http://localhost:22000//datasets/123/qmi",
+			"next.qmi.title":          "some qmi title",
+			"next.related_datasets":   relatedDatasets,
+			"next.release_frequency":  "yearly",
+			"next.theme":              "construction",
+			"next.title":              "CPI",
+			"next.uri":                "http://ons.gov.uk/dataset/123/landing-page",
 		}
 
 		dataset := &models.Dataset{
-			Contact: models.ContactDetails{
-				Email:     "njarrod@test.com",
-				Name:      "natalie jarrod",
-				Telephone: "01658 234567",
-			},
-			CollectionID: "12345678",
-			Description:  "test description",
-			NextRelease:  "2018-05-05",
-			Periodicity:  "yearly",
+			Contacts:          contacts,
+			CollectionID:      "12345678",
+			Description:       "test description",
+			Keywords:          []string{"statistics", "national"},
+			Methodologies:     methodologies,
+			NationalStatistic: true,
+			NextRelease:       "2018-05-05",
+			Publications:      publications,
 			Publisher: models.Publisher{
 				Name: "Office of National Statistics",
 				Type: "Public",
 				HRef: "http://ons.gov.uk",
 			},
-			Theme: "construction",
-			Title: "CPI",
+			QMI:              qmi,
+			RelatedDatasets:  relatedDatasets,
+			ReleaseFrequency: "yearly",
+			Theme:            "construction",
+			Title:            "CPI",
+			URI:              "http://ons.gov.uk/dataset/123/landing-page",
 		}
 
 		selector := createDatasetUpdateQuery(dataset)
