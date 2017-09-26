@@ -399,12 +399,12 @@ paths:
           description: "No version was found for an edition of a dataset using the id, edition and version provided"
         500:
           $ref: '#/responses/InternalError'
-  /datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}:
+  /datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options:
     get:
       tags:
       - "Public"
-      summary: "Get all values from a dimension"
-      description: "Get a list of all values which appear in this dimension and dataset"
+      summary: "Get all options from a dimension"
+      description: "Get a list of all options which appear in this dimension and dataset"
       parameters:
       - $ref: '#/parameters/dimension'
       - $ref: '#/parameters/edition'
@@ -414,7 +414,7 @@ paths:
         200:
           description: "Json object containing all values for a dimension"
           schema:
-            $ref: '#/definitions/DimensionValues'
+            $ref: '#/definitions/DimensionOptions'
         401:
           $ref: '#/responses/UnauthorisedError'
         404:
@@ -1099,18 +1099,32 @@ definitions:
     description: "A single dimension within a dataset"
     type: object
     properties:
-      codeListId:
-        description: "The id of the code list that refers to this dimension"
-        type: string
-      id:
-        description: "The id of the dimension"
-        type: string
-      name:
+      dimension_id:
         description: "The name of the dimension"
         type: string
-      type:
-        description: "The type of dimension"
-        type: string
+      links:
+        type: object
+        properties:
+          code_list:
+            description: "The code list related to this dimension"
+            type: object
+            properties:
+              id:
+                description: "The unique id for the code list"
+                type: string
+              href:
+                description: "A URL to the code list"
+                type: string
+          version:
+            description: "The dataset version this dimension belongs too"
+            type: object
+            properties:
+              id:
+                description: "The unique id for the version"
+                type: string
+              href:
+                description: "A URL to the version"
+                type: string
   Dimensions:
     type: object
     properties:
@@ -1133,26 +1147,65 @@ definitions:
         description: "The total number of dimensions against a version from an edition of a dataset"
         readOnly: true
         type: integer
-  DimensionValues:
+  DimensionOptions:
     type: object
     properties:
-      code_list_id:
-        description: "The id of the code list that refers to this dimension"
-        type: string
-      id:
-        description: "The id of the dimension"
-        type: string
-      name:
-        description: "The name of the dimension"
-        type: string
-      type:
-        description: "The type of dimension"
-        type: string
-      values:
-        description: "A list of values within a dimension"
+      count:
+        description: "The number of dimensions returned for a version from an edition of a dataset"
+        readOnly: true
+        type: integer
+      items:
+        description: "An array of dimension options"
         type: array
         items:
-          type: string
+          $ref: '#/definitions/DimensionOption'
+      limit:
+        description: "The number of dimensions requested for a version from an edition of a dataset"
+        type: integer
+      offset:
+        description: "The first row of dimension for a version from an edition of a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
+        type: integer
+      total_count:
+        description: "The total number of dimensions against a version from an edition of a dataset"
+        readOnly: true
+        type: integer
+
+  DimensionOption:
+    type: object
+    properties:
+      dimension_id:
+        description: "The id of the dimension"
+        type: string
+      label:
+        description: "A label given to a dimension option"
+        type: string
+      option:
+        description: "An option for a dimension"
+        type: string
+      links:
+        description: "A object with all resources related to a dimension option"
+        type: object
+        properties:
+          code:
+            description: "A link to the code of the option"
+            type: object
+            properties:
+              id:
+                type: string
+                description: "The id of the code that refers to this dimension"
+              href:
+                type: string
+                description: "The url of the code that refers to this dimension"
+          code_list:
+            description: "A link to the code list the options belongs too"
+            type: object
+            properties:
+              id:
+                type: string
+                description: "The id of the code list that this dimension code belongs"
+              href:
+                type: string
+                description: "The url of the code list that this dimension code belongs"
   DimensionNode:
     type: object
     description: "A cached dimension. (Only used by the Private API)"
