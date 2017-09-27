@@ -6,12 +6,18 @@ db.datasets.insert({
     "_id": "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
     "current": {
         "collection_id": "95c4669b-3ae9-4ba7-b690-87e890a1c543",
-        "contact": {
-            "email": "jsinclair@test.co.uk",
-            "name": "john sinclair",
-            "telephone": "01633 123456"
-        },
+        "contacts": [
+            {
+                "email": "jsinclair@test.co.uk",
+                "name": "john sinclair",
+                "telephone": "01633 123456"
+            }
+        ],
         "description": "census covers the ethnicity of people living in the uk",
+        "keywords": [
+            "national",
+            "metropolitan"
+        ],
         "links": {
             "editions": {
                 "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions"
@@ -24,24 +30,52 @@ db.datasets.insert({
                 "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
             }
         },
+        "methodologies": [
+            {
+                "description": "Report providing an update of our methodology for producing population estimates from administrative data.",
+                "href": "http://localhost:8080/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/methodology/1234",
+                "title": "Methodology of Statistical Population Dataset V2.0"
+            }
+        ],
+        "national_statistic": true,
         "next_release": "2017-08-23",
-        "periodicity": "yearly",
+        "publications": [
+            {
+                "description": "Microdata contain information from individual census responses (treated to protect confidentiality) allowing comparison of characteristics.",
+                "href": "http://localhost:8080/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/publications/1234",
+                "title": "Census microdata"
+            }
+        ],
         "publisher": {
+            "href": "https://www.ons.gov.uk/",
             "name": "The office of national statistics",
-            "type": "goverment department",
-            "href": "https://www.ons.gov.uk/"
+            "type": "goverment department"
         },
+        "qmi": {
+            "description": "2011 Census Statistics for England and Wales: March 2011 QMI.",
+            "href": "http://localhost:8080/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/qmi/1",
+            "title": "Quality and Methodology Information (QMI)"
+        },
+        "related_datasets": [
+            {
+                "href": "http://localhost:8080/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/related/1",
+                "title": "2011 Census: Teaching file"
+            }
+        ],
+        "release_frequency": "yearly",
         "state": "published",
         "theme": "population",
         "title": "CPI",
         "last_updated": "2017-08-23T15:09:11.829+01:00"
     },
     "next": {
-        "contact": {
-            "email": "jsinclair@test.co.uk",
-            "name": "john sinclair",
-            "telephone": "01633 123456"
-        },
+        "contacts": [
+            {
+                "email": "jsinclair@test.co.uk",
+                "name": "john sinclair",
+                "telephone": "01633 123456"
+            }
+        ],
         "description": "census covers the ethnicity of people living in the uk",
         "links": {
             "editions": {
@@ -56,12 +90,12 @@ db.datasets.insert({
             }
         },
         "next_release": "2018-08-23",
-        "periodicity": "yearly",
         "publisher": {
             "name": "The office of national statistics",
             "type": "goverment department",
             "href": "https://www.ons.gov.uk/"
         },
+        "release_frequency": "yearly",
         "state": "created",
         "theme": "population",
         "title": "CPI",
@@ -71,11 +105,13 @@ db.datasets.insert({
 db.datasets.insert({
     "_id": "a9fa845c-0c05-4954-aed7-752b8208da34",
     "next": {
-        "contact": {
-            "email": "ldavis@test.co.uk",
-            "name": "lawrence davis",
-            "telephone": "01633 123457"
-        },
+        "contacts": [
+            {
+                "email": "ldavis@test.co.uk",
+                "name": "lawrence davis",
+                "telephone": "01633 123457"
+            }
+        ],
         "description": "census covers the ethnicity of people living in the uk",
         "links": {
             "editions": {
@@ -90,12 +126,12 @@ db.datasets.insert({
             }
         },
         "next_release": "2021-04-30",
-        "periodicity": "yearly",
         "publisher": {
             "name": "The office of national statistics",
             "type": "goverment department",
             "href": "https://www.ons.gov.uk/"
         },
+        "release_frequency": "yearly",
         "theme": "population",
         "title": "CensusEthnicity",
         "state": "created",

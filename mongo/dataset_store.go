@@ -288,28 +288,32 @@ func createDatasetUpdateQuery(dataset *models.Dataset) bson.M {
 		updates["next.collection_id"] = dataset.CollectionID
 	}
 
-	if dataset.Contact.Email != "" {
-		updates["next.contact.email"] = dataset.Contact.Email
-	}
-
-	if dataset.Contact.Name != "" {
-		updates["next.contact.name"] = dataset.Contact.Name
-	}
-
-	if dataset.Contact.Telephone != "" {
-		updates["next.contact.telephone"] = dataset.Contact.Telephone
+	if dataset.Contacts != nil {
+		updates["next.contacts"] = dataset.Contacts
 	}
 
 	if dataset.Description != "" {
 		updates["next.description"] = dataset.Description
 	}
 
+	if dataset.Keywords != nil {
+		updates["next.keywords"] = dataset.Keywords
+	}
+
+	if dataset.Methodologies != nil {
+		updates["next.methodologies"] = dataset.Methodologies
+	}
+
+	if dataset.NationalStatistic != false {
+		updates["next.national_statistic"] = dataset.NationalStatistic
+	}
+
 	if dataset.NextRelease != "" {
 		updates["next.next_release"] = dataset.NextRelease
 	}
 
-	if dataset.Periodicity != "" {
-		updates["next.periodicity"] = dataset.Periodicity
+	if dataset.Publications != nil {
+		updates["next.publications"] = dataset.Publications
 	}
 
 	if dataset.Publisher.HRef != "" {
@@ -324,6 +328,26 @@ func createDatasetUpdateQuery(dataset *models.Dataset) bson.M {
 		updates["next.publisher.type"] = dataset.Publisher.Type
 	}
 
+	if dataset.QMI.Description != "" {
+		updates["next.qmi.description"] = dataset.QMI.Description
+	}
+
+	if dataset.QMI.HRef != "" {
+		updates["next.qmi.href"] = dataset.QMI.HRef
+	}
+
+	if dataset.QMI.Title != "" {
+		updates["next.qmi.title"] = dataset.QMI.Title
+	}
+
+	if dataset.RelatedDatasets != nil {
+		updates["next.related_datasets"] = dataset.RelatedDatasets
+	}
+
+	if dataset.ReleaseFrequency != "" {
+		updates["next.release_frequency"] = dataset.ReleaseFrequency
+	}
+
 	if dataset.Theme != "" {
 		updates["next.theme"] = dataset.Theme
 	}
@@ -331,6 +355,11 @@ func createDatasetUpdateQuery(dataset *models.Dataset) bson.M {
 	if dataset.Title != "" {
 		updates["next.title"] = dataset.Title
 	}
+
+	if dataset.URI != "" {
+		updates["next.uri"] = dataset.URI
+	}
+
 	return updates
 }
 
