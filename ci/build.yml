@@ -1,0 +1,19 @@
+---
+
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: golang
+    tag: 1.8.3
+
+inputs:
+  - name: dp-dataset-api
+    path: go/src/github.com/ONSdigital/dp-dataset-api
+
+outputs:
+  - name: build
+
+run:
+  path: go/src/github.com/ONSdigital/dp-dataset-api/ci/scripts/build.sh
