@@ -104,9 +104,9 @@ parameters:
     description: "Query data based of there state"
     in: query
     type: string
-  value:
-   name: value
-   description: "A value to set within a type"
+  option:
+   name: option
+   description: "A option to set within a type"
    in: path
    required: true
    type: string
@@ -412,7 +412,7 @@ paths:
       - $ref: '#/parameters/version'
       responses:
         200:
-          description: "Json object containing all values for a dimension"
+          description: "Json object containing all options for a dimension"
           schema:
             $ref: '#/definitions/DimensionOptions'
         401:
@@ -548,8 +548,8 @@ paths:
     get:
       tags:
       - "Private user"
-      summary: "Get all unique values from a dimension"
-      description: "Get all unique values from a dimension"
+      summary: "Get all unique options from a dimension"
+      description: "Get all unique options from a dimension"
       parameters:
       - $ref: '#/parameters/instance_id'
       - $ref: '#/parameters/dimension'
@@ -559,15 +559,15 @@ paths:
       - InternalAPIKey: []
       responses:
         200:
-          description: "Return a list of unique values"
+          description: "Return a list of unique options"
           schema:
             type: object
             properties:
               dimension_id:
                 description: "The name of the dimension"
                 type: string
-              values:
-                description: "A list of all unique values within a dimension"
+              options:
+                description: "A list of all unique options within a dimension"
                 type: array
                 items:
                   type: string
@@ -633,7 +633,7 @@ paths:
         500:
           $ref: '#/responses/InternalError'
 
-  /instances/{instance_id}/dimensions/{dimension}/options/{value}:
+  /instances/{instance_id}/dimensions/{dimension}/options/{option}:
     put:
       tags:
       - "Private"
@@ -643,7 +643,7 @@ paths:
       parameters:
       - $ref: '#/parameters/instance_id'
       - $ref: '#/parameters/dimension'
-      - $ref: '#/parameters/value'
+      - $ref: '#/parameters/option'
       produces:
       - "application/json"
       security:
@@ -659,7 +659,7 @@ paths:
           description: "InstanceId does not match any instances"
         500:
           $ref: '#/responses/InternalError'
-  /instances/{instance_id}/dimensions/{dimension}/options/{value}/node_id/{node_id}:
+  /instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}:
     put:
       tags:
       - "Private"
@@ -670,7 +670,7 @@ paths:
       - $ref: '#/parameters/instance_id'
       - $ref: '#/parameters/dimension'
       - $ref: '#/parameters/node_id'
-      - $ref: '#/parameters/value'
+      - $ref: '#/parameters/option'
       produces:
       - "application/json"
       security:
@@ -1213,8 +1213,8 @@ definitions:
       dimension_id:
         description: "The name of the dimension"
         type: string
-      value:
-        description: "The value of the dimension"
+      option:
+        description: "The option of the dimension"
         type: string
       node_id:
         description: "The id of the node"
