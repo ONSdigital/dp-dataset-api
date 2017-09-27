@@ -697,7 +697,7 @@ responses:
     description: "The instance was not found"
 definitions:
   Contact:
-    description: "Object containing contact information for this dataset"
+    description: "A list of objects containing contact information for this dataset"
     type: object
     properties:
       email:
@@ -746,33 +746,102 @@ definitions:
     description: "The dataset"
     type: object
     properties:
-      contact:
+      collection_id:
+        type: string
+        description: "The id of a collection of datasets that a dataset is associated to"
+      contacts:
         type: array
-        description: "Object containing contact information for this dataset"
+        description: "Object containing contact information for a dataset"
         items:
           $ref: '#/definitions/Contact'
       description:
         type: string
         description: "A description for a dataset"
+      keywords:
+        type: array
+        description: "A list of keywords for a dataset"
+        items:
+          type: "string"
       links:
         $ref: '#/definitions/DatasetLinks'
+      methodologies:
+        type: array
+        description: "A list of methodologies for a dataset"
+        items:
+          type: object
+          properties:
+            description:
+              type: string
+              description: "The description of a methodology"
+            href:
+              type: string
+              description: "The url to a methodology"
+            title:
+              type: string
+              description: "The title of a methodology"
+      national_statistic:
+        type: boolean
+        description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
       next_release:
         type: string
-        description: "The next release date for this dataset"
-      periodicity:
-        type: string
-        description: "The periodicity for a dataset"
+        description: "The next release date for a dataset"
+      publications:
+        type: array
+        description: "A list of publications for a dataset"
+        items:
+          type: object
+          properties:
+            description:
+              type: string
+              description: "The description of a publication"
+            href:
+              type: string
+              description: "The url to a publication"
+            title:
+              type: string
+              description: "The title of a publication"
       publisher:
         $ref: '#/definitions/Publisher'
+      qmi:
+        description: "Object containing information on the quality and methodology index of a dataset"
+        type: object
+        properties:
+          description:
+            type: string
+            description: "The description of a quality and methodology index"
+          href:
+            type: string
+            description: "The url to a quality and methodology index"
+          title:
+            type: string
+            description: "The title of a quality and methodology index"
+      related_datasets:
+        type: array
+        description: "A list of objects containing information of datasets related to a dataset"
+        items:
+          type: object
+          properties:
+            href:
+              type: string
+              description: "The url to a related dataset"
+            title:
+              type: string
+              description: "The title of a related dataset"
+      release_frequency:
+        type: string
+        description: "The release frequency of a dataset"
       state:
         $ref: '#/definitions/State'
       theme:
         type: string
-        description: "A theme for a dataset"
+        description: "The theme for a dataset"
       title:
         type: string
         description: "The title of the dataset"
         example: "CPI"
+      uri:
+        type: string
+        description: "The uri to the location of this resource on the web"
   DatasetLinks:
     description: "A list of links related to this resource"
     readOnly: true
