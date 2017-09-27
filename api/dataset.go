@@ -361,6 +361,11 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 			handleErrorType(err, w)
 			return
 		}
+		if err := api.dataStore.Backend.UpdateInstanceWithVersion(version); err != nil {
+			log.ErrorC("failed to update instance doc after a version of a dataset has been associated with a collection", err, log.Data{"instance_id": version.InstanceID, "version_id": version.ID})
+			handleErrorType(err, w)
+			return
+		}
 	}
 
 	setJSONContentType(w)
@@ -448,6 +453,11 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	if version.State == associatedState {
 		if err := api.dataStore.Backend.UpdateDatasetWithAssociation(datasetID, associatedState, version); err != nil {
 			log.ErrorC("failed to update dataset document after a version of a dataset has been associated with a collection", err, nil)
+			handleErrorType(err, w)
+			return
+		}
+		if err := api.dataStore.Backend.UpdateInstanceWithVersion(version); err != nil {
+			log.ErrorC("failed to update instance doc after a version of a dataset has been associated with a collection", err, log.Data{"instance_id": version.InstanceID, "version_id": version.ID})
 			handleErrorType(err, w)
 			return
 		}

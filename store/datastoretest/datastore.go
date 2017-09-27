@@ -28,6 +28,7 @@ var (
 	lockStorerMockUpdateDimensionNodeID         sync.RWMutex
 	lockStorerMockUpdateEdition                 sync.RWMutex
 	lockStorerMockUpdateInstance                sync.RWMutex
+	lockStorerMockUpdateInstanceWithVersion     sync.RWMutex
 	lockStorerMockUpdateObservationInserted     sync.RWMutex
 	lockStorerMockUpdateVersion                 sync.RWMutex
 	lockStorerMockUpsertContact                 sync.RWMutex
@@ -98,6 +99,9 @@ var (
 //             },
 //             UpdateInstanceFunc: func(id string, instance *models.Instance) error {
 // 	               panic("TODO: mock out the UpdateInstance method")
+//             },
+//             UpdateInstanceWithVersionFunc: func(version *models.Version) error {
+// 	               panic("TODO: mock out the UpdateInstanceWithVersion method")
 //             },
 //             UpdateObservationInsertedFunc: func(id string, observationInserted int64) error {
 // 	               panic("TODO: mock out the UpdateObservationInserted method")
@@ -180,6 +184,9 @@ type StorerMock struct {
 
 	// UpdateInstanceFunc mocks the UpdateInstance method.
 	UpdateInstanceFunc func(id string, instance *models.Instance) error
+
+	// UpdateInstanceWithVersionFunc mocks the UpdateInstanceWithVersion method.
+	UpdateInstanceWithVersionFunc func(version *models.Version) error
 
 	// UpdateObservationInsertedFunc mocks the UpdateObservationInserted method.
 	UpdateObservationInsertedFunc func(id string, observationInserted int64) error
@@ -325,6 +332,11 @@ type StorerMock struct {
 			Id string
 			// Instance is the instance argument value.
 			Instance *models.Instance
+		}
+		// UpdateInstanceWithVersion holds details about calls to the UpdateInstanceWithVersion method.
+		UpdateInstanceWithVersion []struct {
+			// Version is the version argument value.
+			Version *models.Version
 		}
 		// UpdateObservationInserted holds details about calls to the UpdateObservationInserted method.
 		UpdateObservationInserted []struct {
@@ -1016,6 +1028,37 @@ func (mock *StorerMock) UpdateInstanceCalls() []struct {
 	lockStorerMockUpdateInstance.RLock()
 	calls = mock.calls.UpdateInstance
 	lockStorerMockUpdateInstance.RUnlock()
+	return calls
+}
+
+// UpdateInstanceWithVersion calls UpdateInstanceWithVersionFunc.
+func (mock *StorerMock) UpdateInstanceWithVersion(version *models.Version) error {
+	if mock.UpdateInstanceWithVersionFunc == nil {
+		panic("moq: StorerMock.UpdateInstanceWithVersionFunc is nil but Storer.UpdateInstanceWithVersion was just called")
+	}
+	callInfo := struct {
+		Version *models.Version
+	}{
+		Version: version,
+	}
+	lockStorerMockUpdateInstanceWithVersion.Lock()
+	mock.calls.UpdateInstanceWithVersion = append(mock.calls.UpdateInstanceWithVersion, callInfo)
+	lockStorerMockUpdateInstanceWithVersion.Unlock()
+	return mock.UpdateInstanceWithVersionFunc(version)
+}
+
+// UpdateInstanceWithVersionCalls gets all the calls that were made to UpdateInstanceWithVersion.
+// Check the length with:
+//     len(mockedStorer.UpdateInstanceWithVersionCalls())
+func (mock *StorerMock) UpdateInstanceWithVersionCalls() []struct {
+	Version *models.Version
+} {
+	var calls []struct {
+		Version *models.Version
+	}
+	lockStorerMockUpdateInstanceWithVersion.RLock()
+	calls = mock.calls.UpdateInstanceWithVersion
+	lockStorerMockUpdateInstanceWithVersion.RUnlock()
 	return calls
 }
 

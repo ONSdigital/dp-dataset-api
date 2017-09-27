@@ -986,6 +986,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			UpdateVersionFunc: func(string, *models.Version) error {
 				return nil
 			},
+			UpdateInstanceWithVersionFunc: func(*models.Version) error {
+				return nil
+			},
 		}
 		mockedDataStore.GetVersion("123", "2017", "1", "")
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
@@ -998,6 +1001,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateInstanceWithVersionCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When state is set to associated", t, func() {
@@ -1019,6 +1023,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			UpdateDatasetWithAssociationFunc: func(string, string, *models.Version) error {
 				return nil
 			},
+			UpdateInstanceWithVersionFunc: func(*models.Version) error {
+				return nil
+			},
 		}
 		mockedDataStore.GetVersion("123", "2017", "1", "")
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
@@ -1032,6 +1039,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateInstanceWithVersionCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When state is set to published", t, func() {
@@ -1304,6 +1312,9 @@ func setUp(state string) *storetest.StorerMock {
 			return nil
 		},
 		UpsertVersionFunc: func(string, *models.Version) error {
+			return nil
+		},
+		UpdateInstanceWithVersionFunc: func(*models.Version) error {
 			return nil
 		},
 	}

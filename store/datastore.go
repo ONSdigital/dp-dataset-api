@@ -39,4 +39,5 @@ type Storer interface {
 	GetDimensionNodesFromInstance(id string) (*models.DimensionNodeResults, error)
 	UpdateDimensionNodeID(dimension *models.Dimension) error
 	GetUniqueDimensionValues(id, dimension string) (*models.DimensionValues, error)
+	UpdateInstanceWithVersion(version *models.Version) (err error)
 }
