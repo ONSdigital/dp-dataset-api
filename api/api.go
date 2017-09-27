@@ -1,14 +1,18 @@
 package api
 
 import (
+	"context"
+
 	"github.com/ONSdigital/dp-dataset-api/auth"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/go-ns/server"
 	"github.com/gorilla/mux"
 )
 
-//go:generate moq -out apitest/api.go -pkg apitest . API
+var httpServer *server.Server
 
 //API provides an interface for the routes
 type API interface {
@@ -25,10 +29,28 @@ type DatasetAPI struct {
 }
 
 // CreateDatasetAPI manages all the routes configured to API
-func CreateDatasetAPI(host string, secretKey string, router *mux.Router, dataStore store.DataStore) *DatasetAPI {
-	router.Path("/healthcheck").Methods("GET").HandlerFunc(healthCheck)
+func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStore, errorChan chan error) {
+	router := mux.NewRouter()
+	routes(host, secretKey, router, dataStore)
 
+	httpServer = server.New(bindAddr, router)
+	// Disable this here to allow main to manage graceful shutdown of the entire app.
+	httpServer.HandleOSSignals = false
+
+	go func() {
+		log.Debug("Starting api...", nil)
+		if err := httpServer.ListenAndServe(); err != nil {
+			log.ErrorC("api http server returned error", err, nil)
+			errorChan <- err
+		}
+	}()
+}
+
+func routes(host, secretKey string, router *mux.Router, dataStore store.DataStore) *DatasetAPI {
 	api := DatasetAPI{privateAuth: &auth.Authenticator{SecretKey: secretKey, HeaderName: "internal-token"}, dataStore: dataStore, host: host, internalToken: secretKey, router: router}
+
+	router.Path("/healthcheck").Methods("GET").HandlerFunc(api.healthCheck)
+
 	api.router.HandleFunc("/datasets", api.getDatasets).Methods("GET")
 	api.router.HandleFunc("/datasets", api.privateAuth.Check(api.addDataset)).Methods("POST")
 	api.router.HandleFunc("/datasets/{id}", api.getDataset).Methods("GET")
@@ -55,4 +77,13 @@ func CreateDatasetAPI(host string, secretKey string, router *mux.Router, dataSto
 	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}", api.privateAuth.Check(dimension.Add)).Methods("PUT")
 	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}/node_id/{node_id}", api.privateAuth.Check(dimension.AddNodeID)).Methods("PUT")
 	return &api
+}
+
+// Close represents the graceful shutting down of the http server
+func Close(ctx context.Context) error {
+	if err := httpServer.Shutdown(ctx); err != nil {
+		return err
+	}
+	log.Info("graceful shutdown of http server complete", nil)
+	return nil
 }

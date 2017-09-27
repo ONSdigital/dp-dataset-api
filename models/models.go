@@ -37,18 +37,25 @@ type DatasetUpdate struct {
 
 // Dataset represents information related to a single dataset
 type Dataset struct {
-	Contact      ContactDetails `bson:"contact,omitempty"        json:"contact,omitempty"`
-	CollectionID string         `bson:"collection_id,omitempty"  json:"collection_id,omitempty"`
-	Description  string         `bson:"description,omitempty"    json:"description,omitempty"`
-	ID           string         `bson:"_id,omitempty"            json:"id,omitempty"`
-	Links        DatasetLinks   `bson:"links,omitempty"          json:"links,omitempty"`
-	NextRelease  string         `bson:"next_release,omitempty"   json:"next_release,omitempty"`
-	Periodicity  string         `bson:"periodicity,omitempty"    json:"periodicity,omitempty"`
-	Publisher    Publisher      `bson:"publisher,omitempty"      json:"publisher,omitempty"`
-	State        string         `bson:"state,omitempty"          json:"state,omitempty"`
-	Theme        string         `bson:"theme,omitempty"          json:"theme,omitempty"`
-	Title        string         `bson:"title,omitempty"          json:"title,omitempty"`
-	LastUpdated  time.Time      `bson:"last_updated,omitempty"   json:"-"`
+	CollectionID      string           `bson:"collection_id,omitempty"          json:"collection_id,omitempty"`
+	Contacts          []ContactDetails `bson:"contacts,omitempty"               json:"contacts,omitempty"`
+	Description       string           `bson:"description,omitempty"            json:"description,omitempty"`
+	Keywords          []string         `bson:"keywords,omitempty"               json:"keywords,omitempty"`
+	ID                string           `bson:"_id,omitempty"                    json:"id,omitempty"`
+	Links             DatasetLinks     `bson:"links,omitempty"                  json:"links,omitempty"`
+	Methodologies     []GeneralDetails `bson:"methodologies,omitempty"          json:"methodologies,omitempty"`
+	NationalStatistic bool             `bson:"national_statistic,omitempty"     json:"national_statistic,omitempty"`
+	NextRelease       string           `bson:"next_release,omitempty"           json:"next_release,omitempty"`
+	Publications      []GeneralDetails `bson:"publications,omitempty"           json:"publications,omitempty"`
+	Publisher         Publisher        `bson:"publisher,omitempty"              json:"publisher,omitempty"`
+	QMI               GeneralDetails   `bson:"qmi,omitempty"                    json:"qmi,omitempty"`
+	RelatedDatasets   []GeneralDetails `bson:"related_datasets,omitempty"       json:"related_datasets,omitempty"`
+	ReleaseFrequency  string           `bson:"release_frequency,omitempty"      json:"release_frequency,omitempty"`
+	State             string           `bson:"state,omitempty"                  json:"state,omitempty"`
+	Theme             string           `bson:"theme,omitempty"                  json:"theme,omitempty"`
+	Title             string           `bson:"title,omitempty"                  json:"title,omitempty"`
+	URI               string           `bson:"uri,omitempty"                    json:"uri,omitempty"`
+	LastUpdated       time.Time        `bson:"last_updated,omitempty"           json:"-"`
 }
 
 // DatasetLinks represents a list of specific links related to the dataset resource
@@ -62,6 +69,13 @@ type DatasetLinks struct {
 type LinkObject struct {
 	ID   string `bson:"id,omitempty"    json:"id,omitempty"`
 	HRef string `bson:"href,omitempty"  json:"href,omitempty"`
+}
+
+// GeneralDetails represents generic fields stored against an object (reused)
+type GeneralDetails struct {
+	Description string `bson:"description,omitempty"    json:"description,omitempty"`
+	HRef        string `bson:"href,omitempty"           json:"href,omitempty"`
+	Title       string `bson:"title,omitempty"          json:"title,omitempty"`
 }
 
 type Contact struct {
