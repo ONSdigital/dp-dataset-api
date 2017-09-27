@@ -121,7 +121,7 @@ type Version struct {
 	CollectionID string       `bson:"collection_id,omitempty" json:"collection_id,omitempty"`
 	Edition      string       `bson:"edition,omitempty"       json:"edition,omitempty"`
 	ID           string       `bson:"_id,omitempty"           json:"id,omitempty"`
-	InstanceID   string       `bson:"instance_id,omitempty" json:"instance_id,omitempty"`
+	InstanceID   string       `bson:"instance_id,omitempty"   json:"instance_id,omitempty"`
 	License      string       `bson:"license,omitempty"       json:"license,omitempty"`
 	Links        VersionLinks `bson:"links,omitempty"         json:"links,omitempty"`
 	ReleaseDate  string       `bson:"release_date,omitempty"  json:"release_date,omitempty"`
