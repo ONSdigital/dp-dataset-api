@@ -50,7 +50,7 @@ func (m *Mongo) AddDimensionToInstance(opt *models.CachedDimensionOption) error 
 
 	option.LastUpdated = time.Now().UTC()
 	_, err := s.DB(m.Database).C(DIMENSION_OPTIONS).Upsert(bson.M{"instance_id": option.InstanceID, "name": option.Name,
-		"value": option.Option}, &option)
+		"option": option.Option}, &option)
 	if err != nil {
 		return err
 	}
