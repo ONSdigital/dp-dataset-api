@@ -28,9 +28,11 @@ func main() {
 	}
 
 	mongo := &mongo.Mongo{
-		Collection: cfg.MongoConfig.Collection,
-		Database:   cfg.MongoConfig.Database,
-		URI:        cfg.MongoConfig.BindAddr,
+		CodeListURL: cfg.CodeListAPIURL,
+		Collection:  cfg.MongoConfig.Collection,
+		Database:    cfg.MongoConfig.Database,
+		DatasetURL:  cfg.DatasetAPIURL,
+		URI:         cfg.MongoConfig.BindAddr,
 	}
 
 	session, err := mongo.Init()

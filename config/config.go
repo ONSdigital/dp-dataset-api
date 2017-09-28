@@ -9,6 +9,7 @@ import (
 // Configuration structure which hold information for configuring the import API
 type Configuration struct {
 	BindAddr        string        `envconfig:"BIND_ADDR"`
+	CodeListAPIURL  string        `env:"CODE_LIST_API_URL"`
 	DatasetAPIURL   string        `envconfig:"DATASET_API_URL"`
 	SecretKey       string        `envconfig:"SECRET_KEY"`
 	ShutdownTimeout time.Duration `envconfig:"SHUTDOWN_TIMEOUT"`
@@ -32,6 +33,7 @@ func Get() (*Configuration, error) {
 
 	cfg = &Configuration{
 		BindAddr:        ":22000",
+		CodeListAPIURL:  "http://localhost:22400",
 		DatasetAPIURL:   "http://localhost:22000",
 		SecretKey:       "FD0108EA-825D-411C-9B1D-41EF7727F465",
 		ShutdownTimeout: 5 * time.Second,

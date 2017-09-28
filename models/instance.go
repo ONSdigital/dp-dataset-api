@@ -14,7 +14,15 @@ type Instance struct {
 	TotalObservations    *int          `bson:"total_observations,omitempty"          json:"total_observations,omitempty"`
 	InsertedObservations *int          `bson:"total_inserted_observations,omitempty" json:"total_inserted_observations,omitempty"`
 	Headers              *[]string     `bson:"headers,omitempty"                     json:"headers,omitempty"`
+	Dimensions           []CodeList    `bson:"dimensions,omitempty"                  json:"dimensions,omitempty"`
 	LastUpdated          time.Time     `bson:"last_updated,omitempty"                json:"last_updated,omitempty"`
+}
+
+// CodeList for a dimension within an instance
+type CodeList struct {
+	ID   string `json:"id"`
+	HRef string `json:"href"`
+	Name string `json:"name"`
 }
 
 // InstanceLinks holds all links for an instance
@@ -37,29 +45,9 @@ type Event struct {
 	MessageOffset string     `bson:"message_offset,omitempty" json:"message_offset"`
 }
 
-// Dimension which is cached for the import process
-type Dimension struct {
-	Name        string    `bson:"name,omitempty"           json:"dimension_id"`
-	Value       string    `bson:"value,omitempty"          json:"value"`
-	NodeID      string    `bson:"node_id,omitempty"        json:"node_id"`
-	InstanceID  string    `bson:"instance_id,omitempty"    json:"instance_id,omitempty"`
-	LastUpdated time.Time `bson:"last_updated,omitempty"   json:"omitempty"`
-}
-
 // InstanceResults wraps instances objects for pagination
 type InstanceResults struct {
 	Items []Instance `json:"items"`
-}
-
-// DimensionNodeResults wraps dimension node objects for pagination
-type DimensionNodeResults struct {
-	Items []Dimension `json:"items"`
-}
-
-// DimensionValues holds all unique values for a dimension
-type DimensionValues struct {
-	Name   string   `json:"dimension_id"`
-	Values []string `json:"values"`
 }
 
 // Validate the event structure
