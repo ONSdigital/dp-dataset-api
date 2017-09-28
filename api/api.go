@@ -61,7 +61,9 @@ func routes(host, secretKey string, router *mux.Router, dataStore store.DataStor
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions", api.getVersions).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions", api.privateAuth.Check(api.addVersion)).Methods("POST")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.getVersion).Methods("GET")
+	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.addVersion).Methods("POST")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.privateAuth.Check(api.putVersion)).Methods("PUT")
+	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}/dimensions", api.getDimensions).Methods("GET")
 
 	instance := instance.Store{api.dataStore.Backend}
 	api.router.HandleFunc("/instances", instance.GetList).Methods("GET")
@@ -73,9 +75,10 @@ func routes(host, secretKey string, router *mux.Router, dataStore store.DataStor
 
 	dimension := dimension.Store{api.dataStore.Backend}
 	api.router.HandleFunc("/instances/{id}/dimensions", dimension.GetNodes).Methods("GET")
+	api.router.HandleFunc("/instances/{id}/dimensions", api.privateAuth.Check(dimension.Add)).Methods("POST")
 	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options", dimension.GetUnique).Methods("GET")
-	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}", api.privateAuth.Check(dimension.Add)).Methods("PUT")
 	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}/node_id/{node_id}", api.privateAuth.Check(dimension.AddNodeID)).Methods("PUT")
+	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", api.getDimensionOptions).Methods("GET")
 	return &api
 }
 

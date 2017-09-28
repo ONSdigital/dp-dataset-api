@@ -11,6 +11,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+
 )
 
 var _ store.Storer = &Mongo{}
@@ -18,10 +19,13 @@ var session *mgo.Session
 
 // Mongo represents a simplistic MongoDB configuration.
 type Mongo struct {
+	CodeListURL string
 	Collection string
 	Database   string
+	DatasetURL  string
 	Session    *mgo.Session
 	URI        string
+
 }
 
 // Init creates a new mgo.Session with a strong consistency and a write mode of "majortiy".
@@ -482,7 +486,7 @@ func (m *Mongo) UpsertVersion(id string, version *models.Version) (err error) {
 	}
 
 	_, err = s.DB(m.Database).C("versions").UpsertId(id, update)
-	return
+	return err
 }
 
 // UpsertContact adds or overides an existing contact document
