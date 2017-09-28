@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"gopkg.in/mgo.v2/bson"
+
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -508,7 +510,7 @@ func TestPostEditionReturnsCreated(t *testing.T) {
 			GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 				return nil, errs.EditionNotFound
 			},
-			UpsertEditionFunc: func(string, *models.Edition) error {
+			UpsertEditionFunc: func(bson.M, *models.Edition) error {
 				return nil
 			},
 		}
@@ -518,7 +520,7 @@ func TestPostEditionReturnsCreated(t *testing.T) {
 		editionDoc := &models.Edition{
 			State: "created",
 		}
-		mockedDataStore.UpsertEdition("2017", editionDoc)
+		mockedDataStore.UpsertEdition(bson.M{"id": "2017"}, editionDoc)
 
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
@@ -540,7 +542,7 @@ func TestPostEditionReturnsError(t *testing.T) {
 			GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 				return &models.Edition{State: "created"}, nil
 			},
-			UpsertEditionFunc: func(string, *models.Edition) error {
+			UpsertEditionFunc: func(bson.M, *models.Edition) error {
 				return badRequestError
 			},
 		}
@@ -563,7 +565,7 @@ func TestPostEditionReturnsError(t *testing.T) {
 			GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 				return nil, internalError
 			},
-			UpsertEditionFunc: func(string, *models.Edition) error {
+			UpsertEditionFunc: func(bson.M, *models.Edition) error {
 				return nil
 			},
 		}
@@ -584,7 +586,7 @@ func TestPostEditionReturnsError(t *testing.T) {
 			GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 				return nil, internalError
 			},
-			UpsertEditionFunc: func(string, *models.Edition) error {
+			UpsertEditionFunc: func(bson.M, *models.Edition) error {
 				return nil
 			},
 		}
@@ -606,7 +608,7 @@ func TestPostEditionReturnsError(t *testing.T) {
 			GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 				return &models.Edition{State: publishedState}, nil
 			},
-			UpsertEditionFunc: func(string, *models.Edition) error {
+			UpsertEditionFunc: func(bson.M, *models.Edition) error {
 				return nil
 			},
 		}
@@ -732,7 +734,7 @@ func TestPostVersionReturnsError(t *testing.T) {
 			GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 				return &models.Edition{}, nil
 			},
-			GetNextVersionFunc: func(string, string) (int, error) {
+			GetNextVersionFunc: func(bson.M) (int, error) {
 				return 1, nil
 			},
 			UpsertVersionFunc: func(string, *models.Version) error {
@@ -741,7 +743,7 @@ func TestPostVersionReturnsError(t *testing.T) {
 		}
 
 		mockedDataStore.GetEdition("123", "2017", "created")
-		mockedDataStore.GetNextVersion("123", "2017")
+		mockedDataStore.GetNextVersion(bson.M{"links.dataset.id": "123", "edition": "2017"})
 
 		versionDoc := &models.Version{
 			State:        "published",
@@ -1251,7 +1253,7 @@ func setUp(state string) *storetest.StorerMock {
 		GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 			return &models.Edition{}, nil
 		},
-		GetNextVersionFunc: func(string, string) (int, error) {
+		GetNextVersionFunc: func(bson.M) (int, error) {
 			return 1, nil
 		},
 		UpdateDatasetWithAssociationFunc: func(string, string, *models.Version) error {
@@ -1270,7 +1272,7 @@ func setUp(state string) *storetest.StorerMock {
 
 	mockedDataStore.GetEdition("123", "2017", state)
 
-	mockedDataStore.GetNextVersion("123", "2017")
+	mockedDataStore.GetNextVersion(bson.M{"links.dataset.id": "123", "edition": "2017"})
 
 	versionDoc := &models.Version{
 		State: state,

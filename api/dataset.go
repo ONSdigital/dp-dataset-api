@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"gopkg.in/mgo.v2/bson"
+
 	"github.com/ONSdigital/dp-dataset-api/models"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -289,8 +291,11 @@ func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
 	editionDoc.Links.Dataset.HRef = fmt.Sprintf("%s/datasets/%s", api.host, datasetID)
 	editionDoc.Links.Self.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s", api.host, datasetID, edition)
 	editionDoc.Links.Versions.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions", api.host, datasetID, edition)
+	selector := bson.M{
+		"_id": datasetID,
+	}
 
-	if err := api.dataStore.Backend.UpsertEdition(editionDoc.ID, editionDoc); err != nil {
+	if err := api.dataStore.Backend.UpsertEdition(selector, editionDoc); err != nil {
 		log.ErrorR(r, err, nil)
 		handleErrorType(err, w)
 		return
@@ -326,7 +331,7 @@ func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nextVersion, err := api.dataStore.Backend.GetNextVersion(datasetID, edition)
+	nextVersion, err := api.dataStore.Backend.GetNextVersion(bson.M{"links.dataset.id": datasetID, "edition": edition})
 	if err != nil {
 		log.ErrorR(r, err, nil)
 		handleErrorType(err, w)
@@ -571,18 +576,18 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 
 	bytes, err := json.Marshal(results)
 	if err != nil {
-		log.Error(err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension":dimension})
+		log.Error(err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	setJSONContentType(w)
 	_, err = w.Write(bytes)
 	if err != nil {
-		log.Error(err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension":dimension})
+		log.Error(err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	log.Debug("get dimension options", log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension":dimension})
+	log.Debug("get dimension options", log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension})
 }
 
 func handleErrorType(err error, w http.ResponseWriter) {

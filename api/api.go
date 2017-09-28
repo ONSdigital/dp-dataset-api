@@ -65,7 +65,7 @@ func routes(host, secretKey string, router *mux.Router, dataStore store.DataStor
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.privateAuth.Check(api.putVersion)).Methods("PUT")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}/dimensions", api.getDimensions).Methods("GET")
 
-	instance := instance.Store{api.dataStore.Backend}
+	instance := instance.Store{api.host, api.dataStore.Backend}
 	api.router.HandleFunc("/instances", instance.GetList).Methods("GET")
 	api.router.HandleFunc("/instances", api.privateAuth.Check(instance.Add)).Methods("POST")
 	api.router.HandleFunc("/instances/{id}", instance.Get).Methods("GET")

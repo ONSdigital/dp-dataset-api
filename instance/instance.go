@@ -3,22 +3,34 @@ package instance
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
+
+	"gopkg.in/mgo.v2/bson"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
+	uuid "github.com/satori/go.uuid"
 )
 
 //Store provides a backend for instances
 type Store struct {
+	Host string
 	store.Storer
 }
+
+const (
+	completedState        = "completed"
+	editionConfirmedState = "edition-confirmed"
+	associatedState       = "associated"
+	publishedState        = "published"
+)
 
 //GetList a list of all instances
 func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
@@ -102,13 +114,151 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get the current document to check the state of instance
+	currentInstance, err := s.GetInstance(id)
+	if err != nil {
+		log.Error(err, nil)
+		handleErrorType(err, w)
+		return
+	}
+
+	switch instance.State {
+	case editionConfirmedState:
+		if err = validateInstanceUpdate(id, completedState, currentInstance, instance); err != nil {
+			log.Error(err, log.Data{"instance_id": id, "current_state": currentInstance.State})
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+	case associatedState:
+		if err = validateInstanceUpdate(id, editionConfirmedState, currentInstance, instance); err != nil {
+			log.Error(err, log.Data{"instance_id": id, "current_state": currentInstance.State})
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+	case publishedState:
+		if err = validateInstanceUpdate(id, associatedState, currentInstance, instance); err != nil {
+			log.Error(err, log.Data{"instance_id": id, "current_state": currentInstance.State})
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+	}
+
 	if err = s.UpdateInstance(id, instance); err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
 		return
 	}
 
+	if instance.State == editionConfirmedState {
+		var editionDoc *models.Edition
+
+		datasetID := currentInstance.Links.Dataset.ID
+		edition := currentInstance.Edition
+		if instance.Edition != "" {
+			edition = instance.Edition
+		}
+
+		// Set the instance edition to the latest version
+		instance.Edition = edition
+
+		editionDoc = &models.Edition{
+			Edition: edition,
+			Links: models.EditionLinks{
+				Dataset: models.LinkObject{
+					ID:   datasetID,
+					HRef: fmt.Sprintf("%s/datasets/%s", s.Host, datasetID),
+				},
+				Self: models.LinkObject{
+					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", s.Host, datasetID, edition),
+				},
+				Versions: models.LinkObject{
+					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
+				},
+			},
+		}
+
+		editionSelector := bson.M{
+			"edition":          edition,
+			"links.dataset.id": datasetID,
+		}
+		if err := s.UpsertEdition(editionSelector, editionDoc); err != nil {
+			log.ErrorR(r, err, nil)
+			handleErrorType(err, w)
+			return
+		}
+
+		// Check all versions of edition to see if a version already exists
+		// for this instance (use the instance_id)
+		if _, err = s.GetVersionByInstanceID(id); err != nil {
+			if err == errs.VersionNotFound {
+				if err := s.createVersion(instance, currentInstance, editionDoc); err != nil {
+					log.ErrorR(r, err, nil)
+					handleErrorType(err, w)
+				}
+			} else {
+				log.ErrorR(r, err, nil)
+				handleErrorType(err, w)
+			}
+		} else {
+			log.Debug("version already exists for instance", log.Data{"instance_id": id})
+		}
+	}
+
 	log.Debug("updated instance", log.Data{"instance": id})
+}
+
+func validateInstanceUpdate(id, expectedState string, currentInstance, instance *models.Instance) error {
+	if currentInstance.State != expectedState {
+		err := errors.New("Unable to update resource, edition not confirmed")
+		return err
+	}
+	if instance.Edition != currentInstance.Edition && instance.Edition != "" {
+		err := errors.New("Unable to update resource, edition has already been confirmed")
+		return err
+	}
+
+	return nil
+}
+
+func (s *Store) createVersion(instance, currrentInstance *models.Instance, editionDoc *models.Edition) error {
+	// Find the latest version to be able to increment the version
+	// number before creating a new version document
+	nextVersion, err := s.GetNextVersion(bson.M{"links.dataset.id": currrentInstance.Links.Dataset.ID, "edition": instance.Edition})
+	if err != nil {
+		return err
+	}
+
+	versionID := (uuid.NewV4()).String()
+
+	version := &models.Version{
+		ID:         versionID,
+		Edition:    instance.Edition,
+		InstanceID: instance.InstanceID,
+		Links: models.VersionLinks{
+			Dataset: models.LinkObject{
+				ID:   instance.Links.Dataset.ID,
+				HRef: fmt.Sprintf("%s/datasets/%s", s.Host, instance.Links.Dataset.ID),
+			},
+			Edition: models.LinkObject{
+				ID:   editionDoc.ID,
+				HRef: editionDoc.Links.Self.HRef,
+			},
+			Self: models.LinkObject{
+				HRef: fmt.Sprintf("%s/versions/%s", editionDoc.Links.Self.HRef, versionID),
+			},
+			Dimensions: models.LinkObject{
+				HRef: fmt.Sprintf("%s/instance/%s/dimensions/", s.Host, instance.InstanceID),
+			},
+		},
+		State:   "created",
+		Version: nextVersion,
+	}
+
+	if err := s.UpsertVersion(versionID, version); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 //UpdateObservations increments the count of inserted_observations against
