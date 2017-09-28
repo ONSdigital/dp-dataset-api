@@ -27,7 +27,8 @@ type CodeList struct {
 
 // InstanceLinks holds all links for an instance
 type InstanceLinks struct {
-	Job IDLink `bson:"job,omitempty"   json:"job"`
+	Job     IDLink `bson:"job,omitempty"   json:"job"`
+	Dataset IDLink `bson:"dataset,omitempty"   json:"dataset"`
 }
 
 // IDLink holds the id and a link to the resource

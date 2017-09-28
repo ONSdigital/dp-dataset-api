@@ -14,7 +14,7 @@ const INSTANCE_COLLECTION = "instances"
 
 // GetInstances from a mongo collection
 func (m *Mongo) GetInstances(filter string) (*models.InstanceResults, error) {
-	s := session.Copy()
+	s := m.Session.Copy()
 	defer s.Close()
 	query := bson.M{}
 	if filter != "" {
@@ -36,7 +36,7 @@ func (m *Mongo) GetInstances(filter string) (*models.InstanceResults, error) {
 
 // GetInstance returns a single instance from an ID
 func (m *Mongo) GetInstance(ID string) (*models.Instance, error) {
-	s := session.Copy()
+	s := m.Session.Copy()
 	defer s.Close()
 	var instance models.Instance
 	err := s.DB(m.Database).C(INSTANCE_COLLECTION).Find(bson.M{"id": ID}).One(&instance)
@@ -50,7 +50,7 @@ func (m *Mongo) GetInstance(ID string) (*models.Instance, error) {
 
 // AddInstance to the instance collection
 func (m *Mongo) AddInstance(instance *models.Instance) (*models.Instance, error) {
-	s := session.Copy()
+	s := m.Session.Copy()
 	defer s.Close()
 
 	instance.InstanceID = uuid.NewV4().String()
@@ -65,7 +65,7 @@ func (m *Mongo) AddInstance(instance *models.Instance) (*models.Instance, error)
 
 // UpdateInstance with new properties
 func (m *Mongo) UpdateInstance(id string, instance *models.Instance) error {
-	s := session.Copy()
+	s := m.Session.Copy()
 	defer s.Close()
 
 	instance.InstanceID = id
@@ -84,7 +84,7 @@ func (m *Mongo) UpdateInstance(id string, instance *models.Instance) error {
 
 // AddEventToInstance to the instance collection
 func (m *Mongo) AddEventToInstance(instanceId string, event *models.Event) error {
-	s := session.Copy()
+	s := m.Session.Copy()
 	defer s.Close()
 
 	info, err := s.DB(m.Database).C(INSTANCE_COLLECTION).Upsert(bson.M{"id": instanceId},
@@ -104,7 +104,7 @@ func (m *Mongo) UpdateDimensionNodeID(dimension *models.DimensionOption) error {
 	s := session.Copy()
 	defer s.Close()
 	err := s.DB(m.Database).C(DIMENSION_OPTIONS).Update(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
-		"value":                                                              dimension.Option}, bson.M{"$set": bson.M{"node_id": &dimension.NodeID, "last_updated": time.Now().UTC()}})
+		"option":                                                              dimension.Option}, bson.M{"$set": bson.M{"node_id": &dimension.NodeID, "last_updated": time.Now().UTC()}})
 	if err == mgo.ErrNotFound {
 		return errs.InstanceNotFound
 	}
@@ -116,7 +116,7 @@ func (m *Mongo) UpdateDimensionNodeID(dimension *models.DimensionOption) error {
 
 // UpdateObservationInserted by incrementing the stored value
 func (m *Mongo) UpdateObservationInserted(id string, observationInserted int64) error {
-	s := session.Copy()
+	s := m.Session.Copy()
 	defer s.Close()
 	err := s.DB(m.Database).C(INSTANCE_COLLECTION).Update(bson.M{"id": id},
 		bson.M{"$inc": bson.M{"total_inserted_observations": observationInserted}, "$set": bson.M{"last_updated": time.Now().UTC()}})
@@ -130,3 +130,4 @@ func (m *Mongo) UpdateObservationInserted(id string, observationInserted int64) 
 	}
 	return nil
 }
+
