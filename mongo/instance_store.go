@@ -104,7 +104,7 @@ func (m *Mongo) UpdateDimensionNodeID(dimension *models.DimensionOption) error {
 	s := session.Copy()
 	defer s.Close()
 	err := s.DB(m.Database).C(DIMENSION_OPTIONS).Update(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
-		"option":                                                              dimension.Option}, bson.M{"$set": bson.M{"node_id": &dimension.NodeID, "last_updated": time.Now().UTC()}})
+		"option": dimension.Option}, bson.M{"$set": bson.M{"node_id": &dimension.NodeID, "last_updated": time.Now().UTC()}})
 	if err == mgo.ErrNotFound {
 		return errs.InstanceNotFound
 	}
@@ -130,4 +130,3 @@ func (m *Mongo) UpdateObservationInserted(id string, observationInserted int64) 
 	}
 	return nil
 }
-
