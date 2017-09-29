@@ -160,28 +160,6 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 	return &dataset, nil
 }
 
-// CreateEdition manages the creation of a edition from a reader
-func CreateEdition(reader io.Reader) (*Edition, error) {
-	bytes, err := ioutil.ReadAll(reader)
-	if err != nil {
-		return nil, errors.New("Failed to read message body")
-	}
-
-	var edition Edition
-	// Create unique id
-	edition.ID = (uuid.NewV4()).String()
-
-	err = json.Unmarshal(bytes, &edition)
-	if err != nil {
-		return nil, errors.New("Failed to parse json body")
-	}
-
-	// Overwrite state to created
-	edition.State = created
-
-	return &edition, nil
-}
-
 // CreateVersion manages the creation of a version from a reader
 func CreateVersion(reader io.Reader) (*Version, error) {
 	bytes, err := ioutil.ReadAll(reader)

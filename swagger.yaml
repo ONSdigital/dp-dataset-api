@@ -247,28 +247,6 @@ paths:
         500:
           $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}:
-    post:
-      tags:
-      - "Private user"
-      summary: "Create an edition of a dataset"
-      description: "Create an edition of a dataset"
-      parameters:
-      - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/new_edition'
-      responses:
-        201:
-          description: "A json object containing an edition"
-          schema:
-            $ref: '#/definitions/Edition'
-        400:
-          description: "Invalid request body"
-        401:
-          description: "Unauthorised to create/overwrite edition"
-        404:
-          description: "No dataset was found using the id provided"
-        500:
-          $ref: '#/responses/InternalError'
     get:
       tags:
       - "Public"
@@ -287,29 +265,6 @@ paths:
         500:
           $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}/versions:
-    post:
-      tags:
-      - "Private user"
-      summary: "Create a version for an edition of a dataset"
-      description: "Create a version for an edition of a dataset"
-      parameters:
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/new_version'
-      responses:
-        201:
-          description: "A json object containing a version"
-          schema:
-            $ref: '#/definitions/NewVersionResponse'
-        400:
-          description: "Invalid request body"
-        401:
-          description: "Unauthorised to create/overwrite version of dataset"
-        403:
-          description: "Forbidden to overwrite version of dataset, already published"
-        404:
-          description: "No edition for a dataset was found using the id and edition provided"
-        500:
-          $ref: '#/responses/InternalError'
     get:
       tags:
       - "Public"

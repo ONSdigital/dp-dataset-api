@@ -5,13 +5,14 @@ import (
 	"net/http"
 
 	"errors"
+	"io"
+	"io/ioutil"
+
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
-	"io"
-	"io/ioutil"
 )
 
 //Store provides a backend for dimensions
@@ -94,57 +95,6 @@ func (s *Store) AddNodeID(w http.ResponseWriter, r *http.Request) {
 		log.Error(err, nil)
 		handleErrorType(err, w)
 	}
-}
-
-func (s *Store) GetDimensions(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	datasetID := vars["id"]
-	editionID := vars["edition"]
-	versionID := vars["version"]
-
-	results, err := s.Storer.GetDimensions(datasetID, editionID, versionID)
-	if err != nil {
-		handleErrorType(err, w)
-		return
-	}
-
-	bytes, err := json.Marshal(results)
-	if err != nil {
-		log.Error(err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	writeBody(w, bytes)
-	log.Debug("get dimensions", log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
-
-}
-
-func (s *Store) GetDimensionOptions(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	datasetID := vars["id"]
-	editionID := vars["edition"]
-	versionID := vars["version"]
-	dimension := vars["dimension"]
-	results, err := s.Storer.GetDimensionOptions(datasetID, editionID, versionID, dimension)
-	if err != nil {
-		handleErrorType(err, w)
-		return
-	}
-
-	bytes, err := json.Marshal(results)
-	if err != nil {
-		log.Error(err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	writeBody(w, bytes)
-	_, err = w.Write(bytes)
-	if err != nil {
-		log.Error(err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	log.Debug("get dimension options", log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension})
 }
 
 // CreateDataset manages the creation of a dataset from a reader

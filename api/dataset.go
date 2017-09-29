@@ -4,10 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
-
-	"gopkg.in/mgo.v2/bson"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 
@@ -259,121 +256,6 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	log.Debug("upsert dataset", log.Data{"dataset_id": datasetID})
 }
 
-func (api *DatasetAPI) addEdition(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	datasetID := vars["id"]
-	edition := vars["edition"]
-
-	// Check if edition already exists and if it has been published return a status of Forbidden
-	currentEdition, err := api.dataStore.Backend.GetEdition(datasetID, edition, "")
-	if err != nil {
-		if err != errs.EditionNotFound {
-			log.Error(err, log.Data{"dataset_id": datasetID, "edition": edition})
-			handleErrorType(err, w)
-			return
-		}
-	} else {
-		if currentEdition.State == publishedState {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
-	}
-
-	editionDoc, err := models.CreateEdition(r.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-
-	editionDoc.Edition = edition
-	editionDoc.Links.Dataset.ID = datasetID
-	editionDoc.Links.Dataset.HRef = fmt.Sprintf("%s/datasets/%s", api.host, datasetID)
-	editionDoc.Links.Self.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s", api.host, datasetID, edition)
-	editionDoc.Links.Versions.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions", api.host, datasetID, edition)
-	selector := bson.M{
-		"_id": datasetID,
-	}
-
-	if err := api.dataStore.Backend.UpsertEdition(selector, editionDoc); err != nil {
-		log.ErrorR(r, err, nil)
-		handleErrorType(err, w)
-		return
-	}
-
-	setJSONContentType(w)
-	w.WriteHeader(http.StatusCreated)
-	log.Debug("upsert edition", log.Data{"dataset_id": datasetID, "edition": edition})
-}
-
-func (api *DatasetAPI) addVersion(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	datasetID := vars["id"]
-	edition := vars["edition"]
-
-	version, err := models.CreateVersion(r.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-
-	if err = models.ValidateVersion(version); err != nil {
-		log.ErrorR(r, err, nil)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	editionDoc, err := api.dataStore.Backend.GetEdition(datasetID, edition, "")
-	if err != nil {
-		log.ErrorR(r, err, nil)
-		handleErrorType(err, w)
-		return
-	}
-
-	nextVersion, err := api.dataStore.Backend.GetNextVersion(bson.M{"links.dataset.id": datasetID, "edition": edition})
-	if err != nil {
-		log.ErrorR(r, err, nil)
-		handleErrorType(err, w)
-		return
-	}
-
-	version = api.reviseVersionWithAdditionalFields(version, editionDoc, datasetID, edition, nextVersion)
-
-	if err := api.dataStore.Backend.UpsertVersion(version.ID, version); err != nil {
-		log.ErrorR(r, err, nil)
-		handleErrorType(err, w)
-		return
-	}
-
-	if version.State == publishedState {
-		if err := api.dataStore.Backend.UpdateEdition(editionDoc.ID, version.State); err != nil {
-			log.ErrorC("failed to update the state of edition document to published", err, nil)
-			handleErrorType(err, w)
-			return
-		}
-
-		if err := api.updateDataset(datasetID, version); err != nil {
-			log.ErrorC("failed to update dataset document once version state changes to publish", err, nil)
-			handleErrorType(err, w)
-			return
-		}
-	}
-
-	if version.State == associatedState {
-		if err := api.dataStore.Backend.UpdateDatasetWithAssociation(datasetID, associatedState, version); err != nil {
-			log.ErrorC("failed to update dataset document after a version of a dataset has been associated with a collection", err, nil)
-			handleErrorType(err, w)
-			return
-		}
-	}
-
-	setJSONContentType(w)
-	w.WriteHeader(http.StatusCreated)
-
-	log.Debug("upsert version", log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
-}
-
 func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
@@ -521,19 +403,6 @@ func (api *DatasetAPI) updateDataset(id string, version *models.Version) error {
 	return nil
 }
 
-func (api *DatasetAPI) reviseVersionWithAdditionalFields(version *models.Version, editionDoc *models.Edition, datasetID, edition string, nextVersion int) *models.Version {
-	versionID := strconv.Itoa(nextVersion)
-	version.Version = nextVersion
-	version.Edition = edition
-	version.Links.Dataset.ID = datasetID
-	version.Links.Dataset.HRef = fmt.Sprintf("%s/datasets/%s", api.host, datasetID)
-	version.Links.Edition.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s", api.host, datasetID, edition)
-	version.Links.Edition.ID = editionDoc.ID
-	version.Links.Self.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", api.host, datasetID, edition, versionID)
-	version.Links.Dimensions.HRef = fmt.Sprintf("%s/instance/%s/dimensions/", api.host, versionID)
-	return version
-}
-
 func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
@@ -558,8 +427,8 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 		log.Error(err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	log.Debug("get dimensions", log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
 
+	log.Debug("get dimensions", log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
 }
 
 func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Request) {

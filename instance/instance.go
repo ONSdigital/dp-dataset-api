@@ -230,29 +230,19 @@ func (s *Store) createVersion(instance, currrentInstance *models.Instance, editi
 
 	versionID := (uuid.NewV4()).String()
 
-	version := &models.Version{
-		ID:         versionID,
-		Edition:    instance.Edition,
-		InstanceID: instance.InstanceID,
-		Links: models.VersionLinks{
-			Dataset: models.LinkObject{
-				ID:   instance.Links.Dataset.ID,
-				HRef: fmt.Sprintf("%s/datasets/%s", s.Host, instance.Links.Dataset.ID),
-			},
-			Edition: models.LinkObject{
-				ID:   editionDoc.ID,
-				HRef: editionDoc.Links.Self.HRef,
-			},
-			Self: models.LinkObject{
-				HRef: fmt.Sprintf("%s/versions/%s", editionDoc.Links.Self.HRef, versionID),
-			},
-			Dimensions: models.LinkObject{
-				HRef: fmt.Sprintf("%s/instance/%s/dimensions/", s.Host, instance.InstanceID),
-			},
-		},
-		State:   "created",
-		Version: nextVersion,
-	}
+	version := &models.Version{}
+
+	version.ID = versionID
+	version.Edition = instance.Edition
+	version.InstanceID = instance.InstanceID
+	version.Links.Dataset.ID = instance.Links.Dataset.ID
+	version.Links.Dataset.HRef = fmt.Sprintf("%s/datasets/%s", s.Host, instance.Links.Dataset.ID)
+	version.Links.Dimensions.HRef = fmt.Sprintf("%s/instance/%s/dimensions/", s.Host, instance.InstanceID)
+	version.Links.Edition.ID = editionDoc.ID
+	version.Links.Edition.HRef = editionDoc.Links.Self.HRef
+	version.Links.Self.HRef = fmt.Sprintf("%s/versions/%s", editionDoc.Links.Self.HRef, versionID)
+	version.State = "created"
+	version.Version = nextVersion
 
 	if err := s.UpsertVersion(versionID, version); err != nil {
 		return err
