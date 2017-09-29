@@ -101,7 +101,7 @@ func (m *Mongo) AddEventToInstance(instanceId string, event *models.Event) error
 
 // UpdateDimensionNodeID to cache the id for other import processes
 func (m *Mongo) UpdateDimensionNodeID(dimension *models.DimensionOption) error {
-	s := session.Copy()
+	s := m.Session.Copy()
 	defer s.Close()
 	err := s.DB(m.Database).C(DIMENSION_OPTIONS).Update(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
 		"option": dimension.Option}, bson.M{"$set": bson.M{"node_id": &dimension.NodeID, "last_updated": time.Now().UTC()}})

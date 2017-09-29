@@ -12,7 +12,7 @@ const DIMENSION_OPTIONS = "dimension.options"
 
 // GetDimensionNodesFromInstance which are stored in a mongodb collection
 func (m *Mongo) GetDimensionNodesFromInstance(id string) (*models.DimensionNodeResults, error) {
-	s := session.Copy()
+	s := m.Session.Copy()
 	defer s.Close()
 	var dimensions []models.DimensionOption
 	iter := s.DB(m.Database).C(DIMENSION_OPTIONS).Find(bson.M{"instance_id": id}).Select(bson.M{"id": 0, "last_updated": 0, "instance_id": 0}).Iter()
@@ -26,7 +26,7 @@ func (m *Mongo) GetDimensionNodesFromInstance(id string) (*models.DimensionNodeR
 
 // GetUniqueDimensionValues which are stored in mongodb collection
 func (m *Mongo) GetUniqueDimensionValues(id, dimension string) (*models.DimensionValues, error) {
-	s := session.Copy()
+	s := m.Session.Copy()
 	defer s.Close()
 	var values []string
 	err := s.DB(m.Database).C(DIMENSION_OPTIONS).Find(bson.M{"instance_id": id, "name": dimension}).Distinct("value", &values)
@@ -42,9 +42,9 @@ func (m *Mongo) GetUniqueDimensionValues(id, dimension string) (*models.Dimensio
 
 // AddDimensionToInstance to the dimension collection
 func (m *Mongo) AddDimensionToInstance(opt *models.CachedDimensionOption) error {
-	s := session.Copy()
+	s := m.Session.Copy()
 	defer s.Close()
-	option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name}
+	option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name, Label: opt.Label}
 	option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/code-lists/%s", m.CodeListURL, opt.CodeList)}
 	option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.CodeListURL, opt.CodeList, opt.Code)}
 
@@ -59,7 +59,7 @@ func (m *Mongo) AddDimensionToInstance(opt *models.CachedDimensionOption) error 
 
 // GetDimensions returns a list of all dimensions from a dataset
 func (m *Mongo) GetDimensions(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error) {
-	s := session.Copy()
+	s := m.Session.Copy()
 	defer s.Close()
 	version, err := m.GetVersion(datasetID, editionID, versionID, "published")
 	if err != nil {
@@ -91,7 +91,7 @@ func (m *Mongo) GetDimensions(datasetID, editionID, versionID string) (*models.D
 
 // GetDimensionOptions returns all dimension options for a dimensions within a dataset.
 func (m *Mongo) GetDimensionOptions(datasetID, editionID, versionID, dimension string) (*models.DimensionOptionResults, error) {
-	s := session.Copy()
+	s := m.Session.Copy()
 	defer s.Close()
 	version, err := m.GetVersion(datasetID, editionID, versionID, "published")
 	if err != nil {
@@ -103,7 +103,7 @@ func (m *Mongo) GetDimensionOptions(datasetID, editionID, versionID, dimension s
 	if err != nil {
 		return nil, err
 	}
-	for i :=0; i < len(values); i++ {
+	for i := 0; i < len(values); i++ {
 		values[i].Links.Version = version.Links.Self
 	}
 
