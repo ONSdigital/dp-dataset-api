@@ -195,7 +195,7 @@ db.editions.insert({
 db.versions.insert({
     "_id": "63294ed7-dccf-4f30-ad57-62365f038fb7",
     "edition": "2016",
-    "instance_id": "63294ed7-dccf-4f30-ad57-62365f038111",
+    "instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
     "collection_id": "95c4669b-3ae9-4ba7-b690-87e890a1c543",
     "license": "ONS",
     "links": {
@@ -222,7 +222,7 @@ db.versions.insert({
 db.versions.insert({
     "_id": "4ce2ee5c-d50b-469f-b005-ddfed3f5072b",
     "edition": "2016",
-    "instance_id": "4ce2ee5c-d50b-469f-b005-ddfed3f50111",
+    "instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
     "license": "ONS",
     "links": {
         "dataset": {
@@ -248,7 +248,7 @@ db.versions.insert({
 db.versions.insert({
     "_id": "679ebe5f-d9cd-4d6e-8afc-6a2a4f991ccf",
     "edition": "2017",
-    "instance_id": "679ebe5f-d9cd-4d6e-8afc-6a2a4f991111",
+    "instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
     "license": "ONS",
     "links": {
         "dataset": {
@@ -320,12 +320,11 @@ db.versions.ensureIndex({"version":1,"links.edition.id":1},{"background":true})
 db.instances.insert({
     "_id": "AB3BAE9B-5C4D-4640-8936-8502D0DB954D",
     "id": "3b45921b-0efa-4844-a16e-3f9f30df4f88",
-    "links": {"job": {"id": "260EDB0F-2BCD-4006-B441-571F504273E0", "link": "http://localhost:22000/jobs/260EDB0F-2BCD-4006-B441-571F504273E0"},},
+    "links": {"job": {"id": "260EDB0F-2BCD-4006-B441-571F504273E0", "href": "http://localhost:22000/jobs/260EDB0F-2BCD-4006-B441-571F504273E0"},},
     "state": "created",
     "total_observations": 0,
     "total_inserted_observations": 0,
-    "headers": ["V4_1", "time", "age"],
-    "telephone": "01633 123457",
+    "headers": ["V4_0", "time_64d384f1-ea3b-445c-8fb8-aa453f96e58a", "time", "Geography_65107A9F-7DA3-4B41-A410-6F6D9FBD68C3", "Geography", "Aggregate_e44de4c4-d39e-4e2f-942b-3ca10584d078", "Aggregate"],
     "last_updated": "2017-08-25T15:09:11.829+01:00",
 });
 db.instances.insert({
@@ -335,8 +334,7 @@ db.instances.insert({
     "state": "created",
     "total_observations": 0,
     "total_inserted_observations": 0,
-    "headers": ["V4_1", "time", "age"],
-    "telephone": "01633 123457",
+    "headers": ["V4_0", "time_64d384f1-ea3b-445c-8fb8-aa453f96e58a", "time", "Geography_65107A9F-7DA3-4B41-A410-6F6D9FBD68C3", "Geography", "Aggregate_e44de4c4-d39e-4e2f-942b-3ca10584d078", "Aggregate"],
     "last_updated": "2017-08-25T15:09:11.829+01:00",
 });
 db.instances.insert({
@@ -349,19 +347,131 @@ db.instances.insert({
     "telephone": "01633 123457",
     "last_updated": "2017-09-27T15:19:11.29+01:00",
 });
-db.dimensions.insert({
+db.dimension.options.insert({
      "_id":"0F06AB0E-A5D1-409A-8183-BACDF2326205",
      "instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
-     "name": "age",
-     "value": "32",
+     "name": "time",
+     "value": "2000.04",
+     "label": "",
+     "links": {
+         "code": {
+           "id": "2000.04",
+           "href": "/code-lists/64d384f1-ea3b-445c-8fb8-aa453f96e58a/codes/2000.04",
+         },
+         "code_list": {
+           "id": "64d384f1-ea3b-445c-8fb8-aa453f96e58a",
+           "href": "/code-lists/64d384f1-ea3b-445c-8fb8-aa453f96e58a",
+         },
+     },
      "node_id":"80",
 });
-db.dimensions.insert({
+db.dimension.options.insert({
+     "_id":"4C56297E-8424-42AE-B9E1-0F2AE1BF9B30",
+     "instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
+     "name": "time",
+     "value": "2000.05",
+     "label": "",
+     "links": {
+         "code": {
+           "id": "2000.05",
+           "href": "/code-lists/64d384f1-ea3b-445c-8fb8-aa453f96e58a/codes/2000.04",
+         },
+         "code_list": {
+           "id": "64d384f1-ea3b-445c-8fb8-aa453f96e58a",
+           "href": "/code-lists/64d384f1-ea3b-445c-8fb8-aa453f96e58a",
+         },
+     },
+     "node_id":"88",
+});
+db.dimension.options.insert({
      "_id":"AB3BAE9B-5C4D-4640-8936-8502D0DB954D",
      "instance_id": "665BEE8A-D88F-448C-BF29-186D18B8DABE",
-     "name": "age",
-     "value": "37",
+     "name": "aggregate",
+     "value": "CI_0004263",
+     "label": "02.1.1 Spirits",
+     "links": {
+        "code": {
+          "id": "CI_0004263",
+          "href": "/code-lists/e44de4c4-d39e-4e2f-942b-3ca10584d078/codes/CI_0004263",
+        },
+        "code_list": {
+          "id": "e44de4c4-d39e-4e2f-942b-3ca10584d078",
+          "href": "/code-lists/e44de4c4-d39e-4e2f-942b-3ca10584d078",
+        },
+     },
      "node_id":"88",
      "last_updated": "2017-08-25T15:09:11.829+01:00",
+});
+
+db.dimensions.insert({
+  "_id" : "1D5A87B8-6322-4904-AB92-65EC9E2A565F",
+  "links": {
+     "code_list" : {
+       "id" : "64d384f1-ea3b-445c-8fb8-aa453f96e58a",
+       "href" : "http://localhost:22400/code-lists/64d384f1-ea3b-445c-8fb8-aa453f96e58a"
+     },
+     "dataset" : {
+       "id" : "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
+       "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+     },
+     "edition" : {
+       "id" : "2016",
+       "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016"
+     },
+     "version" : {
+       "id": "1",
+       "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/1"
+      },
+   },
+  "name" : "time",
+  "last_updated" : ISODate("2017-09-12T13:46:50.074Z")
+});
+db.dimensions.insert({
+  "_id" : "1C176122-1D54-4CD6-BBB1-65326FB1B2BB",
+
+  "links": {
+     "code_list" : {
+       "id" : "65107A9F-7DA3-4B41-A410-6F6D9FBD68C3",
+       "href" : "http://localhost:22400/code-lists/65107A9F-7DA3-4B41-A410-6F6D9FBD68C3"
+     },
+     "dataset" : {
+       "id" : "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
+       "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+     },
+     "edition" : {
+       "id" : "2016",
+       "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016"
+     },
+     "version" : {
+       "id": "1",
+       "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/1"
+      },
+   },
+  "name" : "Geography",
+  "last_updated" : ISODate("2017-09-12T13:46:50.074Z")
+});
+db.dimensions.insert({
+  "_id" : "CB1B1777-141C-49D7-9083-DF86D7050489",
+  "links": {
+    "code_list" : {
+      "id" : "e44de4c4-d39e-4e2f-942b-3ca10584d078",
+      "href" : "http://localhost:22400/code-lists/e44de4c4-d39e-4e2f-942b-3ca10584d078"
+    },
+    "dataset" : {
+      "id" : "95c4669b-3ae9-4ba7-b690-87e890a1c67c",
+      "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+    },
+    "edition" : {
+      "id" : "2016",
+      "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016"
+      },
+    "version" : {
+      "id": "1",
+      "href" : "http://localhost:22400/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/1"
+      }
+
+  },
+  "name" : "Aggregate",
+  "last_updated" : ISODate("2017-09-12T13:46:50.074Z")
 });
 EOF

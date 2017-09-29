@@ -539,6 +539,62 @@ func (api *DatasetAPI) reviseVersionWithAdditionalFields(version *models.Version
 	return version
 }
 
+func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	datasetID := vars["id"]
+	editionID := vars["edition"]
+	versionID := vars["version"]
+
+	results, err := api.dataStore.Backend.GetDimensions(datasetID, editionID, versionID)
+	if err != nil {
+		handleErrorType(err, w)
+		return
+	}
+
+	bytes, err := json.Marshal(results)
+	if err != nil {
+		log.Error(err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	setJSONContentType(w)
+	_, err = w.Write(bytes)
+	if err != nil {
+		log.Error(err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	log.Debug("get dimensions", log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
+
+}
+
+func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	datasetID := vars["id"]
+	editionID := vars["edition"]
+	versionID := vars["version"]
+	dimension := vars["dimension"]
+	results, err := api.dataStore.Backend.GetDimensionOptions(datasetID, editionID, versionID, dimension)
+	if err != nil {
+		handleErrorType(err, w)
+		return
+	}
+
+	bytes, err := json.Marshal(results)
+	if err != nil {
+		log.Error(err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension":dimension})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	setJSONContentType(w)
+	_, err = w.Write(bytes)
+	if err != nil {
+		log.Error(err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension":dimension})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	log.Debug("get dimension options", log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension":dimension})
+}
+
 func handleErrorType(err error, w http.ResponseWriter) {
 	if err == errs.DatasetNotFound || err == errs.EditionNotFound || err == errs.VersionNotFound || err == errs.DimensionNodeNotFound || err == errs.InstanceNotFound {
 		http.Error(w, err.Error(), http.StatusNotFound)
