@@ -8,13 +8,14 @@ import (
 // Instance which presents a single dataset being imported
 type Instance struct {
 	InstanceID           string        `bson:"id,omitempty"                          json:"id,omitempty"`
+	Dimensions           []CodeList    `bson:"dimensions,omitempty"                  json:"dimensions,omitempty"`
+	Edition              string        `bson:"edition,omitempty"                     json:"edition,omitempty"`
+	Events               *[]Event      `bson:"events,omitempty"                      json:"events,omitempty"`
+	Headers              *[]string     `bson:"headers,omitempty"                     json:"headers,omitempty"`
+	InsertedObservations *int          `bson:"total_inserted_observations,omitempty" json:"total_inserted_observations,omitempty"`
 	Links                InstanceLinks `bson:"links,omitempty"                       json:"links,omitempty"`
 	State                string        `bson:"state,omitempty"                       json:"state,omitempty"`
-	Events               *[]Event      `bson:"events,omitempty"                      json:"events,omitempty"`
 	TotalObservations    *int          `bson:"total_observations,omitempty"          json:"total_observations,omitempty"`
-	InsertedObservations *int          `bson:"total_inserted_observations,omitempty" json:"total_inserted_observations,omitempty"`
-	Headers              *[]string     `bson:"headers,omitempty"                     json:"headers,omitempty"`
-	Dimensions           []CodeList    `bson:"dimensions,omitempty"                  json:"dimensions,omitempty"`
 	LastUpdated          time.Time     `bson:"last_updated,omitempty"                json:"last_updated,omitempty"`
 }
 

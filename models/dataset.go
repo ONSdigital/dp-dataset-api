@@ -113,12 +113,13 @@ type EditionLinks struct {
 type Publisher struct {
 	Name string `bson:"name,omitempty" json:"name,omitempty"`
 	Type string `bson:"type,omitempty" json:"type,omitempty"`
-	HRef string `bson:"href,omitempty"  json:"href,omitempty"`
+	HRef string `bson:"href,omitempty" json:"href,omitempty"`
 }
 
 // Version represents information related to a single version for an edition of a dataset
 type Version struct {
 	CollectionID string       `bson:"collection_id,omitempty" json:"collection_id,omitempty"`
+	Downloads    DownloadList `bson:"downloads,omitempty"     json:"downloads,omitempty"`
 	Edition      string       `bson:"edition,omitempty"       json:"edition,omitempty"`
 	ID           string       `bson:"_id,omitempty"           json:"id,omitempty"`
 	InstanceID   string       `bson:"instance_id,omitempty"   json:"instance_id,omitempty"`
@@ -128,6 +129,18 @@ type Version struct {
 	State        string       `bson:"state,omitempty"         json:"state,omitempty"`
 	LastUpdated  time.Time    `bson:"last_updated,omitempty"  json:"-"`
 	Version      int          `bson:"version,omitempty"       json:"version,omitempty"`
+}
+
+// DownloadList represents a list of objects of containing information on the downloadable files
+type DownloadList struct {
+	CSV DownloadObject `bson:"csv,omitempty" json:"csv,omitempty"`
+	XLS DownloadObject `bson:"xls,omitempty" json:"xls,omitempty"`
+}
+
+// DownloadObject represents information on the downloadable file
+type DownloadObject struct {
+	URL  string `bson:"url,omitempty"  json:"url,omitempty"`
+	Size string `bson:"size,omitempty" json:"size,omitempty"`
 }
 
 // VersionLinks represents a list of specific links related to the version resource for an edition of a dataset
@@ -158,28 +171,6 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 	dataset.State = created
 
 	return &dataset, nil
-}
-
-// CreateEdition manages the creation of a edition from a reader
-func CreateEdition(reader io.Reader) (*Edition, error) {
-	bytes, err := ioutil.ReadAll(reader)
-	if err != nil {
-		return nil, errors.New("Failed to read message body")
-	}
-
-	var edition Edition
-	// Create unique id
-	edition.ID = (uuid.NewV4()).String()
-
-	err = json.Unmarshal(bytes, &edition)
-	if err != nil {
-		return nil, errors.New("Failed to parse json body")
-	}
-
-	// Overwrite state to created
-	edition.State = created
-
-	return &edition, nil
 }
 
 // CreateVersion manages the creation of a version from a reader

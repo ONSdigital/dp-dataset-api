@@ -24,6 +24,7 @@ var (
 	lockStorerMockGetNextVersion                sync.RWMutex
 	lockStorerMockGetUniqueDimensionValues      sync.RWMutex
 	lockStorerMockGetVersion                    sync.RWMutex
+	lockStorerMockGetVersionByInstanceID        sync.RWMutex
 	lockStorerMockGetVersions                   sync.RWMutex
 	lockStorerMockUpdateDataset                 sync.RWMutex
 	lockStorerMockUpdateDatasetWithAssociation  sync.RWMutex
@@ -90,6 +91,9 @@ var (
 //             GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
 // 	               panic("TODO: mock out the GetVersion method")
 //             },
+//             GetVersionByInstanceIDFunc: func(instanceID string) (*models.Version, error) {
+// 	               panic("TODO: mock out the GetVersionByInstanceID method")
+//             },
 //             GetVersionsFunc: func(datasetID string, editionID string, state string) (*models.VersionResults, error) {
 // 	               panic("TODO: mock out the GetVersions method")
 //             },
@@ -123,7 +127,7 @@ var (
 //             UpsertDatasetFunc: func(id string, datasetDoc *models.DatasetUpdate) error {
 // 	               panic("TODO: mock out the UpsertDataset method")
 //             },
-//             UpsertEditionFunc: func(id string, editionDoc *models.Edition) error {
+//             UpsertEditionFunc: func(datasetID string, edition string, editionDoc *models.Edition) error {
 // 	               panic("TODO: mock out the UpsertEdition method")
 //             },
 //             UpsertVersionFunc: func(id string, versionDoc *models.Version) error {
@@ -181,6 +185,9 @@ type StorerMock struct {
 	// GetVersionFunc mocks the GetVersion method.
 	GetVersionFunc func(datasetID string, editionID string, version string, state string) (*models.Version, error)
 
+	// GetVersionByInstanceIDFunc mocks the GetVersionByInstanceID method.
+	GetVersionByInstanceIDFunc func(instanceID string) (*models.Version, error)
+
 	// GetVersionsFunc mocks the GetVersions method.
 	GetVersionsFunc func(datasetID string, editionID string, state string) (*models.VersionResults, error)
 
@@ -215,7 +222,7 @@ type StorerMock struct {
 	UpsertDatasetFunc func(id string, datasetDoc *models.DatasetUpdate) error
 
 	// UpsertEditionFunc mocks the UpsertEdition method.
-	UpsertEditionFunc func(id string, editionDoc *models.Edition) error
+	UpsertEditionFunc func(datasetID string, edition string, editionDoc *models.Edition) error
 
 	// UpsertVersionFunc mocks the UpsertVersion method.
 	UpsertVersionFunc func(id string, versionDoc *models.Version) error
@@ -323,6 +330,11 @@ type StorerMock struct {
 			// State is the state argument value.
 			State string
 		}
+		// GetVersionByInstanceID holds details about calls to the GetVersionByInstanceID method.
+		GetVersionByInstanceID []struct {
+			// InstanceID is the instanceID argument value.
+			InstanceID string
+		}
 		// GetVersions holds details about calls to the GetVersions method.
 		GetVersions []struct {
 			// DatasetID is the datasetID argument value.
@@ -402,8 +414,10 @@ type StorerMock struct {
 		}
 		// UpsertEdition holds details about calls to the UpsertEdition method.
 		UpsertEdition []struct {
-			// Id is the id argument value.
-			Id string
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// Edition is the edition argument value.
+			Edition string
 			// EditionDoc is the editionDoc argument value.
 			EditionDoc *models.Edition
 		}
@@ -933,6 +947,37 @@ func (mock *StorerMock) GetVersionCalls() []struct {
 	return calls
 }
 
+// GetVersionByInstanceID calls GetVersionByInstanceIDFunc.
+func (mock *StorerMock) GetVersionByInstanceID(instanceID string) (*models.Version, error) {
+	if mock.GetVersionByInstanceIDFunc == nil {
+		panic("moq: StorerMock.GetVersionByInstanceIDFunc is nil but Storer.GetVersionByInstanceID was just called")
+	}
+	callInfo := struct {
+		InstanceID string
+	}{
+		InstanceID: instanceID,
+	}
+	lockStorerMockGetVersionByInstanceID.Lock()
+	mock.calls.GetVersionByInstanceID = append(mock.calls.GetVersionByInstanceID, callInfo)
+	lockStorerMockGetVersionByInstanceID.Unlock()
+	return mock.GetVersionByInstanceIDFunc(instanceID)
+}
+
+// GetVersionByInstanceIDCalls gets all the calls that were made to GetVersionByInstanceID.
+// Check the length with:
+//     len(mockedStorer.GetVersionByInstanceIDCalls())
+func (mock *StorerMock) GetVersionByInstanceIDCalls() []struct {
+	InstanceID string
+} {
+	var calls []struct {
+		InstanceID string
+	}
+	lockStorerMockGetVersionByInstanceID.RLock()
+	calls = mock.calls.GetVersionByInstanceID
+	lockStorerMockGetVersionByInstanceID.RUnlock()
+	return calls
+}
+
 // GetVersions calls GetVersionsFunc.
 func (mock *StorerMock) GetVersions(datasetID string, editionID string, state string) (*models.VersionResults, error) {
 	if mock.GetVersionsFunc == nil {
@@ -1319,32 +1364,36 @@ func (mock *StorerMock) UpsertDatasetCalls() []struct {
 }
 
 // UpsertEdition calls UpsertEditionFunc.
-func (mock *StorerMock) UpsertEdition(id string, editionDoc *models.Edition) error {
+func (mock *StorerMock) UpsertEdition(datasetID string, edition string, editionDoc *models.Edition) error {
 	if mock.UpsertEditionFunc == nil {
 		panic("moq: StorerMock.UpsertEditionFunc is nil but Storer.UpsertEdition was just called")
 	}
 	callInfo := struct {
-		Id         string
+		DatasetID  string
+		Edition    string
 		EditionDoc *models.Edition
 	}{
-		Id:         id,
+		DatasetID:  datasetID,
+		Edition:    edition,
 		EditionDoc: editionDoc,
 	}
 	lockStorerMockUpsertEdition.Lock()
 	mock.calls.UpsertEdition = append(mock.calls.UpsertEdition, callInfo)
 	lockStorerMockUpsertEdition.Unlock()
-	return mock.UpsertEditionFunc(id, editionDoc)
+	return mock.UpsertEditionFunc(datasetID, edition, editionDoc)
 }
 
 // UpsertEditionCalls gets all the calls that were made to UpsertEdition.
 // Check the length with:
 //     len(mockedStorer.UpsertEditionCalls())
 func (mock *StorerMock) UpsertEditionCalls() []struct {
-	Id         string
+	DatasetID  string
+	Edition    string
 	EditionDoc *models.Edition
 } {
 	var calls []struct {
-		Id         string
+		DatasetID  string
+		Edition    string
 		EditionDoc *models.Edition
 	}
 	lockStorerMockUpsertEdition.RLock()
