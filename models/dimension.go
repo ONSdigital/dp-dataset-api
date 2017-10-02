@@ -35,6 +35,7 @@ type CachedDimensionOption struct {
 	InstanceID string `bson:"instance_id,omitempty"    json:"instance_id,omitempty"`
 	CodeList   string `bson:"code_list,omitempty"      json:"code_list,omitempty"`
 	Option     string `bson:"option,omitempty"         json:"option"`
+	Label      string `bson:"label,omitempty"          json:"label"`
 }
 
 // DimensionOption contains unique information and metadata used when processing the data
