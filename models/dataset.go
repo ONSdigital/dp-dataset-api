@@ -119,7 +119,7 @@ type Publisher struct {
 // Version represents information related to a single version for an edition of a dataset
 type Version struct {
 	CollectionID string       `bson:"collection_id,omitempty" json:"collection_id,omitempty"`
-	Downloads    Downloads    `bson:"downloads,omitempty"     json:"downloads,omitempty"`
+	Downloads    DownloadList `bson:"downloads,omitempty"     json:"downloads,omitempty"`
 	Edition      string       `bson:"edition,omitempty"       json:"edition,omitempty"`
 	ID           string       `bson:"_id,omitempty"           json:"id,omitempty"`
 	InstanceID   string       `bson:"instance_id,omitempty"   json:"instance_id,omitempty"`
@@ -131,8 +131,8 @@ type Version struct {
 	Version      int          `bson:"version,omitempty"       json:"version,omitempty"`
 }
 
-// Downloads represents a list of objects of containing information on the downloadable files
-type Downloads struct {
+// DownloadList represents a list of objects of containing information on the downloadable files
+type DownloadList struct {
 	CSV DownloadObject `bson:"csv,omitempty" json:"csv,omitempty"`
 	XLS DownloadObject `bson:"xls,omitempty" json:"xls,omitempty"`
 }

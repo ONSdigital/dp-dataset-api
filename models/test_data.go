@@ -1,5 +1,10 @@
 package models
 
+const (
+	collectionID = "12345678"
+	instanceID   = "654321"
+)
+
 var contacts = ContactDetails{
 	Email:     "test@test.co.uk",
 	Name:      "john test",
@@ -35,8 +40,8 @@ var relatedDatasets = GeneralDetails{
 	Title: "Census Age",
 }
 
-var inputDataset = &Dataset{
-	CollectionID: "12345678",
+var inputDataset = Dataset{
+	CollectionID: collectionID,
 	Contacts: []ContactDetails{
 		contacts,
 	},
@@ -62,7 +67,7 @@ var inputDataset = &Dataset{
 	URI:              "http://localhost:22000/datasets/123/breadcrumbs",
 }
 
-var downloads = &Downloads{
+var downloads = DownloadList{
 	CSV: DownloadObject{
 		URL:  "https://www.aws/123",
 		Size: "25mb",
@@ -90,15 +95,38 @@ var links = VersionLinks{
 	},
 }
 
-var inputVersion = &Version{
-	CollectionID: "12345678",
-	Downloads:    *downloads,
+var createdVersion = Version{
+	Downloads:   downloads,
+	Edition:     "2017",
+	InstanceID:  instanceID,
+	License:     "ONS License",
+	Links:       links,
+	ReleaseDate: "2016-04-04",
+	State:       "created",
+	Version:     1,
+}
+
+var associatedVersion = Version{
+	CollectionID: collectionID,
+	Downloads:    downloads,
 	Edition:      "2017",
-	InstanceID:   "654321",
+	InstanceID:   instanceID,
 	License:      "Office of National Statistics license",
 	Links:        links,
 	ReleaseDate:  "2017-10-12",
 	State:        "associated",
+	Version:      1,
+}
+
+var publishedVersion = Version{
+	CollectionID: collectionID,
+	Downloads:    downloads,
+	Edition:      "2017",
+	InstanceID:   instanceID,
+	License:      "Office of National Statistics license",
+	Links:        links,
+	ReleaseDate:  "2017-10-12",
+	State:        "published",
 	Version:      1,
 }
 

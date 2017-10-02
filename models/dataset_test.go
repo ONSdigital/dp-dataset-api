@@ -23,7 +23,7 @@ func TestCreateDataset(t *testing.T) {
 			r := bytes.NewReader(b)
 			dataset, err := CreateDataset(r)
 			So(err, ShouldBeNil)
-			So(dataset.CollectionID, ShouldEqual, "12345678")
+			So(dataset.CollectionID, ShouldEqual, collectionID)
 			So(dataset.Contacts[0], ShouldResemble, contacts)
 			So(dataset.Description, ShouldEqual, "census")
 			So(dataset.ID, ShouldNotBeNil)
@@ -62,7 +62,7 @@ func TestCreateVersion(t *testing.T) {
 	t.Parallel()
 	Convey("Successfully return without any errors", t, func() {
 		Convey("when the version has all fields", func() {
-			b, err := json.Marshal(inputVersion)
+			b, err := json.Marshal(associatedVersion)
 			if err != nil {
 				log.ErrorC("Failed to marshal test data into bytes", err, nil)
 				os.Exit(1)
@@ -70,11 +70,11 @@ func TestCreateVersion(t *testing.T) {
 			r := bytes.NewReader(b)
 			version, err := CreateVersion(r)
 			So(err, ShouldBeNil)
-			So(version.CollectionID, ShouldEqual, "12345678")
-			So(version.Downloads, ShouldResemble, *downloads)
+			So(version.CollectionID, ShouldEqual, collectionID)
+			So(version.Downloads, ShouldResemble, downloads)
 			So(version.Edition, ShouldEqual, "2017")
 			So(version.ID, ShouldNotBeNil)
-			So(version.InstanceID, ShouldEqual, "654321")
+			So(version.InstanceID, ShouldEqual, instanceID)
 			So(version.License, ShouldEqual, "Office of National Statistics license")
 			So(version.ReleaseDate, ShouldEqual, "2017-10-12")
 			So(version.State, ShouldEqual, "associated")
@@ -100,68 +100,42 @@ func TestValidateVersion(t *testing.T) {
 	t.Parallel()
 	Convey("Successfully return without any errors", t, func() {
 		Convey("when the version state is created", func() {
-			version := &Version{
-				InstanceID:  "12345678",
-				License:     "ONS License",
-				ReleaseDate: "2016-04-04",
-				State:       "created",
-			}
 
-			err := ValidateVersion(version)
+			err := ValidateVersion(&createdVersion)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("when the version state is associated", func() {
-			version := &Version{
-				CollectionID: "87654321",
-				InstanceID:   "12345678",
-				License:      "ONS License",
-				ReleaseDate:  "2016-04-04",
-				State:        "associated",
-			}
 
-			err := ValidateVersion(version)
+			err := ValidateVersion(&associatedVersion)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("when the version state is published", func() {
-			version := &Version{
-				CollectionID: "87654321",
-				InstanceID:   "12345678",
-				License:      "ONS License",
-				ReleaseDate:  "2016-04-04",
-				State:        "published",
-			}
 
-			err := ValidateVersion(version)
+			err := ValidateVersion(&publishedVersion)
 			So(err, ShouldBeNil)
 		})
 	})
 
 	Convey("Return with errors", t, func() {
 		Convey("when the version state is set to an invalid value", func() {
-			version := &Version{
-				State: "submitted",
-			}
 
-			err := ValidateVersion(version)
+			err := ValidateVersion(&Version{State: "submitted"})
 			So(err, ShouldNotBeNil)
 			So(err, ShouldResemble, errors.New("Incorrect state, can be one of the following: created, associated or published"))
 		})
 
 		Convey("when mandatorey fields are missing from version document when state is set to created", func() {
-			version := &Version{
-				State: "created",
-			}
 
-			err := ValidateVersion(version)
+			err := ValidateVersion(&Version{State: "created"})
 			So(err, ShouldNotBeNil)
 			So(err, ShouldResemble, errors.New("Missing mandatory fields: [instance_id license release_date]"))
 		})
 
 		Convey("when the version state is published but is missing collection_id", func() {
 			version := &Version{
-				InstanceID:  "12345678",
+				InstanceID:  instanceID,
 				License:     "ONS License",
 				ReleaseDate: "2016-04-04",
 				State:       "published",
