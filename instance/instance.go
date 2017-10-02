@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"gopkg.in/mgo.v2/bson"
-
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -124,19 +122,19 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 	switch instance.State {
 	case editionConfirmedState:
-		if err = validateInstanceUpdate(id, completedState, currentInstance, instance); err != nil {
+		if err = validateInstanceUpdate(completedState, currentInstance, instance); err != nil {
 			log.Error(err, log.Data{"instance_id": id, "current_state": currentInstance.State})
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
 	case associatedState:
-		if err = validateInstanceUpdate(id, editionConfirmedState, currentInstance, instance); err != nil {
+		if err = validateInstanceUpdate(editionConfirmedState, currentInstance, instance); err != nil {
 			log.Error(err, log.Data{"instance_id": id, "current_state": currentInstance.State})
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
 	case publishedState:
-		if err = validateInstanceUpdate(id, associatedState, currentInstance, instance); err != nil {
+		if err = validateInstanceUpdate(associatedState, currentInstance, instance); err != nil {
 			log.Error(err, log.Data{"instance_id": id, "current_state": currentInstance.State})
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
@@ -177,11 +175,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 
-		editionSelector := bson.M{
-			"edition":          edition,
-			"links.dataset.id": datasetID,
-		}
-		if err := s.UpsertEdition(editionSelector, editionDoc); err != nil {
+		if err := s.UpsertEdition(datasetID, edition, editionDoc); err != nil {
 			log.ErrorR(r, err, nil)
 			handleErrorType(err, w)
 			return
@@ -207,7 +201,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	log.Debug("updated instance", log.Data{"instance": id})
 }
 
-func validateInstanceUpdate(id, expectedState string, currentInstance, instance *models.Instance) error {
+func validateInstanceUpdate(expectedState string, currentInstance, instance *models.Instance) error {
 	if currentInstance.State != expectedState {
 		err := errors.New("Unable to update resource, edition not confirmed")
 		return err
@@ -223,7 +217,7 @@ func validateInstanceUpdate(id, expectedState string, currentInstance, instance 
 func (s *Store) createVersion(instance, currrentInstance *models.Instance, editionDoc *models.Edition) error {
 	// Find the latest version to be able to increment the version
 	// number before creating a new version document
-	nextVersion, err := s.GetNextVersion(bson.M{"links.dataset.id": currrentInstance.Links.Dataset.ID, "edition": instance.Edition})
+	nextVersion, err := s.GetNextVersion(currrentInstance.Links.Dataset.ID, instance.Edition)
 	if err != nil {
 		return err
 	}

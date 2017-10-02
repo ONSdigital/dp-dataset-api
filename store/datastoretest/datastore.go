@@ -5,7 +5,6 @@ package storetest
 
 import (
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"gopkg.in/mgo.v2/bson"
 	"sync"
 )
 
@@ -82,7 +81,7 @@ var (
 //             GetInstancesFunc: func(filter string) (*models.InstanceResults, error) {
 // 	               panic("TODO: mock out the GetInstances method")
 //             },
-//             GetNextVersionFunc: func(selector bson.M) (int, error) {
+//             GetNextVersionFunc: func(datasetID string, editionID string) (int, error) {
 // 	               panic("TODO: mock out the GetNextVersion method")
 //             },
 //             GetUniqueDimensionValuesFunc: func(id string, dimension string) (*models.DimensionValues, error) {
@@ -124,7 +123,7 @@ var (
 //             UpsertDatasetFunc: func(id string, datasetDoc *models.DatasetUpdate) error {
 // 	               panic("TODO: mock out the UpsertDataset method")
 //             },
-//             UpsertEditionFunc: func(selector bson.M, editionDoc *models.Edition) error {
+//             UpsertEditionFunc: func(datasetID string, edition string, editionDoc *models.Edition) error {
 // 	               panic("TODO: mock out the UpsertEdition method")
 //             },
 //             UpsertVersionFunc: func(id string, versionDoc *models.Version) error {
@@ -174,7 +173,7 @@ type StorerMock struct {
 	GetInstancesFunc func(filter string) (*models.InstanceResults, error)
 
 	// GetNextVersionFunc mocks the GetNextVersion method.
-	GetNextVersionFunc func(selector bson.M) (int, error)
+	GetNextVersionFunc func(datasetID string, editionID string) (int, error)
 
 	// GetUniqueDimensionValuesFunc mocks the GetUniqueDimensionValues method.
 	GetUniqueDimensionValuesFunc func(id string, dimension string) (*models.DimensionValues, error)
@@ -216,7 +215,7 @@ type StorerMock struct {
 	UpsertDatasetFunc func(id string, datasetDoc *models.DatasetUpdate) error
 
 	// UpsertEditionFunc mocks the UpsertEdition method.
-	UpsertEditionFunc func(selector bson.M, editionDoc *models.Edition) error
+	UpsertEditionFunc func(datasetID string, edition string, editionDoc *models.Edition) error
 
 	// UpsertVersionFunc mocks the UpsertVersion method.
 	UpsertVersionFunc func(id string, versionDoc *models.Version) error
@@ -301,8 +300,10 @@ type StorerMock struct {
 		}
 		// GetNextVersion holds details about calls to the GetNextVersion method.
 		GetNextVersion []struct {
-			// Selector is the selector argument value.
-			Selector bson.M
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// EditionID is the editionID argument value.
+			EditionID string
 		}
 		// GetUniqueDimensionValues holds details about calls to the GetUniqueDimensionValues method.
 		GetUniqueDimensionValues []struct {
@@ -401,8 +402,10 @@ type StorerMock struct {
 		}
 		// UpsertEdition holds details about calls to the UpsertEdition method.
 		UpsertEdition []struct {
-			// Selector is the selector argument value.
-			Selector bson.M
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// Edition is the edition argument value.
+			Edition string
 			// EditionDoc is the editionDoc argument value.
 			EditionDoc *models.Edition
 		}
@@ -820,29 +823,33 @@ func (mock *StorerMock) GetInstancesCalls() []struct {
 }
 
 // GetNextVersion calls GetNextVersionFunc.
-func (mock *StorerMock) GetNextVersion(selector bson.M) (int, error) {
+func (mock *StorerMock) GetNextVersion(datasetID string, editionID string) (int, error) {
 	if mock.GetNextVersionFunc == nil {
 		panic("moq: StorerMock.GetNextVersionFunc is nil but Storer.GetNextVersion was just called")
 	}
 	callInfo := struct {
-		Selector bson.M
+		DatasetID string
+		EditionID string
 	}{
-		Selector: selector,
+		DatasetID: datasetID,
+		EditionID: editionID,
 	}
 	lockStorerMockGetNextVersion.Lock()
 	mock.calls.GetNextVersion = append(mock.calls.GetNextVersion, callInfo)
 	lockStorerMockGetNextVersion.Unlock()
-	return mock.GetNextVersionFunc(selector)
+	return mock.GetNextVersionFunc(datasetID, editionID)
 }
 
 // GetNextVersionCalls gets all the calls that were made to GetNextVersion.
 // Check the length with:
 //     len(mockedStorer.GetNextVersionCalls())
 func (mock *StorerMock) GetNextVersionCalls() []struct {
-	Selector bson.M
+	DatasetID string
+	EditionID string
 } {
 	var calls []struct {
-		Selector bson.M
+		DatasetID string
+		EditionID string
 	}
 	lockStorerMockGetNextVersion.RLock()
 	calls = mock.calls.GetNextVersion
@@ -1314,32 +1321,36 @@ func (mock *StorerMock) UpsertDatasetCalls() []struct {
 }
 
 // UpsertEdition calls UpsertEditionFunc.
-func (mock *StorerMock) UpsertEdition(selector bson.M, editionDoc *models.Edition) error {
+func (mock *StorerMock) UpsertEdition(datasetID string, edition string, editionDoc *models.Edition) error {
 	if mock.UpsertEditionFunc == nil {
 		panic("moq: StorerMock.UpsertEditionFunc is nil but Storer.UpsertEdition was just called")
 	}
 	callInfo := struct {
-		Selector   bson.M
+		DatasetID  string
+		Edition    string
 		EditionDoc *models.Edition
 	}{
-		Selector:   selector,
+		DatasetID:  datasetID,
+		Edition:    edition,
 		EditionDoc: editionDoc,
 	}
 	lockStorerMockUpsertEdition.Lock()
 	mock.calls.UpsertEdition = append(mock.calls.UpsertEdition, callInfo)
 	lockStorerMockUpsertEdition.Unlock()
-	return mock.UpsertEditionFunc(selector, editionDoc)
+	return mock.UpsertEditionFunc(datasetID, edition, editionDoc)
 }
 
 // UpsertEditionCalls gets all the calls that were made to UpsertEdition.
 // Check the length with:
 //     len(mockedStorer.UpsertEditionCalls())
 func (mock *StorerMock) UpsertEditionCalls() []struct {
-	Selector   bson.M
+	DatasetID  string
+	Edition    string
 	EditionDoc *models.Edition
 } {
 	var calls []struct {
-		Selector   bson.M
+		DatasetID  string
+		Edition    string
 		EditionDoc *models.Edition
 	}
 	lockStorerMockUpsertEdition.RLock()

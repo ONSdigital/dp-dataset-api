@@ -7,8 +7,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"gopkg.in/mgo.v2/bson"
-
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -1053,7 +1051,7 @@ func setUp(state string) *storetest.StorerMock {
 		GetEditionFunc: func(string, string, string) (*models.Edition, error) {
 			return &models.Edition{}, nil
 		},
-		GetNextVersionFunc: func(bson.M) (int, error) {
+		GetNextVersionFunc: func(string, string) (int, error) {
 			return 1, nil
 		},
 		UpdateDatasetWithAssociationFunc: func(string, string, *models.Version) error {
@@ -1072,7 +1070,7 @@ func setUp(state string) *storetest.StorerMock {
 
 	mockedDataStore.GetEdition("123", "2017", state)
 
-	mockedDataStore.GetNextVersion(bson.M{"links.dataset.id": "123", "edition": "2017"})
+	mockedDataStore.GetNextVersion("123", "2017")
 
 	versionDoc := &models.Version{
 		State: state,

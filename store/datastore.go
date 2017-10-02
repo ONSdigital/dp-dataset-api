@@ -1,9 +1,6 @@
 package store
 
-import (
-	"github.com/ONSdigital/dp-dataset-api/models"
-	"gopkg.in/mgo.v2/bson"
-)
+import "github.com/ONSdigital/dp-dataset-api/models"
 
 // DataStore provides a datastore.Storer interface used to store, retrieve, remove or update datasets
 type DataStore struct {
@@ -26,8 +23,7 @@ type Storer interface {
 	GetEditions(id, state string) (*models.EditionResults, error)
 	GetInstances(filter string) (*models.InstanceResults, error)
 	GetInstance(id string) (*models.Instance, error)
-	//GetNextVersion(datasetID, editionID string) (int, error)
-	GetNextVersion(selector bson.M) (int, error)
+	GetNextVersion(datasetID, editionID string) (int, error)
 	GetUniqueDimensionValues(id, dimension string) (*models.DimensionValues, error)
 	GetVersion(datasetID, editionID, version, state string) (*models.Version, error)
 	GetVersions(datasetID, editionID, state string) (*models.VersionResults, error)
@@ -41,6 +37,6 @@ type Storer interface {
 	UpdateVersion(id string, version *models.Version) error
 	UpsertContact(id string, update interface{}) error
 	UpsertDataset(id string, datasetDoc *models.DatasetUpdate) error
-	UpsertEdition(selector bson.M, editionDoc *models.Edition) error
+	UpsertEdition(datasetID, edition string, editionDoc *models.Edition) error
 	UpsertVersion(id string, versionDoc *models.Version) error
 }

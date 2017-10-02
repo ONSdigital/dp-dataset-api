@@ -168,12 +168,17 @@ func buildEditionQuery(id, editionID, state string) bson.M {
 }
 
 // GetNextVersion retrieves the latest version for an edition of a dataset
-func (m *Mongo) GetNextVersion(selector bson.M) (int, error) {
+func (m *Mongo) GetNextVersion(datasetID, edition string) (int, error) {
 	s := m.Session.Copy()
 	defer s.Clone()
 	var version models.Version
 	var nextVersion int
-	//err := s.DB(m.Database).C("versions").Find(bson.M{"links.dataset.id": datasetID, "edition": editionID}).Sort("-version").One(&version)
+
+	selector := bson.M{
+		"links.dataset.id": datasetID,
+		"edition":          edition,
+	}
+
 	err := s.DB(m.Database).C("versions").Find(selector).Sort("-version").One(&version)
 	if err != nil {
 		if err == mgo.ErrNotFound {
@@ -472,9 +477,14 @@ func (m *Mongo) UpsertDataset(id string, datasetDoc *models.DatasetUpdate) (err 
 }
 
 // UpsertEdition adds or overides an existing edition document
-func (m *Mongo) UpsertEdition(selector bson.M, editionDoc *models.Edition) (err error) {
+func (m *Mongo) UpsertEdition(datasetID, edition string, editionDoc *models.Edition) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
+
+	selector := bson.M{
+		"edition":          edition,
+		"links.dataset.id": datasetID,
+	}
 
 	update := bson.M{
 		"$set": editionDoc,

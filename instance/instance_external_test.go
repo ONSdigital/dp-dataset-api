@@ -14,7 +14,6 @@ import (
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
-	"gopkg.in/mgo.v2/bson"
 )
 
 const secretKey = "coffee"
@@ -232,13 +231,13 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 			UpdateInstanceFunc: func(id string, i *models.Instance) error {
 				return nil
 			},
-			UpsertEditionFunc: func(selector bson.M, editionDoc *models.Edition) error {
+			UpsertEditionFunc: func(datasetID, edition string, editionDoc *models.Edition) error {
 				return nil
 			},
 			GetVersionByInstanceIDFunc: func(instanceID string) (*models.Version, error) {
 				return nil, errs.VersionNotFound
 			},
-			GetNextVersionFunc: func(selector bson.M) (int, error) {
+			GetNextVersionFunc: func(string, string) (int, error) {
 				return 1, nil
 			},
 			UpsertVersionFunc: func(versionID string, version *models.Version) error {
