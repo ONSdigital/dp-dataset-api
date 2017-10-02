@@ -113,21 +113,34 @@ type EditionLinks struct {
 type Publisher struct {
 	Name string `bson:"name,omitempty" json:"name,omitempty"`
 	Type string `bson:"type,omitempty" json:"type,omitempty"`
-	HRef string `bson:"href,omitempty"  json:"href,omitempty"`
+	HRef string `bson:"href,omitempty" json:"href,omitempty"`
 }
 
 // Version represents information related to a single version for an edition of a dataset
 type Version struct {
 	CollectionID string       `bson:"collection_id,omitempty" json:"collection_id,omitempty"`
+	Downloads    Downloads    `bson:"downloads,omitempty"     json:"downloads,omitempty"`
 	Edition      string       `bson:"edition,omitempty"       json:"edition,omitempty"`
 	ID           string       `bson:"_id,omitempty"           json:"id,omitempty"`
-	InstanceID   string       `bson:"instance_id,omitempty" json:"instance_id,omitempty"`
+	InstanceID   string       `bson:"instance_id,omitempty"   json:"instance_id,omitempty"`
 	License      string       `bson:"license,omitempty"       json:"license,omitempty"`
 	Links        VersionLinks `bson:"links,omitempty"         json:"links,omitempty"`
 	ReleaseDate  string       `bson:"release_date,omitempty"  json:"release_date,omitempty"`
 	State        string       `bson:"state,omitempty"         json:"state,omitempty"`
 	LastUpdated  time.Time    `bson:"last_updated,omitempty"  json:"-"`
 	Version      int          `bson:"version,omitempty"       json:"version,omitempty"`
+}
+
+// Downloads represents a list of objects of containing information on the downloadable files
+type Downloads struct {
+	CSV DownloadObject `bson:"csv,omitempty" json:"csv,omitempty"`
+	XLS DownloadObject `bson:"xls,omitempty" json:"xls,omitempty"`
+}
+
+// DownloadObject represents information on the downloadable file
+type DownloadObject struct {
+	URL  string `bson:"url,omitempty"  json:"url,omitempty"`
+	Size string `bson:"size,omitempty" json:"size,omitempty"`
 }
 
 // VersionLinks represents a list of specific links related to the version resource for an edition of a dataset
