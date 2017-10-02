@@ -49,8 +49,8 @@ func (m *Mongo) GetUniqueDimensionValues(id, dimension string) (*models.Dimensio
 func (m *Mongo) AddDimensionToInstance(opt *models.CachedDimensionOption) error {
 	s := m.Session.Copy()
 	defer s.Close()
-
-	option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name}
+	
+        option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name, Label: opt.Label}
 	option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/code-lists/%s", m.CodeListURL, opt.CodeList)}
 	option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.CodeListURL, opt.CodeList, opt.Code)}
 
