@@ -1048,6 +1048,15 @@ definitions:
       release_date,
     ]
     properties:
+      Downloads:
+        type: object
+        description: |
+          The url to download the full dataset
+        properties:
+          csv:
+            $ref: '#/definitions/DownloadFile'
+          xls:
+            $ref: '#/definitions/DownloadFile'
       edition:
         description: "The dataset edition for this version"
         type: string
@@ -1070,6 +1079,16 @@ definitions:
         example: 1
         readOnly: true
         type: integer
+  DownloadFile:
+    description: "Object containing information of a downloadable file"
+    type: object
+    properties:
+      url:
+        type: string
+        description: "The URL to the generated file"
+      size:
+        type: string
+        description: "The size of the file in bytes"
   VersionLinks:
     description: "A list of links related to this resource"
     readOnly: true
