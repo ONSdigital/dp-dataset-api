@@ -16,10 +16,12 @@ const INSTANCE_COLLECTION = "instances"
 func (m *Mongo) GetInstances(filter string) (*models.InstanceResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
+
 	query := bson.M{}
 	if filter != "" {
 		query["state"] = filter
 	}
+
 	iter := s.DB(m.Database).C(INSTANCE_COLLECTION).Find(query).Iter()
 	defer iter.Close()
 
@@ -38,6 +40,7 @@ func (m *Mongo) GetInstances(filter string) (*models.InstanceResults, error) {
 func (m *Mongo) GetInstance(ID string) (*models.Instance, error) {
 	s := m.Session.Copy()
 	defer s.Close()
+
 	var instance models.Instance
 	err := s.DB(m.Database).C(INSTANCE_COLLECTION).Find(bson.M{"id": ID}).One(&instance)
 
@@ -75,6 +78,7 @@ func (m *Mongo) UpdateInstance(id string, instance *models.Instance) error {
 	if err != nil {
 		return err
 	}
+
 	if info.Updated == 0 {
 		return errs.InstanceNotFound
 	}
@@ -92,6 +96,7 @@ func (m *Mongo) AddEventToInstance(instanceId string, event *models.Event) error
 	if err != nil {
 		return err
 	}
+
 	if info.Updated == 0 {
 		return errs.InstanceNotFound
 	}
@@ -101,16 +106,19 @@ func (m *Mongo) AddEventToInstance(instanceId string, event *models.Event) error
 
 // UpdateDimensionNodeID to cache the id for other import processes
 func (m *Mongo) UpdateDimensionNodeID(dimension *models.DimensionOption) error {
-	s := session.Copy()
+	s := m.Session.Copy()
 	defer s.Close()
+
 	err := s.DB(m.Database).C(DIMENSION_OPTIONS).Update(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
 		"option": dimension.Option}, bson.M{"$set": bson.M{"node_id": &dimension.NodeID, "last_updated": time.Now().UTC()}})
 	if err == mgo.ErrNotFound {
 		return errs.InstanceNotFound
 	}
+
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -118,6 +126,7 @@ func (m *Mongo) UpdateDimensionNodeID(dimension *models.DimensionOption) error {
 func (m *Mongo) UpdateObservationInserted(id string, observationInserted int64) error {
 	s := m.Session.Copy()
 	defer s.Close()
+
 	err := s.DB(m.Database).C(INSTANCE_COLLECTION).Update(bson.M{"id": id},
 		bson.M{"$inc": bson.M{"total_inserted_observations": observationInserted}, "$set": bson.M{"last_updated": time.Now().UTC()}})
 
@@ -128,6 +137,7 @@ func (m *Mongo) UpdateObservationInserted(id string, observationInserted int64) 
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
