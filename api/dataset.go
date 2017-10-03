@@ -216,6 +216,9 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	datasetID := vars["id"]
+
 	dataset, err := models.CreateDataset(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -223,7 +226,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	datasetID := dataset.ID
+	dataset.ID = datasetID
 	dataset.Links.Self.HRef = fmt.Sprintf("%s/datasets/%s", api.host, datasetID)
 	dataset.Links.Editions.HRef = fmt.Sprintf("%s/datasets/%s/editions", api.host, datasetID)
 	dataset.LastUpdated = time.Now()

@@ -159,8 +159,6 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 	}
 
 	var dataset Dataset
-	// Create unique id
-	dataset.ID = uuid.NewV4().String()
 
 	err = json.Unmarshal(bytes, &dataset)
 	if err != nil {
