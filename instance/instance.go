@@ -159,7 +159,11 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		// Set the instance edition to the latest version
 		instance.Edition = edition
 
+		// create unique id for edition
+		editionID := (uuid.NewV4()).String()
+
 		editionDoc = &models.Edition{
+			ID:      editionID,
 			Edition: edition,
 			Links: models.EditionLinks{
 				Dataset: models.LinkObject{
