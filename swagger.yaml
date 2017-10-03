@@ -910,6 +910,19 @@ definitions:
                 type: string
                 description: "The URL for the job containing this instance"
                 example: 'http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35'
+          version:
+            description: "An object describing the ID and URL of the dataset version associated with this instance"
+            type: object
+            readOnly: true
+            properties:
+              id:
+                type: string
+                description: "The ID of the dataset version associated with this instance"
+                example: 042e216a-7822-4fa0-a3d6-e3f5248ffc35
+              href:
+                type: string
+                description: "The URL for the dataset version associated with this instance"
+                example: 'http://localhost:21800/dataset/042e216a-7822-4fa0-a3d6-e3f5248ffc35/edition/2017/version/1'
       state:
         $ref: '#/definitions/State'
       edition:
