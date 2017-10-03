@@ -150,6 +150,24 @@ paths:
         500:
           description: "Failed to process the request due to an internal error"
   /datasets:
+    get:
+      tags:
+      - "Public"
+      summary: "Get a list of datasets"
+      description: "Returns a list of all datasets provided by the ONS that can be filtered using the filter API"
+      parameters:
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "A json list containing datasets which have been published"
+          schema:
+            $ref: '#/definitions/Datasets'
+        500:
+          $ref: '#/responses/InternalError'
+  /datasets/{id}:
     post:
       tags:
       - "Private user"
@@ -172,24 +190,6 @@ paths:
           description: "Forbidden to overwrite dataset, already published"
         500:
           $ref: '#/responses/InternalError'
-    get:
-      tags:
-      - "Public"
-      summary: "Get a list of datasets"
-      description: "Returns a list of all datasets provided by the ONS that can be filtered using the filter API"
-      parameters:
-      - $ref: '#/parameters/limit'
-      - $ref: '#/parameters/offset'
-      produces:
-      - "application/json"
-      responses:
-        200:
-          description: "A json list containing datasets which have been published"
-          schema:
-            $ref: '#/definitions/Datasets'
-        500:
-          $ref: '#/responses/InternalError'
-  /datasets/{id}:
     get:
       tags:
       - "Public"

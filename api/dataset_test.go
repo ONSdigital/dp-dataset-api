@@ -423,7 +423,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 	Convey("", t, func() {
 		var b string
 		b = datasetPayload
-		r := httptest.NewRequest("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		r := httptest.NewRequest("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		r.Header.Add("internal-token", secretKey)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -445,7 +445,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	Convey("When the request contain malformed json a bad request status is returned", t, func() {
 		var b string
 		b = "{"
-		r := httptest.NewRequest("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		r := httptest.NewRequest("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		r.Header.Add("internal-token", secretKey)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -463,7 +463,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
 		var b string
 		b = datasetPayload
-		r := httptest.NewRequest("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		r := httptest.NewRequest("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		r.Header.Add("internal-token", secretKey)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -481,7 +481,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	Convey("When the request does not contain a valid internal token return status unauthorised", t, func() {
 		var b string
 		b = datasetPayload
-		r := httptest.NewRequest("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		r := httptest.NewRequest("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
