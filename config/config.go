@@ -3,6 +3,7 @@ package config
 import (
 	"time"
 
+	"github.com/ONSdigital/go-ns/log"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -43,6 +44,10 @@ func Get() (*Configuration, error) {
 			Database:   "datasets",
 		},
 	}
+
+	sanitized := *cfg
+	sanitized.SecretKey = ""
+	log.Info("config on startup", log.Data{"config": sanitized})
 
 	return cfg, envconfig.Process("", cfg)
 }
