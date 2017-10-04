@@ -237,7 +237,7 @@ func (s *Store) createVersion(instance *models.Instance, editionDoc *models.Edit
 	version.Links.Dimensions.HRef = fmt.Sprintf("%s/instance/%s/dimensions/", s.Host, instance.InstanceID)
 	version.Links.Edition.ID = editionDoc.ID
 	version.Links.Edition.HRef = editionDoc.Links.Self.HRef
-	version.Links.Self.HRef = fmt.Sprintf("%s/versions/%s", editionDoc.Links.Self.HRef, versionID)
+	version.Links.Self.HRef = fmt.Sprintf("%s/versions/%s", editionDoc.Links.Self.HRef, strconv.Itoa(nextVersion))
 	version.State = "created"
 	version.Version = nextVersion
 
