@@ -159,7 +159,11 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		// Set the instance edition to the latest version
 		instance.Edition = edition
 
+		// create unique id for edition
+		editionID := (uuid.NewV4()).String()
+
 		editionDoc = &models.Edition{
+			ID:      editionID,
 			Edition: edition,
 			Links: models.EditionLinks{
 				Dataset: models.LinkObject{
@@ -185,7 +189,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		// for this instance (use the instance_id)
 		if _, err = s.GetVersionByInstanceID(id); err != nil {
 			if err == errs.VersionNotFound {
-				if err := s.createVersion(instance, currentInstance, editionDoc); err != nil {
+				if err := s.createVersion(instance, editionDoc); err != nil {
 					log.ErrorR(r, err, nil)
 					handleErrorType(err, w)
 				}
@@ -214,10 +218,10 @@ func validateInstanceUpdate(expectedState string, currentInstance, instance *mod
 	return nil
 }
 
-func (s *Store) createVersion(instance, currrentInstance *models.Instance, editionDoc *models.Edition) error {
+func (s *Store) createVersion(instance *models.Instance, editionDoc *models.Edition) error {
 	// Find the latest version to be able to increment the version
 	// number before creating a new version document
-	nextVersion, err := s.GetNextVersion(currrentInstance.Links.Dataset.ID, instance.Edition)
+	nextVersion, err := s.GetNextVersion(editionDoc.Links.Dataset.ID, instance.Edition)
 	if err != nil {
 		return err
 	}
@@ -229,12 +233,11 @@ func (s *Store) createVersion(instance, currrentInstance *models.Instance, editi
 	version.ID = versionID
 	version.Edition = instance.Edition
 	version.InstanceID = instance.InstanceID
-	version.Links.Dataset.ID = instance.Links.Dataset.ID
-	version.Links.Dataset.HRef = fmt.Sprintf("%s/datasets/%s", s.Host, instance.Links.Dataset.ID)
+	version.Links.Dataset = editionDoc.Links.Dataset
 	version.Links.Dimensions.HRef = fmt.Sprintf("%s/instance/%s/dimensions/", s.Host, instance.InstanceID)
 	version.Links.Edition.ID = editionDoc.ID
 	version.Links.Edition.HRef = editionDoc.Links.Self.HRef
-	version.Links.Self.HRef = fmt.Sprintf("%s/versions/%s", editionDoc.Links.Self.HRef, versionID)
+	version.Links.Self.HRef = fmt.Sprintf("%s/versions/%s", editionDoc.Links.Self.HRef, strconv.Itoa(nextVersion))
 	version.State = "created"
 	version.Version = nextVersion
 
