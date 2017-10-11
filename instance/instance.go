@@ -94,6 +94,8 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+
 	w.WriteHeader(http.StatusCreated)
 	writeBody(w, bytes)
 	log.Debug("add instance", log.Data{"instance": instance})
