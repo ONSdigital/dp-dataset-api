@@ -140,19 +140,3 @@ func (m *Mongo) UpdateObservationInserted(id string, observationInserted int64) 
 
 	return nil
 }
-
-// UpdateInstanceWithVersion updates an existing instance document with version data
-func (m *Mongo) UpdateInstanceWithVersion(version *models.Version) (err error) {
-	s := m.Session.Copy()
-	defer s.Close()
-
-	update := bson.M{
-		"$set": bson.M{
-			"links.version.href": version.Links.Self.HRef,
-			"links.version.id":   version.ID,
-			"last_updated":       time.Now().UTC(),
-		},
-	}
-	err = s.DB(m.Database).C(INSTANCE_COLLECTION).Update(bson.M{"id": version.InstanceID}, update)
-	return
-}

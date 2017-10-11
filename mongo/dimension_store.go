@@ -49,8 +49,8 @@ func (m *Mongo) GetUniqueDimensionValues(id, dimension string) (*models.Dimensio
 func (m *Mongo) AddDimensionToInstance(opt *models.CachedDimensionOption) error {
 	s := m.Session.Copy()
 	defer s.Close()
-	
-        option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name, Label: opt.Label}
+
+	option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name, Label: opt.Label}
 	option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/code-lists/%s", m.CodeListURL, opt.CodeList)}
 	option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.CodeListURL, opt.CodeList, opt.Code)}
 
@@ -78,7 +78,7 @@ func (m *Mongo) GetDimensions(datasetID, editionID, versionID string) (*models.D
 	// To get all unique values an aggregation is needed, as using distinct() will only return the distinct values and
 	// not the documents.
 	// Match by instance_id
-	match := bson.M{"$match": bson.M{"instance_id": version.InstanceID}}
+	match := bson.M{"$match": bson.M{"instance_id": version.ID}}
 	// Then group the values by name.
 	group := bson.M{"$group": bson.M{"_id": "$name", "doc": bson.M{"$first": "$$ROOT"}}}
 	res := []bson.M{}
@@ -93,7 +93,7 @@ func (m *Mongo) GetDimensions(datasetID, editionID, versionID string) (*models.D
 		dimension.Links.CodeList = opt.Links.CodeList
 		dimension.Links.Options = models.LinkObject{ID: opt.Name, HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s/dimensions/%s/options",
 			m.DatasetURL, version.Links.Dataset.ID, version.Edition, versionID, opt.Name)}
-		dimension.Links.Version = version.Links.Self
+		dimension.Links.Version = *version.Links.Self
 
 		results = append(results, dimension)
 	}
@@ -112,14 +112,14 @@ func (m *Mongo) GetDimensionOptions(datasetID, editionID, versionID, dimension s
 	}
 
 	var values []models.PublicDimensionOption
-	iter := s.DB(m.Database).C(DIMENSION_OPTIONS).Find(bson.M{"instance_id": version.InstanceID, "name": dimension}).Iter()
+	iter := s.DB(m.Database).C(DIMENSION_OPTIONS).Find(bson.M{"instance_id": version.ID, "name": dimension}).Iter()
 	err = iter.All(&values)
 	if err != nil {
 		return nil, err
 	}
 
 	for i := 0; i < len(values); i++ {
-		values[i].Links.Version = version.Links.Self
+		values[i].Links.Version = *version.Links.Self
 	}
 
 	return &models.DimensionOptionResults{Items: values}, nil

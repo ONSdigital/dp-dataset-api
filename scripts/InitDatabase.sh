@@ -320,12 +320,24 @@ db.versions.ensureIndex({"version":1,"links.edition.id":1},{"background":true})
 db.instances.insert({
     "_id": "AB3BAE9B-5C4D-4640-8936-8502D0DB954D",
     "id": "3b45921b-0efa-4844-a16e-3f9f30df4f88",
-    "links": {"job": {"id": "260EDB0F-2BCD-4006-B441-571F504273E0", "href": "http://localhost:22000/jobs/260EDB0F-2BCD-4006-B441-571F504273E0"},},
-    "state": "created",
+    "collection_id": "95c4669b-3ae9-4ba7-b690-87e890a1c543",
+    "edition": "2016",
+    "headers": ["V4_0", "time_64d384f1-ea3b-445c-8fb8-aa453f96e58a", "time", "Geography_65107A9F-7DA3-4B41-A410-6F6D9FBD68C3", "Geography", "Aggregate_e44de4c4-d39e-4e2f-942b-3ca10584d078", "Aggregate"],
+    "license": "ONS",
+    "links": {
+        "job": {"id": "260EDB0F-2BCD-4006-B441-571F504273E0", "href": "http://localhost:22000/jobs/260EDB0F-2BCD-4006-B441-571F504273E0"},
+        "dataset": {"id": "95c4669b-3ae9-4ba7-b690-87e890a1c67c", "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"},
+        "dimensions": {"href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/1/dimensions"},
+        "edition": {"id": "051a058-58a9-4ba4-8374-fbb7315d3b78", "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016"},
+        "self": {"href": "http://localhost:22000/instances/3b45921b-0efa-4844-a16e-3f9f30df4f88"},
+        "version": {"id": "1", "href": "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2016/versions/1"}
+    },
+    "release_date": "2016-08-23",
+    "state": "published",
     "total_observations": 0,
     "total_inserted_observations": 0,
-    "headers": ["V4_0", "time_64d384f1-ea3b-445c-8fb8-aa453f96e58a", "time", "Geography_65107A9F-7DA3-4B41-A410-6F6D9FBD68C3", "Geography", "Aggregate_e44de4c4-d39e-4e2f-942b-3ca10584d078", "Aggregate"],
-    "last_updated": "2017-08-25T15:09:11.829+01:00",
+    "version": 1,
+    "last_updated": "2017-08-25T15:09:11.829+01:00"
 });
 db.instances.insert({
     "_id": "0F06AB0E-A5D1-409A-8183-BACDF2326205",
