@@ -2,7 +2,6 @@ package models
 
 const (
 	collectionID = "12345678"
-	instanceID   = "654321"
 )
 
 var contacts = ContactDetails{
@@ -55,8 +54,8 @@ var inputDataset = Dataset{
 	Publications: []GeneralDetails{
 		publications,
 	},
-	Publisher: publisher,
-	QMI:       qmi,
+	Publisher: &publisher,
+	QMI:       &qmi,
 	RelatedDatasets: []GeneralDetails{
 		relatedDatasets,
 	},
@@ -68,39 +67,38 @@ var inputDataset = Dataset{
 }
 
 var downloads = DownloadList{
-	CSV: DownloadObject{
+	CSV: &DownloadObject{
 		URL:  "https://www.aws/123",
 		Size: "25mb",
 	},
-	XLS: DownloadObject{
+	XLS: &DownloadObject{
 		URL:  "https://www.aws/1234",
 		Size: "45mb",
 	},
 }
 
 var links = VersionLinks{
-	Dataset: LinkObject{
+	Dataset: &LinkObject{
 		HRef: "http://localhost:22000/datasets/123",
 		ID:   "3265vj48317tr4r34r3f",
 	},
-	Dimensions: LinkObject{
+	Dimensions: &LinkObject{
 		HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
 	},
-	Edition: LinkObject{
+	Edition: &LinkObject{
 		HRef: "http://localhost:22000/datasets/123/editions/2017",
 		ID:   "asf87wafgu34gf87wfdgr",
 	},
-	Self: LinkObject{
+	Self: &LinkObject{
 		HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
 	},
 }
 
 var createdVersion = Version{
-	Downloads:   downloads,
+	Downloads:   &downloads,
 	Edition:     "2017",
-	InstanceID:  instanceID,
 	License:     "ONS License",
-	Links:       links,
+	Links:       &links,
 	ReleaseDate: "2016-04-04",
 	State:       "created",
 	Version:     1,
@@ -108,11 +106,10 @@ var createdVersion = Version{
 
 var associatedVersion = Version{
 	CollectionID: collectionID,
-	Downloads:    downloads,
+	Downloads:    &downloads,
 	Edition:      "2017",
-	InstanceID:   instanceID,
 	License:      "Office of National Statistics license",
-	Links:        links,
+	Links:        &links,
 	ReleaseDate:  "2017-10-12",
 	State:        "associated",
 	Version:      1,
@@ -120,11 +117,10 @@ var associatedVersion = Version{
 
 var publishedVersion = Version{
 	CollectionID: collectionID,
-	Downloads:    downloads,
+	Downloads:    &downloads,
 	Edition:      "2017",
-	InstanceID:   instanceID,
 	License:      "Office of National Statistics license",
-	Links:        links,
+	Links:        &links,
 	ReleaseDate:  "2017-10-12",
 	State:        "published",
 	Version:      1,

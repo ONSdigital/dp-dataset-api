@@ -623,33 +623,29 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
 				return &models.Version{
-					ID:         "789",
-					InstanceID: "87654321",
-					License:    "ONS License",
-					Links: models.VersionLinks{
-						Dataset: models.LinkObject{
+					ID:      "789",
+					License: "ONS License",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123",
 							ID:   "123",
 						},
-						Dimensions: models.LinkObject{
+						Dimensions: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
 						},
-						Edition: models.LinkObject{
+						Edition: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123/editions/2017",
 							ID:   "456",
 						},
-						Self: models.LinkObject{
+						Self: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
 						},
 					},
 					ReleaseDate: "2017-12-12",
-					State:       "created",
+					State:       "edition-confirmed",
 				}, nil
 			},
 			UpdateVersionFunc: func(string, *models.Version) error {
-				return nil
-			},
-			UpdateInstanceWithVersionFunc: func(*models.Version) error {
 				return nil
 			},
 		}
@@ -664,7 +660,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpdateInstanceWithVersionCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When state is set to associated", t, func() {
@@ -686,9 +681,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			UpdateDatasetWithAssociationFunc: func(string, string, *models.Version) error {
 				return nil
 			},
-			UpdateInstanceWithVersionFunc: func(*models.Version) error {
-				return nil
-			},
 		}
 		mockedDataStore.GetVersion("123", "2017", "1", "")
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
@@ -702,7 +694,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpdateInstanceWithVersionCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When state is set to published", t, func() {
@@ -715,33 +706,32 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
 				return &models.Version{
-					ID:         "789",
-					InstanceID: "87654321",
-					License:    "ONS License",
-					Links: models.VersionLinks{
-						Dataset: models.LinkObject{
+					ID:      "789",
+					License: "ONS License",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123",
 							ID:   "123",
 						},
-						Dimensions: models.LinkObject{
+						Dimensions: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
 						},
-						Edition: models.LinkObject{
+						Edition: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123/editions/2017",
-							ID:   "456",
+							ID:   "2017",
 						},
-						Self: models.LinkObject{
+						Self: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
 						},
 					},
 					ReleaseDate: "2017-12-12",
-					State:       "created",
+					State:       "edition-confirmed",
 				}, nil
 			},
 			UpdateVersionFunc: func(string, *models.Version) error {
 				return nil
 			},
-			UpdateEditionFunc: func(string, string) error {
+			UpdateEditionFunc: func(string, string, string) error {
 				return nil
 			},
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
@@ -757,7 +747,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		}
 		mockedDataStore.GetVersion("789", "2017", "1", "")
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
-		mockedDataStore.UpdateEdition("456", "published")
+		mockedDataStore.UpdateEdition("123", "2017", "published")
 		mockedDataStore.GetDataset("123")
 		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{})
 
@@ -1065,16 +1055,13 @@ func setUp(state string) *storetest.StorerMock {
 		UpdateDatasetWithAssociationFunc: func(string, string, *models.Version) error {
 			return nil
 		},
-		UpdateEditionFunc: func(string, string) error {
+		UpdateEditionFunc: func(string, string, string) error {
 			return nil
 		},
 		UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
 			return nil
 		},
 		UpsertVersionFunc: func(string, *models.Version) error {
-			return nil
-		},
-		UpdateInstanceWithVersionFunc: func(*models.Version) error {
 			return nil
 		},
 	}
@@ -1095,7 +1082,7 @@ func setUp(state string) *storetest.StorerMock {
 				State: state,
 			},
 		}
-		mockedDataStore.UpdateEdition("123", state)
+		mockedDataStore.UpdateEdition("123", "2017", state)
 		mockedDataStore.GetDataset("123")
 		mockedDataStore.UpsertDataset("123", datasetDoc)
 	}

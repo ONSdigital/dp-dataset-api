@@ -179,7 +179,7 @@ func (m *Mongo) GetNextVersion(datasetID, edition string) (int, error) {
 		"edition":          edition,
 	}
 
-	err := s.DB(m.Database).C("versions").Find(selector).Sort("-version").One(&version)
+	err := s.DB(m.Database).C("instances").Find(selector).Sort("-version").One(&version)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return 1, nil
@@ -199,7 +199,7 @@ func (m *Mongo) GetVersions(id, editionID, state string) (*models.VersionResults
 
 	selector := buildVersionsQuery(id, editionID, state)
 
-	iter := s.DB(m.Database).C("versions").Find(selector).Iter()
+	iter := s.DB(m.Database).C("instances").Find(selector).Iter()
 	defer iter.Close()
 
 	var results []models.Version
@@ -247,7 +247,7 @@ func (m *Mongo) GetVersion(id, editionID, versionID, state string) (*models.Vers
 	selector := buildVersionQuery(id, editionID, state, versionNumber)
 
 	var version models.Version
-	err = s.DB(m.Database).C("versions").Find(selector).One(&version)
+	err = s.DB(m.Database).C("instances").Find(selector).One(&version)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, errs.VersionNotFound
@@ -275,22 +275,6 @@ func buildVersionQuery(id, editionID, state string, versionID int) bson.M {
 	}
 
 	return selector
-}
-
-// GetVersionByInstanceID retrieves a version document by its instance id
-func (m *Mongo) GetVersionByInstanceID(instanceID string) (*models.Version, error) {
-	s := m.Session.Copy()
-	defer s.Clone()
-
-	var version models.Version
-	err := s.DB(m.Database).C("versions").Find(bson.M{"instance_id": instanceID}).One(&version)
-	if err != nil {
-		if err == mgo.ErrNotFound {
-			return nil, errs.VersionNotFound
-		}
-		return nil, err
-	}
-	return &version, nil
 }
 
 // UpdateDataset updates an existing dataset document
@@ -406,7 +390,7 @@ func (m *Mongo) UpdateDatasetWithAssociation(id, state string, version *models.V
 }
 
 // UpdateEdition updates an existing edition document
-func (m *Mongo) UpdateEdition(id, state string) (err error) {
+func (m *Mongo) UpdateEdition(datasetID, edition, state string) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -419,7 +403,7 @@ func (m *Mongo) UpdateEdition(id, state string) (err error) {
 		},
 	}
 
-	err = s.DB(m.Database).C("editions").UpdateId(id, update)
+	err = s.DB(m.Database).C("editions").Update(bson.M{"links.dataset.id": datasetID, "edition": edition}, update)
 	return
 }
 
@@ -430,7 +414,7 @@ func (m *Mongo) UpdateVersion(id string, version *models.Version) (err error) {
 
 	updates := createVersionUpdateQuery(version)
 
-	err = s.DB(m.Database).C("versions").UpdateId(id, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}})
+	err = s.DB(m.Database).C("instances").Update(bson.M{"id": id}, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}})
 	return
 }
 
@@ -439,10 +423,6 @@ func createVersionUpdateQuery(version *models.Version) bson.M {
 
 	if version.CollectionID != "" {
 		updates["collection_id"] = version.CollectionID
-	}
-
-	if version.InstanceID != "" {
-		updates["instance_id"] = version.InstanceID
 	}
 
 	if version.License != "" {
@@ -497,7 +477,7 @@ func (m *Mongo) UpsertEdition(datasetID, edition string, editionDoc *models.Edit
 	return
 }
 
-// UpsertVersion adds or overides an existing version document
+// UpsertVersion adds or overrides an existing version document
 func (m *Mongo) UpsertVersion(id string, version *models.Version) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
@@ -509,7 +489,7 @@ func (m *Mongo) UpsertVersion(id string, version *models.Version) (err error) {
 		},
 	}
 
-	_, err = s.DB(m.Database).C("versions").UpsertId(id, update)
+	_, err = s.DB(m.Database).C("instances").UpsertId(id, update)
 	return err
 }
 

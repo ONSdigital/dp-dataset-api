@@ -199,12 +199,12 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			NationalStatistic: true,
 			NextRelease:       "2018-05-05",
 			Publications:      publications,
-			Publisher: models.Publisher{
+			Publisher: &models.Publisher{
 				Name: "Office of National Statistics",
 				Type: "Public",
 				HRef: "http://ons.gov.uk",
 			},
-			QMI:              qmi,
+			QMI:              &qmi,
 			RelatedDatasets:  relatedDatasets,
 			ReleaseFrequency: "yearly",
 			Theme:            "construction",
@@ -224,7 +224,6 @@ func TestVersionUpdateQuery(t *testing.T) {
 
 		expectedUpdate := bson.M{
 			"collection_id": "12345678",
-			"instance_id":   "87654321",
 			"license":       "ONS License",
 			"release_date":  "2017-09-09",
 			"state":         "published",
@@ -232,7 +231,6 @@ func TestVersionUpdateQuery(t *testing.T) {
 
 		version := &models.Version{
 			CollectionID: "12345678",
-			InstanceID:   "87654321",
 			License:      "ONS License",
 			ReleaseDate:  "2017-09-09",
 			State:        "published",

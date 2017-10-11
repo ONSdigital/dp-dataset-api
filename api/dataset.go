@@ -14,8 +14,10 @@ import (
 )
 
 const (
-	publishedState  = "published"
+	createdState    = "created"
+	completedState  = "completed"
 	associatedState = "associated"
+	publishedState  = "published"
 
 	internalToken = "internal-token"
 )
@@ -226,9 +228,17 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	log.Debug("got here 1", nil)
+
 	dataset.ID = datasetID
-	dataset.Links.Self.HRef = fmt.Sprintf("%s/datasets/%s", api.host, datasetID)
-	dataset.Links.Editions.HRef = fmt.Sprintf("%s/datasets/%s/editions", api.host, datasetID)
+	dataset.Links = &models.DatasetLinks{
+		Self: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s", api.host, datasetID),
+		},
+		Editions: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s/editions", api.host, datasetID),
+		},
+	}
 	dataset.LastUpdated = time.Now()
 
 	datasetDoc := &models.DatasetUpdate{
@@ -306,6 +316,11 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if currentVersion.State == createdState || currentVersion.State == completedState {
+		http.Error(w, fmt.Sprintf("Version not found"), http.StatusNotFound)
+		return
+	}
+
 	// Combine update version document to existing version document
 	newVersion := createNewVersionDoc(currentVersion, version)
 
@@ -321,7 +336,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if version.State == publishedState {
-		if err := api.dataStore.Backend.UpdateEdition(newVersion.Links.Edition.ID, version.State); err != nil {
+		if err := api.dataStore.Backend.UpdateEdition(datasetID, editionID, version.State); err != nil {
 			log.ErrorC("failed to update the state of edition document to published", err, nil)
 			handleErrorType(err, w)
 			return
@@ -341,11 +356,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 			handleErrorType(err, w)
 			return
 		}
-		if err := api.dataStore.Backend.UpdateInstanceWithVersion(version); err != nil {
-			log.ErrorC("failed to update instance doc after a version of a dataset has been associated with a collection", err, log.Data{"instance_id": version.InstanceID, "version_id": version.ID})
-			handleErrorType(err, w)
-			return
-		}
 	}
 
 	setJSONContentType(w)
@@ -356,10 +366,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 func createNewVersionDoc(currentVersion *models.Version, version *models.Version) *models.Version {
 	if version.CollectionID == "" {
 		version.CollectionID = currentVersion.CollectionID
-	}
-
-	if version.InstanceID == "" {
-		version.InstanceID = currentVersion.InstanceID
 	}
 
 	if version.License == "" {
@@ -388,8 +394,12 @@ func (api *DatasetAPI) updateDataset(id string, version *models.Version) error {
 	}
 
 	currentDataset.Next.CollectionID = version.CollectionID
-	currentDataset.Next.Links.LatestVersion.ID = version.ID
-	currentDataset.Next.Links.LatestVersion.HRef = version.Links.Self.HRef
+	currentDataset.Next.Links = &models.DatasetLinks{
+		LatestVersion: &models.LinkObject{
+			ID:   version.ID,
+			HRef: version.Links.Self.HRef,
+		},
+	}
 	currentDataset.Next.State = publishedState
 	currentDataset.Next.LastUpdated = time.Now()
 
