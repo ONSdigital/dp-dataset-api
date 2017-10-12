@@ -893,7 +893,7 @@ definitions:
       id:
         type: string
         readOnly: true
-        description: "A unique id for a job"
+        description: "A unique id for an instance"
       links:
         type: object
         properties:
