@@ -20,7 +20,7 @@ A ONS API used to navigate datasets which are published.
 | SECRET_KEY                 | FD0108EA-825D-411C-9B1D-41EF7727F465 | A secret key used authentication
 | CODE_LIST_API_URL          | http://localhost:22400               | The host name for the Dataset API
 | DATASET_API_URL            | http://localhost:22000               | The host name for the CodeList API
-| SHUTDOWN_TIMEOUT           | 5s                                  | The graceful shutdown timeout in seconds
+| GRACEFUL_SHUTDOWN_TIMEOUT  | 5s                                   | The graceful shutdown timeout in seconds
 
 ### Contributing
 
