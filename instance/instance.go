@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -32,9 +33,15 @@ const (
 
 //GetList a list of all instances
 func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
-	stateFilter := r.URL.Query().Get("state")
+	stateFilterQuery := r.URL.Query().Get("state")
+	var stateFilterList []string
+	if stateFilterQuery == "" {
+		stateFilterList = nil
+	} else {
+		stateFilterList = strings.Split(stateFilterQuery, ",")
+	}
 
-	results, err := s.GetInstances(stateFilter)
+	results, err := s.GetInstances(stateFilterList)
 	if err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
@@ -48,7 +55,7 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeBody(w, bytes)
-	log.Debug("get all instances", log.Data{"query": stateFilter})
+	log.Debug("get all instances", log.Data{"query": stateFilterQuery})
 }
 
 //Get a single instance by id

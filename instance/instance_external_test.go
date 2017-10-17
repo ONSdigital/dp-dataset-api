@@ -34,7 +34,7 @@ func TestGetInstancesReturnsOK(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetInstancesFunc: func(string) (*models.InstanceResults, error) {
+			GetInstancesFunc: func([]string) (*models.InstanceResults, error) {
 				return &models.InstanceResults{}, nil
 			},
 		}
@@ -54,7 +54,7 @@ func TestGetInstancesReturnsInternalError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetInstancesFunc: func(string) (*models.InstanceResults, error) {
+			GetInstancesFunc: func([]string) (*models.InstanceResults, error) {
 				return nil, internalError
 			},
 		}
