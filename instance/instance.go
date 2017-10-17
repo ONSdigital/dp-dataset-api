@@ -35,9 +35,7 @@ const (
 func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	stateFilterQuery := r.URL.Query().Get("state")
 	var stateFilterList []string
-	if stateFilterQuery == "" {
-		stateFilterList = nil
-	} else {
+	if stateFilterQuery != "" {
 		stateFilterList = strings.Split(stateFilterQuery, ",")
 	}
 
