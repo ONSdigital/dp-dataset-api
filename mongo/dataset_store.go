@@ -7,7 +7,6 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/ONSdigital/go-ns/log"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"gopkg.in/mgo.v2"
@@ -300,7 +299,6 @@ func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset) (err error) {
 	defer s.Close()
 
 	updates := createDatasetUpdateQuery(dataset)
-	log.Debug("Stuff", log.Data{"id": id, "updates": updates})
 	err = s.DB(m.Database).C("datasets").UpdateId(id, bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}})
 	return
 }
