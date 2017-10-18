@@ -101,7 +101,7 @@ parameters:
     type: string
   state:
     name: "state"
-    description: "Query data based of there state"
+    description: "A comma separated list of state values to filter on (e.g. ‘completed,edition-confirmed’)"
     in: query
     type: string
   option:
