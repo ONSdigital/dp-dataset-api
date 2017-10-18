@@ -47,6 +47,45 @@ func TestGetInstancesReturnsOK(t *testing.T) {
 	})
 }
 
+func TestGetInstancesFiltersOnState(t *testing.T) {
+	t.Parallel()
+	Convey("Get instances filtered by a single state value returns only instances with that value", t, func() {
+		r := createRequestWithToken("GET", "http://localhost:21800/instances?state=completed", nil)
+		w := httptest.NewRecorder()
+		var result []string
+
+		mockedDataStore := &storetest.StorerMock{
+			GetInstancesFunc: func(filterString []string) (*models.InstanceResults, error) {
+				result = filterString
+				return &models.InstanceResults{}, nil
+			},
+		}
+
+		instance := &instance.Store{"http://lochost://8080", mockedDataStore}
+		instance.GetList(w, r)
+
+		So(result, ShouldResemble, []string{"completed"})
+	})
+
+	Convey("Get instances filtered by multiple state values returns only instances with those values", t, func() {
+		r := createRequestWithToken("GET", "http://localhost:21800/instances?state=completed,edition-confirmed", nil)
+		w := httptest.NewRecorder()
+		var result []string
+
+		mockedDataStore := &storetest.StorerMock{
+			GetInstancesFunc: func(filterString []string) (*models.InstanceResults, error) {
+				result = filterString
+				return &models.InstanceResults{}, nil
+			},
+		}
+
+		instance := &instance.Store{"http://lochost://8080", mockedDataStore}
+		instance.GetList(w, r)
+
+		So(result, ShouldResemble, []string{"completed", "edition-confirmed"})
+	})
+}
+
 func TestGetInstancesReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("Get instances returns an internal error", t, func() {
