@@ -20,13 +20,20 @@ const (
 	publishedState  = "published"
 
 	internalToken = "internal-token"
+
+	datasetDocType         = "dataset"
+	editionDocType         = "edition"
+	versionDocType         = "version"
+	instanceDocType        = "instance"
+	dimensionDocType       = "dimension"
+	dimensionOptionDocType = "dimension-option"
 )
 
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	results, err := api.dataStore.Backend.GetDatasets()
 	if err != nil {
 		log.Error(err, nil)
-		handleErrorType(err, w)
+		handleErrorType(datasetDocType, err, w)
 		return
 	}
 
@@ -39,7 +46,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 		bytes, err = json.Marshal(datasets)
 		if err != nil {
 			log.Error(err, nil)
-			handleErrorType(err, w)
+			handleErrorType(datasetDocType, err, w)
 			return
 		}
 	} else {
@@ -50,7 +57,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 		bytes, err = json.Marshal(datasets)
 		if err != nil {
 			log.Error(err, nil)
-			handleErrorType(err, w)
+			handleErrorType(datasetDocType, err, w)
 			return
 		}
 	}
@@ -69,14 +76,14 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	dataset, err := api.dataStore.Backend.GetDataset(id)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": id})
-		handleErrorType(err, w)
+		handleErrorType(datasetDocType, err, w)
 		return
 	}
 
 	var bytes []byte
 	if r.Header.Get(internalToken) != api.internalToken {
 		if dataset.Current == nil {
-			handleErrorType(errs.DatasetNotFound, w)
+			handleErrorType(datasetDocType, errs.DatasetNotFound, w)
 			return
 		}
 
@@ -89,7 +96,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		if dataset == nil {
-			handleErrorType(errs.DatasetNotFound, w)
+			handleErrorType(datasetDocType, errs.DatasetNotFound, w)
 		}
 		bytes, err = json.Marshal(dataset)
 		if err != nil {
@@ -120,7 +127,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	results, err := api.dataStore.Backend.GetEditions(id, state)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": id})
-		handleErrorType(err, w)
+		handleErrorType(editionDocType, err, w)
 		return
 	}
 
@@ -152,7 +159,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	edition, err := api.dataStore.Backend.GetEdition(id, editionID, state)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
-		handleErrorType(err, w)
+		handleErrorType(editionDocType, err, w)
 		return
 	}
 
@@ -185,7 +192,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	results, err := api.dataStore.Backend.GetVersions(id, editionID, state)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
-		handleErrorType(err, w)
+		handleErrorType(versionDocType, err, w)
 		return
 	}
 
@@ -218,7 +225,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	results, err := api.dataStore.Backend.GetVersion(id, editionID, version, state)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": id, "edition": editionID, "version": version})
-		handleErrorType(err, w)
+		handleErrorType(versionDocType, err, w)
 		return
 	}
 
@@ -268,7 +275,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 
 	if err := api.dataStore.Backend.UpsertDataset(datasetID, datasetDoc); err != nil {
 		log.ErrorR(r, err, nil)
-		handleErrorType(err, w)
+		handleErrorType(datasetDocType, err, w)
 		return
 	}
 
@@ -301,7 +308,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	if err := api.dataStore.Backend.UpdateDataset(datasetID, dataset); err != nil {
-		handleErrorType(err, w)
+		handleErrorType(datasetDocType, err, w)
 		return
 	}
 
@@ -325,7 +332,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	currentVersion, err := api.dataStore.Backend.GetVersion(datasetID, editionID, versionID, "")
 	if err != nil {
-		handleErrorType(err, w)
+		handleErrorType(versionDocType, err, w)
 		return
 	}
 
@@ -351,21 +358,21 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := api.dataStore.Backend.UpdateVersion(newVersion.ID, version); err != nil {
-		handleErrorType(err, w)
+		handleErrorType(versionDocType, err, w)
 		return
 	}
 
 	if version.State == publishedState {
 		if err := api.dataStore.Backend.UpdateEdition(datasetID, editionID, version.State); err != nil {
 			log.ErrorC("failed to update the state of edition document to published", err, nil)
-			handleErrorType(err, w)
+			handleErrorType(versionDocType, err, w)
 			return
 		}
 
 		// Pass in newVersion variable to include relevant data needed for update on dataset API (e.g. links)
 		if err := api.updateDataset(datasetID, newVersion); err != nil {
 			log.ErrorC("failed to update dataset document once version state changes to publish", err, nil)
-			handleErrorType(err, w)
+			handleErrorType(versionDocType, err, w)
 			return
 		}
 	}
@@ -373,7 +380,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	if version.State == associatedState {
 		if err := api.dataStore.Backend.UpdateDatasetWithAssociation(datasetID, associatedState, version); err != nil {
 			log.ErrorC("failed to update dataset document after a version of a dataset has been associated with a collection", err, nil)
-			handleErrorType(err, w)
+			handleErrorType(versionDocType, err, w)
 			return
 		}
 	}
@@ -449,7 +456,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 
 	results, err := api.dataStore.Backend.GetDimensions(datasetID, editionID, versionID)
 	if err != nil {
-		handleErrorType(err, w)
+		handleErrorType(dimensionDocType, err, w)
 		return
 	}
 
@@ -477,7 +484,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	dimension := vars["dimension"]
 	results, err := api.dataStore.Backend.GetDimensionOptions(datasetID, editionID, versionID, dimension)
 	if err != nil {
-		handleErrorType(err, w)
+		handleErrorType(dimensionOptionDocType, err, w)
 		return
 	}
 
@@ -510,11 +517,22 @@ func mapResults(results []models.DatasetUpdate) []*models.Dataset {
 	return items
 }
 
-func handleErrorType(err error, w http.ResponseWriter) {
-	if err == errs.DatasetNotFound || err == errs.EditionNotFound || err == errs.VersionNotFound || err == errs.DimensionNodeNotFound || err == errs.InstanceNotFound {
-		http.Error(w, err.Error(), http.StatusNotFound)
-	} else {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+func handleErrorType(docType string, err error, w http.ResponseWriter) {
+	switch docType {
+	default:
+		if err == errs.DatasetNotFound || err == errs.EditionNotFound || err == errs.VersionNotFound || err == errs.DimensionNodeNotFound || err == errs.InstanceNotFound {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	case "edition":
+		if err == errs.DatasetNotFound {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else if err == errs.EditionNotFound {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 }
 

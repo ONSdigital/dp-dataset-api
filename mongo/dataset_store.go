@@ -80,6 +80,10 @@ func (m *Mongo) GetEditions(id, state string) (*models.EditionResults, error) {
 	s := m.Session.Copy()
 	defer s.Clone()
 
+	if err := m.checkDatasetExists(id, state); err != nil {
+		return nil, err
+	}
+
 	selector := buildEditionsQuery(id, state)
 
 	iter := s.DB(m.Database).C("editions").Find(selector).Iter()
@@ -119,6 +123,10 @@ func buildEditionsQuery(id, state string) bson.M {
 func (m *Mongo) GetEdition(id, editionID, state string) (*models.Edition, error) {
 	s := m.Session.Copy()
 	defer s.Clone()
+
+	if err := m.checkDatasetExists(id, state); err != nil {
+		return nil, err
+	}
 
 	selector := buildEditionQuery(id, editionID, state)
 
@@ -484,4 +492,32 @@ func (m *Mongo) UpsertContact(id string, update interface{}) (err error) {
 
 	_, err = s.DB(m.Database).C("contacts").UpsertId(id, update)
 	return
+}
+
+func (m *Mongo) checkDatasetExists(id, state string) error {
+	s := m.Session.Copy()
+	defer s.Close()
+
+	var query bson.M
+	if state == "" {
+		query = bson.M{
+			"_id": id,
+		}
+	} else {
+		query = bson.M{
+			"_id":           id,
+			"current.state": state,
+		}
+	}
+
+	count, err := s.DB(m.Database).C("datasets").Find(query).Count()
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		return errs.DatasetNotFound
+	}
+
+	return nil
 }
