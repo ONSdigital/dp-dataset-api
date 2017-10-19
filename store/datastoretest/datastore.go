@@ -12,6 +12,8 @@ var (
 	lockStorerMockAddDimensionToInstance        sync.RWMutex
 	lockStorerMockAddEventToInstance            sync.RWMutex
 	lockStorerMockAddInstance                   sync.RWMutex
+	lockStorerMockCheckDatasetExists            sync.RWMutex
+	lockStorerMockCheckEditionExists            sync.RWMutex
 	lockStorerMockGetDataset                    sync.RWMutex
 	lockStorerMockGetDatasets                   sync.RWMutex
 	lockStorerMockGetDimensionNodesFromInstance sync.RWMutex
@@ -52,6 +54,12 @@ var (
 //             },
 //             AddInstanceFunc: func(instance *models.Instance) (*models.Instance, error) {
 // 	               panic("TODO: mock out the AddInstance method")
+//             },
+//             CheckDatasetExistsFunc: func(id string, state string) error {
+// 	               panic("TODO: mock out the CheckDatasetExists method")
+//             },
+//             CheckEditionExistsFunc: func(id string, editionID string, state string) error {
+// 	               panic("TODO: mock out the CheckEditionExists method")
 //             },
 //             GetDatasetFunc: func(id string) (*models.DatasetUpdate, error) {
 // 	               panic("TODO: mock out the GetDataset method")
@@ -140,6 +148,12 @@ type StorerMock struct {
 
 	// AddInstanceFunc mocks the AddInstance method.
 	AddInstanceFunc func(instance *models.Instance) (*models.Instance, error)
+
+	// CheckDatasetExistsFunc mocks the CheckDatasetExists method.
+	CheckDatasetExistsFunc func(id string, state string) error
+
+	// CheckEditionExistsFunc mocks the CheckEditionExists method.
+	CheckEditionExistsFunc func(id string, editionID string, state string) error
 
 	// GetDatasetFunc mocks the GetDataset method.
 	GetDatasetFunc func(id string) (*models.DatasetUpdate, error)
@@ -231,6 +245,22 @@ type StorerMock struct {
 		AddInstance []struct {
 			// Instance is the instance argument value.
 			Instance *models.Instance
+		}
+		// CheckDatasetExists holds details about calls to the CheckDatasetExists method.
+		CheckDatasetExists []struct {
+			// Id is the id argument value.
+			Id string
+			// State is the state argument value.
+			State string
+		}
+		// CheckEditionExists holds details about calls to the CheckEditionExists method.
+		CheckEditionExists []struct {
+			// Id is the id argument value.
+			Id string
+			// EditionID is the editionID argument value.
+			EditionID string
+			// State is the state argument value.
+			State string
 		}
 		// GetDataset holds details about calls to the GetDataset method.
 		GetDataset []struct {
@@ -503,6 +533,80 @@ func (mock *StorerMock) AddInstanceCalls() []struct {
 	lockStorerMockAddInstance.RLock()
 	calls = mock.calls.AddInstance
 	lockStorerMockAddInstance.RUnlock()
+	return calls
+}
+
+// CheckDatasetExists calls CheckDatasetExistsFunc.
+func (mock *StorerMock) CheckDatasetExists(id string, state string) error {
+	if mock.CheckDatasetExistsFunc == nil {
+		panic("moq: StorerMock.CheckDatasetExistsFunc is nil but Storer.CheckDatasetExists was just called")
+	}
+	callInfo := struct {
+		Id    string
+		State string
+	}{
+		Id:    id,
+		State: state,
+	}
+	lockStorerMockCheckDatasetExists.Lock()
+	mock.calls.CheckDatasetExists = append(mock.calls.CheckDatasetExists, callInfo)
+	lockStorerMockCheckDatasetExists.Unlock()
+	return mock.CheckDatasetExistsFunc(id, state)
+}
+
+// CheckDatasetExistsCalls gets all the calls that were made to CheckDatasetExists.
+// Check the length with:
+//     len(mockedStorer.CheckDatasetExistsCalls())
+func (mock *StorerMock) CheckDatasetExistsCalls() []struct {
+	Id    string
+	State string
+} {
+	var calls []struct {
+		Id    string
+		State string
+	}
+	lockStorerMockCheckDatasetExists.RLock()
+	calls = mock.calls.CheckDatasetExists
+	lockStorerMockCheckDatasetExists.RUnlock()
+	return calls
+}
+
+// CheckEditionExists calls CheckEditionExistsFunc.
+func (mock *StorerMock) CheckEditionExists(id string, editionID string, state string) error {
+	if mock.CheckEditionExistsFunc == nil {
+		panic("moq: StorerMock.CheckEditionExistsFunc is nil but Storer.CheckEditionExists was just called")
+	}
+	callInfo := struct {
+		Id        string
+		EditionID string
+		State     string
+	}{
+		Id:        id,
+		EditionID: editionID,
+		State:     state,
+	}
+	lockStorerMockCheckEditionExists.Lock()
+	mock.calls.CheckEditionExists = append(mock.calls.CheckEditionExists, callInfo)
+	lockStorerMockCheckEditionExists.Unlock()
+	return mock.CheckEditionExistsFunc(id, editionID, state)
+}
+
+// CheckEditionExistsCalls gets all the calls that were made to CheckEditionExists.
+// Check the length with:
+//     len(mockedStorer.CheckEditionExistsCalls())
+func (mock *StorerMock) CheckEditionExistsCalls() []struct {
+	Id        string
+	EditionID string
+	State     string
+} {
+	var calls []struct {
+		Id        string
+		EditionID string
+		State     string
+	}
+	lockStorerMockCheckEditionExists.RLock()
+	calls = mock.calls.CheckEditionExists
+	lockStorerMockCheckEditionExists.RUnlock()
 	return calls
 }
 

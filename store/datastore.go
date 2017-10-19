@@ -14,6 +14,8 @@ type Storer interface {
 	AddDimensionToInstance(dimension *models.CachedDimensionOption) error
 	AddEventToInstance(instanceID string, event *models.Event) error
 	AddInstance(instance *models.Instance) (*models.Instance, error)
+	CheckDatasetExists(id, state string) error
+	CheckEditionExists(id, editionID, state string) error
 	GetDataset(id string) (*models.DatasetUpdate, error)
 	GetDatasets() ([]models.DatasetUpdate, error)
 	GetDimensionNodesFromInstance(id string) (*models.DimensionNodeResults, error)

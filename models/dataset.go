@@ -154,6 +154,7 @@ type VersionLinks struct {
 	Dimensions *LinkObject `bson:"dimensions,omitempty"  json:"dimensions,omitempty"`
 	Edition    *LinkObject `bson:"edition,omitempty"     json:"edition,omitempty"`
 	Self       *LinkObject `bson:"self,omitempty"        json:"self,omitempty"`
+	Version    *LinkObject `bson:"version,omitempty"     json:"-"`
 }
 
 // CreateDataset manages the creation of a dataset from a reader
