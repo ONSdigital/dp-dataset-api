@@ -30,11 +30,29 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, err := json.Marshal(results)
-	if err != nil {
-		log.Error(err, nil)
-		handleErrorType(err, w)
-		return
+	var bytes []byte
+
+	if r.Header.Get(internalToken) == api.internalToken {
+		datasets := &models.DatasetUpdateResults{}
+
+		datasets.Items = results
+		bytes, err = json.Marshal(datasets)
+		if err != nil {
+			log.Error(err, nil)
+			handleErrorType(err, w)
+			return
+		}
+	} else {
+		datasets := &models.DatasetResults{}
+
+		datasets.Items = mapResults(results)
+
+		bytes, err = json.Marshal(datasets)
+		if err != nil {
+			log.Error(err, nil)
+			handleErrorType(err, w)
+			return
+		}
 	}
 	setJSONContentType(w)
 	_, err = w.Write(bytes)
@@ -475,6 +493,19 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	}
 
 	log.Debug("get dimension options", log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension})
+}
+
+func mapResults(results []models.DatasetUpdate) []*models.Dataset {
+	items := []*models.Dataset{}
+	for _, item := range results {
+		if item.Current == nil {
+			continue
+		}
+		item.Current.ID = item.ID
+
+		items = append(items, item.Current)
+	}
+	return items
 }
 
 func handleErrorType(err error, w http.ResponseWriter) {

@@ -15,7 +15,7 @@ type Storer interface {
 	AddEventToInstance(instanceID string, event *models.Event) error
 	AddInstance(instance *models.Instance) (*models.Instance, error)
 	GetDataset(id string) (*models.DatasetUpdate, error)
-	GetDatasets() (*models.DatasetResults, error)
+	GetDatasets() ([]models.DatasetUpdate, error)
 	GetDimensionNodesFromInstance(id string) (*models.DimensionNodeResults, error)
 	GetDimensions(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error)
 	GetDimensionOptions(datasetID, editionID, versionID, dimension string) (*models.DimensionOptionResults, error)

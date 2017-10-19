@@ -56,7 +56,7 @@ var (
 //             GetDatasetFunc: func(id string) (*models.DatasetUpdate, error) {
 // 	               panic("TODO: mock out the GetDataset method")
 //             },
-//             GetDatasetsFunc: func() (*models.DatasetResults, error) {
+//             GetDatasetsFunc: func() ([]models.DatasetUpdate, error) {
 // 	               panic("TODO: mock out the GetDatasets method")
 //             },
 //             GetDimensionNodesFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
@@ -145,7 +145,7 @@ type StorerMock struct {
 	GetDatasetFunc func(id string) (*models.DatasetUpdate, error)
 
 	// GetDatasetsFunc mocks the GetDatasets method.
-	GetDatasetsFunc func() (*models.DatasetResults, error)
+	GetDatasetsFunc func() ([]models.DatasetUpdate, error)
 
 	// GetDimensionNodesFromInstanceFunc mocks the GetDimensionNodesFromInstance method.
 	GetDimensionNodesFromInstanceFunc func(id string) (*models.DimensionNodeResults, error)
@@ -538,7 +538,7 @@ func (mock *StorerMock) GetDatasetCalls() []struct {
 }
 
 // GetDatasets calls GetDatasetsFunc.
-func (mock *StorerMock) GetDatasets() (*models.DatasetResults, error) {
+func (mock *StorerMock) GetDatasets() ([]models.DatasetUpdate, error) {
 	if mock.GetDatasetsFunc == nil {
 		panic("moq: StorerMock.GetDatasetsFunc is nil but Storer.GetDatasets was just called")
 	}

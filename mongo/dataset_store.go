@@ -41,11 +41,9 @@ func (m *Mongo) Init() (session *mgo.Session, err error) {
 }
 
 // GetDatasets retrieves all dataset documents
-func (m *Mongo) GetDatasets() (*models.DatasetResults, error) {
+func (m *Mongo) GetDatasets() ([]models.DatasetUpdate, error) {
 	s := m.Session.Copy()
 	defer s.Close()
-
-	datasets := &models.DatasetResults{}
 
 	iter := s.DB(m.Database).C("datasets").Find(nil).Iter()
 	defer iter.Close()
@@ -58,21 +56,7 @@ func (m *Mongo) GetDatasets() (*models.DatasetResults, error) {
 		return nil, err
 	}
 
-	datasets.Items = mapResults(results)
-
-	return datasets, nil
-}
-
-func mapResults(results []models.DatasetUpdate) []*models.Dataset {
-	items := []*models.Dataset{}
-	for _, item := range results {
-		if item.Current == nil {
-			continue
-		}
-
-		items = append(items, item.Current)
-	}
-	return items
+	return results, nil
 }
 
 // GetDataset retrieves a dataset document
