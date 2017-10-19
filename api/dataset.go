@@ -79,6 +79,8 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			handleErrorType(errs.DatasetNotFound, w)
 			return
 		}
+
+		dataset.Current.ID = dataset.ID
 		bytes, err = json.Marshal(dataset.Current)
 		if err != nil {
 			log.Error(err, log.Data{"dataset_id": id})
