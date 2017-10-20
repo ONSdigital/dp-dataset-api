@@ -37,6 +37,11 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	var stateFilterList []string
 	if stateFilterQuery != "" {
 		stateFilterList = strings.Split(stateFilterQuery, ",")
+		if err := models.ValidateStateFilter(stateFilterList); err != nil {
+			log.Error(err, nil)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 
 	results, err := s.GetInstances(stateFilterList)

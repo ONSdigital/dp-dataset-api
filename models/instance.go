@@ -2,7 +2,10 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"time"
+
+	"github.com/ONSdigital/go-ns/log"
 )
 
 // Instance which presents a single dataset being imported
@@ -57,5 +60,32 @@ func (e *Event) Validate() error {
 	if e.Message == "" || e.MessageOffset == "" || e.Time == nil || e.Type == "" {
 		return errors.New("Missing properties")
 	}
+	return nil
+}
+
+var validStates = map[string]int{
+	"created":           1,
+	"completed":         1,
+	"edition-confirmed": 1,
+	"associated":        1,
+	"published":         1,
+}
+
+// ValidateStateFilter checks the list of filter states from a whitelist
+func ValidateStateFilter(filterList []string) error {
+	var invalidFilterStateValues []string
+
+	for _, filter := range filterList {
+		if _, ok := validStates[filter]; !ok {
+			invalidFilterStateValues = append(invalidFilterStateValues, filter)
+		}
+	}
+
+	if invalidFilterStateValues != nil {
+		err := fmt.Errorf("invalid filter state values")
+		log.Error(err, log.Data{"list-of-invalid-filter-states": invalidFilterStateValues})
+		return err
+	}
+
 	return nil
 }
