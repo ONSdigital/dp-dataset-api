@@ -64,6 +64,8 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 		instance := &instance.Store{"http://lochost://8080", mockedDataStore}
 		instance.GetList(w, r)
 
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 		So(result, ShouldResemble, []string{"completed"})
 	})
 
@@ -82,11 +84,13 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 		instance := &instance.Store{"http://lochost://8080", mockedDataStore}
 		instance.GetList(w, r)
 
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 		So(result, ShouldResemble, []string{"completed", "edition-confirmed"})
 	})
 }
 
-func TestGetInstancesReturnsInternalError(t *testing.T) {
+func TestGetInstancesReturnsError(t *testing.T) {
 	t.Parallel()
 	Convey("Get instances returns an internal error", t, func() {
 		r := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
@@ -103,6 +107,19 @@ func TestGetInstancesReturnsInternalError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
+	})
+
+	Convey("Get instances returns bad request error", t, func() {
+		r := createRequestWithToken("GET", "http://localhost:21800/instances?state=foo", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		instance := &instance.Store{host, mockedDataStore}
+		instance.GetList(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 0)
 	})
 }
 
