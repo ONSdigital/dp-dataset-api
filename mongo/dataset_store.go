@@ -78,7 +78,7 @@ func mapResults(results []models.DatasetUpdate) []*models.Dataset {
 // GetDataset retrieves a dataset document
 func (m *Mongo) GetDataset(id string) (*models.DatasetUpdate, error) {
 	s := m.Session.Copy()
-	defer s.Clone()
+	defer s.Close()
 	var dataset models.DatasetUpdate
 	err := s.DB(m.Database).C("datasets").Find(bson.M{"_id": id}).One(&dataset)
 	if err != nil {
@@ -94,7 +94,7 @@ func (m *Mongo) GetDataset(id string) (*models.DatasetUpdate, error) {
 // GetEditions retrieves all edition documents for a dataset
 func (m *Mongo) GetEditions(id, state string) (*models.EditionResults, error) {
 	s := m.Session.Copy()
-	defer s.Clone()
+	defer s.Close()
 
 	selector := buildEditionsQuery(id, state)
 
@@ -134,7 +134,7 @@ func buildEditionsQuery(id, state string) bson.M {
 // GetEdition retrieves an edition document for a dataset
 func (m *Mongo) GetEdition(id, editionID, state string) (*models.Edition, error) {
 	s := m.Session.Copy()
-	defer s.Clone()
+	defer s.Close()
 
 	selector := buildEditionQuery(id, editionID, state)
 
@@ -170,7 +170,7 @@ func buildEditionQuery(id, editionID, state string) bson.M {
 // GetNextVersion retrieves the latest version for an edition of a dataset
 func (m *Mongo) GetNextVersion(datasetID, edition string) (int, error) {
 	s := m.Session.Copy()
-	defer s.Clone()
+	defer s.Close()
 	var version models.Version
 	var nextVersion int
 
@@ -195,7 +195,7 @@ func (m *Mongo) GetNextVersion(datasetID, edition string) (int, error) {
 // GetVersions retrieves all version documents for a dataset edition
 func (m *Mongo) GetVersions(id, editionID, state string) (*models.VersionResults, error) {
 	s := m.Session.Copy()
-	defer s.Clone()
+	defer s.Close()
 
 	selector := buildVersionsQuery(id, editionID, state)
 
@@ -238,7 +238,7 @@ func buildVersionsQuery(id, editionID, state string) bson.M {
 // GetVersion retrieves a version document for a dataset edition
 func (m *Mongo) GetVersion(id, editionID, versionID, state string) (*models.Version, error) {
 	s := m.Session.Copy()
-	defer s.Clone()
+	defer s.Close()
 
 	versionNumber, err := strconv.Atoi(versionID)
 	if err != nil {
@@ -280,7 +280,7 @@ func buildVersionQuery(id, editionID, state string, versionID int) bson.M {
 // GetVersionByInstanceID retrieves a version document by its instance id
 func (m *Mongo) GetVersionByInstanceID(instanceID string) (*models.Version, error) {
 	s := m.Session.Copy()
-	defer s.Clone()
+	defer s.Close()
 
 	var version models.Version
 	err := s.DB(m.Database).C("versions").Find(bson.M{"instance_id": instanceID}).One(&version)
