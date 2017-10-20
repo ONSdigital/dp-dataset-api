@@ -4,8 +4,9 @@
 package storetest
 
 import (
-	"github.com/ONSdigital/dp-dataset-api/models"
 	"sync"
+
+	"github.com/ONSdigital/dp-dataset-api/models"
 )
 
 var (
@@ -180,7 +181,7 @@ type StorerMock struct {
 	GetInstanceFunc func(id string) (*models.Instance, error)
 
 	// GetInstancesFunc mocks the GetInstances method.
-	GetInstancesFunc func(filter string) (*models.InstanceResults, error)
+	GetInstancesFunc func(filter []string) (*models.InstanceResults, error)
 
 	// GetNextVersionFunc mocks the GetNextVersion method.
 	GetNextVersionFunc func(datasetID string, editionID string) (int, error)
@@ -319,7 +320,7 @@ type StorerMock struct {
 		// GetInstances holds details about calls to the GetInstances method.
 		GetInstances []struct {
 			// Filter is the filter argument value.
-			Filter string
+			Filter []string
 		}
 		// GetNextVersion holds details about calls to the GetNextVersion method.
 		GetNextVersion []struct {
@@ -886,29 +887,29 @@ func (mock *StorerMock) GetInstanceCalls() []struct {
 }
 
 // GetInstances calls GetInstancesFunc.
-func (mock *StorerMock) GetInstances(filter string) (*models.InstanceResults, error) {
+func (mock *StorerMock) GetInstances(filters []string) (*models.InstanceResults, error) {
 	if mock.GetInstancesFunc == nil {
 		panic("moq: StorerMock.GetInstancesFunc is nil but Storer.GetInstances was just called")
 	}
 	callInfo := struct {
-		Filter string
+		Filter []string
 	}{
-		Filter: filter,
+		Filter: filters,
 	}
 	lockStorerMockGetInstances.Lock()
 	mock.calls.GetInstances = append(mock.calls.GetInstances, callInfo)
 	lockStorerMockGetInstances.Unlock()
-	return mock.GetInstancesFunc(filter)
+	return mock.GetInstancesFunc(filters)
 }
 
 // GetInstancesCalls gets all the calls that were made to GetInstances.
 // Check the length with:
 //     len(mockedStorer.GetInstancesCalls())
 func (mock *StorerMock) GetInstancesCalls() []struct {
-	Filter string
+	Filter []string
 } {
 	var calls []struct {
-		Filter string
+		Filter []string
 	}
 	lockStorerMockGetInstances.RLock()
 	calls = mock.calls.GetInstances

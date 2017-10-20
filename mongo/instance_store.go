@@ -13,16 +13,16 @@ import (
 const INSTANCE_COLLECTION = "instances"
 
 // GetInstances from a mongo collection
-func (m *Mongo) GetInstances(filter string) (*models.InstanceResults, error) {
+func (m *Mongo) GetInstances(filters []string) (*models.InstanceResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	query := bson.M{}
-	if filter != "" {
-		query["state"] = filter
+	var stateFilter bson.M
+	if len(filters) > 0 {
+		stateFilter = bson.M{"state": bson.M{"$in": filters}}
 	}
 
-	iter := s.DB(m.Database).C(INSTANCE_COLLECTION).Find(query).Iter()
+	iter := s.DB(m.Database).C(INSTANCE_COLLECTION).Find(stateFilter).Iter()
 	defer iter.Close()
 
 	results := []models.Instance{}

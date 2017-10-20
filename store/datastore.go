@@ -23,7 +23,7 @@ type Storer interface {
 	GetDimensionOptions(datasetID, editionID, versionID, dimension string) (*models.DimensionOptionResults, error)
 	GetEdition(id, editionID, state string) (*models.Edition, error)
 	GetEditions(id, state string) (*models.EditionResults, error)
-	GetInstances(filter string) (*models.InstanceResults, error)
+	GetInstances(filters []string) (*models.InstanceResults, error)
 	GetInstance(id string) (*models.Instance, error)
 	GetNextVersion(datasetID, editionID string) (int, error)
 	GetUniqueDimensionValues(id, dimension string) (*models.DimensionValues, error)

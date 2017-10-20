@@ -271,7 +271,6 @@ func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset) (err error) {
 	defer s.Close()
 
 	updates := createDatasetUpdateQuery(dataset)
-
 	err = s.DB(m.Database).C("datasets").UpdateId(id, bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}})
 	return
 }
