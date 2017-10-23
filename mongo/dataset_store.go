@@ -383,7 +383,7 @@ func createDatasetUpdateQuery(dataset *models.Dataset) bson.M {
 	}
 
 	if dataset.State != "" {
-		updates["state"] = dataset.State
+		updates["next.state"] = dataset.State
 	}
 
 	return updates
