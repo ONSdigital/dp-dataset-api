@@ -16,6 +16,12 @@ func TestValidateStateFilter(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 
+		Convey("when the filter list contains a state of `submitted`", func() {
+
+			err := ValidateStateFilter([]string{"submitted"})
+			So(err, ShouldBeNil)
+		})
+
 		Convey("when the filter list contains a state of `completed`", func() {
 
 			err := ValidateStateFilter([]string{"completed"})

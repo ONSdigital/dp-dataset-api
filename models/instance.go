@@ -65,6 +65,7 @@ func (e *Event) Validate() error {
 
 var validStates = map[string]int{
 	"created":           1,
+	"submitted":         1,
 	"completed":         1,
 	"edition-confirmed": 1,
 	"associated":        1,
