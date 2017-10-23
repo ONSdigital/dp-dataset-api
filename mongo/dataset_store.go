@@ -382,6 +382,10 @@ func createDatasetUpdateQuery(dataset *models.Dataset) bson.M {
 		updates["next.uri"] = dataset.URI
 	}
 
+	if dataset.State != "" {
+		updates["state"] = dataset.State
+	}
+
 	return updates
 }
 
