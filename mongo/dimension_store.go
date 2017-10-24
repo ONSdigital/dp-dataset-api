@@ -33,7 +33,7 @@ func (m *Mongo) GetUniqueDimensionValues(id, dimension string) (*models.Dimensio
 	defer s.Close()
 
 	var values []string
-	err := s.DB(m.Database).C(DIMENSION_OPTIONS).Find(bson.M{"instance_id": id, "name": dimension}).Distinct("value", &values)
+	err := s.DB(m.Database).C(DIMENSION_OPTIONS).Find(bson.M{"instance_id": id, "name": dimension}).Distinct("option", &values)
 	if err != nil {
 		return nil, err
 	}
