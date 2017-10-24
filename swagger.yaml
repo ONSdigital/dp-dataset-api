@@ -20,6 +20,12 @@ parameters:
     in: path
     required: true
     type: string
+  dimension_option:
+    name: dimension_option
+    description: "A dimension option from an instance"
+    in: body
+    schema:
+      $ref: '#/definitions/DimensionNode'
   edition:
     name: edition
     description: "An edition of a dataset"
@@ -488,6 +494,23 @@ paths:
           $ref: '#/responses/UnauthorisedError'
         403:
           $ref: '#/responses/ForbiddenError'
+        404:
+          $ref: '#/responses/InstanceNotFound'
+        500:
+          $ref: '#/responses/InternalError'
+    post:
+      tags:
+      - "Private"
+      summary: "Create a new dimension"
+      description: "Create a new dimension which is related to an instance"
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/dimension_option'
+      security:
+      - InternalAPIKey: []
+      responses:
+        201:
+          description: "Dimension was created"
         404:
           $ref: '#/responses/InstanceNotFound'
         500:
@@ -1277,6 +1300,9 @@ definitions:
         type: string
       option:
         description: "The option of the dimension"
+        type: string
+      label:
+        description: "The label for a option"
         type: string
       node_id:
         description: "The id of the node"
