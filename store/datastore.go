@@ -14,8 +14,10 @@ type Storer interface {
 	AddDimensionToInstance(dimension *models.CachedDimensionOption) error
 	AddEventToInstance(instanceID string, event *models.Event) error
 	AddInstance(instance *models.Instance) (*models.Instance, error)
+	CheckDatasetExists(id, state string) error
+	CheckEditionExists(id, editionID, state string) error
 	GetDataset(id string) (*models.DatasetUpdate, error)
-	GetDatasets() (*models.DatasetResults, error)
+	GetDatasets() ([]models.DatasetUpdate, error)
 	GetDimensionNodesFromInstance(id string) (*models.DimensionNodeResults, error)
 	GetDimensions(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error)
 	GetDimensionOptions(datasetID, editionID, versionID, dimension string) (*models.DimensionOptionResults, error)
@@ -27,11 +29,10 @@ type Storer interface {
 	GetUniqueDimensionValues(id, dimension string) (*models.DimensionValues, error)
 	GetVersion(datasetID, editionID, version, state string) (*models.Version, error)
 	GetVersions(datasetID, editionID, state string) (*models.VersionResults, error)
-	GetVersionByInstanceID(instanceID string) (*models.Version, error)
 	UpdateDataset(id string, dataset *models.Dataset) error
 	UpdateDatasetWithAssociation(id, state string, version *models.Version) error
 	UpdateDimensionNodeID(dimension *models.DimensionOption) error
-	UpdateEdition(id, state string) error
+	UpdateEdition(datasetID, edition, state string) error
 	UpdateInstance(id string, instance *models.Instance) error
 	UpdateObservationInserted(id string, observationInserted int64) error
 	UpdateVersion(id string, version *models.Version) error
@@ -39,5 +40,4 @@ type Storer interface {
 	UpsertDataset(id string, datasetDoc *models.DatasetUpdate) error
 	UpsertEdition(datasetID, edition string, editionDoc *models.Edition) error
 	UpsertVersion(id string, versionDoc *models.Version) error
-	UpdateInstanceWithVersion(version *models.Version) (err error)
 }

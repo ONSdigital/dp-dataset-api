@@ -248,6 +248,8 @@ paths:
           description: "A json list containing all editions for a dataset"
           schema:
             $ref: '#/definitions/Editions'
+        400:
+          description: "Invalid request, dataset id was incorrect"
         404:
           description: "No editions were found for the id provided"
         500:
@@ -266,6 +268,8 @@ paths:
           description: "A json object containing an edition"
           schema:
             $ref: '#/definitions/Edition'
+        400:
+          description: "Invalid request, dataset id was incorrect"
         404:
           description: "No edition of a dataset was found using the id and edition provided"
         500:
@@ -286,6 +290,11 @@ paths:
           description: "A json list containing all versions for a set type of dataset and edition"
           schema:
             $ref: '#/definitions/Versions'
+        400:
+          description: |
+            Invalid request, reasons can be one of the following:
+              * dataset id was incorrect
+              * edition was incorrect
         404:
           description: "No versions found using the id and edition provided"
         500:
@@ -305,13 +314,17 @@ paths:
           schema:
             $ref: '#/definitions/NewVersionResponse'
         400:
-          description: "Invalid request body"
+          description: |
+            Invalid request, reasons can be one of the following:
+              * invalid request body
+              * dataset id was incorrect
+              * edition was incorrect
         401:
           description: "Unauthorised to update version of dataset"
         403:
           description: "Forbidden to overwrite version of dataset, already published"
         404:
-          description: "No edition was found for a dataset using the id and edition provided"
+          description: "Version was not found for a dataset using the id and edition provided"
         500:
           $ref: '#/responses/InternalError'
     get:
@@ -328,6 +341,11 @@ paths:
           description: "A json object containing the edition and version of a dataset"
           schema:
             $ref: '#/definitions/Version'
+        400:
+          description: |
+            Invalid request, reasons can be one of the following:
+              * dataset id was incorrect
+              * edition was incorrect
         404:
           description: "No version was found for an edition of a dataset using the id, edition and version provided"
         500:
@@ -349,6 +367,12 @@ paths:
           description: "A json list of dimensions"
           schema:
             $ref: '#/definitions/Dimensions'
+        400:
+          description: |
+            Invalid request, reasons can be one of the following:
+              * dataset id was incorrect
+              * edition was incorrect
+              * version was incorrect
         404:
           description: "No dimensions found for version of an edition of a dataset using the id, edition and version provided"
         500:
@@ -371,6 +395,13 @@ paths:
           description: "Json object containing all options for a dimension"
           schema:
             $ref: '#/definitions/DimensionOptions'
+        400:
+          description: |
+            Invalid request, reasons can be one of the following:
+              * dataset id was incorrect
+              * edition was incorrect
+              * version was incorrect
+              * dimension was incorrect
         404:
           description: "No dimension options were found for dimension"
         500:
@@ -1063,7 +1094,7 @@ definitions:
       The state of the resource, can only be one of the following:
         * created
         * completed (instances only)
-        * edition-confirmed (instances only)
+        * edition-confirmed (instances and versions only)
         * associated
         * published
     type: string

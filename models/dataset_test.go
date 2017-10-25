@@ -33,8 +33,8 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.NationalStatistic, ShouldEqual, true)
 			So(dataset.NextRelease, ShouldEqual, "2016-05-05")
 			So(dataset.Publications[0], ShouldResemble, publications)
-			So(dataset.Publisher, ShouldResemble, publisher)
-			So(dataset.QMI, ShouldResemble, qmi)
+			So(dataset.Publisher, ShouldResemble, &publisher)
+			So(dataset.QMI, ShouldResemble, &qmi)
 			So(dataset.RelatedDatasets[0], ShouldResemble, relatedDatasets)
 			So(dataset.ReleaseFrequency, ShouldEqual, "yearly")
 			So(dataset.State, ShouldEqual, "created")
@@ -71,10 +71,9 @@ func TestCreateVersion(t *testing.T) {
 			version, err := CreateVersion(r)
 			So(err, ShouldBeNil)
 			So(version.CollectionID, ShouldEqual, collectionID)
-			So(version.Downloads, ShouldResemble, downloads)
+			So(version.Downloads, ShouldResemble, &downloads)
 			So(version.Edition, ShouldEqual, "2017")
 			So(version.ID, ShouldNotBeNil)
-			So(version.InstanceID, ShouldEqual, instanceID)
 			So(version.License, ShouldEqual, "Office of National Statistics license")
 			So(version.ReleaseDate, ShouldEqual, "2017-10-12")
 			So(version.State, ShouldEqual, "associated")
@@ -130,12 +129,11 @@ func TestValidateVersion(t *testing.T) {
 
 			err := ValidateVersion(&Version{State: "created"})
 			So(err, ShouldNotBeNil)
-			So(err, ShouldResemble, errors.New("Missing mandatory fields: [instance_id license release_date]"))
+			So(err, ShouldResemble, errors.New("Missing mandatory fields: [license release_date]"))
 		})
 
 		Convey("when the version state is published but is missing collection_id", func() {
 			version := &Version{
-				InstanceID:  instanceID,
 				License:     "ONS License",
 				ReleaseDate: "2016-04-04",
 				State:       "published",

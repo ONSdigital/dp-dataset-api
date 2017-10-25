@@ -53,8 +53,8 @@ func main() {
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {
-		log.Info(fmt.Sprintf("Shutdown with timeout: %s", cfg.ShutdownTimeout), nil)
-		ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+		log.Info(fmt.Sprintf("Shutdown with timeout: %s", cfg.GracefulShutdownTimeout), nil)
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.GracefulShutdownTimeout)
 
 		api.Close(ctx)
 

@@ -11,14 +11,19 @@ import (
 // Instance which presents a single dataset being imported
 type Instance struct {
 	InstanceID           string        `bson:"id,omitempty"                          json:"id,omitempty"`
+	CollectionID         string        `bson:"collection_id,omitempty"               json:"collection_id,omitempty"`
 	Dimensions           []CodeList    `bson:"dimensions,omitempty"                  json:"dimensions,omitempty"`
+	Downloads            *DownloadList `bson:"downloads,omitempty"                   json:"downloads,omitempty"`
 	Edition              string        `bson:"edition,omitempty"                     json:"edition,omitempty"`
 	Events               *[]Event      `bson:"events,omitempty"                      json:"events,omitempty"`
 	Headers              *[]string     `bson:"headers,omitempty"                     json:"headers,omitempty"`
 	InsertedObservations *int          `bson:"total_inserted_observations,omitempty" json:"total_inserted_observations,omitempty"`
+	License              string        `bson:"license,omitempty"                     json:"license,omitempty"`
 	Links                InstanceLinks `bson:"links,omitempty"                       json:"links,omitempty"`
+	ReleaseDate          string        `bson:"release_date,omitempty"                json:"release_date,omitempty"`
 	State                string        `bson:"state,omitempty"                       json:"state,omitempty"`
 	TotalObservations    *int          `bson:"total_observations,omitempty"          json:"total_observations,omitempty"`
+	Version              int           `bson:"version,omitempty"                     json:"version,omitempty"`
 	LastUpdated          time.Time     `bson:"last_updated,omitempty"                json:"last_updated,omitempty"`
 }
 
@@ -31,15 +36,18 @@ type CodeList struct {
 
 // InstanceLinks holds all links for an instance
 type InstanceLinks struct {
-	Job     IDLink `bson:"job,omitempty"       json:"job"`
-	Dataset IDLink `bson:"dataset,omitempty"   json:"dataset"`
-	Version IDLink `bson:"version,omitempty"   json:"version"`
+	Job        *IDLink `bson:"job,omitempty"        json:"job"`
+	Dataset    *IDLink `bson:"dataset,omitempty"    json:"dataset,omitempty"`
+	Dimensions *IDLink `bson:"dimensions,omitempty" json:"dimensions,omitempty"`
+	Edition    *IDLink `bson:"edition,omitempty"    json:"edition,omitempty"`
+	Version    *IDLink `bson:"version,omitempty"    json:"version,omitempty"`
+	Self       *IDLink `bson:"self,omitempty"       json:"self,omitempty"`
 }
 
 // IDLink holds the id and a link to the resource
 type IDLink struct {
-	ID   string `bson:"id,omitempty"   json:"id"`
-	HRef string `bson:"href,omitempty" json:"href"`
+	ID   string `bson:"id,omitempty"   json:"id,omitempty"`
+	HRef string `bson:"href,omitempty" json:"href,omitempty"`
 }
 
 // Event which has happened to an instance

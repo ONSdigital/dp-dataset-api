@@ -38,8 +38,8 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func() (*models.DatasetResults, error) {
-				return &models.DatasetResults{}, nil
+			GetDatasetsFunc: func() ([]models.DatasetUpdate, error) {
+				return []models.DatasetUpdate{}, nil
 			},
 		}
 
@@ -56,7 +56,7 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func() (*models.DatasetResults, error) {
+			GetDatasetsFunc: func() ([]models.DatasetUpdate, error) {
 				return nil, internalError
 			},
 		}
@@ -156,6 +156,9 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
 			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
 				return &models.EditionResults{}, nil
 			},
@@ -164,6 +167,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 	})
 }
@@ -174,15 +178,33 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
-				return nil, internalError
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return internalError
 			},
 		}
 
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the dataset does not exist return status bad request", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
+		r.Header.Add("internal_token", "coffee")
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return errs.DatasetNotFound
+			},
+		}
+
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When no editions exist against an existing dataset return status not found", t, func() {
@@ -190,6 +212,9 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		r.Header.Add("internal_token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
 			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
 				return nil, errs.EditionNotFound
 			},
@@ -198,6 +223,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 	})
 
@@ -205,6 +231,9 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
 			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
 				return nil, errs.EditionNotFound
 			},
@@ -213,6 +242,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 	})
 }
@@ -223,6 +253,9 @@ func TestGetEditionReturnsOK(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
 			GetEditionFunc: func(id, editionID, state string) (*models.Edition, error) {
 				return &models.Edition{}, nil
 			},
@@ -231,6 +264,7 @@ func TestGetEditionReturnsOK(t *testing.T) {
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
 }
@@ -241,15 +275,33 @@ func TestGetEditionReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetEditionFunc: func(id, editionID, state string) (*models.Edition, error) {
-				return nil, internalError
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return internalError
 			},
 		}
 
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the dataset does not exist return status bad request", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
+		r.Header.Add("internal_token", "coffee")
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return errs.DatasetNotFound
+			},
+		}
+
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When edition does not exist for a dataset return status not found", t, func() {
@@ -257,6 +309,9 @@ func TestGetEditionReturnsError(t *testing.T) {
 		r.Header.Add("internal_token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
 			GetEditionFunc: func(id, editionID, state string) (*models.Edition, error) {
 				return nil, errs.EditionNotFound
 			},
@@ -265,6 +320,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
 
@@ -272,6 +328,9 @@ func TestGetEditionReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
 			GetEditionFunc: func(id, editionID, state string) (*models.Edition, error) {
 				return nil, errs.EditionNotFound
 			},
@@ -280,6 +339,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
 }
@@ -290,6 +350,12 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return nil
+			},
 			GetVersionsFunc: func(datasetID, editionID, state string) (*models.VersionResults, error) {
 				return &models.VersionResults{}, nil
 			},
@@ -298,6 +364,8 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
 	})
 }
@@ -308,15 +376,54 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionsFunc: func(id, editionID, state string) (*models.VersionResults, error) {
-				return nil, internalError
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return internalError
 			},
 		}
 
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the dataset does not exist return status bad request", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return errs.DatasetNotFound
+			},
+		}
+
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the edition of a dataset does not exist return status bad request", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return errs.EditionNotFound
+			},
+		}
+
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When version does not exist for an edition of a dataset returns status not found", t, func() {
@@ -324,6 +431,12 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		r.Header.Add("internal_token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return nil
+			},
 			GetVersionsFunc: func(datasetID, editionID, state string) (*models.VersionResults, error) {
 				return nil, errs.VersionNotFound
 			},
@@ -332,6 +445,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
 	})
 
@@ -339,6 +454,12 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return nil
+			},
 			GetVersionsFunc: func(datasetID, editionID, state string) (*models.VersionResults, error) {
 				return nil, errs.VersionNotFound
 			},
@@ -347,6 +468,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
 	})
 }
@@ -355,16 +478,32 @@ func TestGetVersionReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return nil
+			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
-				return &models.Version{}, nil
+				return &models.Version{
+					Links: &models.VersionLinks{
+						Self: &models.LinkObject{},
+						Version: &models.LinkObject{
+							HRef: "href",
+						},
+					},
+				}, nil
 			},
 		}
 
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
 }
@@ -375,15 +514,54 @@ func TestGetVersionReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
-				return nil, internalError
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return internalError
 			},
 		}
 
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+	})
+
+	Convey("When the dataset does not exist for return status bad request", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
+		r.Header.Add("internal_token", "coffee")
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return errs.DatasetNotFound
+			},
+		}
+
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the edition of a dataset does not exist return status bad request", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
+		r.Header.Add("internal_token", "coffee")
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return errs.EditionNotFound
+			},
+		}
+
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When version does not exist for an edition of a dataset return status not found", t, func() {
@@ -391,6 +569,12 @@ func TestGetVersionReturnsError(t *testing.T) {
 		r.Header.Add("internal_token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return nil
+			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
 				return nil, errs.VersionNotFound
 			},
@@ -399,6 +583,8 @@ func TestGetVersionReturnsError(t *testing.T) {
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
 
@@ -406,6 +592,12 @@ func TestGetVersionReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return nil
+			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
 				return nil, errs.VersionNotFound
 			},
@@ -414,6 +606,8 @@ func TestGetVersionReturnsError(t *testing.T) {
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
 }
@@ -623,33 +817,29 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
 				return &models.Version{
-					ID:         "789",
-					InstanceID: "87654321",
-					License:    "ONS License",
-					Links: models.VersionLinks{
-						Dataset: models.LinkObject{
+					ID:      "789",
+					License: "ONS License",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123",
 							ID:   "123",
 						},
-						Dimensions: models.LinkObject{
+						Dimensions: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
 						},
-						Edition: models.LinkObject{
+						Edition: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123/editions/2017",
 							ID:   "456",
 						},
-						Self: models.LinkObject{
+						Self: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
 						},
 					},
 					ReleaseDate: "2017-12-12",
-					State:       "created",
+					State:       "edition-confirmed",
 				}, nil
 			},
 			UpdateVersionFunc: func(string, *models.Version) error {
-				return nil
-			},
-			UpdateInstanceWithVersionFunc: func(*models.Version) error {
 				return nil
 			},
 		}
@@ -664,7 +854,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpdateInstanceWithVersionCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When state is set to associated", t, func() {
@@ -686,9 +875,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			UpdateDatasetWithAssociationFunc: func(string, string, *models.Version) error {
 				return nil
 			},
-			UpdateInstanceWithVersionFunc: func(*models.Version) error {
-				return nil
-			},
 		}
 		mockedDataStore.GetVersion("123", "2017", "1", "")
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
@@ -702,7 +888,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpdateInstanceWithVersionCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When state is set to published", t, func() {
@@ -715,33 +900,32 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
 				return &models.Version{
-					ID:         "789",
-					InstanceID: "87654321",
-					License:    "ONS License",
-					Links: models.VersionLinks{
-						Dataset: models.LinkObject{
+					ID:      "789",
+					License: "ONS License",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123",
 							ID:   "123",
 						},
-						Dimensions: models.LinkObject{
+						Dimensions: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
 						},
-						Edition: models.LinkObject{
+						Edition: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123/editions/2017",
-							ID:   "456",
+							ID:   "2017",
 						},
-						Self: models.LinkObject{
+						Self: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
 						},
 					},
 					ReleaseDate: "2017-12-12",
-					State:       "created",
+					State:       "edition-confirmed",
 				}, nil
 			},
 			UpdateVersionFunc: func(string, *models.Version) error {
 				return nil
 			},
-			UpdateEditionFunc: func(string, string) error {
+			UpdateEditionFunc: func(string, string, string) error {
 				return nil
 			},
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
@@ -757,7 +941,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		}
 		mockedDataStore.GetVersion("789", "2017", "1", "")
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
-		mockedDataStore.UpdateEdition("456", "published")
+		mockedDataStore.UpdateEdition("123", "2017", "published")
 		mockedDataStore.GetDataset("123")
 		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{})
 
@@ -1065,16 +1249,13 @@ func setUp(state string) *storetest.StorerMock {
 		UpdateDatasetWithAssociationFunc: func(string, string, *models.Version) error {
 			return nil
 		},
-		UpdateEditionFunc: func(string, string) error {
+		UpdateEditionFunc: func(string, string, string) error {
 			return nil
 		},
 		UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
 			return nil
 		},
 		UpsertVersionFunc: func(string, *models.Version) error {
-			return nil
-		},
-		UpdateInstanceWithVersionFunc: func(*models.Version) error {
 			return nil
 		},
 	}
@@ -1095,7 +1276,7 @@ func setUp(state string) *storetest.StorerMock {
 				State: state,
 			},
 		}
-		mockedDataStore.UpdateEdition("123", state)
+		mockedDataStore.UpdateEdition("123", "2017", state)
 		mockedDataStore.GetDataset("123")
 		mockedDataStore.UpsertDataset("123", datasetDoc)
 	}

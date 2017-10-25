@@ -273,7 +273,7 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 		currentInstanceTestData := &models.Instance{
 			Edition: "2017",
 			Links: models.InstanceLinks{
-				Dataset: models.IDLink{
+				Dataset: &models.IDLink{
 					ID: "4567",
 				},
 			},
@@ -284,19 +284,16 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 			GetInstanceFunc: func(id string) (*models.Instance, error) {
 				return currentInstanceTestData, nil
 			},
-			UpdateInstanceFunc: func(id string, i *models.Instance) error {
-				return nil
+			GetEditionFunc: func(datasetID, edition, state string) (*models.Edition, error) {
+				return nil, errs.EditionNotFound
 			},
 			UpsertEditionFunc: func(datasetID, edition string, editionDoc *models.Edition) error {
 				return nil
 			},
-			GetVersionByInstanceIDFunc: func(instanceID string) (*models.Version, error) {
-				return nil, errs.VersionNotFound
-			},
 			GetNextVersionFunc: func(string, string) (int, error) {
 				return 1, nil
 			},
-			UpsertVersionFunc: func(versionID string, version *models.Version) error {
+			UpdateInstanceFunc: func(id string, i *models.Instance) error {
 				return nil
 			},
 		}
@@ -306,11 +303,10 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionByInstanceIDCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetNextVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpsertVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -358,7 +354,7 @@ func TestUpdateInstanceReturnsInternalError(t *testing.T) {
 		currentInstanceTestData := &models.Instance{
 			Edition: "2017",
 			Links: models.InstanceLinks{
-				Dataset: models.IDLink{
+				Dataset: &models.IDLink{
 					ID: "4567",
 				},
 			},

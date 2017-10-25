@@ -18,6 +18,12 @@ type DatasetResults struct {
 	Items []*Dataset `json:"items"`
 }
 
+// DatasetUpdateResults represents a structure for a list of evolving dataset
+// with the current dataset and the updated dataset
+type DatasetUpdateResults struct {
+	Items []DatasetUpdate `json:"items"`
+}
+
 // EditionResults represents a structure for a list of editions for a dataset
 type EditionResults struct {
 	Items []Edition `json:"items"`
@@ -42,13 +48,13 @@ type Dataset struct {
 	Description       string           `bson:"description,omitempty"            json:"description,omitempty"`
 	Keywords          []string         `bson:"keywords,omitempty"               json:"keywords,omitempty"`
 	ID                string           `bson:"_id,omitempty"                    json:"id,omitempty"`
-	Links             DatasetLinks     `bson:"links,omitempty"                  json:"links,omitempty"`
+	Links             *DatasetLinks    `bson:"links,omitempty"                  json:"links,omitempty"`
 	Methodologies     []GeneralDetails `bson:"methodologies,omitempty"          json:"methodologies,omitempty"`
 	NationalStatistic bool             `bson:"national_statistic,omitempty"     json:"national_statistic,omitempty"`
 	NextRelease       string           `bson:"next_release,omitempty"           json:"next_release,omitempty"`
 	Publications      []GeneralDetails `bson:"publications,omitempty"           json:"publications,omitempty"`
-	Publisher         Publisher        `bson:"publisher,omitempty"              json:"publisher,omitempty"`
-	QMI               GeneralDetails   `bson:"qmi,omitempty"                    json:"qmi,omitempty"`
+	Publisher         *Publisher       `bson:"publisher,omitempty"              json:"publisher,omitempty"`
+	QMI               *GeneralDetails  `bson:"qmi,omitempty"                    json:"qmi,omitempty"`
 	RelatedDatasets   []GeneralDetails `bson:"related_datasets,omitempty"       json:"related_datasets,omitempty"`
 	ReleaseFrequency  string           `bson:"release_frequency,omitempty"      json:"release_frequency,omitempty"`
 	State             string           `bson:"state,omitempty"                  json:"state,omitempty"`
@@ -60,9 +66,9 @@ type Dataset struct {
 
 // DatasetLinks represents a list of specific links related to the dataset resource
 type DatasetLinks struct {
-	Editions      LinkObject `bson:"editions,omitempty"        json:"editions,omitempty"`
-	LatestVersion LinkObject `bson:"latest_version,omitempty"  json:"latest_version,omitempty"`
-	Self          LinkObject `bson:"self,omitempty"            json:"self,omitempty"`
+	Editions      *LinkObject `bson:"editions,omitempty"        json:"editions,omitempty"`
+	LatestVersion *LinkObject `bson:"latest_version,omitempty"  json:"latest_version,omitempty"`
+	Self          *LinkObject `bson:"self,omitempty"            json:"self,omitempty"`
 }
 
 // LinkObject represents a generic structure for all links
@@ -95,18 +101,18 @@ type ContactDetails struct {
 
 // Edition represents information related to a single edition for a dataset
 type Edition struct {
-	Edition     string       `bson:"edition,omitempty"      json:"edition,omitempty"`
-	ID          string       `bson:"_id,omitempty"          json:"id,omitempty"`
-	Links       EditionLinks `bson:"links,omitempty"        json:"links,omitempty"`
-	State       string       `bson:"state,omitempty"        json:"state,omitempty"`
-	LastUpdated time.Time    `bson:"last_updated,omitempty" json:"-"`
+	Edition     string        `bson:"edition,omitempty"      json:"edition,omitempty"`
+	ID          string        `bson:"id,omitempty"          json:"id,omitempty"`
+	Links       *EditionLinks `bson:"links,omitempty"        json:"links,omitempty"`
+	State       string        `bson:"state,omitempty"        json:"state,omitempty"`
+	LastUpdated time.Time     `bson:"last_updated,omitempty" json:"-"`
 }
 
 // EditionLinks represents a list of specific links related to the edition resource of a dataset
 type EditionLinks struct {
-	Dataset  LinkObject `bson:"dataset,omitempty"     json:"dataset,omitempty"`
-	Self     LinkObject `bson:"self,omitempty"        json:"self,omitempty"`
-	Versions LinkObject `bson:"versions,omitempty"    json:"versions,omitempty"`
+	Dataset  *LinkObject `bson:"dataset,omitempty"     json:"dataset,omitempty"`
+	Self     *LinkObject `bson:"self,omitempty"        json:"self,omitempty"`
+	Versions *LinkObject `bson:"versions,omitempty"    json:"versions,omitempty"`
 }
 
 // Publisher represents an object containing information of the publisher
@@ -118,23 +124,22 @@ type Publisher struct {
 
 // Version represents information related to a single version for an edition of a dataset
 type Version struct {
-	CollectionID string       `bson:"collection_id,omitempty" json:"collection_id,omitempty"`
-	Downloads    DownloadList `bson:"downloads,omitempty"     json:"downloads,omitempty"`
-	Edition      string       `bson:"edition,omitempty"       json:"edition,omitempty"`
-	ID           string       `bson:"_id,omitempty"           json:"id,omitempty"`
-	InstanceID   string       `bson:"instance_id,omitempty"   json:"instance_id,omitempty"`
-	License      string       `bson:"license,omitempty"       json:"license,omitempty"`
-	Links        VersionLinks `bson:"links,omitempty"         json:"links,omitempty"`
-	ReleaseDate  string       `bson:"release_date,omitempty"  json:"release_date,omitempty"`
-	State        string       `bson:"state,omitempty"         json:"state,omitempty"`
-	LastUpdated  time.Time    `bson:"last_updated,omitempty"  json:"-"`
-	Version      int          `bson:"version,omitempty"       json:"version,omitempty"`
+	CollectionID string        `bson:"collection_id,omitempty" json:"collection_id,omitempty"`
+	Downloads    *DownloadList `bson:"downloads,omitempty"     json:"downloads,omitempty"`
+	Edition      string        `bson:"edition,omitempty"       json:"edition,omitempty"`
+	ID           string        `bson:"id,omitempty"            json:"id,omitempty"`
+	License      string        `bson:"license,omitempty"       json:"license,omitempty"`
+	Links        *VersionLinks `bson:"links,omitempty"         json:"links,omitempty"`
+	ReleaseDate  string        `bson:"release_date,omitempty"  json:"release_date,omitempty"`
+	State        string        `bson:"state,omitempty"         json:"state,omitempty"`
+	LastUpdated  time.Time     `bson:"last_updated,omitempty"  json:"-"`
+	Version      int           `bson:"version,omitempty"       json:"version,omitempty"`
 }
 
 // DownloadList represents a list of objects of containing information on the downloadable files
 type DownloadList struct {
-	CSV DownloadObject `bson:"csv,omitempty" json:"csv,omitempty"`
-	XLS DownloadObject `bson:"xls,omitempty" json:"xls,omitempty"`
+	CSV *DownloadObject `bson:"csv,omitempty" json:"csv,omitempty"`
+	XLS *DownloadObject `bson:"xls,omitempty" json:"xls,omitempty"`
 }
 
 // DownloadObject represents information on the downloadable file
@@ -145,10 +150,11 @@ type DownloadObject struct {
 
 // VersionLinks represents a list of specific links related to the version resource for an edition of a dataset
 type VersionLinks struct {
-	Dataset    LinkObject `bson:"dataset,omitempty"     json:"dataset,omitempty"`
-	Dimensions LinkObject `bson:"dimensions,omitempty"  json:"dimensions,omitempty"`
-	Edition    LinkObject `bson:"edition,omitempty"     json:"edition,omitempty"`
-	Self       LinkObject `bson:"self,omitempty"        json:"self,omitempty"`
+	Dataset    *LinkObject `bson:"dataset,omitempty"     json:"dataset,omitempty"`
+	Dimensions *LinkObject `bson:"dimensions,omitempty"  json:"dimensions,omitempty"`
+	Edition    *LinkObject `bson:"edition,omitempty"     json:"edition,omitempty"`
+	Self       *LinkObject `bson:"self,omitempty"        json:"self,omitempty"`
+	Version    *LinkObject `bson:"version,omitempty"     json:"-"`
 }
 
 // CreateDataset manages the creation of a dataset from a reader
@@ -229,10 +235,6 @@ func ValidateVersion(version *Version) error {
 	}
 
 	var missingFields []string
-
-	if version.InstanceID == "" {
-		missingFields = append(missingFields, "instance_id")
-	}
 
 	if version.License == "" {
 		missingFields = append(missingFields, "license")
