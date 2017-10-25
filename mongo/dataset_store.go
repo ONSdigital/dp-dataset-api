@@ -163,6 +163,7 @@ func (m *Mongo) GetNextVersion(datasetID, edition string) (int, error) {
 		"edition":          edition,
 	}
 
+	// Results are sorted in reverse order to get latest version
 	err := s.DB(m.Database).C("instances").Find(selector).Sort("-version").One(&version)
 	if err != nil {
 		if err == mgo.ErrNotFound {

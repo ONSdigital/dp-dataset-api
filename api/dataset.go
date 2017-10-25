@@ -19,7 +19,7 @@ const (
 	associatedState = "associated"
 	publishedState  = "published"
 
-	internalToken = "internal-token"
+	internalToken = "Internal-Token"
 
 	datasetDocType         = "dataset"
 	editionDocType         = "edition"
@@ -555,6 +555,8 @@ func mapResults(results []models.DatasetUpdate) []*models.Dataset {
 }
 
 func handleErrorType(docType string, err error, w http.ResponseWriter) {
+	log.Error(err, nil)
+
 	switch docType {
 	default:
 		if err == errs.DatasetNotFound || err == errs.EditionNotFound || err == errs.VersionNotFound || err == errs.DimensionNodeNotFound || err == errs.InstanceNotFound {

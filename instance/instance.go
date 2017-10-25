@@ -179,7 +179,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// create unique id for edition
-			editionID := (uuid.NewV4()).String()
+			editionID := uuid.NewV4().String()
 
 			editionDoc = &models.Edition{
 				ID:      editionID,
@@ -209,8 +209,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Check whether instance has a version
-		if currentInstance.Version > 0 {
-		} else {
+		if currentInstance.Version < 1 {
 			// Find the latest version for the dataset edition attached to this
 			// instance and append by 1 to set the version of this instance document
 			version, err := s.GetNextVersion(datasetID, edition)
