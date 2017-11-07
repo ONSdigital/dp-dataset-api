@@ -699,13 +699,13 @@ definitions:
     type: object
     properties:
       email:
-        description: "An email address to contact the person"
+        description: "An email address to contact the statistician"
         type: string
       name:
-        description: "The name of the person"
+        description: "The name of the statistician"
         type: string
       telephone:
-        description: "Telephone number to contact the person"
+        description: "Telephone number to contact the statistician"
         type: string
   Datasets:
     description: "A list of datasets"
@@ -744,12 +744,15 @@ definitions:
     description: "The dataset"
     type: object
     properties:
+      access_right:
+        type: string
+        description: "A link to the standard Government access right text for the dataset"
       collection_id:
         type: string
         description: "The id of a collection of datasets that a dataset is associated to"
       contacts:
         type: array
-        description: "Object containing contact information for a dataset"
+        description: "Object containing contact details of staticians for a dataset"
         items:
           $ref: '#/definitions/Contact'
       description:
@@ -760,6 +763,9 @@ definitions:
         description: "A list of keywords for a dataset"
         items:
           type: "string"
+      license:
+        description: "The standard Government license right text for the dataset"
+        type: string
       links:
         $ref: '#/definitions/DatasetLinks'
       methodologies:
@@ -948,6 +954,20 @@ definitions:
         type: string
         readOnly: true
         description: "A unique id for an instance"
+      edition:
+        type: string
+        description: "The edition of the dataset version"
+      events:
+        type: array
+        readOnly: true
+        description: "A list of events took place for this job"
+        items:
+          $ref: '#/definitions/Event'
+      headers:
+        type: array
+        description: "The header information from a V4 file"
+        items:
+          type: string
       links:
         type: object
         properties:
@@ -990,25 +1010,22 @@ definitions:
                 type: string
                 description: "The URL for the dataset version associated with this instance"
                 example: 'http://localhost:21800/dataset/042e216a-7822-4fa0-a3d6-e3f5248ffc35/edition/2017/version/1'
+      release_date:
+        description: "The release date of this version of the dataset"
+        type: string
+      spatial:
+        type: string
+        description: "A link to a list of geography ranges for the version of the dataset"
       state:
         $ref: '#/definitions/State'
-      edition:
-        type: string
-        description: "The edition of the dataset version"
-      events:
-        type: array
-        readOnly: true
-        description: "A list of events took place for this job"
-        items:
-          $ref: '#/definitions/Event'
-      number_of_observations:
+      temporal:
+        $ref: '#/definitions/Temporal'
+      total_inserted_observations:
+        type: integer
+        description: "The number of inserted observations in this instance"
+      total_observations:
         type: integer
         description: "The number of observations in this instance"
-      headers:
-        type: array
-        description: "The header information from a V4 file"
-        items:
-          type: string
       last_updated:
         type: string
         readOnly: true
@@ -1098,6 +1115,21 @@ definitions:
         * associated
         * published
     type: string
+  Temporal:
+    type: array
+    description: "A list of frequencies the dataset covers for a particular period of time"
+    items:
+      type: object
+      properties:
+        start_date:
+          type: string
+          description: "The start date of the time period in which the version of the dataset covers this frequency"
+        end_date:
+          type: string
+          description: "The end date of the time period in which the version of the dataset covers this frequency"
+        frequency:
+          type: string
+          description: "The time frequency the version of the dataset covers for the period of time between start_date and end_date"
   Versions:
     type: object
     properties:
@@ -1124,11 +1156,10 @@ definitions:
     description: "An object containing information about published datasets from the ONS"
     type: object
     required: [
-      license,
       release_date,
     ]
     properties:
-      Downloads:
+      downloads:
         type: object
         description: |
           The url to download the full dataset
@@ -1144,16 +1175,18 @@ definitions:
       instance_id:
         description: "The instance identifier for this version of an edition for a dataset"
         type: string
-      license:
-        description: "The type of license for the dataset"
-        type: string
       links:
         $ref: '#/definitions/VersionLinks'
       release_date:
-        description: "The release date of this dataset"
+        description: "The release date of this version of the dataset"
         type: string
+      spatial:
+        type: string
+        description: "A link to a list of geography ranges for the version of the dataset"
       state:
         $ref: '#/definitions/State'
+      temporal:
+        $ref: '#/definitions/Temporal'
       version:
         description: "A number identifying the version for an edition from a dataset"
         example: 1
