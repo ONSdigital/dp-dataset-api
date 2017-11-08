@@ -18,7 +18,6 @@ type Instance struct {
 	Events               *[]Event      `bson:"events,omitempty"                      json:"events,omitempty"`
 	Headers              *[]string     `bson:"headers,omitempty"                     json:"headers,omitempty"`
 	InsertedObservations *int          `bson:"total_inserted_observations,omitempty" json:"total_inserted_observations,omitempty"`
-	License              string        `bson:"license,omitempty"                     json:"license,omitempty"`
 	Links                InstanceLinks `bson:"links,omitempty"                       json:"links,omitempty"`
 	ReleaseDate          string        `bson:"release_date,omitempty"                json:"release_date,omitempty"`
 	State                string        `bson:"state,omitempty"                       json:"state,omitempty"`

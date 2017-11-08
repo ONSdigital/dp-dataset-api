@@ -48,6 +48,7 @@ type Dataset struct {
 	Description       string           `bson:"description,omitempty"            json:"description,omitempty"`
 	Keywords          []string         `bson:"keywords,omitempty"               json:"keywords,omitempty"`
 	ID                string           `bson:"_id,omitempty"                    json:"id,omitempty"`
+	License           string           `bson:"license,omitempty"                json:"license,omitempty"`
 	Links             *DatasetLinks    `bson:"links,omitempty"                  json:"links,omitempty"`
 	Methodologies     []GeneralDetails `bson:"methodologies,omitempty"          json:"methodologies,omitempty"`
 	NationalStatistic bool             `bson:"national_statistic,omitempty"     json:"national_statistic,omitempty"`
@@ -128,7 +129,6 @@ type Version struct {
 	Downloads    *DownloadList `bson:"downloads,omitempty"     json:"downloads,omitempty"`
 	Edition      string        `bson:"edition,omitempty"       json:"edition,omitempty"`
 	ID           string        `bson:"id,omitempty"            json:"id,omitempty"`
-	License      string        `bson:"license,omitempty"       json:"license,omitempty"`
 	Links        *VersionLinks `bson:"links,omitempty"         json:"links,omitempty"`
 	ReleaseDate  string        `bson:"release_date,omitempty"  json:"release_date,omitempty"`
 	State        string        `bson:"state,omitempty"         json:"state,omitempty"`
@@ -235,10 +235,6 @@ func ValidateVersion(version *Version) error {
 	}
 
 	var missingFields []string
-
-	if version.License == "" {
-		missingFields = append(missingFields, "license")
-	}
 
 	if version.ReleaseDate == "" {
 		missingFields = append(missingFields, "release_date")

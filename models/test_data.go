@@ -44,13 +44,14 @@ var inputDataset = Dataset{
 	Contacts: []ContactDetails{
 		contacts,
 	},
-	Description:       "census",
-	Keywords:          []string{"test", "test2"},
-	NationalStatistic: true,
+	Description: "census",
+	Keywords:    []string{"test", "test2"},
+	License:     "Office of National Statistics license",
 	Methodologies: []GeneralDetails{
 		methodology,
 	},
-	NextRelease: "2016-05-05",
+	NationalStatistic: true,
+	NextRelease:       "2016-05-05",
 	Publications: []GeneralDetails{
 		publications,
 	},
@@ -97,7 +98,6 @@ var links = VersionLinks{
 var createdVersion = Version{
 	Downloads:   &downloads,
 	Edition:     "2017",
-	License:     "ONS License",
 	Links:       &links,
 	ReleaseDate: "2016-04-04",
 	State:       "created",
@@ -108,7 +108,6 @@ var associatedVersion = Version{
 	CollectionID: collectionID,
 	Downloads:    &downloads,
 	Edition:      "2017",
-	License:      "Office of National Statistics license",
 	Links:        &links,
 	ReleaseDate:  "2017-10-12",
 	State:        "associated",
@@ -119,7 +118,6 @@ var publishedVersion = Version{
 	CollectionID: collectionID,
 	Downloads:    &downloads,
 	Edition:      "2017",
-	License:      "Office of National Statistics license",
 	Links:        &links,
 	ReleaseDate:  "2017-10-12",
 	State:        "published",

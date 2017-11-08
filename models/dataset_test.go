@@ -29,6 +29,7 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.ID, ShouldNotBeNil)
 			So(dataset.Keywords[0], ShouldEqual, "test")
 			So(dataset.Keywords[1], ShouldEqual, "test2")
+			So(dataset.License, ShouldEqual, "Office of National Statistics license")
 			So(dataset.Methodologies[0], ShouldResemble, methodology)
 			So(dataset.NationalStatistic, ShouldEqual, true)
 			So(dataset.NextRelease, ShouldEqual, "2016-05-05")
@@ -74,7 +75,6 @@ func TestCreateVersion(t *testing.T) {
 			So(version.Downloads, ShouldResemble, &downloads)
 			So(version.Edition, ShouldEqual, "2017")
 			So(version.ID, ShouldNotBeNil)
-			So(version.License, ShouldEqual, "Office of National Statistics license")
 			So(version.ReleaseDate, ShouldEqual, "2017-10-12")
 			So(version.State, ShouldEqual, "associated")
 			So(version.Version, ShouldEqual, 1)
@@ -129,12 +129,11 @@ func TestValidateVersion(t *testing.T) {
 
 			err := ValidateVersion(&Version{State: "created"})
 			So(err, ShouldNotBeNil)
-			So(err, ShouldResemble, errors.New("Missing mandatory fields: [license release_date]"))
+			So(err, ShouldResemble, errors.New("Missing mandatory fields: [release_date]"))
 		})
 
 		Convey("when the version state is published but is missing collection_id", func() {
 			version := &Version{
-				License:     "ONS License",
 				ReleaseDate: "2016-04-04",
 				State:       "published",
 			}
