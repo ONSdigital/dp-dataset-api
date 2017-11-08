@@ -954,12 +954,27 @@ definitions:
         type: string
         readOnly: true
         description: "A unique id for an instance"
+      collection_id:
+        type: string
+        description: "The id of a collection of datasets that a dataset is associated to"
+      dimensions:
+        type: array
+        description: "A list of codelists for each dimension of this instance"
+        items:
+          $ref: '#/definitions/Codelist'
+      downloads:
+        type: object
+        description: "A selection of download objects containing information of downloadable files."
+        properties:
+          csv:
+            $ref: '#/definitions/DownloadFile'
+          xls:
+            $ref: '#/definitions/DownloadFile'
       edition:
         type: string
         description: "The edition of the dataset version"
       events:
         type: array
-        readOnly: true
         description: "A list of events took place for this job"
         items:
           $ref: '#/definitions/Event'
@@ -984,6 +999,27 @@ definitions:
                 type: string
                 description: "The URL for the dataset associated with this instance"
                 example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+          dimensions:
+            description: "An object describing the URL for the dimensions which are associated with this instance"
+            type: object
+            readOnly: true
+            properties:
+              href:
+                type: string
+                description: "The URL for a list of dimensions associated with this instance"
+                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017/versions/1/dimensions"
+          edition:
+            description: "An object describing the ID and URL for the dataset edition that is associated with this instance"
+            type: object
+            readOnly: true
+            properties:
+              id:
+                type: string
+                description: "The ID for the dataset edition associated with this instance"
+              href:
+                type: string
+                description: "The URL for the dataset edition associated with this instance"
+                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017"
           job:
             description: "An object describing the ID and URL of the job containing this instance"
             type: object
@@ -1010,6 +1046,15 @@ definitions:
                 type: string
                 description: "The URL for the dataset version associated with this instance"
                 example: 'http://localhost:21800/dataset/042e216a-7822-4fa0-a3d6-e3f5248ffc35/edition/2017/version/1'
+          self:
+            description: "An object describing the ID and URL for a dataset which is associated with this instance"
+            type: object
+            readOnly: true
+            properties:
+              href:
+                type: string
+                description: "The URL for this resource"
+                example: "http://localhost:22000/instances/45c4669b-3ae9-4ba7-b690-87e890a1c67f"
       release_date:
         description: "The release date of this version of the dataset"
         type: string
@@ -1026,10 +1071,28 @@ definitions:
       total_observations:
         type: integer
         description: "The number of observations in this instance"
+      version:
+        type: integer
+        description: "The dataset version number that this instance is associated with, this will only be set once the state has been updated to `edition-confirmed`"
       last_updated:
         type: string
         readOnly: true
         description: "The last time an event happened"
+  Codelist:
+    type: object
+    properties:
+      id:
+        type: string
+        description: "The codelist id corresponding to this dimension"
+      href:
+        type: string
+        description: "A link to the codelist corresponding to this dimension"
+      name:
+        type: string
+        description: "The dimension name"
+      description:
+        type: string
+        description: "The dimension description"
   Instances:
     type: object
     properties:
@@ -1111,8 +1174,9 @@ definitions:
       The state of the resource, can only be one of the following:
         * created
         * completed (instances only)
+        * failed (instances only)
         * edition-confirmed (instances and versions only)
-        * associated
+        * associated (not editions)
         * published
     type: string
   Temporal:
@@ -1159,10 +1223,17 @@ definitions:
       release_date,
     ]
     properties:
+      collection_id:
+        type: string
+        description: "The id of a collection of datasets that a dataset is associated to"
+      dimensions:
+        type: array
+        description: "A list of codelists for each dimension of this version"
+        items:
+          $ref: '#/definitions/Codelist'
       downloads:
         type: object
-        description: |
-          The url to download the full dataset
+        description: "A selection of download objects containing information of downloadable files."
         properties:
           csv:
             $ref: '#/definitions/DownloadFile'
