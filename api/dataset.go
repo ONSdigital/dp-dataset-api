@@ -432,16 +432,20 @@ func createNewVersionDoc(currentVersion *models.Version, version *models.Version
 		version.CollectionID = currentVersion.CollectionID
 	}
 
-	if version.License == "" {
-		version.License = currentVersion.License
-	}
-
 	if version.ReleaseDate == "" {
 		version.ReleaseDate = currentVersion.ReleaseDate
 	}
 
+	if version.Spatial == "" {
+		version.Spatial = currentVersion.Spatial
+	}
+
 	if version.State == "" {
 		version.State = currentVersion.State
+	}
+
+	if version.Temporal == nil {
+		version.Temporal = currentVersion.Temporal
 	}
 
 	version.ID = currentVersion.ID

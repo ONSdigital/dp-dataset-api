@@ -173,6 +173,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			"next.contacts":           contacts,
 			"next.description":        "test description",
 			"next.keywords":           []string{"statistics", "national"},
+			"next.license":            "ONS License",
 			"next.methodologies":      methodologies,
 			"next.national_statistic": true,
 			"next.next_release":       "2018-05-05",
@@ -195,6 +196,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			CollectionID:      "12345678",
 			Description:       "test description",
 			Keywords:          []string{"statistics", "national"},
+			License:           "ONS License",
 			Methodologies:     methodologies,
 			NationalStatistic: true,
 			NextRelease:       "2018-05-05",
@@ -222,18 +224,26 @@ func TestVersionUpdateQuery(t *testing.T) {
 	t.Parallel()
 	Convey("When all possible fields exist", t, func() {
 
+		temporal := models.TemporalFrequency{
+			EndDate:   "2017-09-09",
+			Frequency: "monthly",
+			StartDate: "2014-09-09",
+		}
+
 		expectedUpdate := bson.M{
 			"collection_id": "12345678",
-			"license":       "ONS License",
 			"release_date":  "2017-09-09",
+			"spatial":       "http://ons.gov.uk/geographylist",
 			"state":         "published",
+			"temporal":      &[]models.TemporalFrequency{temporal},
 		}
 
 		version := &models.Version{
 			CollectionID: "12345678",
-			License:      "ONS License",
 			ReleaseDate:  "2017-09-09",
+			Spatial:      "http://ons.gov.uk/geographylist",
 			State:        "published",
+			Temporal:     &[]models.TemporalFrequency{temporal},
 		}
 
 		selector := createVersionUpdateQuery(version)

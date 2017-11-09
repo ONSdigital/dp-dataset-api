@@ -817,8 +817,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
 				return &models.Version{
-					ID:      "789",
-					License: "ONS License",
+					ID: "789",
 					Links: &models.VersionLinks{
 						Dataset: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123",
@@ -900,8 +899,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
 				return &models.Version{
-					ID:      "789",
-					License: "ONS License",
+					ID: "789",
 					Links: &models.VersionLinks{
 						Dataset: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123",

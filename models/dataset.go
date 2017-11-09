@@ -43,6 +43,7 @@ type DatasetUpdate struct {
 
 // Dataset represents information related to a single dataset
 type Dataset struct {
+	AccessRight       string           `bson:"access_right,omitempty"          json:"access_right,omitempty"`
 	CollectionID      string           `bson:"collection_id,omitempty"          json:"collection_id,omitempty"`
 	Contacts          []ContactDetails `bson:"contacts,omitempty"               json:"contacts,omitempty"`
 	Description       string           `bson:"description,omitempty"            json:"description,omitempty"`
@@ -125,15 +126,18 @@ type Publisher struct {
 
 // Version represents information related to a single version for an edition of a dataset
 type Version struct {
-	CollectionID string        `bson:"collection_id,omitempty" json:"collection_id,omitempty"`
-	Downloads    *DownloadList `bson:"downloads,omitempty"     json:"downloads,omitempty"`
-	Edition      string        `bson:"edition,omitempty"       json:"edition,omitempty"`
-	ID           string        `bson:"id,omitempty"            json:"id,omitempty"`
-	Links        *VersionLinks `bson:"links,omitempty"         json:"links,omitempty"`
-	ReleaseDate  string        `bson:"release_date,omitempty"  json:"release_date,omitempty"`
-	State        string        `bson:"state,omitempty"         json:"state,omitempty"`
-	LastUpdated  time.Time     `bson:"last_updated,omitempty"  json:"-"`
-	Version      int           `bson:"version,omitempty"       json:"version,omitempty"`
+	CollectionID string               `bson:"collection_id,omitempty" json:"collection_id,omitempty"`
+	Dimensions   []CodeList           `bson:"dimensions,omitempty"    json:"dimensions,omitempty"`
+	Downloads    *DownloadList        `bson:"downloads,omitempty"     json:"downloads,omitempty"`
+	Edition      string               `bson:"edition,omitempty"       json:"edition,omitempty"`
+	ID           string               `bson:"id,omitempty"            json:"id,omitempty"`
+	Links        *VersionLinks        `bson:"links,omitempty"         json:"links,omitempty"`
+	ReleaseDate  string               `bson:"release_date,omitempty"  json:"release_date,omitempty"`
+	Spatial      string               `bson:"spatial,omitempty"       json:"spatial,omitempty"`
+	State        string               `bson:"state,omitempty"         json:"state,omitempty"`
+	Temporal     *[]TemporalFrequency `bson:"temporal,omitempty"      json:"temporal,omitempty"`
+	LastUpdated  time.Time            `bson:"last_updated,omitempty"  json:"-"`
+	Version      int                  `bson:"version,omitempty"       json:"version,omitempty"`
 }
 
 // DownloadList represents a list of objects of containing information on the downloadable files
@@ -146,6 +150,13 @@ type DownloadList struct {
 type DownloadObject struct {
 	URL  string `bson:"url,omitempty"  json:"url,omitempty"`
 	Size string `bson:"size,omitempty" json:"size,omitempty"`
+}
+
+// TemporalFrequency represents a frequency for a particular period of time
+type TemporalFrequency struct {
+	EndDate   string `bson:"end_date,omitempty"    json:"end_date,omitempty"`
+	Frequency string `bson:"frequency,omitempty"   json:"frequency,omitempty"`
+	StartDate string `bson:"start_date,omitempty"  json:"start_date,omitempty"`
 }
 
 // VersionLinks represents a list of specific links related to the version resource for an edition of a dataset

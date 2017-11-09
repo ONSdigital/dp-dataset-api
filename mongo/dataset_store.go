@@ -295,6 +295,10 @@ func createDatasetUpdateQuery(dataset *models.Dataset) bson.M {
 		updates["next.keywords"] = dataset.Keywords
 	}
 
+	if dataset.License != "" {
+		updates["next.license"] = dataset.License
+	}
+
 	if dataset.Methodologies != nil {
 		updates["next.methodologies"] = dataset.Methodologies
 	}
@@ -413,16 +417,20 @@ func createVersionUpdateQuery(version *models.Version) bson.M {
 		updates["collection_id"] = version.CollectionID
 	}
 
-	if version.License != "" {
-		updates["license"] = version.License
-	}
-
 	if version.ReleaseDate != "" {
 		updates["release_date"] = version.ReleaseDate
 	}
 
+	if version.Spatial != "" {
+		updates["spatial"] = version.Spatial
+	}
+
 	if version.State != "" {
 		updates["state"] = version.State
+	}
+
+	if version.Spatial != "" {
+		updates["temporal"] = version.Temporal
 	}
 
 	return updates
