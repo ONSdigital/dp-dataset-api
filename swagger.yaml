@@ -58,7 +58,7 @@ parameters:
     type: string
   instance:
     name: instance
-    description: "A state of an instance"
+    description: "An instance related to an import job and dataset"
     in: body
     required: true
     schema:
@@ -100,6 +100,13 @@ parameters:
     description: "The first row of resources to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
     in: query
     type: integer
+  newInstance:
+    name: instance
+    description: "An instance related to an import job"
+    in: body
+    required: true
+    schema:
+      $ref: '#/definitions/NewInstance'
   query:
     name: q
     description: "The query text to search datasets with"
@@ -425,6 +432,8 @@ paths:
           description: "Return a list of instance state"
           schema:
             $ref: '#/definitions/Instances'
+        400:
+          $ref: '#/responses/InvalidRequestError'
         401:
           $ref: '#/responses/UnauthorisedError'
         403:
@@ -436,9 +445,9 @@ paths:
       - "Private"
       summary: "Create an instance"
       description:  |
-        Create an instance which will be imported. To create an instance a import job id and href is required. This is to allow a link back to the import job
+        Create an instance which will be imported. To create an instance an import job id and href is required. This is to allow a link back to the import job
       parameters:
-      - $ref: '#/parameters/instance'
+      - $ref: '#/parameters/newInstance'
       produces:
       - "application/json"
       security:
@@ -447,7 +456,9 @@ paths:
         200:
           description: "Create an instance then returned it"
           schema:
-            $ref: '#/definitions/Instance'
+            $ref: '#/definitions/NewInstance'
+        400:
+          $ref: '#/responses/InvalidRequestError'
         401:
           $ref: '#/responses/UnauthorisedError'
         403:
@@ -471,6 +482,8 @@ paths:
           description: "Return a single instance state"
           schema:
             $ref: '#/definitions/Instance'
+        400:
+          $ref: '#/responses/InvalidRequestError'
         401:
           $ref: '#/responses/UnauthorisedError'
         403:
@@ -494,6 +507,8 @@ paths:
       responses:
         200:
           description: "The instance has been updated"
+        400:
+          $ref: '#/responses/InvalidRequestError'
         401:
           $ref: '#/responses/UnauthorisedError'
         403:
@@ -521,6 +536,8 @@ paths:
             type: array
             items:
               $ref: '#/definitions/DimensionNode'
+        400:
+          $ref: '#/responses/InvalidRequestError'
         401:
           $ref: '#/responses/UnauthorisedError'
         403:
@@ -542,6 +559,8 @@ paths:
       responses:
         201:
           description: "Dimension was created"
+        400:
+          $ref: '#/responses/InvalidRequestError'
         404:
           $ref: '#/responses/InstanceNotFound'
         500:
@@ -574,7 +593,7 @@ paths:
                 items:
                   type: string
         400:
-          description: "instance_id does not match any instances"
+          $ref: '#/responses/InvalidRequestError'
         401:
           $ref: '#/responses/UnauthorisedError'
         403:
@@ -601,7 +620,7 @@ paths:
         201:
           description: "The event was added to the instance"
         400:
-          description: "Invalid json message sent"
+          $ref: '#/responses/InvalidRequestError'
         401:
           $ref: '#/responses/UnauthorisedError'
         404:
@@ -623,14 +642,13 @@ paths:
         200:
           description: "Added value to inserted observation"
         400:
-          description: "Invalid value provided for inserted_observations"
+          $ref: '#/responses/InvalidRequestError'
         401:
           $ref: '#/responses/UnauthorisedError'
         404:
           description: "InstanceId does not match any instances"
         500:
           $ref: '#/responses/InternalError'
-
   /instances/{instance_id}/dimensions/{dimension}/options/{option}:
     put:
       tags:
@@ -649,6 +667,8 @@ paths:
       responses:
         200:
           description: "The dimension was added"
+        400:
+          $ref: '#/responses/InvalidRequestError'
         401:
           $ref: '#/responses/UnauthorisedError'
         403:
@@ -676,6 +696,8 @@ paths:
       responses:
         200:
           description: "Updated the dimension with the nodeId"
+        400:
+          $ref: '#/responses/InvalidRequestError'
         401:
           $ref: '#/responses/UnauthorisedError'
         403:
@@ -685,6 +707,8 @@ paths:
         500:
           $ref: '#/responses/InternalError'
 responses:
+  InvalidRequestError:
+    description: "Failed to process the request due to invalid request"
   InternalError:
     description: "Failed to process the request due to an internal error"
   ForbiddenError:
@@ -976,6 +1000,7 @@ definitions:
       events:
         type: array
         description: "A list of events took place for this job"
+        readOnly: true
         items:
           $ref: '#/definitions/Event'
       headers:
@@ -984,6 +1009,7 @@ definitions:
         items:
           type: string
       links:
+        readOnly: true
         type: object
         properties:
           dataset:
@@ -1023,6 +1049,7 @@ definitions:
           job:
             description: "An object describing the ID and URL of the job containing this instance"
             type: object
+            readOnly: true
             required: ["id", "href"]
             properties:
               id:
@@ -1149,6 +1176,60 @@ definitions:
             description: "The unique identifier for a collection of datasets that this dataset belongs"
             type: string
       - $ref: "#/definitions/Version"
+  NewInstance:
+    description: "A model for the request and response body for creating a new instance"
+    type: object
+    properties:
+      id:
+        type: string
+        readOnly: true
+        description: "A unique id for an instance"
+      dimensions:
+        type: array
+        description: "A list of codelists for each dimension of this instance"
+        items:
+          $ref: '#/definitions/Codelist'
+      links:
+        type: object
+        properties:
+          dataset:
+            description: "An object describing the ID and URL for a dataset which is associated with this instance"
+            type: object
+            properties:
+              id:
+                type: string
+                description: "The ID of the dataset associated with this instance"
+                example: "95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+              href:
+                type: string
+                description: "The URL for the dataset associated with this instance"
+                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+          job:
+            description: "An object describing the ID and URL of the job containing this instance"
+            type: object
+            required: ["id", "href"]
+            properties:
+              id:
+                type: string
+                description: "The ID of the job containing this instance"
+                example: 042e216a-7822-4fa0-a3d6-e3f5248ffc35
+              href:
+                type: string
+                description: "The URL for the job containing this instance"
+                example: "http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35"
+          self:
+            description: "An object describing the ID and URL for a dataset which is associated with this instance"
+            type: object
+            readOnly: true
+            properties:
+              href:
+                type: string
+                description: "The URL for this resource"
+                example: "http://localhost:22000/instances/45c4669b-3ae9-4ba7-b690-87e890a1c67f"
+      state:
+        description: "The state of the resource, this can only have a value of `created`"
+        type: string
+        readOnly: true
   Publisher:
     description: "The publisher of the dataset"
     type: object
