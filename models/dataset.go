@@ -11,7 +11,10 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-const created = "created"
+const (
+	created               = "created"
+	editionConfirmedState = "edition-confirmed"
+)
 
 // DatasetResults represents a structure for a list of datasets
 type DatasetResults struct {
@@ -187,8 +190,6 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 	var version Version
 	// Create unique id
 	version.ID = (uuid.NewV4()).String()
-	// set default state to be unpublished
-	version.State = created
 
 	err = json.Unmarshal(bytes, &version)
 	if err != nil {
@@ -221,13 +222,13 @@ func ValidateVersion(version *Version) error {
 	var hasAssociation bool
 
 	switch version.State {
-	case "created":
+	case "edition-confirmed":
 	case "associated":
 		hasAssociation = true
 	case "published":
 		hasAssociation = true
 	default:
-		return errors.New("Incorrect state, can be one of the following: created, associated or published")
+		return errors.New("Incorrect state, can be one of the following: edition-confirmed, associated or published")
 	}
 
 	if hasAssociation && version.CollectionID == "" {

@@ -380,11 +380,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if currentVersion.State == createdState || currentVersion.State == completedState {
-		http.Error(w, fmt.Sprintf("Version not found"), http.StatusNotFound)
-		return
-	}
-
 	// Combine update version document to existing version document
 	newVersion := createNewVersionDoc(currentVersion, version)
 

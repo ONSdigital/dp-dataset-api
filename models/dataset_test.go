@@ -122,12 +122,12 @@ func TestValidateVersion(t *testing.T) {
 
 			err := ValidateVersion(&Version{State: "submitted"})
 			So(err, ShouldNotBeNil)
-			So(err, ShouldResemble, errors.New("Incorrect state, can be one of the following: created, associated or published"))
+			So(err, ShouldResemble, errors.New("Incorrect state, can be one of the following: edition-confirmed, associated or published"))
 		})
 
 		Convey("when mandatorey fields are missing from version document when state is set to created", func() {
 
-			err := ValidateVersion(&Version{State: "created"})
+			err := ValidateVersion(&Version{State: "edition-confirmed"})
 			So(err, ShouldNotBeNil)
 			So(err, ShouldResemble, errors.New("Missing mandatory fields: [license release_date]"))
 		})

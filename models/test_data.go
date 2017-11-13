@@ -100,7 +100,7 @@ var createdVersion = Version{
 	License:     "ONS License",
 	Links:       &links,
 	ReleaseDate: "2016-04-04",
-	State:       "created",
+	State:       "edition-confirmed",
 	Version:     1,
 }
 
