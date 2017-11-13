@@ -768,15 +768,12 @@ definitions:
     description: "The dataset"
     type: object
     properties:
-      access_right:
-        type: string
-        description: "A link to the standard Government access right text for the dataset"
       collection_id:
         type: string
         description: "The id of a collection of datasets that a dataset is associated to"
       contacts:
         type: array
-        description: "Object containing contact details of staticians for a dataset"
+        description: "A list containing contact details of staticians for a dataset"
         items:
           $ref: '#/definitions/Contact'
       description:
@@ -875,6 +872,12 @@ definitions:
     readOnly: true
     type: object
     properties:
+      access_right:
+        type: object
+        properties:
+          href:
+            type: string
+            description: "A url to the standard Government access right text for the dataset"
       editions:
         type: object
         properties:
@@ -1060,6 +1063,12 @@ definitions:
                 type: string
                 description: "The URL for the job containing this instance"
                 example: "http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35"
+          spatial:
+            type: object
+            properties:
+              href:
+                type: string
+                description: "A url to a list of geography ranges for the version of the dataset"
           version:
             description: "An object describing the ID and URL of the dataset version associated with this instance"
             type: object
@@ -1085,9 +1094,6 @@ definitions:
       release_date:
         description: "The release date of this version of the dataset"
         type: string
-      spatial:
-        type: string
-        description: "A link to a list of geography ranges for the version of the dataset"
       state:
         $ref: '#/definitions/State'
       temporal:
@@ -1332,9 +1338,6 @@ definitions:
       release_date:
         description: "The release date of this version of the dataset"
         type: string
-      spatial:
-        type: string
-        description: "A link to a list of geography ranges for the version of the dataset"
       state:
         $ref: '#/definitions/State'
       temporal:
@@ -1372,6 +1375,12 @@ definitions:
         $ref: '#/definitions/EditionLink'
       self:
         $ref: '#/definitions/SelfLink'
+      spatial:
+        type: object
+        properties:
+          href:
+            type: string
+            description: "A url to a list of geography ranges for the version of the dataset"
   DatasetLink:
     description: "An object containing the dataset id and link"
     readOnly: true
