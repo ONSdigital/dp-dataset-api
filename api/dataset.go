@@ -454,9 +454,15 @@ func (api *DatasetAPI) updateDataset(id string, version *models.Version) error {
 
 	currentDataset.Next.CollectionID = version.CollectionID
 	currentDataset.Next.Links = &models.DatasetLinks{
+		Editions: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s/editions", api.host, version.Links.Dataset.ID),
+		},
 		LatestVersion: &models.LinkObject{
 			ID:   version.ID,
 			HRef: version.Links.Self.HRef,
+		},
+		Self: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s", api.host, version.Links.Dataset.ID),
 		},
 	}
 	currentDataset.Next.State = publishedState

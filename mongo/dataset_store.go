@@ -7,6 +7,7 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/go-ns/log"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"gopkg.in/mgo.v2"
@@ -271,13 +272,15 @@ func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	updates := createDatasetUpdateQuery(dataset)
+	updates := createDatasetUpdateQuery(id, dataset)
 	err = s.DB(m.Database).C("datasets").UpdateId(id, bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}})
 	return
 }
 
-func createDatasetUpdateQuery(dataset *models.Dataset) bson.M {
+func createDatasetUpdateQuery(id string, dataset *models.Dataset) bson.M {
 	updates := make(bson.M, 0)
+
+	log.Debug("building update query for dataset resource", log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
 
 	if dataset.CollectionID != "" {
 		updates["next.collection_id"] = dataset.CollectionID
@@ -311,28 +314,32 @@ func createDatasetUpdateQuery(dataset *models.Dataset) bson.M {
 		updates["next.publications"] = dataset.Publications
 	}
 
-	if dataset.Publisher.HRef != "" {
-		updates["next.publisher.href"] = dataset.Publisher.HRef
+	if dataset.Publisher != nil {
+		if dataset.Publisher.HRef != "" {
+			updates["next.publisher.href"] = dataset.Publisher.HRef
+		}
+
+		if dataset.Publisher.Name != "" {
+			updates["next.publisher.name"] = dataset.Publisher.Name
+		}
+
+		if dataset.Publisher.Type != "" {
+			updates["next.publisher.type"] = dataset.Publisher.Type
+		}
 	}
 
-	if dataset.Publisher.Name != "" {
-		updates["next.publisher.name"] = dataset.Publisher.Name
-	}
+	if dataset.QMI != nil {
+		if dataset.QMI.Description != "" {
+			updates["next.qmi.description"] = dataset.QMI.Description
+		}
 
-	if dataset.Publisher.Type != "" {
-		updates["next.publisher.type"] = dataset.Publisher.Type
-	}
+		if dataset.QMI.HRef != "" {
+			updates["next.qmi.href"] = dataset.QMI.HRef
+		}
 
-	if dataset.QMI.Description != "" {
-		updates["next.qmi.description"] = dataset.QMI.Description
-	}
-
-	if dataset.QMI.HRef != "" {
-		updates["next.qmi.href"] = dataset.QMI.HRef
-	}
-
-	if dataset.QMI.Title != "" {
-		updates["next.qmi.title"] = dataset.QMI.Title
+		if dataset.QMI.Title != "" {
+			updates["next.qmi.title"] = dataset.QMI.Title
+		}
 	}
 
 	if dataset.RelatedDatasets != nil {
@@ -354,6 +361,8 @@ func createDatasetUpdateQuery(dataset *models.Dataset) bson.M {
 	if dataset.URI != "" {
 		updates["next.uri"] = dataset.URI
 	}
+
+	log.Debug("built update query for dataset resource", log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
 
 	return updates
 }

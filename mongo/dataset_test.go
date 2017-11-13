@@ -212,7 +212,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			URI:              "http://ons.gov.uk/dataset/123/landing-page",
 		}
 
-		selector := createDatasetUpdateQuery(dataset)
+		selector := createDatasetUpdateQuery("123", dataset)
 		So(selector, ShouldNotBeNil)
 		So(selector, ShouldResemble, expectedUpdate)
 	})
