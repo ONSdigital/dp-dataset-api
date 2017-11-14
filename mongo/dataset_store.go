@@ -298,6 +298,18 @@ func createDatasetUpdateQuery(id string, dataset *models.Dataset) bson.M {
 		updates["next.keywords"] = dataset.Keywords
 	}
 
+	if dataset.License != "" {
+		updates["next.license"] = dataset.License
+	}
+
+	if dataset.Links != nil {
+		if dataset.Links.AccessRights != nil {
+			if dataset.Links.AccessRights.HRef != "" {
+				updates["next.links.access_rights.href"] = dataset.Links.AccessRights.HRef
+			}
+		}
+	}
+
 	if dataset.Methodologies != nil {
 		updates["next.methodologies"] = dataset.Methodologies
 	}
@@ -422,16 +434,22 @@ func createVersionUpdateQuery(version *models.Version) bson.M {
 		updates["collection_id"] = version.CollectionID
 	}
 
-	if version.License != "" {
-		updates["license"] = version.License
-	}
-
 	if version.ReleaseDate != "" {
 		updates["release_date"] = version.ReleaseDate
 	}
 
+	if version.Links.Spatial != nil {
+		if version.Links.Spatial.HRef != "" {
+			updates["links.spatial.href"] = version.Links.Spatial.HRef
+		}
+	}
+
 	if version.State != "" {
 		updates["state"] = version.State
+	}
+
+	if version.Temporal != nil {
+		updates["temporal"] = version.Temporal
 	}
 
 	return updates

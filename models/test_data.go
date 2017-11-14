@@ -44,13 +44,19 @@ var inputDataset = Dataset{
 	Contacts: []ContactDetails{
 		contacts,
 	},
-	Description:       "census",
-	Keywords:          []string{"test", "test2"},
-	NationalStatistic: true,
+	Description: "census",
+	Keywords:    []string{"test", "test2"},
+	License:     "Office of National Statistics license",
+	Links: &DatasetLinks{
+		AccessRights: &LinkObject{
+			HRef: "http://ons.gov.uk/accessrights",
+		},
+	},
 	Methodologies: []GeneralDetails{
 		methodology,
 	},
-	NextRelease: "2016-05-05",
+	NationalStatistic: true,
+	NextRelease:       "2016-05-05",
 	Publications: []GeneralDetails{
 		publications,
 	},
@@ -64,6 +70,13 @@ var inputDataset = Dataset{
 	Theme:            "population",
 	Title:            "CensusEthnicity",
 	URI:              "http://localhost:22000/datasets/123/breadcrumbs",
+}
+
+var dimension = CodeList{
+	Description: "A list of ages between 18 and 75+",
+	HRef:        "http://localhost:22400/codelists/1245",
+	ID:          "1245",
+	Name:        "age",
 }
 
 var downloads = DownloadList{
@@ -92,12 +105,21 @@ var links = VersionLinks{
 	Self: &LinkObject{
 		HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
 	},
+	Spatial: &LinkObject{
+		HRef: "http://ons.gov.uk/geographylist",
+	},
+}
+
+var temporal = TemporalFrequency{
+	EndDate:   "2017-09-09",
+	Frequency: "monthly",
+	StartDate: "2014-09-09",
 }
 
 var createdVersion = Version{
+	Dimensions:  []CodeList{dimension},
 	Downloads:   &downloads,
 	Edition:     "2017",
-	License:     "ONS License",
 	Links:       &links,
 	ReleaseDate: "2016-04-04",
 	State:       "edition-confirmed",
@@ -106,23 +128,25 @@ var createdVersion = Version{
 
 var associatedVersion = Version{
 	CollectionID: collectionID,
+	Dimensions:   []CodeList{dimension},
 	Downloads:    &downloads,
 	Edition:      "2017",
-	License:      "Office of National Statistics license",
 	Links:        &links,
 	ReleaseDate:  "2017-10-12",
 	State:        "associated",
+	Temporal:     &[]TemporalFrequency{temporal},
 	Version:      1,
 }
 
 var publishedVersion = Version{
 	CollectionID: collectionID,
+	Dimensions:   []CodeList{dimension},
 	Downloads:    &downloads,
 	Edition:      "2017",
-	License:      "Office of National Statistics license",
 	Links:        &links,
 	ReleaseDate:  "2017-10-12",
 	State:        "published",
+	Temporal:     &[]TemporalFrequency{temporal},
 	Version:      1,
 }
 

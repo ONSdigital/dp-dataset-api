@@ -51,6 +51,7 @@ type Dataset struct {
 	Description       string           `bson:"description,omitempty"            json:"description,omitempty"`
 	Keywords          []string         `bson:"keywords,omitempty"               json:"keywords,omitempty"`
 	ID                string           `bson:"_id,omitempty"                    json:"id,omitempty"`
+	License           string           `bson:"license,omitempty"                json:"license,omitempty"`
 	Links             *DatasetLinks    `bson:"links,omitempty"                  json:"links,omitempty"`
 	Methodologies     []GeneralDetails `bson:"methodologies,omitempty"          json:"methodologies,omitempty"`
 	NationalStatistic bool             `bson:"national_statistic,omitempty"     json:"national_statistic,omitempty"`
@@ -69,6 +70,7 @@ type Dataset struct {
 
 // DatasetLinks represents a list of specific links related to the dataset resource
 type DatasetLinks struct {
+	AccessRights  *LinkObject `bson:"access_rights,omitempty"   json:"access_rights,omitempty"`
 	Editions      *LinkObject `bson:"editions,omitempty"        json:"editions,omitempty"`
 	LatestVersion *LinkObject `bson:"latest_version,omitempty"  json:"latest_version,omitempty"`
 	Self          *LinkObject `bson:"self,omitempty"            json:"self,omitempty"`
@@ -113,9 +115,10 @@ type Edition struct {
 
 // EditionLinks represents a list of specific links related to the edition resource of a dataset
 type EditionLinks struct {
-	Dataset  *LinkObject `bson:"dataset,omitempty"     json:"dataset,omitempty"`
-	Self     *LinkObject `bson:"self,omitempty"        json:"self,omitempty"`
-	Versions *LinkObject `bson:"versions,omitempty"    json:"versions,omitempty"`
+	Dataset       *LinkObject `bson:"dataset,omitempty"        json:"dataset,omitempty"`
+	LatestVersion *LinkObject `bson:"latest_version,omitempty" json:"latest_version,omitempty"`
+	Self          *LinkObject `bson:"self,omitempty"           json:"self,omitempty"`
+	Versions      *LinkObject `bson:"versions,omitempty"       json:"versions,omitempty"`
 }
 
 // Publisher represents an object containing information of the publisher
@@ -127,16 +130,17 @@ type Publisher struct {
 
 // Version represents information related to a single version for an edition of a dataset
 type Version struct {
-	CollectionID string        `bson:"collection_id,omitempty" json:"collection_id,omitempty"`
-	Downloads    *DownloadList `bson:"downloads,omitempty"     json:"downloads,omitempty"`
-	Edition      string        `bson:"edition,omitempty"       json:"edition,omitempty"`
-	ID           string        `bson:"id,omitempty"            json:"id,omitempty"`
-	License      string        `bson:"license,omitempty"       json:"license,omitempty"`
-	Links        *VersionLinks `bson:"links,omitempty"         json:"links,omitempty"`
-	ReleaseDate  string        `bson:"release_date,omitempty"  json:"release_date,omitempty"`
-	State        string        `bson:"state,omitempty"         json:"state,omitempty"`
-	LastUpdated  time.Time     `bson:"last_updated,omitempty"  json:"-"`
-	Version      int           `bson:"version,omitempty"       json:"version,omitempty"`
+	CollectionID string               `bson:"collection_id,omitempty" json:"collection_id,omitempty"`
+	Dimensions   []CodeList           `bson:"dimensions,omitempty"    json:"dimensions,omitempty"`
+	Downloads    *DownloadList        `bson:"downloads,omitempty"     json:"downloads,omitempty"`
+	Edition      string               `bson:"edition,omitempty"       json:"edition,omitempty"`
+	ID           string               `bson:"id,omitempty"            json:"id,omitempty"`
+	Links        *VersionLinks        `bson:"links,omitempty"         json:"links,omitempty"`
+	ReleaseDate  string               `bson:"release_date,omitempty"  json:"release_date,omitempty"`
+	State        string               `bson:"state,omitempty"         json:"state,omitempty"`
+	Temporal     *[]TemporalFrequency `bson:"temporal,omitempty"      json:"temporal,omitempty"`
+	LastUpdated  time.Time            `bson:"last_updated,omitempty"  json:"-"`
+	Version      int                  `bson:"version,omitempty"       json:"version,omitempty"`
 }
 
 // DownloadList represents a list of objects of containing information on the downloadable files
@@ -151,12 +155,20 @@ type DownloadObject struct {
 	Size string `bson:"size,omitempty" json:"size,omitempty"`
 }
 
+// TemporalFrequency represents a frequency for a particular period of time
+type TemporalFrequency struct {
+	EndDate   string `bson:"end_date,omitempty"    json:"end_date,omitempty"`
+	Frequency string `bson:"frequency,omitempty"   json:"frequency,omitempty"`
+	StartDate string `bson:"start_date,omitempty"  json:"start_date,omitempty"`
+}
+
 // VersionLinks represents a list of specific links related to the version resource for an edition of a dataset
 type VersionLinks struct {
 	Dataset    *LinkObject `bson:"dataset,omitempty"     json:"dataset,omitempty"`
 	Dimensions *LinkObject `bson:"dimensions,omitempty"  json:"dimensions,omitempty"`
 	Edition    *LinkObject `bson:"edition,omitempty"     json:"edition,omitempty"`
 	Self       *LinkObject `bson:"self,omitempty"        json:"self,omitempty"`
+	Spatial    *LinkObject `bson:"spatial,omitempty"     json:"spatial,omitempty"`
 	Version    *LinkObject `bson:"version,omitempty"     json:"-"`
 }
 
@@ -236,10 +248,6 @@ func ValidateVersion(version *Version) error {
 	}
 
 	var missingFields []string
-
-	if version.License == "" {
-		missingFields = append(missingFields, "license")
-	}
 
 	if version.ReleaseDate == "" {
 		missingFields = append(missingFields, "release_date")

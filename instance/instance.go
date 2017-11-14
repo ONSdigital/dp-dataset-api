@@ -189,8 +189,12 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 						ID:   datasetID,
 						HRef: fmt.Sprintf("%s/datasets/%s", s.Host, datasetID),
 					},
+					LatestVersion: &models.LinkObject{
+						ID:   "1",
+						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
+					},
 					Self: &models.LinkObject{
-						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", s.Host, datasetID, edition),
+						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/1", s.Host, datasetID, edition),
 					},
 					Versions: &models.LinkObject{
 						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
@@ -198,15 +202,28 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 				},
 				State: "created",
 			}
-
-			if err := s.UpsertEdition(datasetID, edition, editionDoc); err != nil {
-				log.ErrorR(r, err, nil)
-				handleErrorType(err, w)
-				return
-			}
-
-			log.Debug("created edition", log.Data{"instance": id, "edition": edition})
 		}
+
+		// Update the latest version for the dataset edition
+		version, err := strconv.Atoi(editionDoc.Links.LatestVersion.ID)
+		if err != nil {
+			log.ErrorC("Unable to retrieve latest version", err, log.Data{"instance": id, "edition": edition, "version": editionDoc.Links.LatestVersion.ID})
+			handleErrorType(err, w)
+			return
+		}
+
+		version++
+
+		editionDoc.Links.LatestVersion.ID = strconv.Itoa(version)
+		editionDoc.Links.LatestVersion.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", s.Host, datasetID, edition, strconv.Itoa(version))
+
+		if err := s.UpsertEdition(datasetID, edition, editionDoc); err != nil {
+			log.ErrorR(r, err, nil)
+			handleErrorType(err, w)
+			return
+		}
+
+		log.Debug("created edition", log.Data{"instance": id, "edition": edition})
 
 		// Check whether instance has a version
 		if currentInstance.Version < 1 {

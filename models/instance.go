@@ -10,28 +10,30 @@ import (
 
 // Instance which presents a single dataset being imported
 type Instance struct {
-	InstanceID           string        `bson:"id,omitempty"                          json:"id,omitempty"`
-	CollectionID         string        `bson:"collection_id,omitempty"               json:"collection_id,omitempty"`
-	Dimensions           []CodeList    `bson:"dimensions,omitempty"                  json:"dimensions,omitempty"`
-	Downloads            *DownloadList `bson:"downloads,omitempty"                   json:"downloads,omitempty"`
-	Edition              string        `bson:"edition,omitempty"                     json:"edition,omitempty"`
-	Events               *[]Event      `bson:"events,omitempty"                      json:"events,omitempty"`
-	Headers              *[]string     `bson:"headers,omitempty"                     json:"headers,omitempty"`
-	InsertedObservations *int          `bson:"total_inserted_observations,omitempty" json:"total_inserted_observations,omitempty"`
-	License              string        `bson:"license,omitempty"                     json:"license,omitempty"`
-	Links                InstanceLinks `bson:"links,omitempty"                       json:"links,omitempty"`
-	ReleaseDate          string        `bson:"release_date,omitempty"                json:"release_date,omitempty"`
-	State                string        `bson:"state,omitempty"                       json:"state,omitempty"`
-	TotalObservations    *int          `bson:"total_observations,omitempty"          json:"total_observations,omitempty"`
-	Version              int           `bson:"version,omitempty"                     json:"version,omitempty"`
-	LastUpdated          time.Time     `bson:"last_updated,omitempty"                json:"last_updated,omitempty"`
+	InstanceID           string               `bson:"id,omitempty"                          json:"id,omitempty"`
+	CollectionID         string               `bson:"collection_id,omitempty"               json:"collection_id,omitempty"`
+	Dimensions           []CodeList           `bson:"dimensions,omitempty"                  json:"dimensions,omitempty"`
+	Downloads            *DownloadList        `bson:"downloads,omitempty"                   json:"downloads,omitempty"`
+	Edition              string               `bson:"edition,omitempty"                     json:"edition,omitempty"`
+	Events               *[]Event             `bson:"events,omitempty"                      json:"events,omitempty"`
+	Headers              *[]string            `bson:"headers,omitempty"                     json:"headers,omitempty"`
+	InsertedObservations *int                 `bson:"total_inserted_observations,omitempty" json:"total_inserted_observations,omitempty"`
+	Links                InstanceLinks        `bson:"links,omitempty"                       json:"links,omitempty"`
+	ReleaseDate          string               `bson:"release_date,omitempty"                json:"release_date,omitempty"`
+	Spatial              string               `bson:"spatial,omitempty"                     json:"spatial,omitempty"`
+	State                string               `bson:"state,omitempty"                       json:"state,omitempty"`
+	Temporal             *[]TemporalFrequency `bson:"temporal,omitempty"                    json:"temporal,omitempty"`
+	TotalObservations    *int                 `bson:"total_observations,omitempty"          json:"total_observations,omitempty"`
+	Version              int                  `bson:"version,omitempty"                     json:"version,omitempty"`
+	LastUpdated          time.Time            `bson:"last_updated,omitempty"                json:"last_updated,omitempty"`
 }
 
 // CodeList for a dimension within an instance
 type CodeList struct {
-	ID   string `json:"id"`
-	HRef string `json:"href"`
-	Name string `json:"name"`
+	Description string `json:"description"`
+	HRef        string `json:"href"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
 }
 
 // InstanceLinks holds all links for an instance
