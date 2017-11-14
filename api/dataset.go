@@ -294,15 +294,31 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	var accessRights string
+	if dataset.Links != nil {
+		if dataset.Links.AccessRights != nil {
+			if dataset.Links.AccessRights.HRef != "" {
+				accessRights = dataset.Links.AccessRights.HRef
+			}
+		}
+	}
+
 	dataset.ID = datasetID
 	dataset.Links = &models.DatasetLinks{
-		Self: &models.LinkObject{
-			HRef: fmt.Sprintf("%s/datasets/%s", api.host, datasetID),
-		},
 		Editions: &models.LinkObject{
 			HRef: fmt.Sprintf("%s/datasets/%s/editions", api.host, datasetID),
 		},
+		Self: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s", api.host, datasetID),
+		},
 	}
+
+	if accessRights != "" {
+		dataset.Links.AccessRights = &models.LinkObject{
+			HRef: accessRights,
+		}
+	}
+
 	dataset.LastUpdated = time.Now()
 
 	datasetDoc := &models.DatasetUpdate{
@@ -436,10 +452,6 @@ func createNewVersionDoc(currentVersion *models.Version, version *models.Version
 		version.ReleaseDate = currentVersion.ReleaseDate
 	}
 
-	if version.Spatial == "" {
-		version.Spatial = currentVersion.Spatial
-	}
-
 	if version.State == "" {
 		version.State = currentVersion.State
 	}
@@ -448,8 +460,36 @@ func createNewVersionDoc(currentVersion *models.Version, version *models.Version
 		version.Temporal = currentVersion.Temporal
 	}
 
+	var spatial string
+
+	// Get spatial link before overwriting the version links object below
+	if version.Links != nil {
+		if version.Links.Spatial != nil {
+			if version.Links.Spatial.HRef != "" {
+				spatial = version.Links.Spatial.HRef
+			}
+		}
+	}
+
 	version.ID = currentVersion.ID
 	version.Links = currentVersion.Links
+
+	if spatial != "" {
+
+		// In reality the current version will always have a link object, so
+		// if/else statement should always fall into else block
+		if version.Links == nil {
+			version.Links = &models.VersionLinks{
+				Spatial: &models.LinkObject{
+					HRef: spatial,
+				},
+			}
+		} else {
+			version.Links.Spatial = &models.LinkObject{
+				HRef: spatial,
+			}
+		}
+	}
 
 	return version
 }

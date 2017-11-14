@@ -40,7 +40,6 @@ var relatedDatasets = GeneralDetails{
 }
 
 var inputDataset = Dataset{
-	AccessRight:  "http://ons.gov.uk/accessrights",
 	CollectionID: collectionID,
 	Contacts: []ContactDetails{
 		contacts,
@@ -48,6 +47,11 @@ var inputDataset = Dataset{
 	Description: "census",
 	Keywords:    []string{"test", "test2"},
 	License:     "Office of National Statistics license",
+	Links: &DatasetLinks{
+		AccessRights: &LinkObject{
+			HRef: "http://ons.gov.uk/accessrights",
+		},
+	},
 	Methodologies: []GeneralDetails{
 		methodology,
 	},
@@ -101,6 +105,9 @@ var links = VersionLinks{
 	Self: &LinkObject{
 		HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
 	},
+	Spatial: &LinkObject{
+		HRef: "http://ons.gov.uk/geographylist",
+	},
 }
 
 var temporal = TemporalFrequency{
@@ -126,7 +133,6 @@ var associatedVersion = Version{
 	Edition:      "2017",
 	Links:        &links,
 	ReleaseDate:  "2017-10-12",
-	Spatial:      "http://ons.gov.uk/geographylist",
 	State:        "associated",
 	Temporal:     &[]TemporalFrequency{temporal},
 	Version:      1,
@@ -139,7 +145,6 @@ var publishedVersion = Version{
 	Edition:      "2017",
 	Links:        &links,
 	ReleaseDate:  "2017-10-12",
-	Spatial:      "http://ons.gov.uk/geographylist",
 	State:        "published",
 	Temporal:     &[]TemporalFrequency{temporal},
 	Version:      1,

@@ -169,34 +169,40 @@ func TestDatasetUpdateQuery(t *testing.T) {
 		relatedDatasets = append(relatedDatasets, relatedDataset)
 
 		expectedUpdate := bson.M{
-			"next.collection_id":      "12345678",
-			"next.contacts":           contacts,
-			"next.description":        "test description",
-			"next.keywords":           []string{"statistics", "national"},
-			"next.license":            "ONS License",
-			"next.methodologies":      methodologies,
-			"next.national_statistic": true,
-			"next.next_release":       "2018-05-05",
-			"next.publications":       publications,
-			"next.publisher.href":     "http://ons.gov.uk",
-			"next.publisher.name":     "Office of National Statistics",
-			"next.publisher.type":     "Public",
-			"next.qmi.description":    "some qmi description",
-			"next.qmi.href":           "http://localhost:22000//datasets/123/qmi",
-			"next.qmi.title":          "some qmi title",
-			"next.related_datasets":   relatedDatasets,
-			"next.release_frequency":  "yearly",
-			"next.theme":              "construction",
-			"next.title":              "CPI",
-			"next.uri":                "http://ons.gov.uk/dataset/123/landing-page",
+			"next.collection_id":            "12345678",
+			"next.contacts":                 contacts,
+			"next.description":              "test description",
+			"next.keywords":                 []string{"statistics", "national"},
+			"next.license":                  "ONS License",
+			"next.links.access_rights.href": "http://ons.gov.uk/accessrights",
+			"next.methodologies":            methodologies,
+			"next.national_statistic":       true,
+			"next.next_release":             "2018-05-05",
+			"next.publications":             publications,
+			"next.publisher.href":           "http://ons.gov.uk",
+			"next.publisher.name":           "Office of National Statistics",
+			"next.publisher.type":           "Public",
+			"next.qmi.description":          "some qmi description",
+			"next.qmi.href":                 "http://localhost:22000//datasets/123/qmi",
+			"next.qmi.title":                "some qmi title",
+			"next.related_datasets":         relatedDatasets,
+			"next.release_frequency":        "yearly",
+			"next.theme":                    "construction",
+			"next.title":                    "CPI",
+			"next.uri":                      "http://ons.gov.uk/dataset/123/landing-page",
 		}
 
 		dataset := &models.Dataset{
-			Contacts:          contacts,
-			CollectionID:      "12345678",
-			Description:       "test description",
-			Keywords:          []string{"statistics", "national"},
-			License:           "ONS License",
+			Contacts:     contacts,
+			CollectionID: "12345678",
+			Description:  "test description",
+			Keywords:     []string{"statistics", "national"},
+			License:      "ONS License",
+			Links: &models.DatasetLinks{
+				AccessRights: &models.LinkObject{
+					HRef: "http://ons.gov.uk/accessrights",
+				},
+			},
 			Methodologies:     methodologies,
 			NationalStatistic: true,
 			NextRelease:       "2018-05-05",
@@ -231,19 +237,23 @@ func TestVersionUpdateQuery(t *testing.T) {
 		}
 
 		expectedUpdate := bson.M{
-			"collection_id": "12345678",
-			"release_date":  "2017-09-09",
-			"spatial":       "http://ons.gov.uk/geographylist",
-			"state":         "published",
-			"temporal":      &[]models.TemporalFrequency{temporal},
+			"collection_id":      "12345678",
+			"release_date":       "2017-09-09",
+			"links.spatial.href": "http://ons.gov.uk/geographylist",
+			"state":              "published",
+			"temporal":           &[]models.TemporalFrequency{temporal},
 		}
 
 		version := &models.Version{
 			CollectionID: "12345678",
 			ReleaseDate:  "2017-09-09",
-			Spatial:      "http://ons.gov.uk/geographylist",
-			State:        "published",
-			Temporal:     &[]models.TemporalFrequency{temporal},
+			Links: &models.VersionLinks{
+				Spatial: &models.LinkObject{
+					HRef: "http://ons.gov.uk/geographylist",
+				},
+			},
+			State:    "published",
+			Temporal: &[]models.TemporalFrequency{temporal},
 		}
 
 		selector := createVersionUpdateQuery(version)

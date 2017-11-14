@@ -25,7 +25,7 @@ var (
 	badRequestError = errors.New("bad request")
 	notFoundError   = errors.New("not found")
 
-	datasetPayload           = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","title":"CensusEthnicity","theme":"population","periodicity":"yearly","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"}}`
+	datasetPayload           = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","periodicity":"yearly","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"}}`
 	editionPayload           = `{"edition":"2017","state":"created"}`
 	versionPayload           = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04"}`
 	versionAssociatedPayload = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"associated","collection_id":"12345"}`
@@ -1230,6 +1230,75 @@ func TestCreateNewVersionDoc(t *testing.T) {
 		newVersion := createNewVersionDoc(currentVersion, version)
 		So(newVersion.CollectionID, ShouldNotBeNil)
 		So(newVersion.CollectionID, ShouldEqual, "")
+	})
+
+	Convey("Check the version has the new spatial link when request contains a links.spatial.href", t, func() {
+		currentVersion := &models.Version{}
+		version := &models.Version{
+			Links: &models.VersionLinks{
+				Spatial: &models.LinkObject{
+					HRef: "http://ons.gov.uk/geographylist",
+				},
+			},
+		}
+
+		newVersion := createNewVersionDoc(currentVersion, version)
+		So(newVersion.Links, ShouldNotBeNil)
+		So(newVersion.Links.Spatial, ShouldNotBeNil)
+		So(newVersion.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/geographylist")
+	})
+
+	Convey("Check the version links.spatial.href does not get replaced by the current version value", t, func() {
+		currentVersion := &models.Version{
+			Links: &models.VersionLinks{
+				Spatial: &models.LinkObject{
+					HRef: "http://ons.gov.uk/oldgeographylist",
+				},
+			},
+		}
+		version := &models.Version{
+			Links: &models.VersionLinks{
+				Spatial: &models.LinkObject{
+					HRef: "http://ons.gov.uk/geographylist",
+				},
+			},
+		}
+
+		newVersion := createNewVersionDoc(currentVersion, version)
+		So(newVersion.Links, ShouldNotBeNil)
+		So(newVersion.Links.Spatial, ShouldNotBeNil)
+		So(newVersion.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/geographylist")
+	})
+
+	Convey("Check the links.spatial.href has the old value when request does not contain a links.spatial.href", t, func() {
+		currentVersion := &models.Version{
+			Links: &models.VersionLinks{
+				Spatial: &models.LinkObject{
+					HRef: "http://ons.gov.uk/oldgeographylist",
+				},
+			},
+		}
+		version := &models.Version{}
+
+		newVersion := createNewVersionDoc(currentVersion, version)
+		So(newVersion.Links, ShouldNotBeNil)
+		So(newVersion.Links.Spatial, ShouldNotBeNil)
+		So(newVersion.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/oldgeographylist")
+	})
+
+	Convey("check the version links.spatial.href is not set when both request body and current version document do not contain a links.spatial.href", t, func() {
+		currentVersion := &models.Version{
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://ons.gov.uk/datasets/123",
+				},
+			},
+		}
+		version := &models.Version{}
+
+		newVersion := createNewVersionDoc(currentVersion, version)
+		So(newVersion.Links, ShouldNotBeNil)
+		So(newVersion.Links.Spatial, ShouldBeNil)
 	})
 }
 

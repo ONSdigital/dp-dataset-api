@@ -43,7 +43,6 @@ type DatasetUpdate struct {
 
 // Dataset represents information related to a single dataset
 type Dataset struct {
-	AccessRight       string           `bson:"access_right,omitempty"          json:"access_right,omitempty"`
 	CollectionID      string           `bson:"collection_id,omitempty"          json:"collection_id,omitempty"`
 	Contacts          []ContactDetails `bson:"contacts,omitempty"               json:"contacts,omitempty"`
 	Description       string           `bson:"description,omitempty"            json:"description,omitempty"`
@@ -68,6 +67,7 @@ type Dataset struct {
 
 // DatasetLinks represents a list of specific links related to the dataset resource
 type DatasetLinks struct {
+	AccessRights  *LinkObject `bson:"access_rights,omitempty"   json:"access_rights,omitempty"`
 	Editions      *LinkObject `bson:"editions,omitempty"        json:"editions,omitempty"`
 	LatestVersion *LinkObject `bson:"latest_version,omitempty"  json:"latest_version,omitempty"`
 	Self          *LinkObject `bson:"self,omitempty"            json:"self,omitempty"`
@@ -133,7 +133,6 @@ type Version struct {
 	ID           string               `bson:"id,omitempty"            json:"id,omitempty"`
 	Links        *VersionLinks        `bson:"links,omitempty"         json:"links,omitempty"`
 	ReleaseDate  string               `bson:"release_date,omitempty"  json:"release_date,omitempty"`
-	Spatial      string               `bson:"spatial,omitempty"       json:"spatial,omitempty"`
 	State        string               `bson:"state,omitempty"         json:"state,omitempty"`
 	Temporal     *[]TemporalFrequency `bson:"temporal,omitempty"      json:"temporal,omitempty"`
 	LastUpdated  time.Time            `bson:"last_updated,omitempty"  json:"-"`
@@ -165,6 +164,7 @@ type VersionLinks struct {
 	Dimensions *LinkObject `bson:"dimensions,omitempty"  json:"dimensions,omitempty"`
 	Edition    *LinkObject `bson:"edition,omitempty"     json:"edition,omitempty"`
 	Self       *LinkObject `bson:"self,omitempty"        json:"self,omitempty"`
+	Spatial    *LinkObject `bson:"spatial,omitempty"     json:"spatial,omitempty"`
 	Version    *LinkObject `bson:"version,omitempty"     json:"-"`
 }
 

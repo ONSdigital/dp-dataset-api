@@ -299,6 +299,14 @@ func createDatasetUpdateQuery(dataset *models.Dataset) bson.M {
 		updates["next.license"] = dataset.License
 	}
 
+	if dataset.Links != nil {
+		if dataset.Links.AccessRights != nil {
+			if dataset.Links.AccessRights.HRef != "" {
+				updates["next.links.access_rights.href"] = dataset.Links.AccessRights.HRef
+			}
+		}
+	}
+
 	if dataset.Methodologies != nil {
 		updates["next.methodologies"] = dataset.Methodologies
 	}
@@ -421,15 +429,17 @@ func createVersionUpdateQuery(version *models.Version) bson.M {
 		updates["release_date"] = version.ReleaseDate
 	}
 
-	if version.Spatial != "" {
-		updates["spatial"] = version.Spatial
+	if version.Links.Spatial != nil {
+		if version.Links.Spatial.HRef != "" {
+			updates["links.spatial.href"] = version.Links.Spatial.HRef
+		}
 	}
 
 	if version.State != "" {
 		updates["state"] = version.State
 	}
 
-	if version.Spatial != "" {
+	if version.Temporal != nil {
 		updates["temporal"] = version.Temporal
 	}
 
