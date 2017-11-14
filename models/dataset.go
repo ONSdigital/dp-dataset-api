@@ -112,9 +112,10 @@ type Edition struct {
 
 // EditionLinks represents a list of specific links related to the edition resource of a dataset
 type EditionLinks struct {
-	Dataset  *LinkObject `bson:"dataset,omitempty"     json:"dataset,omitempty"`
-	Self     *LinkObject `bson:"self,omitempty"        json:"self,omitempty"`
-	Versions *LinkObject `bson:"versions,omitempty"    json:"versions,omitempty"`
+	Dataset       *LinkObject `bson:"dataset,omitempty"        json:"dataset,omitempty"`
+	LatestVersion *LinkObject `bson:"latest_version,omitempty" json:"latest_version,omitempty"`
+	Self          *LinkObject `bson:"self,omitempty"           json:"self,omitempty"`
+	Versions      *LinkObject `bson:"versions,omitempty"       json:"versions,omitempty"`
 }
 
 // Publisher represents an object containing information of the publisher

@@ -944,6 +944,8 @@ definitions:
     properties:
       dataset:
         $ref: '#/definitions/DatasetLink'
+      latest_version:
+        $ref: '#/definitions/LatestVersionLink'
       self:
         $ref: '#/definitions/SelfLink'
       versions:
