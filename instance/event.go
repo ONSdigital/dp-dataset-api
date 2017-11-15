@@ -33,22 +33,23 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 
 	event, err := unmarshalEvent(r.Body)
 	if err != nil {
-		log.Error(err, nil)
+		log.ErrorC("AddEvent json", err, nil)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if err = event.Validate(); err != nil {
-		log.Error(err, nil)
+		log.ErrorC("AddEvent valid", err, nil)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if err = s.AddEventToInstance(id, event); err != nil {
-		log.Error(err, nil)
+		log.ErrorC("AddEvent add", err, nil)
 		handleErrorType(err, w)
 		return
 	}
 
+	w.WriteHeader(http.StatusCreated)
 	log.Debug("add event to instance", log.Data{"instance": id})
 }

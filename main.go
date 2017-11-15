@@ -60,7 +60,7 @@ func main() {
 
 		// mongo.Close() may use all remaining time in the context - do this last!
 		if err = mongoclosure.Close(ctx, session); err != nil {
-			log.Error(err, nil)
+			log.ErrorC("mongo close", err, nil)
 		}
 
 		log.Info("Shutdown complete", nil)

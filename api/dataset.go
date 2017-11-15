@@ -32,7 +32,7 @@ const (
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	results, err := api.dataStore.Backend.GetDatasets()
 	if err != nil {
-		log.Error(err, nil)
+		log.ErrorC("getDatasets res", err, nil)
 		handleErrorType(datasetDocType, err, w)
 		return
 	}
@@ -45,7 +45,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 		datasets.Items = results
 		bytes, err = json.Marshal(datasets)
 		if err != nil {
-			log.Error(err, nil)
+			log.ErrorC("getDatasets json auth", err, nil)
 			handleErrorType(datasetDocType, err, w)
 			return
 		}
@@ -56,7 +56,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 
 		bytes, err = json.Marshal(datasets)
 		if err != nil {
-			log.Error(err, nil)
+			log.ErrorC("getDatasets json pub", err, nil)
 			handleErrorType(datasetDocType, err, w)
 			return
 		}
@@ -64,7 +64,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	setJSONContentType(w)
 	_, err = w.Write(bytes)
 	if err != nil {
-		log.Error(err, nil)
+		log.ErrorC("getDatasets write", err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	log.Debug("get all datasets", nil)
@@ -599,7 +599,7 @@ func mapResults(results []models.DatasetUpdate) []*models.Dataset {
 }
 
 func handleErrorType(docType string, err error, w http.ResponseWriter) {
-	log.Error(err, nil)
+	log.ErrorC("handleErr", err, nil)
 
 	switch docType {
 	default:
