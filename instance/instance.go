@@ -194,7 +194,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
 					},
 					Self: &models.LinkObject{
-						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/1", s.Host, datasetID, edition),
+						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", s.Host, datasetID, edition),
 					},
 					Versions: &models.LinkObject{
 						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
