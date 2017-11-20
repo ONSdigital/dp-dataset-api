@@ -287,6 +287,20 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
 
+	_, err := api.dataStore.Backend.GetDataset(datasetID)
+	if err != nil {
+		if err != errs.DatasetNotFound {
+			log.Error(err, log.Data{"dataset_id": datasetID})
+			handleErrorType(datasetDocType, err, w)
+			return
+		}
+	} else {
+		err := fmt.Errorf("Forbidden - dataset already exists")
+		log.Error(err, log.Data{"dataset_id": datasetID})
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
 	dataset, err := models.CreateDataset(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

@@ -621,6 +621,9 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		r.Header.Add("internal-token", secretKey)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return nil, errs.DatasetNotFound
+			},
 			UpsertDatasetFunc: func(id string, datasetDoc *models.DatasetUpdate) error {
 				return nil
 			},
@@ -630,6 +633,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusCreated)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
 	})
 }
@@ -643,6 +647,9 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		r.Header.Add("internal-token", secretKey)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return nil, errs.DatasetNotFound
+			},
 			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
 				return badRequestError
 			},
@@ -651,6 +658,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 	})
 
@@ -661,15 +669,19 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		r.Header.Add("internal-token", secretKey)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return nil, internalError
+			},
 			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
-				return internalError
+				return nil
 			},
 		}
 
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the request does not contain a valid internal token return status unauthorised", t, func() {
@@ -678,6 +690,9 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		r := httptest.NewRequest("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return nil, errs.DatasetNotFound
+			},
 			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
 				return nil
 			},
@@ -686,6 +701,33 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the dataset already exists and a request is sent to create the same dataset", t, func() {
+		var b string
+		b = datasetPayload
+		r := httptest.NewRequest("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		r.Header.Add("internal-token", secretKey)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID:      "123",
+					Next:    &models.Dataset{},
+					Current: &models.Dataset{},
+				}, nil
+			},
+			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 	})
 }

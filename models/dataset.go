@@ -54,7 +54,7 @@ type Dataset struct {
 	License           string           `bson:"license,omitempty"                json:"license,omitempty"`
 	Links             *DatasetLinks    `bson:"links,omitempty"                  json:"links,omitempty"`
 	Methodologies     []GeneralDetails `bson:"methodologies,omitempty"          json:"methodologies,omitempty"`
-	NationalStatistic bool             `bson:"national_statistic,omitempty"     json:"national_statistic,omitempty"`
+	NationalStatistic *bool            `bson:"national_statistic,omitempty"     json:"national_statistic,omitempty"`
 	NextRelease       string           `bson:"next_release,omitempty"           json:"next_release,omitempty"`
 	Publications      []GeneralDetails `bson:"publications,omitempty"           json:"publications,omitempty"`
 	Publisher         *Publisher       `bson:"publisher,omitempty"              json:"publisher,omitempty"`

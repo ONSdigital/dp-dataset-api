@@ -32,7 +32,7 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.Keywords[1], ShouldEqual, "test2")
 			So(dataset.License, ShouldEqual, "Office of National Statistics license")
 			So(dataset.Methodologies[0], ShouldResemble, methodology)
-			So(dataset.NationalStatistic, ShouldEqual, true)
+			So(dataset.NationalStatistic, ShouldResemble, &nationalStatistic)
 			So(dataset.NextRelease, ShouldEqual, "2016-05-05")
 			So(dataset.Publications[0], ShouldResemble, publications)
 			So(dataset.Publisher, ShouldResemble, &publisher)

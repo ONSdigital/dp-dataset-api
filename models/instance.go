@@ -44,6 +44,7 @@ type InstanceLinks struct {
 	Edition    *IDLink `bson:"edition,omitempty"    json:"edition,omitempty"`
 	Version    *IDLink `bson:"version,omitempty"    json:"version,omitempty"`
 	Self       *IDLink `bson:"self,omitempty"       json:"self,omitempty"`
+	Spatial    *IDLink `bson:"spatial,omitempty"    json:"spatial,omitempty"`
 }
 
 // IDLink holds the id and a link to the resource
@@ -93,7 +94,7 @@ func ValidateStateFilter(filterList []string) error {
 	}
 
 	if invalidFilterStateValues != nil {
-		err := fmt.Errorf("invalid filter state values")
+		err := fmt.Errorf("Bad request - invalid filter state values: %v", invalidFilterStateValues)
 		log.Error(err, log.Data{"list-of-invalid-filter-states": invalidFilterStateValues})
 		return err
 	}
