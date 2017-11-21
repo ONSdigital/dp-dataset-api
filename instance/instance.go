@@ -24,13 +24,6 @@ type Store struct {
 	store.Storer
 }
 
-const (
-	completedState        = "completed"
-	editionConfirmedState = "edition-confirmed"
-	associatedState       = "associated"
-	publishedState        = "published"
-)
-
 //GetList a list of all instances
 func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	stateFilterQuery := r.URL.Query().Get("state")
@@ -133,22 +126,22 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch instance.State {
-	case editionConfirmedState:
-		if err = validateInstanceUpdate(completedState, currentInstance, instance); err != nil {
+	case models.EditionConfirmedState:
+		if err = validateInstanceUpdate(models.CompletedState, currentInstance, instance); err != nil {
 			log.Error(err, log.Data{"instance_id": id, "current_state": currentInstance.State})
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
-	case associatedState:
-		if err = validateInstanceUpdate(editionConfirmedState, currentInstance, instance); err != nil {
+	case models.AssociatedState:
+		if err = validateInstanceUpdate(models.EditionConfirmedState, currentInstance, instance); err != nil {
 			log.Error(err, log.Data{"instance_id": id, "current_state": currentInstance.State})
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
 
 		// TODO Update dataset.next state to associated and add collection id
-	case publishedState:
-		if err = validateInstanceUpdate(associatedState, currentInstance, instance); err != nil {
+	case models.PublishedState:
+		if err = validateInstanceUpdate(models.AssociatedState, currentInstance, instance); err != nil {
 			log.Error(err, log.Data{"instance_id": id, "current_state": currentInstance.State})
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
@@ -157,7 +150,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		// TODO Update both edition and dataset states to published
 	}
 
-	if instance.State == editionConfirmedState {
+	if instance.State == models.EditionConfirmedState {
 		var editionDoc *models.Edition
 
 		datasetID := currentInstance.Links.Dataset.ID
@@ -257,7 +250,7 @@ func validateInstanceUpdate(expectedState string, currentInstance, instance *mod
 		err := fmt.Errorf("Unable to update resource, expected resource to have a state of %s", expectedState)
 		return err
 	}
-	if instance.State == editionConfirmedState && currentInstance.Edition == "" && instance.Edition == "" {
+	if instance.State == models.EditionConfirmedState && currentInstance.Edition == "" && instance.Edition == "" {
 		err := errors.New("Unable to update resource, missing a value for the edition")
 		return err
 	}

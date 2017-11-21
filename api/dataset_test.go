@@ -1378,7 +1378,7 @@ func setUp(state string) *storetest.StorerMock {
 	}
 	mockedDataStore.UpsertVersion("1", versionDoc)
 
-	if state == publishedState {
+	if state == models.PublishedState {
 		datasetDoc := &models.DatasetUpdate{
 			ID: "123",
 			Next: &models.Dataset{
@@ -1390,7 +1390,7 @@ func setUp(state string) *storetest.StorerMock {
 		mockedDataStore.UpsertDataset("123", datasetDoc)
 	}
 
-	if state == associatedState {
+	if state == models.AssociatedState {
 		versionDoc := &models.Version{
 			State: state,
 		}

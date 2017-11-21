@@ -73,12 +73,12 @@ func (e *Event) Validate() error {
 }
 
 var validStates = map[string]int{
-	"created":           1,
-	"submitted":         1,
-	"completed":         1,
-	"edition-confirmed": 1,
-	"associated":        1,
-	"published":         1,
+	CreatedState:          1,
+	SubmittedState:        1,
+	CompletedState:        1,
+	EditionConfirmedState: 1,
+	AssociatedState:       1,
+	PublishedState:        1,
 }
 
 // ValidateStateFilter checks the list of filter states from a whitelist
