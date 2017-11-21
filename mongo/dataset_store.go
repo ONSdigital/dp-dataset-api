@@ -273,13 +273,15 @@ func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset) (err error) {
 	defer s.Close()
 
 	updates := createDatasetUpdateQuery(id, dataset)
-	if err = s.DB(m.Database).C("datasets").UpdateId(id, bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}}); err != nil {
+	update := bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}}
+	if err = s.DB(m.Database).C("datasets").UpdateId(id, update); err != nil {
 		if err == mgo.ErrNotFound {
 			return errs.ErrDatasetNotFound
 		}
+		return err
 	}
 
-	return
+	return nil
 }
 
 func createDatasetUpdateQuery(id string, dataset *models.Dataset) bson.M {

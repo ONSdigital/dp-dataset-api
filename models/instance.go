@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/ONSdigital/go-ns/log"
 )
 
 // Instance which presents a single dataset being imported
@@ -95,7 +93,6 @@ func ValidateStateFilter(filterList []string) error {
 
 	if invalidFilterStateValues != nil {
 		err := fmt.Errorf("Bad request - invalid filter state values: %v", invalidFilterStateValues)
-		log.Error(err, log.Data{"list-of-invalid-filter-states": invalidFilterStateValues})
 		return err
 	}
 
