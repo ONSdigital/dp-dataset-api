@@ -207,7 +207,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		// Update the latest version for the dataset edition
 		version, err := strconv.Atoi(editionDoc.Links.LatestVersion.ID)
 		if err != nil {
-			log.ErrorC("Unable to retrieve latest version", err, log.Data{"instance": id, "edition": edition, "version": editionDoc.Links.LatestVersion.ID})
+			log.ErrorC("unable to retrieve latest version", err, log.Data{"instance": id, "edition": edition, "version": editionDoc.Links.LatestVersion.ID})
 			handleErrorType(err, w)
 			return
 		}

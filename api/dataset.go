@@ -506,7 +506,7 @@ func createNewVersionDoc(currentVersion *models.Version, version *models.Version
 func (api *DatasetAPI) updateDataset(id string, version *models.Version) error {
 	currentDataset, err := api.dataStore.Backend.GetDataset(id)
 	if err != nil {
-		log.ErrorC("Unable to update dataset", err, log.Data{"dataset_id": id})
+		log.ErrorC("unable to update dataset", err, log.Data{"dataset_id": id})
 		return err
 	}
 
@@ -537,7 +537,7 @@ func (api *DatasetAPI) updateDataset(id string, version *models.Version) error {
 	}
 
 	if err := api.dataStore.Backend.UpsertDataset(id, newDataset); err != nil {
-		log.ErrorC("Unable to update dataset", err, log.Data{"dataset_id": id})
+		log.ErrorC("unable to update dataset", err, log.Data{"dataset_id": id})
 		return err
 	}
 
