@@ -21,9 +21,9 @@ const (
 )
 
 var (
-	internalError   = errors.New("internal error")
-	badRequestError = errors.New("bad request")
-	notFoundError   = errors.New("not found")
+	errInternal   = errors.New("internal error")
+	errBadRequest = errors.New("bad request")
+	errNotFound   = errors.New("not found")
 
 	datasetPayload           = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","periodicity":"yearly","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"}}`
 	editionPayload           = `{"edition":"2017","state":"created"}`
@@ -57,7 +57,7 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetsFunc: func() ([]models.DatasetUpdate, error) {
-				return nil, internalError
+				return nil, errInternal
 			},
 		}
 
@@ -109,7 +109,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(id string) (*models.DatasetUpdate, error) {
-				return nil, internalError
+				return nil, errInternal
 			},
 		}
 
@@ -139,7 +139,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(id string) (*models.DatasetUpdate, error) {
-				return nil, errs.DatasetNotFound
+				return nil, errs.ErrDatasetNotFound
 			},
 		}
 
@@ -179,7 +179,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
-				return internalError
+				return errInternal
 			},
 		}
 
@@ -196,7 +196,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
-				return errs.DatasetNotFound
+				return errs.ErrDatasetNotFound
 			},
 		}
 
@@ -216,7 +216,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 				return nil
 			},
 			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
-				return nil, errs.EditionNotFound
+				return nil, errs.ErrEditionNotFound
 			},
 		}
 
@@ -235,7 +235,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 				return nil
 			},
 			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
-				return nil, errs.EditionNotFound
+				return nil, errs.ErrEditionNotFound
 			},
 		}
 
@@ -276,7 +276,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
-				return internalError
+				return errInternal
 			},
 		}
 
@@ -293,7 +293,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
-				return errs.DatasetNotFound
+				return errs.ErrDatasetNotFound
 			},
 		}
 
@@ -313,7 +313,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 				return nil
 			},
 			GetEditionFunc: func(id, editionID, state string) (*models.Edition, error) {
-				return nil, errs.EditionNotFound
+				return nil, errs.ErrEditionNotFound
 			},
 		}
 
@@ -332,7 +332,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 				return nil
 			},
 			GetEditionFunc: func(id, editionID, state string) (*models.Edition, error) {
-				return nil, errs.EditionNotFound
+				return nil, errs.ErrEditionNotFound
 			},
 		}
 
@@ -377,7 +377,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
-				return internalError
+				return errInternal
 			},
 		}
 
@@ -394,7 +394,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
-				return errs.DatasetNotFound
+				return errs.ErrDatasetNotFound
 			},
 		}
 
@@ -414,7 +414,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 				return nil
 			},
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
-				return errs.EditionNotFound
+				return errs.ErrEditionNotFound
 			},
 		}
 
@@ -438,7 +438,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 				return nil
 			},
 			GetVersionsFunc: func(datasetID, editionID, state string) (*models.VersionResults, error) {
-				return nil, errs.VersionNotFound
+				return nil, errs.ErrVersionNotFound
 			},
 		}
 
@@ -461,7 +461,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 				return nil
 			},
 			GetVersionsFunc: func(datasetID, editionID, state string) (*models.VersionResults, error) {
-				return nil, errs.VersionNotFound
+				return nil, errs.ErrVersionNotFound
 			},
 		}
 
@@ -515,7 +515,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
-				return internalError
+				return errInternal
 			},
 		}
 
@@ -531,7 +531,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
-				return errs.DatasetNotFound
+				return errs.ErrDatasetNotFound
 			},
 		}
 
@@ -552,7 +552,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 				return nil
 			},
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
-				return errs.EditionNotFound
+				return errs.ErrEditionNotFound
 			},
 		}
 
@@ -576,7 +576,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 				return nil
 			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
-				return nil, errs.VersionNotFound
+				return nil, errs.ErrVersionNotFound
 			},
 		}
 
@@ -599,7 +599,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 				return nil
 			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
-				return nil, errs.VersionNotFound
+				return nil, errs.ErrVersionNotFound
 			},
 		}
 
@@ -622,7 +622,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
-				return nil, errs.DatasetNotFound
+				return nil, errs.ErrDatasetNotFound
 			},
 			UpsertDatasetFunc: func(id string, datasetDoc *models.DatasetUpdate) error {
 				return nil
@@ -648,10 +648,10 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
-				return nil, errs.DatasetNotFound
+				return nil, errs.ErrDatasetNotFound
 			},
 			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
-				return badRequestError
+				return errBadRequest
 			},
 		}
 
@@ -670,7 +670,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
-				return nil, internalError
+				return nil, errInternal
 			},
 			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
 				return nil
@@ -691,7 +691,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
-				return nil, errs.DatasetNotFound
+				return nil, errs.ErrDatasetNotFound
 			},
 			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
 				return nil
@@ -705,7 +705,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 	})
 
-	Convey("When the dataset already exists and a request is sent to create the same dataset", t, func() {
+	Convey("When the dataset already exists and a request is sent to create the same dataset return status forbidden", t, func() {
 		var b string
 		b = datasetPayload
 		r := httptest.NewRequest("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
@@ -770,7 +770,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			UpdateDatasetFunc: func(string, *models.Dataset) error {
-				return badRequestError
+				return errBadRequest
 			},
 		}
 
@@ -789,7 +789,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			UpdateDatasetFunc: func(string, *models.Dataset) error {
-				return internalError
+				return errInternal
 			},
 		}
 
@@ -813,7 +813,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			UpdateDatasetFunc: func(string, *models.Dataset) error {
-				return errs.DatasetNotFound
+				return errs.ErrDatasetNotFound
 			},
 		}
 
@@ -1027,7 +1027,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
-				return nil, internalError
+				return nil, errInternal
 			},
 			UpdateVersionFunc: func(string, *models.Version) error {
 				return nil
@@ -1050,7 +1050,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
-				return nil, errs.VersionNotFound
+				return nil, errs.ErrVersionNotFound
 			},
 			UpdateVersionFunc: func(string, *models.Version) error {
 				return nil
@@ -1156,7 +1156,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDimensionsFunc: func(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error) {
-				return nil, errs.VersionNotFound
+				return nil, errs.ErrVersionNotFound
 			},
 		}
 
@@ -1170,7 +1170,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDimensionsFunc: func(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error) {
-				return nil, internalError
+				return nil, errInternal
 			},
 		}
 
@@ -1204,7 +1204,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDimensionOptionsFunc: func(datasetID, editionID, versionID, dimensions string) (*models.DimensionOptionResults, error) {
-				return nil, errs.DatasetNotFound
+				return nil, errs.ErrDatasetNotFound
 			},
 		}
 
@@ -1218,7 +1218,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDimensionOptionsFunc: func(datasetID, editionID, versionID, dimensions string) (*models.DimensionOptionResults, error) {
-				return nil, internalError
+				return nil, errInternal
 			},
 		}
 

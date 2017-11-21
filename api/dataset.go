@@ -83,7 +83,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	var bytes []byte
 	if r.Header.Get(internalToken) != api.internalToken {
 		if dataset.Current == nil {
-			handleErrorType(datasetDocType, errs.DatasetNotFound, w)
+			handleErrorType(datasetDocType, errs.ErrDatasetNotFound, w)
 			return
 		}
 
@@ -96,7 +96,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		if dataset == nil {
-			handleErrorType(datasetDocType, errs.DatasetNotFound, w)
+			handleErrorType(datasetDocType, errs.ErrDatasetNotFound, w)
 		}
 		bytes, err = json.Marshal(dataset)
 		if err != nil {
@@ -289,7 +289,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 
 	_, err := api.dataStore.Backend.GetDataset(datasetID)
 	if err != nil {
-		if err != errs.DatasetNotFound {
+		if err != errs.ErrDatasetNotFound {
 			log.Error(err, log.Data{"dataset_id": datasetID})
 			handleErrorType(datasetDocType, err, w)
 			return
@@ -618,25 +618,25 @@ func handleErrorType(docType string, err error, w http.ResponseWriter) {
 
 	switch docType {
 	default:
-		if err == errs.DatasetNotFound || err == errs.EditionNotFound || err == errs.VersionNotFound || err == errs.DimensionNodeNotFound || err == errs.InstanceNotFound {
+		if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	case "edition":
-		if err == errs.DatasetNotFound {
+		if err == errs.ErrDatasetNotFound {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else if err == errs.EditionNotFound {
+		} else if err == errs.ErrEditionNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	case "version":
-		if err == errs.DatasetNotFound {
+		if err == errs.ErrDatasetNotFound {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else if err == errs.EditionNotFound {
+		} else if err == errs.ErrEditionNotFound {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else if err == errs.VersionNotFound {
+		} else if err == errs.ErrVersionNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

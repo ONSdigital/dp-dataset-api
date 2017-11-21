@@ -173,7 +173,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		// Only create edition if it doesn't already exist
 		editionDoc, err = s.GetEdition(datasetID, edition, "")
 		if err != nil {
-			if err != errs.EditionNotFound {
+			if err != errs.ErrEditionNotFound {
 				log.Error(err, nil)
 				handleErrorType(err, w)
 			}
@@ -344,7 +344,7 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 func handleErrorType(err error, w http.ResponseWriter) {
 	status := http.StatusInternalServerError
 
-	if err == errs.DatasetNotFound || err == errs.EditionNotFound || err == errs.VersionNotFound || err == errs.DimensionNodeNotFound || err == errs.InstanceNotFound {
+	if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
 		status = http.StatusNotFound
 	}
 

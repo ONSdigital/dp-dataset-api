@@ -39,7 +39,7 @@ func TestGetInstancesReturnsOK(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{"http://lochost://8080", mockedDataStore}
+		instance := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore}
 		instance.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -61,7 +61,7 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{"http://lochost://8080", mockedDataStore}
+		instance := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore}
 		instance.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -81,7 +81,7 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{"http://lochost://8080", mockedDataStore}
+		instance := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore}
 		instance.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -102,7 +102,7 @@ func TestGetInstancesReturnsError(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -115,7 +115,7 @@ func TestGetInstancesReturnsError(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -135,7 +135,7 @@ func TestGetInstanceReturnsOK(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.Get(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -155,7 +155,7 @@ func TestGetInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.Get(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -176,7 +176,7 @@ func TestAddInstancesReturnsCreated(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.Add(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusCreated)
@@ -197,7 +197,7 @@ func TestAddInstancesReturnsBadRequest(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.Add(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -214,7 +214,7 @@ func TestAddInstancesReturnsBadRequest(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.Add(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -233,7 +233,7 @@ func TestAddInstancesReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.Add(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -257,7 +257,7 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.Update(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -285,7 +285,7 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 				return currentInstanceTestData, nil
 			},
 			GetEditionFunc: func(datasetID, edition, state string) (*models.Edition, error) {
-				return nil, errs.EditionNotFound
+				return nil, errs.ErrEditionNotFound
 			},
 			UpsertEditionFunc: func(datasetID, edition string, editionDoc *models.Edition) error {
 				return nil
@@ -298,7 +298,7 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.Update(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -318,7 +318,7 @@ func TestUpdateInstanceFailure(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.Update(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -331,11 +331,11 @@ func TestUpdateInstanceFailure(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetInstanceFunc: func(id string) (*models.Instance, error) {
-				return nil, errs.InstanceNotFound
+				return nil, errs.ErrInstanceNotFound
 			},
 		}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.Update(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -370,7 +370,7 @@ func TestUpdateInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.Update(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -391,7 +391,7 @@ func TestInsertedObservationsReturnsOk(t *testing.T) {
 				return nil
 			},
 		}
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 
 		router := mux.NewRouter()
 		router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", instance.UpdateObservations).Methods("PUT")
@@ -409,7 +409,7 @@ func TestInsertedObservationsReturnsBadRequest(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.UpdateObservations(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -424,11 +424,11 @@ func TestInsertedObservationsReturnsNotFound(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{
 			UpdateObservationInsertedFunc: func(id string, ob int64) error {
-				return errs.InstanceNotFound
+				return errs.ErrInstanceNotFound
 			},
 		}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 
 		router := mux.NewRouter()
 		router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", instance.UpdateObservations).Methods("PUT")

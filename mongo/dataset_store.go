@@ -52,7 +52,7 @@ func (m *Mongo) GetDatasets() ([]models.DatasetUpdate, error) {
 	results := []models.DatasetUpdate{}
 	if err := iter.All(&results); err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, errs.DatasetNotFound
+			return nil, errs.ErrDatasetNotFound
 		}
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (m *Mongo) GetDataset(id string) (*models.DatasetUpdate, error) {
 	err := s.DB(m.Database).C("datasets").Find(bson.M{"_id": id}).One(&dataset)
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, errs.DatasetNotFound
+			return nil, errs.ErrDatasetNotFound
 		}
 		return nil, err
 	}
@@ -89,13 +89,13 @@ func (m *Mongo) GetEditions(id, state string) (*models.EditionResults, error) {
 	var results []models.Edition
 	if err := iter.All(&results); err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, errs.EditionNotFound
+			return nil, errs.ErrEditionNotFound
 		}
 		return nil, err
 	}
 
 	if len(results) < 1 {
-		return nil, errs.EditionNotFound
+		return nil, errs.ErrEditionNotFound
 	}
 	return &models.EditionResults{Items: results}, nil
 }
@@ -127,7 +127,7 @@ func (m *Mongo) GetEdition(id, editionID, state string) (*models.Edition, error)
 	err := s.DB(m.Database).C("editions").Find(selector).One(&edition)
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, errs.EditionNotFound
+			return nil, errs.ErrEditionNotFound
 		}
 		return nil, err
 	}
@@ -191,13 +191,13 @@ func (m *Mongo) GetVersions(id, editionID, state string) (*models.VersionResults
 	var results []models.Version
 	if err := iter.All(&results); err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, errs.VersionNotFound
+			return nil, errs.ErrVersionNotFound
 		}
 		return nil, err
 	}
 
 	if len(results) < 1 {
-		return nil, errs.VersionNotFound
+		return nil, errs.ErrVersionNotFound
 	}
 
 	for i := 0; i < len(results); i++ {
@@ -240,7 +240,7 @@ func (m *Mongo) GetVersion(id, editionID, versionID, state string) (*models.Vers
 	err = s.DB(m.Database).C("instances").Find(selector).One(&version)
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, errs.VersionNotFound
+			return nil, errs.ErrVersionNotFound
 		}
 		return nil, err
 	}
@@ -275,7 +275,7 @@ func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset) (err error) {
 	updates := createDatasetUpdateQuery(id, dataset)
 	if err = s.DB(m.Database).C("datasets").UpdateId(id, bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}}); err != nil {
 		if err == mgo.ErrNotFound {
-			return errs.DatasetNotFound
+			return errs.ErrDatasetNotFound
 		}
 	}
 
@@ -522,6 +522,7 @@ func (m *Mongo) UpsertContact(id string, update interface{}) (err error) {
 	return
 }
 
+// CheckDatasetExists checks that the dataset exists
 func (m *Mongo) CheckDatasetExists(id, state string) error {
 	s := m.Session.Copy()
 	defer s.Close()
@@ -544,12 +545,13 @@ func (m *Mongo) CheckDatasetExists(id, state string) error {
 	}
 
 	if count == 0 {
-		return errs.DatasetNotFound
+		return errs.ErrDatasetNotFound
 	}
 
 	return nil
 }
 
+// CheckEditionExists checks that the edition of a dataset exists
 func (m *Mongo) CheckEditionExists(id, editionID, state string) error {
 	s := m.Session.Copy()
 	defer s.Close()
@@ -574,7 +576,7 @@ func (m *Mongo) CheckEditionExists(id, editionID, state string) error {
 	}
 
 	if count == 0 {
-		return errs.EditionNotFound
+		return errs.ErrEditionNotFound
 	}
 
 	return nil

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	created               = "created"
+	createdState          = "created"
 	editionConfirmedState = "edition-confirmed"
 )
 
@@ -89,6 +89,7 @@ type GeneralDetails struct {
 	Title       string `bson:"title,omitempty"          json:"title,omitempty"`
 }
 
+// Contact represents information of individual contact details
 type Contact struct {
 	ID          string    `bson:"_id,omitempty"            json:"id,omitempty"`
 	Email       string    `bson:"email,omitempty"          json:"email,omitempty"`
@@ -187,7 +188,7 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 	}
 
 	// Overwrite state to created
-	dataset.State = created
+	dataset.State = createdState
 
 	return &dataset, nil
 }

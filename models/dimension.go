@@ -57,6 +57,7 @@ type PublicDimensionOption struct {
 	Option string               `bson:"option,omitempty"         json:"option"`
 }
 
+// DimensionOptionLinks represents a list of link objects related to dimension options
 type DimensionOptionLinks struct {
 	Code     LinkObject `bson:"code,omitempty"              json:"code"`
 	Version  LinkObject `bson:"version,omitempty"           json:"version"`
