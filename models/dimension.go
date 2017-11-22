@@ -27,6 +27,11 @@ type DimensionLink struct {
 	Version  LinkObject `bson:"version,omitempty"       json:"version,omitempty"`
 }
 
+// BatchOfCachedDimensionOptions is a collection of CachedDimensionOption
+type BatchOfCachedDimensionOptions struct {
+	Options []CachedDimensionOption `json:"options,omitempty"`
+}
+
 // CachedDimensionOption contains information used to create a dimension option
 type CachedDimensionOption struct {
 	Name       string `bson:"name,omitempty"           json:"dimension_id"`

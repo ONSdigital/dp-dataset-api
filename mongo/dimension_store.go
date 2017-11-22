@@ -6,6 +6,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/go-ns/log"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -60,6 +61,75 @@ func (m *Mongo) AddDimensionToInstance(opt *models.CachedDimensionOption) error 
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+// AddDimensionBatchToInstance to the dimension collection
+func (m *Mongo) AddDimensionBatchToInstance(dimensionBatch *[]models.CachedDimensionOption, instanceID string) error {
+	// s := m.Session.Copy()
+	// defer s.Close()
+	// optionsPerNameOption := make(map[string]map[string][]models.DimensionOption, len(*dimensionBatch))
+	now := time.Now().UTC()
+
+	s := m.Session.Copy()
+	defer s.Close()
+	bulk := s.DB(m.Database).C(dimensionOptions).Bulk()
+
+	log.Trace("batch", log.Data{"total": len(*dimensionBatch)})
+	// collect name/option groups into map
+	for idx, opt := range *dimensionBatch {
+		opt.InstanceID = instanceID
+		log.Trace("batch", log.Data{"opt": opt, "idx": idx})
+
+		option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name, Label: opt.Label}
+		option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/code-lists/%s", m.CodeListURL, opt.CodeList)}
+		option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.CodeListURL, opt.CodeList, opt.Code)}
+
+		option.LastUpdated = now
+		bulk.Upsert(bson.M{
+			"instance_id": option.InstanceID,
+			"name":        option.Name,
+			"option":      option.Option,
+		}, &option)
+	}
+
+	bulkResult, err := bulk.Run()
+	if err != nil {
+		log.ErrorC("AddDimensionBatchToInstance", err, log.Data{"bulkResult": bulkResult})
+		return err
+	}
+
+	// if bulkResult.Modified != len(*dimensionBatch) {
+	log.Trace("AddDimensionBatchToInstance", log.Data{"bulkResult": bulkResult})
+	// }
+
+	// option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name, Label: opt.Label}
+	// option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/code-lists/%s", m.CodeListURL, opt.CodeList)}
+	// option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.CodeListURL, opt.CodeList, opt.Code)}
+	// option.LastUpdated = now
+	// if _, ok := optionsPerNameOption[option.Name]; !ok {
+	// 	optionsPerNameOption[option.Name] = make(map[string][]models.DimensionOption, len(*dimensionBatch))
+	// }
+	// if _, ok := optionsPerNameOption[option.Name][option.Option]; !ok {
+	// 	optionsPerNameOption[option.Name][option.Option] = make([]models.DimensionOption, 0)
+	// }
+	// optionsPerNameOption[option.Name][option.Option] = append(optionsPerNameOption[option.Name][option.Option], option)
+
+	// for name, _ := range optionsPerNameOption {
+	// 	for option, options := range optionsPerNameOption[name] {
+	// 		log.Trace("upsert", log.Data{"instance_id": instanceID, "name": name, "option": option, "options_count": len(options)})
+	// 		_, err := s.DB(m.Database).C(dimensionOptions).Upsert(
+	// 			bson.M{
+	// 				"instance_id": instanceID,
+	// 				"name":        name,
+	// 				"option":      option,
+	// 			}, bson.D{[]options})
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// }
 
 	return nil
 }

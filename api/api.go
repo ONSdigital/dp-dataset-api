@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/auth"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
@@ -34,6 +35,7 @@ func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStor
 	routes(host, secretKey, router, dataStore)
 
 	httpServer = server.New(bindAddr, router)
+	httpServer.WriteTimeout = 50 * time.Second // XXX
 	// Disable this here to allow main to manage graceful shutdown of the entire app.
 	httpServer.HandleOSSignals = false
 
@@ -74,6 +76,7 @@ func routes(host, secretKey string, router *mux.Router, dataStore store.DataStor
 	dimension := dimension.Store{Storer: api.dataStore.Backend}
 	api.router.HandleFunc("/instances/{id}/dimensions", dimension.GetNodes).Methods("GET")
 	api.router.HandleFunc("/instances/{id}/dimensions", api.privateAuth.Check(dimension.Add)).Methods("POST")
+	api.router.HandleFunc("/instances/{id}/dimensions_batch", api.privateAuth.Check(dimension.AddBatch)).Methods("POST")
 	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options", dimension.GetUnique).Methods("GET")
 	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}/node_id/{node_id}", api.privateAuth.Check(dimension.AddNodeID)).Methods("PUT")
 	return &api

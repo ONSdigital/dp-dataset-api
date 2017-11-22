@@ -82,6 +82,22 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// AddBatch of dimensions to a specific instance
+func (s *Store) AddBatch(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	options, err := unmarshalDimensionBatch(r.Body, id)
+	if err != nil {
+		log.ErrorC("AddBatch json", err, nil)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := s.AddDimensionBatchToInstance(options, id); err != nil {
+		log.ErrorC("AddBatch add", err, nil)
+		handleErrorType(err, w)
+	}
+}
+
 //AddNodeID against a specific value for dimension
 func (s *Store) AddNodeID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -116,6 +132,33 @@ func unmarshalDimensionCache(reader io.Reader) (*models.CachedDimensionOption, e
 	}
 
 	return &option, nil
+}
+
+// unmarshalDimensionBatch manages the creation of a dataset from a reader
+func unmarshalDimensionBatch(reader io.Reader, instanceID string) (*[]models.CachedDimensionOption, error) {
+	bytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, errors.New("Failed to read message body")
+	}
+	if len(bytes) == 0 {
+		return nil, errors.New("Empty message body")
+	}
+
+	var options models.BatchOfCachedDimensionOptions
+
+	if err = json.Unmarshal(bytes, &options); err != nil {
+		log.Trace("flake", log.Data{"body": string(bytes)})
+		return nil, errors.New("Failed to parse json body")
+	}
+
+	for _, option := range options.Options {
+		option.InstanceID = instanceID
+		if option.Name == "" || (option.Option == "" && option.CodeList == "") {
+			return nil, errors.New("Missing properties in JSON")
+		}
+	}
+
+	return &options.Options, nil
 }
 
 func handleErrorType(err error, w http.ResponseWriter) {

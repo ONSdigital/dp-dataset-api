@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	lockStorerMockAddDimensionBatchToInstance   sync.RWMutex
 	lockStorerMockAddDimensionToInstance        sync.RWMutex
 	lockStorerMockAddEventToInstance            sync.RWMutex
 	lockStorerMockAddInstance                   sync.RWMutex
@@ -46,6 +47,9 @@ var (
 //
 //         // make and configure a mocked Storer
 //         mockedStorer := &StorerMock{
+//             AddDimensionBatchToInstanceFunc: func(dimensionBatch *[]models.CachedDimensionOption, instanceID string) error {
+// 	               panic("TODO: mock out the AddDimensionBatchToInstance method")
+//             },
 //             AddDimensionToInstanceFunc: func(dimension *models.CachedDimensionOption) error {
 // 	               panic("TODO: mock out the AddDimensionToInstance method")
 //             },
@@ -140,6 +144,9 @@ var (
 //
 //     }
 type StorerMock struct {
+	// AddDimensionBatchToInstanceFunc mocks the AddDimensionBatchToInstance method.
+	AddDimensionBatchToInstanceFunc func(dimensionBatch *[]models.CachedDimensionOption, instanceID string) error
+
 	// AddDimensionToInstanceFunc mocks the AddDimensionToInstance method.
 	AddDimensionToInstanceFunc func(dimension *models.CachedDimensionOption) error
 
@@ -229,6 +236,13 @@ type StorerMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AddDimensionBatchToInstance holds details about calls to the AddDimensionBatchToInstance method.
+		AddDimensionBatchToInstance []struct {
+			// DimensionBatch is the dimensionBatch argument value.
+			DimensionBatch *[]models.CachedDimensionOption
+			// InstanceID is the instanceID argument value.
+			InstanceID string
+		}
 		// AddDimensionToInstance holds details about calls to the AddDimensionToInstance method.
 		AddDimensionToInstance []struct {
 			// Dimension is the dimension argument value.
@@ -437,6 +451,41 @@ type StorerMock struct {
 			VersionDoc *models.Version
 		}
 	}
+}
+
+// AddDimensionBatchToInstance calls AddDimensionBatchToInstanceFunc.
+func (mock *StorerMock) AddDimensionBatchToInstance(dimensionBatch *[]models.CachedDimensionOption, instanceID string) error {
+	if mock.AddDimensionBatchToInstanceFunc == nil {
+		panic("moq: StorerMock.AddDimensionBatchToInstanceFunc is nil but Storer.AddDimensionBatchToInstance was just called")
+	}
+	callInfo := struct {
+		DimensionBatch *[]models.CachedDimensionOption
+		InstanceID     string
+	}{
+		DimensionBatch: dimensionBatch,
+		InstanceID:     instanceID,
+	}
+	lockStorerMockAddDimensionBatchToInstance.Lock()
+	mock.calls.AddDimensionBatchToInstance = append(mock.calls.AddDimensionBatchToInstance, callInfo)
+	lockStorerMockAddDimensionBatchToInstance.Unlock()
+	return mock.AddDimensionBatchToInstanceFunc(dimensionBatch, instanceID)
+}
+
+// AddDimensionBatchToInstanceCalls gets all the calls that were made to AddDimensionBatchToInstance.
+// Check the length with:
+//     len(mockedStorer.AddDimensionBatchToInstanceCalls())
+func (mock *StorerMock) AddDimensionBatchToInstanceCalls() []struct {
+	DimensionBatch *[]models.CachedDimensionOption
+	InstanceID     string
+} {
+	var calls []struct {
+		DimensionBatch *[]models.CachedDimensionOption
+		InstanceID     string
+	}
+	lockStorerMockAddDimensionBatchToInstance.RLock()
+	calls = mock.calls.AddDimensionBatchToInstance
+	lockStorerMockAddDimensionBatchToInstance.RUnlock()
+	return calls
 }
 
 // AddDimensionToInstance calls AddDimensionToInstanceFunc.

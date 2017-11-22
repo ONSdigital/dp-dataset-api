@@ -12,6 +12,7 @@ type DataStore struct {
 // Storer represents basic data access via Get, Remove and Upsert methods.
 type Storer interface {
 	AddDimensionToInstance(dimension *models.CachedDimensionOption) error
+	AddDimensionBatchToInstance(dimensionBatch *[]models.CachedDimensionOption, instanceID string) error
 	AddEventToInstance(instanceID string, event *models.Event) error
 	AddInstance(instance *models.Instance) (*models.Instance, error)
 	CheckDatasetExists(ID, state string) error
