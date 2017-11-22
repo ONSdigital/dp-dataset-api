@@ -65,7 +65,7 @@ func (s *Store) GetUnique(w http.ResponseWriter, r *http.Request) {
 	log.Debug("get dimension values", log.Data{"instance": id})
 }
 
-//Add dimension to a specific instance
+// Add represents adding a dimension to a specific instance
 func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -121,7 +121,7 @@ func unmarshalDimensionCache(reader io.Reader) (*models.CachedDimensionOption, e
 func handleErrorType(err error, w http.ResponseWriter) {
 	status := http.StatusInternalServerError
 
-	if err == errs.DatasetNotFound || err == errs.EditionNotFound || err == errs.VersionNotFound || err == errs.DimensionNodeNotFound || err == errs.InstanceNotFound {
+	if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
 		status = http.StatusNotFound
 	}
 

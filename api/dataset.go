@@ -14,11 +14,6 @@ import (
 )
 
 const (
-	createdState    = "created"
-	completedState  = "completed"
-	associatedState = "associated"
-	publishedState  = "published"
-
 	internalToken = "Internal-Token"
 
 	datasetDocType         = "dataset"
@@ -83,7 +78,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	var bytes []byte
 	if r.Header.Get(internalToken) != api.internalToken {
 		if dataset.Current == nil {
-			handleErrorType(datasetDocType, errs.DatasetNotFound, w)
+			handleErrorType(datasetDocType, errs.ErrDatasetNotFound, w)
 			return
 		}
 
@@ -96,7 +91,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		if dataset == nil {
-			handleErrorType(datasetDocType, errs.DatasetNotFound, w)
+			handleErrorType(datasetDocType, errs.ErrDatasetNotFound, w)
 		}
 		bytes, err = json.Marshal(dataset)
 		if err != nil {
@@ -121,7 +116,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 
 	var state string
 	if r.Header.Get(internalToken) != api.internalToken {
-		state = publishedState
+		state = models.PublishedState
 	}
 
 	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
@@ -159,7 +154,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 
 	var state string
 	if r.Header.Get(internalToken) != api.internalToken {
-		state = publishedState
+		state = models.PublishedState
 	}
 
 	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
@@ -198,7 +193,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 
 	var state string
 	if r.Header.Get(internalToken) != api.internalToken {
-		state = publishedState
+		state = models.PublishedState
 	}
 
 	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
@@ -243,7 +238,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 
 	var state string
 	if r.Header.Get(internalToken) != api.internalToken {
-		state = publishedState
+		state = models.PublishedState
 	}
 
 	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
@@ -286,6 +281,20 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
+
+	_, err := api.dataStore.Backend.GetDataset(datasetID)
+	if err != nil {
+		if err != errs.ErrDatasetNotFound {
+			log.Error(err, log.Data{"dataset_id": datasetID})
+			handleErrorType(datasetDocType, err, w)
+			return
+		}
+	} else {
+		err := fmt.Errorf("Forbidden - dataset already exists")
+		log.Error(err, log.Data{"dataset_id": datasetID})
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
 
 	dataset, err := models.CreateDataset(r.Body)
 	if err != nil {
@@ -391,13 +400,8 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	// Check current state of version document;
 	// if published do not try to update document
-	if currentVersion.State == publishedState {
+	if currentVersion.State == models.PublishedState {
 		http.Error(w, fmt.Sprintf("Unable to update document, already published"), http.StatusForbidden)
-		return
-	}
-
-	if currentVersion.State == createdState || currentVersion.State == completedState {
-		http.Error(w, fmt.Sprintf("Version not found"), http.StatusNotFound)
 		return
 	}
 
@@ -415,7 +419,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if version.State == publishedState {
+	if version.State == models.PublishedState {
 		if err := api.dataStore.Backend.UpdateEdition(datasetID, editionID, version.State); err != nil {
 			log.ErrorC("failed to update the state of edition document to published", err, nil)
 			handleErrorType(versionDocType, err, w)
@@ -430,8 +434,8 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if version.State == associatedState {
-		if err := api.dataStore.Backend.UpdateDatasetWithAssociation(datasetID, associatedState, version); err != nil {
+	if version.State == models.AssociatedState {
+		if err := api.dataStore.Backend.UpdateDatasetWithAssociation(datasetID, version.State, version); err != nil {
 			log.ErrorC("failed to update dataset document after a version of a dataset has been associated with a collection", err, nil)
 			handleErrorType(versionDocType, err, w)
 			return
@@ -497,18 +501,24 @@ func createNewVersionDoc(currentVersion *models.Version, version *models.Version
 func (api *DatasetAPI) updateDataset(id string, version *models.Version) error {
 	currentDataset, err := api.dataStore.Backend.GetDataset(id)
 	if err != nil {
-		log.ErrorC("Unable to update dataset", err, log.Data{"dataset_id": id})
+		log.ErrorC("unable to update dataset", err, log.Data{"dataset_id": id})
 		return err
 	}
 
 	currentDataset.Next.CollectionID = version.CollectionID
 	currentDataset.Next.Links = &models.DatasetLinks{
+		Editions: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s/editions", api.host, version.Links.Dataset.ID),
+		},
 		LatestVersion: &models.LinkObject{
 			ID:   version.ID,
 			HRef: version.Links.Self.HRef,
 		},
+		Self: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s", api.host, version.Links.Dataset.ID),
+		},
 	}
-	currentDataset.Next.State = publishedState
+	currentDataset.Next.State = models.PublishedState
 	currentDataset.Next.LastUpdated = time.Now()
 
 	// newDataset.Next will not be cleaned up due to keeping request to mongo
@@ -522,7 +532,7 @@ func (api *DatasetAPI) updateDataset(id string, version *models.Version) error {
 	}
 
 	if err := api.dataStore.Backend.UpsertDataset(id, newDataset); err != nil {
-		log.ErrorC("Unable to update dataset", err, log.Data{"dataset_id": id})
+		log.ErrorC("unable to update dataset", err, log.Data{"dataset_id": id})
 		return err
 	}
 
@@ -603,25 +613,25 @@ func handleErrorType(docType string, err error, w http.ResponseWriter) {
 
 	switch docType {
 	default:
-		if err == errs.DatasetNotFound || err == errs.EditionNotFound || err == errs.VersionNotFound || err == errs.DimensionNodeNotFound || err == errs.InstanceNotFound {
+		if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	case "edition":
-		if err == errs.DatasetNotFound {
+		if err == errs.ErrDatasetNotFound {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else if err == errs.EditionNotFound {
+		} else if err == errs.ErrEditionNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	case "version":
-		if err == errs.DatasetNotFound {
+		if err == errs.ErrDatasetNotFound {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else if err == errs.EditionNotFound {
+		} else if err == errs.ErrEditionNotFound {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else if err == errs.VersionNotFound {
+		} else if err == errs.ErrVersionNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

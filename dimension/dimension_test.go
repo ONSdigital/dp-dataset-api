@@ -38,7 +38,7 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 			},
 		}
 
-		dimension := &dimension.Store{mockedDataStore}
+		dimension := &dimension.Store{Storer: mockedDataStore}
 		dimension.AddNodeID(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -54,11 +54,11 @@ func TestAddNodeIDToDimensionReturnsBadRequest(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{
 			UpdateDimensionNodeIDFunc: func(event *models.DimensionOption) error {
-				return errs.DimensionNodeNotFound
+				return errs.ErrDimensionNodeNotFound
 			},
 		}
 
-		dimension := &dimension.Store{mockedDataStore}
+		dimension := &dimension.Store{Storer: mockedDataStore}
 		dimension.AddNodeID(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -78,7 +78,7 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		dimension := &dimension.Store{mockedDataStore}
+		dimension := &dimension.Store{Storer: mockedDataStore}
 		dimension.AddNodeID(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -98,7 +98,7 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 			},
 		}
 
-		dimension := &dimension.Store{mockedDataStore}
+		dimension := &dimension.Store{Storer: mockedDataStore}
 		dimension.Add(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -115,11 +115,11 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{
 			AddDimensionToInstanceFunc: func(event *models.CachedDimensionOption) error {
-				return errs.DimensionNodeNotFound
+				return errs.ErrDimensionNodeNotFound
 			},
 		}
 
-		dimension := &dimension.Store{mockedDataStore}
+		dimension := &dimension.Store{Storer: mockedDataStore}
 		dimension.Add(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -140,7 +140,7 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		dimension := &dimension.Store{mockedDataStore}
+		dimension := &dimension.Store{Storer: mockedDataStore}
 		dimension.Add(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -160,7 +160,7 @@ func TestGetDimensionNodesReturnsOk(t *testing.T) {
 			},
 		}
 
-		dimension := &dimension.Store{mockedDataStore}
+		dimension := &dimension.Store{Storer: mockedDataStore}
 		dimension.GetNodes(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -176,11 +176,11 @@ func TestGetDimensionNodesReturnsNotFound(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{
 			GetDimensionNodesFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
-				return nil, errs.InstanceNotFound
+				return nil, errs.ErrInstanceNotFound
 			},
 		}
 
-		dimension := &dimension.Store{mockedDataStore}
+		dimension := &dimension.Store{Storer: mockedDataStore}
 		dimension.GetNodes(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -200,7 +200,7 @@ func TestGetDimensionNodesReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		dimension := &dimension.Store{mockedDataStore}
+		dimension := &dimension.Store{Storer: mockedDataStore}
 		dimension.GetNodes(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -220,7 +220,7 @@ func TestGetUniqueDimensionValuesReturnsOk(t *testing.T) {
 			},
 		}
 
-		dimension := &dimension.Store{mockedDataStore}
+		dimension := &dimension.Store{Storer: mockedDataStore}
 		dimension.GetUnique(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -236,11 +236,11 @@ func TestGetUniqueDimensionValuesReturnsNotFound(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetUniqueDimensionValuesFunc: func(id, dimension string) (*models.DimensionValues, error) {
-				return nil, errs.InstanceNotFound
+				return nil, errs.ErrInstanceNotFound
 			},
 		}
 
-		dimension := &dimension.Store{mockedDataStore}
+		dimension := &dimension.Store{Storer: mockedDataStore}
 		dimension.GetUnique(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -260,7 +260,7 @@ func TestGetUniqueDimensionValuesReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		dimension := &dimension.Store{mockedDataStore}
+		dimension := &dimension.Store{Storer: mockedDataStore}
 		dimension.GetUnique(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)

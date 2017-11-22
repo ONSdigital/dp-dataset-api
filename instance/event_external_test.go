@@ -25,7 +25,7 @@ func TestAddEventReturnsCreated(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.AddEvent(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusCreated)
@@ -41,7 +41,7 @@ func TestAddEventToInstanceReturnsBadRequest(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.AddEvent(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -52,7 +52,7 @@ func TestAddEventToInstanceReturnsBadRequest(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.AddEvent(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -72,7 +72,7 @@ func TestAddEventToInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{host, mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.AddEvent(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)

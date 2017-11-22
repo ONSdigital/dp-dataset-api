@@ -167,6 +167,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 		methodologies = append(methodologies, methodology)
 		publications = append(publications, publication)
 		relatedDatasets = append(relatedDatasets, relatedDataset)
+		nationalStatistic := true
 
 		expectedUpdate := bson.M{
 			"next.collection_id":            "12345678",
@@ -176,7 +177,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			"next.license":                  "ONS License",
 			"next.links.access_rights.href": "http://ons.gov.uk/accessrights",
 			"next.methodologies":            methodologies,
-			"next.national_statistic":       true,
+			"next.national_statistic":       &nationalStatistic,
 			"next.next_release":             "2018-05-05",
 			"next.publications":             publications,
 			"next.publisher.href":           "http://ons.gov.uk",
@@ -204,7 +205,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 				},
 			},
 			Methodologies:     methodologies,
-			NationalStatistic: true,
+			NationalStatistic: &nationalStatistic,
 			NextRelease:       "2018-05-05",
 			Publications:      publications,
 			Publisher: &models.Publisher{
@@ -220,9 +221,30 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			URI:              "http://ons.gov.uk/dataset/123/landing-page",
 		}
 
-		selector := createDatasetUpdateQuery(dataset)
+		selector := createDatasetUpdateQuery("123", dataset)
 		So(selector, ShouldNotBeNil)
 		So(selector, ShouldResemble, expectedUpdate)
+	})
+
+	Convey("When national statistic is set to false", t, func() {
+		nationalStatistic := false
+		dataset := &models.Dataset{
+			NationalStatistic: &nationalStatistic,
+		}
+		expectedUpdate := bson.M{
+			"next.national_statistic": &nationalStatistic,
+		}
+		selector := createDatasetUpdateQuery("123", dataset)
+		So(selector, ShouldNotBeNil)
+		So(selector, ShouldResemble, expectedUpdate)
+	})
+
+	Convey("When national statistic is not set", t, func() {
+		dataset := &models.Dataset{}
+
+		selector := createDatasetUpdateQuery("123", dataset)
+		So(selector, ShouldNotBeNil)
+		So(selector, ShouldResemble, bson.M{})
 	})
 }
 

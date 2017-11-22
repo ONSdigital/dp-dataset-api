@@ -10,7 +10,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-const INSTANCE_COLLECTION = "instances"
+const instanceCollection = "instances"
 
 // GetInstances from a mongo collection
 func (m *Mongo) GetInstances(filters []string) (*models.InstanceResults, error) {
@@ -22,13 +22,13 @@ func (m *Mongo) GetInstances(filters []string) (*models.InstanceResults, error) 
 		stateFilter = bson.M{"state": bson.M{"$in": filters}}
 	}
 
-	iter := s.DB(m.Database).C(INSTANCE_COLLECTION).Find(stateFilter).Iter()
+	iter := s.DB(m.Database).C(instanceCollection).Find(stateFilter).Iter()
 	defer iter.Close()
 
 	results := []models.Instance{}
 	if err := iter.All(&results); err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, errs.DatasetNotFound
+			return nil, errs.ErrDatasetNotFound
 		}
 		return nil, err
 	}
@@ -42,10 +42,10 @@ func (m *Mongo) GetInstance(ID string) (*models.Instance, error) {
 	defer s.Close()
 
 	var instance models.Instance
-	err := s.DB(m.Database).C(INSTANCE_COLLECTION).Find(bson.M{"id": ID}).One(&instance)
+	err := s.DB(m.Database).C(instanceCollection).Find(bson.M{"id": ID}).One(&instance)
 
 	if err == mgo.ErrNotFound {
-		return nil, errs.InstanceNotFound
+		return nil, errs.ErrInstanceNotFound
 	}
 
 	return &instance, err
@@ -58,7 +58,7 @@ func (m *Mongo) AddInstance(instance *models.Instance) (*models.Instance, error)
 
 	instance.InstanceID = uuid.NewV4().String()
 	instance.LastUpdated = time.Now().UTC()
-	err := s.DB(m.Database).C(INSTANCE_COLLECTION).Insert(&instance)
+	err := s.DB(m.Database).C(instanceCollection).Insert(&instance)
 	if err != nil {
 		return nil, err
 	}
@@ -74,31 +74,31 @@ func (m *Mongo) UpdateInstance(id string, instance *models.Instance) error {
 	instance.InstanceID = id
 	instance.LastUpdated = time.Now().UTC()
 
-	info, err := s.DB(m.Database).C(INSTANCE_COLLECTION).Upsert(bson.M{"id": id}, bson.M{"$set": &instance})
+	info, err := s.DB(m.Database).C(instanceCollection).Upsert(bson.M{"id": id}, bson.M{"$set": &instance})
 	if err != nil {
 		return err
 	}
 
 	if info.Updated == 0 {
-		return errs.InstanceNotFound
+		return errs.ErrInstanceNotFound
 	}
 
 	return nil
 }
 
 // AddEventToInstance to the instance collection
-func (m *Mongo) AddEventToInstance(instanceId string, event *models.Event) error {
+func (m *Mongo) AddEventToInstance(instanceID string, event *models.Event) error {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	info, err := s.DB(m.Database).C(INSTANCE_COLLECTION).Upsert(bson.M{"id": instanceId},
+	info, err := s.DB(m.Database).C(instanceCollection).Upsert(bson.M{"id": instanceID},
 		bson.M{"$push": bson.M{"events": &event}, "$set": bson.M{"last_updated": time.Now().UTC()}})
 	if err != nil {
 		return err
 	}
 
 	if info.Updated == 0 {
-		return errs.InstanceNotFound
+		return errs.ErrInstanceNotFound
 	}
 
 	return nil
@@ -109,10 +109,10 @@ func (m *Mongo) UpdateDimensionNodeID(dimension *models.DimensionOption) error {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	err := s.DB(m.Database).C(DIMENSION_OPTIONS).Update(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
+	err := s.DB(m.Database).C(dimensionOptions).Update(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
 		"option": dimension.Option}, bson.M{"$set": bson.M{"node_id": &dimension.NodeID, "last_updated": time.Now().UTC()}})
 	if err == mgo.ErrNotFound {
-		return errs.InstanceNotFound
+		return errs.ErrInstanceNotFound
 	}
 
 	if err != nil {
@@ -127,11 +127,11 @@ func (m *Mongo) UpdateObservationInserted(id string, observationInserted int64) 
 	s := m.Session.Copy()
 	defer s.Close()
 
-	err := s.DB(m.Database).C(INSTANCE_COLLECTION).Update(bson.M{"id": id},
+	err := s.DB(m.Database).C(instanceCollection).Update(bson.M{"id": id},
 		bson.M{"$inc": bson.M{"total_inserted_observations": observationInserted}, "$set": bson.M{"last_updated": time.Now().UTC()}})
 
 	if err == mgo.ErrNotFound {
-		return errs.InstanceNotFound
+		return errs.ErrInstanceNotFound
 	}
 
 	if err != nil {

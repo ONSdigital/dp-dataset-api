@@ -32,7 +32,7 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.Keywords[1], ShouldEqual, "test2")
 			So(dataset.License, ShouldEqual, "Office of National Statistics license")
 			So(dataset.Methodologies[0], ShouldResemble, methodology)
-			So(dataset.NationalStatistic, ShouldEqual, true)
+			So(dataset.NationalStatistic, ShouldResemble, &nationalStatistic)
 			So(dataset.NextRelease, ShouldEqual, "2016-05-05")
 			So(dataset.Publications[0], ShouldResemble, publications)
 			So(dataset.Publisher, ShouldResemble, &publisher)
@@ -126,12 +126,12 @@ func TestValidateVersion(t *testing.T) {
 
 			err := ValidateVersion(&Version{State: "submitted"})
 			So(err, ShouldNotBeNil)
-			So(err, ShouldResemble, errors.New("Incorrect state, can be one of the following: created, associated or published"))
+			So(err, ShouldResemble, errors.New("Incorrect state, can be one of the following: edition-confirmed, associated or published"))
 		})
 
 		Convey("when mandatorey fields are missing from version document when state is set to created", func() {
 
-			err := ValidateVersion(&Version{State: "created"})
+			err := ValidateVersion(&Version{State: "edition-confirmed"})
 			So(err, ShouldNotBeNil)
 			So(err, ShouldResemble, errors.New("Missing mandatory fields: [release_date]"))
 		})

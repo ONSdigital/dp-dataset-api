@@ -37,7 +37,7 @@ func main() {
 
 	session, err := mongo.Init()
 	if err != nil {
-		log.ErrorC("Failed to initialise mongo", err, nil)
+		log.ErrorC("failed to initialise mongo", err, nil)
 		os.Exit(1)
 	}
 
@@ -53,7 +53,7 @@ func main() {
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {
-		log.Info(fmt.Sprintf("Shutdown with timeout: %s", cfg.GracefulShutdownTimeout), nil)
+		log.Info(fmt.Sprintf("shutdown with timeout: %s", cfg.GracefulShutdownTimeout), nil)
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.GracefulShutdownTimeout)
 
 		api.Close(ctx)
@@ -63,7 +63,7 @@ func main() {
 			log.ErrorC("mongo close", err, nil)
 		}
 
-		log.Info("Shutdown complete", nil)
+		log.Info("shutdown complete", nil)
 
 		cancel()
 		os.Exit(1)

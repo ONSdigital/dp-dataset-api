@@ -16,6 +16,8 @@ var methodology = GeneralDetails{
 	Title:       "some methodology title",
 }
 
+var nationalStatistic = true
+
 var publications = GeneralDetails{
 	Description: "some publication description",
 	HRef:        "http://localhost:22000//datasets/publications",
@@ -55,7 +57,7 @@ var inputDataset = Dataset{
 	Methodologies: []GeneralDetails{
 		methodology,
 	},
-	NationalStatistic: true,
+	NationalStatistic: &nationalStatistic,
 	NextRelease:       "2016-05-05",
 	Publications: []GeneralDetails{
 		publications,
@@ -122,7 +124,7 @@ var createdVersion = Version{
 	Edition:     "2017",
 	Links:       &links,
 	ReleaseDate: "2016-04-04",
-	State:       "created",
+	State:       "edition-confirmed",
 	Version:     1,
 }
 

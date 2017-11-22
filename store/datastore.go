@@ -14,30 +14,30 @@ type Storer interface {
 	AddDimensionToInstance(dimension *models.CachedDimensionOption) error
 	AddEventToInstance(instanceID string, event *models.Event) error
 	AddInstance(instance *models.Instance) (*models.Instance, error)
-	CheckDatasetExists(id, state string) error
-	CheckEditionExists(id, editionID, state string) error
-	GetDataset(id string) (*models.DatasetUpdate, error)
+	CheckDatasetExists(ID, state string) error
+	CheckEditionExists(ID, editionID, state string) error
+	GetDataset(ID string) (*models.DatasetUpdate, error)
 	GetDatasets() ([]models.DatasetUpdate, error)
-	GetDimensionNodesFromInstance(id string) (*models.DimensionNodeResults, error)
+	GetDimensionNodesFromInstance(ID string) (*models.DimensionNodeResults, error)
 	GetDimensions(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error)
 	GetDimensionOptions(datasetID, editionID, versionID, dimension string) (*models.DimensionOptionResults, error)
-	GetEdition(id, editionID, state string) (*models.Edition, error)
-	GetEditions(id, state string) (*models.EditionResults, error)
+	GetEdition(ID, editionID, state string) (*models.Edition, error)
+	GetEditions(ID, state string) (*models.EditionResults, error)
 	GetInstances(filters []string) (*models.InstanceResults, error)
-	GetInstance(id string) (*models.Instance, error)
+	GetInstance(ID string) (*models.Instance, error)
 	GetNextVersion(datasetID, editionID string) (int, error)
-	GetUniqueDimensionValues(id, dimension string) (*models.DimensionValues, error)
+	GetUniqueDimensionValues(ID, dimension string) (*models.DimensionValues, error)
 	GetVersion(datasetID, editionID, version, state string) (*models.Version, error)
 	GetVersions(datasetID, editionID, state string) (*models.VersionResults, error)
-	UpdateDataset(id string, dataset *models.Dataset) error
-	UpdateDatasetWithAssociation(id, state string, version *models.Version) error
+	UpdateDataset(ID string, dataset *models.Dataset) error
+	UpdateDatasetWithAssociation(ID, state string, version *models.Version) error
 	UpdateDimensionNodeID(dimension *models.DimensionOption) error
 	UpdateEdition(datasetID, edition, state string) error
-	UpdateInstance(id string, instance *models.Instance) error
-	UpdateObservationInserted(id string, observationInserted int64) error
-	UpdateVersion(id string, version *models.Version) error
-	UpsertContact(id string, update interface{}) error
-	UpsertDataset(id string, datasetDoc *models.DatasetUpdate) error
+	UpdateInstance(ID string, instance *models.Instance) error
+	UpdateObservationInserted(ID string, observationInserted int64) error
+	UpdateVersion(ID string, version *models.Version) error
+	UpsertContact(ID string, update interface{}) error
+	UpsertDataset(ID string, datasetDoc *models.DatasetUpdate) error
 	UpsertEdition(datasetID, edition string, editionDoc *models.Edition) error
-	UpsertVersion(id string, versionDoc *models.Version) error
+	UpsertVersion(ID string, versionDoc *models.Version) error
 }

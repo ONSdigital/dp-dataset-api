@@ -11,8 +11,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-const created = "created"
-
 // DatasetResults represents a structure for a list of datasets
 type DatasetResults struct {
 	Items []*Dataset `json:"items"`
@@ -51,7 +49,7 @@ type Dataset struct {
 	License           string           `bson:"license,omitempty"                json:"license,omitempty"`
 	Links             *DatasetLinks    `bson:"links,omitempty"                  json:"links,omitempty"`
 	Methodologies     []GeneralDetails `bson:"methodologies,omitempty"          json:"methodologies,omitempty"`
-	NationalStatistic bool             `bson:"national_statistic,omitempty"     json:"national_statistic,omitempty"`
+	NationalStatistic *bool            `bson:"national_statistic,omitempty"     json:"national_statistic,omitempty"`
 	NextRelease       string           `bson:"next_release,omitempty"           json:"next_release,omitempty"`
 	Publications      []GeneralDetails `bson:"publications,omitempty"           json:"publications,omitempty"`
 	Publisher         *Publisher       `bson:"publisher,omitempty"              json:"publisher,omitempty"`
@@ -86,6 +84,7 @@ type GeneralDetails struct {
 	Title       string `bson:"title,omitempty"          json:"title,omitempty"`
 }
 
+// Contact represents information of individual contact details
 type Contact struct {
 	ID          string    `bson:"_id,omitempty"            json:"id,omitempty"`
 	Email       string    `bson:"email,omitempty"          json:"email,omitempty"`
@@ -184,7 +183,7 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 	}
 
 	// Overwrite state to created
-	dataset.State = created
+	dataset.State = CreatedState
 
 	return &dataset, nil
 }
@@ -199,8 +198,6 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 	var version Version
 	// Create unique id
 	version.ID = (uuid.NewV4()).String()
-	// set default state to be unpublished
-	version.State = created
 
 	err = json.Unmarshal(bytes, &version)
 	if err != nil {
@@ -233,13 +230,13 @@ func ValidateVersion(version *Version) error {
 	var hasAssociation bool
 
 	switch version.State {
-	case "created":
-	case "associated":
+	case EditionConfirmedState:
+	case AssociatedState:
 		hasAssociation = true
-	case "published":
+	case PublishedState:
 		hasAssociation = true
 	default:
-		return errors.New("Incorrect state, can be one of the following: created, associated or published")
+		return errors.New("Incorrect state, can be one of the following: edition-confirmed, associated or published")
 	}
 
 	if hasAssociation && version.CollectionID == "" {

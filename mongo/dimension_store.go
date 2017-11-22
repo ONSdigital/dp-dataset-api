@@ -9,7 +9,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-const DIMENSION_OPTIONS = "dimension.options"
+const dimensionOptions = "dimension.options"
 
 // GetDimensionNodesFromInstance which are stored in a mongodb collection
 func (m *Mongo) GetDimensionNodesFromInstance(id string) (*models.DimensionNodeResults, error) {
@@ -17,7 +17,7 @@ func (m *Mongo) GetDimensionNodesFromInstance(id string) (*models.DimensionNodeR
 	defer s.Close()
 
 	var dimensions []models.DimensionOption
-	iter := s.DB(m.Database).C(DIMENSION_OPTIONS).Find(bson.M{"instance_id": id}).Select(bson.M{"id": 0, "last_updated": 0, "instance_id": 0}).Iter()
+	iter := s.DB(m.Database).C(dimensionOptions).Find(bson.M{"instance_id": id}).Select(bson.M{"id": 0, "last_updated": 0, "instance_id": 0}).Iter()
 
 	err := iter.All(&dimensions)
 	if err != nil {
@@ -33,13 +33,13 @@ func (m *Mongo) GetUniqueDimensionValues(id, dimension string) (*models.Dimensio
 	defer s.Close()
 
 	var values []string
-	err := s.DB(m.Database).C(DIMENSION_OPTIONS).Find(bson.M{"instance_id": id, "name": dimension}).Distinct("option", &values)
+	err := s.DB(m.Database).C(dimensionOptions).Find(bson.M{"instance_id": id, "name": dimension}).Distinct("option", &values)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(values) == 0 {
-		return nil, errs.DimensionNodeNotFound
+		return nil, errs.ErrDimensionNodeNotFound
 	}
 
 	return &models.DimensionValues{Name: dimension, Values: values}, nil
@@ -55,7 +55,7 @@ func (m *Mongo) AddDimensionToInstance(opt *models.CachedDimensionOption) error 
 	option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.CodeListURL, opt.CodeList, opt.Code)}
 
 	option.LastUpdated = time.Now().UTC()
-	_, err := s.DB(m.Database).C(DIMENSION_OPTIONS).Upsert(bson.M{"instance_id": option.InstanceID, "name": option.Name,
+	_, err := s.DB(m.Database).C(dimensionOptions).Upsert(bson.M{"instance_id": option.InstanceID, "name": option.Name,
 		"option": option.Option}, &option)
 	if err != nil {
 		return err
@@ -82,7 +82,7 @@ func (m *Mongo) GetDimensions(datasetID, editionID, versionID string) (*models.D
 	// Then group the values by name.
 	group := bson.M{"$group": bson.M{"_id": "$name", "doc": bson.M{"$first": "$$ROOT"}}}
 	res := []bson.M{}
-	err = s.DB(m.Database).C(DIMENSION_OPTIONS).Pipe([]bson.M{match, group}).All(&res)
+	err = s.DB(m.Database).C(dimensionOptions).Pipe([]bson.M{match, group}).All(&res)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (m *Mongo) GetDimensionOptions(datasetID, editionID, versionID, dimension s
 	}
 
 	var values []models.PublicDimensionOption
-	iter := s.DB(m.Database).C(DIMENSION_OPTIONS).Find(bson.M{"instance_id": version.ID, "name": dimension}).Iter()
+	iter := s.DB(m.Database).C(dimensionOptions).Find(bson.M{"instance_id": version.ID, "name": dimension}).Iter()
 	err = iter.All(&values)
 	if err != nil {
 		return nil, err
