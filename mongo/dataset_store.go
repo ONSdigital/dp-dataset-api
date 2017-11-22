@@ -369,6 +369,10 @@ func createDatasetUpdateQuery(id string, dataset *models.Dataset) bson.M {
 		updates["next.release_frequency"] = dataset.ReleaseFrequency
 	}
 
+	if dataset.State != "" {
+		updates["next.state"] = dataset.State
+	}
+
 	if dataset.Theme != "" {
 		updates["next.theme"] = dataset.Theme
 	}

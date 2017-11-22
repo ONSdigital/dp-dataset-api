@@ -39,7 +39,7 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.QMI, ShouldResemble, &qmi)
 			So(dataset.RelatedDatasets[0], ShouldResemble, relatedDatasets)
 			So(dataset.ReleaseFrequency, ShouldEqual, "yearly")
-			So(dataset.State, ShouldEqual, "created")
+			So(dataset.State, ShouldEqual, "associated")
 			So(dataset.Theme, ShouldEqual, "population")
 			So(dataset.Title, ShouldEqual, "CensusEthnicity")
 			So(dataset.URI, ShouldEqual, "http://localhost:22000/datasets/123/breadcrumbs")

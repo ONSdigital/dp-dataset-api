@@ -68,7 +68,7 @@ var inputDataset = Dataset{
 		relatedDatasets,
 	},
 	ReleaseFrequency: "yearly",
-	State:            "published",
+	State:            "associated",
 	Theme:            "population",
 	Title:            "CensusEthnicity",
 	URI:              "http://localhost:22000/datasets/123/breadcrumbs",
