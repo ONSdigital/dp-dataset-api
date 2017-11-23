@@ -182,6 +182,10 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 		return nil, errors.New("Failed to parse json body")
 	}
 
+	if dataset.State == "" {
+		dataset.State = CreatedState
+	}
+
 	return &dataset, nil
 }
 

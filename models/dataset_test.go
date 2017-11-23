@@ -13,8 +13,13 @@ import (
 
 func TestCreateDataset(t *testing.T) {
 	t.Parallel()
+
 	Convey("Successfully return without any errors", t, func() {
+
 		Convey("when the dataset has all fields", func() {
+
+			inputDataset := createTestDataset()
+
 			b, err := json.Marshal(inputDataset)
 			if err != nil {
 				log.ErrorC("Failed to marshal test data into bytes", err, nil)
@@ -39,11 +44,13 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.QMI, ShouldResemble, &qmi)
 			So(dataset.RelatedDatasets[0], ShouldResemble, relatedDatasets)
 			So(dataset.ReleaseFrequency, ShouldEqual, "yearly")
-			So(dataset.State, ShouldEqual, "associated")
+			So(dataset.State, ShouldEqual, AssociatedState)
 			So(dataset.Theme, ShouldEqual, "population")
 			So(dataset.Title, ShouldEqual, "CensusEthnicity")
 			So(dataset.URI, ShouldEqual, "http://localhost:22000/datasets/123/breadcrumbs")
 		})
+
+
 	})
 
 	Convey("Return with error when the request body contains the correct fields but of the wrong type", t, func() {
@@ -59,6 +66,33 @@ func TestCreateDataset(t *testing.T) {
 		So(err, ShouldResemble, errors.New("Failed to parse json body"))
 	})
 }
+
+func TestCreateDataset_DefaultsStateToCreated(t *testing.T) {
+
+	Convey("Given a dataset JSON input that does not specify a state", t, func() {
+
+		inputDataset := createTestDataset()
+		inputDataset.State = ""
+
+		jsonBytes, err := json.Marshal(inputDataset)
+		if err != nil {
+			log.ErrorC("Failed to marshal test data into bytes", err, nil)
+			os.Exit(1)
+		}
+
+		Convey("When the CreateDataset function is called", func() {
+
+			jsonReader := bytes.NewReader(jsonBytes)
+			dataset, err := CreateDataset(jsonReader)
+
+			Convey("Then the returned dataset state is 'created'", func() {
+				So(err, ShouldBeNil)
+				So(dataset.State, ShouldEqual, CreatedState)
+			})
+		})
+	})
+}
+
 
 func TestCreateVersion(t *testing.T) {
 	t.Parallel()
@@ -79,7 +113,7 @@ func TestCreateVersion(t *testing.T) {
 			So(version.ID, ShouldNotBeNil)
 			So(version.ReleaseDate, ShouldEqual, "2017-10-12")
 			So(version.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/geographylist")
-			So(version.State, ShouldEqual, "associated")
+			So(version.State, ShouldEqual, AssociatedState)
 			So(version.Temporal, ShouldResemble, &[]TemporalFrequency{temporal})
 			So(version.Version, ShouldEqual, 1)
 		})
@@ -124,14 +158,14 @@ func TestValidateVersion(t *testing.T) {
 	Convey("Return with errors", t, func() {
 		Convey("when the version state is set to an invalid value", func() {
 
-			err := ValidateVersion(&Version{State: "submitted"})
+			err := ValidateVersion(&Version{State: SubmittedState})
 			So(err, ShouldNotBeNil)
 			So(err, ShouldResemble, errors.New("Incorrect state, can be one of the following: edition-confirmed, associated or published"))
 		})
 
 		Convey("when mandatorey fields are missing from version document when state is set to created", func() {
 
-			err := ValidateVersion(&Version{State: "edition-confirmed"})
+			err := ValidateVersion(&Version{State: EditionConfirmedState})
 			So(err, ShouldNotBeNil)
 			So(err, ShouldResemble, errors.New("Missing mandatory fields: [release_date]"))
 		})
@@ -139,7 +173,7 @@ func TestValidateVersion(t *testing.T) {
 		Convey("when the version state is published but is missing collection_id", func() {
 			version := &Version{
 				ReleaseDate: "2016-04-04",
-				State:       "published",
+				State:       PublishedState,
 			}
 
 			err := ValidateVersion(version)
