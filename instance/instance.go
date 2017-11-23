@@ -193,7 +193,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
 					},
 				},
-				State: "created",
+				State: models.CreatedState,
 			}
 		}
 
@@ -328,7 +328,7 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 		}
 
 		if instance.State == "" {
-			instance.State = "created"
+			instance.State = models.CreatedState
 		}
 	}
 	return &instance, nil

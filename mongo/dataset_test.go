@@ -12,7 +12,7 @@ import (
 var (
 	id        = "123"
 	editionID = "2017"
-	state     = "published"
+	state     = models.PublishedState
 	versionID = 2
 )
 
@@ -262,7 +262,7 @@ func TestVersionUpdateQuery(t *testing.T) {
 			"collection_id":      "12345678",
 			"release_date":       "2017-09-09",
 			"links.spatial.href": "http://ons.gov.uk/geographylist",
-			"state":              "published",
+			"state":              models.PublishedState,
 			"temporal":           &[]models.TemporalFrequency{temporal},
 		}
 
@@ -274,7 +274,7 @@ func TestVersionUpdateQuery(t *testing.T) {
 					HRef: "http://ons.gov.uk/geographylist",
 				},
 			},
-			State:    "published",
+			State:    models.PublishedState,
 			Temporal: &[]models.TemporalFrequency{temporal},
 		}
 

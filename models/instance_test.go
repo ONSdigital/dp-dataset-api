@@ -12,43 +12,43 @@ func TestValidateStateFilter(t *testing.T) {
 	Convey("Successfully return without any errors", t, func() {
 		Convey("when the filter list contains a state of `created`", func() {
 
-			err := ValidateStateFilter([]string{"created"})
+			err := ValidateStateFilter([]string{CreatedState})
 			So(err, ShouldBeNil)
 		})
 
 		Convey("when the filter list contains a state of `submitted`", func() {
 
-			err := ValidateStateFilter([]string{"submitted"})
+			err := ValidateStateFilter([]string{SubmittedState})
 			So(err, ShouldBeNil)
 		})
 
 		Convey("when the filter list contains a state of `completed`", func() {
 
-			err := ValidateStateFilter([]string{"completed"})
+			err := ValidateStateFilter([]string{CompletedState})
 			So(err, ShouldBeNil)
 		})
 
 		Convey("when the filter list contains a state of `edition-confirmed`", func() {
 
-			err := ValidateStateFilter([]string{"edition-confirmed"})
+			err := ValidateStateFilter([]string{EditionConfirmedState})
 			So(err, ShouldBeNil)
 		})
 
 		Convey("when the filter list contains a state of `associated`", func() {
 
-			err := ValidateStateFilter([]string{"associated"})
+			err := ValidateStateFilter([]string{AssociatedState})
 			So(err, ShouldBeNil)
 		})
 
 		Convey("when the filter list contains a state of `published`", func() {
 
-			err := ValidateStateFilter([]string{"published"})
+			err := ValidateStateFilter([]string{PublishedState})
 			So(err, ShouldBeNil)
 		})
 
 		Convey("when the filter list contains more than one valid state", func() {
 
-			err := ValidateStateFilter([]string{"edition-confirmed", "published"})
+			err := ValidateStateFilter([]string{EditionConfirmedState, PublishedState})
 			So(err, ShouldBeNil)
 		})
 	})

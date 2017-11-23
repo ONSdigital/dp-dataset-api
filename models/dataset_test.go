@@ -138,7 +138,7 @@ func TestValidateVersion(t *testing.T) {
 	Convey("Successfully return without any errors", t, func() {
 		Convey("when the version state is created", func() {
 
-			err := ValidateVersion(&createdVersion)
+			err := ValidateVersion(&editionConfirmedVersion)
 			So(err, ShouldBeNil)
 		})
 

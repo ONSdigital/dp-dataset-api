@@ -877,7 +877,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 						},
 					},
 					ReleaseDate: "2017-12-12",
-					State:       "edition-confirmed",
+					State:       models.EditionConfirmedState,
 				}, nil
 			},
 			UpdateVersionFunc: func(string, *models.Version) error {
@@ -907,7 +907,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
 				return &models.Version{
-					State: "associated",
+					State: models.AssociatedState,
 				}, nil
 			},
 			UpdateVersionFunc: func(string, *models.Version) error {
@@ -919,7 +919,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		}
 		mockedDataStore.GetVersion("123", "2017", "1", "")
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
-		mockedDataStore.UpdateDatasetWithAssociation("123", "associated", &models.Version{})
+		mockedDataStore.UpdateDatasetWithAssociation("123", models.AssociatedState, &models.Version{})
 
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
@@ -959,7 +959,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 						},
 					},
 					ReleaseDate: "2017-12-12",
-					State:       "edition-confirmed",
+					State:       models.EditionConfirmedState,
 				}, nil
 			},
 			UpdateVersionFunc: func(string, *models.Version) error {
@@ -981,7 +981,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		}
 		mockedDataStore.GetVersion("789", "2017", "1", "")
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
-		mockedDataStore.UpdateEdition("123", "2017", "published")
+		mockedDataStore.UpdateEdition("123", "2017", models.PublishedState)
 		mockedDataStore.GetDataset("123")
 		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{})
 
@@ -1092,7 +1092,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
 				return &models.Version{
-					State: "published",
+					State: models.PublishedState,
 				}, nil
 			},
 			UpdateVersionFunc: func(string, *models.Version) error {

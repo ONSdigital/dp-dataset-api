@@ -71,7 +71,7 @@ func createTestDataset() *Dataset {
 			relatedDatasets,
 		},
 		ReleaseFrequency: "yearly",
-		State:            EditionConfirmedState,
+		State:            AssociatedState,
 		Theme:            "population",
 		Title:            "CensusEthnicity",
 		URI:              "http://localhost:22000/datasets/123/breadcrumbs",
@@ -122,7 +122,7 @@ var temporal = TemporalFrequency{
 	StartDate: "2014-09-09",
 }
 
-var createdVersion = Version{
+var editionConfirmedVersion = Version{
 	Dimensions:  []CodeList{dimension},
 	Downloads:   &downloads,
 	Edition:     "2017",
@@ -139,7 +139,7 @@ var associatedVersion = Version{
 	Edition:      "2017",
 	Links:        &links,
 	ReleaseDate:  "2017-10-12",
-	State:        EditionConfirmedState,
+	State:        AssociatedState,
 	Temporal:     &[]TemporalFrequency{temporal},
 	Version:      1,
 }
@@ -151,7 +151,7 @@ var publishedVersion = Version{
 	Edition:      "2017",
 	Links:        &links,
 	ReleaseDate:  "2017-10-12",
-	State:        EditionConfirmedState,
+	State:        PublishedState,
 	Temporal:     &[]TemporalFrequency{temporal},
 	Version:      1,
 }
