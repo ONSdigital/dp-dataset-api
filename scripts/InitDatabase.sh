@@ -414,6 +414,7 @@ db.dimension.options.insert({
      "node_id":"88",
      "last_updated": "2017-08-25T15:09:11.829+01:00",
 });
+db.dimension.options.ensureIndex({"instance_id":1,"name":1,"option":1},{"background":true})
 
 db.dimensions.insert({
   "_id" : "1D5A87B8-6322-4904-AB92-65EC9E2A565F",
