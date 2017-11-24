@@ -85,6 +85,11 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	instance.InstanceID = uuid.NewV4().String()
+	instance.Links.Self = &models.IDLink{
+		HRef: fmt.Sprintf("%s/instances/%s", s.Host, instance.InstanceID),
+	}
+
 	instance, err = s.AddInstance(instance)
 	if err != nil {
 		internalError(w, err)
@@ -125,6 +130,23 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get spatial link before overwriting links object
+	var spatial string
+	if instance.Links != nil {
+		if instance.Links.Spatial != nil {
+			if instance.Links.Spatial.HRef != "" {
+				spatial = instance.Links.Spatial.HRef
+			}
+		}
+	}
+
+	if spatial != "" {
+		instance.Links = currentInstance.Links
+		instance.Links.Spatial = &models.IDLink{
+			HRef: spatial,
+		}
+	}
+
 	switch instance.State {
 	case models.EditionConfirmedState:
 		if err = validateInstanceUpdate(models.CompletedState, currentInstance, instance); err != nil {
@@ -154,13 +176,20 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		var editionDoc *models.Edition
 
 		datasetID := currentInstance.Links.Dataset.ID
-		instance.Links.Job = currentInstance.Links.Job
+		if instance.Links != nil {
+			instance.Links = currentInstance.Links
+		} else {
+			instance.Links = &models.InstanceLinks{
+				Job:     currentInstance.Links.Job,
+				Self:    currentInstance.Links.Self,
+				Spatial: currentInstance.Links.Spatial,
+			}
+		}
 
 		// If instance has no edition, get the current edition
 		if instance.Edition == "" {
 			instance.Edition = currentInstance.Edition
 		}
-
 		edition := instance.Edition
 
 		// Only create edition if it doesn't already exist
@@ -170,7 +199,6 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 				log.Error(err, nil)
 				handleErrorType(err, w)
 			}
-
 			// create unique id for edition
 			editionID := uuid.NewV4().String()
 
@@ -184,7 +212,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 					},
 					LatestVersion: &models.LinkObject{
 						ID:   "1",
-						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
+						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/1", s.Host, datasetID, edition),
 					},
 					Self: &models.LinkObject{
 						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", s.Host, datasetID, edition),
@@ -195,20 +223,21 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 				},
 				State: "created",
 			}
+		} else {
+
+			// Update the latest version for the dataset edition
+			version, err := strconv.Atoi(editionDoc.Links.LatestVersion.ID)
+			if err != nil {
+				log.ErrorC("unable to retrieve latest version", err, log.Data{"instance": id, "edition": edition, "version": editionDoc.Links.LatestVersion.ID})
+				handleErrorType(err, w)
+				return
+			}
+
+			version++
+
+			editionDoc.Links.LatestVersion.ID = strconv.Itoa(version)
+			editionDoc.Links.LatestVersion.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", s.Host, datasetID, edition, strconv.Itoa(version))
 		}
-
-		// Update the latest version for the dataset edition
-		version, err := strconv.Atoi(editionDoc.Links.LatestVersion.ID)
-		if err != nil {
-			log.ErrorC("unable to retrieve latest version", err, log.Data{"instance": id, "edition": edition, "version": editionDoc.Links.LatestVersion.ID})
-			handleErrorType(err, w)
-			return
-		}
-
-		version++
-
-		editionDoc.Links.LatestVersion.ID = strconv.Itoa(version)
-		editionDoc.Links.LatestVersion.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", s.Host, datasetID, edition, strconv.Itoa(version))
 
 		if err := s.UpsertEdition(datasetID, edition, editionDoc); err != nil {
 			log.ErrorR(r, err, nil)
@@ -258,10 +287,12 @@ func validateInstanceUpdate(expectedState string, currentInstance, instance *mod
 	return nil
 }
 
-func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *models.Edition) models.InstanceLinks {
+func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *models.Edition) *models.InstanceLinks {
 	stringifiedVersion := strconv.Itoa(instance.Version)
 
-	links := models.InstanceLinks{
+	log.Info("got here 9a", log.Data{"editionDoc": editionDoc.Links, "instance": instance})
+
+	links := &models.InstanceLinks{
 		Dataset: &models.IDLink{
 			HRef: editionDoc.Links.Dataset.HRef,
 			ID:   editionDoc.Links.Dataset.ID,
@@ -273,9 +304,12 @@ func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *model
 			HRef: editionDoc.Links.Self.HRef,
 			ID:   editionDoc.Edition,
 		},
-		Job: instance.Links.Job,
+		Job: &models.IDLink{
+			HRef: instance.Links.Job.HRef,
+			ID:   instance.Links.Job.ID,
+		},
 		Self: &models.IDLink{
-			HRef: fmt.Sprintf("%s/versions/%s", editionDoc.Links.Self.HRef, stringifiedVersion),
+			HRef: instance.Links.Self.HRef,
 		},
 		Version: &models.IDLink{
 			HRef: fmt.Sprintf("%s/versions/%s", editionDoc.Links.Self.HRef, stringifiedVersion),
@@ -283,11 +317,16 @@ func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *model
 		},
 	}
 
+	// Check for spatial link as it is an optional field
+	if instance.Links.Spatial != nil {
+		links.Spatial = instance.Links.Spatial
+	}
+
 	return links
 }
 
-//UpdateObservations increments the count of inserted_observations against
-//an instance
+// UpdateObservations increments the count of inserted_observations against
+// an instance
 func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -318,19 +357,35 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 		return nil, errors.New("Failed to parse json body: " + err.Error())
 	}
 
+	if instance.State != "" {
+		if err := models.ValidateInstanceState(instance.State); err != nil {
+			return nil, err
+		}
+	}
+
 	if post {
-		if instance.Links.Job != nil {
-			if instance.Links.Job.ID == "" || instance.Links.Job.HRef == "" {
-				return nil, errors.New("Missing job properties")
-			}
-		} else {
+		log.Debug("got here", log.Data{"instance": instance})
+		if instance.Links == nil {
 			return nil, errors.New("Missing job properties")
 		}
+		if instance.Links.Job == nil {
+			return nil, errors.New("Missing job properties")
+		}
+
+		// Need both href and id for job link
+		if instance.Links.Job.HRef == "" || instance.Links.Job.ID == "" {
+			return nil, errors.New("Missing job properties")
+		}
+
+		// TODO May want to check the id and href make sense; or change spec to allow
+		// for an id only of the dataset and build the href here or vice versa
+		// expect an href and strip the job id from the href?
 
 		if instance.State == "" {
 			instance.State = "created"
 		}
 	}
+
 	return &instance, nil
 }
 

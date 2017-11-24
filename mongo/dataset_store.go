@@ -369,6 +369,10 @@ func createDatasetUpdateQuery(id string, dataset *models.Dataset) bson.M {
 		updates["next.release_frequency"] = dataset.ReleaseFrequency
 	}
 
+	if dataset.State != "" {
+		updates["next.state"] = dataset.State
+	}
+
 	if dataset.Theme != "" {
 		updates["next.theme"] = dataset.Theme
 	}
@@ -406,13 +410,15 @@ func (m *Mongo) UpdateDatasetWithAssociation(id, state string, version *models.V
 }
 
 // UpdateEdition updates an existing edition document
-func (m *Mongo) UpdateEdition(datasetID, edition, state string) (err error) {
+func (m *Mongo) UpdateEdition(datasetID, edition string, version *models.Version) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
 	update := bson.M{
 		"$set": bson.M{
-			"state": state,
+			"state":                     version.State,
+			"links.latest_version.href": version.Links.Version.HRef,
+			"links.latest_version.id":   version.Links.Version.ID,
 		},
 		"$setOnInsert": bson.M{
 			"last_updated": time.Now(),

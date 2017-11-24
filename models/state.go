@@ -9,3 +9,9 @@ const (
 	AssociatedState       = "associated"
 	PublishedState        = "published"
 )
+
+// A list of request methods
+const (
+	PutMethod  = "put"
+	PostMethod = "post"
+)

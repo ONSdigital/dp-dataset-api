@@ -16,9 +16,8 @@ type Instance struct {
 	Events               *[]Event             `bson:"events,omitempty"                      json:"events,omitempty"`
 	Headers              *[]string            `bson:"headers,omitempty"                     json:"headers,omitempty"`
 	InsertedObservations *int                 `bson:"total_inserted_observations,omitempty" json:"total_inserted_observations,omitempty"`
-	Links                InstanceLinks        `bson:"links,omitempty"                       json:"links,omitempty"`
+	Links                *InstanceLinks       `bson:"links,omitempty"                       json:"links,omitempty"`
 	ReleaseDate          string               `bson:"release_date,omitempty"                json:"release_date,omitempty"`
-	Spatial              string               `bson:"spatial,omitempty"                     json:"spatial,omitempty"`
 	State                string               `bson:"state,omitempty"                       json:"state,omitempty"`
 	Temporal             *[]TemporalFrequency `bson:"temporal,omitempty"                    json:"temporal,omitempty"`
 	TotalObservations    *int                 `bson:"total_observations,omitempty"          json:"total_observations,omitempty"`
@@ -93,6 +92,22 @@ func ValidateStateFilter(filterList []string) error {
 
 	if invalidFilterStateValues != nil {
 		err := fmt.Errorf("Bad request - invalid filter state values: %v", invalidFilterStateValues)
+		return err
+	}
+
+	return nil
+}
+
+// ValidateInstanceState checks the list of instance states from a whitelist
+func ValidateInstanceState(state string) error {
+	var invalidInstantStateValues []string
+
+	if _, ok := validStates[state]; !ok {
+		invalidInstantStateValues = append(invalidInstantStateValues, state)
+	}
+
+	if invalidInstantStateValues != nil {
+		err := fmt.Errorf("Bad request - invalid filter state values: %v", invalidInstantStateValues)
 		return err
 	}
 

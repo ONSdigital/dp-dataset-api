@@ -21,7 +21,7 @@ func TestCreateDataset(t *testing.T) {
 				os.Exit(1)
 			}
 			r := bytes.NewReader(b)
-			dataset, err := CreateDataset(r)
+			dataset, err := CreateDataset(PostMethod, r)
 			So(err, ShouldBeNil)
 			So(dataset.Links.AccessRights.HRef, ShouldEqual, "http://ons.gov.uk/accessrights")
 			So(dataset.CollectionID, ShouldEqual, collectionID)
@@ -53,7 +53,7 @@ func TestCreateDataset(t *testing.T) {
 			os.Exit(1)
 		}
 		r := bytes.NewReader(b)
-		version, err := CreateDataset(r)
+		version, err := CreateDataset(PostMethod, r)
 		So(version, ShouldBeNil)
 		So(err, ShouldNotBeNil)
 		So(err, ShouldResemble, errors.New("Failed to parse json body"))

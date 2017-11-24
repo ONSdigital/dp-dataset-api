@@ -272,9 +272,17 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 
 		currentInstanceTestData := &models.Instance{
 			Edition: "2017",
-			Links: models.InstanceLinks{
+			Links: &models.InstanceLinks{
+				Job: &models.IDLink{
+					ID:   "7654",
+					HRef: "job-link",
+				},
 				Dataset: &models.IDLink{
-					ID: "4567",
+					ID:   "4567",
+					HRef: "dataset-link",
+				},
+				Self: &models.IDLink{
+					HRef: "self-link",
 				},
 			},
 			State: "completed",
@@ -353,7 +361,7 @@ func TestUpdateInstanceReturnsInternalError(t *testing.T) {
 
 		currentInstanceTestData := &models.Instance{
 			Edition: "2017",
-			Links: models.InstanceLinks{
+			Links: &models.InstanceLinks{
 				Dataset: &models.IDLink{
 					ID: "4567",
 				},

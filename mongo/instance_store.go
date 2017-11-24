@@ -5,7 +5,6 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/satori/go.uuid"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -56,7 +55,6 @@ func (m *Mongo) AddInstance(instance *models.Instance) (*models.Instance, error)
 	s := m.Session.Copy()
 	defer s.Close()
 
-	instance.InstanceID = uuid.NewV4().String()
 	instance.LastUpdated = time.Now().UTC()
 	err := s.DB(m.Database).C(instanceCollection).Insert(&instance)
 	if err != nil {

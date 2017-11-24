@@ -109,7 +109,7 @@ var (
 //             UpdateDimensionNodeIDFunc: func(dimension *models.DimensionOption) error {
 // 	               panic("TODO: mock out the UpdateDimensionNodeID method")
 //             },
-//             UpdateEditionFunc: func(datasetID string, edition string, state string) error {
+//             UpdateEditionFunc: func(datasetID string, edition string, version *models.Version) error {
 // 	               panic("TODO: mock out the UpdateEdition method")
 //             },
 //             UpdateInstanceFunc: func(ID string, instance *models.Instance) error {
@@ -204,7 +204,7 @@ type StorerMock struct {
 	UpdateDimensionNodeIDFunc func(dimension *models.DimensionOption) error
 
 	// UpdateEditionFunc mocks the UpdateEdition method.
-	UpdateEditionFunc func(datasetID string, edition string, state string) error
+	UpdateEditionFunc func(datasetID string, edition string, version *models.Version) error
 
 	// UpdateInstanceFunc mocks the UpdateInstance method.
 	UpdateInstanceFunc func(ID string, instance *models.Instance) error
@@ -382,8 +382,8 @@ type StorerMock struct {
 			DatasetID string
 			// Edition is the edition argument value.
 			Edition string
-			// State is the state argument value.
-			State string
+			// Version is the version argument value.
+			Version *models.Version
 		}
 		// UpdateInstance holds details about calls to the UpdateInstance method.
 		UpdateInstance []struct {
@@ -1174,23 +1174,23 @@ func (mock *StorerMock) UpdateDimensionNodeIDCalls() []struct {
 }
 
 // UpdateEdition calls UpdateEditionFunc.
-func (mock *StorerMock) UpdateEdition(datasetID string, edition string, state string) error {
+func (mock *StorerMock) UpdateEdition(datasetID string, edition string, version *models.Version) error {
 	if mock.UpdateEditionFunc == nil {
 		panic("moq: StorerMock.UpdateEditionFunc is nil but Storer.UpdateEdition was just called")
 	}
 	callInfo := struct {
 		DatasetID string
 		Edition   string
-		State     string
+		Version   *models.Version
 	}{
 		DatasetID: datasetID,
 		Edition:   edition,
-		State:     state,
+		Version:   version,
 	}
 	lockStorerMockUpdateEdition.Lock()
 	mock.calls.UpdateEdition = append(mock.calls.UpdateEdition, callInfo)
 	lockStorerMockUpdateEdition.Unlock()
-	return mock.UpdateEditionFunc(datasetID, edition, state)
+	return mock.UpdateEditionFunc(datasetID, edition, version)
 }
 
 // UpdateEditionCalls gets all the calls that were made to UpdateEdition.
@@ -1199,12 +1199,12 @@ func (mock *StorerMock) UpdateEdition(datasetID string, edition string, state st
 func (mock *StorerMock) UpdateEditionCalls() []struct {
 	DatasetID string
 	Edition   string
-	State     string
+	Version   *models.Version
 } {
 	var calls []struct {
 		DatasetID string
 		Edition   string
-		State     string
+		Version   *models.Version
 	}
 	lockStorerMockUpdateEdition.RLock()
 	calls = mock.calls.UpdateEdition
