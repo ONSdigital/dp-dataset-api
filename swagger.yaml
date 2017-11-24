@@ -436,8 +436,6 @@ paths:
           $ref: '#/responses/InvalidRequestError'
         401:
           $ref: '#/responses/UnauthorisedError'
-        403:
-          $ref: '#/responses/ForbiddenError'
         500:
           $ref: '#/responses/InternalError'
     post:
@@ -482,12 +480,8 @@ paths:
           description: "Return a single instance state"
           schema:
             $ref: '#/definitions/Instance'
-        400:
-          $ref: '#/responses/InvalidRequestError'
         401:
           $ref: '#/responses/UnauthorisedError'
-        403:
-          $ref: '#/responses/ForbiddenError'
         404:
           $ref: '#/responses/InstanceNotFound'
         500:
@@ -864,6 +858,9 @@ definitions:
         type: string
         description: "The title of the dataset"
         example: "CPI"
+      unit_of_measure:
+        type: string
+        description: "The unit of measure for the dataset observations"
       uri:
         type: string
         description: "The uri to the location of this resource on the web"
@@ -1312,6 +1309,11 @@ definitions:
       release_date,
     ]
     properties:
+      alerts:
+        type: array
+        description: "A list of alerts, for example corrections after the resource has been published"
+        items:
+          $ref: '#/definitions/Alert'
       collection_id:
         type: string
         description: "The id of a collection of datasets that a dataset is associated to"
@@ -1335,6 +1337,11 @@ definitions:
       instance_id:
         description: "The instance identifier for this version of an edition for a dataset"
         type: string
+      latest_changes:
+        type: array
+        description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
+        items:
+          $ref: '#/definitions/LatestChange'
       links:
         $ref: '#/definitions/VersionLinks'
       release_date:
@@ -1359,6 +1366,35 @@ definitions:
       size:
         type: string
         description: "The size of the file in bytes"
+  Alert:
+    description: "A single alert, &#x2603;"
+    type: object
+    properties:
+      date:
+        description: "The date and time of when an alert took place,  &#x2603; for a version"
+        type: string
+      description:
+        description: "A description of the alert, &#x2603;"
+        type: string
+      type:
+        description: "The type of alert"
+        type: string
+        example: "correction"
+  LatestChange:
+    description: "A single change between this version and the previous version of an edition for a dataset"
+    type: object
+    properties:
+      description:
+        description: "A description of what has changed between versions"
+        type: string
+      name:
+        description: "The name of the change that has occurred between versions"
+        type: string
+        example: "changes in classification"
+      type:
+        description: "The type of change"
+        type: string
+        example: "summary of changes"
   VersionLinks:
     description: "A list of links related to this resource"
     readOnly: true
