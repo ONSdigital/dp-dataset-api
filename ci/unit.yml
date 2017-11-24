@@ -6,7 +6,7 @@ image_resource:
   type: docker-image
   source:
     repository: golang
-    tag: 1.9.0
+    tag: 1.9.2
 
 inputs:
   - name: dp-dataset-api
