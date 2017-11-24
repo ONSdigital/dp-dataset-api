@@ -290,7 +290,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		err := fmt.Errorf("Forbidden - dataset already exists")
+		err = fmt.Errorf("Forbidden - dataset already exists")
 		log.Error(err, log.Data{"dataset_id": datasetID})
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
@@ -335,7 +335,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 		Next: dataset,
 	}
 
-	if err := api.dataStore.Backend.UpsertDataset(datasetID, datasetDoc); err != nil {
+	if err = api.dataStore.Backend.UpsertDataset(datasetID, datasetDoc); err != nil {
 		log.ErrorR(r, err, nil)
 		handleErrorType(datasetDocType, err, w)
 		return
@@ -393,13 +393,13 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	if err := api.dataStore.Backend.CheckDatasetExists(datasetID, ""); err != nil {
+	if err = api.dataStore.Backend.CheckDatasetExists(datasetID, ""); err != nil {
 		log.Error(err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		handleErrorType(versionDocType, err, w)
 		return
 	}
 
-	if err := api.dataStore.Backend.CheckEditionExists(datasetID, edition, ""); err != nil {
+	if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, ""); err != nil {
 		log.Error(err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		handleErrorType(versionDocType, err, w)
 		return
