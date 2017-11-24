@@ -69,7 +69,7 @@ func (m *Mongo) GetDimensions(datasetID, editionID, versionID string) (*models.D
 	s := m.Session.Copy()
 	defer s.Close()
 
-	version, err := m.GetVersion(datasetID, editionID, versionID, "published")
+	version, err := m.GetVersion(datasetID, editionID, versionID, models.PublishedState)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (m *Mongo) GetDimensionOptions(datasetID, editionID, versionID, dimension s
 	s := m.Session.Copy()
 	defer s.Close()
 
-	version, err := m.GetVersion(datasetID, editionID, versionID, "published")
+	version, err := m.GetVersion(datasetID, editionID, versionID, models.PublishedState)
 	if err != nil {
 		return nil, err
 	}

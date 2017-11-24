@@ -221,7 +221,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
 					},
 				},
-				State: "created",
+				State: models.CreatedState,
 			}
 		} else {
 
@@ -382,7 +382,7 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 		// expect an href and strip the job id from the href?
 
 		if instance.State == "" {
-			instance.State = "created"
+			instance.State = models.CreatedState
 		}
 	}
 

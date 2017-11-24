@@ -41,37 +41,41 @@ var relatedDatasets = GeneralDetails{
 	Title: "Census Age",
 }
 
-var inputDataset = Dataset{
-	CollectionID: collectionID,
-	Contacts: []ContactDetails{
-		contacts,
-	},
-	Description: "census",
-	Keywords:    []string{"test", "test2"},
-	License:     "Office of National Statistics license",
-	Links: &DatasetLinks{
-		AccessRights: &LinkObject{
-			HRef: "http://ons.gov.uk/accessrights",
+
+// Create a fully populated dataset object to use in testing.
+func createTestDataset() *Dataset {
+	return &Dataset{
+		CollectionID: collectionID,
+		Contacts: []ContactDetails{
+			contacts,
 		},
-	},
-	Methodologies: []GeneralDetails{
-		methodology,
-	},
-	NationalStatistic: &nationalStatistic,
-	NextRelease:       "2016-05-05",
-	Publications: []GeneralDetails{
-		publications,
-	},
-	Publisher: &publisher,
-	QMI:       &qmi,
-	RelatedDatasets: []GeneralDetails{
-		relatedDatasets,
-	},
-	ReleaseFrequency: "yearly",
-	State:            "published",
-	Theme:            "population",
-	Title:            "CensusEthnicity",
-	URI:              "http://localhost:22000/datasets/123/breadcrumbs",
+		Description: "census",
+		Keywords:    []string{"test", "test2"},
+		License:     "Office of National Statistics license",
+		Links: &DatasetLinks{
+			AccessRights: &LinkObject{
+				HRef: "http://ons.gov.uk/accessrights",
+			},
+		},
+		Methodologies: []GeneralDetails{
+			methodology,
+		},
+		NationalStatistic: &nationalStatistic,
+		NextRelease:       "2016-05-05",
+		Publications: []GeneralDetails{
+			publications,
+		},
+		Publisher: &publisher,
+		QMI:       &qmi,
+		RelatedDatasets: []GeneralDetails{
+			relatedDatasets,
+		},
+		ReleaseFrequency: "yearly",
+		State:            AssociatedState,
+		Theme:            "population",
+		Title:            "CensusEthnicity",
+		URI:              "http://localhost:22000/datasets/123/breadcrumbs",
+	}
 }
 
 var dimension = CodeList{
@@ -118,13 +122,13 @@ var temporal = TemporalFrequency{
 	StartDate: "2014-09-09",
 }
 
-var createdVersion = Version{
+var editionConfirmedVersion = Version{
 	Dimensions:  []CodeList{dimension},
 	Downloads:   &downloads,
 	Edition:     "2017",
 	Links:       &links,
 	ReleaseDate: "2016-04-04",
-	State:       "edition-confirmed",
+	State:       EditionConfirmedState,
 	Version:     1,
 }
 
@@ -135,7 +139,7 @@ var associatedVersion = Version{
 	Edition:      "2017",
 	Links:        &links,
 	ReleaseDate:  "2017-10-12",
-	State:        "associated",
+	State:        AssociatedState,
 	Temporal:     &[]TemporalFrequency{temporal},
 	Version:      1,
 }
@@ -147,7 +151,7 @@ var publishedVersion = Version{
 	Edition:      "2017",
 	Links:        &links,
 	ReleaseDate:  "2017-10-12",
-	State:        "published",
+	State:        PublishedState,
 	Temporal:     &[]TemporalFrequency{temporal},
 	Version:      1,
 }

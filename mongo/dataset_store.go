@@ -249,7 +249,7 @@ func (m *Mongo) GetVersion(id, editionID, versionID, state string) (*models.Vers
 
 func buildVersionQuery(id, editionID, state string, versionID int) bson.M {
 	var selector bson.M
-	if state != "published" {
+	if state != models.PublishedState {
 		selector = bson.M{
 			"links.dataset.id": id,
 			"version":          versionID,

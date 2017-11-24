@@ -66,7 +66,7 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
-		So(result, ShouldResemble, []string{"completed"})
+		So(result, ShouldResemble, []string{models.CompletedState})
 	})
 
 	Convey("Get instances filtered by multiple state values returns only instances with those values", t, func() {
@@ -86,7 +86,7 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
-		So(result, ShouldResemble, []string{"completed", "edition-confirmed"})
+		So(result, ShouldResemble, []string{models.CompletedState, models.EditionConfirmedState})
 	})
 }
 
@@ -285,7 +285,7 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 					HRef: "self-link",
 				},
 			},
-			State: "completed",
+			State: models.CompletedState,
 		}
 
 		mockedDataStore := &storetest.StorerMock{
@@ -366,7 +366,7 @@ func TestUpdateInstanceReturnsInternalError(t *testing.T) {
 					ID: "4567",
 				},
 			},
-			State: "completed",
+			State: models.CompletedState,
 		}
 
 		mockedDataStore := &storetest.StorerMock{
