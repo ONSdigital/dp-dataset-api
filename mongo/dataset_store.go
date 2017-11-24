@@ -200,11 +200,24 @@ func (m *Mongo) GetVersions(id, editionID, state string) (*models.VersionResults
 		return nil, errs.ErrVersionNotFound
 	}
 
+	// Remove versions which have not got a state of edition-confirmed,
+	// associated or published
+	var newResults []models.Version
+
 	for i := 0; i < len(results); i++ {
+		if results[i].State == models.CreatedState || results[i].State == models.CompletedState {
+			continue
+		}
 		results[i].Links.Self.HRef = results[i].Links.Version.HRef
+		newResults = append(newResults, results[i])
 	}
 
-	return &models.VersionResults{Items: results}, nil
+	// Check newResults is an empty list
+	if len(newResults) < 1 {
+		return nil, errs.ErrVersionNotFound
+	}
+
+	return &models.VersionResults{Items: newResults}, nil
 }
 
 func buildVersionsQuery(id, editionID, state string) bson.M {
