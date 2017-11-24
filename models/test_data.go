@@ -41,7 +41,6 @@ var relatedDatasets = GeneralDetails{
 	Title: "Census Age",
 }
 
-
 // Create a fully populated dataset object to use in testing.
 func createTestDataset() *Dataset {
 	return &Dataset{

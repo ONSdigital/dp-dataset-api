@@ -16,7 +16,7 @@ func TestCreateDataset(t *testing.T) {
 
 	Convey("Successfully return without any errors", t, func() {
 
-		Convey("when the dataset has all fields", func() {
+		Convey("when the dataset has all fields for PUT request", func() {
 
 			inputDataset := createTestDataset()
 
@@ -44,13 +44,48 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.QMI, ShouldResemble, &qmi)
 			So(dataset.RelatedDatasets[0], ShouldResemble, relatedDatasets)
 			So(dataset.ReleaseFrequency, ShouldEqual, "yearly")
+			So(dataset.State, ShouldEqual, CreatedState)
+			So(dataset.Theme, ShouldEqual, "population")
+			So(dataset.Title, ShouldEqual, "CensusEthnicity")
+			So(dataset.URI, ShouldEqual, "http://localhost:22000/datasets/123/breadcrumbs")
+		})
+	})
+
+	Convey("Successfully return without any errors", t, func() {
+
+		Convey("when the dataset has all fields for PUT request", func() {
+
+			inputDataset := createTestDataset()
+
+			b, err := json.Marshal(inputDataset)
+			if err != nil {
+				log.ErrorC("Failed to marshal test data into bytes", err, nil)
+				os.Exit(1)
+			}
+			r := bytes.NewReader(b)
+			dataset, err := CreateDataset(PutMethod, r)
+			So(err, ShouldBeNil)
+			So(dataset.Links.AccessRights.HRef, ShouldEqual, "http://ons.gov.uk/accessrights")
+			So(dataset.CollectionID, ShouldEqual, collectionID)
+			So(dataset.Contacts[0], ShouldResemble, contacts)
+			So(dataset.Description, ShouldEqual, "census")
+			So(dataset.ID, ShouldNotBeNil)
+			So(dataset.Keywords[0], ShouldEqual, "test")
+			So(dataset.Keywords[1], ShouldEqual, "test2")
+			So(dataset.License, ShouldEqual, "Office of National Statistics license")
+			So(dataset.Methodologies[0], ShouldResemble, methodology)
+			So(dataset.NationalStatistic, ShouldResemble, &nationalStatistic)
+			So(dataset.NextRelease, ShouldEqual, "2016-05-05")
+			So(dataset.Publications[0], ShouldResemble, publications)
+			So(dataset.Publisher, ShouldResemble, &publisher)
+			So(dataset.QMI, ShouldResemble, &qmi)
+			So(dataset.RelatedDatasets[0], ShouldResemble, relatedDatasets)
+			So(dataset.ReleaseFrequency, ShouldEqual, "yearly")
 			So(dataset.State, ShouldEqual, AssociatedState)
 			So(dataset.Theme, ShouldEqual, "population")
 			So(dataset.Title, ShouldEqual, "CensusEthnicity")
 			So(dataset.URI, ShouldEqual, "http://localhost:22000/datasets/123/breadcrumbs")
 		})
-
-
 	})
 
 	Convey("Return with error when the request body contains the correct fields but of the wrong type", t, func() {
@@ -83,7 +118,7 @@ func TestCreateDataset_DefaultsStateToCreated(t *testing.T) {
 		Convey("When the CreateDataset function is called", func() {
 
 			jsonReader := bytes.NewReader(jsonBytes)
-			dataset, err := CreateDataset(jsonReader)
+			dataset, err := CreateDataset(PostMethod, jsonReader)
 
 			Convey("Then the returned dataset state is 'created'", func() {
 				So(err, ShouldBeNil)
@@ -92,7 +127,6 @@ func TestCreateDataset_DefaultsStateToCreated(t *testing.T) {
 		})
 	})
 }
-
 
 func TestCreateVersion(t *testing.T) {
 	t.Parallel()
