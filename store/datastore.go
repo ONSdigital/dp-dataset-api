@@ -32,7 +32,7 @@ type Storer interface {
 	UpdateDataset(ID string, dataset *models.Dataset) error
 	UpdateDatasetWithAssociation(ID, state string, version *models.Version) error
 	UpdateDimensionNodeID(dimension *models.DimensionOption) error
-	UpdateEdition(datasetID, edition string, version *models.Version) error
+	UpdateEdition(datasetID, edition string, latestVersion *models.Version) error
 	UpdateInstance(ID string, instance *models.Instance) error
 	UpdateObservationInserted(ID string, observationInserted int64) error
 	UpdateVersion(ID string, version *models.Version) error

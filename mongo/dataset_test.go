@@ -77,6 +77,11 @@ func TestBuildVersionsQuery(t *testing.T) {
 		expectedSelector := bson.M{
 			"links.dataset.id": id,
 			"edition":          editionID,
+			"$or": []interface{}{
+				bson.M{"state": "edition-confirmed"},
+				bson.M{"state": "associated"},
+				bson.M{"state": "published"},
+			},
 		}
 
 		selector := buildVersionsQuery(id, editionID, "")

@@ -26,45 +26,7 @@ func TestCreateDataset(t *testing.T) {
 				os.Exit(1)
 			}
 			r := bytes.NewReader(b)
-			dataset, err := CreateDataset(PostMethod, r)
-			So(err, ShouldBeNil)
-			So(dataset.Links.AccessRights.HRef, ShouldEqual, "http://ons.gov.uk/accessrights")
-			So(dataset.CollectionID, ShouldEqual, collectionID)
-			So(dataset.Contacts[0], ShouldResemble, contacts)
-			So(dataset.Description, ShouldEqual, "census")
-			So(dataset.ID, ShouldNotBeNil)
-			So(dataset.Keywords[0], ShouldEqual, "test")
-			So(dataset.Keywords[1], ShouldEqual, "test2")
-			So(dataset.License, ShouldEqual, "Office of National Statistics license")
-			So(dataset.Methodologies[0], ShouldResemble, methodology)
-			So(dataset.NationalStatistic, ShouldResemble, &nationalStatistic)
-			So(dataset.NextRelease, ShouldEqual, "2016-05-05")
-			So(dataset.Publications[0], ShouldResemble, publications)
-			So(dataset.Publisher, ShouldResemble, &publisher)
-			So(dataset.QMI, ShouldResemble, &qmi)
-			So(dataset.RelatedDatasets[0], ShouldResemble, relatedDatasets)
-			So(dataset.ReleaseFrequency, ShouldEqual, "yearly")
-			So(dataset.State, ShouldEqual, CreatedState)
-			So(dataset.Theme, ShouldEqual, "population")
-			So(dataset.Title, ShouldEqual, "CensusEthnicity")
-			So(dataset.UnitOfMeasure, ShouldEqual, "Pounds Sterling")
-			So(dataset.URI, ShouldEqual, "http://localhost:22000/datasets/123/breadcrumbs")
-		})
-	})
-
-	Convey("Successfully return without any errors", t, func() {
-
-		Convey("when the dataset has all fields for PUT request", func() {
-
-			inputDataset := createTestDataset()
-
-			b, err := json.Marshal(inputDataset)
-			if err != nil {
-				log.ErrorC("Failed to marshal test data into bytes", err, nil)
-				os.Exit(1)
-			}
-			r := bytes.NewReader(b)
-			dataset, err := CreateDataset(PutMethod, r)
+			dataset, err := CreateDataset(r)
 			So(err, ShouldBeNil)
 			So(dataset.Links.AccessRights.HRef, ShouldEqual, "http://ons.gov.uk/accessrights")
 			So(dataset.CollectionID, ShouldEqual, collectionID)
@@ -90,6 +52,31 @@ func TestCreateDataset(t *testing.T) {
 		})
 	})
 
+	Convey("Successfully return without any errors", t, func() {
+
+		Convey("when the dataset has all fields for PUT request", func() {
+
+			inputDataset := createTestDataset()
+			expectedDataset := expectedDataset()
+
+			b, err := json.Marshal(inputDataset)
+			if err != nil {
+				log.ErrorC("Failed to marshal test data into bytes", err, nil)
+				os.Exit(1)
+			}
+			r := bytes.NewReader(b)
+			dataset, err := CreateDataset(r)
+			So(dataset.ID, ShouldNotBeNil)
+
+			// Check id exists and emove before comparison with expected dataset; id
+			// is generated each time CreateDataset is called
+			So(err, ShouldBeNil)
+			dataset.ID = ""
+
+			So(dataset, ShouldResemble, &expectedDataset)
+		})
+	})
+
 	Convey("Return with error when the request body contains the correct fields but of the wrong type", t, func() {
 		b, err := json.Marshal(badInputData)
 		if err != nil {
@@ -97,36 +84,10 @@ func TestCreateDataset(t *testing.T) {
 			os.Exit(1)
 		}
 		r := bytes.NewReader(b)
-		version, err := CreateDataset(PostMethod, r)
+		version, err := CreateDataset(r)
 		So(version, ShouldBeNil)
 		So(err, ShouldNotBeNil)
 		So(err, ShouldResemble, errors.New("Failed to parse json body"))
-	})
-}
-
-func TestCreateDataset_DefaultsStateToCreated(t *testing.T) {
-
-	Convey("Given a dataset JSON input that does not specify a state", t, func() {
-
-		inputDataset := createTestDataset()
-		inputDataset.State = ""
-
-		jsonBytes, err := json.Marshal(inputDataset)
-		if err != nil {
-			log.ErrorC("Failed to marshal test data into bytes", err, nil)
-			os.Exit(1)
-		}
-
-		Convey("When the CreateDataset function is called", func() {
-
-			jsonReader := bytes.NewReader(jsonBytes)
-			dataset, err := CreateDataset(PostMethod, jsonReader)
-
-			Convey("Then the returned dataset state is 'created'", func() {
-				So(err, ShouldBeNil)
-				So(dataset.State, ShouldEqual, CreatedState)
-			})
-		})
 	})
 }
 

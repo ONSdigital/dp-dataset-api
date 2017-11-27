@@ -122,7 +122,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get the current document to check the state of instance
+	// Get the current document
 	currentInstance, err := s.GetInstance(id)
 	if err != nil {
 		log.Error(err, nil)
@@ -130,22 +130,8 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get spatial link before overwriting links object
-	var spatial string
-	if instance.Links != nil {
-		if instance.Links.Spatial != nil {
-			if instance.Links.Spatial.HRef != "" {
-				spatial = instance.Links.Spatial.HRef
-			}
-		}
-	}
-
-	if spatial != "" {
-		instance.Links = currentInstance.Links
-		instance.Links.Spatial = &models.IDLink{
-			HRef: spatial,
-		}
-	}
+	// Combine existing links and spatial link
+	instance.Links = updateLinks(instance, currentInstance)
 
 	switch instance.State {
 	case models.EditionConfirmedState:
@@ -176,15 +162,6 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		var editionDoc *models.Edition
 
 		datasetID := currentInstance.Links.Dataset.ID
-		if instance.Links != nil {
-			instance.Links = currentInstance.Links
-		} else {
-			instance.Links = &models.InstanceLinks{
-				Job:     currentInstance.Links.Job,
-				Self:    currentInstance.Links.Self,
-				Spatial: currentInstance.Links.Spatial,
-			}
-		}
 
 		// If instance has no edition, get the current edition
 		if instance.Edition == "" {
@@ -274,6 +251,26 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	log.Debug("updated instance", log.Data{"instance": id})
 }
 
+func updateLinks(instance, currentInstance *models.Instance) *models.InstanceLinks {
+	var spatial string
+	if instance.Links != nil {
+		if instance.Links.Spatial != nil {
+			if instance.Links.Spatial.HRef != "" {
+				spatial = instance.Links.Spatial.HRef
+			}
+		}
+	}
+
+	links := currentInstance.Links
+	if spatial != "" {
+		links.Spatial = &models.IDLink{
+			HRef: spatial,
+		}
+	}
+
+	return links
+}
+
 func validateInstanceUpdate(expectedState string, currentInstance, instance *models.Instance) error {
 	if currentInstance.State != expectedState {
 		err := fmt.Errorf("Unable to update resource, expected resource to have a state of %s", expectedState)
@@ -290,7 +287,7 @@ func validateInstanceUpdate(expectedState string, currentInstance, instance *mod
 func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *models.Edition) *models.InstanceLinks {
 	stringifiedVersion := strconv.Itoa(instance.Version)
 
-	log.Info("got here 9a", log.Data{"editionDoc": editionDoc.Links, "instance": instance})
+	log.Debug("defining instance links", log.Data{"editionDoc": editionDoc.Links, "instance": instance})
 
 	links := &models.InstanceLinks{
 		Dataset: &models.IDLink{
@@ -364,11 +361,8 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 	}
 
 	if post {
-		log.Debug("got here", log.Data{"instance": instance})
-		if instance.Links == nil {
-			return nil, errors.New("Missing job properties")
-		}
-		if instance.Links.Job == nil {
+		log.Debug("post request on an instance", log.Data{"instance_id": instance.InstanceID})
+		if instance.Links == nil || instance.Links.Job == nil {
 			return nil, errors.New("Missing job properties")
 		}
 
