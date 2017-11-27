@@ -73,8 +73,15 @@ func createTestDataset() *Dataset {
 		State:            AssociatedState,
 		Theme:            "population",
 		Title:            "CensusEthnicity",
+		UnitOfMeasure:    "Pounds Sterling",
 		URI:              "http://localhost:22000/datasets/123/breadcrumbs",
 	}
+}
+
+var alert = Alert{
+	Date:        "2017-10-10",
+	Description: "A correction to an observation for males of age 25, previously 11 now changed to 12",
+	Type:        "Correction",
 }
 
 var dimension = CodeList{
@@ -93,6 +100,12 @@ var downloads = DownloadList{
 		URL:  "https://www.aws/1234",
 		Size: "45mb",
 	},
+}
+
+var latestChange = LatestChange{
+	Description: "The border of Southampton changed after the south east cliff face fell into the sea.",
+	Name:        "Changes in Classification",
+	Type:        "Summary of Changes",
 }
 
 var links = VersionLinks{
@@ -132,27 +145,30 @@ var editionConfirmedVersion = Version{
 }
 
 var associatedVersion = Version{
-	CollectionID: collectionID,
-	Dimensions:   []CodeList{dimension},
-	Downloads:    &downloads,
-	Edition:      "2017",
-	Links:        &links,
-	ReleaseDate:  "2017-10-12",
-	State:        AssociatedState,
-	Temporal:     &[]TemporalFrequency{temporal},
-	Version:      1,
+	CollectionID:  collectionID,
+	Dimensions:    []CodeList{dimension},
+	Downloads:     &downloads,
+	Edition:       "2017",
+	LatestChanges: &[]LatestChange{latestChange},
+	Links:         &links,
+	ReleaseDate:   "2017-10-12",
+	State:         AssociatedState,
+	Temporal:      &[]TemporalFrequency{temporal},
+	Version:       1,
 }
 
 var publishedVersion = Version{
-	CollectionID: collectionID,
-	Dimensions:   []CodeList{dimension},
-	Downloads:    &downloads,
-	Edition:      "2017",
-	Links:        &links,
-	ReleaseDate:  "2017-10-12",
-	State:        PublishedState,
-	Temporal:     &[]TemporalFrequency{temporal},
-	Version:      1,
+	Alerts:        &[]Alert{alert},
+	CollectionID:  collectionID,
+	Dimensions:    []CodeList{dimension},
+	Downloads:     &downloads,
+	Edition:       "2017",
+	LatestChanges: &[]LatestChange{latestChange},
+	Links:         &links,
+	ReleaseDate:   "2017-10-12",
+	State:         PublishedState,
+	Temporal:      &[]TemporalFrequency{temporal},
+	Version:       1,
 }
 
 var badInputData = struct {

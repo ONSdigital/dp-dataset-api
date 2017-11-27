@@ -412,8 +412,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check current state of version document;
-	// if published do not try to update document
+	// Check current state of version document
 	if currentVersion.State == models.PublishedState {
 		http.Error(w, fmt.Sprintf("Unable to update document, already published"), http.StatusForbidden)
 		return
@@ -464,8 +463,51 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func createNewVersionDoc(currentVersion *models.Version, version *models.Version) *models.Version {
+
+	var alerts []models.Alert
+	if currentVersion.Alerts != nil {
+
+		// loop through current alerts and add each alert to array
+		for _, currentAlert := range *currentVersion.Alerts {
+			alerts = append(alerts, currentAlert)
+		}
+	}
+
+	if version.Alerts != nil {
+
+		// loop through new alerts and add each alert to array
+		for _, newAlert := range *version.Alerts {
+			alerts = append(alerts, newAlert)
+		}
+	}
+
+	if alerts != nil {
+		version.Alerts = &alerts
+	}
+
 	if version.CollectionID == "" {
 		version.CollectionID = currentVersion.CollectionID
+	}
+
+	var latestChanges []models.LatestChange
+	if currentVersion.LatestChanges != nil {
+
+		// loop through current latestChanges and add each latest change to array
+		for _, currentLatestChange := range *currentVersion.LatestChanges {
+			latestChanges = append(latestChanges, currentLatestChange)
+		}
+	}
+
+	if version.LatestChanges != nil {
+
+		// loop through new latestChanges and add each latest change to array
+		for _, newLatestChange := range *version.LatestChanges {
+			latestChanges = append(latestChanges, newLatestChange)
+		}
+	}
+
+	if latestChanges != nil {
+		version.LatestChanges = &latestChanges
 	}
 
 	if version.ReleaseDate == "" {

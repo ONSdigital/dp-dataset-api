@@ -394,6 +394,10 @@ func createDatasetUpdateQuery(id string, dataset *models.Dataset) bson.M {
 		updates["next.title"] = dataset.Title
 	}
 
+	if dataset.UnitOfMeasure != "" {
+		updates["next.unit_of_measure"] = dataset.UnitOfMeasure
+	}
+
 	if dataset.URI != "" {
 		updates["next.uri"] = dataset.URI
 	}
@@ -456,8 +460,16 @@ func (m *Mongo) UpdateVersion(id string, version *models.Version) (err error) {
 func createVersionUpdateQuery(version *models.Version) bson.M {
 	updates := make(bson.M, 0)
 
+	if version.Alerts != nil {
+		updates["alerts"] = version.Alerts
+	}
+
 	if version.CollectionID != "" {
 		updates["collection_id"] = version.CollectionID
+	}
+
+	if version.LatestChanges != nil {
+		updates["latest_changes"] = version.LatestChanges
 	}
 
 	if version.ReleaseDate != "" {
