@@ -1197,7 +1197,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusForbidden)
-		So(w.Body.String(), ShouldEqual, "Unable to update document, already published\n")
+		So(w.Body.String(), ShouldEqual, "unable to update document, already published\n")
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
