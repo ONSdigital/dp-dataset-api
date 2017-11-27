@@ -300,13 +300,15 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dataset, err := models.CreateDataset(models.PostMethod, r.Body)
+	dataset, err := models.CreateDataset(r.Body)
 	if err != nil {
 		log.ErrorC("fail to model dataset resource based on request", err, log.Data{"dataset_id": datasetID})
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
+
+	dataset.State = models.CreatedState
 
 	var accessRights string
 	if dataset.Links != nil {
@@ -367,7 +369,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
 
-	dataset, err := models.CreateDataset(models.PutMethod, r.Body)
+	dataset, err := models.CreateDataset(r.Body)
 	if err != nil {
 		log.ErrorC("fail to model dataset resource based on request", err, log.Data{"dataset_id": datasetID})
 		http.Error(w, err.Error(), http.StatusBadRequest)

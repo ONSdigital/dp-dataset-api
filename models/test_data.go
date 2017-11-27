@@ -77,6 +77,33 @@ func createTestDataset() *Dataset {
 	}
 }
 
+func expectedDataset() Dataset {
+	return Dataset{
+		CollectionID: collectionID,
+		Contacts:     []ContactDetails{contacts},
+		Description:  "census",
+		Keywords:     []string{"test", "test2"},
+		License:      "Office of National Statistics license",
+		Links: &DatasetLinks{
+			AccessRights: &LinkObject{
+				HRef: "http://ons.gov.uk/accessrights",
+			},
+		},
+		Methodologies:     []GeneralDetails{methodology},
+		NationalStatistic: &nationalStatistic,
+		NextRelease:       "2016-05-05",
+		Publications:      []GeneralDetails{publications},
+		Publisher:         &publisher,
+		QMI:               &qmi,
+		RelatedDatasets:   []GeneralDetails{relatedDatasets},
+		ReleaseFrequency:  "yearly",
+		State:             AssociatedState,
+		Theme:             "population",
+		Title:             "CensusEthnicity",
+		URI:               "http://localhost:22000/datasets/123/breadcrumbs",
+	}
+}
+
 var dimension = CodeList{
 	Description: "A list of ages between 18 and 75+",
 	HRef:        "http://localhost:22400/codelists/1245",

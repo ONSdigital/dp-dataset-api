@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/ONSdigital/go-ns/log"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -170,7 +169,7 @@ type VersionLinks struct {
 }
 
 // CreateDataset manages the creation of a dataset from a reader
-func CreateDataset(method string, reader io.Reader) (*Dataset, error) {
+func CreateDataset(reader io.Reader) (*Dataset, error) {
 	bytes, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
@@ -181,12 +180,6 @@ func CreateDataset(method string, reader io.Reader) (*Dataset, error) {
 	err = json.Unmarshal(bytes, &dataset)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
-	}
-
-	// Overwrite state to created if request method is POST
-	if method == PostMethod {
-		log.Debug("post method, force state to be created", log.Data{"method": method})
-		dataset.State = CreatedState
 	}
 
 	return &dataset, nil
