@@ -680,7 +680,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	log.Debug("get dimension options", log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension})
 }
 
-func (api *DatasetAPI) getMetaData(w http.ResponseWriter, r *http.Request) {
+func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
 	edition := vars["edition"]
@@ -695,20 +695,19 @@ func (api *DatasetAPI) getMetaData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Default state to published
-	state := models.PublishedState
+	var state string
 
 	// if request is authenticated then access resources of state other than published
-	if r.Header.Get(internalToken) == api.internalToken {
-		state = ""
-	}
+	if r.Header.Get(internalToken) != api.internalToken {
 
-	if state == models.PublishedState {
 		// Check for current sub document
 		if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
 			log.ErrorC("found dataset but currently unpublished", errs.ErrDatasetNotFound, log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "dataset": datasetDoc.Current})
 			http.Error(w, errs.ErrDatasetNotFound.Error(), http.StatusBadRequest)
 			return
 		}
+
+		state = datasetDoc.Current.State
 	}
 
 	if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
