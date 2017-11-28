@@ -413,6 +413,30 @@ paths:
           description: "No dimension options were found for dimension"
         500:
           $ref: '#/responses/InternalError'
+  /datasets/{id}/editions/{edition}/versions/{version}/metadata:
+    get:
+      tags:
+      - "Public"
+      summary: "Get all version meta data"
+      description: "Get all version meta data"
+      parameters:
+      - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/version'
+      responses:
+        200:
+          description: "Json object containing all meta data for a version"
+          schema:
+            $ref: '#/definitions/MetaData'
+        400:
+          description: |
+            Invalid request, reasons can be one of the following:
+              * dataset id was incorrect
+              * edition was incorrect
+        404:
+          description: "Version not found"
+        500:
+          $ref: '#/responses/InternalError'
   /instances:
     get:
       tags:
@@ -712,6 +736,12 @@ responses:
   InstanceNotFound:
     description: "The instance was not found"
 definitions:
+  AccessRightsLink:
+    type: object
+    properties:
+      href:
+        type: string
+        description: "A url to the standard Government access right text for the dataset"
   Contact:
     description: "A list of objects containing contact information for this dataset"
     type: object
@@ -869,12 +899,8 @@ definitions:
     readOnly: true
     type: object
     properties:
-      access_right:
-        type: object
-        properties:
-          href:
-            type: string
-            description: "A url to the standard Government access right text for the dataset"
+      access_rights:
+        $ref: '#/definitions/AccessRightsLink'
       editions:
         type: object
         properties:
@@ -1398,6 +1424,12 @@ definitions:
         description: "The type of change"
         type: string
         example: "summary of changes"
+  SpatialLink:
+    type: object
+    properties:
+      href:
+        type: string
+        description: "A url to a list of geography ranges for the version of the dataset"
   VersionLinks:
     description: "A list of links related to this resource"
     readOnly: true
@@ -1417,11 +1449,7 @@ definitions:
       self:
         $ref: '#/definitions/SelfLink'
       spatial:
-        type: object
-        properties:
-          href:
-            type: string
-            description: "A url to a list of geography ranges for the version of the dataset"
+        $ref: '#/definitions/SpatialLink'
   DatasetLink:
     description: "An object containing the dataset id and link"
     readOnly: true
@@ -1467,15 +1495,7 @@ definitions:
                 description: "A URL to the code list"
                 type: string
           version:
-            description: "The dataset version this dimension belongs too"
-            type: object
-            properties:
-              id:
-                description: "The unique id for the version"
-                type: string
-              href:
-                description: "A URL to the version"
-                type: string
+            $ref: '#/definitions/VersionLink'
   Dimensions:
     type: object
     properties:
@@ -1520,7 +1540,6 @@ definitions:
         description: "The total number of dimensions against a version from an edition of a dataset"
         readOnly: true
         type: integer
-
   DimensionOption:
     type: object
     properties:
@@ -1572,4 +1591,163 @@ definitions:
         type: string
       node_id:
         description: "The id of the node"
+        type: string
+  MetaData:
+    type: object
+    description: "An object containing all meta data information against a version"
+    properties:
+      alerts:
+        type: array
+        description: "A list of alerts, for example corrections after the resource has been published"
+        items:
+          $ref: '#/definitions/Alert'
+      collection_id:
+        type: string
+        description: "The id of a collection of datasets that a dataset is associated to"
+      contacts:
+        type: array
+        description: "A list containing contact details of staticians for a dataset"
+        items:
+          $ref: '#/definitions/Contact'
+      description:
+        type: string
+        description: "A description for a dataset"
+      distribution:
+        type: array
+        description: "A list of media types that the version data of an edition of a dataset can be accessed"
+        items:
+          type: string
+      dimensions:
+        type: array
+        description: "A list of codelists for each dimension of this version"
+        items:
+          $ref: '#/definitions/Codelist'
+      downloads:
+        type: object
+        description: "A selection of download objects containing information of downloadable files."
+        properties:
+          csv:
+            $ref: '#/definitions/DownloadFile'
+          xls:
+            $ref: '#/definitions/DownloadFile'
+      keywords:
+        type: array
+        description: "A list of keywords for a dataset"
+        items:
+          type: "string"
+      latest_changes:
+        type: array
+        description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
+        items:
+          $ref: '#/definitions/LatestChange'
+      license:
+        description: "The standard Government license right text for the dataset"
+        type: string
+      links:
+        $ref: '#/definitions/MetaDataLinks'
+      methodologies:
+        type: array
+        description: "A list of methodologies for a dataset"
+        items:
+          type: object
+          properties:
+            description:
+              type: string
+              description: "The description of a methodology"
+            href:
+              type: string
+              description: "The url to a methodology"
+            title:
+              type: string
+              description: "The title of a methodology"
+      national_statistic:
+        type: boolean
+        description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
+      next_release:
+        type: string
+        description: "The next release date for a dataset"
+      publications:
+        type: array
+        description: "A list of publications for a dataset"
+        items:
+          type: object
+          properties:
+            description:
+              type: string
+              description: "The description of a publication"
+            href:
+              type: string
+              description: "The url to a publication"
+            title:
+              type: string
+              description: "The title of a publication"
+      publisher:
+        $ref: '#/definitions/Publisher'
+      qmi:
+        description: "Object containing information on the quality and methodology index of a dataset"
+        type: object
+        properties:
+          description:
+            type: string
+            description: "The description of a quality and methodology index"
+          href:
+            type: string
+            description: "The url to a quality and methodology index"
+          title:
+            type: string
+            description: "The title of a quality and methodology index"
+      related_datasets:
+        type: array
+        description: "A list of objects containing information of datasets related to a dataset"
+        items:
+          type: object
+          properties:
+            href:
+              type: string
+              description: "The url to a related dataset"
+            title:
+              type: string
+              description: "The title of a related dataset"
+      release_date:
+        description: "The release date of this version of the dataset"
+        type: string
+      release_frequency:
+        type: string
+        description: "The release frequency of a dataset"
+      temporal:
+        $ref: '#/definitions/Temporal'
+      theme:
+        type: string
+        description: "The theme for a dataset"
+      title:
+        type: string
+        description: "The title of the dataset"
+        example: "CPI"
+      unit_of_measure:
+        type: string
+        description: "The unit of measure for the dataset observations"
+      uri:
+        type: string
+        description: "The uri to the location of the dataset on the web"
+  MetaDataLinks:
+    type: object
+    description: ""
+    properties:
+      access_right:
+        $ref: '#/definitions/AccessRightsLink'
+      self:
+        $ref: '#/definitions/SelfLink'
+      spatial:
+        $ref: '#/definitions/SpatialLink'
+      version:
+        $ref: '#/definitions/VersionLink'
+  VersionLink:
+    description: "The dataset version this dimension belongs too"
+    type: object
+    properties:
+      id:
+        description: "The version number this resource relates to"
+        type: string
+      href:
+        description: "A URL to the version this resource relates to"
         type: string
