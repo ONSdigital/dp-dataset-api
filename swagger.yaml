@@ -223,7 +223,7 @@ paths:
       tags:
       - "Private user"
       summary: "Update a dataset"
-      description: "Update the meta data for the next release of the dataset. The dataset contains all high level information, for additional details see editions or versions of a dataset."
+      description: "Update the metadata for the next release of the dataset. The dataset contains all high level information, for additional details see editions or versions of a dataset."
       parameters:
       - $ref: '#/parameters/id'
       - $ref: '#/parameters/new_dataset'
@@ -417,15 +417,15 @@ paths:
     get:
       tags:
       - "Public"
-      summary: "Get all version meta data"
-      description: "Get all version meta data"
+      summary: "Get metadata relevant to a version"
+      description: "Get all metadata relevant to a version"
       parameters:
       - $ref: '#/parameters/edition'
       - $ref: '#/parameters/id'
       - $ref: '#/parameters/version'
       responses:
         200:
-          description: "Json object containing all meta data for a version"
+          description: "Json object containing all metadata for a version"
           schema:
             $ref: '#/definitions/MetaData'
         400:
@@ -1594,16 +1594,13 @@ definitions:
         type: string
   MetaData:
     type: object
-    description: "An object containing all meta data information against a version"
+    description: "An object containing all metadata information against a version"
     properties:
       alerts:
         type: array
         description: "A list of alerts, for example corrections after the resource has been published"
         items:
           $ref: '#/definitions/Alert'
-      collection_id:
-        type: string
-        description: "The id of a collection of datasets that a dataset is associated to"
       contacts:
         type: array
         description: "A list containing contact details of staticians for a dataset"
@@ -1742,7 +1739,7 @@ definitions:
       version:
         $ref: '#/definitions/VersionLink'
   VersionLink:
-    description: "The dataset version this dimension belongs too"
+    description: "The dataset version this resource belongs to"
     type: object
     properties:
       id:
