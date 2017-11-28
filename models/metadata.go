@@ -89,16 +89,12 @@ func getDistribution(downloads *DownloadList) []string {
 	distribution := []string{"json"}
 
 	if downloads != nil {
-		if downloads.CSV != nil {
-			if downloads.CSV.URL != "" {
-				distribution = append(distribution, "csv")
-			}
+		if downloads.CSV != nil || downloads.CSV.URL != "" {
+			distribution = append(distribution, "csv")
 		}
 
-		if downloads.XLS != nil {
-			if downloads.XLS.URL != "" {
-				distribution = append(distribution, "xls")
-			}
+		if downloads.XLS != nil || downloads.XLS.URL != "" {
+			distribution = append(distribution, "xls")
 		}
 	}
 
