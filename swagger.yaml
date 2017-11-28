@@ -1367,13 +1367,16 @@ definitions:
         type: string
         description: "The size of the file in bytes"
   Alert:
+    # TODO Update description, so it is useful to an API customer
     description: "A single alert, &#x2603;"
     type: object
     properties:
       date:
+        # TODO Update description, so it is useful to an API customer
         description: "The date and time of when an alert took place,  &#x2603; for a version"
         type: string
       description:
+        # TODO Update description, so it is useful to an API customer
         description: "A description of the alert, &#x2603;"
         type: string
       type:
