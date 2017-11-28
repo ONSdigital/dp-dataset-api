@@ -215,6 +215,7 @@ func expectedMetadataDoc() Metadata {
 		Contacts:      []ContactDetails{contacts},
 		Description:   "census",
 		Dimensions:    []CodeList{dimension},
+		Distribution:  []string{"json", "csv", "xls"},
 		Downloads:     &downloads,
 		Keywords:      []string{"test", "test2"},
 		LatestChanges: &[]LatestChange{latestChange},

@@ -6,6 +6,7 @@ type Metadata struct {
 	Contacts          []ContactDetails     `json:"contacts,omitempty"`
 	Description       string               `json:"description,omitempty"`
 	Dimensions        []CodeList           `json:"dimensions,omitempty"`
+	Distribution      []string             `json:"distribution,omitempty"`
 	Downloads         *DownloadList        `json:"downloads,omitempty"`
 	Keywords          []string             `json:"keywords,omitempty"`
 	LatestChanges     *[]LatestChange      `json:"latest_changes,omitempty"`
@@ -79,5 +80,27 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version) *Metadata {
 		metaDataDoc.Links.Version = versionDoc.Links.Version
 	}
 
+	metaDataDoc.Distribution = getDistribution(metaDataDoc.Downloads)
+
 	return metaDataDoc
+}
+
+func getDistribution(downloads *DownloadList) []string {
+	distribution := []string{"json"}
+
+	if downloads != nil {
+		if downloads.CSV != nil {
+			if downloads.CSV.URL != "" {
+				distribution = append(distribution, "csv")
+			}
+		}
+
+		if downloads.XLS != nil {
+			if downloads.XLS.URL != "" {
+				distribution = append(distribution, "xls")
+			}
+		}
+	}
+
+	return distribution
 }
