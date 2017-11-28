@@ -9,10 +9,13 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/config"
+	"github.com/ONSdigital/dp-dataset-api/download"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/go-ns/clients/filter"
 	"github.com/ONSdigital/go-ns/log"
 	mongoclosure "github.com/ONSdigital/go-ns/mongo"
+	"time"
 )
 
 func main() {
@@ -47,9 +50,17 @@ func main() {
 		"bind_address": cfg.BindAddr,
 	})
 
+	store := store.DataStore{Backend: mongo}
+
+	downloadGenerator := download.Generator{
+		Storer:       store.Backend,
+		Delay:        time.Duration(3),
+		FilterClient: filter.New("http://localhost:22100"),
+	}
+
 	apiErrors := make(chan error, 1)
 
-	api.CreateDatasetAPI(cfg.DatasetAPIURL, cfg.BindAddr, cfg.SecretKey, store.DataStore{Backend: mongo}, apiErrors)
+	api.CreateDatasetAPI(cfg.DatasetAPIURL, cfg.BindAddr, cfg.SecretKey, store, apiErrors, downloadGenerator)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {

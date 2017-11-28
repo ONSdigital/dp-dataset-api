@@ -19,19 +19,24 @@ type API interface {
 	CreateDatasetAPI(string, *mux.Router, store.DataStore) *DatasetAPI
 }
 
+type DownloadGenerator interface {
+	GenerateFullDatasetDownloads(datasetID string, edition string, versionID string, version int)
+}
+
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
-	dataStore     store.DataStore
-	host          string
-	internalToken string
-	privateAuth   *auth.Authenticator
-	router        *mux.Router
+	dataStore         store.DataStore
+	host              string
+	internalToken     string
+	privateAuth       *auth.Authenticator
+	router            *mux.Router
+	downloadGenerator DownloadGenerator
 }
 
 // CreateDatasetAPI manages all the routes configured to API
-func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStore, errorChan chan error) {
+func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStore, errorChan chan error, downloadGenerator DownloadGenerator) {
 	router := mux.NewRouter()
-	routes(host, secretKey, router, dataStore)
+	routes(host, secretKey, router, dataStore, downloadGenerator)
 
 	httpServer = server.New(bindAddr, router)
 	// Disable this here to allow main to manage graceful shutdown of the entire app.
@@ -46,8 +51,18 @@ func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStor
 	}()
 }
 
-func routes(host, secretKey string, router *mux.Router, dataStore store.DataStore) *DatasetAPI {
-	api := DatasetAPI{privateAuth: &auth.Authenticator{SecretKey: secretKey, HeaderName: "internal-token"}, dataStore: dataStore, host: host, internalToken: secretKey, router: router}
+func routes(host, secretKey string, router *mux.Router, dataStore store.DataStore, downloadGenerator DownloadGenerator) *DatasetAPI {
+	api := DatasetAPI{
+		privateAuth: &auth.Authenticator{
+			SecretKey:  secretKey,
+			HeaderName: "internal-token",
+		},
+		dataStore:         dataStore,
+		host:              host,
+		internalToken:     secretKey,
+		router:            router,
+		downloadGenerator: downloadGenerator,
+	}
 
 	router.Path("/healthcheck").Methods("GET").HandlerFunc(api.healthCheck)
 

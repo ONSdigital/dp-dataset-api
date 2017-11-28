@@ -465,6 +465,10 @@ func createVersionUpdateQuery(version *models.Version) bson.M {
 		updates["temporal"] = version.Temporal
 	}
 
+	if version.Downloads != nil {
+		updates["downloads"] = version.Downloads
+	}
+
 	return updates
 }
 

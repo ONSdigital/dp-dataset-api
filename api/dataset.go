@@ -456,6 +456,9 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 			handleErrorType(versionDocType, err, w)
 			return
 		}
+		go func() {
+			api.downloadGenerator.GenerateFullDatasetDownloads(datasetID, edition, versionDoc.ID, versionDoc.Version)
+		}()
 	}
 
 	setJSONContentType(w)
