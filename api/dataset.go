@@ -680,6 +680,75 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	log.Debug("get dimension options", log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension})
 }
 
+func (api *DatasetAPI) getMetaData(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	datasetID := vars["id"]
+	edition := vars["edition"]
+	version := vars["version"]
+
+	// get dataset document
+	datasetDoc, err := api.dataStore.Backend.GetDataset(datasetID)
+	if err != nil {
+		log.Error(err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		handleErrorType(versionDocType, err, w)
+		return
+	}
+
+	// Default state to published
+	state := models.PublishedState
+
+	// if request is authenticated then access resources of state other than published
+	if r.Header.Get(internalToken) == api.internalToken {
+		state = ""
+	}
+
+	if state == models.PublishedState {
+		// Check for current sub document
+		if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
+			log.ErrorC("found dataset but currently unpublished", errs.ErrDatasetNotFound, log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "dataset": datasetDoc.Current})
+			http.Error(w, errs.ErrDatasetNotFound.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
+	if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
+		log.ErrorC("fail to find edition for dataset", err, log.Data{"dataset_id": datasetID, "edition": edition, version: version})
+		handleErrorType(versionDocType, err, w)
+		return
+	}
+
+	versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
+	if err != nil {
+		log.ErrorC("fail to find version for dataset edition", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		handleErrorType(versionDocType, err, w)
+		return
+	}
+
+	var metaDataDoc *models.Metadata
+	// combine version and dataset metadata
+	if state != models.PublishedState && versionDoc.CollectionID == datasetDoc.Next.CollectionID {
+		metaDataDoc = models.CreateMetaDataDoc(datasetDoc.Next, versionDoc)
+	} else {
+		metaDataDoc = models.CreateMetaDataDoc(datasetDoc.Current, versionDoc)
+	}
+
+	bytes, err := json.Marshal(metaDataDoc)
+	if err != nil {
+		log.ErrorC("fail to marshal metadata resource into bytes", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	setJSONContentType(w)
+	_, err = w.Write(bytes)
+	if err != nil {
+		log.Error(err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	log.Debug("get metadata relevant to version", log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+}
+
 func mapResults(results []models.DatasetUpdate) []*models.Dataset {
 	items := []*models.Dataset{}
 	for _, item := range results {

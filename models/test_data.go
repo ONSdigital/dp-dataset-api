@@ -154,6 +154,10 @@ var links = VersionLinks{
 	Spatial: &LinkObject{
 		HRef: "http://ons.gov.uk/geographylist",
 	},
+	Version: &LinkObject{
+		ID:   "1",
+		HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+	},
 }
 
 var temporal = TemporalFrequency{
@@ -203,4 +207,41 @@ var badInputData = struct {
 	CollectionID int `json:"collection_id"`
 }{
 	CollectionID: 1,
+}
+
+func expectedMetadataDoc() Metadata {
+	return Metadata{
+		Alerts:        &[]Alert{alert},
+		Contacts:      []ContactDetails{contacts},
+		Description:   "census",
+		Dimensions:    []CodeList{dimension},
+		Downloads:     &downloads,
+		Keywords:      []string{"test", "test2"},
+		LatestChanges: &[]LatestChange{latestChange},
+		License:       "Office of National Statistics license",
+		Links: &MetadataLinks{
+			AccessRights: &LinkObject{
+				HRef: "http://ons.gov.uk/accessrights",
+			},
+			Self: &LinkObject{
+				HRef: links.Version.HRef + "/metadata",
+			},
+			Spatial: links.Spatial,
+			Version: links.Version,
+		},
+		Methodologies:     []GeneralDetails{methodology},
+		NationalStatistic: &nationalStatistic,
+		NextRelease:       "2016-05-05",
+		Publications:      []GeneralDetails{publications},
+		Publisher:         &publisher,
+		QMI:               &qmi,
+		RelatedDatasets:   []GeneralDetails{relatedDatasets},
+		ReleaseDate:       "2017-10-12",
+		ReleaseFrequency:  "yearly",
+		Temporal:          &[]TemporalFrequency{temporal},
+		Theme:             "population",
+		Title:             "CensusEthnicity",
+		UnitOfMeasure:     "Pounds Sterling",
+		URI:               "http://localhost:22000/datasets/123/breadcrumbs",
+	}
 }
