@@ -159,8 +159,6 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if instance.State == models.EditionConfirmedState {
-		var editionDoc *models.Edition
-
 		datasetID := currentInstance.Links.Dataset.ID
 
 		// If instance has no edition, get the current edition
@@ -170,53 +168,13 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		edition := instance.Edition
 
 		// Only create edition if it doesn't already exist
-		editionDoc, err = s.GetEdition(datasetID, edition, "")
+		editionDoc, err := s.getEdition(datasetID, edition, id)
 		if err != nil {
-			if err != errs.ErrEditionNotFound {
-				log.Error(err, nil)
-				handleErrorType(err, w)
-			}
-			// create unique id for edition
-			editionID := uuid.NewV4().String()
-
-			editionDoc = &models.Edition{
-				ID:      editionID,
-				Edition: edition,
-				Links: &models.EditionLinks{
-					Dataset: &models.LinkObject{
-						ID:   datasetID,
-						HRef: fmt.Sprintf("%s/datasets/%s", s.Host, datasetID),
-					},
-					LatestVersion: &models.LinkObject{
-						ID:   "1",
-						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/1", s.Host, datasetID, edition),
-					},
-					Self: &models.LinkObject{
-						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", s.Host, datasetID, edition),
-					},
-					Versions: &models.LinkObject{
-						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
-					},
-				},
-				State: models.CreatedState,
-			}
-		} else {
-
-			// Update the latest version for the dataset edition
-			version, err := strconv.Atoi(editionDoc.Links.LatestVersion.ID)
-			if err != nil {
-				log.ErrorC("unable to retrieve latest version", err, log.Data{"instance": id, "edition": edition, "version": editionDoc.Links.LatestVersion.ID})
-				handleErrorType(err, w)
-				return
-			}
-
-			version++
-
-			editionDoc.Links.LatestVersion.ID = strconv.Itoa(version)
-			editionDoc.Links.LatestVersion.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", s.Host, datasetID, edition, strconv.Itoa(version))
+			handleErrorType(err, w)
+			return
 		}
 
-		if err := s.UpsertEdition(datasetID, edition, editionDoc); err != nil {
+		if err = s.UpsertEdition(datasetID, edition, editionDoc); err != nil {
 			log.ErrorR(r, err, nil)
 			handleErrorType(err, w)
 			return
@@ -269,6 +227,55 @@ func updateLinks(instance, currentInstance *models.Instance) *models.InstanceLin
 	}
 
 	return links
+}
+
+func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.Edition, error) {
+	editionDoc, err := s.GetEdition(datasetID, edition, "")
+	if err != nil {
+		if err != errs.ErrEditionNotFound {
+			log.Error(err, nil)
+			return nil, err
+		}
+		// create unique id for edition
+		editionID := uuid.NewV4().String()
+
+		editionDoc = &models.Edition{
+			ID:      editionID,
+			Edition: edition,
+			Links: &models.EditionLinks{
+				Dataset: &models.LinkObject{
+					ID:   datasetID,
+					HRef: fmt.Sprintf("%s/datasets/%s", s.Host, datasetID),
+				},
+				LatestVersion: &models.LinkObject{
+					ID:   "1",
+					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/1", s.Host, datasetID, edition),
+				},
+				Self: &models.LinkObject{
+					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", s.Host, datasetID, edition),
+				},
+				Versions: &models.LinkObject{
+					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
+				},
+			},
+			State: models.CreatedState,
+		}
+	} else {
+
+		// Update the latest version for the dataset edition
+		version, err := strconv.Atoi(editionDoc.Links.LatestVersion.ID)
+		if err != nil {
+			log.ErrorC("unable to retrieve latest version", err, log.Data{"instance": instanceID, "edition": edition, "version": editionDoc.Links.LatestVersion.ID})
+			return nil, err
+		}
+
+		version++
+
+		editionDoc.Links.LatestVersion.ID = strconv.Itoa(version)
+		editionDoc.Links.LatestVersion.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", s.Host, datasetID, edition, strconv.Itoa(version))
+	}
+
+	return editionDoc, nil
 }
 
 func validateInstanceUpdate(expectedState string, currentInstance, instance *models.Instance) error {
