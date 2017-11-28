@@ -1731,7 +1731,7 @@ definitions:
         description: "The uri to the location of the dataset on the web"
   MetaDataLinks:
     type: object
-    description: ""
+    description: "A list of links related to this resource"
     properties:
       access_right:
         $ref: '#/definitions/AccessRightsLink'
