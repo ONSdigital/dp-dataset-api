@@ -12,6 +12,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+//go:generate moq -out test/api.go -pkg apitest . API
+
 var httpServer *server.Server
 
 //API provides an interface for the routes

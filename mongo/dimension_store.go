@@ -65,40 +65,27 @@ func (m *Mongo) AddDimensionToInstance(opt *models.CachedDimensionOption) error 
 }
 
 // GetDimensions returns a list of all dimensions from a dataset
-func (m *Mongo) GetDimensions(datasetID, editionID, versionID string) (*models.DatasetDimensionResults, error) {
+func (m *Mongo) GetDimensions(datasetID, versionID string) ([]bson.M, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	version, err := m.GetVersion(datasetID, editionID, versionID, models.PublishedState)
-	if err != nil {
-		return nil, err
-	}
-
-	var results []models.Dimension
 	// To get all unique values an aggregation is needed, as using distinct() will only return the distinct values and
 	// not the documents.
 	// Match by instance_id
-	match := bson.M{"$match": bson.M{"instance_id": version.ID}}
+	match := bson.M{"$match": bson.M{"instance_id": versionID}}
 	// Then group the values by name.
 	group := bson.M{"$group": bson.M{"_id": "$name", "doc": bson.M{"$first": "$$ROOT"}}}
-	res := []bson.M{}
-	err = s.DB(m.Database).C(dimensionOptions).Pipe([]bson.M{match, group}).All(&res)
+	results := []bson.M{}
+	err := s.DB(m.Database).C(dimensionOptions).Pipe([]bson.M{match, group}).All(&results)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, dim := range res {
-		opt := convertBSonToDimension(dim["doc"])
-		dimension := models.Dimension{Name: opt.Name}
-		dimension.Links.CodeList = opt.Links.CodeList
-		dimension.Links.Options = models.LinkObject{ID: opt.Name, HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s/dimensions/%s/options",
-			m.DatasetURL, version.Links.Dataset.ID, version.Edition, versionID, opt.Name)}
-		dimension.Links.Version = *version.Links.Self
-
-		results = append(results, dimension)
+	if len(results) < 1 {
+		return nil, errs.ErrDimensionsNotFound
 	}
 
-	return &models.DatasetDimensionResults{Items: results}, nil
+	return results, nil
 }
 
 // GetDimensionOptions returns all dimension options for a dimensions within a dataset.
@@ -123,16 +110,4 @@ func (m *Mongo) GetDimensionOptions(datasetID, editionID, versionID, dimension s
 	}
 
 	return &models.DimensionOptionResults{Items: values}, nil
-}
-
-func convertBSonToDimension(data interface{}) *models.DimensionOption {
-	var dim models.DimensionOption
-	bytes, err := bson.Marshal(data)
-	if err != nil {
-
-	}
-
-	bson.Unmarshal(bytes, &dim)
-
-	return &dim
 }

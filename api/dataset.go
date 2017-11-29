@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"gopkg.in/mgo.v2/bson"
+
 	"github.com/ONSdigital/dp-dataset-api/models"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -622,19 +624,39 @@ func (api *DatasetAPI) publishDataset(id string, version *models.Version) error 
 func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
-	editionID := vars["edition"]
-	versionID := vars["version"]
+	edition := vars["edition"]
+	version := vars["version"]
 
-	results, err := api.dataStore.Backend.GetDimensions(datasetID, editionID, versionID)
+	var state string
+	if r.Header.Get(internalToken) != api.internalToken {
+		state = models.PublishedState
+	}
+
+	versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
 	if err != nil {
-		log.ErrorC("failed to get version dimensions", err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
+		log.ErrorC("failed to get version", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		handleErrorType(dimensionDocType, err, w)
 		return
 	}
 
-	bytes, err := json.Marshal(results)
+	dimensions, err := api.dataStore.Backend.GetDimensions(datasetID, versionDoc.ID)
 	if err != nil {
-		log.ErrorC("fail to marshal list of dimension resources into bytes", err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
+		log.ErrorC("failed to get version dimensions", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		handleErrorType(dimensionDocType, err, w)
+		return
+	}
+
+	results, err := api.createListOfDimensions(versionDoc, dimensions)
+	if err != nil {
+		log.ErrorC("fail to convert bson to dimension", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	listOfDimensions := &models.DatasetDimensionResults{Items: results}
+
+	bytes, err := json.Marshal(listOfDimensions)
+	if err != nil {
+		log.ErrorC("fail to marshal list of dimension resources into bytes", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -642,11 +664,52 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	setJSONContentType(w)
 	_, err = w.Write(bytes)
 	if err != nil {
-		log.Error(err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
+		log.Error(err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	log.Debug("get dimensions", log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
+	log.Debug("get dimensions", log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+}
+
+func (api *DatasetAPI) createListOfDimensions(versionDoc *models.Version, dimensions []bson.M) ([]models.Dimension, error) {
+	// Get dimension description from the version document and add to hash map
+	dimensionDescriptions := make(map[string]string)
+	for _, details := range versionDoc.Dimensions {
+		dimensionDescriptions[details.Name] = details.Description
+	}
+
+	var results []models.Dimension
+	for _, dim := range dimensions {
+		opt, err := convertBSonToDimension(dim["doc"])
+		if err != nil {
+			return nil, err
+		}
+
+		dimension := models.Dimension{Name: opt.Name}
+		dimension.Links.CodeList = opt.Links.CodeList
+		dimension.Links.Options = models.LinkObject{ID: opt.Name, HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s/dimensions/%s/options",
+			api.host, versionDoc.Links.Dataset.ID, versionDoc.Edition, versionDoc.Links.Version.ID, opt.Name)}
+		dimension.Links.Version = *versionDoc.Links.Self
+
+		// Add description to dimension from hash map
+		dimension.Description = dimensionDescriptions[dimension.Name]
+
+		results = append(results, dimension)
+	}
+
+	return results, nil
+}
+
+func convertBSonToDimension(data interface{}) (*models.DimensionOption, error) {
+	var dim models.DimensionOption
+	bytes, err := bson.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	bson.Unmarshal(bytes, &dim)
+
+	return &dim, nil
 }
 
 func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Request) {
@@ -785,6 +848,18 @@ func handleErrorType(docType string, err error, w http.ResponseWriter) {
 		} else if err == errs.ErrEditionNotFound {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else if err == errs.ErrVersionNotFound {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	case "dimension":
+		if err == errs.ErrDatasetNotFound {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else if err == errs.ErrEditionNotFound {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else if err == errs.ErrVersionNotFound {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else if err == errs.ErrDimensionsNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

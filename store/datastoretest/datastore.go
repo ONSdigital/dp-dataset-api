@@ -5,6 +5,7 @@ package storetest
 
 import (
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"gopkg.in/mgo.v2/bson"
 	"sync"
 )
 
@@ -73,7 +74,7 @@ var (
 //             GetDimensionOptionsFunc: func(datasetID string, editionID string, versionID string, dimension string) (*models.DimensionOptionResults, error) {
 // 	               panic("TODO: mock out the GetDimensionOptions method")
 //             },
-//             GetDimensionsFunc: func(datasetID string, editionID string, versionID string) (*models.DatasetDimensionResults, error) {
+//             GetDimensionsFunc: func(datasetID string, versionID string) ([]bson.M, error) {
 // 	               panic("TODO: mock out the GetDimensions method")
 //             },
 //             GetEditionFunc: func(ID string, editionID string, state string) (*models.Edition, error) {
@@ -109,7 +110,7 @@ var (
 //             UpdateDimensionNodeIDFunc: func(dimension *models.DimensionOption) error {
 // 	               panic("TODO: mock out the UpdateDimensionNodeID method")
 //             },
-//             UpdateEditionFunc: func(datasetID string, edition string, version *models.Version) error {
+//             UpdateEditionFunc: func(datasetID string, edition string, latestVersion *models.Version) error {
 // 	               panic("TODO: mock out the UpdateEdition method")
 //             },
 //             UpdateInstanceFunc: func(ID string, instance *models.Instance) error {
@@ -168,7 +169,7 @@ type StorerMock struct {
 	GetDimensionOptionsFunc func(datasetID string, editionID string, versionID string, dimension string) (*models.DimensionOptionResults, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
-	GetDimensionsFunc func(datasetID string, editionID string, versionID string) (*models.DatasetDimensionResults, error)
+	GetDimensionsFunc func(datasetID string, versionID string) ([]bson.M, error)
 
 	// GetEditionFunc mocks the GetEdition method.
 	GetEditionFunc func(ID string, editionID string, state string) (*models.Edition, error)
@@ -204,7 +205,7 @@ type StorerMock struct {
 	UpdateDimensionNodeIDFunc func(dimension *models.DimensionOption) error
 
 	// UpdateEditionFunc mocks the UpdateEdition method.
-	UpdateEditionFunc func(datasetID string, edition string, version *models.Version) error
+	UpdateEditionFunc func(datasetID string, edition string, latestVersion *models.Version) error
 
 	// UpdateInstanceFunc mocks the UpdateInstance method.
 	UpdateInstanceFunc func(ID string, instance *models.Instance) error
@@ -290,8 +291,6 @@ type StorerMock struct {
 		GetDimensions []struct {
 			// DatasetID is the datasetID argument value.
 			DatasetID string
-			// EditionID is the editionID argument value.
-			EditionID string
 			// VersionID is the versionID argument value.
 			VersionID string
 		}
@@ -382,8 +381,8 @@ type StorerMock struct {
 			DatasetID string
 			// Edition is the edition argument value.
 			Edition string
-			// Version is the version argument value.
-			Version *models.Version
+			// LatestVersion is the latestVersion argument value.
+			LatestVersion *models.Version
 		}
 		// UpdateInstance holds details about calls to the UpdateInstance method.
 		UpdateInstance []struct {
@@ -742,23 +741,21 @@ func (mock *StorerMock) GetDimensionOptionsCalls() []struct {
 }
 
 // GetDimensions calls GetDimensionsFunc.
-func (mock *StorerMock) GetDimensions(datasetID string, editionID string, versionID string) (*models.DatasetDimensionResults, error) {
+func (mock *StorerMock) GetDimensions(datasetID string, versionID string) ([]bson.M, error) {
 	if mock.GetDimensionsFunc == nil {
 		panic("moq: StorerMock.GetDimensionsFunc is nil but Storer.GetDimensions was just called")
 	}
 	callInfo := struct {
 		DatasetID string
-		EditionID string
 		VersionID string
 	}{
 		DatasetID: datasetID,
-		EditionID: editionID,
 		VersionID: versionID,
 	}
 	lockStorerMockGetDimensions.Lock()
 	mock.calls.GetDimensions = append(mock.calls.GetDimensions, callInfo)
 	lockStorerMockGetDimensions.Unlock()
-	return mock.GetDimensionsFunc(datasetID, editionID, versionID)
+	return mock.GetDimensionsFunc(datasetID, versionID)
 }
 
 // GetDimensionsCalls gets all the calls that were made to GetDimensions.
@@ -766,12 +763,10 @@ func (mock *StorerMock) GetDimensions(datasetID string, editionID string, versio
 //     len(mockedStorer.GetDimensionsCalls())
 func (mock *StorerMock) GetDimensionsCalls() []struct {
 	DatasetID string
-	EditionID string
 	VersionID string
 } {
 	var calls []struct {
 		DatasetID string
-		EditionID string
 		VersionID string
 	}
 	lockStorerMockGetDimensions.RLock()
@@ -1174,37 +1169,37 @@ func (mock *StorerMock) UpdateDimensionNodeIDCalls() []struct {
 }
 
 // UpdateEdition calls UpdateEditionFunc.
-func (mock *StorerMock) UpdateEdition(datasetID string, edition string, version *models.Version) error {
+func (mock *StorerMock) UpdateEdition(datasetID string, edition string, latestVersion *models.Version) error {
 	if mock.UpdateEditionFunc == nil {
 		panic("moq: StorerMock.UpdateEditionFunc is nil but Storer.UpdateEdition was just called")
 	}
 	callInfo := struct {
-		DatasetID string
-		Edition   string
-		Version   *models.Version
+		DatasetID     string
+		Edition       string
+		LatestVersion *models.Version
 	}{
-		DatasetID: datasetID,
-		Edition:   edition,
-		Version:   version,
+		DatasetID:     datasetID,
+		Edition:       edition,
+		LatestVersion: latestVersion,
 	}
 	lockStorerMockUpdateEdition.Lock()
 	mock.calls.UpdateEdition = append(mock.calls.UpdateEdition, callInfo)
 	lockStorerMockUpdateEdition.Unlock()
-	return mock.UpdateEditionFunc(datasetID, edition, version)
+	return mock.UpdateEditionFunc(datasetID, edition, latestVersion)
 }
 
 // UpdateEditionCalls gets all the calls that were made to UpdateEdition.
 // Check the length with:
 //     len(mockedStorer.UpdateEditionCalls())
 func (mock *StorerMock) UpdateEditionCalls() []struct {
-	DatasetID string
-	Edition   string
-	Version   *models.Version
+	DatasetID     string
+	Edition       string
+	LatestVersion *models.Version
 } {
 	var calls []struct {
-		DatasetID string
-		Edition   string
-		Version   *models.Version
+		DatasetID     string
+		Edition       string
+		LatestVersion *models.Version
 	}
 	lockStorerMockUpdateEdition.RLock()
 	calls = mock.calls.UpdateEdition

@@ -15,8 +15,9 @@ type DimensionOptionResults struct {
 // Dimension represents an overview for a single dimension. This includes a link to the code list API
 // which provides metadata about the dimension and all possible values.
 type Dimension struct {
+	Description string        `bson:"description,omitempty"         json:"description,omitempty"`
 	Links       DimensionLink `bson:"links,omitempty"         json:"links,omitempty"`
-	Name        string        `bson:"name,omitempty"          json:"dimension_id,omitempty"`
+	Name        string        `bson:"name,omitempty"          json:"dimension,omitempty"`
 	LastUpdated time.Time     `bson:"last_updated,omitempty"  json:"-"`
 }
 
