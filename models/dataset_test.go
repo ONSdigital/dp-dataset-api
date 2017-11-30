@@ -44,7 +44,7 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.QMI, ShouldResemble, &qmi)
 			So(dataset.RelatedDatasets[0], ShouldResemble, relatedDatasets)
 			So(dataset.ReleaseFrequency, ShouldEqual, "yearly")
-			So(dataset.State, ShouldEqual, CreatedState)
+			So(dataset.State, ShouldEqual, AssociatedState)
 			So(dataset.Theme, ShouldEqual, "population")
 			So(dataset.Title, ShouldEqual, "CensusEthnicity")
 			So(dataset.UnitOfMeasure, ShouldEqual, "Pounds Sterling")
@@ -88,32 +88,6 @@ func TestCreateDataset(t *testing.T) {
 		So(version, ShouldBeNil)
 		So(err, ShouldNotBeNil)
 		So(err, ShouldResemble, errors.New("Failed to parse json body"))
-	})
-}
-
-func TestCreateDataset_DefaultsStateToCreated(t *testing.T) {
-
-	Convey("Given a dataset JSON input that does not specify a state", t, func() {
-
-		inputDataset := createTestDataset()
-		inputDataset.State = ""
-
-		jsonBytes, err := json.Marshal(inputDataset)
-		if err != nil {
-			log.ErrorC("Failed to marshal test data into bytes", err, nil)
-			os.Exit(1)
-		}
-
-		Convey("When the CreateDataset function is called", func() {
-
-			jsonReader := bytes.NewReader(jsonBytes)
-			dataset, err := CreateDataset(jsonReader)
-
-			Convey("Then the returned dataset state is 'created'", func() {
-				So(err, ShouldBeNil)
-				So(dataset.State, ShouldEqual, CreatedState)
-			})
-		})
 	})
 }
 

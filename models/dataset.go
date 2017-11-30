@@ -8,8 +8,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
-	"strings"
+	"github.com/satori/go.uuid"
 )
 
 // DatasetResults represents a structure for a list of datasets

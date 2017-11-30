@@ -1448,7 +1448,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -1502,7 +1502,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -1547,7 +1547,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "internal error\n")
@@ -1567,7 +1567,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldEqual, "Dataset not found\n")
@@ -1592,7 +1592,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldEqual, "Edition not found\n")
@@ -1621,7 +1621,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Version not found\n")
