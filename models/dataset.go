@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/ONSdigital/go-ns/log"
 	uuid "github.com/satori/go.uuid"
 	"strings"
 )
@@ -61,6 +60,7 @@ type Dataset struct {
 	State             string           `bson:"state,omitempty"                  json:"state,omitempty"`
 	Theme             string           `bson:"theme,omitempty"                  json:"theme,omitempty"`
 	Title             string           `bson:"title,omitempty"                  json:"title,omitempty"`
+	UnitOfMeasure     string           `bson:"unit_of_measure,omitempty"        json:"unit_of_measure,omitempty"`
 	URI               string           `bson:"uri,omitempty"                    json:"uri,omitempty"`
 	LastUpdated       time.Time        `bson:"last_updated,omitempty"           json:"-"`
 }
@@ -128,17 +128,26 @@ type Publisher struct {
 
 // Version represents information related to a single version for an edition of a dataset
 type Version struct {
-	CollectionID string               `bson:"collection_id,omitempty" json:"collection_id,omitempty"`
-	Dimensions   []CodeList           `bson:"dimensions,omitempty"    json:"dimensions,omitempty"`
-	Downloads    *DownloadList        `bson:"downloads,omitempty"     json:"downloads,omitempty"`
-	Edition      string               `bson:"edition,omitempty"       json:"edition,omitempty"`
-	ID           string               `bson:"id,omitempty"            json:"id,omitempty"`
-	Links        *VersionLinks        `bson:"links,omitempty"         json:"links,omitempty"`
-	ReleaseDate  string               `bson:"release_date,omitempty"  json:"release_date,omitempty"`
-	State        string               `bson:"state,omitempty"         json:"state,omitempty"`
-	Temporal     *[]TemporalFrequency `bson:"temporal,omitempty"      json:"temporal,omitempty"`
-	LastUpdated  time.Time            `bson:"last_updated,omitempty"  json:"-"`
-	Version      int                  `bson:"version,omitempty"       json:"version,omitempty"`
+	Alerts        *[]Alert             `bson:"alerts,omitempty"         json:"alerts,omitempty"`
+	CollectionID  string               `bson:"collection_id,omitempty"  json:"collection_id,omitempty"`
+	Dimensions    []CodeList           `bson:"dimensions,omitempty"     json:"dimensions,omitempty"`
+	Downloads     *DownloadList        `bson:"downloads,omitempty"      json:"downloads,omitempty"`
+	Edition       string               `bson:"edition,omitempty"        json:"edition,omitempty"`
+	ID            string               `bson:"id,omitempty"             json:"id,omitempty"`
+	LatestChanges *[]LatestChange      `bson:"latest_changes,omitempty" json:"latest_changes,omitempty"`
+	Links         *VersionLinks        `bson:"links,omitempty"          json:"links,omitempty"`
+	ReleaseDate   string               `bson:"release_date,omitempty"   json:"release_date,omitempty"`
+	State         string               `bson:"state,omitempty"          json:"state,omitempty"`
+	Temporal      *[]TemporalFrequency `bson:"temporal,omitempty"       json:"temporal,omitempty"`
+	LastUpdated   time.Time            `bson:"last_updated,omitempty"   json:"-"`
+	Version       int                  `bson:"version,omitempty"        json:"version,omitempty"`
+}
+
+// Alert represents an object containing information on an alert
+type Alert struct {
+	Date        string `bson:"date,omitempty"        json:"date,omitempty"`
+	Description string `bson:"description,omitempty" json:"description,omitempty"`
+	Type        string `bson:"type,omitempty"        json:"type,omitempty"`
 }
 
 // DownloadList represents a list of objects of containing information on the downloadable files
@@ -151,6 +160,14 @@ type DownloadList struct {
 type DownloadObject struct {
 	URL  string `bson:"url,omitempty"  json:"url,omitempty"`
 	Size string `bson:"size,omitempty" json:"size,omitempty"`
+}
+
+// LatestChange represents an object contining
+// information on a single change between versions
+type LatestChange struct {
+	Description string `bson:"description,omitempty" json:"description,omitempty"`
+	Name        string `bson:"name,omitempty"        json:"name,omitempty"`
+	Type        string `bson:"type,omitempty"        json:"type,omitempty"`
 }
 
 // TemporalFrequency represents a frequency for a particular period of time
@@ -171,7 +188,7 @@ type VersionLinks struct {
 }
 
 // CreateDataset manages the creation of a dataset from a reader
-func CreateDataset(method string, reader io.Reader) (*Dataset, error) {
+func CreateDataset(reader io.Reader) (*Dataset, error) {
 	bytes, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
@@ -183,13 +200,6 @@ func CreateDataset(method string, reader io.Reader) (*Dataset, error) {
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
 	}
-
-	// Overwrite state to created if request method is POST
-	if strings.ToLower(method) == PostMethod {
-		log.Debug("post method, force state to be created", log.Data{"method": method})
-		dataset.State = CreatedState
-	}
-
 	return &dataset, nil
 }
 

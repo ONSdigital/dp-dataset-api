@@ -201,6 +201,7 @@ func (m *Mongo) GetVersions(id, editionID, state string) (*models.VersionResults
 	}
 
 	for i := 0; i < len(results); i++ {
+
 		results[i].Links.Self.HRef = results[i].Links.Version.HRef
 	}
 
@@ -213,6 +214,11 @@ func buildVersionsQuery(id, editionID, state string) bson.M {
 		selector = bson.M{
 			"links.dataset.id": id,
 			"edition":          editionID,
+			"$or": []interface{}{
+				bson.M{"state": models.EditionConfirmedState},
+				bson.M{"state": models.AssociatedState},
+				bson.M{"state": models.PublishedState},
+			},
 		}
 	} else {
 		selector = bson.M{
@@ -381,6 +387,10 @@ func createDatasetUpdateQuery(id string, dataset *models.Dataset) bson.M {
 		updates["next.title"] = dataset.Title
 	}
 
+	if dataset.UnitOfMeasure != "" {
+		updates["next.unit_of_measure"] = dataset.UnitOfMeasure
+	}
+
 	if dataset.URI != "" {
 		updates["next.uri"] = dataset.URI
 	}
@@ -443,8 +453,16 @@ func (m *Mongo) UpdateVersion(id string, version *models.Version) (err error) {
 func createVersionUpdateQuery(version *models.Version) bson.M {
 	updates := make(bson.M, 0)
 
+	if version.Alerts != nil {
+		updates["alerts"] = version.Alerts
+	}
+
 	if version.CollectionID != "" {
 		updates["collection_id"] = version.CollectionID
+	}
+
+	if version.LatestChanges != nil {
+		updates["latest_changes"] = version.LatestChanges
 	}
 
 	if version.ReleaseDate != "" {

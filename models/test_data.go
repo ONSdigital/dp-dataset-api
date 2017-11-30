@@ -41,7 +41,6 @@ var relatedDatasets = GeneralDetails{
 	Title: "Census Age",
 }
 
-
 // Create a fully populated dataset object to use in testing.
 func createTestDataset() *Dataset {
 	return &Dataset{
@@ -74,7 +73,42 @@ func createTestDataset() *Dataset {
 		State:            AssociatedState,
 		Theme:            "population",
 		Title:            "CensusEthnicity",
+		UnitOfMeasure:    "Pounds Sterling",
 		URI:              "http://localhost:22000/datasets/123/breadcrumbs",
+	}
+}
+
+var alert = Alert{
+	Date:        "2017-10-10",
+	Description: "A correction to an observation for males of age 25, previously 11 now changed to 12",
+	Type:        "Correction",
+}
+
+func expectedDataset() Dataset {
+	return Dataset{
+		CollectionID: collectionID,
+		Contacts:     []ContactDetails{contacts},
+		Description:  "census",
+		Keywords:     []string{"test", "test2"},
+		License:      "Office of National Statistics license",
+		Links: &DatasetLinks{
+			AccessRights: &LinkObject{
+				HRef: "http://ons.gov.uk/accessrights",
+			},
+		},
+		Methodologies:     []GeneralDetails{methodology},
+		NationalStatistic: &nationalStatistic,
+		NextRelease:       "2016-05-05",
+		Publications:      []GeneralDetails{publications},
+		Publisher:         &publisher,
+		QMI:               &qmi,
+		RelatedDatasets:   []GeneralDetails{relatedDatasets},
+		ReleaseFrequency:  "yearly",
+		State:             AssociatedState,
+		Theme:             "population",
+		Title:             "CensusEthnicity",
+		UnitOfMeasure:     "Pounds Sterling",
+		URI:               "http://localhost:22000/datasets/123/breadcrumbs",
 	}
 }
 
@@ -96,6 +130,12 @@ var downloads = DownloadList{
 	},
 }
 
+var latestChange = LatestChange{
+	Description: "The border of Southampton changed after the south east cliff face fell into the sea.",
+	Name:        "Changes in Classification",
+	Type:        "Summary of Changes",
+}
+
 var links = VersionLinks{
 	Dataset: &LinkObject{
 		HRef: "http://localhost:22000/datasets/123",
@@ -113,6 +153,10 @@ var links = VersionLinks{
 	},
 	Spatial: &LinkObject{
 		HRef: "http://ons.gov.uk/geographylist",
+	},
+	Version: &LinkObject{
+		ID:   "1",
+		HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
 	},
 }
 
@@ -133,31 +177,72 @@ var editionConfirmedVersion = Version{
 }
 
 var associatedVersion = Version{
-	CollectionID: collectionID,
-	Dimensions:   []CodeList{dimension},
-	Downloads:    &downloads,
-	Edition:      "2017",
-	Links:        &links,
-	ReleaseDate:  "2017-10-12",
-	State:        AssociatedState,
-	Temporal:     &[]TemporalFrequency{temporal},
-	Version:      1,
+	CollectionID:  collectionID,
+	Dimensions:    []CodeList{dimension},
+	Downloads:     &downloads,
+	Edition:       "2017",
+	LatestChanges: &[]LatestChange{latestChange},
+	Links:         &links,
+	ReleaseDate:   "2017-10-12",
+	State:         AssociatedState,
+	Temporal:      &[]TemporalFrequency{temporal},
+	Version:       1,
 }
 
 var publishedVersion = Version{
-	CollectionID: collectionID,
-	Dimensions:   []CodeList{dimension},
-	Downloads:    &downloads,
-	Edition:      "2017",
-	Links:        &links,
-	ReleaseDate:  "2017-10-12",
-	State:        PublishedState,
-	Temporal:     &[]TemporalFrequency{temporal},
-	Version:      1,
+	Alerts:        &[]Alert{alert},
+	CollectionID:  collectionID,
+	Dimensions:    []CodeList{dimension},
+	Downloads:     &downloads,
+	Edition:       "2017",
+	LatestChanges: &[]LatestChange{latestChange},
+	Links:         &links,
+	ReleaseDate:   "2017-10-12",
+	State:         PublishedState,
+	Temporal:      &[]TemporalFrequency{temporal},
+	Version:       1,
 }
 
 var badInputData = struct {
 	CollectionID int `json:"collection_id"`
 }{
 	CollectionID: 1,
+}
+
+func expectedMetadataDoc() Metadata {
+	return Metadata{
+		Alerts:        &[]Alert{alert},
+		Contacts:      []ContactDetails{contacts},
+		Description:   "census",
+		Dimensions:    []CodeList{dimension},
+		Distribution:  []string{"json", "csv", "xls"},
+		Downloads:     &downloads,
+		Keywords:      []string{"test", "test2"},
+		LatestChanges: &[]LatestChange{latestChange},
+		License:       "Office of National Statistics license",
+		Links: &MetadataLinks{
+			AccessRights: &LinkObject{
+				HRef: "http://ons.gov.uk/accessrights",
+			},
+			Self: &LinkObject{
+				HRef: links.Version.HRef + "/metadata",
+			},
+			Spatial: links.Spatial,
+			Version: links.Version,
+		},
+		Methodologies:     []GeneralDetails{methodology},
+		NationalStatistic: &nationalStatistic,
+		NextRelease:       "2016-05-05",
+		Publications:      []GeneralDetails{publications},
+		Publisher:         &publisher,
+		QMI:               &qmi,
+		RelatedDatasets:   []GeneralDetails{relatedDatasets},
+		ReleaseDate:       "2017-10-12",
+		ReleaseFrequency:  "yearly",
+		Temporal:          &[]TemporalFrequency{temporal},
+		Theme:             "population",
+		Title:             "CensusEthnicity",
+		UnitOfMeasure:     "Pounds Sterling",
+		URI:               "http://localhost:22000/datasets/123/breadcrumbs",
+	}
 }

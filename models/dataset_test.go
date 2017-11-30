@@ -9,7 +9,6 @@ import (
 
 	"github.com/ONSdigital/go-ns/log"
 	. "github.com/smartystreets/goconvey/convey"
-	"net/http"
 )
 
 func TestCreateDataset(t *testing.T) {
@@ -17,7 +16,7 @@ func TestCreateDataset(t *testing.T) {
 
 	Convey("Successfully return without any errors", t, func() {
 
-		Convey("when the dataset has all fields", func() {
+		Convey("when the dataset has all fields for PUT request", func() {
 
 			inputDataset := createTestDataset()
 
@@ -27,7 +26,7 @@ func TestCreateDataset(t *testing.T) {
 				os.Exit(1)
 			}
 			r := bytes.NewReader(b)
-			dataset, err := CreateDataset(PostMethod, r)
+			dataset, err := CreateDataset(r)
 			So(err, ShouldBeNil)
 			So(dataset.Links.AccessRights.HRef, ShouldEqual, "http://ons.gov.uk/accessrights")
 			So(dataset.CollectionID, ShouldEqual, collectionID)
@@ -48,9 +47,34 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.State, ShouldEqual, CreatedState)
 			So(dataset.Theme, ShouldEqual, "population")
 			So(dataset.Title, ShouldEqual, "CensusEthnicity")
+			So(dataset.UnitOfMeasure, ShouldEqual, "Pounds Sterling")
 			So(dataset.URI, ShouldEqual, "http://localhost:22000/datasets/123/breadcrumbs")
 		})
+	})
 
+	Convey("Successfully return without any errors", t, func() {
+
+		Convey("when the dataset has all fields for PUT request", func() {
+
+			inputDataset := createTestDataset()
+			expectedDataset := expectedDataset()
+
+			b, err := json.Marshal(inputDataset)
+			if err != nil {
+				log.ErrorC("Failed to marshal test data into bytes", err, nil)
+				os.Exit(1)
+			}
+			r := bytes.NewReader(b)
+			dataset, err := CreateDataset(r)
+			So(dataset.ID, ShouldNotBeNil)
+
+			// Check id exists and emove before comparison with expected dataset; id
+			// is generated each time CreateDataset is called
+			So(err, ShouldBeNil)
+			dataset.ID = ""
+
+			So(dataset, ShouldResemble, &expectedDataset)
+		})
 	})
 
 	Convey("Return with error when the request body contains the correct fields but of the wrong type", t, func() {
@@ -60,7 +84,7 @@ func TestCreateDataset(t *testing.T) {
 			os.Exit(1)
 		}
 		r := bytes.NewReader(b)
-		version, err := CreateDataset(PostMethod, r)
+		version, err := CreateDataset(r)
 		So(version, ShouldBeNil)
 		So(err, ShouldNotBeNil)
 		So(err, ShouldResemble, errors.New("Failed to parse json body"))
@@ -83,7 +107,7 @@ func TestCreateDataset_DefaultsStateToCreated(t *testing.T) {
 		Convey("When the CreateDataset function is called", func() {
 
 			jsonReader := bytes.NewReader(jsonBytes)
-			dataset, err := CreateDataset(http.MethodPost, jsonReader)
+			dataset, err := CreateDataset(jsonReader)
 
 			Convey("Then the returned dataset state is 'created'", func() {
 				So(err, ShouldBeNil)
@@ -111,6 +135,7 @@ func TestCreateVersion(t *testing.T) {
 			So(version.Edition, ShouldEqual, "2017")
 			So(version.ID, ShouldNotBeNil)
 			So(version.ReleaseDate, ShouldEqual, "2017-10-12")
+			So(version.LatestChanges, ShouldResemble, &[]LatestChange{latestChange})
 			So(version.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/geographylist")
 			So(version.State, ShouldEqual, AssociatedState)
 			So(version.Temporal, ShouldResemble, &[]TemporalFrequency{temporal})
