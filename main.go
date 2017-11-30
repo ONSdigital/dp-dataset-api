@@ -15,7 +15,6 @@ import (
 	"github.com/ONSdigital/go-ns/clients/filter"
 	"github.com/ONSdigital/go-ns/log"
 	mongoclosure "github.com/ONSdigital/go-ns/mongo"
-	"time"
 )
 
 func main() {
@@ -53,9 +52,10 @@ func main() {
 	store := store.DataStore{Backend: mongo}
 
 	downloadGenerator := download.Generator{
-		Storer:       store.Backend,
-		Delay:        time.Duration(3),
+		Store:        store.Backend,
+		RetryDelay:   cfg.DownloadsAvailableRetryDelay,
 		FilterClient: filter.New("http://localhost:22100"),
+		MaxRetries:   cfg.DownloadsAvailableMaxRetries,
 	}
 
 	apiErrors := make(chan error, 1)

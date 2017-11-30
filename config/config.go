@@ -9,12 +9,14 @@ import (
 
 // Configuration structure which hold information for configuring the import API
 type Configuration struct {
-	BindAddr                string        `envconfig:"BIND_ADDR"`
-	CodeListAPIURL          string        `env:"CODE_LIST_API_URL"`
-	DatasetAPIURL           string        `envconfig:"DATASET_API_URL"`
-	SecretKey               string        `envconfig:"SECRET_KEY"`
-	GracefulShutdownTimeout time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
-	MongoConfig             MongoConfig
+	BindAddr                     string        `envconfig:"BIND_ADDR"`
+	CodeListAPIURL               string        `env:"CODE_LIST_API_URL"`
+	DatasetAPIURL                string        `envconfig:"DATASET_API_URL"`
+	SecretKey                    string        `envconfig:"SECRET_KEY"`
+	GracefulShutdownTimeout      time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
+	DownloadsAvailableMaxRetries int           `envconfig:"DOWNLOADS_AVAILABLE_MAX_RETRIES"`
+	DownloadsAvailableRetryDelay time.Duration `envconfig:"DOWNLOADS_AVAILABLE_RETRY_DELAY"`
+	MongoConfig                  MongoConfig
 }
 
 // MongoConfig contains the config required to connect to MongoDB.
@@ -33,11 +35,13 @@ func Get() (*Configuration, error) {
 	}
 
 	cfg = &Configuration{
-		BindAddr:                ":22000",
-		CodeListAPIURL:          "http://localhost:22400",
-		DatasetAPIURL:           "http://localhost:22000",
-		SecretKey:               "FD0108EA-825D-411C-9B1D-41EF7727F465",
-		GracefulShutdownTimeout: 5 * time.Second,
+		BindAddr:                     ":22000",
+		CodeListAPIURL:               "http://localhost:22400",
+		DatasetAPIURL:                "http://localhost:22000",
+		SecretKey:                    "FD0108EA-825D-411C-9B1D-41EF7727F465",
+		GracefulShutdownTimeout:      5 * time.Second,
+		DownloadsAvailableMaxRetries: 5,
+		DownloadsAvailableRetryDelay: 3 * time.Second,
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",

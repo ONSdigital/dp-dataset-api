@@ -13,6 +13,7 @@ import (
 )
 
 func TestHealthCheckReturnsOK(t *testing.T) {
+	generator := &DownloadGeneratorMock{}
 	t.Parallel()
 	Convey("", t, func() {
 		r, err := http.NewRequest("GET", "http://localhost:22000/healthcheck", nil)
@@ -20,7 +21,7 @@ func TestHealthCheckReturnsOK(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generator)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 	})

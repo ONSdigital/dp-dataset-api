@@ -19,7 +19,6 @@ var (
 	downloadsKey            = "downloads"
 	xlsKey                  = "xls"
 	csvKey                  = "csv"
-	maxRetires              = 5
 	createBlueprintErr      = "error while attempting to create filter blueprint: url: %s"
 	getJobStateErr          = "error while attempting to get filter job state filterID: %s, url: %s"
 	updateBlueprintErr      = "error while attempting to update filter blueprint filterID: %s, url: %s"
@@ -54,7 +53,7 @@ type Store interface {
 type Generator struct {
 	FilterClient FilterClient
 	Store        Store
-	Delay        time.Duration
+	RetryDelay   time.Duration
 	MaxRetries   int
 }
 
@@ -79,7 +78,7 @@ func (genErr GeneratorError) Error() string {
 	return errors.Wrap(genErr.originalErr, fmt.Sprintf(genErr.message, genErr.args...)).Error()
 }
 
-func (g Generator) GenerateDatasetDownloads(datasetID string, edition string, versionID string, version int) error {
+func (g Generator) GenerateDatasetDownloads(datasetID string, edition string, versionID string, version string) error {
 	if err := g.validate(datasetID, edition, versionID, version); err != nil {
 		return err
 	}
@@ -112,12 +111,7 @@ func (g Generator) GenerateDatasetDownloads(datasetID string, edition string, ve
 		versionKey:   version,
 	})
 
-	versionStr := strconv.Itoa(version)
-	if versionStr == "0" {
-		versionStr = "1"
-	}
-
-	latestVersion, err := g.Store.GetVersion(datasetID, edition, versionStr, models.AssociatedState)
+	latestVersion, err := g.Store.GetVersion(datasetID, edition, version, models.AssociatedState)
 	if err != nil {
 		return newGeneratorError(err, getVersionErr, versionURL)
 	}
@@ -141,25 +135,26 @@ func (g Generator) checkDownloadsAvailable(outputID string, versionURL string) (
 	var err error
 	available := false
 
-	for retries := 0; retries < maxRetires; retries++ {
+	for attempts := 0; attempts < g.MaxRetries; attempts++ {
 		filterOutput, err = g.FilterClient.GetOutput(outputID)
 		if err != nil {
 			log.Error(newGeneratorError(err, getOutputErr, outputID), nil)
 			continue
 		}
 		if g.downloadsAvailable(filterOutput) {
+			available = true
 			break
 		}
-		time.Sleep(time.Second * g.Delay)
+		time.Sleep(g.RetryDelay)
 	}
 
 	if !available {
-		return nil, errors.Errorf(retriesExceededErr, versionURL)
+		return nil, newGeneratorError(nil, retriesExceededErr, versionURL)
 	}
 	return &filterOutput, nil
 }
 
-func (g Generator) validate(datasetID string, edition string, versionID string, version int) error {
+func (g Generator) validate(datasetID string, edition string, versionID string, version string) error {
 	if datasetID == "" {
 		return datasetIDEmptyErr
 	}
@@ -169,13 +164,13 @@ func (g Generator) validate(datasetID string, edition string, versionID string, 
 	if versionID == "" {
 		return versionIDEmptyErr
 	}
-	if version == 0 {
+	if _, err := strconv.Atoi(version); err != nil {
 		return versionNumberInvalidErr
 	}
 	return nil
 }
 
-func versionURI(datasetID string, edition string, version int) string {
+func versionURI(datasetID string, edition string, version string) string {
 	return fmt.Sprintf(datasetVersionURIFMT, datasetID, edition, version)
 }
 

@@ -11,6 +11,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -457,7 +458,11 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		go func() {
-			api.downloadGenerator.GenerateFullDatasetDownloads(datasetID, edition, versionDoc.ID, versionDoc.Version)
+			log.Info("generating full dataset downloads for version", log.Data{"dataset_id": datasetID, "version": version})
+			if err := api.downloadGenerator.GenerateDatasetDownloads(datasetID, edition, versionDoc.ID, version); err != nil {
+				// TODO - beyond scope of initial MVP implementation but need to handle this properly?
+				log.Error(errors.Wrap(err, "failed to generate full dataset downloads for version"), log.Data{"dataset_id": datasetID, "version": version})
+			}
 		}()
 	}
 

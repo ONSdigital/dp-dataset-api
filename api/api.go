@@ -12,6 +12,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+//go:generate moq -out mocks.go -pkg api . DownloadGenerator
+
 var httpServer *server.Server
 
 //API provides an interface for the routes
@@ -20,7 +22,7 @@ type API interface {
 }
 
 type DownloadGenerator interface {
-	GenerateFullDatasetDownloads(datasetID string, edition string, versionID string, version int)
+	GenerateDatasetDownloads(datasetID string, edition string, versionID string, version string) error
 }
 
 // DatasetAPI manages importing filters against a dataset

@@ -10,9 +10,11 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
+	"time"
 )
 
 const (
@@ -43,7 +45,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
@@ -61,7 +63,7 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
@@ -79,7 +81,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -95,7 +97,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -113,7 +115,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -128,7 +130,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -143,7 +145,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -151,6 +153,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 }
 
 func TestGetEditionsReturnsOK(t *testing.T) {
+
 	t.Parallel()
 	Convey("", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
@@ -164,7 +167,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -183,7 +186,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -200,7 +203,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -220,7 +223,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -239,7 +242,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -261,7 +264,7 @@ func TestGetEditionReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -270,6 +273,7 @@ func TestGetEditionReturnsOK(t *testing.T) {
 }
 
 func TestGetEditionReturnsError(t *testing.T) {
+	generatorMock := &DownloadGeneratorMock{}
 	t.Parallel()
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
@@ -280,7 +284,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -297,7 +301,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -317,7 +321,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -336,7 +340,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -361,7 +365,7 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -381,7 +385,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -398,7 +402,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -418,7 +422,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -442,7 +446,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -465,7 +469,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -475,6 +479,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 }
 
 func TestGetVersionReturnsOK(t *testing.T) {
+	generatorMock := &DownloadGeneratorMock{}
 	t.Parallel()
 	Convey("", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
@@ -499,7 +504,7 @@ func TestGetVersionReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -509,6 +514,7 @@ func TestGetVersionReturnsOK(t *testing.T) {
 }
 
 func TestGetVersionReturnsError(t *testing.T) {
+	generatorMock := &DownloadGeneratorMock{}
 	t.Parallel()
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
@@ -519,7 +525,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -535,7 +541,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -556,7 +562,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -580,7 +586,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -603,7 +609,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -630,7 +636,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		}
 		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{})
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusCreated)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -655,7 +661,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -677,7 +683,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -698,7 +704,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
@@ -724,7 +730,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -752,7 +758,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		}
 		mockedDataStore.UpdateDataset("123", dataset)
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
@@ -774,7 +780,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.UpsertVersionCalls()), ShouldEqual, 0)
@@ -798,7 +804,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		}
 		mockedDataStore.UpdateDataset("123", dataset)
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
@@ -822,7 +828,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		}
 		mockedDataStore.UpdateDataset("123", dataset)
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
@@ -840,7 +846,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, &DownloadGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
@@ -850,6 +856,11 @@ func TestPutDatasetReturnsError(t *testing.T) {
 func TestPutVersionReturnsSuccessfully(t *testing.T) {
 	t.Parallel()
 	Convey("When state is unchanged", t, func() {
+		generatorMock := &DownloadGeneratorMock{
+			GenerateDatasetDownloadsFunc: func(datasetID string, edition string, versionID string, version string) error {
+				return nil
+			},
+		}
 		var b string
 		b = versionPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
@@ -893,8 +904,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		mockedDataStore.GetVersion("123", "2017", "1", "")
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -903,9 +915,18 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateDatasetDownloadsCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When state is set to associated", t, func() {
+		generateTriggered := make(chan bool, 1)
+
+		generatorMock := &DownloadGeneratorMock{
+			GenerateDatasetDownloadsFunc: func(datasetID string, edition string, versionID string, version string) error {
+				generateTriggered <- true
+				return nil
+			},
+		}
 		var b string
 		b = versionAssociatedPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
@@ -935,8 +956,17 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
 		mockedDataStore.UpdateDatasetWithAssociation("123", models.AssociatedState, &models.Version{})
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
+
+		select {
+		case <-generateTriggered:
+			log.Info("generate triggered", nil)
+		case <-time.After(time.Second * 5):
+			log.Info("failing test - generate downloads due to timeout", nil)
+			t.FailNow()
+		}
+
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -945,9 +975,15 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateDatasetDownloadsCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When state is set to published", t, func() {
+		generatorMock := &DownloadGeneratorMock{
+			GenerateDatasetDownloadsFunc: func(datasetID string, edition string, versionID string, version string) error {
+				return nil
+			},
+		}
 		var b string
 		b = versionPublishedPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
@@ -1010,7 +1046,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		mockedDataStore.GetDataset("123")
 		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{})
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
@@ -1021,12 +1057,18 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateDatasetDownloadsCalls()), ShouldEqual, 0)
 	})
 }
 
 func TestPutVersionReturnsError(t *testing.T) {
 	t.Parallel()
 	Convey("When the request contain malformed json a bad request status is returned", t, func() {
+		generatorMock := &DownloadGeneratorMock{
+			GenerateDatasetDownloadsFunc: func(datasetID string, edition string, versionID string, version string) error {
+				return nil
+			},
+		}
 		var b string
 		b = "{"
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
@@ -1039,14 +1081,20 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Body.String(), ShouldEqual, "Failed to parse json body\n")
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateDatasetDownloadsCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
+		generatorMock := &DownloadGeneratorMock{
+			GenerateDatasetDownloadsFunc: func(datasetID string, edition string, versionID string, version string) error {
+				return nil
+			},
+		}
 		var b string
 		b = versionPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
@@ -1062,15 +1110,21 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "internal error\n")
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateDatasetDownloadsCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the dataset document cannot be found for version return status bad request", t, func() {
+		generatorMock := &DownloadGeneratorMock{
+			GenerateDatasetDownloadsFunc: func(datasetID string, edition string, versionID string, version string) error {
+				return nil
+			},
+		}
 		var b string
 		b = versionPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
@@ -1086,15 +1140,21 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldEqual, "Dataset not found\n")
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateDatasetDownloadsCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the edition document cannot be found for version return status bad request", t, func() {
+		generatorMock := &DownloadGeneratorMock{
+			GenerateDatasetDownloadsFunc: func(datasetID string, edition string, versionID string, version string) error {
+				return nil
+			},
+		}
 		var b string
 		b = versionPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
@@ -1110,16 +1170,22 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldEqual, "Edition not found\n")
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateDatasetDownloadsCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the version document cannot be found return status not found", t, func() {
+		generatorMock := &DownloadGeneratorMock{
+			GenerateDatasetDownloadsFunc: func(datasetID string, edition string, versionID string, version string) error {
+				return nil
+			},
+		}
 		var b string
 		b = versionPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
@@ -1141,7 +1207,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Version not found\n")
@@ -1149,9 +1215,15 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateDatasetDownloadsCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the request does not contain a valid internal token return status unauthorised", t, func() {
+		generatorMock := &DownloadGeneratorMock{
+			GenerateDatasetDownloadsFunc: func(datasetID string, edition string, versionID string, version string) error {
+				return nil
+			},
+		}
 		var b string
 		b = versionPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
@@ -1163,14 +1235,20 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
 		So(w.Body.String(), ShouldEqual, "No authentication header provided\n")
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateDatasetDownloadsCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the version document has already been published return status forbidden", t, func() {
+		generatorMock := &DownloadGeneratorMock{
+			GenerateDatasetDownloadsFunc: func(datasetID string, edition string, versionID string, version string) error {
+				return nil
+			},
+		}
 		var b string
 		b = versionPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
@@ -1194,7 +1272,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(w.Body.String(), ShouldEqual, "Unable to update document, already published\n")
@@ -1202,9 +1280,15 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateDatasetDownloadsCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the request body is invalid return status bad request", t, func() {
+		generatorMock := &DownloadGeneratorMock{
+			GenerateDatasetDownloadsFunc: func(datasetID string, edition string, versionID string, version string) error {
+				return nil
+			},
+		}
 		var b string
 		b = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"associated"}`
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
@@ -1226,7 +1310,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldEqual, "Missing collection_id for association between version and a collection\n")
@@ -1234,10 +1318,12 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateDatasetDownloadsCalls()), ShouldEqual, 0)
 	})
 }
 
 func TestGetDimensionsReturnsOk(t *testing.T) {
+	generatorMock := &DownloadGeneratorMock{}
 	t.Parallel()
 	Convey("When the request contain valid ids return dimension information", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
@@ -1248,7 +1334,7 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
@@ -1256,6 +1342,7 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 }
 
 func TestGetDimensionsReturnsErrors(t *testing.T) {
+	generatorMock := &DownloadGeneratorMock{}
 	t.Parallel()
 	Convey("When the request contain invalid ids return not found error", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
@@ -1266,7 +1353,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 	})
@@ -1280,13 +1367,14 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 }
 
 func TestGetDimensionOptionsReturnsOk(t *testing.T) {
+	generatorMock := &DownloadGeneratorMock{}
 	t.Parallel()
 	Convey("", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
@@ -1297,13 +1385,14 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 	})
 }
 
 func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
+	generatorMock := &DownloadGeneratorMock{}
 	t.Parallel()
 	Convey("", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
@@ -1314,7 +1403,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 	})
@@ -1328,7 +1417,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})

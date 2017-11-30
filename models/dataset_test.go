@@ -9,6 +9,7 @@ import (
 
 	"github.com/ONSdigital/go-ns/log"
 	. "github.com/smartystreets/goconvey/convey"
+	"net/http"
 )
 
 func TestCreateDataset(t *testing.T) {
@@ -44,12 +45,11 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.QMI, ShouldResemble, &qmi)
 			So(dataset.RelatedDatasets[0], ShouldResemble, relatedDatasets)
 			So(dataset.ReleaseFrequency, ShouldEqual, "yearly")
-			So(dataset.State, ShouldEqual, AssociatedState)
+			So(dataset.State, ShouldEqual, CreatedState)
 			So(dataset.Theme, ShouldEqual, "population")
 			So(dataset.Title, ShouldEqual, "CensusEthnicity")
 			So(dataset.URI, ShouldEqual, "http://localhost:22000/datasets/123/breadcrumbs")
 		})
-
 
 	})
 
@@ -83,7 +83,7 @@ func TestCreateDataset_DefaultsStateToCreated(t *testing.T) {
 		Convey("When the CreateDataset function is called", func() {
 
 			jsonReader := bytes.NewReader(jsonBytes)
-			dataset, err := CreateDataset(jsonReader)
+			dataset, err := CreateDataset(http.MethodPost, jsonReader)
 
 			Convey("Then the returned dataset state is 'created'", func() {
 				So(err, ShouldBeNil)
@@ -92,7 +92,6 @@ func TestCreateDataset_DefaultsStateToCreated(t *testing.T) {
 		})
 	})
 }
-
 
 func TestCreateVersion(t *testing.T) {
 	t.Parallel()

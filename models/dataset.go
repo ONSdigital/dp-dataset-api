@@ -10,6 +10,7 @@ import (
 
 	"github.com/ONSdigital/go-ns/log"
 	uuid "github.com/satori/go.uuid"
+	"strings"
 )
 
 // DatasetResults represents a structure for a list of datasets
@@ -184,7 +185,7 @@ func CreateDataset(method string, reader io.Reader) (*Dataset, error) {
 	}
 
 	// Overwrite state to created if request method is POST
-	if method == PostMethod {
+	if strings.ToLower(method) == PostMethod {
 		log.Debug("post method, force state to be created", log.Data{"method": method})
 		dataset.State = CreatedState
 	}
