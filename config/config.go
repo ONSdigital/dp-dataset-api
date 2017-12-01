@@ -10,7 +10,7 @@ import (
 // Configuration structure which hold information for configuring the import API
 type Configuration struct {
 	BindAddr                string        `envconfig:"BIND_ADDR"`
-	CodeListAPIURL          string        `env:"CODE_LIST_API_URL"`
+	CodeListAPIURL          string        `envconfig:"CODE_LIST_API_URL"`
 	DatasetAPIURL           string        `envconfig:"DATASET_API_URL"`
 	SecretKey               string        `envconfig:"SECRET_KEY"`
 	GracefulShutdownTimeout time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
