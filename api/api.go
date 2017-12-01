@@ -21,6 +21,7 @@ type API interface {
 	CreateDatasetAPI(string, *mux.Router, store.DataStore) *DatasetAPI
 }
 
+// DownloadGenerator pre generates full file downloads for the specified dataset/edition/version
 type DownloadGenerator interface {
 	GenerateDatasetDownloads(datasetID string, edition string, versionID string, version string) error
 }

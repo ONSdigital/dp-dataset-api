@@ -12,11 +12,11 @@ import (
 var (
 	datasetID     = "111"
 	edition       = "222"
-	verisonId     = "333"
+	verisonID     = "333"
 	versionNumber = "1"
 	versionURL    = versionURI(datasetID, edition, versionNumber)
 	filterID      = "666"
-	mockError     = errors.New("borked")
+	errMock       = errors.New("borked")
 	maxRetries    = 3
 	xlsURL        = "/path/to/xls"
 	csvURL        = "/path/to/csv"
@@ -32,7 +32,7 @@ func TestGenerator_GenerateDatasetDownloadsSuccess(t *testing.T) {
 			},
 		}
 
-		v := &models.Version{ID: verisonId, Downloads: &models.DownloadList{}}
+		v := &models.Version{ID: verisonID, Downloads: &models.DownloadList{}}
 
 		storeMock := &mocks.StoreMock{
 			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
@@ -60,7 +60,7 @@ func TestGenerator_GenerateDatasetDownloadsSuccess(t *testing.T) {
 
 		Convey("When generateDownloads is called", func() {
 			gen := Generator{filterCliMock, storeMock, 0, maxRetries}
-			err := gen.GenerateDatasetDownloads(datasetID, edition, verisonId, versionNumber)
+			err := gen.GenerateDatasetDownloads(datasetID, edition, verisonID, versionNumber)
 
 			Convey("Then no error is returned", func() {
 				So(err, ShouldBeNil)
@@ -80,7 +80,7 @@ func TestGenerator_GenerateDatasetDownloadsSuccess(t *testing.T) {
 				So(len(updateCalls), ShouldEqual, 1)
 				So(updateCalls[0].Version.Downloads.XLS, ShouldResemble, &models.DownloadObject{URL: xlsURL})
 				So(updateCalls[0].Version.Downloads.CSV, ShouldResemble, &models.DownloadObject{URL: csvURL})
-				So(updateCalls[0].ID, ShouldEqual, verisonId)
+				So(updateCalls[0].ID, ShouldEqual, verisonID)
 			})
 		})
 	})
@@ -103,7 +103,7 @@ func TestGenerator_GenerateDatasetDownloadsUpdateVersionError(t *testing.T) {
 				return v, nil
 			},
 			UpdateVersionFunc: func(ID string, version *models.Version) error {
-				return mockError
+				return errMock
 			},
 		}
 
@@ -124,10 +124,10 @@ func TestGenerator_GenerateDatasetDownloadsUpdateVersionError(t *testing.T) {
 
 		gen := Generator{filterCliMock, storeMock, 0, maxRetries}
 
-		err := gen.GenerateDatasetDownloads(datasetID, edition, verisonId, versionNumber)
+		err := gen.GenerateDatasetDownloads(datasetID, edition, verisonID, versionNumber)
 
 		Convey("Then the expected error is returned", func() {
-			So(err, ShouldResemble, newGeneratorError(mockError, updateDatasetVersionErr, versionURL))
+			So(err, ShouldResemble, newGeneratorError(errMock, updateDatasetVersionErr, versionURL))
 		})
 
 		Convey("And the correct calls are made to the filterClient", func() {
@@ -156,7 +156,7 @@ func TestGenerator_GenerateDatasetDownloadsGetVersionError(t *testing.T) {
 
 		storeMock := &mocks.StoreMock{
 			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
-				return nil, mockError
+				return nil, errMock
 			},
 		}
 
@@ -176,10 +176,10 @@ func TestGenerator_GenerateDatasetDownloadsGetVersionError(t *testing.T) {
 		}
 
 		gen := Generator{filterCliMock, storeMock, 0, maxRetries}
-		err := gen.GenerateDatasetDownloads(datasetID, edition, verisonId, versionNumber)
+		err := gen.GenerateDatasetDownloads(datasetID, edition, verisonID, versionNumber)
 
 		Convey("Then the expected error is returned", func() {
-			So(err, ShouldResemble, newGeneratorError(mockError, getVersionErr, versionURL))
+			So(err, ShouldResemble, newGeneratorError(errMock, getVersionErr, versionURL))
 		})
 
 		Convey("And the correct calls are made to the filterClient", func() {
@@ -213,13 +213,13 @@ func TestGenerator_GenerateFullDatasetDownloadsRetriesExceeded(t *testing.T) {
 				return model, nil
 			},
 			GetOutputFunc: func(filterOutputID string) (filter.Model, error) {
-				return filter.Model{}, mockError
+				return filter.Model{}, errMock
 			},
 		}
 
 		gen := Generator{filterCliMock, storeMock, 0, maxRetries}
 
-		err := gen.GenerateDatasetDownloads(datasetID, edition, verisonId, versionNumber)
+		err := gen.GenerateDatasetDownloads(datasetID, edition, verisonID, versionNumber)
 
 		Convey("Then the expected error is returned", func() {
 			So(err, ShouldResemble, newGeneratorError(nil, retriesExceededErr, versionURL))
@@ -253,17 +253,17 @@ func TestGenerator_GenerateFullDatasetDownloadsUpdateBlueprintError(t *testing.T
 				return jobState, nil
 			},
 			UpdateBlueprintFunc: func(m filter.Model, doSubmit bool) (filter.Model, error) {
-				return filter.Model{}, mockError
+				return filter.Model{}, errMock
 			},
 		}
 
 		gen := Generator{filterCliMock, storeMock, 0, 0}
 
 		Convey("When the generator is called", func() {
-			err := gen.GenerateDatasetDownloads(datasetID, edition, verisonId, versionNumber)
+			err := gen.GenerateDatasetDownloads(datasetID, edition, verisonID, versionNumber)
 
 			Convey("Then the expected error is returned", func() {
-				So(err, ShouldResemble, newGeneratorError(mockError, updateBlueprintErr, filterID, versionURL))
+				So(err, ShouldResemble, newGeneratorError(errMock, updateBlueprintErr, filterID, versionURL))
 			})
 
 			Convey("And the correct calls are made to the filterClient", func() {
@@ -290,17 +290,17 @@ func TestGenerator_GenerateFullDatasetDownloadsGetJobStateError(t *testing.T) {
 				return filterID, nil
 			},
 			GetJobStateFunc: func(filterID string) (filter.Model, error) {
-				return filter.Model{}, mockError
+				return filter.Model{}, errMock
 			},
 		}
 
 		gen := Generator{filterCliMock, storeMock, 0, 0}
 
 		Convey("When the generator is called", func() {
-			err := gen.GenerateDatasetDownloads(datasetID, edition, verisonId, versionNumber)
+			err := gen.GenerateDatasetDownloads(datasetID, edition, verisonID, versionNumber)
 
 			Convey("Then the expected error is returned", func() {
-				So(err, ShouldResemble, newGeneratorError(mockError, getJobStateErr, filterID, versionURL))
+				So(err, ShouldResemble, newGeneratorError(errMock, getJobStateErr, filterID, versionURL))
 			})
 
 			Convey("And the correct calls are made to the filterClient", func() {
@@ -324,17 +324,17 @@ func TestGenerator_GenerateFullDatasetDownloadsCreateBlueprintError(t *testing.T
 
 		filterCliMock := &mocks.FilterClientMock{
 			CreateBlueprintFunc: func(instanceID string, names []string) (string, error) {
-				return "", mockError
+				return "", errMock
 			},
 		}
 
 		gen := Generator{filterCliMock, storeMock, 0, 0}
 
 		Convey("When the generator is called", func() {
-			err := gen.GenerateDatasetDownloads(datasetID, edition, verisonId, versionNumber)
+			err := gen.GenerateDatasetDownloads(datasetID, edition, verisonID, versionNumber)
 
 			Convey("Then the expected error is returned", func() {
-				So(err, ShouldResemble, newGeneratorError(mockError, createBlueprintErr, versionURL))
+				So(err, ShouldResemble, newGeneratorError(errMock, createBlueprintErr, versionURL))
 			})
 
 			Convey("And the correct calls are made to the filterClient", func() {

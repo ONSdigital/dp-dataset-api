@@ -468,10 +468,10 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		go func() {
-			log.Info("generating full dataset downloads for version", log.Data{"dataset_id": datasetID, "version": version})
+			log.Info("generating full dataset downloads for version", log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 			if err := api.downloadGenerator.GenerateDatasetDownloads(datasetID, edition, versionDoc.ID, version); err != nil {
 				// TODO - beyond scope of initial MVP implementation but need to handle this properly?
-				log.Error(errors.Wrap(err, "failed to generate full dataset downloads for version"), log.Data{"dataset_id": datasetID, "version": version})
+				log.Error(errors.Wrap(err, "failed to generate full dataset downloads for version"), log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 			}
 		}()
 	}

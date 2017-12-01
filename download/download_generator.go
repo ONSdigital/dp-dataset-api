@@ -34,6 +34,7 @@ var (
 	versionNumberInvalidErr = newGeneratorError(nil, "failed to generator full datasetID download as version was invalid")
 )
 
+// FilterClient provides functionality for interacting with the dp-filter-api
 type FilterClient interface {
 	// CreateBlueprint ...
 	CreateBlueprint(instanceID string, names []string) (string, error)
@@ -45,11 +46,13 @@ type FilterClient interface {
 	GetOutput(filterOutputID string) (m filter.Model, err error)
 }
 
+// Store for saving/retrieving dataset version data
 type Store interface {
 	GetVersion(datasetID, editionID, version, state string) (*models.Version, error)
 	UpdateVersion(ID string, version *models.Version) error
 }
 
+// Generator pre generates full dataset downloads files.
 type Generator struct {
 	FilterClient FilterClient
 	Store        Store
@@ -57,6 +60,7 @@ type Generator struct {
 	MaxRetries   int
 }
 
+// GeneratorError is a wrapper for errors returned from the Generator
 type GeneratorError struct {
 	originalErr error
 	message     string
@@ -71,6 +75,7 @@ func newGeneratorError(err error, message string, args ...interface{}) Generator
 	}
 }
 
+// Error return details about the error
 func (genErr GeneratorError) Error() string {
 	if genErr.originalErr == nil {
 		return errors.Errorf(genErr.message, genErr.args...).Error()
@@ -78,6 +83,7 @@ func (genErr GeneratorError) Error() string {
 	return errors.Wrap(genErr.originalErr, fmt.Sprintf(genErr.message, genErr.args...)).Error()
 }
 
+// GenerateDatasetDownloads generate unfiltererd download files for the specified dataset/edition/version
 func (g Generator) GenerateDatasetDownloads(datasetID string, edition string, versionID string, version string) error {
 	if err := g.validate(datasetID, edition, versionID, version); err != nil {
 		return err
