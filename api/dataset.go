@@ -680,7 +680,7 @@ func (api *DatasetAPI) createListOfDimensions(versionDoc *models.Version, dimens
 
 	var results []models.Dimension
 	for _, dim := range dimensions {
-		opt, err := convertBSonToDimension(dim["doc"])
+		opt, err := convertBSONToDimensionOption(dim["doc"])
 		if err != nil {
 			return nil, err
 		}
@@ -700,7 +700,7 @@ func (api *DatasetAPI) createListOfDimensions(versionDoc *models.Version, dimens
 	return results, nil
 }
 
-func convertBSonToDimension(data interface{}) (*models.DimensionOption, error) {
+func convertBSONToDimensionOption(data interface{}) (*models.DimensionOption, error) {
 	var dim models.DimensionOption
 	bytes, err := bson.Marshal(data)
 	if err != nil {
