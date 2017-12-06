@@ -21,11 +21,9 @@ var (
 )
 
 func TestGenerator_GenerateFullDatasetDownloadsValidationErrors(t *testing.T) {
-	outputChan := make(chan []byte, 1)
-
 	producerMock := &mocks.KafkaProducerMock{
 		OutputFunc: func() chan []byte {
-			return outputChan
+			return nil
 		},
 	}
 
@@ -110,6 +108,102 @@ func TestGenerator_GenerateFullDatasetDownloadsValidationErrors(t *testing.T) {
 			Convey("And producer is never called", func() {
 				So(len(producerMock.OutputCalls()), ShouldEqual, 0)
 			})
+		})
+	})
+}
+
+func TestGenerator_GenerateMarshalError(t *testing.T) {
+	Convey("when marshal returns an error", t, func() {
+		datasetID := "111"
+		instanceID := "222"
+		edition := "333"
+		version := "4"
+		mockErr := errors.New("let's get schwifty")
+
+		producerMock := &mocks.KafkaProducerMock{
+			OutputFunc: func() chan []byte {
+				return nil
+			},
+		}
+
+		marhsallerMock := &mocks.GenerateDownloadsEventMock{
+			MarshalFunc: func(s interface{}) ([]byte, error) {
+				return nil, mockErr
+			},
+		}
+
+		gen := Generator{
+			Producer:   producerMock,
+			Marshaller: marhsallerMock,
+		}
+
+		err := gen.Generate(datasetID, instanceID, edition, version)
+
+		Convey("then then expected error is returned", func() {
+			So(err, ShouldResemble, newGeneratorError(mockErr, avroMarshalErr))
+		})
+
+		Convey("and marshal is called one time", func() {
+			So(len(marhsallerMock.MarshalCalls()), ShouldEqual, 1)
+		})
+
+		Convey("and kafka producer is never called", func() {
+			So(len(producerMock.OutputCalls()), ShouldEqual, 0)
+		})
+	})
+}
+
+func TestGenerator_Generate(t *testing.T) {
+	Convey("given valid input", t, func() {
+		datasetID := "111"
+		instanceID := "222"
+		edition := "333"
+		version := "4"
+
+		generateDownloads := generateDownloads{
+			FilterID:   "",
+			DatasetID:  datasetID,
+			InstanceID: instanceID,
+			Edition:    edition,
+			Version:    version,
+		}
+
+		output := make(chan []byte, 1)
+		avroBytes := []byte("hello world")
+
+		producerMock := &mocks.KafkaProducerMock{
+			OutputFunc: func() chan []byte {
+				return output
+			},
+		}
+
+		marhsallerMock := &mocks.GenerateDownloadsEventMock{
+			MarshalFunc: func(s interface{}) ([]byte, error) {
+				return avroBytes, nil
+			},
+		}
+
+		gen := Generator{
+			Producer:   producerMock,
+			Marshaller: marhsallerMock,
+		}
+
+		Convey("when generate is called no error is returned", func() {
+			err := gen.Generate(datasetID, instanceID, edition, version)
+			So(err, ShouldBeNil)
+
+			Convey("then marshal is called with the expected parameters", func() {
+				So(len(marhsallerMock.MarshalCalls()), ShouldEqual, 1)
+				So(marhsallerMock.MarshalCalls()[0].S, ShouldResemble, generateDownloads)
+			})
+
+			Convey("and producer output is called one time with the expected parameters", func() {
+				So(len(producerMock.OutputCalls()), ShouldEqual, 1)
+
+				producerOut := <-output
+				So(producerOut, ShouldResemble, avroBytes)
+			})
+
 		})
 	})
 }

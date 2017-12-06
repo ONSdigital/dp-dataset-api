@@ -3,11 +3,12 @@ package models
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/ONSdigital/go-ns/log"
+	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -179,4 +180,30 @@ func TestValidateVersion(t *testing.T) {
 			So(err.Error(), ShouldResemble, errors.New("Missing collection_id for association between version and a collection").Error())
 		})
 	})
+}
+
+func TestCreateDownloadList(t *testing.T) {
+	Convey("invalid input bytes return the expected error", t, func() {
+		reader := bytes.NewReader([]byte("hello"))
+		dl, err := CreateDownloadList(reader)
+		So(dl, ShouldBeNil)
+		So(reflect.TypeOf(errors.Cause(err)), ShouldEqual, reflect.TypeOf(&json.SyntaxError{}))
+	})
+
+	Convey("valid input returns the expected value", t, func() {
+		expected := &DownloadList{
+			XLS: &DownloadObject{
+				Size: "1",
+				URL:  "2",
+			},
+		}
+
+		input, _ := json.Marshal(expected)
+		reader := bytes.NewReader(input)
+
+		dl, err := CreateDownloadList(reader)
+		So(err, ShouldBeNil)
+		So(dl, ShouldResemble, expected)
+	})
+
 }
