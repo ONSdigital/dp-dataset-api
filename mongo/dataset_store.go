@@ -469,9 +469,11 @@ func createVersionUpdateQuery(version *models.Version) bson.M {
 		updates["release_date"] = version.ReleaseDate
 	}
 
-	if version.Links.Spatial != nil {
-		if version.Links.Spatial.HRef != "" {
-			updates["links.spatial.href"] = version.Links.Spatial.HRef
+	if version.Links != nil {
+		if version.Links.Spatial != nil {
+			if version.Links.Spatial.HRef != "" {
+				updates["links.spatial.href"] = version.Links.Spatial.HRef
+			}
 		}
 	}
 

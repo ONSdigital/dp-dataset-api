@@ -14,6 +14,8 @@ A ONS API used to navigate datasets which are published.
 | Environment variable             | Default                              | Description
 | -------------------------------- | -------------------------------------| -----------
 | BIND_ADDR                        | :22000                               | The host and port to bind to
+| KAFKA_ADDR                       | "localhost:9092"                     | The list of kafka hosts
+| GENERATE_DOWNLOADS_TOPIC         | "filter-job-submitted"               | The topic to send generate full dataset version downloads to
 | MONGODB_BIND_ADDR                | localhost:27017                      | The MongoDB bind address
 | MONGODB_DATABASE                 | datasets                             | The MongoDB dataset database
 | MONGODB_COLLECTION               | datasets                             | MongoDB collection
@@ -21,8 +23,6 @@ A ONS API used to navigate datasets which are published.
 | CODE_LIST_API_URL                | http://localhost:22400               | The host name for the Dataset API
 | DATASET_API_URL                  | http://localhost:22000               | The host name for the CodeList API
 | GRACEFUL_SHUTDOWN_TIMEOUT        | 5s                                   | The graceful shutdown timeout in seconds
-| DOWNLOADS_AVAILABLE_MAX_RETRIES  | 5                                    | The maximum number of attempts to make when checking if full dataset version download files have been created 
-| DOWNLOADS_AVAILABLE_RETRY_DELAY  | 5s                                   | The time to wait between each API request to check if  full dataset version download files are available
 
 ### Contributing
 

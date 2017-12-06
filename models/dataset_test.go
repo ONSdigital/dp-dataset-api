@@ -87,7 +87,7 @@ func TestCreateDataset(t *testing.T) {
 		version, err := CreateDataset(r)
 		So(version, ShouldBeNil)
 		So(err, ShouldNotBeNil)
-		So(err, ShouldResemble, errors.New("Failed to parse json body"))
+		So(err.Error(), ShouldResemble, errors.New("Failed to parse json body").Error())
 	})
 }
 
@@ -127,7 +127,7 @@ func TestCreateVersion(t *testing.T) {
 		version, err := CreateVersion(r)
 		So(version, ShouldBeNil)
 		So(err, ShouldNotBeNil)
-		So(err, ShouldResemble, errors.New("Failed to parse json body"))
+		So(err.Error(), ShouldResemble, errors.New("Failed to parse json body").Error())
 	})
 }
 
@@ -158,14 +158,14 @@ func TestValidateVersion(t *testing.T) {
 
 			err := ValidateVersion(&Version{State: SubmittedState})
 			So(err, ShouldNotBeNil)
-			So(err, ShouldResemble, errors.New("Incorrect state, can be one of the following: edition-confirmed, associated or published"))
+			So(err.Error(), ShouldResemble, errors.New("Incorrect state, can be one of the following: edition-confirmed, associated or published").Error())
 		})
 
 		Convey("when mandatorey fields are missing from version document when state is set to created", func() {
 
 			err := ValidateVersion(&Version{State: EditionConfirmedState})
 			So(err, ShouldNotBeNil)
-			So(err, ShouldResemble, errors.New("Missing mandatory fields: [release_date]"))
+			So(err.Error(), ShouldResemble, errors.New("Missing mandatory fields: [release_date]").Error())
 		})
 
 		Convey("when the version state is published but is missing collection_id", func() {
@@ -176,7 +176,7 @@ func TestValidateVersion(t *testing.T) {
 
 			err := ValidateVersion(version)
 			So(err, ShouldNotBeNil)
-			So(err, ShouldResemble, errors.New("Missing collection_id for association between version and a collection"))
+			So(err.Error(), ShouldResemble, errors.New("Missing collection_id for association between version and a collection").Error())
 		})
 	})
 }

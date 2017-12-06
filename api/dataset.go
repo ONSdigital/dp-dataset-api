@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ONSdigital/dp-dataset-api/models"
-
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -24,6 +23,14 @@ const (
 	dimensionDocType       = "dimension"
 	dimensionOptionDocType = "dimension-option"
 )
+
+type GenerateVersionDownloads struct {
+	FilterID   string `avro:"filter_output_id"`
+	InstanceID string `avro:"instance_id"`
+	DatasetID  string `avro:"dataset_id"`
+	Edition    string `avro:"edition"`
+	Version    string `avro:"version"`
+}
 
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	results, err := api.dataStore.Backend.GetDatasets()
@@ -467,18 +474,93 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 			handleErrorType(versionDocType, err, w)
 			return
 		}
-		go func() {
-			log.Info("generating full dataset downloads for version", log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
-			if err := api.downloadGenerator.GenerateDatasetDownloads(datasetID, edition, versionDoc.ID, version); err != nil {
-				// TODO - beyond scope of initial MVP implementation but need to handle this properly?
-				log.Error(errors.Wrap(err, "failed to generate full dataset downloads for version"), log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
-			}
-		}()
+
+		if err := api.downloadGenerator.Generate(datasetID, versionDoc.ID, edition, version); err != nil {
+			err = errors.Wrap(err, "error while attempting to generate full dataset version downloads")
+			log.Error(err, log.Data{
+				"dataset_id":  datasetID,
+				"instance_id": versionDoc.ID,
+				"edition":     edition,
+				"version":     version,
+			})
+			handleErrorType(versionDocType, err, w)
+		}
 	}
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
 	log.Debug("update dataset", log.Data{"dataset_id": datasetID})
+}
+
+func (api *DatasetAPI) PutVersionDownloads(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	datasetID := vars["id"]
+	edition := vars["edition"]
+	version := vars["version"]
+
+	updatedDownloads, err := models.CreateDownloadList(r.Body)
+	if err != nil {
+		err = errors.Wrap(err, "failed to unmarshal put version downloads request")
+		log.Error(err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	defer r.Body.Close()
+
+	if err = api.dataStore.Backend.CheckDatasetExists(datasetID, ""); err != nil {
+		log.ErrorC("fail to find dataset", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		handleErrorType(versionDocType, err, w)
+		return
+	}
+
+	if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, ""); err != nil {
+		log.ErrorC("fail to find edition of dataset", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		handleErrorType(versionDocType, err, w)
+		return
+	}
+
+	currentVersion, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, "")
+	if err != nil {
+		log.ErrorC("fail to find version of dataset edition", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		handleErrorType(versionDocType, err, w)
+		return
+	}
+
+	// Check current state of version document
+	if currentVersion.State == models.PublishedState {
+		err = fmt.Errorf("unable to update document, already published")
+		log.Error(err, nil)
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	// create a new version doc to hold the updated downloads
+	versionDoc := &models.Version{
+		Downloads: currentVersion.Downloads,
+	}
+
+	if versionDoc.Downloads == nil {
+		versionDoc.Downloads = &models.DownloadList{}
+	}
+
+	// Update the xls download option
+	if updatedDownloads.XLS != nil {
+		versionDoc.Downloads.XLS = updatedDownloads.XLS
+	}
+	// update the csv download option
+	if updatedDownloads.CSV != nil {
+		versionDoc.Downloads.CSV = updatedDownloads.CSV
+	}
+
+	if err := api.dataStore.Backend.UpdateVersion(currentVersion.ID, versionDoc); err != nil {
+		log.ErrorC("failed to update version document", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		handleErrorType(versionDocType, err, w)
+		return
+	}
+
+	setJSONContentType(w)
+	w.WriteHeader(http.StatusOK)
 }
 
 func createNewVersionDoc(currentVersion *models.Version, version *models.Version) *models.Version {

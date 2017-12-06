@@ -2,12 +2,12 @@ package models
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 )
 
@@ -219,6 +219,20 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 	}
 
 	return &version, nil
+}
+
+func CreateDownloadList(reader io.Reader) (*DownloadList, error) {
+	bytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	var downloadList DownloadList
+	if err := json.Unmarshal(bytes, &downloadList); err != nil {
+		return nil, errors.Wrap(err, "failed to parse json to downloadList")
+	}
+
+	return &downloadList, nil
 }
 
 // CreateContact manages the creation of a contact from a reader

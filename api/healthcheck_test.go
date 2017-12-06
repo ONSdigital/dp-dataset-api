@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/gorilla/mux"
@@ -13,7 +14,7 @@ import (
 )
 
 func TestHealthCheckReturnsOK(t *testing.T) {
-	generator := &DownloadGeneratorMock{}
+	generator := &mocks.DownloadsGeneratorMock{}
 	t.Parallel()
 	Convey("", t, func() {
 		r, err := http.NewRequest("GET", "http://localhost:22000/healthcheck", nil)

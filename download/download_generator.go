@@ -2,62 +2,80 @@ package download
 
 import (
 	"fmt"
-	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/go-ns/clients/filter"
+
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/pkg/errors"
-	"strconv"
-	"time"
 )
 
-//go:generate moq -out mocks/generate_downloads_mocks.go -pkg mocks . FilterClient Store
+//go:generate moq -out ../mocks/generate_downloads_mocks.go -pkg mocks . KafkaProducer GenerateDownloadsEvent
 
 var (
-	datasetIDKey            = "datasetID"
-	editionKey              = "edition"
-	versionKey              = "version"
-	downloadsKey            = "downloads"
-	xlsKey                  = "xls"
-	csvKey                  = "csv"
-	createBlueprintErr      = "error while attempting to create filter blueprint: url: %s"
-	getJobStateErr          = "error while attempting to get filter job state filterID: %s, url: %s"
-	updateBlueprintErr      = "error while attempting to update filter blueprint filterID: %s, url: %s"
-	retriesExceededErr      = "dataset downloads not available and check retries exceeded max retry attempts: url: %s"
-	getOutputErr            = "filter client get output returned an error filterID: %s"
-	getVersionErr           = "error while attempting to get latest dataset version: url: %s"
-	updateDatasetVersionErr = "error while attempting to updated dataset version"
-	datasetVersionURIFMT    = "/datasets/%s/editions/%s/versions/%d"
+	avroMarshalErr = "error while attempting to marshal generateDownloadsEvent to avro bytes"
 
-	datasetIDEmptyErr       = newGeneratorError(nil, "failed to generator full datasetID download as dataset was empty")
-	editionEmptyErr         = newGeneratorError(nil, "failed to generator full datasetID download as edition was empty")
-	versionIDEmptyErr       = newGeneratorError(nil, "failed to generator full datasetID download as versionID was empty")
-	versionNumberInvalidErr = newGeneratorError(nil, "failed to generator full datasetID download as version was invalid")
+	datasetIDEmptyErr  = newGeneratorError(nil, "failed to generate full dataset download as dataset ID was empty")
+	instanceIDEmptyErr = newGeneratorError(nil, "failed to generate full dataset download as instance ID was empty")
+	editionEmptyErr    = newGeneratorError(nil, "failed to generate full dataset download as edition was empty")
+	versionEmptyErr    = newGeneratorError(nil, "failed to generate full dataset download as version was empty")
 )
 
-// FilterClient provides functionality for interacting with the dp-filter-api
-type FilterClient interface {
-	// CreateBlueprint ...
-	CreateBlueprint(instanceID string, names []string) (string, error)
-	// GetJobState ...
-	GetJobState(filterID string) (m filter.Model, err error)
-	// UpdateBlueprint ...
-	UpdateBlueprint(m filter.Model, doSubmit bool) (mdl filter.Model, err error)
-	// GetOutput ...
-	GetOutput(filterOutputID string) (m filter.Model, err error)
+type KafkaProducer interface {
+	Output() chan []byte
 }
 
-// Store for saving/retrieving dataset version data
-type Store interface {
-	GetVersion(datasetID, editionID, version, state string) (*models.Version, error)
-	UpdateVersion(ID string, version *models.Version) error
+type GenerateDownloadsEvent interface {
+	Marshal(s interface{}) ([]byte, error)
 }
 
-// Generator pre generates full dataset downloads files.
+type generateDownloads struct {
+	FilterID   string `avro:"filter_output_id"`
+	InstanceID string `avro:"instance_id"`
+	DatasetID  string `avro:"dataset_id"`
+	Edition    string `avro:"edition"`
+	Version    string `avro:"version"`
+}
+
 type Generator struct {
-	FilterClient FilterClient
-	Store        Store
-	RetryDelay   time.Duration
-	MaxRetries   int
+	Producer   KafkaProducer
+	Marshaller GenerateDownloadsEvent
+}
+
+func (gen *Generator) Generate(datasetID string, instanceID string, edition string, version string) error {
+	if datasetID == "" {
+		return datasetIDEmptyErr
+	}
+	if instanceID == "" {
+		return instanceIDEmptyErr
+	}
+	if edition == "" {
+		return editionEmptyErr
+	}
+	if version == "" {
+		return versionEmptyErr
+	}
+
+	generateDownloads := generateDownloads{
+		FilterID:   "",
+		DatasetID:  datasetID,
+		InstanceID: instanceID,
+		Edition:    edition,
+		Version:    version,
+	}
+
+	log.Info("send generate downloads event", log.Data{
+		"datasetID":  datasetID,
+		"instanceID": instanceID,
+		"edition":    edition,
+		"version":    version,
+	})
+
+	avroBytes, err := gen.Marshaller.Marshal(generateDownloads)
+	if err != nil {
+		return newGeneratorError(err, avroMarshalErr)
+	}
+
+	gen.Producer.Output() <- avroBytes
+
+	return nil
 }
 
 // GeneratorError is a wrapper for errors returned from the Generator
@@ -81,121 +99,4 @@ func (genErr GeneratorError) Error() string {
 		return errors.Errorf(genErr.message, genErr.args...).Error()
 	}
 	return errors.Wrap(genErr.originalErr, fmt.Sprintf(genErr.message, genErr.args...)).Error()
-}
-
-// GenerateDatasetDownloads generate unfiltererd download files for the specified dataset/edition/version
-func (g Generator) GenerateDatasetDownloads(datasetID string, edition string, versionID string, version string) error {
-	if err := g.validate(datasetID, edition, versionID, version); err != nil {
-		return err
-	}
-
-	versionURL := versionURI(datasetID, edition, version)
-	filterID, err := g.FilterClient.CreateBlueprint(versionID, []string{})
-	if err != nil {
-		return newGeneratorError(err, createBlueprintErr, versionURL)
-	}
-
-	jobState, err := g.FilterClient.GetJobState(filterID)
-	if err != nil {
-		return newGeneratorError(err, getJobStateErr, filterID, versionURL)
-	}
-
-	updatedBlueprint, err := g.FilterClient.UpdateBlueprint(jobState, true)
-	if err != nil {
-		return newGeneratorError(err, updateBlueprintErr, jobState.FilterID, versionURL)
-	}
-
-	filterOutput, err := g.checkDownloadsAvailable(updatedBlueprint.Links.FilterOutputs.ID, versionURL)
-	if err != nil {
-		return err
-	}
-
-	log.Info("full dataset version downloads available", log.Data{
-		downloadsKey: filterOutput.Downloads,
-		datasetIDKey: datasetID,
-		editionKey:   edition,
-		versionKey:   version,
-	})
-
-	latestVersion, err := g.Store.GetVersion(datasetID, edition, version, models.AssociatedState)
-	if err != nil {
-		return newGeneratorError(err, getVersionErr, versionURL)
-	}
-
-	xls := filterOutput.Downloads[xlsKey]
-	csv := filterOutput.Downloads[csvKey]
-
-	latestVersion.Downloads = &models.DownloadList{
-		XLS: &models.DownloadObject{URL: xls.URL, Size: xls.Size},
-		CSV: &models.DownloadObject{URL: csv.URL, Size: csv.Size},
-	}
-
-	if err := g.Store.UpdateVersion(latestVersion.ID, latestVersion); err != nil {
-		return newGeneratorError(err, updateDatasetVersionErr, versionURL)
-	}
-	return nil
-}
-
-func (g Generator) checkDownloadsAvailable(outputID string, versionURL string) (*filter.Model, error) {
-	var filterOutput filter.Model
-	var err error
-	available := false
-
-	for attempts := 0; attempts < g.MaxRetries; attempts++ {
-		filterOutput, err = g.FilterClient.GetOutput(outputID)
-		if err != nil {
-			log.Error(newGeneratorError(err, getOutputErr, outputID), nil)
-			continue
-		}
-		if g.downloadsAvailable(filterOutput) {
-			available = true
-			break
-		}
-		time.Sleep(g.RetryDelay)
-	}
-
-	if !available {
-		return nil, newGeneratorError(nil, retriesExceededErr, versionURL)
-	}
-	return &filterOutput, nil
-}
-
-func (g Generator) validate(datasetID string, edition string, versionID string, version string) error {
-	if datasetID == "" {
-		return datasetIDEmptyErr
-	}
-	if edition == "" {
-		return editionEmptyErr
-	}
-	if versionID == "" {
-		return versionIDEmptyErr
-	}
-	if _, err := strconv.Atoi(version); err != nil {
-		return versionNumberInvalidErr
-	}
-	return nil
-}
-
-func versionURI(datasetID string, edition string, version string) string {
-	return fmt.Sprintf(datasetVersionURIFMT, datasetID, edition, version)
-}
-
-func (g Generator) downloadsAvailable(f filter.Model) bool {
-	var xlsDownload filter.Download
-	var csvDownload filter.Download
-	var ok bool
-
-	if f.Downloads == nil || len(f.Downloads) == 0 {
-		return false
-	}
-	if xlsDownload, ok = f.Downloads[xlsKey]; !ok {
-		return false
-	}
-	if csvDownload, ok = f.Downloads[csvKey]; !ok {
-		return false
-	}
-	if xlsDownload.URL == "" || csvDownload.URL == "" {
-		return false
-	}
-	return true
 }
