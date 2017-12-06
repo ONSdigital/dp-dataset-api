@@ -409,8 +409,8 @@ func (m *Mongo) UpdateDatasetWithAssociation(id, state string, version *models.V
 		"$set": bson.M{
 			"next.state":                     state,
 			"next.collection_id":             version.CollectionID,
-			"next.links.latest_version.link": version.Links.Self,
-			"next.links.latest_version.id":   version.ID,
+			"next.links.latest_version.href": version.Links.Version.HRef,
+			"next.links.latest_version.id":   version.Links.Version.ID,
 			"next.last_updated":              time.Now(),
 		},
 	}
