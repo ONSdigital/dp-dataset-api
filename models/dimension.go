@@ -30,7 +30,7 @@ type DimensionLink struct {
 
 // CachedDimensionOption contains information used to create a dimension option
 type CachedDimensionOption struct {
-	Name       string `bson:"name,omitempty"           json:"dimension_id"`
+	Name       string `bson:"name,omitempty"           json:"dimension"`
 	Code       string `bson:"code,omitempty"           json:"code"`
 	NodeID     string `bson:"node_id,omitempty"        json:"node_id"`
 	InstanceID string `bson:"instance_id,omitempty"    json:"instance_id,omitempty"`
