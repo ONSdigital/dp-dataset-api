@@ -52,7 +52,7 @@ type DimensionOption struct {
 
 // PublicDimensionOption hides values which are only used by interval services
 type PublicDimensionOption struct {
-	Name   string               `bson:"name,omitempty"           json:"dimension_id"`
+	Name   string               `bson:"name,omitempty"           json:"dimension"`
 	Label  string               `bson:"label,omitempty"          json:"label"`
 	Links  DimensionOptionLinks `bson:"links,omitempty"          json:"links"`
 	Option string               `bson:"option,omitempty"         json:"option"`
@@ -72,6 +72,6 @@ type DimensionNodeResults struct {
 
 // DimensionValues holds all unique values for a dimension
 type DimensionValues struct {
-	Name   string   `json:"dimension_id"`
+	Name   string   `json:"dimension"`
 	Values []string `json:"values"`
 }

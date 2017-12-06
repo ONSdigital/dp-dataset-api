@@ -602,7 +602,7 @@ paths:
           schema:
             type: object
             properties:
-              dimension_id:
+              dimension:
                 description: "The name of the dimension"
                 type: string
               options:
@@ -617,7 +617,7 @@ paths:
         403:
           $ref: '#/responses/ForbiddenError'
         404:
-          description: "dimension_id does not match any dimensions within the instance"
+          description: "dimension does not match any dimensions within the instance"
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}/events:
@@ -1478,7 +1478,7 @@ definitions:
     description: "A single dimension within a dataset"
     type: object
     properties:
-      dimension_id:
+      dimension:
         description: "The name of the dimension"
         type: string
       links:
@@ -1543,8 +1543,8 @@ definitions:
   DimensionOption:
     type: object
     properties:
-      dimension_id:
-        description: "The id of the dimension"
+      dimension:
+        description: "The name of the dimension"
         type: string
       label:
         description: "A label given to a dimension option"
@@ -1580,7 +1580,7 @@ definitions:
     type: object
     description: "A cached dimension. (Only used by the Private API)"
     properties:
-      dimension_id:
+      dimension:
         description: "The name of the dimension"
         type: string
       option:
