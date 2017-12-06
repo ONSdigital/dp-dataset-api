@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"gopkg.in/mgo.v2/bson"
+
 	"github.com/ONSdigital/dp-dataset-api/models"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -40,7 +42,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 		datasets.Items = results
 		bytes, err = json.Marshal(datasets)
 		if err != nil {
-			log.ErrorC("fail to marshal dataset resource into bytes", err, nil)
+			log.ErrorC("failed to marshal dataset resource into bytes", err, nil)
 			handleErrorType(datasetDocType, err, w)
 			return
 		}
@@ -51,7 +53,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 
 		bytes, err = json.Marshal(datasets)
 		if err != nil {
-			log.ErrorC("fail to marshal dataset resource into bytes", err, nil)
+			log.ErrorC("failed to marshal dataset resource into bytes", err, nil)
 			handleErrorType(datasetDocType, err, w)
 			return
 		}
@@ -86,7 +88,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		dataset.Current.ID = dataset.ID
 		bytes, err = json.Marshal(dataset.Current)
 		if err != nil {
-			log.ErrorC("fail to marshal dataset current sub document resource into bytes", err, log.Data{"dataset_id": id})
+			log.ErrorC("failed to marshal dataset current sub document resource into bytes", err, log.Data{"dataset_id": id})
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -97,7 +99,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		}
 		bytes, err = json.Marshal(dataset)
 		if err != nil {
-			log.ErrorC("fail to marshal dataset current sub document resource into bytes", err, log.Data{"dataset_id": id})
+			log.ErrorC("failed to marshal dataset current sub document resource into bytes", err, log.Data{"dataset_id": id})
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -136,7 +138,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 
 	bytes, err := json.Marshal(results)
 	if err != nil {
-		log.ErrorC("fail to marshal a list of edition resources into bytes", err, log.Data{"dataset_id": id})
+		log.ErrorC("failed to marshal a list of edition resources into bytes", err, log.Data{"dataset_id": id})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -175,7 +177,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 
 	bytes, err := json.Marshal(edition)
 	if err != nil {
-		log.ErrorC("fail to marshal edition resource into bytes", err, log.Data{"dataset_id": id, "edition": editionID})
+		log.ErrorC("failed to marshal edition resource into bytes", err, log.Data{"dataset_id": id, "edition": editionID})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -200,27 +202,27 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
-		log.ErrorC("fail to find dataset for list of versions", err, log.Data{"dataset_id": id, "edition": editionID})
+		log.ErrorC("failed to find dataset for list of versions", err, log.Data{"dataset_id": id, "edition": editionID})
 		handleErrorType(versionDocType, err, w)
 		return
 	}
 
 	if err := api.dataStore.Backend.CheckEditionExists(id, editionID, state); err != nil {
-		log.ErrorC("fail to find edition for list of versions", err, log.Data{"dataset_id": id, "edition": editionID})
+		log.ErrorC("failed to find edition for list of versions", err, log.Data{"dataset_id": id, "edition": editionID})
 		handleErrorType(versionDocType, err, w)
 		return
 	}
 
 	results, err := api.dataStore.Backend.GetVersions(id, editionID, state)
 	if err != nil {
-		log.ErrorC("fail to find any versions for dataset edition", err, log.Data{"dataset_id": id, "edition": editionID})
+		log.ErrorC("failed to find any versions for dataset edition", err, log.Data{"dataset_id": id, "edition": editionID})
 		handleErrorType(versionDocType, err, w)
 		return
 	}
 
 	bytes, err := json.Marshal(results)
 	if err != nil {
-		log.ErrorC("fail to marshal list of version resources into bytes", err, log.Data{"dataset_id": id, "edition": editionID})
+		log.ErrorC("failed to marshal list of version resources into bytes", err, log.Data{"dataset_id": id, "edition": editionID})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -246,20 +248,20 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
-		log.ErrorC("fail to find dataset", err, log.Data{"dataset_id": id, "edition": editionID, "version": version})
+		log.ErrorC("failed to find dataset", err, log.Data{"dataset_id": id, "edition": editionID, "version": version})
 		handleErrorType(versionDocType, err, w)
 		return
 	}
 
 	if err := api.dataStore.Backend.CheckEditionExists(id, editionID, state); err != nil {
-		log.ErrorC("fail to find edition for dataset", err, log.Data{"dataset_id": id, "edition": editionID, "version": version})
+		log.ErrorC("failed to find edition for dataset", err, log.Data{"dataset_id": id, "edition": editionID, "version": version})
 		handleErrorType(versionDocType, err, w)
 		return
 	}
 
 	results, err := api.dataStore.Backend.GetVersion(id, editionID, version, state)
 	if err != nil {
-		log.ErrorC("fail to find version for dataset edition", err, log.Data{"dataset_id": id, "edition": editionID, "version": version})
+		log.ErrorC("failed to find version for dataset edition", err, log.Data{"dataset_id": id, "edition": editionID, "version": version})
 		handleErrorType(versionDocType, err, w)
 		return
 	}
@@ -268,7 +270,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 
 	bytes, err := json.Marshal(results)
 	if err != nil {
-		log.ErrorC("fail to marshal version resource into bytes", err, log.Data{"dataset_id": id, "edition": editionID, "version": version})
+		log.ErrorC("failed to marshal version resource into bytes", err, log.Data{"dataset_id": id, "edition": editionID, "version": version})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -289,7 +291,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	_, err := api.dataStore.Backend.GetDataset(datasetID)
 	if err != nil {
 		if err != errs.ErrDatasetNotFound {
-			log.ErrorC("fail to find dataset", err, log.Data{"dataset_id": datasetID})
+			log.ErrorC("failed to find dataset", err, log.Data{"dataset_id": datasetID})
 			handleErrorType(datasetDocType, err, w)
 			return
 		}
@@ -302,7 +304,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 
 	dataset, err := models.CreateDataset(r.Body)
 	if err != nil {
-		log.ErrorC("fail to model dataset resource based on request", err, log.Data{"dataset_id": datasetID})
+		log.ErrorC("failed to model dataset resource based on request", err, log.Data{"dataset_id": datasetID})
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -343,14 +345,14 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = api.dataStore.Backend.UpsertDataset(datasetID, datasetDoc); err != nil {
-		log.ErrorC("fail to insert dataset resource to datastore", err, log.Data{"new_dataset": datasetID})
+		log.ErrorC("failed to insert dataset resource to datastore", err, log.Data{"new_dataset": datasetID})
 		handleErrorType(datasetDocType, err, w)
 		return
 	}
 
 	bytes, err := json.Marshal(datasetDoc)
 	if err != nil {
-		log.ErrorC("fail to marshal dataset resource into bytes", err, log.Data{"new_dataset": datasetID})
+		log.ErrorC("failed to marshal dataset resource into bytes", err, log.Data{"new_dataset": datasetID})
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -371,7 +373,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 
 	dataset, err := models.CreateDataset(r.Body)
 	if err != nil {
-		log.ErrorC("fail to model dataset resource based on request", err, log.Data{"dataset_id": datasetID})
+		log.ErrorC("failed to model dataset resource based on request", err, log.Data{"dataset_id": datasetID})
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -396,27 +398,27 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	versionDoc, err := models.CreateVersion(r.Body)
 	if err != nil {
-		log.ErrorC("fail to model version resource based on request", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		log.ErrorC("failed to model version resource based on request", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
 
 	if err = api.dataStore.Backend.CheckDatasetExists(datasetID, ""); err != nil {
-		log.ErrorC("fail to find dataset", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		log.ErrorC("failed to find dataset", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		handleErrorType(versionDocType, err, w)
 		return
 	}
 
 	if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, ""); err != nil {
-		log.ErrorC("fail to find edition of dataset", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		log.ErrorC("failed to find edition of dataset", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		handleErrorType(versionDocType, err, w)
 		return
 	}
 
 	currentVersion, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, "")
 	if err != nil {
-		log.ErrorC("fail to find version of dataset edition", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		log.ErrorC("failed to find version of dataset edition", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		handleErrorType(versionDocType, err, w)
 		return
 	}
@@ -622,19 +624,39 @@ func (api *DatasetAPI) publishDataset(id string, version *models.Version) error 
 func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
-	editionID := vars["edition"]
-	versionID := vars["version"]
+	edition := vars["edition"]
+	version := vars["version"]
 
-	results, err := api.dataStore.Backend.GetDimensions(datasetID, editionID, versionID)
+	var state string
+	if r.Header.Get(internalToken) != api.internalToken {
+		state = models.PublishedState
+	}
+
+	versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
 	if err != nil {
-		log.ErrorC("failed to get version dimensions", err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
+		log.ErrorC("failed to get version", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		handleErrorType(dimensionDocType, err, w)
 		return
 	}
 
-	bytes, err := json.Marshal(results)
+	dimensions, err := api.dataStore.Backend.GetDimensions(datasetID, versionDoc.ID)
 	if err != nil {
-		log.ErrorC("fail to marshal list of dimension resources into bytes", err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
+		log.ErrorC("failed to get version dimensions", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		handleErrorType(dimensionDocType, err, w)
+		return
+	}
+
+	results, err := api.createListOfDimensions(versionDoc, dimensions)
+	if err != nil {
+		log.ErrorC("failed to convert bson to dimension", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	listOfDimensions := &models.DatasetDimensionResults{Items: results}
+
+	bytes, err := json.Marshal(listOfDimensions)
+	if err != nil {
+		log.ErrorC("failed to marshal list of dimension resources into bytes", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -642,11 +664,52 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	setJSONContentType(w)
 	_, err = w.Write(bytes)
 	if err != nil {
-		log.Error(err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
+		log.Error(err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	log.Debug("get dimensions", log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
+	log.Debug("get dimensions", log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+}
+
+func (api *DatasetAPI) createListOfDimensions(versionDoc *models.Version, dimensions []bson.M) ([]models.Dimension, error) {
+	// Get dimension description from the version document and add to hash map
+	dimensionDescriptions := make(map[string]string)
+	for _, details := range versionDoc.Dimensions {
+		dimensionDescriptions[details.Name] = details.Description
+	}
+
+	var results []models.Dimension
+	for _, dim := range dimensions {
+		opt, err := convertBSONToDimensionOption(dim["doc"])
+		if err != nil {
+			return nil, err
+		}
+
+		dimension := models.Dimension{Name: opt.Name}
+		dimension.Links.CodeList = opt.Links.CodeList
+		dimension.Links.Options = models.LinkObject{ID: opt.Name, HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s/dimensions/%s/options",
+			api.host, versionDoc.Links.Dataset.ID, versionDoc.Edition, versionDoc.Links.Version.ID, opt.Name)}
+		dimension.Links.Version = *versionDoc.Links.Self
+
+		// Add description to dimension from hash map
+		dimension.Description = dimensionDescriptions[dimension.Name]
+
+		results = append(results, dimension)
+	}
+
+	return results, nil
+}
+
+func convertBSONToDimensionOption(data interface{}) (*models.DimensionOption, error) {
+	var dim models.DimensionOption
+	bytes, err := bson.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	bson.Unmarshal(bytes, &dim)
+
+	return &dim, nil
 }
 
 func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Request) {
@@ -665,7 +728,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 
 	bytes, err := json.Marshal(results)
 	if err != nil {
-		log.ErrorC("fail to marshal list of dimension option resources into bytes", err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension})
+		log.ErrorC("failed to marshal list of dimension option resources into bytes", err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -711,14 +774,14 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
-		log.ErrorC("fail to find edition for dataset", err, log.Data{"dataset_id": datasetID, "edition": edition, version: version})
+		log.ErrorC("failed to find edition for dataset", err, log.Data{"dataset_id": datasetID, "edition": edition, version: version})
 		handleErrorType(versionDocType, err, w)
 		return
 	}
 
 	versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
 	if err != nil {
-		log.ErrorC("fail to find version for dataset edition", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		log.ErrorC("failed to find version for dataset edition", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		handleErrorType(versionDocType, err, w)
 		return
 	}
@@ -733,7 +796,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 	bytes, err := json.Marshal(metaDataDoc)
 	if err != nil {
-		log.ErrorC("fail to marshal metadata resource into bytes", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		log.ErrorC("failed to marshal metadata resource into bytes", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -785,6 +848,18 @@ func handleErrorType(docType string, err error, w http.ResponseWriter) {
 		} else if err == errs.ErrEditionNotFound {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else if err == errs.ErrVersionNotFound {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	case "dimension":
+		if err == errs.ErrDatasetNotFound {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else if err == errs.ErrEditionNotFound {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else if err == errs.ErrVersionNotFound {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else if err == errs.ErrDimensionsNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

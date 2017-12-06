@@ -15,8 +15,9 @@ type DimensionOptionResults struct {
 // Dimension represents an overview for a single dimension. This includes a link to the code list API
 // which provides metadata about the dimension and all possible values.
 type Dimension struct {
+	Description string        `bson:"description,omitempty"   json:"description,omitempty"`
 	Links       DimensionLink `bson:"links,omitempty"         json:"links,omitempty"`
-	Name        string        `bson:"name,omitempty"          json:"dimension_id,omitempty"`
+	Name        string        `bson:"name,omitempty"          json:"dimension,omitempty"`
 	LastUpdated time.Time     `bson:"last_updated,omitempty"  json:"-"`
 }
 
@@ -29,7 +30,7 @@ type DimensionLink struct {
 
 // CachedDimensionOption contains information used to create a dimension option
 type CachedDimensionOption struct {
-	Name       string `bson:"name,omitempty"           json:"dimension_id"`
+	Name       string `bson:"name,omitempty"           json:"dimension"`
 	Code       string `bson:"code,omitempty"           json:"code"`
 	NodeID     string `bson:"node_id,omitempty"        json:"node_id"`
 	InstanceID string `bson:"instance_id,omitempty"    json:"instance_id,omitempty"`
@@ -40,7 +41,7 @@ type CachedDimensionOption struct {
 
 // DimensionOption contains unique information and metadata used when processing the data
 type DimensionOption struct {
-	Name        string               `bson:"name,omitempty"           json:"dimension_id"`
+	Name        string               `bson:"name,omitempty"           json:"dimension"`
 	Label       string               `bson:"label,omitempty"          json:"label"`
 	Links       DimensionOptionLinks `bson:"links,omitempty"          json:"links"`
 	Option      string               `bson:"option,omitempty"         json:"option"`
