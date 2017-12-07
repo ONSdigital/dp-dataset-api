@@ -16,11 +16,6 @@ import (
 
 var httpServer *server.Server
 
-//API provides an interface for the routes
-type API interface {
-	CreateDatasetAPI(string, *mux.Router, store.DataStore) *DatasetAPI
-}
-
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
 	dataStore     store.DataStore
