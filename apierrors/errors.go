@@ -8,5 +8,6 @@ var (
 	ErrEditionNotFound       = errors.New("Edition not found")
 	ErrVersionNotFound       = errors.New("Version not found")
 	ErrDimensionNodeNotFound = errors.New("Dimension node not found")
+	ErrDimensionsNotFound    = errors.New("Dimensions not found")
 	ErrInstanceNotFound      = errors.New("Instance not found")
 )
