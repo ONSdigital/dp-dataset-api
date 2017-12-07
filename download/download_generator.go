@@ -18,10 +18,12 @@ var (
 	versionEmptyErr    = newGeneratorError(nil, "failed to generate full dataset download as version was empty")
 )
 
+// KafkaProducer sends an outbound kafka message
 type KafkaProducer interface {
 	Output() chan []byte
 }
 
+// GenerateDownloadsEvent marshal the event into avro format
 type GenerateDownloadsEvent interface {
 	Marshal(s interface{}) ([]byte, error)
 }
@@ -34,11 +36,13 @@ type generateDownloads struct {
 	Version    string `avro:"version"`
 }
 
+// Generator kicks off a full dataset version download task
 type Generator struct {
 	Producer   KafkaProducer
 	Marshaller GenerateDownloadsEvent
 }
 
+// Generate the full file download files for the specified dataset/edition/version
 func (gen *Generator) Generate(datasetID string, instanceID string, edition string, version string) error {
 	if datasetID == "" {
 		return datasetIDEmptyErr

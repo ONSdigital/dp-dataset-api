@@ -25,14 +25,6 @@ const (
 	dimensionOptionDocType = "dimension-option"
 )
 
-type GenerateVersionDownloads struct {
-	FilterID   string `avro:"filter_output_id"`
-	InstanceID string `avro:"instance_id"`
-	DatasetID  string `avro:"dataset_id"`
-	Edition    string `avro:"edition"`
-	Version    string `avro:"version"`
-}
-
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	results, err := api.dataStore.Backend.GetDatasets()
 	if err != nil {
@@ -493,6 +485,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	log.Debug("update dataset", log.Data{"dataset_id": datasetID})
 }
 
+// PutVersionDownloads update the version downnloads
 func (api *DatasetAPI) PutVersionDownloads(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
