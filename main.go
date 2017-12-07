@@ -11,6 +11,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/log"
 	mongoclosure "github.com/ONSdigital/go-ns/mongo"
 )
@@ -49,7 +50,9 @@ func main() {
 
 	apiErrors := make(chan error, 1)
 
-	api.CreateDatasetAPI(cfg.DatasetAPIURL, cfg.BindAddr, cfg.SecretKey, store.DataStore{Backend: mongo}, apiErrors)
+	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
+
+	api.CreateDatasetAPI(cfg.DatasetAPIURL, cfg.BindAddr, cfg.SecretKey, store.DataStore{Backend: mongo}, urlBuilder, apiErrors)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {

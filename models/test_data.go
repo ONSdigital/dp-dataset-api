@@ -1,5 +1,7 @@
 package models
 
+import "strings"
+
 const (
 	collectionID = "12345678"
 )
@@ -44,6 +46,7 @@ var relatedDatasets = GeneralDetails{
 // Create a fully populated dataset object to use in testing.
 func createTestDataset() *Dataset {
 	return &Dataset{
+		ID:           "123",
 		CollectionID: collectionID,
 		Contacts: []ContactDetails{
 			contacts,
@@ -146,7 +149,7 @@ var links = VersionLinks{
 	},
 	Edition: &LinkObject{
 		HRef: "http://localhost:22000/datasets/123/editions/2017",
-		ID:   "asf87wafgu34gf87wfdgr",
+		ID:   "2017",
 	},
 	Self: &LinkObject{
 		HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
@@ -227,8 +230,9 @@ func expectedMetadataDoc() Metadata {
 			Self: &LinkObject{
 				HRef: links.Version.HRef + "/metadata",
 			},
-			Spatial: links.Spatial,
-			Version: links.Version,
+			Spatial:        links.Spatial,
+			Version:        links.Version,
+			WebsiteVersion: &LinkObject{HRef: strings.Replace(links.Version.HRef, "22000", "20000", -1)},
 		},
 		Methodologies:     []GeneralDetails{methodology},
 		NationalStatistic: &nationalStatistic,
