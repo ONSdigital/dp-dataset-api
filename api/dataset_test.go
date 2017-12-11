@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
-
 	"time"
 
+	"github.com/ONSdigital/go-ns/log"
 	"gopkg.in/mgo.v2/bson"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -20,7 +19,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -951,7 +949,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
 				return &models.Version{
-					State: models.AssociatedState,
+					State: models.EditionConfirmedState,
 				}, nil
 			},
 			UpdateVersionFunc: func(string, *models.Version) error {
@@ -1067,6 +1065,181 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+	})
+
+}
+
+func TestPutVersionGenerateDownloadsError(t *testing.T) {
+	Convey("given download generator returns an error", t, func() {
+
+		mockedErr := errors.New("spectacular explosion")
+		var v models.Version
+		json.Unmarshal([]byte(versionAssociatedPayload), &v)
+		v.State = models.EditionConfirmedState
+
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+				return &v, nil
+			},
+			CheckDatasetExistsFunc: func(ID string, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
+				return nil
+			},
+			UpdateVersionFunc: func(ID string, version *models.Version) error {
+				return nil
+			},
+			UpdateDatasetWithAssociationFunc: func(ID string, state string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		mockDownloadGenerator := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(datasetID string, instanceID string, edition string, version string) error {
+				return mockedErr
+			},
+		}
+
+		Convey("when put version is called with a valid request", func() {
+			r, _ := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
+			r.Header.Add("internal-token", "coffee")
+			w := httptest.NewRecorder()
+
+			api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, mockDownloadGenerator)
+			api.router.ServeHTTP(w, r)
+
+			Convey("then an internal server error response is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+			})
+
+			Convey("and the expected store calls are made with the expected parameters", func() {
+				genCalls := mockDownloadGenerator.GenerateCalls()
+
+				So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+				So(mockedDataStore.CheckDatasetExistsCalls()[0].ID, ShouldEqual, "123")
+
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+				So(mockedDataStore.CheckEditionExistsCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.CheckEditionExistsCalls()[0].EditionID, ShouldEqual, "2017")
+
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+				So(mockedDataStore.GetVersionCalls()[0].DatasetID, ShouldEqual, "123")
+				So(mockedDataStore.GetVersionCalls()[0].EditionID, ShouldEqual, "2017")
+				So(mockedDataStore.GetVersionCalls()[0].Version, ShouldEqual, "1")
+
+				So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+
+				So(len(genCalls), ShouldEqual, 1)
+				So(genCalls[0].DatasetID, ShouldEqual, "123")
+				So(genCalls[0].Edition, ShouldEqual, "2017")
+				So(genCalls[0].Version, ShouldEqual, "1")
+			})
+		})
+
+	})
+}
+
+func TestPutEmptyVersion(t *testing.T) {
+	var v models.Version
+	json.Unmarshal([]byte(versionAssociatedPayload), &v)
+	v.State = models.AssociatedState
+	xlsDownload := &models.DownloadList{XLS: &models.DownloadObject{Size: "1", URL: "/hello"}}
+
+	Convey("given an existing version with empty downloads", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+				return &v, nil
+			},
+			CheckDatasetExistsFunc: func(ID string, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
+				return nil
+			},
+			UpdateVersionFunc: func(ID string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		mockDownloadGenerator := &mocks.DownloadsGeneratorMock{}
+
+		Convey("when put version is called with an associated version with empty downloads", func() {
+			r, _ := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
+			r.Header.Add("internal-token", "coffee")
+			w := httptest.NewRecorder()
+
+			api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, mockDownloadGenerator)
+			api.router.ServeHTTP(w, r)
+
+			Convey("then a http status ok is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("and the updated version is as expected", func() {
+				So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+				So(mockedDataStore.UpdateVersionCalls()[0].Version.Downloads, ShouldBeNil)
+			})
+		})
+	})
+
+	Convey("given an existing version with a xls download already exists", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+				v.Downloads = xlsDownload
+				return &v, nil
+			},
+			CheckDatasetExistsFunc: func(ID string, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
+				return nil
+			},
+			UpdateVersionFunc: func(ID string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		mockDownloadGenerator := &mocks.DownloadsGeneratorMock{}
+
+		Convey("when put version is called with an associated version with empty downloads", func() {
+			r, _ := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
+			r.Header.Add("internal-token", "coffee")
+			w := httptest.NewRecorder()
+
+			api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, mockDownloadGenerator)
+			api.router.ServeHTTP(w, r)
+
+			Convey("then a http status ok is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("and any existing version downloads are not overwritten", func() {
+				So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+				So(mockedDataStore.UpdateVersionCalls()[0].Version.Downloads, ShouldResemble, xlsDownload)
+			})
+
+			Convey("and the expected external calls are made with the correct parameters", func() {
+				So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+				So(mockedDataStore.CheckDatasetExistsCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.CheckDatasetExistsCalls()[0].State, ShouldEqual, "")
+
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+				So(mockedDataStore.CheckEditionExistsCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.CheckEditionExistsCalls()[0].EditionID, ShouldEqual, "2017")
+				So(mockedDataStore.CheckEditionExistsCalls()[0].State, ShouldEqual, "")
+
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+				So(mockedDataStore.GetVersionCalls()[0].DatasetID, ShouldEqual, "123")
+				So(mockedDataStore.GetVersionCalls()[0].EditionID, ShouldEqual, "2017")
+				So(mockedDataStore.GetVersionCalls()[0].Version, ShouldEqual, "1")
+				So(mockedDataStore.GetVersionCalls()[0].State, ShouldEqual, "")
+
+				So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
+				So(len(mockDownloadGenerator.GenerateCalls()), ShouldEqual, 0)
+			})
+		})
 	})
 }
 
@@ -1787,7 +1960,7 @@ func TestCreateNewVersionDoc(t *testing.T) {
 	})
 }
 
-func TestDatasetAPI_PutVersionDownloads(t *testing.T) {
+/*func TestDatasetAPI_PutVersionDownloads(t *testing.T) {
 	datasetID := "999"
 	edition := "888"
 	version := "1"
@@ -2092,7 +2265,7 @@ func TestDatasetAPI_PutVersionDownloads(t *testing.T) {
 			So(updateVersionCalls[0].ID, ShouldEqual, "123")
 		})
 	})
-}
+}*/
 
 func setUp(state string) *storetest.StorerMock {
 	mockedDataStore := &storetest.StorerMock{

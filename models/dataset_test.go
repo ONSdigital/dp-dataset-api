@@ -3,6 +3,7 @@ package models
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -166,7 +167,7 @@ func TestValidateVersion(t *testing.T) {
 
 			err := ValidateVersion(&Version{State: EditionConfirmedState})
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldResemble, errors.New("Missing mandatory fields: [release_date]").Error())
+			So(err.Error(), ShouldResemble, errors.New("missing mandatory fields: [release_date]").Error())
 		})
 
 		Convey("when the version state is published but is missing collection_id", func() {
@@ -179,7 +180,35 @@ func TestValidateVersion(t *testing.T) {
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldResemble, errors.New("Missing collection_id for association between version and a collection").Error())
 		})
+
+		Convey("when version downloads are invalid", func() {
+			v := &Version{ReleaseDate: "Today", State: EditionConfirmedState}
+
+			v.Downloads = &DownloadList{XLS: &DownloadObject{URL: "", Size: "2"}}
+			assertVerionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLS.URL"}), v)
+
+			v.Downloads = &DownloadList{CSV: &DownloadObject{URL: "", Size: "2"}}
+			assertVerionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSV.URL"}), v)
+
+			v.Downloads = &DownloadList{XLS: &DownloadObject{URL: "/", Size: ""}}
+			assertVerionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLS.Size"}), v)
+
+			v.Downloads = &DownloadList{CSV: &DownloadObject{URL: "/", Size: ""}}
+			assertVerionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSV.Size"}), v)
+
+			v.Downloads = &DownloadList{XLS: &DownloadObject{URL: "/", Size: "bob"}}
+			assertVerionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.XLS.Size not a number"}), v)
+
+			v.Downloads = &DownloadList{CSV: &DownloadObject{URL: "/", Size: "bob"}}
+			assertVerionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.CSV.Size not a number"}), v)
+		})
 	})
+}
+
+func assertVerionDownloadError(expected error, v *Version) {
+	err := ValidateVersion(v)
+	So(err, ShouldNotBeNil)
+	So(err, ShouldResemble, expected)
 }
 
 func TestCreateDownloadList(t *testing.T) {

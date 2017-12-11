@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -272,13 +273,44 @@ func ValidateVersion(version *Version) error {
 	}
 
 	var missingFields []string
+	var invalidFields []string
 
 	if version.ReleaseDate == "" {
 		missingFields = append(missingFields, "release_date")
 	}
 
+	if version.Downloads != nil {
+		if version.Downloads.XLS != nil {
+			if version.Downloads.XLS.URL == "" {
+				missingFields = append(missingFields, "Downloads.XLS.URL")
+			}
+			if version.Downloads.XLS.Size == "" {
+				missingFields = append(missingFields, "Downloads.XLS.Size")
+			}
+			if _, err := strconv.Atoi(version.Downloads.XLS.Size); err != nil {
+				invalidFields = append(invalidFields, "Downloads.XLS.Size not a number")
+			}
+		}
+
+		if version.Downloads.CSV != nil {
+			if version.Downloads.CSV.URL == "" {
+				missingFields = append(missingFields, "Downloads.CSV.URL")
+			}
+			if version.Downloads.CSV.Size == "" {
+				missingFields = append(missingFields, "Downloads.CSV.Size")
+			}
+			if _, err := strconv.Atoi(version.Downloads.CSV.Size); err != nil {
+				invalidFields = append(invalidFields, "Downloads.CSV.Size not a number")
+			}
+		}
+	}
+
 	if missingFields != nil {
-		return fmt.Errorf("Missing mandatory fields: %v", missingFields)
+		return fmt.Errorf("missing mandatory fields: %v", missingFields)
+	}
+
+	if invalidFields != nil {
+		return fmt.Errorf("invalid fields: %v", invalidFields)
 	}
 
 	return nil

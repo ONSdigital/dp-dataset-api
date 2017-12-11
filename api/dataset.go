@@ -461,12 +461,14 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if versionDoc.State == models.AssociatedState {
+	if versionDoc.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
 		if err := api.dataStore.Backend.UpdateDatasetWithAssociation(datasetID, versionDoc.State, versionDoc); err != nil {
 			log.ErrorC("failed to update dataset document after a version of a dataset has been associated with a collection", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 			handleErrorType(versionDocType, err, w)
 			return
 		}
+
+		log.Info("generating full dataset version downloads", log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 
 		if err := api.downloadGenerator.Generate(datasetID, versionDoc.ID, edition, version); err != nil {
 			err = errors.Wrap(err, "error while attempting to generate full dataset version downloads")
@@ -476,6 +478,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 				"edition":     edition,
 				"version":     version,
 			})
+			// TODO - TECH DEBT - need to add an error event for this.
 			handleErrorType(versionDocType, err, w)
 		}
 	}
@@ -483,78 +486,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
 	log.Debug("update dataset", log.Data{"dataset_id": datasetID})
-}
-
-// PutVersionDownloads update the version downnloads
-func (api *DatasetAPI) PutVersionDownloads(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	datasetID := vars["id"]
-	edition := vars["edition"]
-	version := vars["version"]
-
-	updatedDownloads, err := models.CreateDownloadList(r.Body)
-	if err != nil {
-		err = errors.Wrap(err, "failed to unmarshal put version downloads request")
-		log.Error(err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	defer r.Body.Close()
-
-	if err = api.dataStore.Backend.CheckDatasetExists(datasetID, ""); err != nil {
-		log.ErrorC("fail to find dataset", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
-		handleErrorType(versionDocType, err, w)
-		return
-	}
-
-	if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, ""); err != nil {
-		log.ErrorC("fail to find edition of dataset", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
-		handleErrorType(versionDocType, err, w)
-		return
-	}
-
-	currentVersion, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, "")
-	if err != nil {
-		log.ErrorC("fail to find version of dataset edition", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
-		handleErrorType(versionDocType, err, w)
-		return
-	}
-
-	// Check current state of version document
-	if currentVersion.State == models.PublishedState {
-		err = fmt.Errorf("unable to update document, already published")
-		log.Error(err, nil)
-		http.Error(w, err.Error(), http.StatusForbidden)
-		return
-	}
-
-	// create a new version doc to hold the updated downloads
-	versionDoc := &models.Version{
-		Downloads: currentVersion.Downloads,
-	}
-
-	if versionDoc.Downloads == nil {
-		versionDoc.Downloads = &models.DownloadList{}
-	}
-
-	// Update the xls download option
-	if updatedDownloads.XLS != nil {
-		versionDoc.Downloads.XLS = updatedDownloads.XLS
-	}
-	// update the csv download option
-	if updatedDownloads.CSV != nil {
-		versionDoc.Downloads.CSV = updatedDownloads.CSV
-	}
-
-	if err := api.dataStore.Backend.UpdateVersion(currentVersion.ID, versionDoc); err != nil {
-		log.ErrorC("failed to update version document", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
-		handleErrorType(versionDocType, err, w)
-		return
-	}
-
-	setJSONContentType(w)
-	w.WriteHeader(http.StatusOK)
 }
 
 func createNewVersionDoc(currentVersion *models.Version, version *models.Version) *models.Version {
@@ -644,6 +575,22 @@ func createNewVersionDoc(currentVersion *models.Version, version *models.Version
 		} else {
 			version.Links.Spatial = &models.LinkObject{
 				HRef: spatial,
+			}
+		}
+	}
+
+	if version.Downloads == nil {
+		version.Downloads = currentVersion.Downloads
+	} else {
+		if version.Downloads.XLS == nil {
+			if currentVersion.Downloads != nil && currentVersion.Downloads.XLS != nil {
+				version.Downloads.XLS = currentVersion.Downloads.XLS
+			}
+		}
+
+		if version.Downloads.CSV == nil {
+			if currentVersion.Downloads != nil && currentVersion.Downloads.CSV != nil {
+				version.Downloads.CSV = currentVersion.Downloads.CSV
 			}
 		}
 	}
