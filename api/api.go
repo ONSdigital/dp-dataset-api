@@ -54,7 +54,7 @@ func routes(host, secretKey string, router *mux.Router, dataStore store.DataStor
 		router:        router,
 		urlBuilder:    urlBuilder}
 
-	router.Path("/healthcheck").Methods("GET").HandlerFunc(api.healthCheck)
+	api.router.HandleFunc("/healthcheck", api.healthCheck).Methods("GET")
 
 	api.router.HandleFunc("/datasets", api.getDatasets).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.addDataset)).Methods("POST")

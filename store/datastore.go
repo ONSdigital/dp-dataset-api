@@ -1,6 +1,9 @@
 package store
 
 import (
+	"context"
+	"time"
+
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -43,4 +46,5 @@ type Storer interface {
 	UpsertDataset(ID string, datasetDoc *models.DatasetUpdate) error
 	UpsertEdition(datasetID, edition string, editionDoc *models.Edition) error
 	UpsertVersion(ID string, versionDoc *models.Version) error
+	Ping(ctx context.Context) (time.Time, error)
 }

@@ -1,6 +1,7 @@
 package mongo
 
 import (
+	"context"
 	"errors"
 	"strconv"
 	"time"
@@ -18,12 +19,14 @@ var _ store.Storer = &Mongo{}
 
 // Mongo represents a simplistic MongoDB configuration.
 type Mongo struct {
-	CodeListURL string
-	Collection  string
-	Database    string
-	DatasetURL  string
-	Session     *mgo.Session
-	URI         string
+	CodeListURL    string
+	Collection     string
+	Database       string
+	DatasetURL     string
+	Session        *mgo.Session
+	URI            string
+	lastPingTime   time.Time
+	lastPingResult error
 }
 
 const (
@@ -610,4 +613,34 @@ func (m *Mongo) CheckEditionExists(id, editionID, state string) error {
 	}
 
 	return nil
+}
+
+func (m *Mongo) Ping(ctx context.Context) (time.Time, error) {
+	if time.Since(m.lastPingTime) < 1*time.Second {
+		return m.lastPingTime, m.lastPingResult
+	}
+
+	s := m.Session.Copy()
+	defer s.Close()
+
+	m.lastPingTime = time.Now()
+	pingDoneChan := make(chan error)
+
+	go func() {
+		log.Trace("db ping", nil)
+		var res interface{}
+		var err error
+		if err = s.DB(m.Database).C(editionsCollection).Find(nil).One(&res); err != nil {
+			log.ErrorC("Ping mongo", err, nil)
+		}
+		pingDoneChan <- err
+	}()
+	select {
+	case err := <-pingDoneChan:
+		m.lastPingResult = err
+	case <-ctx.Done():
+		m.lastPingResult = ctx.Err()
+	}
+	close(pingDoneChan)
+	return m.lastPingTime, m.lastPingResult
 }
