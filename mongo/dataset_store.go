@@ -26,6 +26,10 @@ type Mongo struct {
 	URI         string
 }
 
+const (
+	editionsCollection = "editions"
+)
+
 // Init creates a new mgo.Session with a strong consistency and a write mode of "majortiy".
 func (m *Mongo) Init() (session *mgo.Session, err error) {
 	if session != nil {
@@ -83,7 +87,7 @@ func (m *Mongo) GetEditions(id, state string) (*models.EditionResults, error) {
 
 	selector := buildEditionsQuery(id, state)
 
-	iter := s.DB(m.Database).C("editions").Find(selector).Iter()
+	iter := s.DB(m.Database).C(editionsCollection).Find(selector).Iter()
 	defer iter.Close()
 
 	var results []models.Edition
@@ -124,7 +128,7 @@ func (m *Mongo) GetEdition(id, editionID, state string) (*models.Edition, error)
 	selector := buildEditionQuery(id, editionID, state)
 
 	var edition models.Edition
-	err := s.DB(m.Database).C("editions").Find(selector).One(&edition)
+	err := s.DB(m.Database).C(editionsCollection).Find(selector).One(&edition)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, errs.ErrEditionNotFound
@@ -435,7 +439,7 @@ func (m *Mongo) UpdateEdition(datasetID, edition string, version *models.Version
 		},
 	}
 
-	err = s.DB(m.Database).C("editions").Update(bson.M{"links.dataset.id": datasetID, "edition": edition}, update)
+	err = s.DB(m.Database).C(editionsCollection).Update(bson.M{"links.dataset.id": datasetID, "edition": edition}, update)
 	return
 }
 
@@ -519,7 +523,7 @@ func (m *Mongo) UpsertEdition(datasetID, edition string, editionDoc *models.Edit
 		},
 	}
 
-	_, err = s.DB(m.Database).C("editions").Upsert(selector, update)
+	_, err = s.DB(m.Database).C(editionsCollection).Upsert(selector, update)
 	return
 }
 
@@ -596,7 +600,7 @@ func (m *Mongo) CheckEditionExists(id, editionID, state string) error {
 		}
 	}
 
-	count, err := s.DB(m.Database).C("editions").Find(query).Count()
+	count, err := s.DB(m.Database).C(editionsCollection).Find(query).Count()
 	if err != nil {
 		return err
 	}
