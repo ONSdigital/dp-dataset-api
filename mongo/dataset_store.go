@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -625,7 +626,9 @@ func (m *Mongo) Ping(ctx context.Context) (time.Time, error) {
 
 	m.lastPingTime = time.Now()
 	pingDoneChan := make(chan error)
+	var wg sync.WaitGroup
 
+	wg.Add(1)
 	go func() {
 		log.Trace("db ping", nil)
 		var res interface{}
@@ -634,13 +637,19 @@ func (m *Mongo) Ping(ctx context.Context) (time.Time, error) {
 			log.ErrorC("Ping mongo", err, nil)
 		}
 		pingDoneChan <- err
+		wg.Done()
 	}()
+
+	go func() {
+		wg.Wait()
+		close(pingDoneChan)
+	}()
+
 	select {
 	case err := <-pingDoneChan:
 		m.lastPingResult = err
 	case <-ctx.Done():
 		m.lastPingResult = ctx.Err()
 	}
-	close(pingDoneChan)
 	return m.lastPingTime, m.lastPingResult
 }
