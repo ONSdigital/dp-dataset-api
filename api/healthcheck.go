@@ -48,6 +48,9 @@ func (api *DatasetAPI) healthCheck(w http.ResponseWriter, r *http.Request) {
 		lastPing, err := api.dataStore.Backend.Ping(r.Context())
 		healthChan <- healthResult{Error: err, LastChecked: lastPing}
 		wg.Done()
+		if err != nil {
+			log.ErrorC("healthcheck", err, nil)
+		}
 	}()
 
 	// setup close() when all checks complete (avoid sending on closed channel)
@@ -66,7 +69,7 @@ func (api *DatasetAPI) healthCheck(w http.ResponseWriter, r *http.Request) {
 		lastChecked = res.LastChecked
 	case <-r.Context().Done():
 		return
-	case <-time.After(2 * time.Second):
+	case <-time.After(api.healthCheckTimeout):
 		healthIssue = "timeout waiting for db response"
 	}
 

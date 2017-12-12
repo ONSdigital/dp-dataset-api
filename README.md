@@ -21,7 +21,8 @@ A ONS API used to navigate datasets which are published.
 | CODE_LIST_API_URL          | http://localhost:22400               | The host name for the Dataset API
 | DATASET_API_URL            | http://localhost:22000               | The host name for the CodeList API
 | WEBSITE_URL                | http://localhost:20000               | The host name for the website
-| GRACEFUL_SHUTDOWN_TIMEOUT  | 5s                                   | The graceful shutdown timeout in seconds
+| GRACEFUL_SHUTDOWN_TIMEOUT  | 5s                                   | The graceful shutdown timeout
+| HEALTHCHECK_TIMEOUT        | 2s                                   | The timeout that the healthcheck allows for checked subsystems
 
 ### Contributing
 

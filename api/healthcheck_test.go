@@ -8,11 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	"github.com/gorilla/mux"
 
-	"github.com/ONSdigital/dp-dataset-api/url"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -28,7 +25,7 @@ func TestHealthCheckReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, url.NewBuilder("localhost:20000"))
+		api := GetAPIWithMockedDatastore(mockedDataStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		body := w.Body.String()
@@ -49,7 +46,7 @@ func TestHealthCheckReturnsError(t *testing.T) {
 			},
 		}
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, url.NewBuilder("localhost:20000"))
+		api := GetAPIWithMockedDatastore(mockedDataStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		body := w.Body.String()

@@ -52,7 +52,7 @@ func main() {
 
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
-	api.CreateDatasetAPI(cfg.DatasetAPIURL, cfg.BindAddr, cfg.SecretKey, store.DataStore{Backend: mongo}, urlBuilder, apiErrors)
+	api.CreateDatasetAPI(cfg.DatasetAPIURL, cfg.BindAddr, cfg.SecretKey, store.DataStore{Backend: mongo}, urlBuilder, apiErrors, cfg.HealthCheckTimeout)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {

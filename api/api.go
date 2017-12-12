@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/auth"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
@@ -19,18 +20,19 @@ var httpServer *server.Server
 
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
-	dataStore     store.DataStore
-	host          string
-	internalToken string
-	privateAuth   *auth.Authenticator
-	router        *mux.Router
-	urlBuilder    *url.Builder
+	dataStore          store.DataStore
+	host               string
+	internalToken      string
+	privateAuth        *auth.Authenticator
+	router             *mux.Router
+	urlBuilder         *url.Builder
+	healthCheckTimeout time.Duration
 }
 
 // CreateDatasetAPI manages all the routes configured to API
-func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error) {
+func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, healthCheckTimeout time.Duration) {
 	router := mux.NewRouter()
-	routes(host, secretKey, router, dataStore, urlBuilder)
+	routes(host, secretKey, router, dataStore, urlBuilder, healthCheckTimeout)
 
 	httpServer = server.New(bindAddr, router)
 	// Disable this here to allow main to manage graceful shutdown of the entire app.
@@ -45,14 +47,16 @@ func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStor
 	}()
 }
 
-func routes(host, secretKey string, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder) *DatasetAPI {
+func routes(host, secretKey string, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, healthCheckTimeout time.Duration) *DatasetAPI {
 	api := DatasetAPI{
-		privateAuth:   &auth.Authenticator{SecretKey: secretKey, HeaderName: "internal-token"},
-		dataStore:     dataStore,
-		host:          host,
-		internalToken: secretKey,
-		router:        router,
-		urlBuilder:    urlBuilder}
+		privateAuth:        &auth.Authenticator{SecretKey: secretKey, HeaderName: "internal-token"},
+		dataStore:          dataStore,
+		host:               host,
+		internalToken:      secretKey,
+		router:             router,
+		urlBuilder:         urlBuilder,
+		healthCheckTimeout: healthCheckTimeout,
+	}
 
 	api.router.HandleFunc("/healthcheck", api.healthCheck).Methods("GET")
 
