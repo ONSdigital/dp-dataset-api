@@ -2,12 +2,18 @@ dp-dataset-api
 ==================
 A ONS API used to navigate datasets which are published.
 
-#### Postgres
+#### Database
 * Run ```brew install mongo```
-* Run ```sudo mkdir -p /data/db```
-* Run ```sudo chmod 777 /data/db```
-* Run ```mongod &```
+* Run ```brew services start mongodb```
 * Run ```./scripts/InitDatabase.sh```
+
+### Healthcheck
+
+The endpoint `/healthcheck` checks the connection to the database and returns
+one of:
+
+- success (200, JSON "status": "OK")
+- failure (500, JSON "status": "error").
 
 ### Configuration
 
