@@ -34,6 +34,12 @@ job "dp-dataset-api" {
         name = "dp-dataset-api"
         port = "http"
         tags = ["web"]
+        check {
+          type     = "http"
+          path     = "/healthcheck"
+          interval = "10s"
+          timeout  = "2s"
+        }
       }
 
       resources {
@@ -87,6 +93,12 @@ job "dp-dataset-api" {
         name = "dp-dataset-api"
         port = "http"
         tags = ["publishing"]
+        check {
+          type     = "http"
+          path     = "/healthcheck"
+          interval = "10s"
+          timeout  = "2s"
+        }
       }
 
       resources {
