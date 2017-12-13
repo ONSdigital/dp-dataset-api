@@ -14,6 +14,7 @@ type Configuration struct {
 	GenerateDownloadsTopic  string        `envconfig:"GENERATE_DOWNLOADS_TOPIC"`
 	CodeListAPIURL          string        `envconfig:"CODE_LIST_API_URL"`
 	DatasetAPIURL           string        `envconfig:"DATASET_API_URL"`
+	WebsiteURL              string        `envconfig:"WEBSITE_URL"`
 	SecretKey               string        `envconfig:"SECRET_KEY"`
 	GracefulShutdownTimeout time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 	MongoConfig             MongoConfig
@@ -40,6 +41,7 @@ func Get() (*Configuration, error) {
 		GenerateDownloadsTopic:  "filter-job-submitted",
 		CodeListAPIURL:          "http://localhost:22400",
 		DatasetAPIURL:           "http://localhost:22000",
+		WebsiteURL:              "http://localhost:20000",
 		SecretKey:               "FD0108EA-825D-411C-9B1D-41EF7727F465",
 		GracefulShutdownTimeout: 5 * time.Second,
 		MongoConfig: MongoConfig{

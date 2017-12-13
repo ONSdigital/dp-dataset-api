@@ -7,6 +7,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/dimension"
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/server"
 	"github.com/gorilla/mux"
@@ -33,13 +34,14 @@ type DatasetAPI struct {
 	internalToken     string
 	privateAuth       *auth.Authenticator
 	router            *mux.Router
+	urlBuilder        *url.Builder
 	downloadGenerator DownloadsGenerator
 }
 
 // CreateDatasetAPI manages all the routes configured to API
-func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStore, errorChan chan error, downloadsGenerator DownloadsGenerator) {
+func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadsGenerator DownloadsGenerator) {
 	router := mux.NewRouter()
-	routes(host, secretKey, router, dataStore, downloadsGenerator)
+	routes(host, secretKey, router, dataStore, urlBuilder, downloadsGenerator)
 
 	httpServer = server.New(bindAddr, router)
 	// Disable this here to allow main to manage graceful shutdown of the entire app.
@@ -54,16 +56,14 @@ func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStor
 	}()
 }
 
-func routes(host, secretKey string, router *mux.Router, dataStore store.DataStore, downloadGenerator DownloadsGenerator) *DatasetAPI {
+func routes(host, secretKey string, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator) *DatasetAPI {
 	api := DatasetAPI{
-		privateAuth: &auth.Authenticator{
-			SecretKey:  secretKey,
-			HeaderName: "internal-token",
-		},
+		privateAuth:       &auth.Authenticator{SecretKey: secretKey, HeaderName: "internal-token"},
 		dataStore:         dataStore,
 		host:              host,
 		internalToken:     secretKey,
 		router:            router,
+		urlBuilder:        urlBuilder,
 		downloadGenerator: downloadGenerator,
 	}
 

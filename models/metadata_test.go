@@ -3,8 +3,11 @@ package models
 import (
 	"testing"
 
+	"github.com/ONSdigital/dp-dataset-api/url"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+var urlBuilder = url.NewBuilder("http://localhost:20000")
 
 func TestCreateMetadataDoc(t *testing.T) {
 	t.Parallel()
@@ -17,7 +20,7 @@ func TestCreateMetadataDoc(t *testing.T) {
 
 		inputVersionDoc := &Version{}
 
-		metaDataDoc := CreateMetaDataDoc(inputDatasetDoc, inputVersionDoc)
+		metaDataDoc := CreateMetaDataDoc(inputDatasetDoc, inputVersionDoc, urlBuilder)
 		So(metaDataDoc.Title, ShouldEqual, "CPI")
 	})
 
@@ -28,7 +31,7 @@ func TestCreateMetadataDoc(t *testing.T) {
 
 		exectedMetadataDoc := expectedMetadataDoc()
 
-		metaDataDoc := CreateMetaDataDoc(inputDatasetDoc, inputVersionDoc)
+		metaDataDoc := CreateMetaDataDoc(inputDatasetDoc, inputVersionDoc, urlBuilder)
 		So(metaDataDoc, ShouldResemble, &exectedMetadataDoc)
 	})
 }

@@ -1,5 +1,10 @@
 package models
 
+import (
+	"github.com/ONSdigital/dp-dataset-api/url"
+	"strconv"
+)
+
 // Metadata represents information (metadata) relevant to a version
 type Metadata struct {
 	Alerts            *[]Alert             `json:"alerts,omitempty"`
@@ -29,13 +34,14 @@ type Metadata struct {
 }
 
 type MetadataLinks struct {
-	AccessRights *LinkObject `json:"access_rights,omitempty"`
-	Self         *LinkObject `json:"self,omitempty"`
-	Spatial      *LinkObject `json:"spatial,omitempty"`
-	Version      *LinkObject `json:"version,omitempty"`
+	AccessRights   *LinkObject `json:"access_rights,omitempty"`
+	Self           *LinkObject `json:"self,omitempty"`
+	Spatial        *LinkObject `json:"spatial,omitempty"`
+	Version        *LinkObject `json:"version,omitempty"`
+	WebsiteVersion *LinkObject `json:"website_version,omitempty"`
 }
 
-func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version) *Metadata {
+func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url.Builder) *Metadata {
 	metaDataDoc := &Metadata{
 		Alerts:            versionDoc.Alerts,
 		Contacts:          datasetDoc.Contacts,
@@ -78,6 +84,15 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version) *Metadata {
 
 		metaDataDoc.Links.Spatial = versionDoc.Links.Spatial
 		metaDataDoc.Links.Version = versionDoc.Links.Version
+
+		websiteVersionURL := urlBuilder.BuildWebsiteDatasetVersionURL(
+			datasetDoc.ID,
+			versionDoc.Links.Edition.ID,
+			strconv.Itoa(versionDoc.Version))
+
+		metaDataDoc.Links.WebsiteVersion = &LinkObject{
+			HRef: websiteVersionURL,
+		}
 	}
 
 	metaDataDoc.Distribution = getDistribution(metaDataDoc.Downloads)

@@ -13,7 +13,10 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
+
 	"github.com/ONSdigital/go-ns/kafka"
+
+	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/log"
 	mongoclosure "github.com/ONSdigital/go-ns/mongo"
 	"github.com/pkg/errors"
@@ -66,7 +69,8 @@ func main() {
 
 	apiErrors := make(chan error, 1)
 
-	api.CreateDatasetAPI(cfg.DatasetAPIURL, cfg.BindAddr, cfg.SecretKey, store, apiErrors, downloadGenerator)
+	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
+	api.CreateDatasetAPI(cfg.DatasetAPIURL, cfg.BindAddr, cfg.SecretKey, store, urlBuilder, apiErrors, downloadGenerator)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {

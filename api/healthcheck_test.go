@@ -10,6 +10,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/gorilla/mux"
 
+	"github.com/ONSdigital/dp-dataset-api/url"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -21,8 +22,7 @@ func TestHealthCheckReturnsOK(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
-
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, generator)
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, url.NewBuilder("localhost:20000"), generator)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 	})
