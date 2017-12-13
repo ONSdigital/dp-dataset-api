@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ONSdigital/go-ns/log"
+	"github.com/johnnadratowski/golang-neo4j-bolt-driver/log"
 	"gopkg.in/mgo.v2/bson"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -929,11 +929,61 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 	})
 
 	Convey("When state is set to associated", t, func() {
-		generateTriggered := make(chan bool, 1)
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(datasetID string, edition string, versionID string, version string) error {
+				return nil
+			},
+		}
+		var b string
+
+		b = versionAssociatedPayload
+		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		r.Header.Add("internal-token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(string, string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(string, string, string) error {
+				return nil
+			},
+			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					State: models.AssociatedState,
+				}, nil
+			},
+			UpdateVersionFunc: func(string, *models.Version) error {
+				return nil
+			},
+			UpdateDatasetWithAssociationFunc: func(string, string, *models.Version) error {
+				return nil
+			},
+		}
+		mockedDataStore.GetVersion("123", "2017", "1", "")
+		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
+		mockedDataStore.UpdateDatasetWithAssociation("123", models.AssociatedState, &models.Version{})
+
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, &mocks.DownloadsGeneratorMock{})
+		api.router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When state is set to edition-confirmed", t, func() {
+		downloadsGenerated := make(chan bool, 1)
 
 		generatorMock := &mocks.DownloadsGeneratorMock{
 			GenerateFunc: func(datasetID string, edition string, versionID string, version string) error {
-				generateTriggered <- true
+				downloadsGenerated <- true
 				return nil
 			},
 		}
@@ -943,6 +993,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
+
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(string, string) error {
 				return nil
@@ -962,27 +1013,24 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				return nil
 			},
 		}
-		mockedDataStore.GetVersion("123", "2017", "1", "")
-		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
-		mockedDataStore.UpdateDatasetWithAssociation("123", models.AssociatedState, &models.Version{})
 
-		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, &mocks.DownloadsGeneratorMock{})
+		api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, generatorMock)
 		api.router.ServeHTTP(w, r)
 
 		select {
-		case <-generateTriggered:
-			log.Info("generate triggered", nil)
-		case <-time.After(time.Second * 5):
-			log.Info("failing test - generate downloads due to timeout", nil)
-			t.FailNow()
+		case <-downloadsGenerated:
+			log.Info("download generated as expected")
+		case <-time.After(time.Second * 10):
+			log.Errorf("failing test due to timeout")
+			t.Fail()
 		}
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
