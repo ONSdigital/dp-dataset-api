@@ -8,18 +8,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-var (
-	datasetID     = "111"
-	edition       = "222"
-	verisonID     = "333"
-	versionNumber = "1"
-	filterID      = "666"
-	errMock       = errors.New("borked")
-	maxRetries    = 3
-	xlsURL        = "/path/to/xls"
-	csvURL        = "/path/to/csv"
-)
-
 func TestGenerator_GenerateFullDatasetDownloadsValidationErrors(t *testing.T) {
 	producerMock := &mocks.KafkaProducerMock{
 		OutputFunc: func() chan []byte {
