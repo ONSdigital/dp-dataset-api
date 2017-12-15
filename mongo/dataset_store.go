@@ -631,9 +631,8 @@ func (m *Mongo) Ping(ctx context.Context) (time.Time, error) {
 	wg.Add(1)
 	go func() {
 		log.Trace("db ping", nil)
-		var res interface{}
-		var err error
-		if err = s.DB(m.Database).C(editionsCollection).Find(nil).One(&res); err != nil {
+		err := s.Ping()
+		if err != nil {
 			log.ErrorC("Ping mongo", err, nil)
 		}
 		pingDoneChan <- err
