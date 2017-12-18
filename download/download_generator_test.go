@@ -148,7 +148,7 @@ func TestGenerator_Generate(t *testing.T) {
 		edition := "333"
 		version := "4"
 
-		generateDownloads := generateDownloads{
+		downloads := generateDownloads{
 			FilterID:   "",
 			DatasetID:  datasetID,
 			InstanceID: instanceID,
@@ -182,7 +182,7 @@ func TestGenerator_Generate(t *testing.T) {
 
 			Convey("then marshal is called with the expected parameters", func() {
 				So(len(marhsallerMock.MarshalCalls()), ShouldEqual, 1)
-				So(marhsallerMock.MarshalCalls()[0].S, ShouldResemble, generateDownloads)
+				So(marhsallerMock.MarshalCalls()[0].S, ShouldResemble, downloads)
 			})
 
 			Convey("and producer output is called one time with the expected parameters", func() {

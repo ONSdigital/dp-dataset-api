@@ -57,7 +57,9 @@ func (gen *Generator) Generate(datasetID string, instanceID string, edition stri
 		return versionEmptyErr
 	}
 
-	generateDownloads := generateDownloads{
+	// FilterID is set to an empty string as the avro schema expects there to be
+	// a filter ID otherwise struct wont be marshalled into an acceptable message
+	downloads := generateDownloads{
 		FilterID:   "",
 		DatasetID:  datasetID,
 		InstanceID: instanceID,
@@ -72,7 +74,7 @@ func (gen *Generator) Generate(datasetID string, instanceID string, edition stri
 		"version":    version,
 	})
 
-	avroBytes, err := gen.Marshaller.Marshal(generateDownloads)
+	avroBytes, err := gen.Marshaller.Marshal(downloads)
 	if err != nil {
 		return newGeneratorError(err, avroMarshalErr)
 	}
