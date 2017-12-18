@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/johnnadratowski/golang-neo4j-bolt-driver/log"
 	"gopkg.in/mgo.v2/bson"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -19,6 +18,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/go-ns/log"
 
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/gorilla/mux"
@@ -1031,9 +1031,10 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		select {
 		case <-downloadsGenerated:
-			log.Info("download generated as expected")
+			log.Info("download generated as expected", nil)
 		case <-time.After(time.Second * 10):
-			log.Errorf("failing test due to timeout")
+			err := errors.New("failing test due to timeout")
+			log.Error(err, nil)
 			t.Fail()
 		}
 
