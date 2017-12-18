@@ -222,6 +222,7 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 	return &version, nil
 }
 
+// CreateDownloadList manages the creation of a list downloadable items from a reader
 func CreateDownloadList(reader io.Reader) (*DownloadList, error) {
 	bytes, err := ioutil.ReadAll(reader)
 	if err != nil {

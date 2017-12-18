@@ -15,7 +15,7 @@ var generateDownloads = `{
   ]
 }`
 
-// FilterSubmittedEvent the Avro schema for FilterOutputSubmitted messages.
+// GenerateDownloadsEvent the Avro schema for FilterOutputSubmitted messages.
 var GenerateDownloadsEvent = &avro.Schema{
 	Definition: generateDownloads,
 }

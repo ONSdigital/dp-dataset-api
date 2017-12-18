@@ -185,27 +185,27 @@ func TestValidateVersion(t *testing.T) {
 			v := &Version{ReleaseDate: "Today", State: EditionConfirmedState}
 
 			v.Downloads = &DownloadList{XLS: &DownloadObject{URL: "", Size: "2"}}
-			assertVerionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLS.URL"}), v)
+			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLS.URL"}), v)
 
 			v.Downloads = &DownloadList{CSV: &DownloadObject{URL: "", Size: "2"}}
-			assertVerionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSV.URL"}), v)
+			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSV.URL"}), v)
 
 			v.Downloads = &DownloadList{XLS: &DownloadObject{URL: "/", Size: ""}}
-			assertVerionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLS.Size"}), v)
+			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLS.Size"}), v)
 
 			v.Downloads = &DownloadList{CSV: &DownloadObject{URL: "/", Size: ""}}
-			assertVerionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSV.Size"}), v)
+			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSV.Size"}), v)
 
 			v.Downloads = &DownloadList{XLS: &DownloadObject{URL: "/", Size: "bob"}}
-			assertVerionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.XLS.Size not a number"}), v)
+			assertVersionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.XLS.Size not a number"}), v)
 
 			v.Downloads = &DownloadList{CSV: &DownloadObject{URL: "/", Size: "bob"}}
-			assertVerionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.CSV.Size not a number"}), v)
+			assertVersionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.CSV.Size not a number"}), v)
 		})
 	})
 }
 
-func assertVerionDownloadError(expected error, v *Version) {
+func assertVersionDownloadError(expected error, v *Version) {
 	err := ValidateVersion(v)
 	So(err, ShouldNotBeNil)
 	So(err, ShouldResemble, expected)

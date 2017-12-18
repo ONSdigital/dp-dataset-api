@@ -1,8 +1,9 @@
 package models
 
 import (
-	"github.com/ONSdigital/dp-dataset-api/url"
 	"strconv"
+
+	"github.com/ONSdigital/dp-dataset-api/url"
 )
 
 // Metadata represents information (metadata) relevant to a version
@@ -33,6 +34,7 @@ type Metadata struct {
 	URI               string               `json:"uri,omitempty"`
 }
 
+// MetadataLinks represents a link object to list of metadata) relevant to a version
 type MetadataLinks struct {
 	AccessRights   *LinkObject `json:"access_rights,omitempty"`
 	Self           *LinkObject `json:"self,omitempty"`
@@ -41,6 +43,7 @@ type MetadataLinks struct {
 	WebsiteVersion *LinkObject `json:"website_version,omitempty"`
 }
 
+// CreateMetaDataDoc manages the creation of metadata across dataset and version docs
 func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url.Builder) *Metadata {
 	metaDataDoc := &Metadata{
 		Alerts:            versionDoc.Alerts,
