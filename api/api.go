@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/auth"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
@@ -36,12 +37,13 @@ type DatasetAPI struct {
 	router            *mux.Router
 	urlBuilder        *url.Builder
 	downloadGenerator DownloadsGenerator
+	healthCheckTimeout time.Duration
 }
 
 // CreateDatasetAPI manages all the routes configured to API
-func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadsGenerator DownloadsGenerator) {
+func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadsGenerator DownloadsGenerator, healthCheckTimeout time.Duration) {
 	router := mux.NewRouter()
-	routes(host, secretKey, router, dataStore, urlBuilder, downloadsGenerator)
+	routes(host, secretKey, router, dataStore, urlBuilder, downloadsGenerator, healthCheckTimeout)
 
 	httpServer = server.New(bindAddr, router)
 	// Disable this here to allow main to manage graceful shutdown of the entire app.
@@ -56,7 +58,7 @@ func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStor
 	}()
 }
 
-func routes(host, secretKey string, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator) *DatasetAPI {
+func routes(host, secretKey string, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, healthCheckTimeout time.Duration) *DatasetAPI {
 	api := DatasetAPI{
 		privateAuth:       &auth.Authenticator{SecretKey: secretKey, HeaderName: "internal-token"},
 		dataStore:         dataStore,
@@ -65,9 +67,10 @@ func routes(host, secretKey string, router *mux.Router, dataStore store.DataStor
 		router:            router,
 		urlBuilder:        urlBuilder,
 		downloadGenerator: downloadGenerator,
+		healthCheckTimeout: healthCheckTimeout,
 	}
 
-	router.Path("/healthcheck").Methods("GET").HandlerFunc(api.healthCheck)
+	api.router.HandleFunc("/healthcheck", api.healthCheck).Methods("GET")
 
 	api.router.HandleFunc("/datasets", api.getDatasets).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.addDataset)).Methods("POST")
