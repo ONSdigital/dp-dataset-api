@@ -77,9 +77,9 @@ func main() {
 		log.Info(fmt.Sprintf("shutdown with timeout: %s", cfg.GracefulShutdownTimeout), nil)
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.GracefulShutdownTimeout)
 
+		// stop any incoming requests before closing any outbound connections
 		api.Close(ctx)
 
-		// mongo.Close() may use all remaining time in the context - do this last!
 		if err = mongoclosure.Close(ctx, session); err != nil {
 			log.Error(err, nil)
 		}
