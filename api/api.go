@@ -24,7 +24,7 @@ type API interface {
 
 // DownloadsGenerator pre generates full file downloads for the specified dataset/edition/version
 type DownloadsGenerator interface {
-	Generate(datasetID string, instanceID string, edition string, version string) error
+	Generate(datasetID, instanceID, edition, version string) error
 }
 
 // DatasetAPI manages importing filters against a dataset
