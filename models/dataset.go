@@ -158,7 +158,9 @@ type DownloadList struct {
 
 // DownloadObject represents information on the downloadable file
 type DownloadObject struct {
-	URL  string `bson:"url,omitempty"  json:"url,omitempty"`
+	URL string `bson:"url,omitempty"  json:"url,omitempty"`
+	// TODO size is in bytes and probably should be an int64 instead of a string this
+	// will have to change for several services (filter API, exporter services and web)
 	Size string `bson:"size,omitempty" json:"size,omitempty"`
 }
 
