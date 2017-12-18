@@ -11,7 +11,6 @@ A ONS API used to navigate datasets which are published.
 
 ### Configuration
 
-<<<<<<< HEAD
 | Environment variable             | Default                              | Description
 | -------------------------------- | -------------------------------------| -----------
 | BIND_ADDR                        | :22000                               | The host and port to bind to
@@ -22,7 +21,7 @@ A ONS API used to navigate datasets which are published.
 | CODE_LIST_API_URL                | http://localhost:22400               | The host name for the CodeList API
 | DATASET_API_URL                  | http://localhost:22000               | The host name for the Dataset API
 | GRACEFUL_SHUTDOWN_TIMEOUT        | 5s                                   | The graceful shutdown timeout in seconds
-| WEBSITE_URL                | http://localhost:20000               | The host name for the website
+| WEBSITE_URL                      | http://localhost:20000               | The host name for the website
 | KAFKA_ADDR                       | "localhost:9092"                     | The list of kafka hosts
 | GENERATE_DOWNLOADS_TOPIC         | "filter-job-submitted"               | The topic to send generate full dataset version downloads to
 
