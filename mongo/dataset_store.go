@@ -520,11 +520,10 @@ func (m *Mongo) UpsertEdition(datasetID, edition string, editionDoc *models.Edit
 		"links.dataset.id": datasetID,
 	}
 
+	editionDoc.LastUpdated = time.Now()
+
 	update := bson.M{
 		"$set": editionDoc,
-		"$setOnInsert": bson.M{
-			"last_updated": time.Now(),
-		},
 	}
 
 	_, err = s.DB(m.Database).C(editionsCollection).Upsert(selector, update)
