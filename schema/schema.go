@@ -5,13 +5,12 @@ import "github.com/ONSdigital/go-ns/avro"
 var generateDownloads = `{
   "type": "record",
   "name": "filter-output-submitted",
-  "namespace": "",
   "fields": [
-    {"name": "filter_output_id", "type": "string"},
-    {"name": "instance_id", "type": "string"},
-    {"name": "dataset_id", "type": "string"},
-    {"name": "edition", "type": "string"},
-    {"name": "version", "type": "string"}
+    {"name": "filter_output_id", "type": "string", "default": ""},
+    {"name": "instance_id", "type": "string", "default": ""},
+    {"name": "dataset_id", "type": "string", "default": ""},
+    {"name": "edition", "type": "string", "default": ""},
+    {"name": "version", "type": "string", "default": ""}
   ]
 }`
 
