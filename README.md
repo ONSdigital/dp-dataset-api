@@ -17,7 +17,6 @@ one of:
 
 ### Configuration
 
-<<<<<<< HEAD
 | Environment variable       | Default                              | Description
 | -------------------------- | -------------------------------------| -----------
 | BIND_ADDR                  | :22000                               | The host and port to bind to
