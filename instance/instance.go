@@ -109,6 +109,49 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	log.Debug("add instance", log.Data{"instance": instance})
 }
 
+func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	ID := vars["id"]
+	dimension := vars["dimension"]
+
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Error(err, nil)
+	}
+
+	var dim *models.CodeList
+
+	err = json.Unmarshal(bytes, &dim)
+	if err != nil {
+		log.Error(err, nil)
+	}
+
+	instance, err := s.GetInstance(ID)
+	if err != nil {
+		log.Error(err, nil)
+	}
+
+	for i := 0; i < len(instance.Dimensions); i++ {
+		if instance.Dimensions[i].Name == dimension {
+			if dim.Label != "" {
+				instance.Dimensions[i].Label = dim.Label
+			}
+			if dim.Description != "" {
+				instance.Dimensions[i].Description = dim.Description
+			}
+		}
+	}
+
+	if err = s.UpdateInstance(ID, instance); err != nil {
+		log.Error(err, nil)
+		handleErrorType(err, w)
+		return
+	}
+
+	log.Debug("updated dimension", log.Data{"instance": ID, "dimension": dimension})
+
+}
+
 //Update a specific instance
 func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
