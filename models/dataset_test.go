@@ -161,7 +161,7 @@ func TestValidateVersion(t *testing.T) {
 			So(err, ShouldResemble, errors.New("Incorrect state, can be one of the following: edition-confirmed, associated or published"))
 		})
 
-		Convey("when mandatorey fields are missing from version document when state is set to created", func() {
+		Convey("when mandatory fields are missing from version document when state is set to created", func() {
 
 			err := ValidateVersion(&Version{State: EditionConfirmedState})
 			So(err, ShouldNotBeNil)
