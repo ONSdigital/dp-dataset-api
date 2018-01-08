@@ -352,7 +352,42 @@ func TestUpdateInstanceFailure(t *testing.T) {
 	})
 }
 
-func TestUpdateInstanceReturnsInternalError(t *testing.T) {
+func TestUpdatePublishedInstanceToCompletedReturnsForbidden(t *testing.T) {
+	t.Parallel()
+	Convey("Given a 'published' instance, when we update to 'completed' then we get a bad-request error", t, func() {
+		body := strings.NewReader(`{"state":"completed"}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/1235", body)
+		w := httptest.NewRecorder()
+
+		currentInstanceTestData := &models.Instance{
+			Edition: "2017",
+			Links: &models.InstanceLinks{
+				Dataset: &models.IDLink{
+					ID: "4567",
+				},
+			},
+			State: models.PublishedState,
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(id string) (*models.Instance, error) {
+				return currentInstanceTestData, nil
+			},
+			UpdateInstanceFunc: func(id string, i *models.Instance) error {
+				return internalError
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance.Update(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+	})
+}
+
+func TestUpdateCompletedInstanceToCompletedReturnsForbidden(t *testing.T) {
 	t.Parallel()
 	Convey("update to an instance returns an internal error", t, func() {
 		body := strings.NewReader(`{"state":"completed"}`)
@@ -381,10 +416,9 @@ func TestUpdateInstanceReturnsInternalError(t *testing.T) {
 		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.Update(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 	})
 }
 
