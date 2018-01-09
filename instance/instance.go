@@ -109,8 +109,8 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	log.Debug("add instance", log.Data{"instance": instance})
 }
 
-// UpdateDimensionLabelDesc updates label and/or description for a specific dimension within an instance
-func (s *Store) UpdateDimensionLabelDesc(w http.ResponseWriter, r *http.Request) {
+// UpdateDimension updates label and/or description for a specific dimension within an instance
+func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	ID := vars["id"]
