@@ -123,7 +123,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Early return if instance is already published
-	if instance.State == "published" {
+	if instance.State == models.PublishedState {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
