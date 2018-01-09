@@ -24,8 +24,8 @@ type Configuration struct {
 // MongoConfig contains the config required to connect to MongoDB.
 type MongoConfig struct {
 	BindAddr   string `envconfig:"MONGODB_BIND_ADDR"`
-	Collection string `envconfig:"MONGODB_DATABASE"`
-	Database   string `envconfig:"MONGODB_COLLECTION"`
+	Collection string `envconfig:"MONGODB_COLLECTION"`
+	Database   string `envconfig:"MONGODB_DATABASE"`
 }
 
 var cfg *Configuration
