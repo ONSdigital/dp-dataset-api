@@ -133,22 +133,23 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	// Combine existing links and spatial link
 	instance.Links = updateLinks(instance, currentInstance)
 
+	logData := log.Data{"instance_id": id, "current_state": currentInstance.State, "requested_state": instance.State}
 	switch instance.State {
 	case models.CompletedState:
 		if err = validateInstanceUpdate(models.SubmittedState, currentInstance, instance); err != nil {
-			log.Error(err, log.Data{"instance_id": id, "current_state": currentInstance.State})
+			log.Error(err, logData)
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
 	case models.EditionConfirmedState:
 		if err = validateInstanceUpdate(models.CompletedState, currentInstance, instance); err != nil {
-			log.Error(err, log.Data{"instance_id": id, "current_state": currentInstance.State})
+			log.Error(err, logData)
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
 	case models.AssociatedState:
 		if err = validateInstanceUpdate(models.EditionConfirmedState, currentInstance, instance); err != nil {
-			log.Error(err, log.Data{"instance_id": id, "current_state": currentInstance.State})
+			log.Error(err, logData)
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
@@ -156,7 +157,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		// TODO Update dataset.next state to associated and add collection id
 	case models.PublishedState:
 		if err = validateInstanceUpdate(models.AssociatedState, currentInstance, instance); err != nil {
-			log.Error(err, log.Data{"instance_id": id, "current_state": currentInstance.State})
+			log.Error(err, logData)
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
