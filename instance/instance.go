@@ -109,11 +109,26 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	log.Debug("add instance", log.Data{"instance": instance})
 }
 
+// UpdateDimension updates label and/or description for a specific dimension in an instance
 func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
+
 	vars := mux.Vars(r)
 	ID := vars["id"]
 	dimension := vars["dimension"]
 
+	// Get instance
+	instance, err := s.GetInstance(ID)
+	if err != nil {
+		log.Error(err, nil)
+	}
+
+	// Early return if instance is already published
+	if instance.State == "published" {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	// Read and unmarshal request body
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error(err, nil)
@@ -126,13 +141,13 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 		log.Error(err, nil)
 	}
 
-	instance, err := s.GetInstance(ID)
-	if err != nil {
-		log.Error(err, nil)
-	}
-
+	// Update instance-dimension
 	for i := 0; i < len(instance.Dimensions); i++ {
+
+		// For the chosen dimension
 		if instance.Dimensions[i].Name == dimension {
+
+			// Assign update info, conditionals to allow updating of both or either without blanking other
 			if dim.Label != "" {
 				instance.Dimensions[i].Label = dim.Label
 			}
@@ -140,8 +155,10 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 				instance.Dimensions[i].Description = dim.Description
 			}
 		}
+
 	}
 
+	// Update instance
 	if err = s.UpdateInstance(ID, instance); err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
