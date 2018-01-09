@@ -384,6 +384,32 @@ paths:
           description: "No dimensions found for version of an edition of a dataset using the id, edition and version provided"
         500:
           $ref: '#/responses/InternalError'
+  /datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}:
+    get:
+      tags:
+      - "Private user"
+      summary: "Update label and/or description for a single dimension"
+      description: "Update label and/or description for a single dimension"
+      parameters:
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/dimension'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      responses:
+        400:
+          description: |
+            Invalid request, reasons can be one of the following:
+              * invalid request body
+              * dataset id was incorrect
+              * edition was incorrect
+        401:
+          description: "Unauthorised to update version of dataset"
+        403:
+          description: "Forbidden to overwrite version of dataset, already published"
+        404:
+          description: "Version was not found for a dataset using the id and edition provided"
+        500:
+          $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options:
     get:
       tags:
