@@ -80,6 +80,7 @@ func routes(host, secretKey string, router *mux.Router, dataStore store.DataStor
 	api.router.HandleFunc("/instances/{id}", api.privateAuth.Check(instance.Update)).Methods("PUT")
 	api.router.HandleFunc("/instances/{id}/events", api.privateAuth.Check(instance.AddEvent)).Methods("POST")
 	api.router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", api.privateAuth.Check(instance.UpdateObservations)).Methods("PUT")
+	api.router.HandleFunc("/instances/{id}/import_tasks/import_observations", api.privateAuth.Check(instance.UpdateImportObservationsTask)).Methods("PUT")
 
 	dimension := dimension.Store{Storer: api.dataStore.Backend}
 	api.router.HandleFunc("/instances/{id}/dimensions", dimension.GetNodes).Methods("GET")

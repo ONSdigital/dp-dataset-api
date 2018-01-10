@@ -15,7 +15,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 )
 
 //Store provides a backend for instances
@@ -349,11 +349,58 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Store) UpdateImportObservationsTask(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	defer r.Body.Close()
+
+	task, err := unmarshalImportObservationTask(r.Body)
+	if err != nil {
+		log.Error(err, nil)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if task.State != "" {
+		if err := s.UpdateImportObservationsTaskState(id, task.State); err != nil {
+			log.Error(err, nil)
+			handleErrorType(err, w)
+		}
+	}
+}
+
+func unmarshalImportObservationTask(reader io.Reader) (*models.ImportObservationsTask, error) {
+
+	bytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, errors.New("failed to read message body")
+	}
+
+	log.Debug("update import observation task request", log.Data{"request": string(bytes)})
+
+	var task models.ImportObservationsTask
+	err = json.Unmarshal(bytes, &task)
+	if err != nil {
+		return nil, errors.New("failed to parse json body: " + err.Error())
+	}
+
+	if task.State != "" {
+		if task.State != models.CompletedState {
+			return nil, fmt.Errorf("bad request - invalid task state values: %v", task.State)
+		}
+	}
+
+	return &task, nil
+}
+
 func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 	bytes, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
 	}
+
+	log.Debug("add instance request", log.Data{"instance": string(bytes)})
 
 	var instance models.Instance
 	err = json.Unmarshal(bytes, &instance)

@@ -41,6 +41,7 @@ type Storer interface {
 	UpdateEdition(datasetID, edition string, latestVersion *models.Version) error
 	UpdateInstance(ID string, instance *models.Instance) error
 	UpdateObservationInserted(ID string, observationInserted int64) error
+	UpdateImportObservationsTaskState(id string, state string) error
 	UpdateVersion(ID string, version *models.Version) error
 	UpsertContact(ID string, update interface{}) error
 	UpsertDataset(ID string, datasetDoc *models.DatasetUpdate) error

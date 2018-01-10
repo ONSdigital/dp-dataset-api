@@ -126,7 +126,31 @@ func (m *Mongo) UpdateObservationInserted(id string, observationInserted int64) 
 	defer s.Close()
 
 	err := s.DB(m.Database).C(instanceCollection).Update(bson.M{"id": id},
-		bson.M{"$inc": bson.M{"total_inserted_observations": observationInserted}, "$set": bson.M{"last_updated": time.Now().UTC()}})
+		bson.M{
+			"$inc": bson.M{"import_tasks.import_observations.total_inserted_observations": observationInserted},
+			"$set": bson.M{"last_updated": time.Now().UTC()}})
+
+	if err == mgo.ErrNotFound {
+		return errs.ErrInstanceNotFound
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateImportObservationsTaskState to the given state.
+func (m *Mongo) UpdateImportObservationsTaskState(id string, state string) error {
+	s := m.Session.Copy()
+	defer s.Close()
+
+	err := s.DB(m.Database).C(instanceCollection).Update(bson.M{"id": id},
+		bson.M{
+			"$set":         bson.M{"import_tasks.import_observations.state": state},
+			"$currentDate": bson.M{"last_updated": true},
+		})
 
 	if err == mgo.ErrNotFound {
 		return errs.ErrInstanceNotFound
