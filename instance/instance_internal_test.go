@@ -98,3 +98,36 @@ func TestUnmarshalInstance(t *testing.T) {
 		So(instance.Links.Job.ID, ShouldEqual, "123-456")
 	})
 }
+
+func TestUnmarshalImportObservationTaskWithBadReader(t *testing.T) {
+	Convey("Create an import observation task with an invalid reader", t, func() {
+		task, err := unmarshalImportObservationTask(Reader{})
+		So(task, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "failed to read message body")
+	})
+}
+
+func TestUnmarshalImportObservationTaskWithInvalidJson(t *testing.T) {
+	Convey("Create an import observation task with invalid json", t, func() {
+		task, err := unmarshalImportObservationTask(strings.NewReader("{ "))
+		So(task, ShouldBeNil)
+		So(err.Error(), ShouldContainSubstring, "failed to parse json body")
+	})
+}
+
+func TestUnmarshalImportObservationTaskInvalidState(t *testing.T) {
+	Convey("Create an import observation task with an invalid state value", t, func() {
+		task, err := unmarshalImportObservationTask(strings.NewReader(`{"state":"wut"}`))
+		So(task, ShouldBeNil)
+		So(err.Error(), ShouldContainSubstring, "bad request - invalid task state values: wut")
+	})
+}
+
+func TestUnmarshalImportObservationTask(t *testing.T) {
+	Convey("Create an import observation task with valid json", t, func() {
+		task, err := unmarshalImportObservationTask(strings.NewReader(`{"state":"completed"}`))
+		So(err, ShouldBeNil)
+		So(task, ShouldNotBeNil)
+		So(task.State, ShouldEqual, "completed")
+	})
+}

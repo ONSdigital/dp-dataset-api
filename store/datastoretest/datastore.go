@@ -12,36 +12,37 @@ import (
 )
 
 var (
-	lockStorerMockAddDimensionToInstance        sync.RWMutex
-	lockStorerMockAddEventToInstance            sync.RWMutex
-	lockStorerMockAddInstance                   sync.RWMutex
-	lockStorerMockCheckDatasetExists            sync.RWMutex
-	lockStorerMockCheckEditionExists            sync.RWMutex
-	lockStorerMockGetDataset                    sync.RWMutex
-	lockStorerMockGetDatasets                   sync.RWMutex
-	lockStorerMockGetDimensionNodesFromInstance sync.RWMutex
-	lockStorerMockGetDimensionOptions           sync.RWMutex
-	lockStorerMockGetDimensions                 sync.RWMutex
-	lockStorerMockGetEdition                    sync.RWMutex
-	lockStorerMockGetEditions                   sync.RWMutex
-	lockStorerMockGetInstance                   sync.RWMutex
-	lockStorerMockGetInstances                  sync.RWMutex
-	lockStorerMockGetNextVersion                sync.RWMutex
-	lockStorerMockGetUniqueDimensionValues      sync.RWMutex
-	lockStorerMockGetVersion                    sync.RWMutex
-	lockStorerMockGetVersions                   sync.RWMutex
-	lockStorerMockPing                          sync.RWMutex
-	lockStorerMockUpdateDataset                 sync.RWMutex
-	lockStorerMockUpdateDatasetWithAssociation  sync.RWMutex
-	lockStorerMockUpdateDimensionNodeID         sync.RWMutex
-	lockStorerMockUpdateEdition                 sync.RWMutex
-	lockStorerMockUpdateInstance                sync.RWMutex
-	lockStorerMockUpdateObservationInserted     sync.RWMutex
-	lockStorerMockUpdateVersion                 sync.RWMutex
-	lockStorerMockUpsertContact                 sync.RWMutex
-	lockStorerMockUpsertDataset                 sync.RWMutex
-	lockStorerMockUpsertEdition                 sync.RWMutex
-	lockStorerMockUpsertVersion                 sync.RWMutex
+	lockStorerMockAddDimensionToInstance            sync.RWMutex
+	lockStorerMockAddEventToInstance                sync.RWMutex
+	lockStorerMockAddInstance                       sync.RWMutex
+	lockStorerMockCheckDatasetExists                sync.RWMutex
+	lockStorerMockCheckEditionExists                sync.RWMutex
+	lockStorerMockGetDataset                        sync.RWMutex
+	lockStorerMockGetDatasets                       sync.RWMutex
+	lockStorerMockGetDimensionNodesFromInstance     sync.RWMutex
+	lockStorerMockGetDimensionOptions               sync.RWMutex
+	lockStorerMockGetDimensions                     sync.RWMutex
+	lockStorerMockGetEdition                        sync.RWMutex
+	lockStorerMockGetEditions                       sync.RWMutex
+	lockStorerMockGetInstance                       sync.RWMutex
+	lockStorerMockGetInstances                      sync.RWMutex
+	lockStorerMockGetNextVersion                    sync.RWMutex
+	lockStorerMockGetUniqueDimensionValues          sync.RWMutex
+	lockStorerMockGetVersion                        sync.RWMutex
+	lockStorerMockGetVersions                       sync.RWMutex
+	lockStorerMockPing                              sync.RWMutex
+	lockStorerMockUpdateDataset                     sync.RWMutex
+	lockStorerMockUpdateDatasetWithAssociation      sync.RWMutex
+	lockStorerMockUpdateDimensionNodeID             sync.RWMutex
+	lockStorerMockUpdateEdition                     sync.RWMutex
+	lockStorerMockUpdateImportObservationsTaskState sync.RWMutex
+	lockStorerMockUpdateInstance                    sync.RWMutex
+	lockStorerMockUpdateObservationInserted         sync.RWMutex
+	lockStorerMockUpdateVersion                     sync.RWMutex
+	lockStorerMockUpsertContact                     sync.RWMutex
+	lockStorerMockUpsertDataset                     sync.RWMutex
+	lockStorerMockUpsertEdition                     sync.RWMutex
+	lockStorerMockUpsertVersion                     sync.RWMutex
 )
 
 // StorerMock is a mock implementation of Storer.
@@ -118,6 +119,9 @@ var (
 //             },
 //             UpdateEditionFunc: func(datasetID string, edition string, latestVersion *models.Version) error {
 // 	               panic("TODO: mock out the UpdateEdition method")
+//             },
+//             UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
+// 	               panic("TODO: mock out the UpdateImportObservationsTaskState method")
 //             },
 //             UpdateInstanceFunc: func(ID string, instance *models.Instance) error {
 // 	               panic("TODO: mock out the UpdateInstance method")
@@ -215,6 +219,9 @@ type StorerMock struct {
 
 	// UpdateEditionFunc mocks the UpdateEdition method.
 	UpdateEditionFunc func(datasetID string, edition string, latestVersion *models.Version) error
+
+	// UpdateImportObservationsTaskStateFunc mocks the UpdateImportObservationsTaskState method.
+	UpdateImportObservationsTaskStateFunc func(id string, state string) error
 
 	// UpdateInstanceFunc mocks the UpdateInstance method.
 	UpdateInstanceFunc func(ID string, instance *models.Instance) error
@@ -397,6 +404,13 @@ type StorerMock struct {
 			Edition string
 			// LatestVersion is the latestVersion argument value.
 			LatestVersion *models.Version
+		}
+		// UpdateImportObservationsTaskState holds details about calls to the UpdateImportObservationsTaskState method.
+		UpdateImportObservationsTaskState []struct {
+			// Id is the id argument value.
+			Id string
+			// State is the state argument value.
+			State string
 		}
 		// UpdateInstance holds details about calls to the UpdateInstance method.
 		UpdateInstance []struct {
@@ -1249,6 +1263,41 @@ func (mock *StorerMock) UpdateEditionCalls() []struct {
 	lockStorerMockUpdateEdition.RLock()
 	calls = mock.calls.UpdateEdition
 	lockStorerMockUpdateEdition.RUnlock()
+	return calls
+}
+
+// UpdateImportObservationsTaskState calls UpdateImportObservationsTaskStateFunc.
+func (mock *StorerMock) UpdateImportObservationsTaskState(id string, state string) error {
+	if mock.UpdateImportObservationsTaskStateFunc == nil {
+		panic("moq: StorerMock.UpdateImportObservationsTaskStateFunc is nil but Storer.UpdateImportObservationsTaskState was just called")
+	}
+	callInfo := struct {
+		Id    string
+		State string
+	}{
+		Id:    id,
+		State: state,
+	}
+	lockStorerMockUpdateImportObservationsTaskState.Lock()
+	mock.calls.UpdateImportObservationsTaskState = append(mock.calls.UpdateImportObservationsTaskState, callInfo)
+	lockStorerMockUpdateImportObservationsTaskState.Unlock()
+	return mock.UpdateImportObservationsTaskStateFunc(id, state)
+}
+
+// UpdateImportObservationsTaskStateCalls gets all the calls that were made to UpdateImportObservationsTaskState.
+// Check the length with:
+//     len(mockedStorer.UpdateImportObservationsTaskStateCalls())
+func (mock *StorerMock) UpdateImportObservationsTaskStateCalls() []struct {
+	Id    string
+	State string
+} {
+	var calls []struct {
+		Id    string
+		State string
+	}
+	lockStorerMockUpdateImportObservationsTaskState.RLock()
+	calls = mock.calls.UpdateImportObservationsTaskState
+	lockStorerMockUpdateImportObservationsTaskState.RUnlock()
 	return calls
 }
 

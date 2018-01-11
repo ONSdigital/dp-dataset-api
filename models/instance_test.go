@@ -58,14 +58,14 @@ func TestValidateStateFilter(t *testing.T) {
 
 			err := ValidateStateFilter([]string{"foo"})
 			So(err, ShouldNotBeNil)
-			So(err, ShouldResemble, errors.New("Bad request - invalid filter state values: [foo]"))
+			So(err, ShouldResemble, errors.New("bad request - invalid filter state values: [foo]"))
 		})
 
 		Convey("when the filter list contains more than one invalid state", func() {
 
 			err := ValidateStateFilter([]string{"foo", "bar"})
 			So(err, ShouldNotBeNil)
-			So(err, ShouldResemble, errors.New("Bad request - invalid filter state values: [foo bar]"))
+			So(err, ShouldResemble, errors.New("bad request - invalid filter state values: [foo bar]"))
 		})
 	})
 }

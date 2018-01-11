@@ -14,8 +14,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-//go:generate moq -out test/api.go -pkg apitest . API
-
 var httpServer *server.Server
 
 // DatasetAPI manages importing filters against a dataset

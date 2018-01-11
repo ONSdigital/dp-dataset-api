@@ -11,7 +11,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -444,5 +444,51 @@ func TestInsertedObservationsReturnsNotFound(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestStore_UpdateImportObservationsTask(t *testing.T) {
+
+	t.Parallel()
+	Convey("update to an import observation task returns http 200 response if no errors occur", t, func() {
+		body := strings.NewReader(`{"state":"completed"}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks/import_observations", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportObservationsTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestStore_UpdateImportObservationsTask_ReturnsInternalError(t *testing.T) {
+
+	t.Parallel()
+	Convey("update to an import observation task returns an internal error", t, func() {
+		body := strings.NewReader(`{"state":"completed"}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks/import_observations", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
+				return internalError
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportObservationsTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
 	})
 }
