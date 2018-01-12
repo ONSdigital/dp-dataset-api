@@ -45,7 +45,8 @@ func (api *DatasetAPI) healthCheck(w http.ResponseWriter, r *http.Request) {
 	// test db access
 	wg.Add(1)
 	go func() {
-		lastPing, err := api.dataStore.Backend.Ping(r.Context())
+		var lastPing time.Time
+		lastPing, err = api.dataStore.Backend.Ping(r.Context())
 		healthChan <- healthResult{Error: err, LastChecked: lastPing}
 		wg.Done()
 		if err != nil {

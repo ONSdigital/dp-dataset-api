@@ -2,13 +2,14 @@ package models
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"strconv"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/pkg/errors"
+	"github.com/satori/go.uuid"
 )
 
 // DatasetResults represents a structure for a list of datasets
@@ -157,7 +158,9 @@ type DownloadList struct {
 
 // DownloadObject represents information on the downloadable file
 type DownloadObject struct {
-	URL  string `bson:"url,omitempty"  json:"url,omitempty"`
+	URL string `bson:"url,omitempty"  json:"url,omitempty"`
+	// TODO size is in bytes and probably should be an int64 instead of a string this
+	// will have to change for several services (filter API, exporter services and web)
 	Size string `bson:"size,omitempty" json:"size,omitempty"`
 }
 
@@ -199,7 +202,6 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
 	}
-
 	return &dataset, nil
 }
 
@@ -220,6 +222,21 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 	}
 
 	return &version, nil
+}
+
+// CreateDownloadList manages the creation of a list downloadable items from a reader
+func CreateDownloadList(reader io.Reader) (*DownloadList, error) {
+	bytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	var downloadList DownloadList
+	if err := json.Unmarshal(bytes, &downloadList); err != nil {
+		return nil, errors.Wrap(err, "failed to parse json to downloadList")
+	}
+
+	return &downloadList, nil
 }
 
 // CreateContact manages the creation of a contact from a reader
@@ -259,13 +276,44 @@ func ValidateVersion(version *Version) error {
 	}
 
 	var missingFields []string
+	var invalidFields []string
 
 	if version.ReleaseDate == "" {
 		missingFields = append(missingFields, "release_date")
 	}
 
+	if version.Downloads != nil {
+		if version.Downloads.XLS != nil {
+			if version.Downloads.XLS.URL == "" {
+				missingFields = append(missingFields, "Downloads.XLS.URL")
+			}
+			if version.Downloads.XLS.Size == "" {
+				missingFields = append(missingFields, "Downloads.XLS.Size")
+			}
+			if _, err := strconv.Atoi(version.Downloads.XLS.Size); err != nil {
+				invalidFields = append(invalidFields, "Downloads.XLS.Size not a number")
+			}
+		}
+
+		if version.Downloads.CSV != nil {
+			if version.Downloads.CSV.URL == "" {
+				missingFields = append(missingFields, "Downloads.CSV.URL")
+			}
+			if version.Downloads.CSV.Size == "" {
+				missingFields = append(missingFields, "Downloads.CSV.Size")
+			}
+			if _, err := strconv.Atoi(version.Downloads.CSV.Size); err != nil {
+				invalidFields = append(invalidFields, "Downloads.CSV.Size not a number")
+			}
+		}
+	}
+
 	if missingFields != nil {
-		return fmt.Errorf("Missing mandatory fields: %v", missingFields)
+		return fmt.Errorf("missing mandatory fields: %v", missingFields)
+	}
+
+	if invalidFields != nil {
+		return fmt.Errorf("invalid fields: %v", invalidFields)
 	}
 
 	return nil
