@@ -3,11 +3,13 @@ package models
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/ONSdigital/go-ns/log"
+	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -87,7 +89,7 @@ func TestCreateDataset(t *testing.T) {
 		version, err := CreateDataset(r)
 		So(version, ShouldBeNil)
 		So(err, ShouldNotBeNil)
-		So(err, ShouldResemble, errors.New("Failed to parse json body"))
+		So(err.Error(), ShouldResemble, errors.New("Failed to parse json body").Error())
 	})
 }
 
@@ -127,7 +129,7 @@ func TestCreateVersion(t *testing.T) {
 		version, err := CreateVersion(r)
 		So(version, ShouldBeNil)
 		So(err, ShouldNotBeNil)
-		So(err, ShouldResemble, errors.New("Failed to parse json body"))
+		So(err.Error(), ShouldResemble, errors.New("Failed to parse json body").Error())
 	})
 }
 
@@ -158,14 +160,14 @@ func TestValidateVersion(t *testing.T) {
 
 			err := ValidateVersion(&Version{State: SubmittedState})
 			So(err, ShouldNotBeNil)
-			So(err, ShouldResemble, errors.New("Incorrect state, can be one of the following: edition-confirmed, associated or published"))
+			So(err.Error(), ShouldResemble, errors.New("Incorrect state, can be one of the following: edition-confirmed, associated or published").Error())
 		})
 
-		Convey("when mandatorey fields are missing from version document when state is set to created", func() {
+		Convey("when mandatory fields are missing from version document when state is set to created", func() {
 
 			err := ValidateVersion(&Version{State: EditionConfirmedState})
 			So(err, ShouldNotBeNil)
-			So(err, ShouldResemble, errors.New("Missing mandatory fields: [release_date]"))
+			So(err.Error(), ShouldResemble, errors.New("missing mandatory fields: [release_date]").Error())
 		})
 
 		Convey("when the version state is published but is missing collection_id", func() {
@@ -176,7 +178,61 @@ func TestValidateVersion(t *testing.T) {
 
 			err := ValidateVersion(version)
 			So(err, ShouldNotBeNil)
-			So(err, ShouldResemble, errors.New("Missing collection_id for association between version and a collection"))
+			So(err.Error(), ShouldResemble, errors.New("Missing collection_id for association between version and a collection").Error())
+		})
+
+		Convey("when version downloads are invalid", func() {
+			v := &Version{ReleaseDate: "Today", State: EditionConfirmedState}
+
+			v.Downloads = &DownloadList{XLS: &DownloadObject{URL: "", Size: "2"}}
+			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLS.URL"}), v)
+
+			v.Downloads = &DownloadList{CSV: &DownloadObject{URL: "", Size: "2"}}
+			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSV.URL"}), v)
+
+			v.Downloads = &DownloadList{XLS: &DownloadObject{URL: "/", Size: ""}}
+			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLS.Size"}), v)
+
+			v.Downloads = &DownloadList{CSV: &DownloadObject{URL: "/", Size: ""}}
+			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSV.Size"}), v)
+
+			v.Downloads = &DownloadList{XLS: &DownloadObject{URL: "/", Size: "bob"}}
+			assertVersionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.XLS.Size not a number"}), v)
+
+			v.Downloads = &DownloadList{CSV: &DownloadObject{URL: "/", Size: "bob"}}
+			assertVersionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.CSV.Size not a number"}), v)
 		})
 	})
+}
+
+func assertVersionDownloadError(expected error, v *Version) {
+	err := ValidateVersion(v)
+	So(err, ShouldNotBeNil)
+	So(err, ShouldResemble, expected)
+}
+
+func TestCreateDownloadList(t *testing.T) {
+	Convey("invalid input bytes return the expected error", t, func() {
+		reader := bytes.NewReader([]byte("hello"))
+		dl, err := CreateDownloadList(reader)
+		So(dl, ShouldBeNil)
+		So(reflect.TypeOf(errors.Cause(err)), ShouldEqual, reflect.TypeOf(&json.SyntaxError{}))
+	})
+
+	Convey("valid input returns the expected value", t, func() {
+		expected := &DownloadList{
+			XLS: &DownloadObject{
+				Size: "1",
+				URL:  "2",
+			},
+		}
+
+		input, _ := json.Marshal(expected)
+		reader := bytes.NewReader(input)
+
+		dl, err := CreateDownloadList(reader)
+		So(err, ShouldBeNil)
+		So(dl, ShouldResemble, expected)
+	})
+
 }

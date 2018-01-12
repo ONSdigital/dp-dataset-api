@@ -10,6 +10,8 @@ import (
 // Configuration structure which hold information for configuring the import API
 type Configuration struct {
 	BindAddr                string        `envconfig:"BIND_ADDR"`
+	KafkaAddr               []string      `envconfig:"KAFKA_ADDR"`
+	GenerateDownloadsTopic  string        `envconfig:"GENERATE_DOWNLOADS_TOPIC"`
 	CodeListAPIURL          string        `envconfig:"CODE_LIST_API_URL"`
 	DatasetAPIURL           string        `envconfig:"DATASET_API_URL"`
 	WebsiteURL              string        `envconfig:"WEBSITE_URL"`
@@ -36,6 +38,8 @@ func Get() (*Configuration, error) {
 
 	cfg = &Configuration{
 		BindAddr:                ":22000",
+		KafkaAddr:               []string{"localhost:9092"},
+		GenerateDownloadsTopic:  "filter-job-submitted",
 		CodeListAPIURL:          "http://localhost:22400",
 		DatasetAPIURL:           "http://localhost:22000",
 		WebsiteURL:              "http://localhost:20000",

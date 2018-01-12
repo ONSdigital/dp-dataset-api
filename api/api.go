@@ -16,21 +16,32 @@ import (
 
 var httpServer *server.Server
 
+//API provides an interface for the routes
+type API interface {
+	CreateDatasetAPI(string, *mux.Router, store.DataStore) *DatasetAPI
+}
+
+// DownloadsGenerator pre generates full file downloads for the specified dataset/edition/version
+type DownloadsGenerator interface {
+	Generate(datasetID, instanceID, edition, version string) error
+}
+
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
-	dataStore          store.DataStore
-	host               string
-	internalToken      string
-	privateAuth        *auth.Authenticator
-	router             *mux.Router
-	urlBuilder         *url.Builder
+	dataStore         store.DataStore
+	host              string
+	internalToken     string
+	privateAuth       *auth.Authenticator
+	router            *mux.Router
+	urlBuilder        *url.Builder
+	downloadGenerator DownloadsGenerator
 	healthCheckTimeout time.Duration
 }
 
 // CreateDatasetAPI manages all the routes configured to API
-func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, healthCheckTimeout time.Duration) {
+func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadsGenerator DownloadsGenerator, healthCheckTimeout time.Duration) {
 	router := mux.NewRouter()
-	routes(host, secretKey, router, dataStore, urlBuilder, healthCheckTimeout)
+	routes(host, secretKey, router, dataStore, urlBuilder, downloadsGenerator, healthCheckTimeout)
 
 	httpServer = server.New(bindAddr, router)
 	// Disable this here to allow main to manage graceful shutdown of the entire app.
@@ -45,14 +56,15 @@ func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStor
 	}()
 }
 
-func routes(host, secretKey string, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, healthCheckTimeout time.Duration) *DatasetAPI {
+func routes(host, secretKey string, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, healthCheckTimeout time.Duration) *DatasetAPI {
 	api := DatasetAPI{
-		privateAuth:        &auth.Authenticator{SecretKey: secretKey, HeaderName: "internal-token"},
-		dataStore:          dataStore,
-		host:               host,
-		internalToken:      secretKey,
-		router:             router,
-		urlBuilder:         urlBuilder,
+		privateAuth:       &auth.Authenticator{SecretKey: secretKey, HeaderName: "internal-token"},
+		dataStore:         dataStore,
+		host:              host,
+		internalToken:     secretKey,
+		router:            router,
+		urlBuilder:        urlBuilder,
+		downloadGenerator: downloadGenerator,
 		healthCheckTimeout: healthCheckTimeout,
 	}
 
