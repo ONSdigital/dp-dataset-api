@@ -1494,6 +1494,12 @@ func TestPutVersionReturnsError(t *testing.T) {
 	})
 
 	Convey("Given the version doc is 'published', when we try to set state to 'completed', then we see a status of forbidden", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(string, string, string, string) error {
+				return nil
+			},
+		}
+
 		var b string
 		b = versionPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
@@ -1517,7 +1523,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(w.Body.String(), ShouldEqual, "unable to update document, already published\n")
