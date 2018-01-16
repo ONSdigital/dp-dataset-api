@@ -187,6 +187,7 @@ paths:
       summary: "Create a dataset"
       description: "Create a dataset provided by the ONS that can be filtered using the filter API"
       parameters:
+      - $ref: '#/parameters/id'
       - $ref: '#/parameters/new_dataset'
       produces:
       - "application/json"
@@ -314,7 +315,8 @@ paths:
       description: "Update a version for an edition of a dataset, if the state is changed to associated or published, the parent documents(dataset and edition resources) will also be updated. A version can only be updated if the state is not published"
       parameters:
       - $ref: '#/parameters/id'
-      - $ref: '#/parameters/new_version'
+      - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/version'
       responses:
         201:
           description: "A json object containing a version"
