@@ -428,8 +428,6 @@ func unmarshalImportObservationTask(reader io.Reader) (*models.ImportObservation
 		return nil, errors.New("failed to read message body")
 	}
 
-	log.Debug("update import observation task request", log.Data{"request": string(bytes)})
-
 	var task models.ImportObservationsTask
 	err = json.Unmarshal(bytes, &task)
 	if err != nil {

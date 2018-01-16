@@ -526,3 +526,49 @@ func TestStore_UpdateImportObservationsTask_ReturnsInternalError(t *testing.T) {
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
 	})
 }
+
+func TestStore_UpdateBuildHierarchyTask(t *testing.T) {
+
+	t.Parallel()
+	Convey("update to a build hierarchy task returns http 200 response if no errors occur", t, func() {
+		body := strings.NewReader(`{"state":"completed"}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks/build_hierarchies/aggregate", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateBuildHierarchyTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestStore_UpdateBuildHierarchyTask_ReturnsInternalError(t *testing.T) {
+
+	t.Parallel()
+	Convey("update to a build hierarchy task returns an internal error", t, func() {
+		body := strings.NewReader(`{"state":"completed"}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks/build_hierarchies/aggregate", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
+				return internalError
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateBuildHierarchyTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
+	})
+}
