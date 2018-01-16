@@ -377,6 +377,50 @@ func (s *Store) UpdateImportObservationsTask(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+func (s *Store) UpdateBuildHierarchyTask(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	dimension := vars["dimension"]
+
+	defer r.Body.Close()
+
+	task, err := unmarshalBuildHierarchyTask(r.Body)
+	if err != nil {
+		log.Error(err, nil)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if task.State != "" {
+		if err := s.UpdateBuildHierarchyTaskState(id, dimension, task.State); err != nil {
+			log.Error(err, nil)
+			handleErrorType(err, w)
+		}
+	}
+}
+
+func unmarshalBuildHierarchyTask(reader io.Reader) (*models.BuildHierarchyTask, error) {
+
+	bytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, errors.New("failed to read message body")
+	}
+
+	var task models.BuildHierarchyTask
+	err = json.Unmarshal(bytes, &task)
+	if err != nil {
+		return nil, errors.New("failed to parse json body: " + err.Error())
+	}
+
+	if task.State != "" {
+		if task.State != models.CompletedState {
+			return nil, fmt.Errorf("bad request - invalid task state value: %v", task.State)
+		}
+	}
+
+	return &task, nil
+}
+
 func unmarshalImportObservationTask(reader io.Reader) (*models.ImportObservationsTask, error) {
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -394,7 +438,7 @@ func unmarshalImportObservationTask(reader io.Reader) (*models.ImportObservation
 
 	if task.State != "" {
 		if task.State != models.CompletedState {
-			return nil, fmt.Errorf("bad request - invalid task state values: %v", task.State)
+			return nil, fmt.Errorf("bad request - invalid task state value: %v", task.State)
 		}
 	}
 

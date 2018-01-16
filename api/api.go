@@ -28,13 +28,13 @@ type DownloadsGenerator interface {
 
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
-	dataStore         store.DataStore
-	host              string
-	internalToken     string
-	privateAuth       *auth.Authenticator
-	router            *mux.Router
-	urlBuilder        *url.Builder
-	downloadGenerator DownloadsGenerator
+	dataStore          store.DataStore
+	host               string
+	internalToken      string
+	privateAuth        *auth.Authenticator
+	router             *mux.Router
+	urlBuilder         *url.Builder
+	downloadGenerator  DownloadsGenerator
 	healthCheckTimeout time.Duration
 }
 
@@ -58,13 +58,13 @@ func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStor
 
 func routes(host, secretKey string, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, healthCheckTimeout time.Duration) *DatasetAPI {
 	api := DatasetAPI{
-		privateAuth:       &auth.Authenticator{SecretKey: secretKey, HeaderName: "internal-token"},
-		dataStore:         dataStore,
-		host:              host,
-		internalToken:     secretKey,
-		router:            router,
-		urlBuilder:        urlBuilder,
-		downloadGenerator: downloadGenerator,
+		privateAuth:        &auth.Authenticator{SecretKey: secretKey, HeaderName: "internal-token"},
+		dataStore:          dataStore,
+		host:               host,
+		internalToken:      secretKey,
+		router:             router,
+		urlBuilder:         urlBuilder,
+		downloadGenerator:  downloadGenerator,
 		healthCheckTimeout: healthCheckTimeout,
 	}
 
@@ -91,6 +91,7 @@ func routes(host, secretKey string, router *mux.Router, dataStore store.DataStor
 	api.router.HandleFunc("/instances/{id}/events", api.privateAuth.Check(instance.AddEvent)).Methods("POST")
 	api.router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", api.privateAuth.Check(instance.UpdateObservations)).Methods("PUT")
 	api.router.HandleFunc("/instances/{id}/import_tasks/import_observations", api.privateAuth.Check(instance.UpdateImportObservationsTask)).Methods("PUT")
+	api.router.HandleFunc("/instances/{id}/import_tasks/build_hierarchies/{dimension}", api.privateAuth.Check(instance.UpdateBuildHierarchyTask)).Methods("PUT")
 
 	dimension := dimension.Store{Storer: api.dataStore.Backend}
 	api.router.HandleFunc("/instances/{id}/dimensions", dimension.GetNodes).Methods("GET")

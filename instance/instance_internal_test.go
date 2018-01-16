@@ -119,13 +119,46 @@ func TestUnmarshalImportObservationTaskInvalidState(t *testing.T) {
 	Convey("Create an import observation task with an invalid state value", t, func() {
 		task, err := unmarshalImportObservationTask(strings.NewReader(`{"state":"wut"}`))
 		So(task, ShouldBeNil)
-		So(err.Error(), ShouldContainSubstring, "bad request - invalid task state values: wut")
+		So(err.Error(), ShouldContainSubstring, "bad request - invalid task state value: wut")
 	})
 }
 
 func TestUnmarshalImportObservationTask(t *testing.T) {
 	Convey("Create an import observation task with valid json", t, func() {
 		task, err := unmarshalImportObservationTask(strings.NewReader(`{"state":"completed"}`))
+		So(err, ShouldBeNil)
+		So(task, ShouldNotBeNil)
+		So(task.State, ShouldEqual, "completed")
+	})
+}
+
+func TestUnmarshalBuildHierarchyTaskWithBadReader(t *testing.T) {
+	Convey("Create an build hierarchy task with an invalid reader", t, func() {
+		task, err := unmarshalBuildHierarchyTask(Reader{})
+		So(task, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "failed to read message body")
+	})
+}
+
+func TestUnmarshalBuildHierarchyTaskWithInvalidJson(t *testing.T) {
+	Convey("Create an build hierarchy task with invalid json", t, func() {
+		task, err := unmarshalBuildHierarchyTask(strings.NewReader("{ "))
+		So(task, ShouldBeNil)
+		So(err.Error(), ShouldContainSubstring, "failed to parse json body")
+	})
+}
+
+func TestUnmarshalBuildHierarchyTaskInvalidState(t *testing.T) {
+	Convey("Create an build hierarchy task with an invalid state value", t, func() {
+		task, err := unmarshalBuildHierarchyTask(strings.NewReader(`{"state":"wut"}`))
+		So(task, ShouldBeNil)
+		So(err.Error(), ShouldContainSubstring, "bad request - invalid task state value: wut")
+	})
+}
+
+func TestUnmarshalBuildHierarchyTask(t *testing.T) {
+	Convey("Create an build hierarchy task with valid json", t, func() {
+		task, err := unmarshalBuildHierarchyTask(strings.NewReader(`{"state":"completed"}`))
 		So(err, ShouldBeNil)
 		So(task, ShouldNotBeNil)
 		So(task.State, ShouldEqual, "completed")

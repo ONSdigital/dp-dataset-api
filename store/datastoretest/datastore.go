@@ -31,6 +31,7 @@ var (
 	lockStorerMockGetVersion                        sync.RWMutex
 	lockStorerMockGetVersions                       sync.RWMutex
 	lockStorerMockPing                              sync.RWMutex
+	lockStorerMockUpdateBuildHierarchyTaskState     sync.RWMutex
 	lockStorerMockUpdateDataset                     sync.RWMutex
 	lockStorerMockUpdateDatasetWithAssociation      sync.RWMutex
 	lockStorerMockUpdateDimensionNodeID             sync.RWMutex
@@ -107,6 +108,9 @@ var (
 //             },
 //             PingFunc: func(ctx context.Context) (time.Time, error) {
 // 	               panic("TODO: mock out the Ping method")
+//             },
+//             UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
+// 	               panic("TODO: mock out the UpdateBuildHierarchyTaskState method")
 //             },
 //             UpdateDatasetFunc: func(ID string, dataset *models.Dataset) error {
 // 	               panic("TODO: mock out the UpdateDataset method")
@@ -207,6 +211,9 @@ type StorerMock struct {
 
 	// PingFunc mocks the Ping method.
 	PingFunc func(ctx context.Context) (time.Time, error)
+
+	// UpdateBuildHierarchyTaskStateFunc mocks the UpdateBuildHierarchyTaskState method.
+	UpdateBuildHierarchyTaskStateFunc func(id string, dimension string, state string) error
 
 	// UpdateDatasetFunc mocks the UpdateDataset method.
 	UpdateDatasetFunc func(ID string, dataset *models.Dataset) error
@@ -374,6 +381,15 @@ type StorerMock struct {
 		Ping []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
+		}
+		// UpdateBuildHierarchyTaskState holds details about calls to the UpdateBuildHierarchyTaskState method.
+		UpdateBuildHierarchyTaskState []struct {
+			// Id is the id argument value.
+			Id string
+			// Dimension is the dimension argument value.
+			Dimension string
+			// State is the state argument value.
+			State string
 		}
 		// UpdateDataset holds details about calls to the UpdateDataset method.
 		UpdateDataset []struct {
@@ -1119,6 +1135,45 @@ func (mock *StorerMock) PingCalls() []struct {
 	lockStorerMockPing.RLock()
 	calls = mock.calls.Ping
 	lockStorerMockPing.RUnlock()
+	return calls
+}
+
+// UpdateBuildHierarchyTaskState calls UpdateBuildHierarchyTaskStateFunc.
+func (mock *StorerMock) UpdateBuildHierarchyTaskState(id string, dimension string, state string) error {
+	if mock.UpdateBuildHierarchyTaskStateFunc == nil {
+		panic("moq: StorerMock.UpdateBuildHierarchyTaskStateFunc is nil but Storer.UpdateBuildHierarchyTaskState was just called")
+	}
+	callInfo := struct {
+		Id        string
+		Dimension string
+		State     string
+	}{
+		Id:        id,
+		Dimension: dimension,
+		State:     state,
+	}
+	lockStorerMockUpdateBuildHierarchyTaskState.Lock()
+	mock.calls.UpdateBuildHierarchyTaskState = append(mock.calls.UpdateBuildHierarchyTaskState, callInfo)
+	lockStorerMockUpdateBuildHierarchyTaskState.Unlock()
+	return mock.UpdateBuildHierarchyTaskStateFunc(id, dimension, state)
+}
+
+// UpdateBuildHierarchyTaskStateCalls gets all the calls that were made to UpdateBuildHierarchyTaskState.
+// Check the length with:
+//     len(mockedStorer.UpdateBuildHierarchyTaskStateCalls())
+func (mock *StorerMock) UpdateBuildHierarchyTaskStateCalls() []struct {
+	Id        string
+	Dimension string
+	State     string
+} {
+	var calls []struct {
+		Id        string
+		Dimension string
+		State     string
+	}
+	lockStorerMockUpdateBuildHierarchyTaskState.RLock()
+	calls = mock.calls.UpdateBuildHierarchyTaskState
+	lockStorerMockUpdateBuildHierarchyTaskState.RUnlock()
 	return calls
 }
 
