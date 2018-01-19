@@ -633,7 +633,6 @@ paths:
         $ref: '#/responses/InstanceNotFound'
       500:
         $ref: '#/responses/InternalError'
-
   /instances/{instance_id}/dimensions/{dimension}/options:
     get:
       tags:
