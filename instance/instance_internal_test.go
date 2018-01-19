@@ -99,68 +99,28 @@ func TestUnmarshalInstance(t *testing.T) {
 	})
 }
 
-func TestUnmarshalImportObservationTaskWithBadReader(t *testing.T) {
-	Convey("Create an import observation task with an invalid reader", t, func() {
-		task, err := unmarshalImportObservationTask(Reader{})
+func TestUnmarshalImportTaskWithBadReader(t *testing.T) {
+	Convey("Create an import task with an invalid reader", t, func() {
+		task, err := unmarshalImportTasks(Reader{})
 		So(task, ShouldBeNil)
 		So(err.Error(), ShouldEqual, "failed to read message body")
 	})
 }
 
-func TestUnmarshalImportObservationTaskWithInvalidJson(t *testing.T) {
+func TestUnmarshalImportTaskWithInvalidJson(t *testing.T) {
 	Convey("Create an import observation task with invalid json", t, func() {
-		task, err := unmarshalImportObservationTask(strings.NewReader("{ "))
+		task, err := unmarshalImportTasks(strings.NewReader("{ "))
 		So(task, ShouldBeNil)
 		So(err.Error(), ShouldContainSubstring, "failed to parse json body")
 	})
 }
 
-func TestUnmarshalImportObservationTaskInvalidState(t *testing.T) {
-	Convey("Create an import observation task with an invalid state value", t, func() {
-		task, err := unmarshalImportObservationTask(strings.NewReader(`{"state":"wut"}`))
-		So(task, ShouldBeNil)
-		So(err.Error(), ShouldContainSubstring, "bad request - invalid task state value: wut")
-	})
-}
-
-func TestUnmarshalImportObservationTask(t *testing.T) {
+func TestUnmarshalImportTask(t *testing.T) {
 	Convey("Create an import observation task with valid json", t, func() {
-		task, err := unmarshalImportObservationTask(strings.NewReader(`{"state":"completed"}`))
+		task, err := unmarshalImportTasks(strings.NewReader(`{"import_observations":{"state":"completed"}}`))
 		So(err, ShouldBeNil)
 		So(task, ShouldNotBeNil)
-		So(task.State, ShouldEqual, "completed")
-	})
-}
-
-func TestUnmarshalBuildHierarchyTaskWithBadReader(t *testing.T) {
-	Convey("Create an build hierarchy task with an invalid reader", t, func() {
-		task, err := unmarshalBuildHierarchyTask(Reader{})
-		So(task, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "failed to read message body")
-	})
-}
-
-func TestUnmarshalBuildHierarchyTaskWithInvalidJson(t *testing.T) {
-	Convey("Create an build hierarchy task with invalid json", t, func() {
-		task, err := unmarshalBuildHierarchyTask(strings.NewReader("{ "))
-		So(task, ShouldBeNil)
-		So(err.Error(), ShouldContainSubstring, "failed to parse json body")
-	})
-}
-
-func TestUnmarshalBuildHierarchyTaskInvalidState(t *testing.T) {
-	Convey("Create an build hierarchy task with an invalid state value", t, func() {
-		task, err := unmarshalBuildHierarchyTask(strings.NewReader(`{"state":"wut"}`))
-		So(task, ShouldBeNil)
-		So(err.Error(), ShouldContainSubstring, "bad request - invalid task state value: wut")
-	})
-}
-
-func TestUnmarshalBuildHierarchyTask(t *testing.T) {
-	Convey("Create an build hierarchy task with valid json", t, func() {
-		task, err := unmarshalBuildHierarchyTask(strings.NewReader(`{"state":"completed"}`))
-		So(err, ShouldBeNil)
-		So(task, ShouldNotBeNil)
-		So(task.State, ShouldEqual, "completed")
+		So(task.ImportObservations, ShouldNotBeNil)
+		So(task.ImportObservations.State, ShouldEqual, "completed")
 	})
 }
