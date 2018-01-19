@@ -146,7 +146,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update instance-dimension
-	for i := 0; i < len(instance.Dimensions); i++ {
+	for i := range instance.Dimensions {
 
 		// For the chosen dimension
 		if instance.Dimensions[i].Name == dimension {
