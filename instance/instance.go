@@ -140,7 +140,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(bytes, &dim)
 	if err != nil {
-		log.ErrorC("Failing to unmarshall bytes to models.codelist", err, log.Data{"bytes": bytes})
+		log.ErrorC("Failing to model models.Codelist resource based on request", err, log.Data{"instance": ID, "dimension": dimension})
 		handleErrorType(err, w)
 	}
 
