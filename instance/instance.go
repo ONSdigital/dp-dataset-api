@@ -125,7 +125,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	// Early return if instance is already published
 	if instance.State == models.PublishedState {
-		log.Debug("unable to update instance, already published", nil)
+		log.Debug("unable to update instance/version, already published", nil)
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
@@ -133,8 +133,8 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	// Read and unmarshal request body
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.ErrorC("Error reading response.body, expecting {\"label\":foo', \"description\":foo} or one of", err, log.Data{"response body": r.Body})
-		handleErrorType(err, w)
+		log.ErrorC("Error reading response.body.", err, nil)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
 	var dim *models.CodeList
@@ -142,7 +142,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(bytes, &dim)
 	if err != nil {
 		log.ErrorC("Failing to model models.Codelist resource based on request", err, log.Data{"instance": id, "dimension": dimension})
-		handleErrorType(err, w)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
 	// Update instance-dimension
@@ -165,7 +165,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	// Update instance
 	if err = s.UpdateInstance(id, instance); err != nil {
-		log.ErrorC("Failed to update instace with new dimension label/description.", err, log.Data{"instance": id, "update": instance})
+		log.ErrorC("Failed to update instance with new dimension label/description.", err, log.Data{"instance": id, "dimension": dimension})
 		handleErrorType(err, w)
 		return
 	}
