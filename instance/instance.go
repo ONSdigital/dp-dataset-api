@@ -113,18 +113,19 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	ID := vars["id"]
+	id := vars["id"]
 	dimension := vars["dimension"]
 
 	// Get instance
-	instance, err := s.GetInstance(ID)
+	instance, err := s.GetInstance(id)
 	if err != nil {
-		log.ErrorC("Failed to GET instance when attempting to update a dimension of that instance.", err, log.Data{"instance": ID})
+		log.ErrorC("Failed to GET instance when attempting to update a dimension of that instance.", err, log.Data{"instance": id})
 		handleErrorType(err, w)
 	}
 
 	// Early return if instance is already published
 	if instance.State == models.PublishedState {
+		log.Debug("unable to update instance, already published", nil)
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
@@ -140,7 +141,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(bytes, &dim)
 	if err != nil {
-		log.ErrorC("Failing to model models.Codelist resource based on request", err, log.Data{"instance": ID, "dimension": dimension})
+		log.ErrorC("Failing to model models.Codelist resource based on request", err, log.Data{"instance": id, "dimension": dimension})
 		handleErrorType(err, w)
 	}
 
@@ -157,18 +158,19 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 			if dim.Description != "" {
 				instance.Dimensions[i].Description = dim.Description
 			}
+			break
 		}
 
 	}
 
 	// Update instance
-	if err = s.UpdateInstance(ID, instance); err != nil {
-		log.ErrorC("Failed to update instace with new dimension label/description.", err, log.Data{"instance": ID, "update": instance})
+	if err = s.UpdateInstance(id, instance); err != nil {
+		log.ErrorC("Failed to update instace with new dimension label/description.", err, log.Data{"instance": id, "update": instance})
 		handleErrorType(err, w)
 		return
 	}
 
-	log.Debug("updated dimension", log.Data{"instance": ID, "dimension": dimension})
+	log.Debug("updated dimension", log.Data{"instance": id, "dimension": dimension})
 
 }
 
