@@ -129,12 +129,12 @@ parameters:
     in: path
     required: true
     type: string
-  state_update:
-    name: state_update
-    description: "A request body to update the state of a resource"
+  import_tasks:
+    name: import_tasks
+    description: "A request body to update the state of an import task"
     in: body
     schema:
-      $ref: '#/definitions/StateUpdateRequest'
+      $ref: '#/definitions/ImportTasks'
 securityDefinitions:
   FlorenceAPIKey:
     name: florence-token
@@ -675,43 +675,20 @@ paths:
           description: "InstanceId does not match any instances"
         500:
           $ref: '#/responses/InternalError'
-  /instances/{instance_id}/import_tasks/import_observations:
+  /instances/{instance_id}/import_tasks:
     put:
       tags:
       - "Private"
-      summary: "Update the import observation task for an instance"
-      description: "Part of the instance import process involves importing observations. This endpoint updates the state of this task."
+      summary: "Update the state of an import task in an instance"
+      description: "The instance import process involves multiple tasks. This endpoint updates the state of an import task."
       parameters:
       - $ref: '#/parameters/instance_id'
-      - $ref: '#/parameters/state_update'
+      - $ref: '#/parameters/import_tasks'
       security:
       - InternalAPIKey: []
       responses:
         200:
-          description: "Updated the state of the import observations task"
-        400:
-          $ref: '#/responses/InvalidRequestError'
-        401:
-          $ref: '#/responses/UnauthorisedError'
-        404:
-          description: "InstanceId does not match any instances"
-        500:
-          $ref: '#/responses/InternalError'
-  /instances/{instance_id}/import_tasks/build_hierarchies/{dimension}:
-    put:
-      tags:
-      - "Private"
-      summary: "Update a build hierarchy task for an instance"
-      description: "Part of the instance import process involves building hierarchies. This endpoint updates the state of a build hierarchy task."
-      parameters:
-      - $ref: '#/parameters/instance_id'
-      - $ref: '#/parameters/dimension'
-      - $ref: '#/parameters/state_update'
-      security:
-      - InternalAPIKey: []
-      responses:
-        200:
-          description: "Updated the state of the build hierarchy task"
+          description: "Updated the state of the import task"
         400:
           $ref: '#/responses/InvalidRequestError'
         401:
@@ -1090,31 +1067,7 @@ definitions:
         items:
           type: string
       import_tasks:
-        type: object
-        properties:
-          import_observations:
-            type: object
-            properties:
-              total_inserted_observations:
-                type: integer
-                description: "The number of inserted observations in this instance"
-              state:
-                type: string
-                description: "The state of the import observations task"
-          build_hierarchies:
-            type: array
-            items:
-              type: object
-              properties:
-                state:
-                  type: string
-                  description: "The state of the import observations task"
-                dimension_name:
-                  type: string
-                  description: "The name of the dimension the hierarchy represents"
-                code_list_id:
-                  type: string
-                  description: "The ID of the codelist that this hierarchy represents"
+        $ref: '#/definitions/ImportTasks'
       links:
         readOnly: true
         type: object
@@ -1212,6 +1165,32 @@ definitions:
         type: string
         readOnly: true
         description: "The last time an event happened"
+  ImportTasks:
+    type: object
+    properties:
+      import_observations:
+        type: object
+        properties:
+          total_inserted_observations:
+            type: integer
+            description: "The number of inserted observations in this instance"
+          state:
+            type: string
+            description: "The state of the import observations task"
+      build_hierarchies:
+        type: array
+        items:
+          type: object
+          properties:
+            state:
+              type: string
+              description: "The state of the import observations task"
+            dimension_name:
+              type: string
+              description: "The name of the dimension the hierarchy represents"
+            code_list_id:
+              type: string
+              description: "The ID of the codelist that this hierarchy represents"
   Codelist:
     type: object
     properties:
@@ -1824,11 +1803,3 @@ definitions:
       href:
         description: "A URL to the version this resource relates to"
         type: string
-  StateUpdateRequest:
-    description: "A request body to update the state of a resource"
-    type: object
-    properties:
-      state:
-        description: "The new state to update the resource with"
-        type: string
-        example: "completed"

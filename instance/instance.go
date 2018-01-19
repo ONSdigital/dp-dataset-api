@@ -431,8 +431,6 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 		return nil, errors.New("Failed to read message body")
 	}
 
-	log.Debug("add instance request", log.Data{"instance": string(bytes)})
-
 	var instance models.Instance
 	err = json.Unmarshal(bytes, &instance)
 	if err != nil {
