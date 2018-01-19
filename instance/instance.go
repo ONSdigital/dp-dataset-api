@@ -119,7 +119,8 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	// Get instance
 	instance, err := s.GetInstance(ID)
 	if err != nil {
-		log.Error(err, nil)
+		log.ErrorC("Failed to GET instance when attempting to update a dimension of that instance.", err, log.Data{"instance": ID})
+		handleErrorType(err, w)
 	}
 
 	// Early return if instance is already published
@@ -131,14 +132,16 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	// Read and unmarshal request body
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Error(err, nil)
+		log.ErrorC("Error reading response.body, expecting {\"label\":foo', \"description\":foo} or one of", err, log.Data{"response body": r.Body})
+		handleErrorType(err, w)
 	}
 
 	var dim *models.CodeList
 
 	err = json.Unmarshal(bytes, &dim)
 	if err != nil {
-		log.Error(err, nil)
+		log.ErrorC("Failing to unmarshall bytes to models.codelist", err, log.Data{"bytes": bytes})
+		handleErrorType(err, w)
 	}
 
 	// Update instance-dimension
@@ -160,7 +163,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	// Update instance
 	if err = s.UpdateInstance(ID, instance); err != nil {
-		log.Error(err, nil)
+		log.ErrorC("Failed to update instace with new dimension label/description.", err, log.Data{"instance": ID, "update": instance})
 		handleErrorType(err, w)
 		return
 	}
