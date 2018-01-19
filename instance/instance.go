@@ -121,6 +121,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.ErrorC("Failed to GET instance when attempting to update a dimension of that instance.", err, log.Data{"instance": id})
 		handleErrorType(err, w)
+		return
 	}
 
 	// Early return if instance is already published
@@ -135,6 +136,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.ErrorC("Error reading response.body.", err, nil)
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	var dim *models.CodeList
@@ -143,6 +145,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.ErrorC("Failing to model models.Codelist resource based on request", err, log.Data{"instance": id, "dimension": dimension})
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	// Update instance-dimension
