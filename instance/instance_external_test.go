@@ -447,10 +447,9 @@ func TestInsertedObservationsReturnsNotFound(t *testing.T) {
 	})
 }
 
-func TestUpdateDimensionFailure(t *testing.T) {
+func TestUpdateDimensionReturnsNotFound(t *testing.T) {
 	t.Parallel()
-
-	Convey("when the instance does not exist return status not found", t, func() {
+	Convey("When update dimension return status not found", t, func() {
 		r := createRequestWithToken("PUT", "http://localhost:22000/instances/dimensions/age", nil)
 		w := httptest.NewRecorder()
 
@@ -467,10 +466,12 @@ func TestUpdateDimensionFailure(t *testing.T) {
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 	})
+}
 
-	Convey("when the instance containing the dimension is already published", t, func() {
-		body := strings.NewReader(`{"label": "My amazing dimension"}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age", body)
+func TestUpdateDimensionReturnsForbidden(t *testing.T) {
+	t.Parallel()
+	Convey("When update dimension returns forbidden (for already published) ", t, func() {
+		r := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", nil)
 		w := httptest.NewRecorder()
 
 		currentInstanceTestData := &models.Instance{
@@ -490,10 +491,13 @@ func TestUpdateDimensionFailure(t *testing.T) {
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 	})
+}
 
-	Convey("When the response body does not contain valid json", t, func() {
+func TestUpdateDimensionReturnsBadRequest(t *testing.T) {
+	t.Parallel()
+	Convey("When update dimension returns bad request", t, func() {
 		body := strings.NewReader("{")
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age", body)
+		r := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -506,5 +510,30 @@ func TestUpdateDimensionFailure(t *testing.T) {
 		instance.UpdateDimension(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+}
+
+func TestUpdateDimensionReturnsOk(t *testing.T) {
+	t.Parallel()
+	Convey("When update dimension fails to update an instance", t, func() {
+		body := strings.NewReader("{}")
+		r := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(id string) (*models.Instance, error) {
+				return &models.Instance{}, nil
+			},
+			UpdateInstanceFunc: func(id string, i *models.Instance) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance.UpdateDimension(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
 	})
 }
