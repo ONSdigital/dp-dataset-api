@@ -446,3 +446,65 @@ func TestInsertedObservationsReturnsNotFound(t *testing.T) {
 		So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
 	})
 }
+
+func TestUpdateDimensionFailure(t *testing.T) {
+	t.Parallel()
+
+	Convey("when the instance does not exist return status not found", t, func() {
+		r := createRequestWithToken("PUT", "http://localhost:22000/instances/dimensions/age", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(id string) (*models.Instance, error) {
+				return nil, errs.ErrInstanceNotFound
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance.UpdateDimension(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+	})
+
+	Convey("when the instance containing the dimension is already published", t, func() {
+		body := strings.NewReader(`{"label": "My amazing dimension"}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age", body)
+		w := httptest.NewRecorder()
+
+		currentInstanceTestData := &models.Instance{
+			State: models.PublishedState,
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(id string) (*models.Instance, error) {
+				return currentInstanceTestData, nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance.UpdateDimension(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the response body does not contain valid json", t, func() {
+		body := strings.NewReader("{")
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(id string) (*models.Instance, error) {
+				return &models.Instance{}, nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance.UpdateDimension(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+}
