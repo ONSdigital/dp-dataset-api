@@ -128,7 +128,9 @@ func (m *Mongo) UpdateObservationInserted(id string, observationInserted int64) 
 	err := s.DB(m.Database).C(instanceCollection).Update(bson.M{"id": id},
 		bson.M{
 			"$inc": bson.M{"import_tasks.import_observations.total_inserted_observations": observationInserted},
-			"$set": bson.M{"last_updated": time.Now().UTC()}})
+			"$set": bson.M{"last_updated": time.Now().UTC()},
+		},
+	)
 
 	if err == mgo.ErrNotFound {
 		return errs.ErrInstanceNotFound
@@ -150,7 +152,8 @@ func (m *Mongo) UpdateImportObservationsTaskState(id string, state string) error
 		bson.M{
 			"$set":         bson.M{"import_tasks.import_observations.state": state},
 			"$currentDate": bson.M{"last_updated": true},
-		})
+		},
+	)
 
 	if err == mgo.ErrNotFound {
 		return errs.ErrInstanceNotFound
@@ -169,12 +172,31 @@ func (m *Mongo) UpdateBuildHierarchyTaskState(id, dimension, state string) (err 
 	defer s.Close()
 
 	selector := bson.M{
-		"id": id,
+		"id":                                            id,
 		"import_tasks.build_hierarchies.dimension_name": dimension,
 	}
 
 	update := bson.M{
 		"$set":         bson.M{"import_tasks.build_hierarchies.$.state": state},
+		"$currentDate": bson.M{"last_updated": true},
+	}
+
+	err = s.DB(m.Database).C(instanceCollection).Update(selector, update)
+	return
+}
+
+// UpdateBuildSearchTaskState updates the state of a build search task.
+func (m *Mongo) UpdateBuildSearchTaskState(id, dimension, state string) (err error) {
+	s := m.Session.Copy()
+	defer s.Close()
+
+	selector := bson.M{
+		"id":                                       id,
+		"import_tasks.build_search.dimension_name": dimension,
+	}
+
+	update := bson.M{
+		"$set":         bson.M{"import_tasks.build_search.$.state": state},
 		"$currentDate": bson.M{"last_updated": true},
 	}
 
