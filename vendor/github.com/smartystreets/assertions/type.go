@@ -14,10 +14,9 @@ func ShouldHaveSameTypeAs(actual interface{}, expected ...interface{}) string {
 	first := reflect.TypeOf(actual)
 	second := reflect.TypeOf(expected[0])
 
-	if first != second {
+	if equal := ShouldEqual(first, second); equal != success {
 		return serializer.serialize(second, first, fmt.Sprintf(shouldHaveBeenA, actual, second, first))
 	}
-
 	return success
 }
 
@@ -30,7 +29,7 @@ func ShouldNotHaveSameTypeAs(actual interface{}, expected ...interface{}) string
 	first := reflect.TypeOf(actual)
 	second := reflect.TypeOf(expected[0])
 
-	if (actual == nil && expected[0] == nil) || first == second {
+	if equal := ShouldEqual(first, second); equal == success {
 		return fmt.Sprintf(shouldNotHaveBeenA, actual, second)
 	}
 	return success

@@ -129,6 +129,12 @@ parameters:
     in: path
     required: true
     type: string
+  import_tasks:
+    name: import_tasks
+    description: "A request body to update the state of an import task"
+    in: body
+    schema:
+      $ref: '#/definitions/ImportTasks'
 securityDefinitions:
   FlorenceAPIKey:
     name: florence-token
@@ -187,6 +193,7 @@ paths:
       summary: "Create a dataset"
       description: "Create a dataset provided by the ONS that can be filtered using the filter API"
       parameters:
+      - $ref: '#/parameters/id'
       - $ref: '#/parameters/new_dataset'
       produces:
       - "application/json"
@@ -314,7 +321,8 @@ paths:
       description: "Update a version for an edition of a dataset, if the state is changed to associated or published, the parent documents(dataset and edition resources) will also be updated. A version can only be updated if the state is not published"
       parameters:
       - $ref: '#/parameters/id'
-      - $ref: '#/parameters/new_version'
+      - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/version'
       responses:
         201:
           description: "A json object containing a version"
@@ -659,6 +667,28 @@ paths:
       responses:
         200:
           description: "Added value to inserted observation"
+        400:
+          $ref: '#/responses/InvalidRequestError'
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        404:
+          description: "InstanceId does not match any instances"
+        500:
+          $ref: '#/responses/InternalError'
+  /instances/{instance_id}/import_tasks:
+    put:
+      tags:
+      - "Private"
+      summary: "Update the state of an import task in an instance"
+      description: "The instance import process involves multiple tasks. This endpoint updates the state of an import task."
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/import_tasks'
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "Updated the state of the import task"
         400:
           $ref: '#/responses/InvalidRequestError'
         401:
@@ -1036,6 +1066,8 @@ definitions:
         description: "The header information from a V4 file"
         items:
           type: string
+      import_tasks:
+        $ref: '#/definitions/ImportTasks'
       links:
         readOnly: true
         type: object
@@ -1123,9 +1155,6 @@ definitions:
         $ref: '#/definitions/State'
       temporal:
         $ref: '#/definitions/Temporal'
-      total_inserted_observations:
-        type: integer
-        description: "The number of inserted observations in this instance"
       total_observations:
         type: integer
         description: "The number of observations in this instance"
@@ -1136,6 +1165,32 @@ definitions:
         type: string
         readOnly: true
         description: "The last time an event happened"
+  ImportTasks:
+    type: object
+    properties:
+      import_observations:
+        type: object
+        properties:
+          total_inserted_observations:
+            type: integer
+            description: "The number of inserted observations in this instance"
+          state:
+            type: string
+            description: "The state of the import observations task"
+      build_hierarchies:
+        type: array
+        items:
+          type: object
+          properties:
+            state:
+              type: string
+              description: "The state of the import observations task"
+            dimension_name:
+              type: string
+              description: "The name of the dimension the hierarchy represents"
+            code_list_id:
+              type: string
+              description: "The ID of the codelist that this hierarchy represents"
   Codelist:
     type: object
     properties:

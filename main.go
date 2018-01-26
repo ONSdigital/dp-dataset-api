@@ -9,11 +9,17 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/config"
+	"github.com/ONSdigital/dp-dataset-api/download"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
+	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
+
+	"github.com/ONSdigital/go-ns/kafka"
+
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/log"
 	mongoclosure "github.com/ONSdigital/go-ns/mongo"
+	"github.com/pkg/errors"
 )
 
 func main() {
@@ -25,6 +31,16 @@ func main() {
 	cfg, err := config.Get()
 	if err != nil {
 		log.Error(err, nil)
+		os.Exit(1)
+	}
+
+	sanitized := *cfg
+	sanitized.SecretKey = ""
+	log.Info("config on startup", log.Data{"config": sanitized})
+
+	generateDownloadsProducer, err := kafka.NewProducer(cfg.KafkaAddr, cfg.GenerateDownloadsTopic, 0)
+	if err != nil {
+		log.Error(errors.Wrap(err, "error creating kakfa producer"), nil)
 		os.Exit(1)
 	}
 
@@ -48,22 +64,33 @@ func main() {
 		"bind_address": cfg.BindAddr,
 	})
 
+	store := store.DataStore{Backend: mongo}
+
+	downloadGenerator := &download.Generator{
+		Producer:   generateDownloadsProducer,
+		Marshaller: schema.GenerateDownloadsEvent,
+	}
+
 	apiErrors := make(chan error, 1)
 
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
-	api.CreateDatasetAPI(cfg.DatasetAPIURL, cfg.BindAddr, cfg.SecretKey, store.DataStore{Backend: mongo}, urlBuilder, apiErrors, cfg.HealthCheckTimeout)
+	api.CreateDatasetAPI(cfg.DatasetAPIURL, cfg.BindAddr, cfg.SecretKey, store, urlBuilder, apiErrors, downloadGenerator, cfg.HealthCheckTimeout)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {
 		log.Info(fmt.Sprintf("shutdown with timeout: %s", cfg.GracefulShutdownTimeout), nil)
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.GracefulShutdownTimeout)
 
+		// stop any incoming requests before closing any outbound connections
 		api.Close(ctx)
 
-		// mongo.Close() may use all remaining time in the context - do this last!
 		if err = mongoclosure.Close(ctx, session); err != nil {
 			log.Error(err, nil)
+		}
+
+		if err := generateDownloadsProducer.Close(ctx); err != nil {
+			log.Error(errors.Wrap(err, "error while attempting to shutdown kafka producer"), nil)
 		}
 
 		log.Info("shutdown complete", nil)
