@@ -109,6 +109,74 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	log.Debug("add instance", log.Data{"instance": instance})
 }
 
+// UpdateDimension updates label and/or description for a specific dimension within an instance
+func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+	dimension := vars["dimension"]
+
+	// Get instance
+	instance, err := s.GetInstance(id)
+	if err != nil {
+		log.ErrorC("Failed to GET instance when attempting to update a dimension of that instance.", err, log.Data{"instance": id})
+		handleErrorType(err, w)
+		return
+	}
+
+	// Early return if instance is already published
+	if instance.State == models.PublishedState {
+		log.Debug("unable to update instance/version, already published", nil)
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	// Read and unmarshal request body
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.ErrorC("Error reading response.body.", err, nil)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var dim *models.CodeList
+
+	err = json.Unmarshal(bytes, &dim)
+	if err != nil {
+		log.ErrorC("Failing to model models.Codelist resource based on request", err, log.Data{"instance": id, "dimension": dimension})
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Update instance-dimension
+	for i := range instance.Dimensions {
+
+		// For the chosen dimension
+		if instance.Dimensions[i].Name == dimension {
+
+			// Assign update info, conditionals to allow updating of both or either without blanking other
+			if dim.Label != "" {
+				instance.Dimensions[i].Label = dim.Label
+			}
+			if dim.Description != "" {
+				instance.Dimensions[i].Description = dim.Description
+			}
+			break
+		}
+
+	}
+
+	// Update instance
+	if err = s.UpdateInstance(id, instance); err != nil {
+		log.ErrorC("Failed to update instance with new dimension label/description.", err, log.Data{"instance": id, "dimension": dimension})
+		handleErrorType(err, w)
+		return
+	}
+
+	log.Debug("updated dimension", log.Data{"instance": id, "dimension": dimension})
+
+}
+
 //Update a specific instance
 func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)

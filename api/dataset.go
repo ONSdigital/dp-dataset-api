@@ -701,10 +701,13 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) createListOfDimensions(versionDoc *models.Version, dimensions []bson.M) ([]models.Dimension, error) {
+
 	// Get dimension description from the version document and add to hash map
 	dimensionDescriptions := make(map[string]string)
+	dimensionLabels := make(map[string]string)
 	for _, details := range versionDoc.Dimensions {
 		dimensionDescriptions[details.Name] = details.Description
+		dimensionLabels[details.Name] = details.Label
 	}
 
 	var results []models.Dimension
@@ -722,6 +725,7 @@ func (api *DatasetAPI) createListOfDimensions(versionDoc *models.Version, dimens
 
 		// Add description to dimension from hash map
 		dimension.Description = dimensionDescriptions[dimension.Name]
+		dimension.Label = dimensionLabels[dimension.Name]
 
 		results = append(results, dimension)
 	}

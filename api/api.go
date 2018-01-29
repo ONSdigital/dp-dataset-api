@@ -88,6 +88,7 @@ func routes(host, secretKey string, router *mux.Router, dataStore store.DataStor
 	api.router.HandleFunc("/instances", api.privateAuth.Check(instance.Add)).Methods("POST")
 	api.router.HandleFunc("/instances/{id}", api.privateAuth.Check(instance.Get)).Methods("GET")
 	api.router.HandleFunc("/instances/{id}", api.privateAuth.Check(instance.Update)).Methods("PUT")
+	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}", api.privateAuth.Check(instance.UpdateDimension)).Methods("PUT")
 	api.router.HandleFunc("/instances/{id}/events", api.privateAuth.Check(instance.AddEvent)).Methods("POST")
 	api.router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", api.privateAuth.Check(instance.UpdateObservations)).Methods("PUT")
 	api.router.HandleFunc("/instances/{id}/import_tasks", api.privateAuth.Check(instance.UpdateImportTask)).Methods("PUT")
@@ -97,6 +98,7 @@ func routes(host, secretKey string, router *mux.Router, dataStore store.DataStor
 	api.router.HandleFunc("/instances/{id}/dimensions", api.privateAuth.Check(dimension.Add)).Methods("POST")
 	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options", dimension.GetUnique).Methods("GET")
 	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}/node_id/{node_id}", api.privateAuth.Check(dimension.AddNodeID)).Methods("PUT")
+
 	return &api
 }
 
