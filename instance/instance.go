@@ -134,35 +134,37 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	instance.Links = updateLinks(instance, currentInstance)
 
 	logData := log.Data{"instance_id": id, "current_state": currentInstance.State, "requested_state": instance.State}
-	switch instance.State {
-	case models.CompletedState:
-		if err = validateInstanceUpdate(models.SubmittedState, currentInstance, instance); err != nil {
-			log.Error(err, logData)
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
-	case models.EditionConfirmedState:
-		if err = validateInstanceUpdate(models.CompletedState, currentInstance, instance); err != nil {
-			log.Error(err, logData)
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
-	case models.AssociatedState:
-		if err = validateInstanceUpdate(models.EditionConfirmedState, currentInstance, instance); err != nil {
-			log.Error(err, logData)
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
+	if instance.State != currentInstance.State {
+		switch instance.State {
+		case models.CompletedState:
+			if err = validateInstanceUpdate(models.SubmittedState, currentInstance, instance); err != nil {
+				log.Error(err, logData)
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
+		case models.EditionConfirmedState:
+			if err = validateInstanceUpdate(models.CompletedState, currentInstance, instance); err != nil {
+				log.Error(err, logData)
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
+		case models.AssociatedState:
+			if err = validateInstanceUpdate(models.EditionConfirmedState, currentInstance, instance); err != nil {
+				log.Error(err, logData)
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
 
-		// TODO Update dataset.next state to associated and add collection id
-	case models.PublishedState:
-		if err = validateInstanceUpdate(models.AssociatedState, currentInstance, instance); err != nil {
-			log.Error(err, logData)
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
+			// TODO Update dataset.next state to associated and add collection id
+		case models.PublishedState:
+			if err = validateInstanceUpdate(models.AssociatedState, currentInstance, instance); err != nil {
+				log.Error(err, logData)
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
 
-		// TODO Update both edition and dataset states to published
+			// TODO Update both edition and dataset states to published
+		}
 	}
 
 	if instance.State == models.EditionConfirmedState {
@@ -286,16 +288,16 @@ func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.Editi
 }
 
 func validateInstanceUpdate(expectedState string, currentInstance, instance *models.Instance) error {
-	if currentInstance.State != expectedState {
-		err := fmt.Errorf("Unable to update resource, expected resource to have a state of %s", expectedState)
-		return err
-	}
-	if instance.State == models.EditionConfirmedState && currentInstance.Edition == "" && instance.Edition == "" {
-		err := errors.New("Unable to update resource, missing a value for the edition")
-		return err
+	var err error
+	if currentInstance.State == models.PublishedState {
+		err = fmt.Errorf("Unable to update resource state, as the version has been published")
+	} else if currentInstance.State != expectedState {
+		err = fmt.Errorf("Unable to update resource, expected resource to have a state of %s", expectedState)
+	} else if instance.State == models.EditionConfirmedState && currentInstance.Edition == "" && instance.Edition == "" {
+		err = errors.New("Unable to update resource, missing a value for the edition")
 	}
 
-	return nil
+	return err
 }
 
 func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *models.Edition) *models.InstanceLinks {

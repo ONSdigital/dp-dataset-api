@@ -599,3 +599,28 @@ func TestStore_UpdateImportTask_ReturnsInternalError(t *testing.T) {
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
 	})
 }
+
+func TestUpdateInstanceReturnsErrorWhenStateIsPublished(t *testing.T) {
+	t.Parallel()
+	Convey("when an instance has a state of published, then put request to change to it to completed ", t, func() {
+		body := strings.NewReader(`{"state":"completed"}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(id string) (*models.Instance, error) {
+				return &models.Instance{State: models.PublishedState}, nil
+			},
+			UpdateInstanceFunc: func(id string, i *models.Instance) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance.Update(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
+	})
+}
