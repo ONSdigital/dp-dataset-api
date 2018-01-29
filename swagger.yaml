@@ -584,29 +584,30 @@ paths:
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}/dimensions/{dimension}:
-  put:
-    tags:
-    - "Private"
-    summary: "Update dimension description and/or label"
-    description: "Update the label and/or description of a dimension within an instance, by providing dimension name and properties to over write"
-    parameters:
-    - $ref: '#/parameters/instance_id'
-    - $ref: '#/parameters/dimension'
-    security:
-    - InternalAPIKey: []
-    responses:
-      200:
-        description: "The instance has been updated"
-      400:
-        $ref: '#/responses/InvalidRequestError'
-      401:
-        $ref: '#/responses/UnauthorisedError'
-      403:
-        $ref: '#/responses/ForbiddenError'
-      404:
-        $ref: '#/responses/InstanceNotFound'
-      500:
-        $ref: '#/responses/InternalError'
+    put:
+      tags:
+      - "Private user"
+      summary: "Update dimension description and/or label"
+      description: "Update the label and/or description of a dimension within an instance, by providing dimension name and properties to over write"
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/dimension'
+      - $ref: '#/parameters/instance'
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "The instance has been updated"
+        400:
+          $ref: '#/responses/InvalidRequestError'
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
+        404:
+          $ref: '#/responses/InstanceNotFound'
+        500:
+          $ref: '#/responses/InternalError'
   /instances/{instance_id}/dimensions/{dimension}/options:
     get:
       tags:
