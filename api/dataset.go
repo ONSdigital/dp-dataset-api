@@ -6,13 +6,12 @@ import (
 	"net/http"
 	"time"
 
-	"gopkg.in/mgo.v2/bson"
-
-	"github.com/ONSdigital/dp-dataset-api/models"
-
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
+	"gopkg.in/mgo.v2/bson"
 )
 
 const (
@@ -462,11 +461,25 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if versionDoc.State == models.AssociatedState {
+	if versionDoc.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
 		if err := api.dataStore.Backend.UpdateDatasetWithAssociation(datasetID, versionDoc.State, versionDoc); err != nil {
 			log.ErrorC("failed to update dataset document after a version of a dataset has been associated with a collection", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 			handleErrorType(versionDocType, err, w)
 			return
+		}
+
+		log.Info("generating full dataset version downloads", log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+
+		if err := api.downloadGenerator.Generate(datasetID, versionDoc.ID, edition, version); err != nil {
+			err = errors.Wrap(err, "error while attempting to generate full dataset version downloads")
+			log.Error(err, log.Data{
+				"dataset_id":  datasetID,
+				"instance_id": versionDoc.ID,
+				"edition":     edition,
+				"version":     version,
+			})
+			// TODO - TECH DEBT - need to add an error event for this.
+			handleErrorType(versionDocType, err, w)
 		}
 	}
 
@@ -562,6 +575,22 @@ func createNewVersionDoc(currentVersion *models.Version, version *models.Version
 		} else {
 			version.Links.Spatial = &models.LinkObject{
 				HRef: spatial,
+			}
+		}
+	}
+
+	if version.Downloads == nil {
+		version.Downloads = currentVersion.Downloads
+	} else {
+		if version.Downloads.XLS == nil {
+			if currentVersion.Downloads != nil && currentVersion.Downloads.XLS != nil {
+				version.Downloads.XLS = currentVersion.Downloads.XLS
+			}
+		}
+
+		if version.Downloads.CSV == nil {
+			if currentVersion.Downloads != nil && currentVersion.Downloads.CSV != nil {
+				version.Downloads.CSV = currentVersion.Downloads.CSV
 			}
 		}
 	}

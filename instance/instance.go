@@ -15,7 +15,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 )
 
 //Store provides a backend for instances
@@ -201,16 +201,23 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	// Combine existing links and spatial link
 	instance.Links = updateLinks(instance, currentInstance)
 
+	logData := log.Data{"instance_id": id, "current_state": currentInstance.State, "requested_state": instance.State}
 	switch instance.State {
+	case models.CompletedState:
+		if err = validateInstanceUpdate(models.SubmittedState, currentInstance, instance); err != nil {
+			log.Error(err, logData)
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
 	case models.EditionConfirmedState:
 		if err = validateInstanceUpdate(models.CompletedState, currentInstance, instance); err != nil {
-			log.Error(err, log.Data{"instance_id": id, "current_state": currentInstance.State})
+			log.Error(err, logData)
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
 	case models.AssociatedState:
 		if err = validateInstanceUpdate(models.EditionConfirmedState, currentInstance, instance); err != nil {
-			log.Error(err, log.Data{"instance_id": id, "current_state": currentInstance.State})
+			log.Error(err, logData)
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
@@ -218,7 +225,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		// TODO Update dataset.next state to associated and add collection id
 	case models.PublishedState:
 		if err = validateInstanceUpdate(models.AssociatedState, currentInstance, instance); err != nil {
-			log.Error(err, log.Data{"instance_id": id, "current_state": currentInstance.State})
+			log.Error(err, logData)
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
@@ -415,6 +422,75 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 		log.Error(err, nil)
 		handleErrorType(err, w)
 	}
+}
+
+func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	defer r.Body.Close()
+
+	tasks, err := unmarshalImportTasks(r.Body)
+	if err != nil {
+		log.Error(err, nil)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	validationErrs := make([]error, 0)
+
+	if tasks.ImportObservations != nil {
+		if tasks.ImportObservations.State != "" {
+			if tasks.ImportObservations.State != models.CompletedState {
+				validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value for import observations: %v", tasks.ImportObservations.State))
+			} else if err := s.UpdateImportObservationsTaskState(id, tasks.ImportObservations.State); err != nil {
+				log.Error(err, nil)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+	}
+
+	if tasks.BuildHierarchyTasks != nil {
+		for _, task := range tasks.BuildHierarchyTasks {
+			if task.State != "" {
+				if task.State != models.CompletedState {
+					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
+				} else if err := s.UpdateBuildHierarchyTaskState(id, task.DimensionName, task.State); err != nil {
+					log.Error(err, nil)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			}
+		}
+	}
+
+	if len(validationErrs) > 0 {
+		for _, err := range validationErrs {
+			log.Error(err, nil)
+		}
+		// todo: add all validation errors to the response
+		http.Error(w, validationErrs[0].Error(), http.StatusBadRequest)
+		return
+	}
+
+}
+
+func unmarshalImportTasks(reader io.Reader) (*models.InstanceImportTasks, error) {
+
+	bytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, errors.New("failed to read message body")
+	}
+
+	var tasks models.InstanceImportTasks
+	err = json.Unmarshal(bytes, &tasks)
+	if err != nil {
+		return nil, errors.New("failed to parse json body: " + err.Error())
+	}
+
+	return &tasks, nil
 }
 
 func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {

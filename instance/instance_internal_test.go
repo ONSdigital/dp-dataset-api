@@ -98,3 +98,29 @@ func TestUnmarshalInstance(t *testing.T) {
 		So(instance.Links.Job.ID, ShouldEqual, "123-456")
 	})
 }
+
+func TestUnmarshalImportTaskWithBadReader(t *testing.T) {
+	Convey("Create an import task with an invalid reader", t, func() {
+		task, err := unmarshalImportTasks(Reader{})
+		So(task, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "failed to read message body")
+	})
+}
+
+func TestUnmarshalImportTaskWithInvalidJson(t *testing.T) {
+	Convey("Create an import observation task with invalid json", t, func() {
+		task, err := unmarshalImportTasks(strings.NewReader("{ "))
+		So(task, ShouldBeNil)
+		So(err.Error(), ShouldContainSubstring, "failed to parse json body")
+	})
+}
+
+func TestUnmarshalImportTask(t *testing.T) {
+	Convey("Create an import observation task with valid json", t, func() {
+		task, err := unmarshalImportTasks(strings.NewReader(`{"import_observations":{"state":"completed"}}`))
+		So(err, ShouldBeNil)
+		So(task, ShouldNotBeNil)
+		So(task.ImportObservations, ShouldNotBeNil)
+		So(task.ImportObservations.State, ShouldEqual, "completed")
+	})
+}

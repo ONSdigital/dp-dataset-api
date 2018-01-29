@@ -14,9 +14,17 @@ import (
 	"github.com/gorilla/mux"
 )
 
-//go:generate moq -out test/api.go -pkg apitest . API
-
 var httpServer *server.Server
+
+//API provides an interface for the routes
+type API interface {
+	CreateDatasetAPI(string, *mux.Router, store.DataStore) *DatasetAPI
+}
+
+// DownloadsGenerator pre generates full file downloads for the specified dataset/edition/version
+type DownloadsGenerator interface {
+	Generate(datasetID, instanceID, edition, version string) error
+}
 
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
@@ -26,13 +34,14 @@ type DatasetAPI struct {
 	privateAuth        *auth.Authenticator
 	router             *mux.Router
 	urlBuilder         *url.Builder
+	downloadGenerator  DownloadsGenerator
 	healthCheckTimeout time.Duration
 }
 
 // CreateDatasetAPI manages all the routes configured to API
-func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, healthCheckTimeout time.Duration) {
+func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadsGenerator DownloadsGenerator, healthCheckTimeout time.Duration) {
 	router := mux.NewRouter()
-	routes(host, secretKey, router, dataStore, urlBuilder, healthCheckTimeout)
+	routes(host, secretKey, router, dataStore, urlBuilder, downloadsGenerator, healthCheckTimeout)
 
 	httpServer = server.New(bindAddr, router)
 	// Disable this here to allow main to manage graceful shutdown of the entire app.
@@ -47,7 +56,7 @@ func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStor
 	}()
 }
 
-func routes(host, secretKey string, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, healthCheckTimeout time.Duration) *DatasetAPI {
+func routes(host, secretKey string, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, healthCheckTimeout time.Duration) *DatasetAPI {
 	api := DatasetAPI{
 		privateAuth:        &auth.Authenticator{SecretKey: secretKey, HeaderName: "internal-token"},
 		dataStore:          dataStore,
@@ -55,6 +64,7 @@ func routes(host, secretKey string, router *mux.Router, dataStore store.DataStor
 		internalToken:      secretKey,
 		router:             router,
 		urlBuilder:         urlBuilder,
+		downloadGenerator:  downloadGenerator,
 		healthCheckTimeout: healthCheckTimeout,
 	}
 
@@ -81,6 +91,7 @@ func routes(host, secretKey string, router *mux.Router, dataStore store.DataStor
 	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}", api.privateAuth.Check(instance.UpdateDimension)).Methods("PUT")
 	api.router.HandleFunc("/instances/{id}/events", api.privateAuth.Check(instance.AddEvent)).Methods("POST")
 	api.router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", api.privateAuth.Check(instance.UpdateObservations)).Methods("PUT")
+	api.router.HandleFunc("/instances/{id}/import_tasks", api.privateAuth.Check(instance.UpdateImportTask)).Methods("PUT")
 
 	dimension := dimension.Store{Storer: api.dataStore.Backend}
 	api.router.HandleFunc("/instances/{id}/dimensions", dimension.GetNodes).Methods("GET")
