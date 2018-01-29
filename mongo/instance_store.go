@@ -172,7 +172,7 @@ func (m *Mongo) UpdateBuildHierarchyTaskState(id, dimension, state string) (err 
 	defer s.Close()
 
 	selector := bson.M{
-		"id":                                            id,
+		"id": id,
 		"import_tasks.build_hierarchies.dimension_name": dimension,
 	}
 
@@ -191,7 +191,7 @@ func (m *Mongo) UpdateBuildSearchTaskState(id, dimension, state string) (err err
 	defer s.Close()
 
 	selector := bson.M{
-		"id":                                       id,
+		"id": id,
 		"import_tasks.build_search.dimension_name": dimension,
 	}
 

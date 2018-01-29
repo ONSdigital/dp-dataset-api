@@ -398,8 +398,8 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if tasks.BuildSearchTasks != nil {
-		for _, task := range tasks.BuildSearchTasks {
+	if tasks.BuildSearchIndexTasks != nil {
+		for _, task := range tasks.BuildSearchIndexTasks {
 			if task.State != "" {
 				if task.State != models.CompletedState {
 					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
