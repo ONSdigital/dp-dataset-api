@@ -313,7 +313,7 @@ func updateLinks(instance, currentInstance *models.Instance) *models.InstanceLin
 
 func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.EditionUpdate, error) {
 
-	editionDoc, err := s.GetEdition(datasetID, edition, "")
+	editionDoc, err := s.GetEdition(datasetID, edition, true)
 	if err != nil {
 		if err != errs.ErrEditionNotFound {
 			log.Error(err, nil)

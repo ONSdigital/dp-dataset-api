@@ -113,7 +113,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	log.Debug("get dataset", log.Data{"dataset_id": id})
 }
 
-func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
+func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, auth bool) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
@@ -128,7 +128,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	results, err := api.dataStore.Backend.GetEditions(id, state)
+	results, err := api.dataStore.Backend.GetEditions(id, auth)
 	if err != nil {
 		log.ErrorC("unable to find editions for dataset", err, log.Data{"dataset_id": id})
 		handleErrorType(editionDocType, err, w)
@@ -151,7 +151,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	log.Debug("get all editions", log.Data{"dataset_id": id})
 }
 
-func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
+func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request, auth bool) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	editionID := vars["edition"]
@@ -167,7 +167,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	edition, err := api.dataStore.Backend.GetEdition(id, editionID, state)
+	edition, err := api.dataStore.Backend.GetEdition(id, editionID, auth)
 	if err != nil {
 		log.ErrorC("unable to find edition", err, log.Data{"dataset_id": id, "edition": editionID})
 		handleErrorType(editionDocType, err, w)
@@ -449,7 +449,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	if versionDoc.State == models.PublishedState {
 
 		// TODO , accomodate associated or edition-confirmed -> published.
-		editionDoc, err := api.dataStore.Backend.GetEdition(datasetID, edition, models.EditionConfirmedState)
+		editionDoc, err := api.dataStore.Backend.GetEdition(datasetID, edition, true)
 		if err != nil {
 			log.ErrorC("failed to find the edition we're trying to update", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 			handleErrorType(versionDocType, err, w)

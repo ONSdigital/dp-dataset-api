@@ -25,7 +25,7 @@ type DatasetUpdateResults struct {
 
 // EditionResults represents a structure for a list of editions for a dataset
 type EditionResults struct {
-	Items []Edition `json:"items"`
+	Items []*EditionUpdate `json:"items"`
 }
 
 // VersionResults represents a structure for a list of versions for an edition of a dataset
