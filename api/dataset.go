@@ -447,8 +447,20 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if versionDoc.State == models.PublishedState {
-		if err := api.dataStore.Backend.UpdateEdition(datasetID, edition, versionDoc); err != nil {
-			log.ErrorC("failed to update the state of edition document to published", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+
+		// TODO , accomodate associated or edition-confirmed -> published.
+		editionDoc, err := api.dataStore.Backend.GetEdition(datasetID, edition, models.EditionConfirmedState)
+		if err != nil {
+			log.ErrorC("failed to find the edition we're trying to update", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+			handleErrorType(versionDocType, err, w)
+			return
+		}
+
+		editionDoc.Next.State = models.PublishedState
+		editionDoc.Current = editionDoc.Next
+
+		if err := api.dataStore.Backend.UpsertEdition(datasetID, edition, editionDoc); err != nil {
+			log.ErrorC("failed to update edition during publishing", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 			handleErrorType(versionDocType, err, w)
 			return
 		}

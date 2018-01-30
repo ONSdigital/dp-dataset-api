@@ -201,37 +201,42 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	// Combine existing links and spatial link
 	instance.Links = updateLinks(instance, currentInstance)
 
-	logData := log.Data{"instance_id": id, "current_state": currentInstance.State, "requested_state": instance.State}
-	switch instance.State {
-	case models.CompletedState:
-		if err = validateInstanceUpdate(models.SubmittedState, currentInstance, instance); err != nil {
-			log.Error(err, logData)
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
-	case models.EditionConfirmedState:
-		if err = validateInstanceUpdate(models.CompletedState, currentInstance, instance); err != nil {
-			log.Error(err, logData)
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
-	case models.AssociatedState:
-		if err = validateInstanceUpdate(models.EditionConfirmedState, currentInstance, instance); err != nil {
-			log.Error(err, logData)
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
+	/*
 
-		// TODO Update dataset.next state to associated and add collection id
-	case models.PublishedState:
-		if err = validateInstanceUpdate(models.AssociatedState, currentInstance, instance); err != nil {
-			log.Error(err, logData)
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
+		TODO - rewrite validation for new model
 
-		// TODO Update both edition and dataset states to published
-	}
+			logData := log.Data{"instance_id": id, "current_state": currentInstance.State, "requested_state": instance.State}
+			switch instance.State {
+			case models.CompletedState:
+				if err = validateInstanceUpdate(models.SubmittedState, currentInstance, instance); err != nil {
+					log.Error(err, logData)
+					http.Error(w, err.Error(), http.StatusForbidden)
+					return
+				}
+			case models.EditionConfirmedState:
+				if err = validateInstanceUpdate(models.CompletedState, currentInstance, instance); err != nil {
+					log.Error(err, logData)
+					http.Error(w, err.Error(), http.StatusForbidden)
+					return
+				}
+			case models.AssociatedState:
+				if err = validateInstanceUpdate(models.EditionConfirmedState, currentInstance, instance); err != nil {
+					log.Error(err, logData)
+					http.Error(w, err.Error(), http.StatusForbidden)
+					return
+				}
+
+				// TODO Update dataset.next state to associated and add collection id
+			case models.PublishedState:
+				if err = validateInstanceUpdate(models.AssociatedState, currentInstance, instance); err != nil {
+					log.Error(err, logData)
+					http.Error(w, err.Error(), http.StatusForbidden)
+					return
+				}
+
+				// TODO Update both edition and dataset states to published
+			}
+	*/
 
 	if instance.State == models.EditionConfirmedState {
 		datasetID := currentInstance.Links.Dataset.ID
@@ -249,6 +254,8 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Update state
+		editionDoc.Next.State = instance.State
 		if err = s.UpsertEdition(datasetID, edition, editionDoc); err != nil {
 			log.ErrorR(r, err, nil)
 			handleErrorType(err, w)
@@ -304,7 +311,8 @@ func updateLinks(instance, currentInstance *models.Instance) *models.InstanceLin
 	return links
 }
 
-func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.Edition, error) {
+func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.EditionUpdate, error) {
+
 	editionDoc, err := s.GetEdition(datasetID, edition, "")
 	if err != nil {
 		if err != errs.ErrEditionNotFound {
@@ -314,17 +322,13 @@ func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.Editi
 		// create unique id for edition
 		editionID := uuid.NewV4().String()
 
-		editionDoc = &models.Edition{
+		editionDoc = &models.EditionUpdate{
 			ID:      editionID,
 			Edition: edition,
-			Links: &models.EditionLinks{
+			Links: &models.EditionUpdateLinks{
 				Dataset: &models.LinkObject{
 					ID:   datasetID,
 					HRef: fmt.Sprintf("%s/datasets/%s", s.Host, datasetID),
-				},
-				LatestVersion: &models.LinkObject{
-					ID:   "1",
-					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/1", s.Host, datasetID, edition),
 				},
 				Self: &models.LinkObject{
 					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", s.Host, datasetID, edition),
@@ -333,21 +337,27 @@ func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.Editi
 					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
 				},
 			},
-			State: models.CreatedState,
+			Next: &models.Edition{
+				State: models.EditionConfirmedState,
+				LatestVersion: &models.LinkObject{
+					ID:   "1",
+					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/1", s.Host, datasetID, edition),
+				},
+			},
 		}
 	} else {
 
 		// Update the latest version for the dataset edition
-		version, err := strconv.Atoi(editionDoc.Links.LatestVersion.ID)
+		version, err := strconv.Atoi(editionDoc.Next.LatestVersion.ID)
 		if err != nil {
-			log.ErrorC("unable to retrieve latest version", err, log.Data{"instance": instanceID, "edition": edition, "version": editionDoc.Links.LatestVersion.ID})
+			log.ErrorC("unable to retrieve latest version", err, log.Data{"instance": instanceID, "edition": edition, "version": editionDoc.Next.LatestVersion.ID})
 			return nil, err
 		}
 
 		version++
 
-		editionDoc.Links.LatestVersion.ID = strconv.Itoa(version)
-		editionDoc.Links.LatestVersion.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", s.Host, datasetID, edition, strconv.Itoa(version))
+		editionDoc.Next.LatestVersion.ID = strconv.Itoa(version)
+		editionDoc.Next.LatestVersion.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", s.Host, datasetID, edition, strconv.Itoa(version))
 	}
 
 	return editionDoc, nil
@@ -366,10 +376,10 @@ func validateInstanceUpdate(expectedState string, currentInstance, instance *mod
 	return nil
 }
 
-func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *models.Edition) *models.InstanceLinks {
+func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *models.EditionUpdate) *models.InstanceLinks {
 	stringifiedVersion := strconv.Itoa(instance.Version)
 
-	log.Debug("defining instance links", log.Data{"editionDoc": editionDoc.Links, "instance": instance})
+	log.Debug("defining instance links", log.Data{"editionDoc": editionDoc.Next, "instance": instance})
 
 	links := &models.InstanceLinks{
 		Dataset: &models.IDLink{

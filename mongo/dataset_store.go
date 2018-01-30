@@ -125,13 +125,13 @@ func buildEditionsQuery(id, state string) bson.M {
 }
 
 // GetEdition retrieves an edition document for a dataset
-func (m *Mongo) GetEdition(id, editionID, state string) (*models.Edition, error) {
+func (m *Mongo) GetEdition(id, editionID, state string) (*models.EditionUpdate, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
 	selector := buildEditionQuery(id, editionID, state)
 
-	var edition models.Edition
+	var edition models.EditionUpdate
 	err := s.DB(m.Database).C(editionsCollection).Find(selector).One(&edition)
 	if err != nil {
 		if err == mgo.ErrNotFound {
@@ -153,7 +153,7 @@ func buildEditionQuery(id, editionID, state string) bson.M {
 		selector = bson.M{
 			"links.dataset.id": id,
 			"edition":          editionID,
-			"state":            state,
+			"next.state":       state,
 		}
 	}
 
@@ -434,9 +434,9 @@ func (m *Mongo) UpdateEdition(datasetID, edition string, version *models.Version
 
 	update := bson.M{
 		"$set": bson.M{
-			"state":                     version.State,
-			"links.latest_version.href": version.Links.Version.HRef,
-			"links.latest_version.id":   version.Links.Version.ID,
+			"next.state":                     version.State,
+			"next.links.latest_version.href": version.Links.Version.HRef,
+			"next.links.latest_version.id":   version.Links.Version.ID,
 		},
 		"$setOnInsert": bson.M{
 			"last_updated": time.Now(),
@@ -517,7 +517,7 @@ func (m *Mongo) UpsertDataset(id string, datasetDoc *models.DatasetUpdate) (err 
 }
 
 // UpsertEdition adds or overides an existing edition document
-func (m *Mongo) UpsertEdition(datasetID, edition string, editionDoc *models.Edition) (err error) {
+func (m *Mongo) UpsertEdition(datasetID, edition string, editionDoc *models.EditionUpdate) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -526,7 +526,7 @@ func (m *Mongo) UpsertEdition(datasetID, edition string, editionDoc *models.Edit
 		"links.dataset.id": datasetID,
 	}
 
-	editionDoc.LastUpdated = time.Now()
+	editionDoc.Next.LastUpdated = time.Now()
 
 	update := bson.M{
 		"$set": editionDoc,

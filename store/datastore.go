@@ -27,7 +27,7 @@ type Storer interface {
 	GetDimensionNodesFromInstance(ID string) (*models.DimensionNodeResults, error)
 	GetDimensions(datasetID, versionID string) ([]bson.M, error)
 	GetDimensionOptions(datasetID, editionID, versionID, dimension string) (*models.DimensionOptionResults, error)
-	GetEdition(ID, editionID, state string) (*models.Edition, error)
+	GetEdition(ID, editionID, state string) (*models.EditionUpdate, error)
 	GetEditions(ID, state string) (*models.EditionResults, error)
 	GetInstances(filters []string) (*models.InstanceResults, error)
 	GetInstance(ID string) (*models.Instance, error)
@@ -46,7 +46,7 @@ type Storer interface {
 	UpdateVersion(ID string, version *models.Version) error
 	UpsertContact(ID string, update interface{}) error
 	UpsertDataset(ID string, datasetDoc *models.DatasetUpdate) error
-	UpsertEdition(datasetID, edition string, editionDoc *models.Edition) error
+	UpsertEdition(datasetID, edition string, editionDoc *models.EditionUpdate) error
 	UpsertVersion(ID string, versionDoc *models.Version) error
 	Ping(ctx context.Context) (time.Time, error)
 }
