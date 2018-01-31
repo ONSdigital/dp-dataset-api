@@ -32,19 +32,6 @@ func (a *Authenticator) Check(handle func(http.ResponseWriter, *http.Request)) h
 	})
 }
 
-// Differentiate wraps a HTTP handler. Authenticated rue/false is passed as a boolean when the HTTP handler is called
-func (a *Authenticator) Differentiate(handle func(http.ResponseWriter, *http.Request, bool)) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		key := r.Header.Get(a.HeaderName)
-		auth := false
-		if key == a.SecretKey {
-			auth = true
-		}
-		// Now run the clients request, including a boolean specifiying if the requester has auth
-		handle(w, r, auth)
-	})
-}
-
 // ManualCheck a boolean is set and passed to the HTTP handler, its the handler responsibility to set the status code
 func (a *Authenticator) ManualCheck(handle func(http.ResponseWriter, *http.Request, bool)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
