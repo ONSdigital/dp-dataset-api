@@ -606,7 +606,7 @@ func (m *Mongo) CheckEditionExists(id, editionID, state string) error {
 		query = bson.M{
 			"links.dataset.id": id,
 			"edition":          editionID,
-			"state":            state,
+			"current.state":    state,
 		}
 	}
 
