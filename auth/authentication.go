@@ -40,7 +40,7 @@ func (a *Authenticator) Differentiate(handle func(http.ResponseWriter, *http.Req
 		if key == a.SecretKey {
 			auth = true
 		}
-		// The request has been authenticated, now run the clients request
+		// Now run the clients request, including a boolean specifiying if the requester has auth
 		handle(w, r, auth)
 	})
 }

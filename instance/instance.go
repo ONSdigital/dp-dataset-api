@@ -201,42 +201,30 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	// Combine existing links and spatial link
 	instance.Links = updateLinks(instance, currentInstance)
 
-	/*
-
-		TODO - rewrite validation for new model
-
-			logData := log.Data{"instance_id": id, "current_state": currentInstance.State, "requested_state": instance.State}
-			switch instance.State {
-			case models.CompletedState:
-				if err = validateInstanceUpdate(models.SubmittedState, currentInstance, instance); err != nil {
-					log.Error(err, logData)
-					http.Error(w, err.Error(), http.StatusForbidden)
-					return
-				}
-			case models.EditionConfirmedState:
-				if err = validateInstanceUpdate(models.CompletedState, currentInstance, instance); err != nil {
-					log.Error(err, logData)
-					http.Error(w, err.Error(), http.StatusForbidden)
-					return
-				}
-			case models.AssociatedState:
-				if err = validateInstanceUpdate(models.EditionConfirmedState, currentInstance, instance); err != nil {
-					log.Error(err, logData)
-					http.Error(w, err.Error(), http.StatusForbidden)
-					return
-				}
-
-				// TODO Update dataset.next state to associated and add collection id
-			case models.PublishedState:
-				if err = validateInstanceUpdate(models.AssociatedState, currentInstance, instance); err != nil {
-					log.Error(err, logData)
-					http.Error(w, err.Error(), http.StatusForbidden)
-					return
-				}
-
-				// TODO Update both edition and dataset states to published
-			}
-	*/
+	wrongEndPoint := "unable to update instance (should PUT to version endpoint with this state)"
+	logData := log.Data{"instance_id": id, "current_state": currentInstance.State, "requested_state": instance.State}
+	switch instance.State {
+	case models.CompletedState:
+		if err = validateInstanceUpdate(models.SubmittedState, currentInstance, instance); err != nil {
+			log.Error(err, logData)
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+	case models.EditionConfirmedState:
+		if err = validateInstanceUpdate(models.CompletedState, currentInstance, instance); err != nil {
+			log.Error(err, logData)
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+	case models.AssociatedState:
+		log.Debug(wrongEndPoint, logData)
+		w.WriteHeader(http.StatusForbidden)
+		return
+	case models.PublishedState:
+		log.Debug(wrongEndPoint, logData)
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
 
 	if instance.State == models.EditionConfirmedState {
 		datasetID := currentInstance.Links.Dataset.ID
@@ -254,7 +242,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Update state
+		// Update with any edition.next changes
 		editionDoc.Next.State = instance.State
 		if err = s.UpsertEdition(datasetID, edition, editionDoc); err != nil {
 			log.ErrorR(r, err, nil)
