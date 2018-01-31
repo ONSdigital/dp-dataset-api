@@ -292,10 +292,10 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 			GetInstanceFunc: func(id string) (*models.Instance, error) {
 				return currentInstanceTestData, nil
 			},
-			GetEditionFunc: func(datasetID, edition, state string) (*models.Edition, error) {
+			GetEditionFunc: func(datasetID string, edition string, auth bool) (*models.EditionUpdate, error) {
 				return nil, errs.ErrEditionNotFound
 			},
-			UpsertEditionFunc: func(datasetID, edition string, editionDoc *models.Edition) error {
+			UpsertEditionFunc: func(datasetID, edition string, editionDoc *models.EditionUpdate) error {
 				return nil
 			},
 			GetNextVersionFunc: func(string, string) (int, error) {
@@ -599,7 +599,6 @@ func TestStore_UpdateImportTask_ReturnsInternalError(t *testing.T) {
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
 	})
 }
-
 
 func TestUpdateDimensionReturnsNotFound(t *testing.T) {
 	t.Parallel()
