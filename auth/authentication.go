@@ -32,7 +32,7 @@ func (a *Authenticator) Check(handle func(http.ResponseWriter, *http.Request)) h
 	})
 }
 
-// Differentiate wraps a HTTP handler. Authenticated is passed as a boolean when the HTTP handler is called
+// Differentiate wraps a HTTP handler. Authenticated rue/false is passed as a boolean when the HTTP handler is called
 func (a *Authenticator) Differentiate(handle func(http.ResponseWriter, *http.Request, bool)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		key := r.Header.Get(a.HeaderName)

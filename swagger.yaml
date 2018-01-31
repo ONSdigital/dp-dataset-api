@@ -273,7 +273,7 @@ paths:
       tags:
       - "Public"
       summary: "Get an edition of a dataset"
-      description: "The edition contains a link to all versions"
+      description: "The edition contains a link to all appropriate versions."
       parameters:
       - $ref: '#/parameters/edition'
       - $ref: '#/parameters/id'
@@ -994,6 +994,24 @@ definitions:
         $ref: '#/definitions/EditionLinks'
       state:
         $ref: '#/definitions/State'
+      current:
+        $ref: '#/definitions/EditionCurrent'
+      next:
+        $ref: '#/definitions/EditionNext'
+  EditionCurrent:
+    description: "Publically accessible details - the currently public version."
+    readOnly: true
+    type: object
+    properties:
+      latest_version:
+        $ref: '#/definitions/LatestVersionLink'
+  EditionNext:
+    description: "Edition details only accessible to an authorised user - the most recent unpublished version"
+    readOnly: true
+    type: object
+    properties:
+      latest_version:
+        $ref: '#/definitions/LatestVersionLink'
   Editions:
     type: object
     properties:
