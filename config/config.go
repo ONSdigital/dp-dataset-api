@@ -55,7 +55,8 @@ func Get() (*Configuration, error) {
 
 	sanitized := *cfg
 	sanitized.SecretKey = ""
+	err := envconfig.Process("", cfg)
 	log.Info("config on startup", log.Data{"config": sanitized})
 
-	return cfg, envconfig.Process("", cfg)
+	return cfg, err
 }
