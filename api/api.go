@@ -83,20 +83,23 @@ func routes(host, secretKey string, router *mux.Router, dataStore store.DataStor
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}/dimensions", api.getDimensions).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", api.getDimensionOptions).Methods("GET")
 
-	instance := instance.Store{Host: api.host, Storer: api.dataStore.Backend}
-	api.router.HandleFunc("/instances", api.privateAuth.Check(instance.GetList)).Methods("GET")
-	api.router.HandleFunc("/instances", api.privateAuth.Check(instance.Add)).Methods("POST")
-	api.router.HandleFunc("/instances/{id}", api.privateAuth.Check(instance.Get)).Methods("GET")
-	api.router.HandleFunc("/instances/{id}", api.privateAuth.Check(instance.Update)).Methods("PUT")
-	api.router.HandleFunc("/instances/{id}/events", api.privateAuth.Check(instance.AddEvent)).Methods("POST")
-	api.router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", api.privateAuth.Check(instance.UpdateObservations)).Methods("PUT")
-	api.router.HandleFunc("/instances/{id}/import_tasks", api.privateAuth.Check(instance.UpdateImportTask)).Methods("PUT")
+	instanceAPI := instance.Store{Host: api.host, Storer: api.dataStore.Backend}
+	publishChecker := instance.InstancePublishCheck{Datastore: dataStore.Backend}
+	api.router.HandleFunc("/instances", api.privateAuth.Check(instanceAPI.GetList)).Methods("GET")
+	api.router.HandleFunc("/instances", api.privateAuth.Check(instanceAPI.Add)).Methods("POST")
+	api.router.HandleFunc("/instances/{id}", api.privateAuth.Check(instanceAPI.Get)).Methods("GET")
+	api.router.HandleFunc("/instances/{id}", api.privateAuth.Check(publishChecker.Check(instanceAPI.Update))).Methods("PUT")
+	api.router.HandleFunc("/instances/{id}/events", api.privateAuth.Check(instanceAPI.AddEvent)).Methods("POST")
+	api.router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}",
+		api.privateAuth.Check(publishChecker.Check(instanceAPI.UpdateObservations))).Methods("PUT")
+	api.router.HandleFunc("/instances/{id}/import_tasks", api.privateAuth.Check(publishChecker.Check(instanceAPI.UpdateImportTask))).Methods("PUT")
 
 	dimension := dimension.Store{Storer: api.dataStore.Backend}
 	api.router.HandleFunc("/instances/{id}/dimensions", dimension.GetNodes).Methods("GET")
-	api.router.HandleFunc("/instances/{id}/dimensions", api.privateAuth.Check(dimension.Add)).Methods("POST")
+	api.router.HandleFunc("/instances/{id}/dimensions", api.privateAuth.Check(publishChecker.Check(dimension.Add))).Methods("POST")
 	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options", dimension.GetUnique).Methods("GET")
-	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}/node_id/{node_id}", api.privateAuth.Check(dimension.AddNodeID)).Methods("PUT")
+	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}/node_id/{node_id}",
+		api.privateAuth.Check(publishChecker.Check(dimension.AddNodeID))).Methods("PUT")
 	return &api
 }
 

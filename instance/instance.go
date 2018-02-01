@@ -490,3 +490,32 @@ func writeBody(w http.ResponseWriter, bytes []byte) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
+
+// InstancePublishCheck Checks if an instance has been published
+type InstancePublishCheck struct {
+	Datastore store.Storer
+}
+
+// Check wraps a HTTP handle. Checks that the state is not published
+func (d *InstancePublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		vars := mux.Vars(r)
+		id := vars["id"]
+		instance, err := d.Datastore.GetInstance(id)
+		if err != nil {
+			log.Error(err, nil)
+			handleErrorType(err, w)
+			return
+		}
+
+		if instance.State == models.PublishedState {
+			err = errors.New("unable to update instance as it has been published")
+			log.Error(err, log.Data{"instance": instance})
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+
+		}
+		handle(w, r)
+	})
+}

@@ -401,7 +401,7 @@ func TestUpdateCompletedInstanceToCompletedReturnsForbidden(t *testing.T) {
 					ID: "4567",
 				},
 			},
-			State: models.CompletedState,
+			State: models.PublishedState,
 		}
 
 		mockedDataStore := &storetest.StorerMock{
@@ -621,6 +621,5 @@ func TestUpdateInstanceReturnsErrorWhenStateIsPublished(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
 	})
 }
