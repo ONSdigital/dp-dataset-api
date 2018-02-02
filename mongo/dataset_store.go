@@ -84,14 +84,23 @@ func (m *Mongo) GetDataset(id string) (*models.DatasetUpdate, error) {
 	return &dataset, nil
 }
 
+// editionAuthSelector provides the fields to return for an edition query, depending on auth true/false
+func editionAuthFilter(auth bool) bson.M {
+	authFilter := bson.M{"current": true, "links": true, "_id": true, "edition": true}
+	if auth == true {
+		authFilter = bson.M{"current": true, "next": true, "links": true, "_id": true, "edition": true}
+	}
+	return authFilter
+}
+
 // GetEditions retrieves all edition documents for a dataset, level of detail depends on auth
 func (m *Mongo) GetEditions(id string, auth bool) (*models.EditionResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	selector := bson.M{"links.dataset.id": id}
+	authFilter := editionAuthFilter(auth)
 
-	iter := s.DB(m.Database).C(editionsCollection).Find(selector).Iter()
+	iter := s.DB(m.Database).C(editionsCollection).Find(bson.M{"links.dataset.id": id}).Select(authFilter).Iter()
 	defer iter.Close()
 
 	var results []*models.EditionUpdate
@@ -105,33 +114,8 @@ func (m *Mongo) GetEditions(id string, auth bool) (*models.EditionResults, error
 	if len(results) < 1 {
 		return nil, errs.ErrEditionNotFound
 	}
+	return &models.EditionResults{Items: results}, nil
 
-	// Sanitise for non-authed users
-	if auth == true {
-		return &models.EditionResults{Items: results}, nil
-	} else {
-		// Need to repackage a bit for our non authorised/api users
-		var sanitisedResults []*models.EditionUpdate
-		for i := range results {
-			result := sanitiseEdition(results[i])
-			sanitisedResults = append(sanitisedResults, result)
-		}
-		return &models.EditionResults{Items: sanitisedResults}, nil
-	}
-
-}
-
-// Sanitise one edition to only contain publiclly availible data
-func sanitiseEdition(oldEdition *models.EditionUpdate) *models.EditionUpdate {
-
-	// NOTE - literally just rebuilding without edition.Next
-	newEdition := &models.EditionUpdate{
-		ID:      oldEdition.ID,
-		Edition: oldEdition.Edition,
-		Current: oldEdition.Current,
-		Links:   oldEdition.Links,
-	}
-	return newEdition
 }
 
 // GetEdition retrieves an edition document for a dataset
@@ -144,8 +128,10 @@ func (m *Mongo) GetEdition(id string, editionID string, auth bool) (*models.Edit
 		"edition":          editionID,
 	}
 
+	authFilter := editionAuthFilter(auth)
+
 	var edition models.EditionUpdate
-	err := s.DB(m.Database).C(editionsCollection).Find(selector).One(&edition)
+	err := s.DB(m.Database).C(editionsCollection).Find(selector).Select(authFilter).One(&edition)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, errs.ErrEditionNotFound
@@ -153,12 +139,7 @@ func (m *Mongo) GetEdition(id string, editionID string, auth bool) (*models.Edit
 		return nil, err
 	}
 
-	if auth == true {
-		return &edition, nil
-	}
-
-	newEdition := sanitiseEdition(&edition)
-	return newEdition, nil
+	return &edition, nil
 }
 
 // GetNextVersion retrieves the latest version for an edition of a dataset
