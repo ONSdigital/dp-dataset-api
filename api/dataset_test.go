@@ -179,7 +179,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
+			GetEditionsFunc: func(id string, auth bool) (*models.EditionResults, error) {
 				return &models.EditionResults{}, nil
 			},
 		}
@@ -235,7 +235,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
+			GetEditionsFunc: func(id string, auth bool) (*models.EditionResults, error) {
 				return nil, errs.ErrEditionNotFound
 			},
 		}
@@ -254,7 +254,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
+			GetEditionsFunc: func(id string, auth bool) (*models.EditionResults, error) {
 				return nil, errs.ErrEditionNotFound
 			},
 		}
@@ -276,8 +276,8 @@ func TestGetEditionReturnsOK(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionFunc: func(id, editionID, state string) (*models.Edition, error) {
-				return &models.Edition{}, nil
+			GetEditionFunc: func(id string, editionID string, auth bool) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{}, nil
 			},
 		}
 
@@ -332,7 +332,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionFunc: func(id, editionID, state string) (*models.Edition, error) {
+			GetEditionFunc: func(id string, editionID string, auth bool) (*models.EditionUpdate, error) {
 				return nil, errs.ErrEditionNotFound
 			},
 		}
@@ -351,7 +351,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionFunc: func(id, editionID, state string) (*models.Edition, error) {
+			GetEditionFunc: func(id string, editionID string, auth bool) (*models.EditionUpdate, error) {
 				return nil, errs.ErrEditionNotFound
 			},
 		}
@@ -1112,8 +1112,22 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
 				return nil
 			},
+			GetEditionFunc: func(string, string, bool) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{
+					ID: "123",
+					Next: &models.Edition{
+						State: models.PublishedState,
+					},
+					Current: &models.Edition{},
+				}, nil
+			},
+			UpsertEditionFunc: func(string, string, *models.EditionUpdate) error {
+				return nil
+			},
 		}
+
 		mockedDataStore.GetVersion("789", "2017", "1", "")
+		mockedDataStore.GetEdition("123", "2017", true)
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
 		mockedDataStore.UpdateEdition("123", "2017", &models.Version{State: "published"})
 		mockedDataStore.GetDataset("123")
@@ -1126,7 +1140,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
@@ -2066,13 +2081,13 @@ func TestCreateNewVersionDoc(t *testing.T) {
 	})
 }
 
-func setUp(state string) *storetest.StorerMock {
+func setUp(auth bool, state string) *storetest.StorerMock {
 	mockedDataStore := &storetest.StorerMock{
 		GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 			return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{}}, nil
 		},
-		GetEditionFunc: func(string, string, string) (*models.Edition, error) {
-			return &models.Edition{}, nil
+		GetEditionFunc: func(string, string, bool) (*models.EditionUpdate, error) {
+			return &models.EditionUpdate{}, nil
 		},
 		GetNextVersionFunc: func(string, string) (int, error) {
 			return 1, nil
@@ -2091,7 +2106,7 @@ func setUp(state string) *storetest.StorerMock {
 		},
 	}
 
-	mockedDataStore.GetEdition("123", "2017", state)
+	mockedDataStore.GetEdition("123", "2017", auth)
 
 	mockedDataStore.GetNextVersion("123", "2017")
 
