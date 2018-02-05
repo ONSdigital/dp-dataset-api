@@ -192,11 +192,11 @@ func (m *Mongo) UpdateBuildSearchTaskState(id, dimension, state string) (err err
 
 	selector := bson.M{
 		"id": id,
-		"import_tasks.build_search.dimension_name": dimension,
+		"import_tasks.build_search_indexes.dimension_name": dimension,
 	}
 
 	update := bson.M{
-		"$set":         bson.M{"import_tasks.build_search.$.state": state},
+		"$set":         bson.M{"import_tasks.build_search_indexes.$.state": state},
 		"$currentDate": bson.M{"last_updated": true},
 	}
 
