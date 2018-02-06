@@ -599,3 +599,53 @@ func TestStore_UpdateImportTask_ReturnsInternalError(t *testing.T) {
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
 	})
 }
+
+func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_InvalidState(t *testing.T) {
+
+	t.Parallel()
+	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
+		body := strings.NewReader(`{"build_search_indexes":[{"state":"notvalid"}]}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+	})
+}
+
+func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask(t *testing.T) {
+
+	t.Parallel()
+	Convey("update to an import task returns http 200 response if no errors occur", t, func() {
+		body := strings.NewReader(`{"build_search_indexes":[{"state":"completed"}]}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
+	})
+}
