@@ -1191,6 +1191,17 @@ definitions:
             code_list_id:
               type: string
               description: "The ID of the codelist that this hierarchy represents"
+      build_search_indexes:
+        type: array
+        items:
+          type: object
+          properties:
+            state:
+              type: string
+              description: "The state of the import observations task"
+            dimension_name:
+              type: string
+              description: "The name of the dimension the search index represents"
   Codelist:
     type: object
     properties:
