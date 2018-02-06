@@ -149,11 +149,12 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update instance-dimension
+	notFound := true
 	for i := range instance.Dimensions {
 
 		// For the chosen dimension
 		if instance.Dimensions[i].Name == dimension {
-
+			notFound = false
 			// Assign update info, conditionals to allow updating of both or either without blanking other
 			if dim.Label != "" {
 				instance.Dimensions[i].Label = dim.Label
@@ -164,6 +165,12 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
+	}
+
+	if notFound {
+		log.ErrorC("dimension not found", errs.ErrDimensionNotFound, log.Data{"instance": id, "dimension": dimension})
+		handleErrorType(errs.ErrDimensionNotFound, w)
+		return
 	}
 
 	// Update instance
@@ -537,7 +544,7 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 func handleErrorType(err error, w http.ResponseWriter) {
 	status := http.StatusInternalServerError
 
-	if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
+	if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
 		status = http.StatusNotFound
 	}
 
