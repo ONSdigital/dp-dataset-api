@@ -10,4 +10,5 @@ var (
 	ErrDimensionNodeNotFound = errors.New("Dimension node not found")
 	ErrDimensionsNotFound    = errors.New("Dimensions not found")
 	ErrInstanceNotFound      = errors.New("Instance not found")
+	ErrInternalServerError   = errors.New("")
 )

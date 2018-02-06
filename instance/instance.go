@@ -491,13 +491,13 @@ func writeBody(w http.ResponseWriter, bytes []byte) {
 	}
 }
 
-// InstancePublishCheck Checks if an instance has been published
-type InstancePublishCheck struct {
+// PublishCheck Checks if an instance has been published
+type PublishCheck struct {
 	Datastore store.Storer
 }
 
 // Check wraps a HTTP handle. Checks that the state is not published
-func (d *InstancePublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		vars := mux.Vars(r)
@@ -514,8 +514,8 @@ func (d *InstancePublishCheck) Check(handle func(http.ResponseWriter, *http.Requ
 			log.Error(err, log.Data{"instance": instance})
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
-
 		}
+
 		handle(w, r)
 	})
 }
