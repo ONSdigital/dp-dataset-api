@@ -1699,7 +1699,10 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDimensionOptionsFunc: func(datasetID, editionID, versionID, dimensions string) (*models.DimensionOptionResults, error) {
+			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+				return &models.Version{}, nil
+			},
+			GetDimensionOptionsFunc: func(version *models.Version, dimensions string) (*models.DimensionOptionResults, error) {
 				return &models.DimensionOptionResults{}, nil
 			},
 		}
@@ -1716,7 +1719,10 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDimensionOptionsFunc: func(datasetID, editionID, versionID, dimensions string) (*models.DimensionOptionResults, error) {
+			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+				return &models.Version{}, nil
+			},
+			GetDimensionOptionsFunc: func(version *models.Version, dimensions string) (*models.DimensionOptionResults, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
 		}
@@ -1730,7 +1736,10 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDimensionOptionsFunc: func(datasetID, editionID, versionID, dimensions string) (*models.DimensionOptionResults, error) {
+			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+				return &models.Version{}, nil
+			},
+			GetDimensionOptionsFunc: func(version *models.Version, dimensions string) (*models.DimensionOptionResults, error) {
 				return nil, errInternal
 			},
 		}
