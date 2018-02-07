@@ -34,6 +34,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	log.Info("config on startup", log.Data{"config": cfg})
+
 	generateDownloadsProducer, err := kafka.NewProducer(cfg.KafkaAddr, cfg.GenerateDownloadsTopic, 0)
 	if err != nil {
 		log.Error(errors.Wrap(err, "error creating kakfa producer"), nil)
