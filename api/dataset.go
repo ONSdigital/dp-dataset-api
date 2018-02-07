@@ -928,7 +928,6 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 		}
 
 		handle(w, r)
-		return
 	})
 }
 

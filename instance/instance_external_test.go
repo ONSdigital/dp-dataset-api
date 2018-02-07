@@ -374,7 +374,7 @@ func TestUpdatePublishedInstanceToCompletedReturnsForbidden(t *testing.T) {
 				return currentInstanceTestData, nil
 			},
 			UpdateInstanceFunc: func(id string, i *models.Instance) error {
-				return internalError
+				return nil
 			},
 		}
 
@@ -387,7 +387,7 @@ func TestUpdatePublishedInstanceToCompletedReturnsForbidden(t *testing.T) {
 	})
 }
 
-func TestUpdateCompletedInstanceToCompletedReturnsForbidden(t *testing.T) {
+func TestUpdateEditionConfirmedInstanceToCompletedReturnsForbidden(t *testing.T) {
 	t.Parallel()
 	Convey("update to an instance returns an internal error", t, func() {
 		body := strings.NewReader(`{"state":"completed"}`)
@@ -401,7 +401,7 @@ func TestUpdateCompletedInstanceToCompletedReturnsForbidden(t *testing.T) {
 					ID: "4567",
 				},
 			},
-			State: models.PublishedState,
+			State: models.EditionConfirmedState,
 		}
 
 		mockedDataStore := &storetest.StorerMock{
@@ -409,7 +409,7 @@ func TestUpdateCompletedInstanceToCompletedReturnsForbidden(t *testing.T) {
 				return currentInstanceTestData, nil
 			},
 			UpdateInstanceFunc: func(id string, i *models.Instance) error {
-				return internalError
+				return nil
 			},
 		}
 

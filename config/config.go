@@ -9,7 +9,7 @@ import (
 
 // Configuration structure which hold information for configuring the import API
 type Configuration struct {
-	BindAddr                string        `envconfig:"BIND_ADDR"                  json:"-"`
+	BindAddr                string        `envconfig:"BIND_ADDR"`
 	KafkaAddr               []string      `envconfig:"KAFKA_ADDR"                 json:"-"`
 	GenerateDownloadsTopic  string        `envconfig:"GENERATE_DOWNLOADS_TOPIC"`
 	CodeListAPIURL          string        `envconfig:"CODE_LIST_API_URL"`

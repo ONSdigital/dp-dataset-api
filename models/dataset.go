@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ONSdigital/go-ns/log"
 	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 )
@@ -212,8 +211,6 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
 	}
-
-	log.Info("version", log.Data{"bytes": string(bytes)})
 
 	var version Version
 	// Create unique id
