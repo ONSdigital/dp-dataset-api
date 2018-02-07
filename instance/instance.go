@@ -149,11 +149,12 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update instance-dimension
+	notFound := true
 	for i := range instance.Dimensions {
 
 		// For the chosen dimension
 		if instance.Dimensions[i].Name == dimension {
-
+			notFound = false
 			// Assign update info, conditionals to allow updating of both or either without blanking other
 			if dim.Label != "" {
 				instance.Dimensions[i].Label = dim.Label
@@ -164,6 +165,12 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
+	}
+
+	if notFound {
+		log.ErrorC("dimension not found", errs.ErrDimensionNotFound, log.Data{"instance": id, "dimension": dimension})
+		handleErrorType(errs.ErrDimensionNotFound, w)
+		return
 	}
 
 	// Update instance
@@ -352,16 +359,16 @@ func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.Editi
 }
 
 func validateInstanceUpdate(expectedState string, currentInstance, instance *models.Instance) error {
-	if currentInstance.State != expectedState {
-		err := fmt.Errorf("Unable to update resource, expected resource to have a state of %s", expectedState)
-		return err
-	}
-	if instance.State == models.EditionConfirmedState && currentInstance.Edition == "" && instance.Edition == "" {
-		err := errors.New("Unable to update resource, missing a value for the edition")
-		return err
+	var err error
+	if currentInstance.State == models.PublishedState {
+		err = fmt.Errorf("Unable to update resource state, as the version has been published")
+	} else if currentInstance.State != expectedState {
+		err = fmt.Errorf("Unable to update resource, expected resource to have a state of %s", expectedState)
+	} else if instance.State == models.EditionConfirmedState && currentInstance.Edition == "" && instance.Edition == "" {
+		err = errors.New("Unable to update resource, missing a value for the edition")
 	}
 
-	return nil
+	return err
 }
 
 func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *models.EditionUpdate) *models.InstanceLinks {
@@ -535,7 +542,7 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 func handleErrorType(err error, w http.ResponseWriter) {
 	status := http.StatusInternalServerError
 
-	if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
+	if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
 		status = http.StatusNotFound
 	}
 
@@ -553,4 +560,33 @@ func writeBody(w http.ResponseWriter, bytes []byte) {
 		log.Error(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+// PublishCheck Checks if an instance has been published
+type PublishCheck struct {
+	Datastore store.Storer
+}
+
+// Check wraps a HTTP handle. Checks that the state is not published
+func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		vars := mux.Vars(r)
+		id := vars["id"]
+		instance, err := d.Datastore.GetInstance(id)
+		if err != nil {
+			log.Error(err, nil)
+			handleErrorType(err, w)
+			return
+		}
+
+		if instance.State == models.PublishedState {
+			err = errors.New("unable to update instance as it has been published")
+			log.Error(err, log.Data{"instance": instance})
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+
+		handle(w, r)
+	})
 }

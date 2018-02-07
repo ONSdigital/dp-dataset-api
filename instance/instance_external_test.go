@@ -17,7 +17,7 @@ import (
 )
 
 const secretKey = "coffee"
-const host = "http://locahost:8080"
+const host = "http://localhost:8080"
 
 var internalError = errors.New("internal error")
 
@@ -374,7 +374,7 @@ func TestUpdatePublishedInstanceToCompletedReturnsForbidden(t *testing.T) {
 				return currentInstanceTestData, nil
 			},
 			UpdateInstanceFunc: func(id string, i *models.Instance) error {
-				return internalError
+				return nil
 			},
 		}
 
@@ -387,7 +387,7 @@ func TestUpdatePublishedInstanceToCompletedReturnsForbidden(t *testing.T) {
 	})
 }
 
-func TestUpdateCompletedInstanceToCompletedReturnsForbidden(t *testing.T) {
+func TestUpdateEditionConfirmedInstanceToCompletedReturnsForbidden(t *testing.T) {
 	t.Parallel()
 	Convey("update to an instance returns an internal error", t, func() {
 		body := strings.NewReader(`{"state":"completed"}`)
@@ -401,7 +401,7 @@ func TestUpdateCompletedInstanceToCompletedReturnsForbidden(t *testing.T) {
 					ID: "4567",
 				},
 			},
-			State: models.CompletedState,
+			State: models.EditionConfirmedState,
 		}
 
 		mockedDataStore := &storetest.StorerMock{
@@ -409,7 +409,7 @@ func TestUpdateCompletedInstanceToCompletedReturnsForbidden(t *testing.T) {
 				return currentInstanceTestData, nil
 			},
 			UpdateInstanceFunc: func(id string, i *models.Instance) error {
-				return internalError
+				return nil
 			},
 		}
 
@@ -600,6 +600,32 @@ func TestStore_UpdateImportTask_ReturnsInternalError(t *testing.T) {
 	})
 }
 
+
+func TestUpdateInstanceReturnsErrorWhenStateIsPublished(t *testing.T) {
+	t.Parallel()
+	Convey("when an instance has a state of published, then put request to change to it to completed ", t, func() {
+		body := strings.NewReader(`{"state":"completed"}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(id string) (*models.Instance, error) {
+				return &models.Instance{State: models.PublishedState}, nil
+			},
+			UpdateInstanceFunc: func(id string, i *models.Instance) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance.Update(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+	})
+}
+
+
 func TestUpdateDimensionReturnsNotFound(t *testing.T) {
 	t.Parallel()
 	Convey("When update dimension return status not found", t, func() {
@@ -666,16 +692,18 @@ func TestUpdateDimensionReturnsBadRequest(t *testing.T) {
 	})
 }
 
-func TestUpdateDimensionReturnsOk(t *testing.T) {
+func TestUpdateDimensionReturnsNotFoundWithWrongName(t *testing.T) {
 	t.Parallel()
 	Convey("When update dimension fails to update an instance", t, func() {
-		body := strings.NewReader("{}")
-		r := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+		body := strings.NewReader(`{"label":"notages"}`)
+		r := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/notage", body)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
 			GetInstanceFunc: func(id string) (*models.Instance, error) {
-				return &models.Instance{}, nil
+				return &models.Instance{State: models.EditionConfirmedState,
+					InstanceID: "123",
+					Dimensions: []models.CodeList{{Name: "age", ID: "age"}}}, nil
 			},
 			UpdateInstanceFunc: func(id string, i *models.Instance) error {
 				return nil
@@ -683,7 +711,41 @@ func TestUpdateDimensionReturnsOk(t *testing.T) {
 		}
 
 		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.UpdateDimension(w, r)
+
+		router := mux.NewRouter()
+		router.HandleFunc("/instances/{id}/dimensions/{dimension}", instance.UpdateDimension).Methods("PUT")
+
+		router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+	})
+}
+
+func TestUpdateDimensionReturnsOk(t *testing.T) {
+	t.Parallel()
+	Convey("When update dimension fails to update an instance", t, func() {
+		body := strings.NewReader(`{"label":"ages"}`)
+		r := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(id string) (*models.Instance, error) {
+				return &models.Instance{State: models.EditionConfirmedState,
+					InstanceID: "123",
+					Dimensions: []models.CodeList{{Name: "age", ID: "age"}}}, nil
+			},
+			UpdateInstanceFunc: func(id string, i *models.Instance) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		router := mux.NewRouter()
+		router.HandleFunc("/instances/{id}/dimensions/{dimension}", instance.UpdateDimension).Methods("PUT")
+
+		router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)

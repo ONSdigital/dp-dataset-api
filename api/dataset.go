@@ -8,6 +8,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -396,12 +397,12 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	version := vars["version"]
 
 	versionDoc, err := models.CreateVersion(r.Body)
+	defer r.Body.Close()
 	if err != nil {
 		log.ErrorC("failed to model version resource based on request", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
 
 	if err = api.dataStore.Backend.CheckDatasetExists(datasetID, ""); err != nil {
 		log.ErrorC("failed to find dataset", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
@@ -419,14 +420,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.ErrorC("failed to find version of dataset edition", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		handleErrorType(versionDocType, err, w)
-		return
-	}
-
-	// Check current state of version document
-	if currentVersion.State == models.PublishedState {
-		err = fmt.Errorf("unable to update document, already published")
-		log.Error(err, nil)
-		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 
@@ -910,6 +903,44 @@ func handleErrorType(docType string, err error, w http.ResponseWriter) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
+}
+
+// PublishCheck Checks if an version has been published
+type PublishCheck struct {
+	Datastore store.Storer
+}
+
+// Check wraps a HTTP handle. Checks that the state is not published
+func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		vars := mux.Vars(r)
+		id := vars["id"]
+		edition := vars["edition"]
+		version := vars["version"]
+
+		versionDoc, err := d.Datastore.GetVersion(id, edition, version, "")
+		if err != nil {
+			if err != errs.ErrVersionNotFound {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			// If document cannot be found do not handle error
+			handle(w, r)
+			return
+		}
+
+		if versionDoc != nil {
+			if versionDoc.State == models.PublishedState {
+				err = errors.New("unable to update version as it has been published")
+				log.Error(err, log.Data{"version": versionDoc})
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
+		}
+
+		handle(w, r)
+	})
 }
 
 func setJSONContentType(w http.ResponseWriter) {
