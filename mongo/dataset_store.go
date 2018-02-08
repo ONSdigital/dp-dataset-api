@@ -93,14 +93,33 @@ func editionAuthFilter(auth bool) bson.M {
 	return authFilter
 }
 
+// editionsStateFilter limits which editions are returned depending on auth
+func editionsStateSelector(id string, auth bool) bson.M {
+	if auth == false {
+		return bson.M{"links.dataset.id": id, "current.state": models.PublishedState}
+	} else {
+		return bson.M{"links.dataset.id": id}
+	}
+}
+
+// editionStateFilter stops the return of unpulished editions to unathorised users
+func editionStateSelector(id string, editionID string, auth bool) bson.M {
+	if auth == false {
+		return bson.M{"links.dataset.id": id, "edition": editionID, "current.state": models.PublishedState}
+	} else {
+		return bson.M{"links.dataset.id": id, "edition": editionID}
+	}
+}
+
 // GetEditions retrieves all edition documents for a dataset, level of detail depends on auth
 func (m *Mongo) GetEditions(id string, auth bool) (*models.EditionResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
+	stateSelect := editionsStateSelector(id, auth)
 	authFilter := editionAuthFilter(auth)
 
-	iter := s.DB(m.Database).C(editionsCollection).Find(bson.M{"links.dataset.id": id}).Select(authFilter).Iter()
+	iter := s.DB(m.Database).C(editionsCollection).Find(stateSelect).Select(authFilter).Iter()
 	defer iter.Close()
 
 	var results []*models.EditionUpdate
@@ -123,15 +142,11 @@ func (m *Mongo) GetEdition(id string, editionID string, auth bool) (*models.Edit
 	s := m.Session.Copy()
 	defer s.Close()
 
-	selector := bson.M{
-		"links.dataset.id": id,
-		"edition":          editionID,
-	}
-
+	stateSelect := editionStateSelector(id, editionID, auth)
 	authFilter := editionAuthFilter(auth)
 
 	var edition models.EditionUpdate
-	err := s.DB(m.Database).C(editionsCollection).Find(selector).Select(authFilter).One(&edition)
+	err := s.DB(m.Database).C(editionsCollection).Find(stateSelect).Select(authFilter).One(&edition)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, errs.ErrEditionNotFound
