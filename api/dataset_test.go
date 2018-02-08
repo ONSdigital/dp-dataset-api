@@ -1695,7 +1695,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 
 func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("When a valid dimension is provided then a list of options can be returned successfully", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -1715,15 +1715,12 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 
 func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("When the version doesn't exist in a request for dimension options, then return not found", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
-				return &models.Version{}, nil
-			},
-			GetDimensionOptionsFunc: func(version *models.Version, dimensions string) (*models.DimensionOptionResults, error) {
-				return nil, errs.ErrDatasetNotFound
+				return nil, errs.ErrVersionNotFound
 			},
 		}
 
@@ -1732,7 +1729,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 	})
 
-	Convey("", t, func() {
+	Convey("When an internal error causes failure to retrieve dimension options, then return internal server error", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
