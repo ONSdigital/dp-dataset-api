@@ -746,13 +746,15 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	dimension := vars["dimension"]
 
 	var state string
+	authenticated := true
 	if r.Header.Get(internalToken) != api.internalToken {
 		state = models.PublishedState
+		authenticated = false
 	}
 
 	version, err := api.dataStore.Backend.GetVersion(datasetID, editionID, versionID, state)
 	if err != nil {
-		log.ErrorC("failed to get version", err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID})
+		log.ErrorC("failed to get version", err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "authenticated": authenticated})
 		handleErrorType(versionDocType, err, w)
 		return
 	}
