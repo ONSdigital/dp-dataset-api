@@ -210,27 +210,29 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 	wrongEndPoint := "unable to update instance (should PUT to version endpoint with this state)"
 	logData := log.Data{"instance_id": id, "current_state": currentInstance.State, "requested_state": instance.State}
-	switch instance.State {
-	case models.CompletedState:
-		if err = validateInstanceUpdate(models.SubmittedState, currentInstance, instance); err != nil {
-			log.Error(err, logData)
-			http.Error(w, err.Error(), http.StatusForbidden)
+	if instance.State != currentInstance.State {
+		switch instance.State {
+		case models.CompletedState:
+			if err = validateInstanceUpdate(models.SubmittedState, currentInstance, instance); err != nil {
+				log.Error(err, logData)
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
+		case models.EditionConfirmedState:
+			if err = validateInstanceUpdate(models.CompletedState, currentInstance, instance); err != nil {
+				log.Error(err, logData)
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
+		case models.AssociatedState:
+			log.Debug(wrongEndPoint, logData)
+			w.WriteHeader(http.StatusForbidden)
+			return
+		case models.PublishedState:
+			log.Debug(wrongEndPoint, logData)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
-	case models.EditionConfirmedState:
-		if err = validateInstanceUpdate(models.CompletedState, currentInstance, instance); err != nil {
-			log.Error(err, logData)
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
-	case models.AssociatedState:
-		log.Debug(wrongEndPoint, logData)
-		w.WriteHeader(http.StatusForbidden)
-		return
-	case models.PublishedState:
-		log.Debug(wrongEndPoint, logData)
-		w.WriteHeader(http.StatusForbidden)
-		return
 	}
 
 	if instance.State == models.EditionConfirmedState {
