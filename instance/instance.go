@@ -208,7 +208,6 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	// Combine existing links and spatial link
 	instance.Links = updateLinks(instance, currentInstance)
 
-	wrongEndPoint := "unable to update instance (should PUT to version endpoint with this state)"
 	logData := log.Data{"instance_id": id, "current_state": currentInstance.State, "requested_state": instance.State}
 	if instance.State != currentInstance.State {
 		switch instance.State {
@@ -225,13 +224,21 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		case models.AssociatedState:
-			log.Debug(wrongEndPoint, logData)
-			w.WriteHeader(http.StatusForbidden)
-			return
+			if err = validateInstanceUpdate(models.EditionConfirmedState, currentInstance, instance); err != nil {
+				log.Error(err, logData)
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
+
+			// TODO Update dataset.next state to associated and add collection id
 		case models.PublishedState:
-			log.Debug(wrongEndPoint, logData)
-			w.WriteHeader(http.StatusForbidden)
-			return
+			if err = validateInstanceUpdate(models.AssociatedState, currentInstance, instance); err != nil {
+				log.Error(err, logData)
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
+
+			// TODO Update both edition and dataset states to published
 		}
 	}
 
