@@ -105,24 +105,24 @@ type ContactDetails struct {
 // EditionUpdate represents an evolving edition containing both the next and current edition
 type EditionUpdate struct {
 	ID      string              `bson:"_id,omitempty"         json:"id,omitempty"`
-	Edition string              `bson:"edition,omitempty"     json:"edition,omitempty"`
-	Links   *EditionUpdateLinks `bson:"links,omitempty"       json:"links,omitempty"`
 	Current *Edition            `bson:"current,omitempty"     json:"current,omitempty"`
 	Next    *Edition            `bson:"next,omitempty"        json:"next,omitempty"`
 }
 
 // EditionUpdateLinks represents those links common the both the current and next edition
 type EditionUpdateLinks struct {
-	Dataset  *LinkObject `bson:"dataset,omitempty"        json:"dataset,omitempty"`
-	Self     *LinkObject `bson:"self,omitempty"           json:"self,omitempty"`
-	Versions *LinkObject `bson:"versions,omitempty"       json:"versions,omitempty"`
+	Edition         string                     `bson:"edition,omitempty"     json:"edition,omitempty"`
+	Dataset         *LinkObject               `bson:"dataset,omitempty"        json:"dataset,omitempty"`
+	Self            *LinkObject               `bson:"self,omitempty"           json:"self,omitempty"`
+	Versions        *LinkObject               `bson:"versions,omitempty"       json:"versions,omitempty"`
+	LatestVersion   *LinkObject          `bson:"latest_version,omitempty" json:"latest_version,omitempty"`
 }
 
 // Edition represents information related to a single edition for a dataset
 type Edition struct {
-	LatestVersion *LinkObject `bson:"latest_version,omitempty" json:"latest_version,omitempty"`
-	State         string      `bson:"state,omitempty"        json:"state,omitempty"`
-	LastUpdated   time.Time   `bson:"last_updated,omitempty" json:"-"`
+	Links         *EditionUpdateLinks    `bson:"links,omitempty"       json:"links,omitempty"`
+	State         string                 `bson:"state,omitempty"        json:"state,omitempty"`
+	LastUpdated   time.Time              `bson:"last_updated,omitempty" json:"-"`
 }
 
 // Publisher represents an object containing information of the publisher
