@@ -43,6 +43,7 @@ type Storer interface {
 	UpdateObservationInserted(ID string, observationInserted int64) error
 	UpdateImportObservationsTaskState(id, state string) error
 	UpdateBuildHierarchyTaskState(id, dimension, state string) error
+	UpdateBuildSearchTaskState(id, dimension, state string) error
 	UpdateVersion(ID string, version *models.Version) error
 	UpsertContact(ID string, update interface{}) error
 	UpsertDataset(ID string, datasetDoc *models.DatasetUpdate) error

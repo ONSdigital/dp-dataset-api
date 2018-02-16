@@ -455,7 +455,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 				validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value for import observations: %v", tasks.ImportObservations.State))
 			} else if err := s.UpdateImportObservationsTaskState(id, tasks.ImportObservations.State); err != nil {
 				log.Error(err, nil)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, "Failed to update import observations task state", http.StatusInternalServerError)
 				return
 			}
 		}
@@ -468,7 +468,21 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
 				} else if err := s.UpdateBuildHierarchyTaskState(id, task.DimensionName, task.State); err != nil {
 					log.Error(err, nil)
-					http.Error(w, err.Error(), http.StatusInternalServerError)
+					http.Error(w, "Failed to update build hierarchy task state", http.StatusInternalServerError)
+					return
+				}
+			}
+		}
+	}
+
+	if tasks.BuildSearchIndexTasks != nil {
+		for _, task := range tasks.BuildSearchIndexTasks {
+			if task.State != "" {
+				if task.State != models.CompletedState {
+					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
+				} else if err := s.UpdateBuildSearchTaskState(id, task.DimensionName, task.State); err != nil {
+					log.Error(err, nil)
+					http.Error(w, "Failed to update build search index task state", http.StatusInternalServerError)
 					return
 				}
 			}
