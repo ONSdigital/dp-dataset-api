@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
@@ -9,12 +10,12 @@ import (
 // Configuration structure which hold information for configuring the import API
 type Configuration struct {
 	BindAddr                string        `envconfig:"BIND_ADDR"`
-	KafkaAddr               []string      `envconfig:"KAFKA_ADDR"`
+	KafkaAddr               []string      `envconfig:"KAFKA_ADDR"                 json:"-"`
 	GenerateDownloadsTopic  string        `envconfig:"GENERATE_DOWNLOADS_TOPIC"`
 	CodeListAPIURL          string        `envconfig:"CODE_LIST_API_URL"`
 	DatasetAPIURL           string        `envconfig:"DATASET_API_URL"`
 	WebsiteURL              string        `envconfig:"WEBSITE_URL"`
-	SecretKey               string        `envconfig:"SECRET_KEY"`
+	SecretKey               string        `envconfig:"SECRET_KEY"                 json:"-"`
 	GracefulShutdownTimeout time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 	HealthCheckTimeout      time.Duration `envconfig:"HEALTHCHECK_TIMEOUT"`
 	MongoConfig             MongoConfig
@@ -22,7 +23,7 @@ type Configuration struct {
 
 // MongoConfig contains the config required to connect to MongoDB.
 type MongoConfig struct {
-	BindAddr   string `envconfig:"MONGODB_BIND_ADDR"`
+	BindAddr   string `envconfig:"MONGODB_BIND_ADDR"   json:"-"`
 	Collection string `envconfig:"MONGODB_COLLECTION"`
 	Database   string `envconfig:"MONGODB_DATABASE"`
 }
@@ -53,4 +54,11 @@ func Get() (*Configuration, error) {
 	}
 
 	return cfg, envconfig.Process("", cfg)
+}
+
+// String is implemented to prevent sensitive fields being logged.
+// The config is returned as JSON with sensitive fields omitted.
+func (config Configuration) String() string {
+	json, _ := json.Marshal(config)
+	return string(json)
 }

@@ -26,7 +26,7 @@ type Storer interface {
 	GetDatasets() ([]models.DatasetUpdate, error)
 	GetDimensionNodesFromInstance(ID string) (*models.DimensionNodeResults, error)
 	GetDimensions(datasetID, versionID string) ([]bson.M, error)
-	GetDimensionOptions(datasetID, editionID, versionID, dimension string) (*models.DimensionOptionResults, error)
+	GetDimensionOptions(version *models.Version, dimension string) (*models.DimensionOptionResults, error)
 	GetEdition(ID, editionID, state string) (*models.Edition, error)
 	GetEditions(ID, state string) (*models.EditionResults, error)
 	GetInstances(filters []string) (*models.InstanceResults, error)

@@ -59,6 +59,7 @@ type CodeList struct {
 	HRef        string `json:"href"`
 	ID          string `json:"id"`
 	Name        string `json:"name"`
+	Label       string `json:"label"`
 }
 
 // InstanceLinks holds all links for an instance
