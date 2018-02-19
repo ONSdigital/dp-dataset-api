@@ -225,8 +225,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request, auth b
 	} else {
 
 		// User doesn't have auth so gets public edition response, (.current doc only).
-		publicEdition := edition.Current
-		bytes, err := json.Marshal(publicEdition)
+		bytes, err := json.Marshal(edition.Current)
 		if err != nil {
 			log.ErrorC("failed to marshal edition resource into bytes", err, log.Data{"dataset_id": id, "edition": editionID})
 			http.Error(w, err.Error(), http.StatusInternalServerError)

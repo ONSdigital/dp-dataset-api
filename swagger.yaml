@@ -1,4 +1,4 @@
-swagger: "2.0"
+wagger: "2.0"
 info:
   description: "An API used to query information about datasets published by the ONS."
   version: "1.0.0"
@@ -273,7 +273,7 @@ paths:
       tags:
       - "Public"
       summary: "Get an edition of a dataset"
-      description: "The edition contains a link to all appropriate versions."
+      description: "The edition contains a link to all versions"
       parameters:
       - $ref: '#/parameters/edition'
       - $ref: '#/parameters/id'
@@ -994,24 +994,6 @@ definitions:
         $ref: '#/definitions/EditionLinks'
       state:
         $ref: '#/definitions/State'
-      current:
-        $ref: '#/definitions/EditionCurrent'
-      next:
-        $ref: '#/definitions/EditionNext'
-  EditionCurrent:
-    description: "Publically accessible details - the currently public version."
-    readOnly: true
-    type: object
-    properties:
-      latest_version:
-        $ref: '#/definitions/LatestVersionLink'
-  EditionNext:
-    description: "Edition details only accessible to an authorised user - the most recent unpublished version"
-    readOnly: true
-    type: object
-    properties:
-      latest_version:
-        $ref: '#/definitions/LatestVersionLink'
   Editions:
     type: object
     properties:
@@ -1234,6 +1216,17 @@ definitions:
             code_list_id:
               type: string
               description: "The ID of the codelist that this hierarchy represents"
+      build_search_indexes:
+        type: array
+        items:
+          type: object
+          properties:
+            state:
+              type: string
+              description: "The state of the import observations task"
+            dimension_name:
+              type: string
+              description: "The name of the dimension the search index represents"
   Codelist:
     type: object
     properties:
