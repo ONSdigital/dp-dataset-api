@@ -328,8 +328,10 @@ func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.Editi
 
 		editionDoc = &models.EditionUpdate{
 			ID:      editionID,
-			Edition: edition,
-			Links: &models.EditionUpdateLinks{
+			Next:    &models.Edition{
+				Edition: edition,
+				State: models.EditionConfirmedState,
+				Links: &models.EditionUpdateLinks{
 				Dataset: &models.LinkObject{
 					ID:   datasetID,
 					HRef: fmt.Sprintf("%s/datasets/%s", s.Host, datasetID),
@@ -340,28 +342,26 @@ func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.Editi
 				Versions: &models.LinkObject{
 					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
 				},
-			},
-			Next: &models.Edition{
-				State: models.EditionConfirmedState,
 				LatestVersion: &models.LinkObject{
 					ID:   "1",
 					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/1", s.Host, datasetID, edition),
 				},
 			},
+			},
 		}
 	} else {
 
 		// Update the latest version for the dataset edition
-		version, err := strconv.Atoi(editionDoc.Next.LatestVersion.ID)
+		version, err := strconv.Atoi(editionDoc.Next.Links.LatestVersion.ID)
 		if err != nil {
-			log.ErrorC("unable to retrieve latest version", err, log.Data{"instance": instanceID, "edition": edition, "version": editionDoc.Next.LatestVersion.ID})
+			log.ErrorC("unable to retrieve latest version", err, log.Data{"instance": instanceID, "edition": edition, "version": editionDoc.Next.Links.LatestVersion.ID})
 			return nil, err
 		}
 
 		version++
 
-		editionDoc.Next.LatestVersion.ID = strconv.Itoa(version)
-		editionDoc.Next.LatestVersion.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", s.Host, datasetID, edition, strconv.Itoa(version))
+		editionDoc.Next.Links.LatestVersion.ID = strconv.Itoa(version)
+		editionDoc.Next.Links.LatestVersion.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", s.Host, datasetID, edition, strconv.Itoa(version))
 	}
 
 	return editionDoc, nil
@@ -387,15 +387,15 @@ func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *model
 
 	links := &models.InstanceLinks{
 		Dataset: &models.IDLink{
-			HRef: editionDoc.Links.Dataset.HRef,
-			ID:   editionDoc.Links.Dataset.ID,
+			HRef: editionDoc.Next.Links.Dataset.HRef,
+			ID:   editionDoc.Next.Links.Dataset.ID,
 		},
 		Dimensions: &models.IDLink{
-			HRef: fmt.Sprintf("%s/versions/%s/dimensions", editionDoc.Links.Self.HRef, stringifiedVersion),
+			HRef: fmt.Sprintf("%s/versions/%s/dimensions", editionDoc.Next.Links.Self.HRef, stringifiedVersion),
 		},
 		Edition: &models.IDLink{
-			HRef: editionDoc.Links.Self.HRef,
-			ID:   editionDoc.Edition,
+			HRef: editionDoc.Next.Links.Self.HRef,
+			ID:   editionDoc.Next.Edition,
 		},
 		Job: &models.IDLink{
 			HRef: instance.Links.Job.HRef,
@@ -405,7 +405,7 @@ func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *model
 			HRef: instance.Links.Self.HRef,
 		},
 		Version: &models.IDLink{
-			HRef: fmt.Sprintf("%s/versions/%s", editionDoc.Links.Self.HRef, stringifiedVersion),
+			HRef: fmt.Sprintf("%s/versions/%s", editionDoc.Next.Links.Self.HRef, stringifiedVersion),
 			ID:   stringifiedVersion,
 		},
 	}

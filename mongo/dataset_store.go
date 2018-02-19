@@ -96,18 +96,18 @@ func editionAuthFilter(auth bool) bson.M {
 // editionsStateFilter limits which editions are returned depending on auth
 func editionsStateSelector(id string, auth bool) bson.M {
 	if auth == false {
-		return bson.M{"links.dataset.id": id, "current.state": models.PublishedState}
+		return bson.M{"current.links.dataset.id": id, "current.state": models.PublishedState}
 	} else {
-		return bson.M{"links.dataset.id": id}
+		return bson.M{"next.links.dataset.id": id}
 	}
 }
 
 // editionStateFilter stops the return of unpulished editions to unathorised users
 func editionStateSelector(id string, editionID string, auth bool) bson.M {
 	if auth == false {
-		return bson.M{"links.dataset.id": id, "edition": editionID, "current.state": models.PublishedState}
+		return bson.M{"current.links.dataset.id": id, "edition": editionID, "current.state": models.PublishedState}
 	} else {
-		return bson.M{"links.dataset.id": id, "edition": editionID}
+		return bson.M{"next.links.dataset.id": id, "next.edition": editionID}
 	}
 }
 
@@ -519,8 +519,8 @@ func (m *Mongo) UpsertEdition(datasetID, edition string, editionDoc *models.Edit
 	defer s.Close()
 
 	selector := bson.M{
-		"edition":          edition,
-		"links.dataset.id": datasetID,
+		"next.edition":          edition,
+		"next.links.dataset.id": datasetID,
 	}
 
 	editionDoc.Next.LastUpdated = time.Now()
@@ -595,13 +595,13 @@ func (m *Mongo) CheckEditionExists(id, editionID, state string) error {
 	var query bson.M
 	if state == "" {
 		query = bson.M{
-			"links.dataset.id": id,
-			"edition":          editionID,
+			"next.links.dataset.id": id,
+			"next.edition":          editionID,
 		}
 	} else {
 		query = bson.M{
-			"links.dataset.id": id,
-			"edition":          editionID,
+			"current.links.dataset.id": id,
+			"current.edition":          editionID,
 			"current.state":    state,
 		}
 	}
