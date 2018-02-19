@@ -187,10 +187,10 @@ type StorerMock struct {
 	GetDimensionsFunc func(datasetID string, versionID string) ([]bson.M, error)
 
 	// GetEditionFunc mocks the GetEdition method.
-	GetEditionFunc func(ID string, editionID string, auth bool) (*models.EditionUpdate, error)
+	GetEditionFunc func(ID, editionID, state string) (*models.EditionUpdate, error)
 
 	// GetEditionsFunc mocks the GetEditions method.
-	GetEditionsFunc func(ID string, auth bool) (*models.EditionResults, error)
+	GetEditionsFunc func(id, state string) (*models.EditionResults, error)
 
 	// GetInstanceFunc mocks the GetInstance method.
 	GetInstanceFunc func(ID string) (*models.Instance, error)
@@ -321,14 +321,14 @@ type StorerMock struct {
 			// EditionID is the editionID argument value.
 			EditionID string
 			// Auth reflects if the requester is authorised.
-			Auth bool
+			State string
 		}
 		// GetEditions holds details about calls to the GetEditions method.
 		GetEditions []struct {
 			// ID is the ID argument value.
 			ID string
-			// Auth reflects if the requester is authorised.
-			Auth bool
+			// State reflects if the requester is authorised.
+			State string
 		}
 		// GetInstance holds details about calls to the GetInstance method.
 		GetInstance []struct {
@@ -809,23 +809,23 @@ func (mock *StorerMock) GetDimensionsCalls() []struct {
 }
 
 // GetEdition calls GetEditionFunc.
-func (mock *StorerMock) GetEdition(ID string, editionID string, auth bool) (*models.EditionUpdate, error) {
+func (mock *StorerMock) GetEdition(ID string, editionID string, state string) (*models.EditionUpdate, error) {
 	if mock.GetEditionFunc == nil {
 		panic("moq: StorerMock.GetEditionFunc is nil but Storer.GetEdition was just called")
 	}
 	callInfo := struct {
 		ID        string
 		EditionID string
-		Auth      bool
+		State     string
 	}{
 		ID:        ID,
 		EditionID: editionID,
-		Auth:      auth,
+		State:     state,
 	}
 	lockStorerMockGetEdition.Lock()
 	mock.calls.GetEdition = append(mock.calls.GetEdition, callInfo)
 	lockStorerMockGetEdition.Unlock()
-	return mock.GetEditionFunc(ID, editionID, auth)
+	return mock.GetEditionFunc(ID, editionID, state)
 }
 
 // GetEditionCalls gets all the calls that were made to GetEdition.
@@ -834,12 +834,12 @@ func (mock *StorerMock) GetEdition(ID string, editionID string, auth bool) (*mod
 func (mock *StorerMock) GetEditionCalls() []struct {
 	ID        string
 	EditionID string
-	Auth      bool
+	State     string
 } {
 	var calls []struct {
 		ID        string
 		EditionID string
-		Auth      bool
+		State     string
 	}
 	lockStorerMockGetEdition.RLock()
 	calls = mock.calls.GetEdition
@@ -848,21 +848,21 @@ func (mock *StorerMock) GetEditionCalls() []struct {
 }
 
 // GetEditions calls GetEditionsFunc.
-func (mock *StorerMock) GetEditions(ID string, auth bool) (*models.EditionResults, error) {
+func (mock *StorerMock) GetEditions(ID string, state string) (*models.EditionResults, error) {
 	if mock.GetEditionsFunc == nil {
 		panic("moq: StorerMock.GetEditionsFunc is nil but Storer.GetEditions was just called")
 	}
 	callInfo := struct {
 		ID   string
-		Auth bool
+		State string
 	}{
 		ID:   ID,
-		Auth: true,
+		State: state,
 	}
 	lockStorerMockGetEditions.Lock()
 	mock.calls.GetEditions = append(mock.calls.GetEditions, callInfo)
 	lockStorerMockGetEditions.Unlock()
-	return mock.GetEditionsFunc(ID, auth)
+	return mock.GetEditionsFunc(ID, state)
 }
 
 // GetEditionsCalls gets all the calls that were made to GetEditions.
@@ -870,11 +870,11 @@ func (mock *StorerMock) GetEditions(ID string, auth bool) (*models.EditionResult
 //     len(mockedStorer.GetEditionsCalls())
 func (mock *StorerMock) GetEditionsCalls() []struct {
 	ID   string
-	Auth bool
+	State string
 } {
 	var calls []struct {
 		ID   string
-		Auth bool
+		State string
 	}
 	lockStorerMockGetEditions.RLock()
 	calls = mock.calls.GetEditions

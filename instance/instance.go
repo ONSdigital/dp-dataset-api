@@ -205,7 +205,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Combine existing links and spatial link
+	// Combine existing links and spatial lsink
 	instance.Links = updateLinks(instance, currentInstance)
 
 	logData := log.Data{"instance_id": id, "current_state": currentInstance.State, "requested_state": instance.State}
@@ -317,7 +317,7 @@ func updateLinks(instance, currentInstance *models.Instance) *models.InstanceLin
 
 func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.EditionUpdate, error) {
 
-	editionDoc, err := s.GetEdition(datasetID, edition, true)
+	editionDoc, err := s.GetEdition(datasetID, edition, "")
 	if err != nil {
 		if err != errs.ErrEditionNotFound {
 			log.Error(err, nil)

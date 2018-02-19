@@ -119,7 +119,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, auth 
 	id := vars["id"]
 
 	var state string
-	if r.Header.Get(internalToken) != api.internalToken {
+	if auth == false {  // if no auth, only look for editions with current.state = published
 		state = models.PublishedState
 	}
 
@@ -129,27 +129,55 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, auth 
 		return
 	}
 
-	results, err := api.dataStore.Backend.GetEditions(id, auth)
+	results, err := api.dataStore.Backend.GetEditions(id, state)
 	if err != nil {
 		log.ErrorC("unable to find editions for dataset", err, log.Data{"dataset_id": id})
 		handleErrorType(editionDocType, err, w)
 		return
 	}
 
-	bytes, err := json.Marshal(results)
-	if err != nil {
-		log.ErrorC("failed to marshal a list of edition resources into bytes", err, log.Data{"dataset_id": id})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	// If auth, we only return the .current document of editions (if a current doc exists then it's state is always published).
+	if auth == true {
+		bytes, err := json.Marshal(results)
+		if err != nil {
+			log.ErrorC("failed to marshal a list of edition resources into bytes", err, log.Data{"dataset_id": id})
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		setJSONContentType(w)
+		_, err = w.Write(bytes)
+		if err != nil {
+			log.Error(err, log.Data{"dataset_id": id})
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		log.Debug("get all editions with auth", log.Data{"dataset_id": id})
+
+	} else {
+
+		// flatten .current doc
+		var publicResults []*models.Edition
+		for i := range results.Items {
+			publicResults = append(publicResults, results.Items[i].Current)
+		}
+
+		bytes, err := json.Marshal(publicResults)
+		if err != nil {
+			log.ErrorC("failed to marshal a list of edition resources into bytes", err, log.Data{"dataset_id": id})
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		setJSONContentType(w)
+		_, err = w.Write(bytes)
+		if err != nil {
+			log.Error(err, log.Data{"dataset_id": id})
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		log.Debug("get all editions without auth", log.Data{"dataset_id": id})
+
 	}
 
-	setJSONContentType(w)
-	_, err = w.Write(bytes)
-	if err != nil {
-		log.Error(err, log.Data{"dataset_id": id})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	log.Debug("get all editions", log.Data{"dataset_id": id})
 }
 
 func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request, auth bool) {
@@ -158,7 +186,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request, auth b
 	editionID := vars["edition"]
 
 	var state string
-	if r.Header.Get(internalToken) != api.internalToken {
+	if auth == false {  // if no auth, only look for editions with current.state = published
 		state = models.PublishedState
 	}
 
@@ -168,27 +196,52 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request, auth b
 		return
 	}
 
-	edition, err := api.dataStore.Backend.GetEdition(id, editionID, auth)
+	edition, err := api.dataStore.Backend.GetEdition(id, editionID, state)
 	if err != nil {
 		log.ErrorC("unable to find edition", err, log.Data{"dataset_id": id, "edition": editionID})
 		handleErrorType(editionDocType, err, w)
 		return
 	}
 
-	bytes, err := json.Marshal(edition)
-	if err != nil {
-		log.ErrorC("failed to marshal edition resource into bytes", err, log.Data{"dataset_id": id, "edition": editionID})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	// If auth, we only return the .current document of editions (if a current doc exists then it's state = published).
+	if auth == true {
 
-	setJSONContentType(w)
-	_, err = w.Write(bytes)
-	if err != nil {
-		log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		// Edition requester has auth and gets everything
+		bytes, err := json.Marshal(edition)
+		if err != nil {
+			log.ErrorC("failed to marshal edition resource into bytes", err, log.Data{"dataset_id": id, "edition": editionID})
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		setJSONContentType(w)
+		_, err = w.Write(bytes)
+		if err != nil {
+			log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		log.Debug("get editions with auth", log.Data{"dataset_id": id, "edition": editionID})
+
+	} else {
+
+		// User doesn't have auth so gets public edition response, (.current doc only).
+		publicEdition := edition.Current
+		bytes, err := json.Marshal(publicEdition)
+		if err != nil {
+			log.ErrorC("failed to marshal edition resource into bytes", err, log.Data{"dataset_id": id, "edition": editionID})
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		setJSONContentType(w)
+		_, err = w.Write(bytes)
+		if err != nil {
+			log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		log.Debug("get editions with no auth", log.Data{"dataset_id": id, "edition": editionID})
+
 	}
-	log.Debug("get edition", log.Data{"dataset_id": id, "edition": editionID})
 }
 
 func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
@@ -441,8 +494,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	if versionDoc.State == models.PublishedState {
 
-		// TODO , accomodate associated or edition-confirmed -> published.
-		editionDoc, err := api.dataStore.Backend.GetEdition(datasetID, edition, true)
+		editionDoc, err := api.dataStore.Backend.GetEdition(datasetID, edition, "")
 		if err != nil {
 			log.ErrorC("failed to find the edition we're trying to update", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 			handleErrorType(versionDocType, err, w)

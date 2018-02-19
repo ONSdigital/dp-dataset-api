@@ -84,42 +84,14 @@ func (m *Mongo) GetDataset(id string) (*models.DatasetUpdate, error) {
 	return &dataset, nil
 }
 
-// editionAuthSelector provides the fields to return for an edition query, depending on auth true/false
-func editionAuthFilter(auth bool) bson.M {
-	authFilter := bson.M{"current": true, "links": true, "_id": true, "edition": true}
-	if auth == true {
-		authFilter = bson.M{"current": true, "next": true, "links": true, "_id": true, "edition": true}
-	}
-	return authFilter
-}
-
-// editionsStateFilter limits which editions are returned depending on auth
-func editionsStateSelector(id string, auth bool) bson.M {
-	if auth == false {
-		return bson.M{"current.links.dataset.id": id, "current.state": models.PublishedState}
-	} else {
-		return bson.M{"next.links.dataset.id": id}
-	}
-}
-
-// editionStateFilter stops the return of unpulished editions to unathorised users
-func editionStateSelector(id string, editionID string, auth bool) bson.M {
-	if auth == false {
-		return bson.M{"current.links.dataset.id": id, "edition": editionID, "current.state": models.PublishedState}
-	} else {
-		return bson.M{"next.links.dataset.id": id, "next.edition": editionID}
-	}
-}
-
-// GetEditions retrieves all edition documents for a dataset, level of detail depends on auth
-func (m *Mongo) GetEditions(id string, auth bool) (*models.EditionResults, error) {
+// GetEditions retrieves all edition documents for a dataset
+func (m *Mongo) GetEditions(id, state string) (*models.EditionResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	stateSelect := editionsStateSelector(id, auth)
-	authFilter := editionAuthFilter(auth)
+	selector := buildEditionsQuery(id, state)
 
-	iter := s.DB(m.Database).C(editionsCollection).Find(stateSelect).Select(authFilter).Iter()
+	iter := s.DB(m.Database).C(editionsCollection).Find(selector).Iter()
 	defer iter.Close()
 
 	var results []*models.EditionUpdate
@@ -134,27 +106,58 @@ func (m *Mongo) GetEditions(id string, auth bool) (*models.EditionResults, error
 		return nil, errs.ErrEditionNotFound
 	}
 	return &models.EditionResults{Items: results}, nil
+}
 
+func buildEditionsQuery(id, state string) bson.M {
+	var selector bson.M
+	if state != "" {
+		selector = bson.M{
+			"current.links.dataset.id": id,
+			"current.state":            state,
+		}
+	} else {
+		selector = bson.M{
+			"next.links.dataset.id": id,
+		}
+	}
+
+	return selector
 }
 
 // GetEdition retrieves an edition document for a dataset
-func (m *Mongo) GetEdition(id string, editionID string, auth bool) (*models.EditionUpdate, error) {
+func (m *Mongo) GetEdition(id, editionID, state string) (*models.EditionUpdate, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	stateSelect := editionStateSelector(id, editionID, auth)
-	authFilter := editionAuthFilter(auth)
+	selector := buildEditionQuery(id, editionID, state)
 
 	var edition models.EditionUpdate
-	err := s.DB(m.Database).C(editionsCollection).Find(stateSelect).Select(authFilter).One(&edition)
+	err := s.DB(m.Database).C(editionsCollection).Find(selector).One(&edition)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, errs.ErrEditionNotFound
 		}
 		return nil, err
 	}
-
 	return &edition, nil
+}
+
+func buildEditionQuery(id, editionID, state string) bson.M {
+	var selector bson.M
+	if state != "" {
+		selector = bson.M{
+			"current.links.dataset.id": id,
+			"current.edition":          editionID,
+			"current.state":			state,
+		}
+	} else {
+		selector = bson.M{
+			"next.links.dataset.id": id,
+			"next.edition":          editionID,
+		}
+	}
+
+	return selector
 }
 
 // GetNextVersion retrieves the latest version for an edition of a dataset

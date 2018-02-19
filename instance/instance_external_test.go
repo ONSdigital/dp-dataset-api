@@ -292,7 +292,7 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 			GetInstanceFunc: func(id string) (*models.Instance, error) {
 				return currentInstanceTestData, nil
 			},
-			GetEditionFunc: func(datasetID string, edition string, auth bool) (*models.EditionUpdate, error) {
+			GetEditionFunc: func(datasetID string, edition string, state string) (*models.EditionUpdate, error) {
 				return nil, errs.ErrEditionNotFound
 			},
 			UpsertEditionFunc: func(datasetID, edition string, editionDoc *models.EditionUpdate) error {
