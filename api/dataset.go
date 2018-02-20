@@ -136,22 +136,18 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, auth 
 		return
 	}
 
+	var logMessage string
+	var bytes []byte
+
 	// If auth, we only return the .current document of editions (if a current doc exists then it's state is always published).
 	if auth == true {
-		bytes, err := json.Marshal(results)
+		bytes, err = json.Marshal(results)
 		if err != nil {
 			log.ErrorC("failed to marshal a list of edition resources into bytes", err, log.Data{"dataset_id": id})
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		setJSONContentType(w)
-		_, err = w.Write(bytes)
-		if err != nil {
-			log.Error(err, log.Data{"dataset_id": id})
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		log.Debug("get all editions with auth", log.Data{"dataset_id": id})
+		logMessage = "get all editions with auth"
 
 	} else {
 
@@ -161,24 +157,25 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, auth 
 			publicResults = append(publicResults, results.Items[i].Current)
 		}
 
-		bytes, err := json.Marshal(publicResults)
+		bytes, err = json.Marshal(publicResults)
 		if err != nil {
-			log.ErrorC("failed to marshal a list of edition resources into bytes", err, log.Data{"dataset_id": id})
+			log.ErrorC("failed to marshal a list of public edition resources into bytes", err, log.Data{"dataset_id": id})
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		logMessage = "get all editions without auth"
+	}
 
-		setJSONContentType(w)
-		_, err = w.Write(bytes)
+	setJSONContentType(w)
+	_, err = w.Write(bytes)
 		if err != nil {
 			log.Error(err, log.Data{"dataset_id": id})
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		log.Debug("get all editions without auth", log.Data{"dataset_id": id})
+		log.Debug(logMessage, log.Data{"dataset_id": id})
 
 	}
 
-}
 
 func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request, auth bool) {
 	vars := mux.Vars(r)
@@ -203,45 +200,42 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request, auth b
 		return
 	}
 
+	var logMessage string
+	var bytes []byte
+
 	// If auth, we only return the .current document of editions (if a current doc exists then it's state = published).
 	if auth == true {
 
 		// Edition requester has auth and gets everything
-		bytes, err := json.Marshal(edition)
+		bytes, err = json.Marshal(edition)
 		if err != nil {
 			log.ErrorC("failed to marshal edition resource into bytes", err, log.Data{"dataset_id": id, "edition": editionID})
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		setJSONContentType(w)
-		_, err = w.Write(bytes)
-		if err != nil {
-			log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		log.Debug("get editions with auth", log.Data{"dataset_id": id, "edition": editionID})
+		logMessage = "get edition with auth"
 
 	} else {
 
 		// User doesn't have auth so gets public edition response, (.current doc only).
-		bytes, err := json.Marshal(edition.Current)
+		bytes, err = json.Marshal(edition.Current)
 		if err != nil {
-			log.ErrorC("failed to marshal edition resource into bytes", err, log.Data{"dataset_id": id, "edition": editionID})
+			log.ErrorC("failed to marshal public edition resource into bytes", err, log.Data{"dataset_id": id, "edition": editionID})
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		logMessage = "get public edition without auth"
+	}
 
-		setJSONContentType(w)
-		_, err = w.Write(bytes)
-		if err != nil {
-			log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		log.Debug("get editions with no auth", log.Data{"dataset_id": id, "edition": editionID})
+	setJSONContentType(w)
+	_, err = w.Write(bytes)
+	if err != nil {
+		log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	log.Debug(logMessage, log.Data{"dataset_id": id, "edition": editionID})
 
 	}
-}
 
 func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
