@@ -1099,9 +1099,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			UpdateVersionFunc: func(string, *models.Version) error {
 				return nil
 			},
-			UpdateEditionFunc: func(string, string, *models.Version) error {
-				return nil
-			},
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{
 					ID:      "123",
@@ -1129,7 +1126,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		mockedDataStore.GetVersion("789", "2017", "1", "")
 		mockedDataStore.GetEdition("123", "2017", "")
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
-		mockedDataStore.UpdateEdition("123", "2017", &models.Version{State: "published"})
 		mockedDataStore.GetDataset("123")
 		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{})
 
@@ -1140,7 +1136,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 3)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
