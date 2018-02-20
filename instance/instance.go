@@ -205,7 +205,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Combine existing links and spatial lsink
+	// Combine existing links and spatial link
 	instance.Links = updateLinks(instance, currentInstance)
 
 	logData := log.Data{"instance_id": id, "current_state": currentInstance.State, "requested_state": instance.State}

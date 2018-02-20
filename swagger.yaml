@@ -1,4 +1,4 @@
-wagger: "2.0"
+swagger: "2.0"
 info:
   description: "An API used to query information about datasets published by the ONS."
   version: "1.0.0"
