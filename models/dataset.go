@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 )
@@ -189,6 +190,31 @@ type VersionLinks struct {
 	Version    *LinkObject `bson:"version,omitempty"     json:"-"`
 }
 
+var validVersionStates = map[string]int{
+	EditionConfirmedState: 1,
+	AssociatedState:       1,
+	PublishedState:        1,
+}
+
+// CheckState checks state against a whitelist of valid states
+func CheckState(docType, state string) error {
+	var states map[string]int
+	switch docType {
+	case "version":
+		states = validVersionStates
+	default:
+		states = validStates
+	}
+
+	for key := range states {
+		if state == key {
+			return nil
+		}
+	}
+
+	return errs.ErrResourceState
+}
+
 // CreateDataset manages the creation of a dataset from a reader
 func CreateDataset(reader io.Reader) (*Dataset, error) {
 	bytes, err := ioutil.ReadAll(reader)
@@ -262,6 +288,8 @@ func ValidateVersion(version *Version) error {
 	var hasAssociation bool
 
 	switch version.State {
+	case "":
+		return errs.ErrVersionMissingState
 	case EditionConfirmedState:
 	case AssociatedState:
 		hasAssociation = true

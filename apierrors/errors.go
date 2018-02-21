@@ -2,7 +2,7 @@ package apierrors
 
 import "errors"
 
-// NotFound error messages for Dataset API
+// Error messages for Dataset API
 var (
 	ErrDatasetNotFound       = errors.New("Dataset not found")
 	ErrEditionNotFound       = errors.New("Edition not found")
@@ -11,4 +11,8 @@ var (
 	ErrDimensionNotFound     = errors.New("Dimension not found")
 	ErrDimensionsNotFound    = errors.New("Dimensions not found")
 	ErrInstanceNotFound      = errors.New("Instance not found")
+	ErrUnauthorised          = errors.New("Unauthorised access to API")
+	ErrNoAuthHeader          = errors.New("No authentication header provided")
+	ErrResourceState         = errors.New("Incorrect resource state")
+	ErrVersionMissingState   = errors.New("Missing state from version")
 )

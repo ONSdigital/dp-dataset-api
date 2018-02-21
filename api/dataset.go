@@ -220,6 +220,19 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var hasInvalidState bool
+	for _, item := range results.Items {
+		if err = models.CheckState("version", item.State); err != nil {
+			hasInvalidState = true
+			log.ErrorC("unpublished version has an invalid state", err, log.Data{"state": item.State})
+		}
+	}
+
+	if hasInvalidState {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	bytes, err := json.Marshal(results)
 	if err != nil {
 		log.ErrorC("failed to marshal list of version resources into bytes", err, log.Data{"dataset_id": id, "edition": editionID})
@@ -267,6 +280,12 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	results.Links.Self.HRef = results.Links.Version.HRef
+
+	if err = models.CheckState("version", results.State); err != nil {
+		log.ErrorC("unpublished version has an invalid state", err, log.Data{"state": results.State})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	bytes, err := json.Marshal(results)
 	if err != nil {
@@ -661,6 +680,12 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err = models.CheckState("version", versionDoc.State); err != nil {
+		log.ErrorC("unpublished version has an invalid state", err, log.Data{"state": versionDoc.State})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	dimensions, err := api.dataStore.Backend.GetDimensions(datasetID, versionDoc.ID)
 	if err != nil {
 		log.ErrorC("failed to get version dimensions", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
@@ -759,6 +784,12 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if err = models.CheckState("version", version.State); err != nil {
+		log.ErrorC("unpublished version has an invalid state", err, log.Data{"state": version.State})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	results, err := api.dataStore.Backend.GetDimensionOptions(version, dimension)
 	if err != nil {
 		log.ErrorC("failed to get a list of dimension options", err, log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension})
@@ -826,6 +857,12 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err = models.CheckState("version", versionDoc.State); err != nil {
+		log.ErrorC("unpublished version has an invalid state", err, log.Data{"state": versionDoc.State})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	var metaDataDoc *models.Metadata
 	// combine version and dataset metadata
 	if state != models.PublishedState && versionDoc.CollectionID == datasetDoc.Next.CollectionID {
@@ -876,7 +913,7 @@ func handleErrorType(docType string, err error, w http.ResponseWriter) {
 		}
 	case "edition":
 		if err == errs.ErrDatasetNotFound {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusNotFound)
 		} else if err == errs.ErrEditionNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
@@ -884,9 +921,9 @@ func handleErrorType(docType string, err error, w http.ResponseWriter) {
 		}
 	case "version":
 		if err == errs.ErrDatasetNotFound {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusNotFound)
 		} else if err == errs.ErrEditionNotFound {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusNotFound)
 		} else if err == errs.ErrVersionNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
@@ -894,11 +931,11 @@ func handleErrorType(docType string, err error, w http.ResponseWriter) {
 		}
 	case "dimension":
 		if err == errs.ErrDatasetNotFound {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusNotFound)
 		} else if err == errs.ErrEditionNotFound {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusNotFound)
 		} else if err == errs.ErrVersionNotFound {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusNotFound)
 		} else if err == errs.ErrDimensionsNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
