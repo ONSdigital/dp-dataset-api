@@ -85,7 +85,7 @@ func (m *Mongo) GetDataset(id string) (*models.DatasetUpdate, error) {
 }
 
 // GetEditions retrieves all edition documents for a dataset
-func (m *Mongo) GetEditions(id, state string) (*models.EditionResults, error) {
+func (m *Mongo) GetEditions(id, state string) (*models.EditionUpdateResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -105,7 +105,7 @@ func (m *Mongo) GetEditions(id, state string) (*models.EditionResults, error) {
 	if len(results) < 1 {
 		return nil, errs.ErrEditionNotFound
 	}
-	return &models.EditionResults{Items: results}, nil
+	return &models.EditionUpdateResults{Items: results}, nil
 }
 
 func buildEditionsQuery(id, state string) bson.M {

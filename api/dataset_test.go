@@ -179,8 +179,8 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(id string, state string) (*models.EditionResults, error) {
-				return &models.EditionResults{}, nil
+			GetEditionsFunc: func(id string, state string) (*models.EditionUpdateResults, error) {
+				return &models.EditionUpdateResults{}, nil
 			},
 		}
 
@@ -235,7 +235,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(id string, state string) (*models.EditionResults, error) {
+			GetEditionsFunc: func(id string, state string) (*models.EditionUpdateResults, error) {
 				return nil, errs.ErrEditionNotFound
 			},
 		}
@@ -254,7 +254,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(id string, state string) (*models.EditionResults, error) {
+			GetEditionsFunc: func(id string, state string) (*models.EditionUpdateResults, error) {
 				return nil, errs.ErrEditionNotFound
 			},
 		}

@@ -190,7 +190,7 @@ type StorerMock struct {
 	GetEditionFunc func(ID, editionID, state string) (*models.EditionUpdate, error)
 
 	// GetEditionsFunc mocks the GetEditions method.
-	GetEditionsFunc func(id, state string) (*models.EditionResults, error)
+	GetEditionsFunc func(id, state string) (*models.EditionUpdateResults, error)
 
 	// GetInstanceFunc mocks the GetInstance method.
 	GetInstanceFunc func(ID string) (*models.Instance, error)
@@ -848,7 +848,7 @@ func (mock *StorerMock) GetEditionCalls() []struct {
 }
 
 // GetEditions calls GetEditionsFunc.
-func (mock *StorerMock) GetEditions(ID string, state string) (*models.EditionResults, error) {
+func (mock *StorerMock) GetEditions(ID string, state string) (*models.EditionUpdateResults, error) {
 	if mock.GetEditionsFunc == nil {
 		panic("moq: StorerMock.GetEditionsFunc is nil but Storer.GetEditions was just called")
 	}
