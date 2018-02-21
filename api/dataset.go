@@ -367,7 +367,14 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	if err := api.dataStore.Backend.UpdateDataset(datasetID, dataset); err != nil {
+	currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
+	if err != nil {
+		log.ErrorC("failed to find dataset", err, log.Data{"dataset_id": datasetID})
+		handleErrorType(datasetDocType, err, w)
+		return
+	}
+
+	if err := api.dataStore.Backend.UpdateDataset(datasetID, dataset, currentDataset.Next.State); err != nil {
 		log.ErrorC("failed to update dataset resource", err, log.Data{"dataset_id": datasetID})
 		handleErrorType(datasetDocType, err, w)
 		return

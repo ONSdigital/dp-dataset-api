@@ -648,7 +648,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 				return nil
 			},
 		}
-		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{})
+		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		api.router.ServeHTTP(w, r)
@@ -762,7 +762,10 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			UpdateDatasetFunc: func(string, *models.Dataset) error {
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
+			},
+			UpdateDatasetFunc: func(string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -770,11 +773,12 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		dataset := &models.Dataset{
 			Title: "CPI",
 		}
-		mockedDataStore.UpdateDataset("123", dataset)
+		mockedDataStore.UpdateDataset("123", dataset, models.CreatedState)
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
 	})
 }
@@ -790,7 +794,10 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			UpdateDatasetFunc: func(string, *models.Dataset) error {
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
+			},
+			UpdateDatasetFunc: func(string, *models.Dataset, string) error {
 				return errBadRequest
 			},
 		}
@@ -798,7 +805,8 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(len(mockedDataStore.UpsertVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
@@ -810,7 +818,10 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			UpdateDatasetFunc: func(string, *models.Dataset) error {
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
+			},
+			UpdateDatasetFunc: func(string, *models.Dataset, string) error {
 				return errInternal
 			},
 		}
@@ -818,11 +829,12 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		dataset := &models.Dataset{
 			Title: "CPI",
 		}
-		mockedDataStore.UpdateDataset("123", dataset)
+		mockedDataStore.UpdateDataset("123", dataset, models.CreatedState)
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
 	})
 
@@ -835,20 +847,19 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			UpdateDatasetFunc: func(string, *models.Dataset) error {
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			UpdateDatasetFunc: func(string, *models.Dataset, string) error {
 				return errs.ErrDatasetNotFound
 			},
 		}
 
-		dataset := &models.Dataset{
-			Title: "CPI",
-		}
-		mockedDataStore.UpdateDataset("123", dataset)
-
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the request does not contain a valid internal token return status unauthorised", t, func() {
@@ -859,7 +870,10 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			UpdateDatasetFunc: func(string, *models.Dataset) error {
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
+			},
+			UpdateDatasetFunc: func(string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -867,6 +881,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 	})
 }
@@ -1117,7 +1132,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
 		mockedDataStore.UpdateEdition("123", "2017", &models.Version{State: "published"})
 		mockedDataStore.GetDataset("123")
-		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{})
+		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock)
 		api.router.ServeHTTP(w, r)
