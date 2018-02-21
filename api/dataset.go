@@ -374,10 +374,18 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := api.dataStore.Backend.UpdateDataset(datasetID, dataset, currentDataset.Next.State); err != nil {
-		log.ErrorC("failed to update dataset resource", err, log.Data{"dataset_id": datasetID})
-		handleErrorType(datasetDocType, err, w)
-		return
+	if dataset.State == models.PublishedState {
+		if err := api.publishDataset(currentDataset, nil); err != nil {
+			log.ErrorC("failed to update dataset document to published", err, log.Data{"dataset_id": datasetID})
+			handleErrorType(versionDocType, err, w)
+			return
+		}
+	} else {
+		if err := api.dataStore.Backend.UpdateDataset(datasetID, dataset, currentDataset.Next.State); err != nil {
+			log.ErrorC("failed to update dataset resource", err, log.Data{"dataset_id": datasetID})
+			handleErrorType(datasetDocType, err, w)
+			return
+		}
 	}
 
 	setJSONContentType(w)
@@ -399,7 +407,8 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = api.dataStore.Backend.CheckDatasetExists(datasetID, ""); err != nil {
+	currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
+	if err != nil {
 		log.ErrorC("failed to find dataset", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		handleErrorType(versionDocType, err, w)
 		return
@@ -442,7 +451,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Pass in newVersion variable to include relevant data needed for update on dataset API (e.g. links)
-		if err := api.publishDataset(datasetID, newVersion); err != nil {
+		if err := api.publishDataset(currentDataset, newVersion); err != nil {
 			log.ErrorC("failed to update dataset document once version state changes to publish", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 			handleErrorType(versionDocType, err, w)
 			return
@@ -586,18 +595,14 @@ func createNewVersionDoc(currentVersion *models.Version, version *models.Version
 	return version
 }
 
-func (api *DatasetAPI) publishDataset(id string, version *models.Version) error {
-	currentDataset, err := api.dataStore.Backend.GetDataset(id)
-	if err != nil {
-		log.ErrorC("unable to update dataset", err, log.Data{"dataset_id": id})
-		return err
-	}
+func (api *DatasetAPI) publishDataset(currentDataset *models.DatasetUpdate, version *models.Version) error {
+	if version != nil {
+		currentDataset.Next.CollectionID = version.CollectionID
 
-	currentDataset.Next.CollectionID = version.CollectionID
-
-	currentDataset.Next.Links.LatestVersion = &models.LinkObject{
-		ID:   version.Links.Version.ID,
-		HRef: version.Links.Version.HRef,
+		currentDataset.Next.Links.LatestVersion = &models.LinkObject{
+			ID:   version.Links.Version.ID,
+			HRef: version.Links.Version.HRef,
+		}
 	}
 
 	currentDataset.Next.State = models.PublishedState
@@ -613,8 +618,8 @@ func (api *DatasetAPI) publishDataset(id string, version *models.Version) error 
 		Next:    currentDataset.Next,
 	}
 
-	if err := api.dataStore.Backend.UpsertDataset(id, newDataset); err != nil {
-		log.ErrorC("unable to update dataset", err, log.Data{"dataset_id": id})
+	if err := api.dataStore.Backend.UpsertDataset(currentDataset.ID, newDataset); err != nil {
+		log.ErrorC("unable to update dataset", err, log.Data{"dataset_id": currentDataset.ID})
 		return err
 	}
 
