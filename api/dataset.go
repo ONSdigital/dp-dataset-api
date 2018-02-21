@@ -157,7 +157,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, auth 
 			publicResults = append(publicResults, results.Items[i].Current)
 		}
 
-		bytes, err = json.Marshal(publicResults)
+		bytes, err = json.Marshal(&models.EditionResults{Items: publicResults})
 		if err != nil {
 			log.ErrorC("failed to marshal a list of public edition resources into bytes", err, log.Data{"dataset_id": id})
 			http.Error(w, err.Error(), http.StatusInternalServerError)
