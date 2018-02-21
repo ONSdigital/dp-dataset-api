@@ -1105,8 +1105,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{
 					ID:      "123",
-					Next:    &models.Dataset{},
-					Current: &models.Dataset{},
+					Next:    &models.Dataset{Links: &models.DatasetLinks{}},
+					Current: &models.Dataset{Links: &models.DatasetLinks{}},
 				}, nil
 			},
 			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {

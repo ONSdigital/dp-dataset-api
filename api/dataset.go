@@ -311,30 +311,18 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	dataset.State = models.CreatedState
-
-	var accessRights string
-	if dataset.Links != nil {
-		if dataset.Links.AccessRights != nil {
-			if dataset.Links.AccessRights.HRef != "" {
-				accessRights = dataset.Links.AccessRights.HRef
-			}
-		}
-	}
-
 	dataset.ID = datasetID
-	dataset.Links = &models.DatasetLinks{
-		Editions: &models.LinkObject{
-			HRef: fmt.Sprintf("%s/datasets/%s/editions", api.host, datasetID),
-		},
-		Self: &models.LinkObject{
-			HRef: fmt.Sprintf("%s/datasets/%s", api.host, datasetID),
-		},
+
+	if dataset.Links == nil {
+		dataset.Links = &models.DatasetLinks{}
 	}
 
-	if accessRights != "" {
-		dataset.Links.AccessRights = &models.LinkObject{
-			HRef: accessRights,
-		}
+	dataset.Links.Editions = &models.LinkObject{
+		HRef: fmt.Sprintf("%s/datasets/%s/editions", api.host, datasetID),
+	}
+
+	dataset.Links.Self = &models.LinkObject{
+		HRef: fmt.Sprintf("%s/datasets/%s", api.host, datasetID),
 	}
 
 	dataset.LastUpdated = time.Now()
@@ -598,30 +586,13 @@ func (api *DatasetAPI) publishDataset(id string, version *models.Version) error 
 		return err
 	}
 
-	var accessRights string
-
-	if currentDataset.Next.Links != nil {
-		if currentDataset.Next.Links.AccessRights != nil {
-			accessRights = currentDataset.Next.Links.AccessRights.HRef
-		}
-	}
-
 	currentDataset.Next.CollectionID = version.CollectionID
-	currentDataset.Next.Links = &models.DatasetLinks{
-		AccessRights: &models.LinkObject{
-			HRef: accessRights,
-		},
-		Editions: &models.LinkObject{
-			HRef: fmt.Sprintf("%s/datasets/%s/editions", api.host, version.Links.Dataset.ID),
-		},
-		LatestVersion: &models.LinkObject{
-			ID:   version.Links.Version.ID,
-			HRef: version.Links.Version.HRef,
-		},
-		Self: &models.LinkObject{
-			HRef: fmt.Sprintf("%s/datasets/%s", api.host, version.Links.Dataset.ID),
-		},
+
+	currentDataset.Next.Links.LatestVersion = &models.LinkObject{
+		ID:   version.Links.Version.ID,
+		HRef: version.Links.Version.HRef,
 	}
+
 	currentDataset.Next.State = models.PublishedState
 	currentDataset.Next.LastUpdated = time.Now()
 
