@@ -951,12 +951,12 @@ definitions:
         description: "The uri to the location of this resource on the web"
   DatasetLinks:
     description: "A list of links related to this resource"
-    readOnly: true
     type: object
     properties:
       access_rights:
         $ref: '#/definitions/AccessRightsLink'
       editions:
+        readOnly: true
         type: object
         properties:
           href:
@@ -1242,6 +1242,9 @@ definitions:
       description:
         type: string
         description: "The dimension description"
+      label:
+        type: string
+        description: "A human readable label for dimension"
   Instances:
     type: object
     properties:
