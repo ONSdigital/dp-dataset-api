@@ -2035,6 +2035,32 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 	})
 
+	Convey("When the dataset document has no current sub document return status not found", t, func() {
+
+		datasetDoc := createDatasetDoc()
+		datasetDoc.Current = nil
+
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return datasetDoc, nil
+			},
+			CheckEditionExistsFunc: func(datasetId, edition, state string) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldEqual, "Dataset not found\n")
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+	})
+
 	Convey("When the edition document cannot be found for version return status not found", t, func() {
 
 		datasetDoc := createDatasetDoc()

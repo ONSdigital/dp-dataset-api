@@ -837,7 +837,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		// Check for current sub document
 		if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
 			log.ErrorC("found dataset but currently unpublished", errs.ErrDatasetNotFound, log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "dataset": datasetDoc.Current})
-			http.Error(w, errs.ErrDatasetNotFound.Error(), http.StatusBadRequest)
+			http.Error(w, errs.ErrDatasetNotFound.Error(), http.StatusNotFound)
 			return
 		}
 
