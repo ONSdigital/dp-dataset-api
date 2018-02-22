@@ -282,11 +282,11 @@ func buildVersionQuery(id, editionID, state string, versionID int) bson.M {
 }
 
 // UpdateDataset updates an existing dataset document
-func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset) (err error) {
+func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset, currentState string) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	updates := createDatasetUpdateQuery(id, dataset)
+	updates := createDatasetUpdateQuery(id, dataset, currentState)
 	update := bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}}
 	if err = s.DB(m.Database).C("datasets").UpdateId(id, update); err != nil {
 		if err == mgo.ErrNotFound {
@@ -298,7 +298,7 @@ func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset) (err error) {
 	return nil
 }
 
-func createDatasetUpdateQuery(id string, dataset *models.Dataset) bson.M {
+func createDatasetUpdateQuery(id string, dataset *models.Dataset, currentState string) bson.M {
 	updates := make(bson.M, 0)
 
 	log.Debug("building update query for dataset resource", log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
@@ -385,6 +385,10 @@ func createDatasetUpdateQuery(id string, dataset *models.Dataset) bson.M {
 
 	if dataset.State != "" {
 		updates["next.state"] = dataset.State
+	} else {
+		if currentState == models.PublishedState {
+			updates["next.state"] = models.CreatedState
+		}
 	}
 
 	if dataset.Theme != "" {

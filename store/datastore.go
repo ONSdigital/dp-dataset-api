@@ -35,7 +35,7 @@ type Storer interface {
 	GetUniqueDimensionValues(ID, dimension string) (*models.DimensionValues, error)
 	GetVersion(datasetID, editionID, version, state string) (*models.Version, error)
 	GetVersions(datasetID, editionID, state string) (*models.VersionResults, error)
-	UpdateDataset(ID string, dataset *models.Dataset) error
+	UpdateDataset(ID string, dataset *models.Dataset, currentState string) error
 	UpdateDatasetWithAssociation(ID, state string, version *models.Version) error
 	UpdateDimensionNodeID(dimension *models.DimensionOption) error
 	UpdateEdition(datasetID, edition string, latestVersion *models.Version) error
