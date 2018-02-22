@@ -17,7 +17,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	"github.com/ian-kent/go-log/log"
+	"github.com/ONSdigital/go-ns/log"
 
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/gorilla/mux"
