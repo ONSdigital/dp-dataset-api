@@ -750,7 +750,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 				return nil
 			},
 		}
-		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{})
+		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		api.router.ServeHTTP(w, r)
@@ -872,7 +872,10 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			UpdateDatasetFunc: func(string, *models.Dataset) error {
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
+			},
+			UpdateDatasetFunc: func(string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -880,11 +883,12 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		dataset := &models.Dataset{
 			Title: "CPI",
 		}
-		mockedDataStore.UpdateDataset("123", dataset)
+		mockedDataStore.UpdateDataset("123", dataset, models.CreatedState)
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
 	})
 }
@@ -900,7 +904,10 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			UpdateDatasetFunc: func(string, *models.Dataset) error {
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
+			},
+			UpdateDatasetFunc: func(string, *models.Dataset, string) error {
 				return errBadRequest
 			},
 		}
@@ -910,7 +917,8 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "Failed to parse json body\n")
 
-		So(len(mockedDataStore.UpsertVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
@@ -922,7 +930,10 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			UpdateDatasetFunc: func(string, *models.Dataset) error {
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
+			},
+			UpdateDatasetFunc: func(string, *models.Dataset, string) error {
 				return errInternal
 			},
 		}
@@ -930,13 +941,14 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		dataset := &models.Dataset{
 			Title: "CPI",
 		}
-		mockedDataStore.UpdateDataset("123", dataset)
+		mockedDataStore.UpdateDataset("123", dataset, models.CreatedState)
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
 
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
 	})
 
@@ -949,22 +961,21 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			UpdateDatasetFunc: func(string, *models.Dataset) error {
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			UpdateDatasetFunc: func(string, *models.Dataset, string) error {
 				return errs.ErrDatasetNotFound
 			},
 		}
-
-		dataset := &models.Dataset{
-			Title: "CPI",
-		}
-		mockedDataStore.UpdateDataset("123", dataset)
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
 
-		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the request does not contain a valid internal token return status not found", t, func() {
@@ -975,7 +986,10 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			UpdateDatasetFunc: func(string, *models.Dataset) error {
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
+			},
+			UpdateDatasetFunc: func(string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -985,6 +999,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Resource not found\n")
 
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 	})
 }
@@ -1006,8 +1021,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(string, string) error {
-				return nil
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
 			},
 			CheckEditionExistsFunc: func(string, string, string) error {
 				return nil
@@ -1046,7 +1061,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		api.router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 3)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
@@ -1071,8 +1086,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(string, string) error {
-				return nil
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
 			},
 			CheckEditionExistsFunc: func(string, string, string) error {
 				return nil
@@ -1097,7 +1112,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		api.router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 3)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
@@ -1125,8 +1140,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(string, string) error {
-				return nil
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
 			},
 			CheckEditionExistsFunc: func(string, string, string) error {
 				return nil
@@ -1157,7 +1172,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		}
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
@@ -1182,9 +1197,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(string, string) error {
-				return nil
-			},
 			CheckEditionExistsFunc: func(string, string, string) error {
 				return nil
 			},
@@ -1223,8 +1235,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{
 					ID:      "123",
-					Next:    &models.Dataset{},
-					Current: &models.Dataset{},
+					Next:    &models.Dataset{Links: &models.DatasetLinks{}},
+					Current: &models.Dataset{Links: &models.DatasetLinks{}},
 				}, nil
 			},
 			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
@@ -1235,12 +1247,11 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
 		mockedDataStore.UpdateEdition("123", "2017", &models.Version{State: "published"})
 		mockedDataStore.GetDataset("123")
-		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{})
+		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 3)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
@@ -1264,8 +1275,8 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
 				return &v, nil
 			},
-			CheckDatasetExistsFunc: func(ID string, state string) error {
-				return nil
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
 			},
 			CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
 				return nil
@@ -1299,8 +1310,8 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 			Convey("and the expected store calls are made with the expected parameters", func() {
 				genCalls := mockDownloadGenerator.GenerateCalls()
 
-				So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
-				So(mockedDataStore.CheckDatasetExistsCalls()[0].ID, ShouldEqual, "123")
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(mockedDataStore.GetDatasetCalls()[0].ID, ShouldEqual, "123")
 
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(mockedDataStore.CheckEditionExistsCalls()[0].ID, ShouldEqual, "123")
@@ -1333,8 +1344,8 @@ func TestPutEmptyVersion(t *testing.T) {
 			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
 				return &v, nil
 			},
-			CheckDatasetExistsFunc: func(ID string, state string) error {
-				return nil
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
 			},
 			CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
 				return nil
@@ -1370,8 +1381,8 @@ func TestPutEmptyVersion(t *testing.T) {
 				v.Downloads = xlsDownload
 				return &v, nil
 			},
-			CheckDatasetExistsFunc: func(ID string, state string) error {
-				return nil
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
 			},
 			CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
 				return nil
@@ -1401,9 +1412,8 @@ func TestPutEmptyVersion(t *testing.T) {
 			})
 
 			Convey("and the expected external calls are made with the correct parameters", func() {
-				So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
-				So(mockedDataStore.CheckDatasetExistsCalls()[0].ID, ShouldEqual, "123")
-				So(mockedDataStore.CheckDatasetExistsCalls()[0].State, ShouldEqual, "")
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(mockedDataStore.GetDatasetCalls()[0].ID, ShouldEqual, "123")
 
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(mockedDataStore.CheckEditionExistsCalls()[0].ID, ShouldEqual, "123")
@@ -1443,8 +1453,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
 				return &models.Version{State: models.AssociatedState}, nil
 			},
-			CheckDatasetExistsFunc: func(string, string) error {
-				return nil
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
 			},
 		}
 
@@ -1454,7 +1464,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldEqual, "Failed to parse json body\n")
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 	})
 
@@ -1475,8 +1485,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
 				return nil, errInternal
 			},
-			CheckDatasetExistsFunc: func(string, string) error {
-				return nil
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
 			},
 		}
 
@@ -1486,7 +1496,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldEqual, "internal error\n")
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 	})
 
@@ -1507,8 +1517,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
 				return &models.Version{}, errs.ErrVersionNotFound
 			},
-			CheckDatasetExistsFunc: func(string, string) error {
-				return errs.ErrDatasetNotFound
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
 			},
 			CheckEditionExistsFunc: func(string, string, string) error {
 				return nil
@@ -1521,7 +1531,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldEqual, "Dataset not found\n")
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 	})
@@ -1543,8 +1553,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
 				return &models.Version{}, errs.ErrVersionNotFound
 			},
-			CheckDatasetExistsFunc: func(string, string) error {
-				return nil
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
 			},
 			CheckEditionExistsFunc: func(string, string, string) error {
 				return errs.ErrEditionNotFound
@@ -1557,7 +1567,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldEqual, "Edition not found\n")
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 	})
@@ -1579,8 +1589,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
 				return &models.Version{}, errs.ErrVersionNotFound
 			},
-			CheckDatasetExistsFunc: func(string, string) error {
-				return nil
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
 			},
 			CheckEditionExistsFunc: func(string, string, string) error {
 				return nil
@@ -1596,7 +1606,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldEqual, "Version not found\n")
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -1650,8 +1660,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 					State: models.PublishedState,
 				}, nil
 			},
-			CheckDatasetExistsFunc: func(string, string) error {
-				return nil
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
 			},
 		}
 
@@ -1661,7 +1671,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldEqual, "unable to update version as it has been published\n")
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the request body is invalid return status bad request", t, func() {
@@ -1681,8 +1691,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
 				return &models.Version{State: "associated"}, nil
 			},
-			CheckDatasetExistsFunc: func(string, string) error {
-				return nil
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
 			},
 			CheckEditionExistsFunc: func(string, string, string) error {
 				return nil
@@ -1698,7 +1708,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldEqual, "Missing collection_id for association between version and a collection\n")
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
