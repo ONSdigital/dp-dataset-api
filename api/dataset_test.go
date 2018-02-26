@@ -23,6 +23,7 @@ import (
 	"github.com/gorilla/mux"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/config"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -48,7 +49,13 @@ var (
 
 // GetAPIWithMockedDatastore also used in other tests, so exported
 func GetAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator) *DatasetAPI {
-	return routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, healthTimeout)
+	cfg, err := config.Get()
+	So(err, ShouldBeNil)
+	cfg.SecretKey = secretKey
+	cfg.DatasetAPIURL = host
+	cfg.EnablePrivateEnpoints = true
+	cfg.HealthCheckTimeout = healthTimeout
+	return routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads)
 }
 
 func TestGetDatasetsReturnsOK(t *testing.T) {
@@ -1181,8 +1188,11 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 			r, _ := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
 			r.Header.Add("internal-token", "coffee")
 			w := httptest.NewRecorder()
-
-			api := routes(host, secretKey, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockDownloadGenerator, healthTimeout)
+			cfg, err := config.Get()
+			So(err, ShouldBeNil)
+			cfg.SecretKey = secretKey
+			cfg.EnablePrivateEnpoints = true
+			api := routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockDownloadGenerator)
 			api.router.ServeHTTP(w, r)
 
 			Convey("then an internal server error response is returned", func() {

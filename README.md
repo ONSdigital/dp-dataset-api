@@ -58,6 +58,7 @@ one of:
 | KAFKA_ADDR                 | "localhost:9092"                     | The list of kafka hosts
 | GENERATE_DOWNLOADS_TOPIC   | "filter-job-submitted"               | The topic to send generate full dataset version downloads to
 | HEALTHCHECK_TIMEOUT        | 2s                                   | The timeout that the healthcheck allows for checked subsystems
+| ENABLE_PRIVATE_ENDPOINTS   | false                                | Enable private endpoints for the API
 
 ### Contributing
 

@@ -16,12 +16,10 @@ import (
 )
 
 const (
-	internalToken = "Internal-Token"
-
+	internalToken          = "Internal-Token"
 	datasetDocType         = "dataset"
 	editionDocType         = "edition"
 	versionDocType         = "version"
-	instanceDocType        = "instance"
 	dimensionDocType       = "dimension"
 	dimensionOptionDocType = "dimension-option"
 )
@@ -36,7 +34,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 
 	var bytes []byte
 
-	if r.Header.Get(internalToken) == api.internalToken {
+	if api.EnablePrePublishView && r.Header.Get(internalToken) == api.internalToken {
 		datasets := &models.DatasetUpdateResults{}
 
 		datasets.Items = results
@@ -78,7 +76,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var bytes []byte
-	if r.Header.Get(internalToken) != api.internalToken {
+	if !api.EnablePrePublishView || r.Header.Get(internalToken) != api.internalToken {
 		if dataset.Current == nil {
 			log.Debug("published dataset not found", nil)
 			handleErrorType(datasetDocType, errs.ErrDatasetNotFound, w)
@@ -119,7 +117,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	var state string
-	if r.Header.Get(internalToken) != api.internalToken {
+	if !api.EnablePrePublishView || r.Header.Get(internalToken) != api.internalToken {
 		state = models.PublishedState
 	}
 
@@ -158,7 +156,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	editionID := vars["edition"]
 
 	var state string
-	if r.Header.Get(internalToken) != api.internalToken {
+	if !api.EnablePrePublishView || r.Header.Get(internalToken) != api.internalToken {
 		state = models.PublishedState
 	}
 
@@ -197,7 +195,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	editionID := vars["edition"]
 
 	var state string
-	if r.Header.Get(internalToken) != api.internalToken {
+	if !api.EnablePrePublishView || r.Header.Get(internalToken) != api.internalToken {
 		state = models.PublishedState
 	}
 
@@ -243,7 +241,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	version := vars["version"]
 
 	var state string
-	if r.Header.Get(internalToken) != api.internalToken {
+	if !api.EnablePrePublishView || r.Header.Get(internalToken) != api.internalToken {
 		state = models.PublishedState
 	}
 
@@ -633,7 +631,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	version := vars["version"]
 
 	var state string
-	if r.Header.Get(internalToken) != api.internalToken {
+	if !api.EnablePrePublishView || r.Header.Get(internalToken) != api.internalToken {
 		state = models.PublishedState
 	}
 
@@ -730,7 +728,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 
 	var state string
 	authenticated := true
-	if r.Header.Get(internalToken) != api.internalToken {
+	if !api.EnablePrePublishView || r.Header.Get(internalToken) != api.internalToken {
 		state = models.PublishedState
 		authenticated = false
 	}
@@ -784,7 +782,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	var state string
 
 	// if request is authenticated then access resources of state other than published
-	if r.Header.Get(internalToken) != api.internalToken {
+	if !api.EnablePrePublishView || r.Header.Get(internalToken) != api.internalToken {
 
 		// Check for current sub document
 		if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
