@@ -25,6 +25,21 @@ func (s *Store) GetNodes(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
+	// Get instance
+	instance, err := s.GetInstance(id)
+	if err != nil {
+		log.ErrorC("Failed to GET instance", err, log.Data{"instance": id})
+		handleErrorType(err, w)
+		return
+	}
+
+	// Early return if instance state is invalid
+	if err = models.CheckState("instance", instance.State); err != nil {
+		log.ErrorC("current instance has an invalid state", err, log.Data{"state": instance.State})
+		handleErrorType(errs.ErrInternalServer, w)
+		return
+	}
+
 	results, err := s.GetDimensionNodesFromInstance(id)
 	if err != nil {
 		log.Error(err, nil)
@@ -48,6 +63,21 @@ func (s *Store) GetUnique(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	dimension := vars["dimension"]
 
+	// Get instance
+	instance, err := s.GetInstance(id)
+	if err != nil {
+		log.ErrorC("Failed to GET instance", err, log.Data{"instance": id})
+		handleErrorType(err, w)
+		return
+	}
+
+	// Early return if instance state is invalid
+	if err = models.CheckState("instance", instance.State); err != nil {
+		log.ErrorC("current instance has an invalid state", err, log.Data{"state": instance.State})
+		handleErrorType(errs.ErrInternalServer, w)
+		return
+	}
+
 	values, err := s.GetUniqueDimensionValues(id, dimension)
 	if err != nil {
 		log.Error(err, nil)
@@ -69,6 +99,22 @@ func (s *Store) GetUnique(w http.ResponseWriter, r *http.Request) {
 func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
+
+	// Get instance
+	instance, err := s.GetInstance(id)
+	if err != nil {
+		log.ErrorC("Failed to GET instance", err, log.Data{"instance": id})
+		handleErrorType(err, w)
+		return
+	}
+
+	// Early return if instance state is invalid
+	if err = models.CheckState("instance", instance.State); err != nil {
+		log.ErrorC("current instance has an invalid state", err, log.Data{"state": instance.State})
+		handleErrorType(errs.ErrInternalServer, w)
+		return
+	}
+
 	option, err := unmarshalDimensionCache(r.Body)
 	if err != nil {
 		log.Error(err, nil)
@@ -89,6 +135,21 @@ func (s *Store) AddNodeID(w http.ResponseWriter, r *http.Request) {
 	dimensionName := vars["dimension"]
 	value := vars["value"]
 	nodeID := vars["node_id"]
+
+	// Get instance
+	instance, err := s.GetInstance(id)
+	if err != nil {
+		log.ErrorC("Failed to GET instance when attempting to update a dimension of that instance.", err, log.Data{"instance": id})
+		handleErrorType(err, w)
+		return
+	}
+
+	// Early return if instance state is invalid
+	if err = models.CheckState("instance", instance.State); err != nil {
+		log.ErrorC("current instance has an invalid state", err, log.Data{"state": instance.State})
+		handleErrorType(errs.ErrInternalServer, w)
+		return
+	}
 
 	dim := models.DimensionOption{Name: dimensionName, Option: value, NodeID: nodeID, InstanceID: id}
 	if err := s.UpdateDimensionNodeID(&dim); err != nil {

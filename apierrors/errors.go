@@ -15,4 +15,5 @@ var (
 	ErrNoAuthHeader          = errors.New("No authentication header provided")
 	ErrResourceState         = errors.New("Incorrect resource state")
 	ErrVersionMissingState   = errors.New("Missing state from version")
+	ErrInternalServer        = errors.New("internal error")
 )
