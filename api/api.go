@@ -59,8 +59,15 @@ func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBu
 }
 
 func routes(cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator) *DatasetAPI {
+
+	var authenticator *auth.Authenticator
+
+	if cfg.EnablePrivateEnpoints {
+		authenticator = &auth.Authenticator{SecretKey: cfg.SecretKey, HeaderName: "Internal-Token"}
+	}
+
 	api := DatasetAPI{
-		privateAuth:          &auth.Authenticator{SecretKey: cfg.SecretKey, HeaderName: "Internal-Token"},
+		privateAuth:          authenticator,
 		dataStore:            dataStore,
 		host:                 cfg.DatasetAPIURL,
 		internalToken:        cfg.SecretKey,
@@ -85,6 +92,9 @@ func routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", api.getDimensionOptions).Methods("GET")
 
 	if cfg.EnablePrivateEnpoints {
+
+		log.Debug("private endpoints have been enabled", log.Data{})
+
 		api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.addDataset)).Methods("POST")
 		api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.putDataset)).Methods("PUT")
 		api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.privateAuth.Check(versionPublishChecker.Check(api.putVersion))).Methods("PUT")
