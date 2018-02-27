@@ -97,9 +97,9 @@ func routes(host, secretKey string, router *mux.Router, dataStore store.DataStor
 	api.router.HandleFunc("/instances/{id}/import_tasks", api.privateAuth.Check(instancePublishChecker.Check(instanceAPI.UpdateImportTask))).Methods("PUT")
 
 	dimension := dimension.Store{Storer: api.dataStore.Backend}
-	api.router.HandleFunc("/instances/{id}/dimensions", dimension.GetNodes).Methods("GET")
+	api.router.HandleFunc("/instances/{id}/dimensions", api.privateAuth.Check(dimension.GetNodes)).Methods("GET")
 	api.router.HandleFunc("/instances/{id}/dimensions", api.privateAuth.Check(instancePublishChecker.Check(dimension.Add))).Methods("POST")
-	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options", dimension.GetUnique).Methods("GET")
+	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options", api.privateAuth.Check(dimension.GetUnique)).Methods("GET")
 	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}/node_id/{node_id}",
 		api.privateAuth.Check(instancePublishChecker.Check(dimension.AddNodeID))).Methods("PUT")
 
