@@ -28,7 +28,7 @@ func (s *Store) GetNodes(w http.ResponseWriter, r *http.Request) {
 	// Get instance
 	instance, err := s.GetInstance(id)
 	if err != nil {
-		log.ErrorC("Failed to GET instance", err, log.Data{"instance": id})
+		log.ErrorC("failed to GET instance", err, log.Data{"instance": id})
 		handleErrorType(err, w)
 		return
 	}
@@ -66,7 +66,7 @@ func (s *Store) GetUnique(w http.ResponseWriter, r *http.Request) {
 	// Get instance
 	instance, err := s.GetInstance(id)
 	if err != nil {
-		log.ErrorC("Failed to GET instance", err, log.Data{"instance": id})
+		log.ErrorC("failed to GET instance", err, log.Data{"instance": id})
 		handleErrorType(err, w)
 		return
 	}
