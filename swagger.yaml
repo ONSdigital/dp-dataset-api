@@ -591,6 +591,31 @@ paths:
           $ref: '#/responses/InstanceNotFound'
         500:
           $ref: '#/responses/InternalError'
+  /instances/{instance_id}/dimensions/{dimension}:
+    put:
+      tags:
+      - "Private user"
+      summary: "Update dimension description and/or label"
+      description: "Update the label and/or description of a dimension within an instance, by providing dimension name and properties to over write"
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/dimension'
+      - $ref: '#/parameters/instance'
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "The instance has been updated"
+        400:
+          $ref: '#/responses/InvalidRequestError'
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
+        404:
+          $ref: '#/responses/InstanceNotFound'
+        500:
+          $ref: '#/responses/InternalError'
   /instances/{instance_id}/dimensions/{dimension}/options:
     get:
       tags:
@@ -1191,6 +1216,17 @@ definitions:
             code_list_id:
               type: string
               description: "The ID of the codelist that this hierarchy represents"
+      build_search_indexes:
+        type: array
+        items:
+          type: object
+          properties:
+            state:
+              type: string
+              description: "The state of the import observations task"
+            dimension_name:
+              type: string
+              description: "The name of the dimension the search index represents"
   Codelist:
     type: object
     properties:

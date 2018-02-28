@@ -34,9 +34,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	sanitized := *cfg
-	sanitized.SecretKey = ""
-	log.Info("config on startup", log.Data{"config": sanitized})
+	log.Info("config on startup", log.Data{"config": cfg})
 
 	generateDownloadsProducer, err := kafka.NewProducer(cfg.KafkaAddr, cfg.GenerateDownloadsTopic, 0)
 	if err != nil {

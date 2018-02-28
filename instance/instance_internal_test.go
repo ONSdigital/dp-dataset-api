@@ -115,12 +115,32 @@ func TestUnmarshalImportTaskWithInvalidJson(t *testing.T) {
 	})
 }
 
-func TestUnmarshalImportTask(t *testing.T) {
+func TestUnmarshalImportTask_ImportObservations(t *testing.T) {
 	Convey("Create an import observation task with valid json", t, func() {
 		task, err := unmarshalImportTasks(strings.NewReader(`{"import_observations":{"state":"completed"}}`))
 		So(err, ShouldBeNil)
 		So(task, ShouldNotBeNil)
 		So(task.ImportObservations, ShouldNotBeNil)
 		So(task.ImportObservations.State, ShouldEqual, "completed")
+	})
+}
+
+func TestUnmarshalImportTask_BuildHierarchies(t *testing.T) {
+	Convey("Create an import observation task with valid json", t, func() {
+		task, err := unmarshalImportTasks(strings.NewReader(`{"build_hierarchies":[{"state":"completed"}]}`))
+		So(err, ShouldBeNil)
+		So(task, ShouldNotBeNil)
+		So(task.BuildHierarchyTasks, ShouldNotBeNil)
+		So(task.BuildHierarchyTasks[0].State, ShouldEqual, "completed")
+	})
+}
+
+func TestUnmarshalImportTask_BuildSearch(t *testing.T) {
+	Convey("Create an import observation task with valid json", t, func() {
+		task, err := unmarshalImportTasks(strings.NewReader(`{"build_search_indexes":[{"state":"completed"}]}`))
+		So(err, ShouldBeNil)
+		So(task, ShouldNotBeNil)
+		So(task.BuildSearchIndexTasks, ShouldNotBeNil)
+		So(task.BuildSearchIndexTasks[0].State, ShouldEqual, "completed")
 	})
 }

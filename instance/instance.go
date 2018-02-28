@@ -109,6 +109,81 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	log.Debug("add instance", log.Data{"instance": instance})
 }
 
+// UpdateDimension updates label and/or description for a specific dimension within an instance
+func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+	dimension := vars["dimension"]
+
+	// Get instance
+	instance, err := s.GetInstance(id)
+	if err != nil {
+		log.ErrorC("Failed to GET instance when attempting to update a dimension of that instance.", err, log.Data{"instance": id})
+		handleErrorType(err, w)
+		return
+	}
+
+	// Early return if instance is already published
+	if instance.State == models.PublishedState {
+		log.Debug("unable to update instance/version, already published", nil)
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	// Read and unmarshal request body
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.ErrorC("Error reading response.body.", err, nil)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var dim *models.CodeList
+
+	err = json.Unmarshal(bytes, &dim)
+	if err != nil {
+		log.ErrorC("Failing to model models.Codelist resource based on request", err, log.Data{"instance": id, "dimension": dimension})
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Update instance-dimension
+	notFound := true
+	for i := range instance.Dimensions {
+
+		// For the chosen dimension
+		if instance.Dimensions[i].Name == dimension {
+			notFound = false
+			// Assign update info, conditionals to allow updating of both or either without blanking other
+			if dim.Label != "" {
+				instance.Dimensions[i].Label = dim.Label
+			}
+			if dim.Description != "" {
+				instance.Dimensions[i].Description = dim.Description
+			}
+			break
+		}
+
+	}
+
+	if notFound {
+		log.ErrorC("dimension not found", errs.ErrDimensionNotFound, log.Data{"instance": id, "dimension": dimension})
+		handleErrorType(errs.ErrDimensionNotFound, w)
+		return
+	}
+
+	// Update instance
+	if err = s.UpdateInstance(id, instance); err != nil {
+		log.ErrorC("Failed to update instance with new dimension label/description.", err, log.Data{"instance": id, "dimension": dimension})
+		handleErrorType(err, w)
+		return
+	}
+
+	log.Debug("updated dimension", log.Data{"instance": id, "dimension": dimension})
+
+}
+
 //Update a specific instance
 func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -134,35 +209,37 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	instance.Links = updateLinks(instance, currentInstance)
 
 	logData := log.Data{"instance_id": id, "current_state": currentInstance.State, "requested_state": instance.State}
-	switch instance.State {
-	case models.CompletedState:
-		if err = validateInstanceUpdate(models.SubmittedState, currentInstance, instance); err != nil {
-			log.Error(err, logData)
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
-	case models.EditionConfirmedState:
-		if err = validateInstanceUpdate(models.CompletedState, currentInstance, instance); err != nil {
-			log.Error(err, logData)
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
-	case models.AssociatedState:
-		if err = validateInstanceUpdate(models.EditionConfirmedState, currentInstance, instance); err != nil {
-			log.Error(err, logData)
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
+	if instance.State != currentInstance.State {
+		switch instance.State {
+		case models.CompletedState:
+			if err = validateInstanceUpdate(models.SubmittedState, currentInstance, instance); err != nil {
+				log.Error(err, logData)
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
+		case models.EditionConfirmedState:
+			if err = validateInstanceUpdate(models.CompletedState, currentInstance, instance); err != nil {
+				log.Error(err, logData)
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
+		case models.AssociatedState:
+			if err = validateInstanceUpdate(models.EditionConfirmedState, currentInstance, instance); err != nil {
+				log.Error(err, logData)
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
 
-		// TODO Update dataset.next state to associated and add collection id
-	case models.PublishedState:
-		if err = validateInstanceUpdate(models.AssociatedState, currentInstance, instance); err != nil {
-			log.Error(err, logData)
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
+			// TODO Update dataset.next state to associated and add collection id
+		case models.PublishedState:
+			if err = validateInstanceUpdate(models.AssociatedState, currentInstance, instance); err != nil {
+				log.Error(err, logData)
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
 
-		// TODO Update both edition and dataset states to published
+			// TODO Update both edition and dataset states to published
+		}
 	}
 
 	if instance.State == models.EditionConfirmedState {
@@ -286,16 +363,16 @@ func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.Editi
 }
 
 func validateInstanceUpdate(expectedState string, currentInstance, instance *models.Instance) error {
-	if currentInstance.State != expectedState {
-		err := fmt.Errorf("Unable to update resource, expected resource to have a state of %s", expectedState)
-		return err
-	}
-	if instance.State == models.EditionConfirmedState && currentInstance.Edition == "" && instance.Edition == "" {
-		err := errors.New("Unable to update resource, missing a value for the edition")
-		return err
+	var err error
+	if currentInstance.State == models.PublishedState {
+		err = fmt.Errorf("Unable to update resource state, as the version has been published")
+	} else if currentInstance.State != expectedState {
+		err = fmt.Errorf("Unable to update resource, expected resource to have a state of %s", expectedState)
+	} else if instance.State == models.EditionConfirmedState && currentInstance.Edition == "" && instance.Edition == "" {
+		err = errors.New("Unable to update resource, missing a value for the edition")
 	}
 
-	return nil
+	return err
 }
 
 func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *models.Edition) *models.InstanceLinks {
@@ -378,7 +455,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 				validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value for import observations: %v", tasks.ImportObservations.State))
 			} else if err := s.UpdateImportObservationsTaskState(id, tasks.ImportObservations.State); err != nil {
 				log.Error(err, nil)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, "Failed to update import observations task state", http.StatusInternalServerError)
 				return
 			}
 		}
@@ -391,7 +468,21 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
 				} else if err := s.UpdateBuildHierarchyTaskState(id, task.DimensionName, task.State); err != nil {
 					log.Error(err, nil)
-					http.Error(w, err.Error(), http.StatusInternalServerError)
+					http.Error(w, "Failed to update build hierarchy task state", http.StatusInternalServerError)
+					return
+				}
+			}
+		}
+	}
+
+	if tasks.BuildSearchIndexTasks != nil {
+		for _, task := range tasks.BuildSearchIndexTasks {
+			if task.State != "" {
+				if task.State != models.CompletedState {
+					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
+				} else if err := s.UpdateBuildSearchTaskState(id, task.DimensionName, task.State); err != nil {
+					log.Error(err, nil)
+					http.Error(w, "Failed to update build search index task state", http.StatusInternalServerError)
 					return
 				}
 			}
@@ -469,7 +560,7 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 func handleErrorType(err error, w http.ResponseWriter) {
 	status := http.StatusInternalServerError
 
-	if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
+	if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
 		status = http.StatusNotFound
 	}
 
@@ -487,4 +578,33 @@ func writeBody(w http.ResponseWriter, bytes []byte) {
 		log.Error(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+// PublishCheck Checks if an instance has been published
+type PublishCheck struct {
+	Datastore store.Storer
+}
+
+// Check wraps a HTTP handle. Checks that the state is not published
+func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		vars := mux.Vars(r)
+		id := vars["id"]
+		instance, err := d.Datastore.GetInstance(id)
+		if err != nil {
+			log.Error(err, nil)
+			handleErrorType(err, w)
+			return
+		}
+
+		if instance.State == models.PublishedState {
+			err = errors.New("unable to update instance as it has been published")
+			log.Error(err, log.Data{"instance": instance})
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+
+		handle(w, r)
+	})
 }

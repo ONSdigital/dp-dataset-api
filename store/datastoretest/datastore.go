@@ -32,6 +32,7 @@ var (
 	lockStorerMockGetVersions                       sync.RWMutex
 	lockStorerMockPing                              sync.RWMutex
 	lockStorerMockUpdateBuildHierarchyTaskState     sync.RWMutex
+	lockStorerMockUpdateBuildSearchTaskState        sync.RWMutex
 	lockStorerMockUpdateDataset                     sync.RWMutex
 	lockStorerMockUpdateDatasetWithAssociation      sync.RWMutex
 	lockStorerMockUpdateDimensionNodeID             sync.RWMutex
@@ -76,7 +77,7 @@ var (
 //             GetDimensionNodesFromInstanceFunc: func(ID string) (*models.DimensionNodeResults, error) {
 // 	               panic("TODO: mock out the GetDimensionNodesFromInstance method")
 //             },
-//             GetDimensionOptionsFunc: func(datasetID string, editionID string, versionID string, dimension string) (*models.DimensionOptionResults, error) {
+//             GetDimensionOptionsFunc: func(version *models.Version, dimension string) (*models.DimensionOptionResults, error) {
 // 	               panic("TODO: mock out the GetDimensionOptions method")
 //             },
 //             GetDimensionsFunc: func(datasetID string, versionID string) ([]bson.M, error) {
@@ -112,7 +113,10 @@ var (
 //             UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
 // 	               panic("TODO: mock out the UpdateBuildHierarchyTaskState method")
 //             },
-//             UpdateDatasetFunc: func(ID string, dataset *models.Dataset) error {
+//             UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
+// 	               panic("TODO: mock out the UpdateBuildSearchTaskState method")
+//             },
+//             UpdateDatasetFunc: func(ID string, dataset *models.Dataset, currentState string) error {
 // 	               panic("TODO: mock out the UpdateDataset method")
 //             },
 //             UpdateDatasetWithAssociationFunc: func(ID string, state string, version *models.Version) error {
@@ -180,7 +184,7 @@ type StorerMock struct {
 	GetDimensionNodesFromInstanceFunc func(ID string) (*models.DimensionNodeResults, error)
 
 	// GetDimensionOptionsFunc mocks the GetDimensionOptions method.
-	GetDimensionOptionsFunc func(datasetID string, editionID string, versionID string, dimension string) (*models.DimensionOptionResults, error)
+	GetDimensionOptionsFunc func(version *models.Version, dimension string) (*models.DimensionOptionResults, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
 	GetDimensionsFunc func(datasetID string, versionID string) ([]bson.M, error)
@@ -215,8 +219,11 @@ type StorerMock struct {
 	// UpdateBuildHierarchyTaskStateFunc mocks the UpdateBuildHierarchyTaskState method.
 	UpdateBuildHierarchyTaskStateFunc func(id string, dimension string, state string) error
 
+	// UpdateBuildSearchTaskStateFunc mocks the UpdateBuildSearchTaskState method.
+	UpdateBuildSearchTaskStateFunc func(id string, dimension string, state string) error
+
 	// UpdateDatasetFunc mocks the UpdateDataset method.
-	UpdateDatasetFunc func(ID string, dataset *models.Dataset) error
+	UpdateDatasetFunc func(ID string, dataset *models.Dataset, currentState string) error
 
 	// UpdateDatasetWithAssociationFunc mocks the UpdateDatasetWithAssociation method.
 	UpdateDatasetWithAssociationFunc func(ID string, state string, version *models.Version) error
@@ -301,12 +308,8 @@ type StorerMock struct {
 		}
 		// GetDimensionOptions holds details about calls to the GetDimensionOptions method.
 		GetDimensionOptions []struct {
-			// DatasetID is the datasetID argument value.
-			DatasetID string
-			// EditionID is the editionID argument value.
-			EditionID string
-			// VersionID is the versionID argument value.
-			VersionID string
+			// Version is the version argument value.
+			Version *models.Version
 			// Dimension is the dimension argument value.
 			Dimension string
 		}
@@ -384,8 +387,17 @@ type StorerMock struct {
 		}
 		// UpdateBuildHierarchyTaskState holds details about calls to the UpdateBuildHierarchyTaskState method.
 		UpdateBuildHierarchyTaskState []struct {
-			// Id is the id argument value.
-			Id string
+			// ID is the id argument value.
+			ID string
+			// Dimension is the dimension argument value.
+			Dimension string
+			// State is the state argument value.
+			State string
+		}
+		// UpdateBuildSearchTaskState holds details about calls to the UpdateBuildSearchTaskState method.
+		UpdateBuildSearchTaskState []struct {
+			// ID is the id argument value.
+			ID string
 			// Dimension is the dimension argument value.
 			Dimension string
 			// State is the state argument value.
@@ -397,6 +409,8 @@ type StorerMock struct {
 			ID string
 			// Dataset is the dataset argument value.
 			Dataset *models.Dataset
+			// CurrentState is the currentState argument value.
+			CurrentState string
 		}
 		// UpdateDatasetWithAssociation holds details about calls to the UpdateDatasetWithAssociation method.
 		UpdateDatasetWithAssociation []struct {
@@ -423,8 +437,8 @@ type StorerMock struct {
 		}
 		// UpdateImportObservationsTaskState holds details about calls to the UpdateImportObservationsTaskState method.
 		UpdateImportObservationsTaskState []struct {
-			// Id is the id argument value.
-			Id string
+			// ID is the id argument value.
+			ID string
 			// State is the state argument value.
 			State string
 		}
@@ -742,40 +756,32 @@ func (mock *StorerMock) GetDimensionNodesFromInstanceCalls() []struct {
 }
 
 // GetDimensionOptions calls GetDimensionOptionsFunc.
-func (mock *StorerMock) GetDimensionOptions(datasetID string, editionID string, versionID string, dimension string) (*models.DimensionOptionResults, error) {
+func (mock *StorerMock) GetDimensionOptions(version *models.Version, dimension string) (*models.DimensionOptionResults, error) {
 	if mock.GetDimensionOptionsFunc == nil {
 		panic("moq: StorerMock.GetDimensionOptionsFunc is nil but Storer.GetDimensionOptions was just called")
 	}
 	callInfo := struct {
-		DatasetID string
-		EditionID string
-		VersionID string
+		Version   *models.Version
 		Dimension string
 	}{
-		DatasetID: datasetID,
-		EditionID: editionID,
-		VersionID: versionID,
+		Version:   version,
 		Dimension: dimension,
 	}
 	lockStorerMockGetDimensionOptions.Lock()
 	mock.calls.GetDimensionOptions = append(mock.calls.GetDimensionOptions, callInfo)
 	lockStorerMockGetDimensionOptions.Unlock()
-	return mock.GetDimensionOptionsFunc(datasetID, editionID, versionID, dimension)
+	return mock.GetDimensionOptionsFunc(version, dimension)
 }
 
 // GetDimensionOptionsCalls gets all the calls that were made to GetDimensionOptions.
 // Check the length with:
 //     len(mockedStorer.GetDimensionOptionsCalls())
 func (mock *StorerMock) GetDimensionOptionsCalls() []struct {
-	DatasetID string
-	EditionID string
-	VersionID string
+	Version   *models.Version
 	Dimension string
 } {
 	var calls []struct {
-		DatasetID string
-		EditionID string
-		VersionID string
+		Version   *models.Version
 		Dimension string
 	}
 	lockStorerMockGetDimensionOptions.RLock()
@@ -1144,11 +1150,11 @@ func (mock *StorerMock) UpdateBuildHierarchyTaskState(id string, dimension strin
 		panic("moq: StorerMock.UpdateBuildHierarchyTaskStateFunc is nil but Storer.UpdateBuildHierarchyTaskState was just called")
 	}
 	callInfo := struct {
-		Id        string
+		ID        string
 		Dimension string
 		State     string
 	}{
-		Id:        id,
+		ID:        id,
 		Dimension: dimension,
 		State:     state,
 	}
@@ -1162,12 +1168,12 @@ func (mock *StorerMock) UpdateBuildHierarchyTaskState(id string, dimension strin
 // Check the length with:
 //     len(mockedStorer.UpdateBuildHierarchyTaskStateCalls())
 func (mock *StorerMock) UpdateBuildHierarchyTaskStateCalls() []struct {
-	Id        string
+	ID        string
 	Dimension string
 	State     string
 } {
 	var calls []struct {
-		Id        string
+		ID        string
 		Dimension string
 		State     string
 	}
@@ -1177,34 +1183,77 @@ func (mock *StorerMock) UpdateBuildHierarchyTaskStateCalls() []struct {
 	return calls
 }
 
+// UpdateBuildSearchTaskState calls UpdateBuildSearchTaskStateFunc.
+func (mock *StorerMock) UpdateBuildSearchTaskState(id string, dimension string, state string) error {
+	if mock.UpdateBuildSearchTaskStateFunc == nil {
+		panic("moq: StorerMock.UpdateBuildSearchTaskStateFunc is nil but Storer.UpdateBuildSearchTaskState was just called")
+	}
+	callInfo := struct {
+		ID        string
+		Dimension string
+		State     string
+	}{
+		ID:        id,
+		Dimension: dimension,
+		State:     state,
+	}
+	lockStorerMockUpdateBuildSearchTaskState.Lock()
+	mock.calls.UpdateBuildSearchTaskState = append(mock.calls.UpdateBuildSearchTaskState, callInfo)
+	lockStorerMockUpdateBuildSearchTaskState.Unlock()
+	return mock.UpdateBuildSearchTaskStateFunc(id, dimension, state)
+}
+
+// UpdateBuildSearchTaskStateCalls gets all the calls that were made to UpdateBuildSearchTaskState.
+// Check the length with:
+//     len(mockedStorer.UpdateBuildSearchTaskStateCalls())
+func (mock *StorerMock) UpdateBuildSearchTaskStateCalls() []struct {
+	ID        string
+	Dimension string
+	State     string
+} {
+	var calls []struct {
+		ID        string
+		Dimension string
+		State     string
+	}
+	lockStorerMockUpdateBuildSearchTaskState.RLock()
+	calls = mock.calls.UpdateBuildSearchTaskState
+	lockStorerMockUpdateBuildSearchTaskState.RUnlock()
+	return calls
+}
+
 // UpdateDataset calls UpdateDatasetFunc.
-func (mock *StorerMock) UpdateDataset(ID string, dataset *models.Dataset) error {
+func (mock *StorerMock) UpdateDataset(ID string, dataset *models.Dataset, currentState string) error {
 	if mock.UpdateDatasetFunc == nil {
 		panic("moq: StorerMock.UpdateDatasetFunc is nil but Storer.UpdateDataset was just called")
 	}
 	callInfo := struct {
-		ID      string
-		Dataset *models.Dataset
+		ID           string
+		Dataset      *models.Dataset
+		CurrentState string
 	}{
-		ID:      ID,
-		Dataset: dataset,
+		ID:           ID,
+		Dataset:      dataset,
+		CurrentState: currentState,
 	}
 	lockStorerMockUpdateDataset.Lock()
 	mock.calls.UpdateDataset = append(mock.calls.UpdateDataset, callInfo)
 	lockStorerMockUpdateDataset.Unlock()
-	return mock.UpdateDatasetFunc(ID, dataset)
+	return mock.UpdateDatasetFunc(ID, dataset, currentState)
 }
 
 // UpdateDatasetCalls gets all the calls that were made to UpdateDataset.
 // Check the length with:
 //     len(mockedStorer.UpdateDatasetCalls())
 func (mock *StorerMock) UpdateDatasetCalls() []struct {
-	ID      string
-	Dataset *models.Dataset
+	ID           string
+	Dataset      *models.Dataset
+	CurrentState string
 } {
 	var calls []struct {
-		ID      string
-		Dataset *models.Dataset
+		ID           string
+		Dataset      *models.Dataset
+		CurrentState string
 	}
 	lockStorerMockUpdateDataset.RLock()
 	calls = mock.calls.UpdateDataset
@@ -1327,10 +1376,10 @@ func (mock *StorerMock) UpdateImportObservationsTaskState(id string, state strin
 		panic("moq: StorerMock.UpdateImportObservationsTaskStateFunc is nil but Storer.UpdateImportObservationsTaskState was just called")
 	}
 	callInfo := struct {
-		Id    string
+		ID    string
 		State string
 	}{
-		Id:    id,
+		ID:    id,
 		State: state,
 	}
 	lockStorerMockUpdateImportObservationsTaskState.Lock()
@@ -1343,11 +1392,11 @@ func (mock *StorerMock) UpdateImportObservationsTaskState(id string, state strin
 // Check the length with:
 //     len(mockedStorer.UpdateImportObservationsTaskStateCalls())
 func (mock *StorerMock) UpdateImportObservationsTaskStateCalls() []struct {
-	Id    string
+	ID    string
 	State string
 } {
 	var calls []struct {
-		Id    string
+		ID    string
 		State string
 	}
 	lockStorerMockUpdateImportObservationsTaskState.RLock()

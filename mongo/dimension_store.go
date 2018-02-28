@@ -89,19 +89,13 @@ func (m *Mongo) GetDimensions(datasetID, versionID string) ([]bson.M, error) {
 }
 
 // GetDimensionOptions returns all dimension options for a dimensions within a dataset.
-func (m *Mongo) GetDimensionOptions(datasetID, editionID, versionID, dimension string) (*models.DimensionOptionResults, error) {
+func (m *Mongo) GetDimensionOptions(version *models.Version, dimension string) (*models.DimensionOptionResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	version, err := m.GetVersion(datasetID, editionID, versionID, models.PublishedState)
-	if err != nil {
-		return nil, err
-	}
-
 	var values []models.PublicDimensionOption
 	iter := s.DB(m.Database).C(dimensionOptions).Find(bson.M{"instance_id": version.ID, "name": dimension}).Iter()
-	err = iter.All(&values)
-	if err != nil {
+	if err := iter.All(&values); err != nil {
 		return nil, err
 	}
 
