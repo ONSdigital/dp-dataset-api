@@ -876,8 +876,12 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	datasetID := vars["id"]
 
 	currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
+	if err == errs.ErrDatasetNotFound {
+		w.WriteHeader(http.StatusNoContent) // idempotent
+		return
+	}
 	if err != nil {
-		log.ErrorC("failed to find dataset", err, log.Data{"dataset_id": datasetID})
+		log.ErrorC("failed to run query for existing dataset", err, log.Data{"dataset_id": datasetID})
 		handleErrorType(datasetDocType, err, w)
 		return
 	}

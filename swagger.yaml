@@ -261,8 +261,6 @@ paths:
           description: "Unauthorised to delete the dataset"
         403:
           description: "Forbidden to delete dataset, already published"
-        404:
-          description: "No dataset was found using the id provided"
         500:
           $ref: '#/responses/InternalError'
   /datasets/{id}/editions:

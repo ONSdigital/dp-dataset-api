@@ -1056,7 +1056,7 @@ func TestDeleteDataset_DatastoreError(t *testing.T) {
 	})
 }
 
-func TestDeleteDataset_NotFoundError(t *testing.T) {
+func TestDeleteDataset_NotFound(t *testing.T) {
 	Convey("When the dataset document cannot be found return status not found ", t, func() {
 		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", nil)
 		r.Header.Add("internal-token", "coffee")
@@ -1074,13 +1074,36 @@ func TestDeleteDataset_NotFoundError(t *testing.T) {
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		api.router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
+		So(w.Code, ShouldEqual, http.StatusNoContent)
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 	})
+}
 
+func TestDeleteDataset_GetDatasetError(t *testing.T) {
+	Convey("When the dataset document cannot be queried return status 500 ", t, func() {
+		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", nil)
+		r.Header.Add("internal-token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return nil, errors.New("database is broken")
+			},
+			DeleteDatasetFunc: func(string) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
+	})
 }
 
 func TestDeleteDataset_InvalidToken(t *testing.T) {
