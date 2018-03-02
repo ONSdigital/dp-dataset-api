@@ -661,3 +661,18 @@ func (m *Mongo) Ping(ctx context.Context) (time.Time, error) {
 	}
 	return m.lastPingTime, m.lastPingResult
 }
+
+// DeleteDataset deletes an existing dataset document
+func (m *Mongo) DeleteDataset(id string) (err error) {
+	s := m.Session.Copy()
+	defer s.Close()
+
+	if err = s.DB(m.Database).C("datasets").RemoveId(id); err != nil {
+		if err == mgo.ErrNotFound {
+			return errs.ErrDatasetNotFound
+		}
+		return err
+	}
+
+	return nil
+}

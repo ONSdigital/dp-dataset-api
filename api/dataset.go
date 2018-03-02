@@ -871,6 +871,34 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	log.Debug("get metadata relevant to version", log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 }
 
+func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	datasetID := vars["id"]
+
+	currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
+	if err != nil {
+		log.ErrorC("failed to find dataset", err, log.Data{"dataset_id": datasetID})
+		handleErrorType(datasetDocType, err, w)
+		return
+	}
+
+	if currentDataset.Current != nil && currentDataset.Current.State == models.PublishedState {
+		log.ErrorC("cannot delete published dataset", err, log.Data{"dataset_id": datasetID})
+		handleErrorType(datasetDocType, err, w)
+		return
+	}
+
+	if err := api.dataStore.Backend.DeleteDataset(datasetID); err != nil {
+		log.ErrorC("failed to delete dataset", err, log.Data{"dataset_id": datasetID})
+		handleErrorType(datasetDocType, err, w)
+		return
+	}
+
+	setJSONContentType(w)
+	w.WriteHeader(http.StatusOK)
+	log.Debug("delete dataset", log.Data{"dataset_id": datasetID})
+}
+
 func mapResults(results []models.DatasetUpdate) []*models.Dataset {
 	items := []*models.Dataset{}
 	for _, item := range results {

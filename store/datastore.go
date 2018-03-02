@@ -50,4 +50,5 @@ type Storer interface {
 	UpsertEdition(datasetID, edition string, editionDoc *models.Edition) error
 	UpsertVersion(ID string, versionDoc *models.Version) error
 	Ping(ctx context.Context) (time.Time, error)
+	DeleteDataset(ID string) error
 }

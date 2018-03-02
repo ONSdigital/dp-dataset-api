@@ -222,6 +222,8 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 		return nil, errors.New("Failed to read message body")
 	}
 
+	fmt.Println(string(bytes))
+
 	var dataset Dataset
 
 	err = json.Unmarshal(bytes, &dataset)
