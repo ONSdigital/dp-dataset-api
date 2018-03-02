@@ -894,8 +894,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setJSONContentType(w)
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 	log.Debug("delete dataset", log.Data{"dataset_id": datasetID})
 }
 

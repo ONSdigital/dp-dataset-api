@@ -255,7 +255,7 @@ paths:
       parameters:
       - $ref: '#/parameters/id'
       responses:
-        200:
+        204:
           description: "The dataset was successfully deleted"
         401:
           description: "Unauthorised to delete the dataset"
