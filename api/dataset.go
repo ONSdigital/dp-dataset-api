@@ -887,8 +887,9 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if currentDataset.Current != nil && currentDataset.Current.State == models.PublishedState {
-		log.ErrorC("cannot delete published dataset", err, log.Data{"dataset_id": datasetID})
-		handleErrorType(datasetDocType, err, w)
+		err = fmt.Errorf("forbidden - a published dataset cannot be deleted")
+		log.ErrorC("unable to delete a published dataset", err, log.Data{"dataset_id": datasetID})
+		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 

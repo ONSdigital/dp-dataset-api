@@ -1028,6 +1028,30 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 	})
 }
 
+func TestDeleteDatasetOnPublishedReturnsForbidden(t *testing.T) {
+	t.Parallel()
+	Convey("when a dataset is published it cannot be deleted", t, func() {
+		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", nil)
+		r.Header.Add("internal-token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
+			},
+			DeleteDatasetFunc: func(string) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
+	})
+}
+
 func TestDeleteDataset_DatastoreError(t *testing.T) {
 	t.Parallel()
 
