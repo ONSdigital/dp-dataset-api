@@ -877,6 +877,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 	currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
 	if err == errs.ErrDatasetNotFound {
+		log.Debug("cannot delete dataset, it does not exist", log.Data{"dataset_id": datasetID})
 		w.WriteHeader(http.StatusNoContent) // idempotent
 		return
 	}

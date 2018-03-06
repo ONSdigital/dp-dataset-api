@@ -53,7 +53,7 @@ func GetAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDown
 
 func TestGetDatasetsReturnsOK(t *testing.T) {
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("A successful request to get dataset returns 200 OK response", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -174,7 +174,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 func TestGetEditionsReturnsOK(t *testing.T) {
 
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("A successful request to get edition returns 200 OK response", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -279,7 +279,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 func TestGetEditionReturnsOK(t *testing.T) {
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("A successful request to get edition returns 200 OK response", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -384,7 +384,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 func TestGetVersionsReturnsOK(t *testing.T) {
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("A successful request to get version returns 200 OK response", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -552,7 +552,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 func TestGetVersionReturnsOK(t *testing.T) {
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("A successful request to get version returns 200 OK response", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
 
 		w := httptest.NewRecorder()
@@ -736,7 +736,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 func TestPostDatasetsReturnsCreated(t *testing.T) {
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("A successful request to post dataset returns 200 OK response", t, func() {
 		var b string
 		b = datasetPayload
 		r := httptest.NewRequest("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
@@ -864,7 +864,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 
 func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("A successful request to put dataset returns 200 OK response", t, func() {
 		var b string
 		b = datasetPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
@@ -1006,7 +1006,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("A successful request to delete dataset returns 200 OK response", t, func() {
 		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", nil)
 		r.Header.Add("internal-token", "coffee")
 		So(err, ShouldBeNil)
