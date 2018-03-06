@@ -11,7 +11,7 @@ job "dp-dataset-api" {
       value     = "web"
     }
 
-    task "dp-dataset-api" {
+    task "dp-dataset-api-web" {
       driver = "exec"
 
       artifact {
@@ -70,7 +70,7 @@ job "dp-dataset-api" {
       value     = "publishing"
     }
 
-    task "dp-dataset-api" {
+    task "dp-dataset-api-publishing" {
       driver = "exec"
 
       artifact {
