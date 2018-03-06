@@ -57,7 +57,7 @@ job "dp-dataset-api" {
       }
 
       vault {
-        policies = ["dp-dataset-api"]
+        policies = ["dp-dataset-api-web"]
       }
     }
   }
@@ -116,7 +116,7 @@ job "dp-dataset-api" {
       }
 
       vault {
-        policies = ["dp-dataset-api"]
+        policies = ["dp-dataset-api-publishing"]
       }
     }
   }
