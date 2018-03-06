@@ -72,6 +72,7 @@ type DatasetLinks struct {
 	Editions      *LinkObject `bson:"editions,omitempty"        json:"editions,omitempty"`
 	LatestVersion *LinkObject `bson:"latest_version,omitempty"  json:"latest_version,omitempty"`
 	Self          *LinkObject `bson:"self,omitempty"            json:"self,omitempty"`
+	Taxonomy      *LinkObject `bson:"taxonomy,omitempty"        json:"taxonomy,omitempty"`
 }
 
 // LinkObject represents a generic structure for all links
