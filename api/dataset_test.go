@@ -60,7 +60,7 @@ func GetAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDown
 
 func TestGetDatasetsReturnsOK(t *testing.T) {
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("A successful request to get dataset returns 200 OK response", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -181,7 +181,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 func TestGetEditionsReturnsOK(t *testing.T) {
 
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("A successful request to get edition returns 200 OK response", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -286,7 +286,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 func TestGetEditionReturnsOK(t *testing.T) {
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("A successful request to get edition returns 200 OK response", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -391,7 +391,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 func TestGetVersionsReturnsOK(t *testing.T) {
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("A successful request to get version returns 200 OK response", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -559,7 +559,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 func TestGetVersionReturnsOK(t *testing.T) {
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("A successful request to get version returns 200 OK response", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
 
 		w := httptest.NewRecorder()
@@ -743,7 +743,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 func TestPostDatasetsReturnsCreated(t *testing.T) {
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("A successful request to post dataset returns 200 OK response", t, func() {
 		var b string
 		b = datasetPayload
 		r := httptest.NewRequest("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
@@ -871,7 +871,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 
 func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 	t.Parallel()
-	Convey("", t, func() {
+	Convey("A successful request to put dataset returns 200 OK response", t, func() {
 		var b string
 		b = datasetPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
@@ -1008,6 +1008,152 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
+	})
+}
+
+func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
+	t.Parallel()
+	Convey("A successful request to delete dataset returns 200 OK response", t, func() {
+		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", nil)
+		r.Header.Add("internal-token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
+			},
+			DeleteDatasetFunc: func(string) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusNoContent)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestDeleteDatasetOnPublishedReturnsForbidden(t *testing.T) {
+	t.Parallel()
+	Convey("when a dataset is published it cannot be deleted", t, func() {
+		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", nil)
+		r.Header.Add("internal-token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
+			},
+			DeleteDatasetFunc: func(string) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
+	})
+}
+
+func TestDeleteDataset_DatastoreError(t *testing.T) {
+	t.Parallel()
+
+	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
+		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", nil)
+		r.Header.Add("internal-token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
+			},
+			DeleteDatasetFunc: func(string) error {
+				return errInternal
+			},
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldResemble, "internal error\n")
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestDeleteDataset_NotFound(t *testing.T) {
+	Convey("When the dataset document cannot be found return status not found ", t, func() {
+		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", nil)
+		r.Header.Add("internal-token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			DeleteDatasetFunc: func(string) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusNoContent)
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
+	})
+}
+
+func TestDeleteDataset_GetDatasetError(t *testing.T) {
+	Convey("When the dataset document cannot be queried return status 500 ", t, func() {
+		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", nil)
+		r.Header.Add("internal-token", "coffee")
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return nil, errors.New("database is broken")
+			},
+			DeleteDatasetFunc: func(string) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
+	})
+}
+
+func TestDeleteDataset_InvalidToken(t *testing.T) {
+	Convey("When the request does not contain a valid internal token return status not found", t, func() {
+		var b string
+		b = "{\"edition\":\"2017\",\"state\":\"created\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
+		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldResemble, "Resource not found\n")
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 	})
 }
 

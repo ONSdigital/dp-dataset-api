@@ -909,6 +909,39 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	log.Debug("get metadata relevant to version", logData)
 }
 
+func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	datasetID := vars["id"]
+
+	currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
+	if err == errs.ErrDatasetNotFound {
+		log.Debug("cannot delete dataset, it does not exist", log.Data{"dataset_id": datasetID})
+		w.WriteHeader(http.StatusNoContent) // idempotent
+		return
+	}
+	if err != nil {
+		log.ErrorC("failed to run query for existing dataset", err, log.Data{"dataset_id": datasetID})
+		handleErrorType(datasetDocType, err, w)
+		return
+	}
+
+	if currentDataset.Current != nil && currentDataset.Current.State == models.PublishedState {
+		err = fmt.Errorf("forbidden - a published dataset cannot be deleted")
+		log.ErrorC("unable to delete a published dataset", err, log.Data{"dataset_id": datasetID})
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	if err := api.dataStore.Backend.DeleteDataset(datasetID); err != nil {
+		log.ErrorC("failed to delete dataset", err, log.Data{"dataset_id": datasetID})
+		handleErrorType(datasetDocType, err, w)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	log.Debug("delete dataset", log.Data{"dataset_id": datasetID})
+}
+
 func mapResults(results []models.DatasetUpdate) []*models.Dataset {
 	items := []*models.Dataset{}
 	for _, item := range results {

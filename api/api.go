@@ -97,6 +97,7 @@ func routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 
 		api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.addDataset)).Methods("POST")
 		api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.putDataset)).Methods("PUT")
+		api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.deleteDataset)).Methods("DELETE")
 		api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.privateAuth.Check(versionPublishChecker.Check(api.putVersion))).Methods("PUT")
 
 		instanceAPI := instance.Store{Host: api.host, Storer: api.dataStore.Backend}
