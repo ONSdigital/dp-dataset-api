@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/auth"
+	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -28,22 +29,23 @@ type DownloadsGenerator interface {
 
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
-	dataStore          store.DataStore
-	host               string
-	internalToken      string
-	privateAuth        *auth.Authenticator
-	router             *mux.Router
-	urlBuilder         *url.Builder
-	downloadGenerator  DownloadsGenerator
-	healthCheckTimeout time.Duration
+	dataStore            store.DataStore
+	host                 string
+	internalToken        string
+	EnablePrePublishView bool
+	privateAuth          *auth.Authenticator
+	router               *mux.Router
+	urlBuilder           *url.Builder
+	downloadGenerator    DownloadsGenerator
+	healthCheckTimeout   time.Duration
 }
 
 // CreateDatasetAPI manages all the routes configured to API
-func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadsGenerator DownloadsGenerator, healthCheckTimeout time.Duration) {
+func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadsGenerator DownloadsGenerator) {
 	router := mux.NewRouter()
-	routes(host, secretKey, router, dataStore, urlBuilder, downloadsGenerator, healthCheckTimeout)
+	routes(cfg, router, dataStore, urlBuilder, downloadsGenerator)
 
-	httpServer = server.New(bindAddr, router)
+	httpServer = server.New(cfg.BindAddr, router)
 	// Disable this here to allow main to manage graceful shutdown of the entire app.
 	httpServer.HandleOSSignals = false
 
@@ -56,54 +58,67 @@ func CreateDatasetAPI(host, bindAddr, secretKey string, dataStore store.DataStor
 	}()
 }
 
-func routes(host, secretKey string, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, healthCheckTimeout time.Duration) *DatasetAPI {
+func routes(cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator) *DatasetAPI {
+
+	var authenticator *auth.Authenticator
+
+	if cfg.EnablePrivateEnpoints {
+		authenticator = &auth.Authenticator{SecretKey: cfg.SecretKey, HeaderName: "Internal-Token"}
+	}
+
 	api := DatasetAPI{
-		privateAuth:        &auth.Authenticator{SecretKey: secretKey, HeaderName: "internal-token"},
-		dataStore:          dataStore,
-		host:               host,
-		internalToken:      secretKey,
-		router:             router,
-		urlBuilder:         urlBuilder,
-		downloadGenerator:  downloadGenerator,
-		healthCheckTimeout: healthCheckTimeout,
+		privateAuth:          authenticator,
+		dataStore:            dataStore,
+		host:                 cfg.DatasetAPIURL,
+		internalToken:        cfg.SecretKey,
+		EnablePrePublishView: cfg.EnablePrivateEnpoints,
+		router:               router,
+		urlBuilder:           urlBuilder,
+		downloadGenerator:    downloadGenerator,
+		healthCheckTimeout:   cfg.HealthCheckTimeout,
 	}
 
 	api.router.HandleFunc("/healthcheck", api.healthCheck).Methods("GET")
 
 	versionPublishChecker := PublishCheck{Datastore: dataStore.Backend}
 	api.router.HandleFunc("/datasets", api.getDatasets).Methods("GET")
-	api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.addDataset)).Methods("POST")
 	api.router.HandleFunc("/datasets/{id}", api.getDataset).Methods("GET")
-	api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.putDataset)).Methods("PUT")
-	api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.deleteDataset)).Methods("DELETE")
 	api.router.HandleFunc("/datasets/{id}/editions", api.getEditions).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}", api.getEdition).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions", api.getVersions).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.getVersion).Methods("GET")
-	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.privateAuth.Check(versionPublishChecker.Check(api.putVersion))).Methods("PUT")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}/metadata", api.getMetadata).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}/dimensions", api.getDimensions).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", api.getDimensionOptions).Methods("GET")
 
-	instanceAPI := instance.Store{Host: api.host, Storer: api.dataStore.Backend}
-	instancePublishChecker := instance.PublishCheck{Datastore: dataStore.Backend}
-	api.router.HandleFunc("/instances", api.privateAuth.Check(instanceAPI.GetList)).Methods("GET")
-	api.router.HandleFunc("/instances", api.privateAuth.Check(instanceAPI.Add)).Methods("POST")
-	api.router.HandleFunc("/instances/{id}", api.privateAuth.Check(instanceAPI.Get)).Methods("GET")
-	api.router.HandleFunc("/instances/{id}", api.privateAuth.Check(instancePublishChecker.Check(instanceAPI.Update))).Methods("PUT")
-	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}", api.privateAuth.Check(instancePublishChecker.Check(instanceAPI.UpdateDimension))).Methods("PUT")
-	api.router.HandleFunc("/instances/{id}/events", api.privateAuth.Check(instanceAPI.AddEvent)).Methods("POST")
-	api.router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}",
-		api.privateAuth.Check(instancePublishChecker.Check(instanceAPI.UpdateObservations))).Methods("PUT")
-	api.router.HandleFunc("/instances/{id}/import_tasks", api.privateAuth.Check(instancePublishChecker.Check(instanceAPI.UpdateImportTask))).Methods("PUT")
+	if cfg.EnablePrivateEnpoints {
 
-	dimension := dimension.Store{Storer: api.dataStore.Backend}
-	api.router.HandleFunc("/instances/{id}/dimensions", api.privateAuth.Check(dimension.GetNodes)).Methods("GET")
-	api.router.HandleFunc("/instances/{id}/dimensions", api.privateAuth.Check(instancePublishChecker.Check(dimension.Add))).Methods("POST")
-	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options", api.privateAuth.Check(dimension.GetUnique)).Methods("GET")
-	api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}/node_id/{node_id}",
-		api.privateAuth.Check(instancePublishChecker.Check(dimension.AddNodeID))).Methods("PUT")
+		log.Debug("private endpoints have been enabled", log.Data{})
 
+		api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.addDataset)).Methods("POST")
+		api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.putDataset)).Methods("PUT")
+		api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.deleteDataset)).Methods("DELETE")
+		api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.privateAuth.Check(versionPublishChecker.Check(api.putVersion))).Methods("PUT")
+
+		instanceAPI := instance.Store{Host: api.host, Storer: api.dataStore.Backend}
+		instancePublishChecker := instance.PublishCheck{Datastore: dataStore.Backend}
+		api.router.HandleFunc("/instances", api.privateAuth.Check(instanceAPI.GetList)).Methods("GET")
+		api.router.HandleFunc("/instances", api.privateAuth.Check(instanceAPI.Add)).Methods("POST")
+		api.router.HandleFunc("/instances/{id}", api.privateAuth.Check(instanceAPI.Get)).Methods("GET")
+		api.router.HandleFunc("/instances/{id}", api.privateAuth.Check(instancePublishChecker.Check(instanceAPI.Update))).Methods("PUT")
+		api.router.HandleFunc("/instances/{id}/dimensions/{dimension}", api.privateAuth.Check(instancePublishChecker.Check(instanceAPI.UpdateDimension))).Methods("PUT")
+		api.router.HandleFunc("/instances/{id}/events", api.privateAuth.Check(instanceAPI.AddEvent)).Methods("POST")
+		api.router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}",
+			api.privateAuth.Check(instancePublishChecker.Check(instanceAPI.UpdateObservations))).Methods("PUT")
+		api.router.HandleFunc("/instances/{id}/import_tasks", api.privateAuth.Check(instancePublishChecker.Check(instanceAPI.UpdateImportTask))).Methods("PUT")
+
+		dimension := dimension.Store{Storer: api.dataStore.Backend}
+		api.router.HandleFunc("/instances/{id}/dimensions", api.privateAuth.Check(dimension.GetNodes)).Methods("GET")
+		api.router.HandleFunc("/instances/{id}/dimensions", api.privateAuth.Check(instancePublishChecker.Check(dimension.Add))).Methods("POST")
+		api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options", api.privateAuth.Check(dimension.GetUnique)).Methods("GET")
+		api.router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}/node_id/{node_id}",
+			api.privateAuth.Check(instancePublishChecker.Check(dimension.AddNodeID))).Methods("PUT")
+	}
 	return &api
 }
 

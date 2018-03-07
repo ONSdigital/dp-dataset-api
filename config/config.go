@@ -18,6 +18,7 @@ type Configuration struct {
 	SecretKey               string        `envconfig:"SECRET_KEY"                 json:"-"`
 	GracefulShutdownTimeout time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 	HealthCheckTimeout      time.Duration `envconfig:"HEALTHCHECK_TIMEOUT"`
+	EnablePrivateEnpoints   bool          `envconfig:"ENABLE_PRIVATE_ENDPOINTS"`
 	MongoConfig             MongoConfig
 }
 
@@ -46,6 +47,7 @@ func Get() (*Configuration, error) {
 		SecretKey:               "FD0108EA-825D-411C-9B1D-41EF7727F465",
 		GracefulShutdownTimeout: 5 * time.Second,
 		HealthCheckTimeout:      2 * time.Second,
+		EnablePrivateEnpoints:   false,
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",
