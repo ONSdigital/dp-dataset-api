@@ -143,6 +143,7 @@ type Version struct {
 	Temporal      *[]TemporalFrequency `bson:"temporal,omitempty"       json:"temporal,omitempty"`
 	LastUpdated   time.Time            `bson:"last_updated,omitempty"   json:"-"`
 	Version       int                  `bson:"version,omitempty"        json:"version,omitempty"`
+	UserNotes     *[]UserNote          `bson:"user_notes,omitempty"     json:"user_notes,omitempty"`
 }
 
 // Alert represents an object containing information on an alert
@@ -179,6 +180,11 @@ type TemporalFrequency struct {
 	EndDate   string `bson:"end_date,omitempty"    json:"end_date,omitempty"`
 	Frequency string `bson:"frequency,omitempty"   json:"frequency,omitempty"`
 	StartDate string `bson:"start_date,omitempty"  json:"start_date,omitempty"`
+}
+
+type UserNote struct {
+	Title string `bson:"title,omitempty"    json:"title,omitempty"`
+	Note  string `bson:"note,omitempty"     json:"note,omitempty"`
 }
 
 // VersionLinks represents a list of specific links related to the version resource for an edition of a dataset

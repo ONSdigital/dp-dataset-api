@@ -1492,6 +1492,11 @@ definitions:
         example: 1
         readOnly: true
         type: integer
+      user_notes:
+        description: "A list of user notes relating to the dataset"
+        type: array
+        items:
+          $ref: '#/definitions/UserNote'
   DownloadFile:
     description: "Object containing information of a downloadable file"
     type: object
@@ -1857,4 +1862,14 @@ definitions:
         type: string
       href:
         description: "A URL to the version this resource relates to"
+        type: string
+  UserNote:
+    description: "A note relating to the dataset. This will appear in downloaded datasets"
+    type: object
+    properties:
+      title:
+        description: "The title of the note"
+        type: string
+      note:
+        description: "The content of the note"
         type: string
