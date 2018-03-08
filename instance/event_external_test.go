@@ -10,6 +10,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	. "github.com/smartystreets/goconvey/convey"
+
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 )
 
 func TestAddEventReturnsOk(t *testing.T) {
@@ -68,7 +70,7 @@ func TestAddEventToInstanceReturnsInternalError(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{
 			AddEventToInstanceFunc: func(id string, event *models.Event) error {
-				return internalError
+				return errs.ErrInternalServer
 			},
 		}
 

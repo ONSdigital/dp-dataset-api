@@ -73,7 +73,7 @@ func main() {
 
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
-	api.CreateDatasetAPI(cfg.DatasetAPIURL, cfg.BindAddr, cfg.SecretKey, store, urlBuilder, apiErrors, downloadGenerator, cfg.HealthCheckTimeout)
+	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {

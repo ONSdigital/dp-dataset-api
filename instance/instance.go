@@ -65,6 +65,13 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Early return if instance state is invalid
+	if err = models.CheckState("instance", instance.State); err != nil {
+		log.ErrorC("instance has an invalid state", err, log.Data{"state": instance.State})
+		internalError(w, err)
+		return
+	}
+
 	bytes, err := json.Marshal(instance)
 	if err != nil {
 		internalError(w, err)
@@ -72,7 +79,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeBody(w, bytes)
-	log.Debug("get all instances", nil)
+	log.Debug("get instance", log.Data{"instance_id": id})
 }
 
 //Add an instance
@@ -121,6 +128,13 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.ErrorC("Failed to GET instance when attempting to update a dimension of that instance.", err, log.Data{"instance": id})
 		handleErrorType(err, w)
+		return
+	}
+
+	// Early return if instance state is invalid
+	if err = models.CheckState("instance", instance.State); err != nil {
+		log.ErrorC("current instance has an invalid state", err, log.Data{"state": instance.State})
+		handleErrorType(errs.ErrInternalServer, w)
 		return
 	}
 
@@ -202,6 +216,13 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
+		return
+	}
+
+	// Early return if instance state is invalid
+	if err = models.CheckState("instance", currentInstance.State); err != nil {
+		log.ErrorC("current instance has an invalid state", err, log.Data{"state": currentInstance.State})
+		handleErrorType(errs.ErrInternalServer, w)
 		return
 	}
 
