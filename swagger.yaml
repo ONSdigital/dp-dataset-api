@@ -146,6 +146,11 @@ securityDefinitions:
     description: "API key used to allow only internal services to update the state of an import job"
     in: header
     type: apiKey
+  DownloadServiceAPIKey:
+    name: x-download-service-token
+    description: "API key used to allow the download service to access public and private links to a download"
+    in: header
+    type: apiKey
 paths:
   /search/datasets:
     get:
@@ -1502,6 +1507,12 @@ definitions:
       size:
         type: string
         description: "The size of the file in bytes"
+      public:
+        type: string
+        description: "The URL to a public-accessible download"
+      private:
+        type: string
+        description: "The URL to a non public-accessible download"
   Alert:
     # TODO Update description, so it is useful to an API customer
     description: "A single alert, &#x2603;"
