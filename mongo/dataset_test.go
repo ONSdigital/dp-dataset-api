@@ -285,6 +285,6 @@ func TestVersionUpdateQuery(t *testing.T) {
 
 		selector := createVersionUpdateQuery(version)
 		So(selector, ShouldNotBeNil)
-		So(selector["$set"], ShouldResemble, expectedUpdate)
+		So(selector, ShouldResemble, expectedUpdate)
 	})
 }

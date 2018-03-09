@@ -100,7 +100,7 @@ func (m *Mongo) GetEditions(id, state string) (*models.EditionResults, error) {
 	defer func() {
 		err := iter.Close()
 		if err != nil {
-			log.ErrorC("error closing iterator", err, log.Data{"selector": selector})
+			log.ErrorC("error closing edition iterator", err, log.Data{"selector": selector})
 		}
 	}()
 
@@ -207,7 +207,7 @@ func (m *Mongo) GetVersions(id, editionID, state string) (*models.VersionResults
 	defer func() {
 		err := iter.Close()
 		if err != nil {
-			log.ErrorC("error closing iterator", err, log.Data{"selector": selector})
+			log.ErrorC("error closing instance iterator ", err, log.Data{"selector": selector})
 		}
 	}()
 
@@ -473,7 +473,7 @@ func (m *Mongo) UpdateVersion(id string, version *models.Version) (err error) {
 
 	updates := createVersionUpdateQuery(version)
 
-	err = s.DB(m.Database).C("instances").Update(bson.M{"id": id}, updates)
+	err = s.DB(m.Database).C("instances").Update(bson.M{"id": id}, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}})
 	return
 }
 
@@ -520,7 +520,7 @@ func createVersionUpdateQuery(version *models.Version) bson.M {
 		setUpdates["user_notes"] = version.UserNotes
 	}
 
-	return bson.M{"$set": setUpdates, "$setOnInsert": bson.M{"last_updated": time.Now()}}
+	return setUpdates
 }
 
 // UpsertDataset adds or overides an existing dataset document
