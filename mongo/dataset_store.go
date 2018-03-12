@@ -516,8 +516,8 @@ func createVersionUpdateQuery(version *models.Version) bson.M {
 		setUpdates["downloads"] = version.Downloads
 	}
 
-	if version.UserNotes != nil {
-		setUpdates["user_notes"] = version.UserNotes
+	if version.UsageNotes != nil {
+		setUpdates["usage_notes"] = version.UsageNotes
 	}
 
 	return setUpdates
