@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"testing"
 
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
@@ -156,6 +157,13 @@ func TestValidateVersion(t *testing.T) {
 	})
 
 	Convey("Return with errors", t, func() {
+		Convey("when the version state is empty", func() {
+
+			err := ValidateVersion(&Version{State: ""})
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldResemble, errors.New("Missing state from version").Error())
+		})
+
 		Convey("when the version state is set to an invalid value", func() {
 
 			err := ValidateVersion(&Version{State: SubmittedState})
@@ -235,4 +243,46 @@ func TestCreateDownloadList(t *testing.T) {
 		So(dl, ShouldResemble, expected)
 	})
 
+}
+
+func TestCheckState(t *testing.T) {
+	Convey("Successfully return without any errors", t, func() {
+		Convey("when the version has state of edition-confirmed", func() {
+
+			err := CheckState("version", EditionConfirmedState)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("when the version has state of associated", func() {
+
+			err := CheckState("version", AssociatedState)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("when the version has state of published", func() {
+
+			err := CheckState("version", PublishedState)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("when a resource has state of created", func() {
+
+			err := CheckState("resource", CreatedState)
+			So(err, ShouldBeNil)
+		})
+	})
+
+	Convey("Return with errors", t, func() {
+		Convey("when the version has state of gobbly-gook", func() {
+
+			err := CheckState("version", "gobbly-gook")
+			So(err.Error(), ShouldEqual, errs.ErrResourceState.Error())
+		})
+
+		Convey("when the version has a missing state", func() {
+
+			err := CheckState("version", "")
+			So(err.Error(), ShouldEqual, errs.ErrResourceState.Error())
+		})
+	})
 }

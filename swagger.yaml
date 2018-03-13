@@ -247,6 +247,22 @@ paths:
           description: "No dataset was found using the id provided"
         500:
           $ref: '#/responses/InternalError'
+    delete:
+      tags:
+      - "Private user"
+      summary: "Delete a dataset"
+      description: "Delete an existing dataset"
+      parameters:
+      - $ref: '#/parameters/id'
+      responses:
+        204:
+          description: "The dataset was successfully deleted"
+        401:
+          description: "Unauthorised to delete the dataset"
+        403:
+          description: "Forbidden to delete dataset, already published"
+        500:
+          $ref: '#/responses/InternalError'
   /datasets/{id}/editions:
     get:
       tags:
@@ -951,12 +967,12 @@ definitions:
         description: "The uri to the location of this resource on the web"
   DatasetLinks:
     description: "A list of links related to this resource"
-    readOnly: true
     type: object
     properties:
       access_rights:
         $ref: '#/definitions/AccessRightsLink'
       editions:
+        readOnly: true
         type: object
         properties:
           href:
@@ -1242,6 +1258,9 @@ definitions:
       description:
         type: string
         description: "The dimension description"
+      label:
+        type: string
+        description: "A human readable label for dimension"
   Instances:
     type: object
     properties:

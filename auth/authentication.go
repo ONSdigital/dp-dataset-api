@@ -1,9 +1,9 @@
 package auth
 
 import (
-	"errors"
 	"net/http"
 
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/go-ns/log"
 )
 
@@ -18,13 +18,13 @@ func (a *Authenticator) Check(handle func(http.ResponseWriter, *http.Request)) h
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		key := r.Header.Get(a.HeaderName)
 		if key == "" {
-			http.Error(w, "No authentication header provided", http.StatusUnauthorized)
-			log.Error(errors.New("client missing token"), log.Data{"header": a.HeaderName})
+			http.Error(w, "Resource not found", http.StatusNotFound)
+			log.Error(errs.ErrNoAuthHeader, log.Data{"header": a.HeaderName})
 			return
 		}
 		if key != a.SecretKey {
-			http.Error(w, "Unauthorised access to API", http.StatusUnauthorized)
-			log.Error(errors.New("unauthorised access to API"), log.Data{"header": a.HeaderName})
+			http.Error(w, "Resource not found", http.StatusNotFound)
+			log.Error(errs.ErrUnauthorised, log.Data{"header": a.HeaderName})
 			return
 		}
 		// The request has been authenticated, now run the clients request
