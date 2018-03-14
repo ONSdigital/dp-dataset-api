@@ -16,7 +16,8 @@ func TestMiddleWareAuthenticationReturnsForbidden(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		auth.Check(mockHTTPHandler).ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldEqual, "Resource not found\n")
 	})
 }
 
@@ -29,7 +30,8 @@ func TestMiddleWareAuthenticationReturnsUnauthorised(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		auth.Check(mockHTTPHandler).ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldEqual, "Resource not found\n")
 	})
 }
 

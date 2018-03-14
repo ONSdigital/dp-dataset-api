@@ -65,6 +65,13 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Early return if instance state is invalid
+	if err = models.CheckState("instance", instance.State); err != nil {
+		log.ErrorC("instance has an invalid state", err, log.Data{"state": instance.State})
+		internalError(w, err)
+		return
+	}
+
 	bytes, err := json.Marshal(instance)
 	if err != nil {
 		internalError(w, err)
@@ -72,7 +79,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeBody(w, bytes)
-	log.Debug("get all instances", nil)
+	log.Debug("get instance", log.Data{"instance_id": id})
 }
 
 //Add an instance
@@ -121,6 +128,13 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.ErrorC("Failed to GET instance when attempting to update a dimension of that instance.", err, log.Data{"instance": id})
 		handleErrorType(err, w)
+		return
+	}
+
+	// Early return if instance state is invalid
+	if err = models.CheckState("instance", instance.State); err != nil {
+		log.ErrorC("current instance has an invalid state", err, log.Data{"state": instance.State})
+		handleErrorType(errs.ErrInternalServer, w)
 		return
 	}
 
@@ -202,6 +216,13 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error(err, nil)
 		handleErrorType(err, w)
+		return
+	}
+
+	// Early return if instance state is invalid
+	if err = models.CheckState("instance", currentInstance.State); err != nil {
+		log.ErrorC("current instance has an invalid state", err, log.Data{"state": currentInstance.State})
+		handleErrorType(errs.ErrInternalServer, w)
 		return
 	}
 
@@ -327,26 +348,26 @@ func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.Editi
 		editionID := uuid.NewV4().String()
 
 		editionDoc = &models.EditionUpdate{
-			ID:      editionID,
-			Next:    &models.Edition{
+			ID: editionID,
+			Next: &models.Edition{
 				Edition: edition,
-				State: models.EditionConfirmedState,
+				State:   models.EditionConfirmedState,
 				Links: &models.EditionUpdateLinks{
-				Dataset: &models.LinkObject{
-					ID:   datasetID,
-					HRef: fmt.Sprintf("%s/datasets/%s", s.Host, datasetID),
+					Dataset: &models.LinkObject{
+						ID:   datasetID,
+						HRef: fmt.Sprintf("%s/datasets/%s", s.Host, datasetID),
+					},
+					Self: &models.LinkObject{
+						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", s.Host, datasetID, edition),
+					},
+					Versions: &models.LinkObject{
+						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
+					},
+					LatestVersion: &models.LinkObject{
+						ID:   "1",
+						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/1", s.Host, datasetID, edition),
+					},
 				},
-				Self: &models.LinkObject{
-					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", s.Host, datasetID, edition),
-				},
-				Versions: &models.LinkObject{
-					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
-				},
-				LatestVersion: &models.LinkObject{
-					ID:   "1",
-					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/1", s.Host, datasetID, edition),
-				},
-			},
 			},
 		}
 	} else {
@@ -460,7 +481,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 				validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value for import observations: %v", tasks.ImportObservations.State))
 			} else if err := s.UpdateImportObservationsTaskState(id, tasks.ImportObservations.State); err != nil {
 				log.Error(err, nil)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, "Failed to update import observations task state", http.StatusInternalServerError)
 				return
 			}
 		}
@@ -473,7 +494,21 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
 				} else if err := s.UpdateBuildHierarchyTaskState(id, task.DimensionName, task.State); err != nil {
 					log.Error(err, nil)
-					http.Error(w, err.Error(), http.StatusInternalServerError)
+					http.Error(w, "Failed to update build hierarchy task state", http.StatusInternalServerError)
+					return
+				}
+			}
+		}
+	}
+
+	if tasks.BuildSearchIndexTasks != nil {
+		for _, task := range tasks.BuildSearchIndexTasks {
+			if task.State != "" {
+				if task.State != models.CompletedState {
+					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
+				} else if err := s.UpdateBuildSearchTaskState(id, task.DimensionName, task.State); err != nil {
+					log.Error(err, nil)
+					http.Error(w, "Failed to update build search index task state", http.StatusInternalServerError)
 					return
 				}
 			}

@@ -228,7 +228,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			URI:              "http://ons.gov.uk/dataset/123/landing-page",
 		}
 
-		selector := createDatasetUpdateQuery("123", dataset)
+		selector := createDatasetUpdateQuery("123", dataset, models.CreatedState)
 		So(selector, ShouldNotBeNil)
 		So(selector, ShouldResemble, expectedUpdate)
 	})
@@ -241,7 +241,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 		expectedUpdate := bson.M{
 			"next.national_statistic": &nationalStatistic,
 		}
-		selector := createDatasetUpdateQuery("123", dataset)
+		selector := createDatasetUpdateQuery("123", dataset, models.CreatedState)
 		So(selector, ShouldNotBeNil)
 		So(selector, ShouldResemble, expectedUpdate)
 	})
@@ -249,7 +249,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 	Convey("When national statistic is not set", t, func() {
 		dataset := &models.Dataset{}
 
-		selector := createDatasetUpdateQuery("123", dataset)
+		selector := createDatasetUpdateQuery("123", dataset, models.CreatedState)
 		So(selector, ShouldNotBeNil)
 		So(selector, ShouldResemble, bson.M{})
 	})

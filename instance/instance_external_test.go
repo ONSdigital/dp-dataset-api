@@ -1,25 +1,23 @@
 package instance_test
 
 import (
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
+
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 )
 
 const secretKey = "coffee"
 const host = "http://localhost:8080"
-
-var internalError = errors.New("internal error")
 
 func createRequestWithToken(method, url string, body io.Reader) *http.Request {
 	r := httptest.NewRequest(method, url, body)
@@ -98,7 +96,7 @@ func TestGetInstancesReturnsError(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{
 			GetInstancesFunc: func([]string) (*models.InstanceResults, error) {
-				return nil, internalError
+				return nil, errs.ErrInternalServer
 			},
 		}
 
@@ -131,7 +129,7 @@ func TestGetInstanceReturnsOK(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
-				return &models.Instance{}, nil
+				return &models.Instance{State: models.CreatedState}, nil
 			},
 		}
 
@@ -145,13 +143,13 @@ func TestGetInstanceReturnsOK(t *testing.T) {
 
 func TestGetInstanceReturnsInternalError(t *testing.T) {
 	t.Parallel()
-	Convey("Get instance returns an internal error", t, func() {
+	Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
 		r := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
-				return nil, internalError
+				return nil, errs.ErrInternalServer
 			},
 		}
 
@@ -159,6 +157,26 @@ func TestGetInstanceReturnsInternalError(t *testing.T) {
 		instance.Get(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldResemble, "internal error\n")
+
+		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+	})
+
+	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
+		r := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(ID string) (*models.Instance, error) {
+				return &models.Instance{State: "gobbly gook"}, nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance.Get(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldResemble, "Incorrect resource state\n")
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 	})
 }
@@ -229,7 +247,7 @@ func TestAddInstancesReturnsInternalError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			AddInstanceFunc: func(*models.Instance) (*models.Instance, error) {
-				return nil, internalError
+				return nil, errs.ErrInternalServer
 			},
 		}
 
@@ -250,7 +268,7 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{
 			GetInstanceFunc: func(id string) (*models.Instance, error) {
-				return &models.Instance{}, nil
+				return &models.Instance{State: models.CreatedState}, nil
 			},
 			UpdateInstanceFunc: func(id string, i *models.Instance) error {
 				return nil
@@ -315,6 +333,49 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetNextVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestUpdateInstanceReturnsInternalError(t *testing.T) {
+	t.Parallel()
+	Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
+		body := strings.NewReader(`{"state":"created"}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(id string) (*models.Instance, error) {
+				return nil, errs.ErrInternalServer
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance.Update(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldResemble, "internal error\n")
+
+		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+	})
+
+	Convey("Given the current instance state is invalid, then response returns an internal error", t, func() {
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", strings.NewReader(`{"state":"completed", "edition": "2017"}`))
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(id string) (*models.Instance, error) {
+				return &models.Instance{State: "gobbly gook"}, nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance.Update(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldResemble, "internal error\n")
+
+		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 	})
 }
 
@@ -587,7 +648,7 @@ func TestStore_UpdateImportTask_ReturnsInternalError(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{
 			UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
-				return internalError
+				return errs.ErrInternalServer
 			},
 		}
 
@@ -599,7 +660,6 @@ func TestStore_UpdateImportTask_ReturnsInternalError(t *testing.T) {
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
 	})
 }
-
 
 func TestUpdateInstanceReturnsErrorWhenStateIsPublished(t *testing.T) {
 	t.Parallel()
@@ -625,11 +685,57 @@ func TestUpdateInstanceReturnsErrorWhenStateIsPublished(t *testing.T) {
 	})
 }
 
+func TestUpdateDimensionReturnsInternalError(t *testing.T) {
+	t.Parallel()
+	Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
+		body := strings.NewReader(`{"label":"ages"}`)
+		r := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(id string) (*models.Instance, error) {
+				return nil, errs.ErrInternalServer
+			},
+			UpdateInstanceFunc: func(id string, i *models.Instance) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance.UpdateDimension(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+	})
+
+	Convey("Given the instance state is invalid, then response returns an internal error", t, func() {
+		body := strings.NewReader(`{"label":"ages"}`)
+		r := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(id string) (*models.Instance, error) {
+				return &models.Instance{State: "gobbly gook"}, nil
+			},
+			UpdateInstanceFunc: func(id string, i *models.Instance) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance.UpdateDimension(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+	})
+}
 
 func TestUpdateDimensionReturnsNotFound(t *testing.T) {
 	t.Parallel()
 	Convey("When update dimension return status not found", t, func() {
-		r := createRequestWithToken("PUT", "http://localhost:22000/instances/dimensions/age", nil)
+		r := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", nil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -681,7 +787,7 @@ func TestUpdateDimensionReturnsBadRequest(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{
 			GetInstanceFunc: func(id string) (*models.Instance, error) {
-				return &models.Instance{}, nil
+				return &models.Instance{State: models.CompletedState}, nil
 			},
 		}
 
@@ -750,5 +856,55 @@ func TestUpdateDimensionReturnsOk(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_InvalidState(t *testing.T) {
+
+	t.Parallel()
+	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
+		body := strings.NewReader(`{"build_search_indexes":[{"state":"notvalid"}]}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+	})
+}
+
+func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask(t *testing.T) {
+
+	t.Parallel()
+	Convey("update to an import task returns http 200 response if no errors occur", t, func() {
+		body := strings.NewReader(`{"build_search_indexes":[{"state":"completed"}]}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
 	})
 }

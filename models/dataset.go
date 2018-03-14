@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 )
@@ -77,6 +78,7 @@ type DatasetLinks struct {
 	Editions      *LinkObject `bson:"editions,omitempty"        json:"editions,omitempty"`
 	LatestVersion *LinkObject `bson:"latest_version,omitempty"  json:"latest_version,omitempty"`
 	Self          *LinkObject `bson:"self,omitempty"            json:"self,omitempty"`
+	Taxonomy      *LinkObject `bson:"taxonomy,omitempty"        json:"taxonomy,omitempty"`
 }
 
 // LinkObject represents a generic structure for all links
@@ -126,6 +128,7 @@ type EditionUpdateLinks struct {
 // Edition represents information related to a single edition for a dataset
 type Edition struct {
 	Edition     string              `bson:"edition,omitempty"     json:"edition,omitempty"`
+	ID          string              `bson:"id,omitempty"          json:"id,omitempty"`
 	Links       *EditionUpdateLinks `bson:"links,omitempty"       json:"links,omitempty"`
 	State       string              `bson:"state,omitempty"        json:"state,omitempty"`
 	LastUpdated time.Time           `bson:"last_updated,omitempty" json:"-"`
@@ -153,6 +156,7 @@ type Version struct {
 	Temporal      *[]TemporalFrequency `bson:"temporal,omitempty"       json:"temporal,omitempty"`
 	LastUpdated   time.Time            `bson:"last_updated,omitempty"   json:"-"`
 	Version       int                  `bson:"version,omitempty"        json:"version,omitempty"`
+	UsageNotes    *[]UsageNote         `bson:"usage_notes,omitempty"     json:"usage_notes,omitempty"`
 }
 
 // Alert represents an object containing information on an alert
@@ -191,6 +195,11 @@ type TemporalFrequency struct {
 	StartDate string `bson:"start_date,omitempty"  json:"start_date,omitempty"`
 }
 
+type UsageNote struct {
+	Title string `bson:"title,omitempty"    json:"title,omitempty"`
+	Note  string `bson:"note,omitempty"     json:"note,omitempty"`
+}
+
 // VersionLinks represents a list of specific links related to the version resource for an edition of a dataset
 type VersionLinks struct {
 	Dataset    *LinkObject `bson:"dataset,omitempty"     json:"dataset,omitempty"`
@@ -199,6 +208,31 @@ type VersionLinks struct {
 	Self       *LinkObject `bson:"self,omitempty"        json:"self,omitempty"`
 	Spatial    *LinkObject `bson:"spatial,omitempty"     json:"spatial,omitempty"`
 	Version    *LinkObject `bson:"version,omitempty"     json:"-"`
+}
+
+var validVersionStates = map[string]int{
+	EditionConfirmedState: 1,
+	AssociatedState:       1,
+	PublishedState:        1,
+}
+
+// CheckState checks state against a whitelist of valid states
+func CheckState(docType, state string) error {
+	var states map[string]int
+	switch docType {
+	case "version":
+		states = validVersionStates
+	default:
+		states = validStates
+	}
+
+	for key := range states {
+		if state == key {
+			return nil
+		}
+	}
+
+	return errs.ErrResourceState
 }
 
 // CreateDataset manages the creation of a dataset from a reader
@@ -274,6 +308,8 @@ func ValidateVersion(version *Version) error {
 	var hasAssociation bool
 
 	switch version.State {
+	case "":
+		return errs.ErrVersionMissingState
 	case EditionConfirmedState:
 	case AssociatedState:
 		hasAssociation = true

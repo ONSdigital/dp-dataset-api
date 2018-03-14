@@ -55,7 +55,12 @@ func (m *Mongo) GetDatasets() ([]models.DatasetUpdate, error) {
 	defer s.Close()
 
 	iter := s.DB(m.Database).C("datasets").Find(nil).Iter()
-	defer iter.Close()
+	defer func() {
+		err := iter.Close()
+		if err != nil {
+			log.ErrorC("error closing iterator", err, log.Data{})
+		}
+	}()
 
 	results := []models.DatasetUpdate{}
 	if err := iter.All(&results); err != nil {
@@ -92,7 +97,12 @@ func (m *Mongo) GetEditions(id, state string) (*models.EditionUpdateResults, err
 	selector := buildEditionsQuery(id, state)
 
 	iter := s.DB(m.Database).C(editionsCollection).Find(selector).Iter()
-	defer iter.Close()
+	defer func() {
+		err := iter.Close()
+		if err != nil {
+			log.ErrorC("error closing edition iterator", err, log.Data{"selector": selector})
+		}
+	}()
 
 	var results []*models.EditionUpdate
 	if err := iter.All(&results); err != nil {
@@ -194,7 +204,12 @@ func (m *Mongo) GetVersions(id, editionID, state string) (*models.VersionResults
 	selector := buildVersionsQuery(id, editionID, state)
 
 	iter := s.DB(m.Database).C("instances").Find(selector).Iter()
-	defer iter.Close()
+	defer func() {
+		err := iter.Close()
+		if err != nil {
+			log.ErrorC("error closing instance iterator ", err, log.Data{"selector": selector})
+		}
+	}()
 
 	var results []models.Version
 	if err := iter.All(&results); err != nil {
@@ -282,11 +297,11 @@ func buildVersionQuery(id, editionID, state string, versionID int) bson.M {
 }
 
 // UpdateDataset updates an existing dataset document
-func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset) (err error) {
+func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset, currentState string) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	updates := createDatasetUpdateQuery(id, dataset)
+	updates := createDatasetUpdateQuery(id, dataset, currentState)
 	update := bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}}
 	if err = s.DB(m.Database).C("datasets").UpdateId(id, update); err != nil {
 		if err == mgo.ErrNotFound {
@@ -298,8 +313,8 @@ func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset) (err error) {
 	return nil
 }
 
-func createDatasetUpdateQuery(id string, dataset *models.Dataset) bson.M {
-	updates := make(bson.M, 0)
+func createDatasetUpdateQuery(id string, dataset *models.Dataset, currentState string) bson.M {
+	updates := make(bson.M)
 
 	log.Debug("building update query for dataset resource", log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
 
@@ -385,6 +400,10 @@ func createDatasetUpdateQuery(id string, dataset *models.Dataset) bson.M {
 
 	if dataset.State != "" {
 		updates["next.state"] = dataset.State
+	} else {
+		if currentState == models.PublishedState {
+			updates["next.state"] = models.CreatedState
+		}
 	}
 
 	if dataset.Theme != "" {
@@ -459,45 +478,49 @@ func (m *Mongo) UpdateVersion(id string, version *models.Version) (err error) {
 }
 
 func createVersionUpdateQuery(version *models.Version) bson.M {
-	updates := make(bson.M, 0)
+	setUpdates := make(bson.M)
 
 	if version.Alerts != nil {
-		updates["alerts"] = version.Alerts
+		setUpdates["alerts"] = version.Alerts
 	}
 
 	if version.CollectionID != "" {
-		updates["collection_id"] = version.CollectionID
+		setUpdates["collection_id"] = version.CollectionID
 	}
 
 	if version.LatestChanges != nil {
-		updates["latest_changes"] = version.LatestChanges
+		setUpdates["latest_changes"] = version.LatestChanges
 	}
 
 	if version.ReleaseDate != "" {
-		updates["release_date"] = version.ReleaseDate
+		setUpdates["release_date"] = version.ReleaseDate
 	}
 
 	if version.Links != nil {
 		if version.Links.Spatial != nil {
 			if version.Links.Spatial.HRef != "" {
-				updates["links.spatial.href"] = version.Links.Spatial.HRef
+				setUpdates["links.spatial.href"] = version.Links.Spatial.HRef
 			}
 		}
 	}
 
 	if version.State != "" {
-		updates["state"] = version.State
+		setUpdates["state"] = version.State
 	}
 
 	if version.Temporal != nil {
-		updates["temporal"] = version.Temporal
+		setUpdates["temporal"] = version.Temporal
 	}
 
 	if version.Downloads != nil {
-		updates["downloads"] = version.Downloads
+		setUpdates["downloads"] = version.Downloads
 	}
 
-	return updates
+	if version.UsageNotes != nil {
+		setUpdates["usage_notes"] = version.UsageNotes
+	}
+
+	return setUpdates
 }
 
 // UpsertDataset adds or overides an existing dataset document
@@ -621,6 +644,7 @@ func (m *Mongo) CheckEditionExists(id, editionID, state string) error {
 	return nil
 }
 
+// Ping the mongodb database
 func (m *Mongo) Ping(ctx context.Context) (time.Time, error) {
 	if time.Since(m.lastPingTime) < 1*time.Second {
 		return m.lastPingTime, m.lastPingResult
@@ -656,4 +680,19 @@ func (m *Mongo) Ping(ctx context.Context) (time.Time, error) {
 		m.lastPingResult = ctx.Err()
 	}
 	return m.lastPingTime, m.lastPingResult
+}
+
+// DeleteDataset deletes an existing dataset document
+func (m *Mongo) DeleteDataset(id string) (err error) {
+	s := m.Session.Copy()
+	defer s.Close()
+
+	if err = s.DB(m.Database).C("datasets").RemoveId(id); err != nil {
+		if err == mgo.ErrNotFound {
+			return errs.ErrDatasetNotFound
+		}
+		return err
+	}
+
+	return nil
 }

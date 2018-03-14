@@ -35,7 +35,7 @@ type Storer interface {
 	GetUniqueDimensionValues(ID, dimension string) (*models.DimensionValues, error)
 	GetVersion(datasetID, editionID, version, state string) (*models.Version, error)
 	GetVersions(datasetID, editionID, state string) (*models.VersionResults, error)
-	UpdateDataset(ID string, dataset *models.Dataset) error
+	UpdateDataset(ID string, dataset *models.Dataset, currentState string) error
 	UpdateDatasetWithAssociation(ID, state string, version *models.Version) error
 	UpdateDimensionNodeID(dimension *models.DimensionOption) error
 	UpdateEdition(datasetID, edition string, latestVersion *models.Version) error
@@ -43,10 +43,12 @@ type Storer interface {
 	UpdateObservationInserted(ID string, observationInserted int64) error
 	UpdateImportObservationsTaskState(id, state string) error
 	UpdateBuildHierarchyTaskState(id, dimension, state string) error
+	UpdateBuildSearchTaskState(id, dimension, state string) error
 	UpdateVersion(ID string, version *models.Version) error
 	UpsertContact(ID string, update interface{}) error
 	UpsertDataset(ID string, datasetDoc *models.DatasetUpdate) error
 	UpsertEdition(datasetID, edition string, editionDoc *models.EditionUpdate) error
 	UpsertVersion(ID string, versionDoc *models.Version) error
 	Ping(ctx context.Context) (time.Time, error)
+	DeleteDataset(ID string) error
 }

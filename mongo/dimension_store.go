@@ -57,11 +57,8 @@ func (m *Mongo) AddDimensionToInstance(opt *models.CachedDimensionOption) error 
 	option.LastUpdated = time.Now().UTC()
 	_, err := s.DB(m.Database).C(dimensionOptions).Upsert(bson.M{"instance_id": option.InstanceID, "name": option.Name,
 		"option": option.Option}, &option)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // GetDimensions returns a list of all dimensions from a dataset
