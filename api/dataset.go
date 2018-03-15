@@ -534,7 +534,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err := api.downloadGenerator.Generate(datasetID, versionDoc.ID, edition, version); err != nil {
-			err = errors.Wrap(err, "error while attempting to generate full dataset version downloads")
+			err = errors.Wrap(err, "error while attempting to generate full dataset version downloads on version publish")
 			log.Error(err, log.Data{
 				"dataset_id":  datasetID,
 				"instance_id": versionDoc.ID,
@@ -557,7 +557,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		log.Info("generating full dataset version downloads", log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 
 		if err := api.downloadGenerator.Generate(datasetID, versionDoc.ID, edition, version); err != nil {
-			err = errors.Wrap(err, "error while attempting to generate full dataset version downloads")
+			err = errors.Wrap(err, "error while attempting to generate full dataset version downloads on version association")
 			log.Error(err, log.Data{
 				"dataset_id":  datasetID,
 				"instance_id": versionDoc.ID,
