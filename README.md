@@ -44,21 +44,22 @@ one of:
 
 ### Configuration
 
-| Environment variable       | Default                              | Description
-| -------------------------- | -------------------------------------| -----------
-| BIND_ADDR                  | :22000                               | The host and port to bind to
-| MONGODB_BIND_ADDR          | localhost:27017                      | The MongoDB bind address
-| MONGODB_DATABASE           | datasets                             | The MongoDB dataset database
-| MONGODB_COLLECTION         | datasets                             | MongoDB collection
-| SECRET_KEY                 | FD0108EA-825D-411C-9B1D-41EF7727F465 | A secret key used authentication
-| CODE_LIST_API_URL          | http://localhost:22400               | The host name for the CodeList API
-| DATASET_API_URL            | http://localhost:22000               | The host name for the Dataset API
-| GRACEFUL_SHUTDOWN_TIMEOUT  | 5s                                   | The graceful shutdown timeout in seconds
-| WEBSITE_URL                | http://localhost:20000               | The host name for the website
-| KAFKA_ADDR                 | "localhost:9092"                     | The list of kafka hosts
-| GENERATE_DOWNLOADS_TOPIC   | "filter-job-submitted"               | The topic to send generate full dataset version downloads to
-| HEALTHCHECK_TIMEOUT        | 2s                                   | The timeout that the healthcheck allows for checked subsystems
-| ENABLE_PRIVATE_ENDPOINTS   | false                                | Enable private endpoints for the API
+| Environment variable        | Default                                | Description
+| --------------------------- | ---------------------------------------| -----------
+| BIND_ADDR                   | :22000                                 | The host and port to bind to
+| MONGODB_BIND_ADDR           | localhost:27017                        | The MongoDB bind address
+| MONGODB_DATABASE            | datasets                               | The MongoDB dataset database
+| MONGODB_COLLECTION          | datasets                               | MongoDB collection
+| SECRET_KEY                  | FD0108EA-825D-411C-9B1D-41EF7727F465   | A secret key used authentication
+| CODE_LIST_API_URL           | http://localhost:22400                 | The host name for the CodeList API
+| DATASET_API_URL             | http://localhost:22000                 | The host name for the Dataset API
+| GRACEFUL_SHUTDOWN_TIMEOUT   | 5s                                     | The graceful shutdown timeout in seconds
+| WEBSITE_URL                 | http://localhost:20000                 | The host name for the website
+| KAFKA_ADDR                  | "localhost:9092"                       | The list of kafka hosts
+| GENERATE_DOWNLOADS_TOPIC    | "filter-job-submitted"                 | The topic to send generate full dataset version downloads to
+| HEALTHCHECK_TIMEOUT         | 2s                                     | The timeout that the healthcheck allows for checked subsystems
+| ENABLE_PRIVATE_ENDPOINTS    | false                                  | Enable private endpoints for the API
+| DOWNLOAD_SERVICE_SECRET_KEY | "QB0108EZ-825D-412C-9B1D-41EF7747F462" | A key specific for the download service to access public/private links
 
 ### Contributing
 

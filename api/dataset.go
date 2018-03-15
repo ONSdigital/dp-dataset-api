@@ -20,6 +20,7 @@ const (
 	datasetDocType         = "dataset"
 	editionDocType         = "edition"
 	versionDocType         = "version"
+	downloadServiceToken   = "X-Download-Service-Token"
 	dimensionDocType       = "dimension"
 	dimensionOptionDocType = "dimension-option"
 )
@@ -246,6 +247,21 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 			hasInvalidState = true
 			log.ErrorC("unpublished version has an invalid state", err, log.Data{"state": item.State})
 		}
+
+		// Only the download service should not have access to the public/private download
+		// fields
+		if r.Header.Get(downloadServiceToken) != api.downloadServiceToken {
+			if item.Downloads != nil {
+				if item.Downloads.CSV != nil {
+					item.Downloads.CSV.Private = ""
+					item.Downloads.CSV.Public = ""
+				}
+				if item.Downloads.XLS != nil {
+					item.Downloads.XLS.Private = ""
+					item.Downloads.XLS.Public = ""
+				}
+			}
+		}
 	}
 
 	if hasInvalidState {
@@ -311,6 +327,21 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 		log.ErrorC("unpublished version has an invalid state", err, log.Data{"state": results.State})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	// Only the download service should not have access to the public/private download
+	// fields
+	if r.Header.Get(downloadServiceToken) != api.downloadServiceToken {
+		if results.Downloads != nil {
+			if results.Downloads.CSV != nil {
+				results.Downloads.CSV.Private = ""
+				results.Downloads.CSV.Public = ""
+			}
+			if results.Downloads.XLS != nil {
+				results.Downloads.XLS.Private = ""
+				results.Downloads.XLS.Public = ""
+			}
+		}
 	}
 
 	bytes, err := json.Marshal(results)
