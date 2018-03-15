@@ -1412,7 +1412,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
-		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 	})
 }
 

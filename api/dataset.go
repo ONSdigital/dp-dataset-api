@@ -532,6 +532,19 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 			handleErrorType(versionDocType, err, w)
 			return
 		}
+
+		if err := api.downloadGenerator.Generate(datasetID, versionDoc.ID, edition, version); err != nil {
+			err = errors.Wrap(err, "error while attempting to generate full dataset version downloads")
+			log.Error(err, log.Data{
+				"dataset_id":  datasetID,
+				"instance_id": versionDoc.ID,
+				"edition":     edition,
+				"version":     version,
+				"state":       versionDoc.State,
+			})
+			// TODO - TECH DEBT - need to add an error event for this.
+			handleErrorType(versionDocType, err, w)
+		}
 	}
 
 	if versionDoc.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
@@ -550,6 +563,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 				"instance_id": versionDoc.ID,
 				"edition":     edition,
 				"version":     version,
+				"state":       versionDoc.State,
 			})
 			// TODO - TECH DEBT - need to add an error event for this.
 			handleErrorType(versionDocType, err, w)
