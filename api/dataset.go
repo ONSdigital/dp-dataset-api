@@ -1113,7 +1113,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 						if err := r.Body.Close(); err != nil {
 							log.ErrorC("could not close response body", err, nil)
 						}
-						r.Body = ioutil.NopCloser(ioutil.NopCloser(bytes.NewBuffer(b)))
+						r.Body = ioutil.NopCloser(bytes.NewBuffer(b))
 						handle(w, r)
 						return
 					}
@@ -1137,7 +1137,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 						if err := r.Body.Close(); err != nil {
 							log.ErrorC("could not close response body", err, nil)
 						}
-						r.Body = ioutil.NopCloser(ioutil.NopCloser(bytes.NewBuffer(b)))
+						r.Body = ioutil.NopCloser(bytes.NewBuffer(b))
 						handle(w, r)
 						return
 					}
