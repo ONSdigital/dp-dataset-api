@@ -1082,7 +1082,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 					}
 				}()
 
-				versionDoc, err := models.CreateVersion(r.Body)
+				currentVersion, err := models.CreateVersion(r.Body)
 				if err != nil {
 					log.ErrorC("failed to model version resource based on request", err, log.Data{"dataset_id": id, "edition": edition, "version": version})
 					http.Error(w, err.Error(), http.StatusBadRequest)
@@ -1092,14 +1092,14 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 				// We can allow public download links to be modified by the exporters when a version is published.
 				// Note that a new version will be created which contain only the download information to prevent
 				// any forbidden fields from being set on the published version
-				if versionDoc.Downloads != nil {
-					if versionDoc.Downloads.CSV != nil && versionDoc.Downloads.CSV.Public != "" {
+				if currentVersion.Downloads != nil {
+					if currentVersion.Downloads.CSV != nil && currentVersion.Downloads.CSV.Public != "" {
 						newVersion := &models.Version{
 							Downloads: &models.DownloadList{
 								CSV: &models.DownloadObject{
-									Public: versionDoc.Downloads.CSV.Public,
-									Size:   versionDoc.Downloads.CSV.Size,
-									URL:    versionDoc.Downloads.CSV.URL,
+									Public: currentVersion.Downloads.CSV.Public,
+									Size:   currentVersion.Downloads.CSV.Size,
+									URL:    currentVersion.Downloads.CSV.URL,
 								},
 							},
 						}
@@ -1117,13 +1117,13 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 						handle(w, r)
 						return
 					}
-					if versionDoc.Downloads.XLS != nil && versionDoc.Downloads.XLS.URL != "" {
+					if currentVersion.Downloads.XLS != nil && currentVersion.Downloads.XLS.URL != "" {
 						newVersion := &models.Version{
 							Downloads: &models.DownloadList{
 								XLS: &models.DownloadObject{
-									Public: versionDoc.Downloads.CSV.Public,
-									Size:   versionDoc.Downloads.CSV.Size,
-									URL:    versionDoc.Downloads.CSV.URL,
+									Public: currentVersion.Downloads.CSV.Public,
+									Size:   currentVersion.Downloads.CSV.Size,
+									URL:    currentVersion.Downloads.CSV.URL,
 								},
 							},
 						}
