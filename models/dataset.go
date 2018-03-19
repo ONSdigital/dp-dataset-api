@@ -143,6 +143,7 @@ type Version struct {
 	Temporal      *[]TemporalFrequency `bson:"temporal,omitempty"       json:"temporal,omitempty"`
 	LastUpdated   time.Time            `bson:"last_updated,omitempty"   json:"-"`
 	Version       int                  `bson:"version,omitempty"        json:"version,omitempty"`
+	UsageNotes    *[]UsageNote         `bson:"usage_notes,omitempty"     json:"usage_notes,omitempty"`
 }
 
 // Alert represents an object containing information on an alert
@@ -163,7 +164,9 @@ type DownloadObject struct {
 	URL string `bson:"url,omitempty"  json:"url,omitempty"`
 	// TODO size is in bytes and probably should be an int64 instead of a string this
 	// will have to change for several services (filter API, exporter services and web)
-	Size string `bson:"size,omitempty" json:"size,omitempty"`
+	Size    string `bson:"size,omitempty" json:"size,omitempty"`
+	Public  string `bson:"public,omitempty" json:"public,omitempty"`
+	Private string `bson:"private,omitempty" json:"private,omitempty"`
 }
 
 // LatestChange represents an object contining
@@ -179,6 +182,11 @@ type TemporalFrequency struct {
 	EndDate   string `bson:"end_date,omitempty"    json:"end_date,omitempty"`
 	Frequency string `bson:"frequency,omitempty"   json:"frequency,omitempty"`
 	StartDate string `bson:"start_date,omitempty"  json:"start_date,omitempty"`
+}
+
+type UsageNote struct {
+	Title string `bson:"title,omitempty"    json:"title,omitempty"`
+	Note  string `bson:"note,omitempty"     json:"note,omitempty"`
 }
 
 // VersionLinks represents a list of specific links related to the version resource for an edition of a dataset

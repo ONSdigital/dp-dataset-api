@@ -32,6 +32,7 @@ type Metadata struct {
 	Title             string               `json:"title,omitempty"`
 	UnitOfMeasure     string               `json:"unit_of_measure,omitempty"`
 	URI               string               `json:"uri,omitempty"`
+	UsageNotes        *[]UsageNote         `json:"usage_notes,omitempty"`
 }
 
 // MetadataLinks represents a link object to list of metadata) relevant to a version
@@ -69,6 +70,7 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 		Title:             datasetDoc.Title,
 		UnitOfMeasure:     datasetDoc.UnitOfMeasure,
 		URI:               datasetDoc.URI,
+		UsageNotes:        versionDoc.UsageNotes,
 	}
 
 	// Add relevant metdata links from dataset document

@@ -5,6 +5,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/go-ns/log"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -22,7 +23,12 @@ func (m *Mongo) GetInstances(filters []string) (*models.InstanceResults, error) 
 	}
 
 	iter := s.DB(m.Database).C(instanceCollection).Find(stateFilter).Iter()
-	defer iter.Close()
+	defer func() {
+		err := iter.Close()
+		if err != nil {
+			log.ErrorC("error closing iterator", err, log.Data{"data": filters})
+		}
+	}()
 
 	results := []models.Instance{}
 	if err := iter.All(&results); err != nil {

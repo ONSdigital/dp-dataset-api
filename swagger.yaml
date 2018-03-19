@@ -146,6 +146,11 @@ securityDefinitions:
     description: "API key used to allow only internal services to update the state of an import job"
     in: header
     type: apiKey
+  DownloadServiceAPIKey:
+    name: x-download-service-token
+    description: "API key used to allow the download service to access public and private links to a download"
+    in: header
+    type: apiKey
 paths:
   /search/datasets:
     get:
@@ -1492,6 +1497,11 @@ definitions:
         example: 1
         readOnly: true
         type: integer
+      user_notes:
+        description: "A list of user notes relating to the dataset"
+        type: array
+        items:
+          $ref: '#/definitions/UserNote'
   DownloadFile:
     description: "Object containing information of a downloadable file"
     type: object
@@ -1502,6 +1512,12 @@ definitions:
       size:
         type: string
         description: "The size of the file in bytes"
+      public:
+        type: string
+        description: "The URL to a public-accessible download"
+      private:
+        type: string
+        description: "The URL to a non public-accessible download"
   Alert:
     # TODO Update description, so it is useful to an API customer
     description: "A single alert, &#x2603;"
@@ -1857,4 +1873,14 @@ definitions:
         type: string
       href:
         description: "A URL to the version this resource relates to"
+        type: string
+  UserNote:
+    description: "A note relating to the dataset. This will appear in downloaded datasets"
+    type: object
+    properties:
+      title:
+        description: "The title of the note"
+        type: string
+      note:
+        description: "The content of the note"
         type: string
