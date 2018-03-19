@@ -1376,7 +1376,14 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 						},
 					},
 					ReleaseDate: "2017-12-12",
-					State:       models.EditionConfirmedState,
+					Downloads: &models.DownloadList{
+						CSV: &models.DownloadObject{
+							Private: "s3://csv-exported/myfile.csv",
+							URL:     "http://localhost:23600/datasets/123/editions/2017/versions/1.csv",
+							Size:    "1234",
+						},
+					},
+					State: models.EditionConfirmedState,
 				}, nil
 			},
 			UpdateVersionFunc: func(string, *models.Version) error {
