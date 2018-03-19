@@ -1093,7 +1093,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 					return
 				}
 
-				// We can allow public download links to be modified by the exporters when a version is publishe
+				// We can allow public download links to be modified by the exporters when a version is published
 				if versionDoc.Downloads != nil {
 					if versionDoc.Downloads.CSV != nil && versionDoc.Downloads.CSV.Public != "" {
 						if err := r.Body.Close(); err != nil {
