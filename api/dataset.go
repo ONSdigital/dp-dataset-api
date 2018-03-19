@@ -1093,21 +1093,55 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 					return
 				}
 
-				// We can allow public download links to be modified by the exporters when a version is published
+				// We can allow public download links to be modified by the exporters when a version is published.
+				// Note that a new version will be created which contain only the download information to prevent
+				// any forbidden fields from being set on the published version
 				if versionDoc.Downloads != nil {
 					if versionDoc.Downloads.CSV != nil && versionDoc.Downloads.CSV.Public != "" {
+						newVersion := &models.Version{
+							Downloads: &models.DownloadList{
+								CSV: &models.DownloadObject{
+									Public: versionDoc.Downloads.CSV.Public,
+									Size:   versionDoc.Downloads.CSV.Size,
+									URL:    versionDoc.Downloads.CSV.URL,
+								},
+							},
+						}
+
+						b, err := json.Marshal(newVersion)
+						if err != nil {
+							http.Error(w, err.Error(), http.StatusForbidden)
+							return
+						}
+
 						if err := r.Body.Close(); err != nil {
 							log.ErrorC("could not close response body", err, nil)
 						}
-						r.Body = ioutil.NopCloser(&buf)
+						r.Body = ioutil.NopCloser(ioutil.NopCloser(bytes.NewBuffer(b)))
 						handle(w, r)
 						return
 					}
 					if versionDoc.Downloads.XLS != nil && versionDoc.Downloads.XLS.URL != "" {
+						newVersion := &models.Version{
+							Downloads: &models.DownloadList{
+								XLS: &models.DownloadObject{
+									Public: versionDoc.Downloads.CSV.Public,
+									Size:   versionDoc.Downloads.CSV.Size,
+									URL:    versionDoc.Downloads.CSV.URL,
+								},
+							},
+						}
+
+						b, err := json.Marshal(newVersion)
+						if err != nil {
+							http.Error(w, err.Error(), http.StatusForbidden)
+							return
+						}
+
 						if err := r.Body.Close(); err != nil {
 							log.ErrorC("could not close response body", err, nil)
 						}
-						r.Body = ioutil.NopCloser(&buf)
+						r.Body = ioutil.NopCloser(ioutil.NopCloser(bytes.NewBuffer(b)))
 						handle(w, r)
 						return
 					}
