@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -1077,16 +1076,13 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 
 		if versionDoc != nil {
 			if versionDoc.State == models.PublishedState {
-				var buf bytes.Buffer
-				tee := io.TeeReader(r.Body, &buf)
-
 				defer func() {
 					if err := r.Body.Close(); err != nil {
 						log.ErrorC("could not close response body", err, nil)
 					}
 				}()
 
-				versionDoc, err := models.CreateVersion(tee)
+				versionDoc, err := models.CreateVersion(r.Body)
 				if err != nil {
 					log.ErrorC("failed to model version resource based on request", err, log.Data{"dataset_id": id, "edition": edition, "version": version})
 					http.Error(w, err.Error(), http.StatusBadRequest)
