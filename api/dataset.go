@@ -1093,8 +1093,9 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 				// Note that a new version will be created which contain only the download information to prevent
 				// any forbidden fields from being set on the published version
 				if currentVersion.Downloads != nil {
+					newVersion := new(models.Version)
 					if currentVersion.Downloads.CSV != nil && currentVersion.Downloads.CSV.Public != "" {
-						newVersion := &models.Version{
+						newVersion = &models.Version{
 							Downloads: &models.DownloadList{
 								CSV: &models.DownloadObject{
 									Public: currentVersion.Downloads.CSV.Public,
@@ -1103,22 +1104,9 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 								},
 							},
 						}
-
-						b, err := json.Marshal(newVersion)
-						if err != nil {
-							http.Error(w, err.Error(), http.StatusForbidden)
-							return
-						}
-
-						if err := r.Body.Close(); err != nil {
-							log.ErrorC("could not close response body", err, nil)
-						}
-						r.Body = ioutil.NopCloser(bytes.NewBuffer(b))
-						handle(w, r)
-						return
 					}
 					if currentVersion.Downloads.XLS != nil && currentVersion.Downloads.XLS.URL != "" {
-						newVersion := &models.Version{
+						newVersion = &models.Version{
 							Downloads: &models.DownloadList{
 								XLS: &models.DownloadObject{
 									Public: currentVersion.Downloads.CSV.Public,
@@ -1127,7 +1115,8 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 								},
 							},
 						}
-
+					}
+					if newVersion != nil {
 						b, err := json.Marshal(newVersion)
 						if err != nil {
 							http.Error(w, err.Error(), http.StatusForbidden)
