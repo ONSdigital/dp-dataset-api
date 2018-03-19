@@ -1,13 +1,13 @@
 package api
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"io/ioutil"
-
-	"encoding/json"
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
@@ -16,7 +16,6 @@ import (
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
-	"gopkg.in/mgo.v2/bson"
 )
 
 // The follow unit tests check that when ENABLE_PRIVATE_ENDPOINTS is set to false, only
@@ -29,8 +28,9 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 	next := &models.Dataset{ID: "4321", Title: "next"}
 
 	Convey("When the API is started with private endpoints disabled", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
-		r.Header.Add(internalToken, secretKey)
+		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets", nil)
+		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetsFunc: func() ([]models.DatasetUpdate, error) {
@@ -62,8 +62,9 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 	next := &models.Dataset{ID: "1234", Title: "next"}
 
 	Convey("When the API is started with private endpoints disabled", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/1234", nil)
-		r.Header.Add(internalToken, secretKey)
+		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234", nil)
+		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
@@ -93,8 +94,9 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 	var editionSearchState, datasetSearchState string
 
 	Convey("When the API is started with private endpoints disabled", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/1234/editions", nil)
-		r.Header.Add(internalToken, secretKey)
+		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions", nil)
+		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(ID, state string) error {
@@ -125,8 +127,9 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 	var editionSearchState, datasetSearchState string
 
 	Convey("When the API is started with private endpoints disabled", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/1234/editions/1234", nil)
-		r.Header.Add(internalToken, secretKey)
+		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234", nil)
+		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(ID, state string) error {
@@ -154,8 +157,9 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 	var versionSearchState, editionSearchState, datasetSearchState string
 
 	Convey("When the API is started with private endpoints disabled", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/1234/editions/1234/versions", nil)
-		r.Header.Add(internalToken, secretKey)
+		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions", nil)
+		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(ID, state string) error {
@@ -190,8 +194,9 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 	var versionSearchState, editionSearchState, datasetSearchState string
 
 	Convey("When the API is started with private endpoints disabled", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234", nil)
-		r.Header.Add(internalToken, secretKey)
+		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234", nil)
+		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(ID, state string) error {
@@ -228,8 +233,9 @@ func TestWebSubnetDimensionsEndpoint(t *testing.T) {
 	var versionSearchState string
 
 	Convey("When the API is started with private endpoints disabled", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234/dimensions", nil)
-		r.Header.Add(internalToken, secretKey)
+		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234/dimensions", nil)
+		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(id string, editionID, version string, state string) (*models.Version, error) {
@@ -258,8 +264,9 @@ func TestWebSubnetDimensionOptionsEndpoint(t *testing.T) {
 	var versionSearchState string
 
 	Convey("When the API is started with private endpoints disabled", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234/dimensions/t/options", nil)
-		r.Header.Add(internalToken, secretKey)
+		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234/dimensions/t/options", nil)
+		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(id string, editionID, version string, state string) (*models.Version, error) {
@@ -318,8 +325,9 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 
 		for _, endpoint := range publishSubnetEndpoints {
 			Convey("The following endpoint "+endpoint.URL+"(Method:"+endpoint.Method+") should return 404", func() {
-				r := httptest.NewRequest(endpoint.Method, endpoint.URL, nil)
-				r.Header.Add(internalToken, secretKey)
+				r, err := createRequestWithAuth(endpoint.Method, endpoint.URL, nil)
+				So(err, ShouldBeNil)
+
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{}
 				api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -333,7 +341,7 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 func GetWebAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator) *DatasetAPI {
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)
-	cfg.SecretKey = secretKey
+	cfg.ServiceAuthToken = authToken
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEnpoints = false
 	cfg.HealthCheckTimeout = healthTimeout

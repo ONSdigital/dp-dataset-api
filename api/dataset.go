@@ -16,7 +16,11 @@ import (
 )
 
 const (
-	internalToken          = "Internal-Token"
+	florenceHeaderKey = "X-Florence-Token"
+	authHeaderKey     = "Authorization"
+	userIdentityKey   = "User-Identity"
+	callerIdentityKey = "Caller-Identity"
+
 	datasetDocType         = "dataset"
 	editionDocType         = "edition"
 	versionDocType         = "version"
@@ -24,6 +28,14 @@ const (
 	dimensionDocType       = "dimension"
 	dimensionOptionDocType = "dimension-option"
 )
+
+// type userIdentity string
+// type callerIdentity string
+//
+// var (
+// 	contextKeyUserIdentity   userIdentity   = userIdentityKey
+// 	contextKeyCallerIdentity callerIdentity = callerIdentityKey
+// )
 
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	results, err := api.dataStore.Backend.GetDatasets()
@@ -36,7 +48,14 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	var bytes []byte
 	logData := log.Data{}
 
-	if api.EnablePrePublishView && r.Header.Get(internalToken) == api.internalToken {
+	var authorised bool
+	identity := ""
+	if api.EnablePrePublishView {
+		identity, authorised = authenticate(r)
+	}
+	logData["identity"] = identity
+
+	if authorised {
 		logData["authenticated"] = true
 		datasets := &models.DatasetUpdateResults{}
 		datasets.Items = results
@@ -79,8 +98,15 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var authorised bool
+	identity := ""
+	if api.EnablePrePublishView {
+		identity, authorised = authenticate(r)
+	}
+	logData["identity"] = identity
+
 	var bytes []byte
-	if !api.EnablePrePublishView || r.Header.Get(internalToken) != api.internalToken {
+	if !authorised {
 		logData["authenticated"] = false
 		if dataset.Current == nil {
 			log.Debug("published dataset not found", nil)
@@ -123,10 +149,17 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	logData := log.Data{"dataset_id": id}
 
+	var authorised bool
+	identity := ""
+	if api.EnablePrePublishView {
+		identity, authorised = authenticate(r)
+	}
+	logData["identity"] = identity
+
 	var state string
 	if !api.EnablePrePublishView {
 		state = models.PublishedState
-	} else if r.Header.Get(internalToken) != api.internalToken {
+	} else if !authorised {
 		logData["authenticated"] = false
 		state = models.PublishedState
 	} else {
@@ -167,10 +200,18 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	editionID := vars["edition"]
 	logData := log.Data{"dataset_id": id, "edition": editionID}
+
+	var authorised bool
+	identity := ""
+	if api.EnablePrePublishView {
+		identity, authorised = authenticate(r)
+	}
+	logData["identity"] = identity
+
 	var state string
 	if !api.EnablePrePublishView {
 		state = models.PublishedState
-	} else if r.Header.Get(internalToken) != api.internalToken {
+	} else if !authorised {
 		logData["authenticated"] = false
 		state = models.PublishedState
 	} else {
@@ -212,10 +253,17 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	editionID := vars["edition"]
 	logData := log.Data{"dataset_id": id, "edition": editionID}
 
+	var authorised bool
+	identity := ""
+	if api.EnablePrePublishView {
+		identity, authorised = authenticate(r)
+	}
+	logData["identity"] = identity
+
 	var state string
 	if !api.EnablePrePublishView {
 		state = models.PublishedState
-	} else if r.Header.Get(internalToken) != api.internalToken {
+	} else if !authorised {
 		logData["authenticated"] = false
 		state = models.PublishedState
 	} else {
@@ -291,11 +339,18 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	editionID := vars["edition"]
 	version := vars["version"]
 	logData := log.Data{"dataset_id": id, "edition": editionID, "version": version}
-	var state string
 
+	var authorised bool
+	identity := ""
+	if api.EnablePrePublishView {
+		identity, authorised = authenticate(r)
+	}
+	logData["identity"] = identity
+
+	var state string
 	if !api.EnablePrePublishView {
 		state = models.PublishedState
-	} else if r.Header.Get(internalToken) != api.internalToken {
+	} else if !authorised {
 		logData["authenticated"] = false
 		state = models.PublishedState
 	} else {
@@ -708,10 +763,18 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	edition := vars["edition"]
 	version := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
+
+	var authorised bool
+	identity := ""
+	if api.EnablePrePublishView {
+		identity, authorised = authenticate(r)
+	}
+	logData["identity"] = identity
+
 	var state string
 	if !api.EnablePrePublishView {
 		state = models.PublishedState
-	} else if r.Header.Get(internalToken) != api.internalToken {
+	} else if !authorised {
 		logData["authenticated"] = false
 		state = models.PublishedState
 	} else {
@@ -816,10 +879,18 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	dimension := vars["dimension"]
 
 	logData := log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension}
+
+	var authorised bool
+	identity := ""
+	if api.EnablePrePublishView {
+		identity, authorised = authenticate(r)
+	}
+	logData["identity"] = identity
+
 	var state string
 	if !api.EnablePrePublishView {
 		state = models.PublishedState
-	} else if r.Header.Get(internalToken) != api.internalToken {
+	} else if !authorised {
 		logData["authenticated"] = false
 		state = models.PublishedState
 	} else {
@@ -878,11 +949,18 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var authorised bool
+	identity := ""
+	if api.EnablePrePublishView {
+		identity, authorised = authenticate(r)
+	}
+	logData["identity"] = identity
+
 	// Default state to published
 	var state string
 
 	// if request is authenticated then access resources of state other than published
-	if !api.EnablePrePublishView || r.Header.Get(internalToken) != api.internalToken {
+	if !authorised {
 		logData["authenticated"] = false
 		// Check for current sub document
 		if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
@@ -1069,4 +1147,16 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 
 func setJSONContentType(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
+}
+
+func authenticate(r *http.Request) (string, bool) {
+	callerIdentity, ok := r.Context().Value(callerIdentityKey).(string)
+	if ok && callerIdentity != "" {
+		return callerIdentity, true
+	}
+	userIdentity, ok := r.Context().Value(userIdentityKey).(string)
+	if ok && userIdentity != "" {
+		return userIdentity, true
+	}
+	return "", false
 }
