@@ -1063,7 +1063,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 		edition := vars["edition"]
 		version := vars["version"]
 
-		versionDoc, err := d.Datastore.GetVersion(id, edition, version, "")
+		currentVersion, err := d.Datastore.GetVersion(id, edition, version, "")
 		if err != nil {
 			if err != errs.ErrVersionNotFound {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -1074,8 +1074,8 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 			return
 		}
 
-		if versionDoc != nil {
-			if versionDoc.State == models.PublishedState {
+		if currentVersion != nil {
+			if currentVersion.State == models.PublishedState {
 				defer func() {
 					if err := r.Body.Close(); err != nil {
 						log.ErrorC("could not close response body", err, nil)
@@ -1144,7 +1144,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 				}
 
 				err = errors.New("unable to update version as it has been published")
-				log.Error(err, log.Data{"version": versionDoc})
+				log.Error(err, log.Data{"version": currentVersion})
 				http.Error(w, err.Error(), http.StatusForbidden)
 				return
 			}
