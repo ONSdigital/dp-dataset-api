@@ -32,14 +32,14 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var bytes []byte
+	var b []byte
 	logData := log.Data{}
 
 	if api.EnablePrePublishView && r.Header.Get(internalToken) == api.internalToken {
 		logData["authenticated"] = true
 		datasets := &models.DatasetUpdateResults{}
 		datasets.Items = results
-		bytes, err = json.Marshal(datasets)
+		b, err = json.Marshal(datasets)
 		if err != nil {
 			log.ErrorC("failed to marshal dataset resource into bytes", err, nil)
 			handleErrorType(datasetDocType, err, w)
@@ -51,7 +51,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 
 		datasets.Items = mapResults(results)
 
-		bytes, err = json.Marshal(datasets)
+		b, err = json.Marshal(datasets)
 		if err != nil {
 			log.ErrorC("failed to marshal dataset resource into bytes", err, nil)
 			handleErrorType(datasetDocType, err, w)
@@ -59,7 +59,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	setJSONContentType(w)
-	_, err = w.Write(bytes)
+	_, err = w.Write(b)
 	if err != nil {
 		log.Error(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -78,7 +78,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var bytes []byte
+	var b []byte
 	if !api.EnablePrePublishView || r.Header.Get(internalToken) != api.internalToken {
 		logData["authenticated"] = false
 		if dataset.Current == nil {
@@ -88,7 +88,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		dataset.Current.ID = dataset.ID
-		bytes, err = json.Marshal(dataset.Current)
+		b, err = json.Marshal(dataset.Current)
 		if err != nil {
 			log.ErrorC("failed to marshal dataset current sub document resource into bytes", err, logData)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -100,7 +100,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			log.Debug("published or unpublished dataset not found", nil)
 			handleErrorType(datasetDocType, errs.ErrDatasetNotFound, w)
 		}
-		bytes, err = json.Marshal(dataset)
+		b, err = json.Marshal(dataset)
 		if err != nil {
 			log.ErrorC("failed to marshal dataset current sub document resource into bytes", err, logData)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -109,7 +109,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setJSONContentType(w)
-	_, err = w.Write(bytes)
+	_, err = w.Write(b)
 	if err != nil {
 		log.Error(err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -150,11 +150,11 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var logMessage string
-	var bytes []byte
+	var b []byte
 
 	// If auth, we only return the .current document of editions (if a current doc exists then it's state is always published).
-	if auth == true {
-		bytes, err = json.Marshal(results)
+	if auth {
+		b, err = json.Marshal(results)
 		if err != nil {
 			log.ErrorC("failed to marshal a list of edition resources into bytes", err, logData)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -170,7 +170,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 			publicResults = append(publicResults, results.Items[i].Current)
 		}
 
-		bytes, err = json.Marshal(&models.EditionResults{Items: publicResults})
+		b, err = json.Marshal(&models.EditionResults{Items: publicResults})
 		if err != nil {
 			log.ErrorC("failed to marshal a list of public edition resources into bytes", err, logData)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -180,7 +180,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setJSONContentType(w)
-	_, err = w.Write(bytes)
+	_, err = w.Write(b)
 	if err != nil {
 		log.Error(err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -220,13 +220,13 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var logMessage string
-	var bytes []byte
+	var b []byte
 
 	// If auth, we only return the .current document of editions (if a current doc exists then it's state = published).
-	if auth == true {
+	if auth {
 
 		// Edition requester has auth and gets everything
-		bytes, err = json.Marshal(edition)
+		b, err = json.Marshal(edition)
 		if err != nil {
 			log.ErrorC("failed to marshal edition resource into bytes", err, logData)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -237,7 +237,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	} else {
 
 		// User doesn't have auth so gets public edition response, (.current doc only).
-		bytes, err = json.Marshal(edition.Current)
+		b, err = json.Marshal(edition.Current)
 		if err != nil {
 			log.ErrorC("failed to marshal public edition resource into bytes", err, logData)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -247,7 +247,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setJSONContentType(w)
-	_, err = w.Write(bytes)
+	_, err = w.Write(b)
 	if err != nil {
 		log.Error(err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -303,7 +303,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, err := json.Marshal(results)
+	b, err := json.Marshal(results)
 	if err != nil {
 		log.ErrorC("failed to marshal list of version resources into bytes", err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -311,7 +311,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setJSONContentType(w)
-	_, err = w.Write(bytes)
+	_, err = w.Write(b)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": id, "edition": editionID})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -363,7 +363,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, err := json.Marshal(results)
+	b, err := json.Marshal(results)
 	if err != nil {
 		log.ErrorC("failed to marshal version resource into bytes", err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -371,7 +371,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setJSONContentType(w)
-	_, err = w.Write(bytes)
+	_, err = w.Write(b)
 	if err != nil {
 		log.Error(err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -433,7 +433,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, err := json.Marshal(datasetDoc)
+	b, err := json.Marshal(datasetDoc)
 	if err != nil {
 		log.ErrorC("failed to marshal dataset resource into bytes", err, log.Data{"new_dataset": datasetID})
 		w.WriteHeader(http.StatusInternalServerError)
@@ -442,7 +442,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusCreated)
-	_, err = w.Write(bytes)
+	_, err = w.Write(b)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": datasetID})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -776,7 +776,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 
 	listOfDimensions := &models.DatasetDimensionResults{Items: results}
 
-	bytes, err := json.Marshal(listOfDimensions)
+	b, err := json.Marshal(listOfDimensions)
 	if err != nil {
 		log.ErrorC("failed to marshal list of dimension resources into bytes", err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -784,7 +784,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setJSONContentType(w)
-	_, err = w.Write(bytes)
+	_, err = w.Write(b)
 	if err != nil {
 		log.Error(err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -828,12 +828,12 @@ func (api *DatasetAPI) createListOfDimensions(versionDoc *models.Version, dimens
 
 func convertBSONToDimensionOption(data interface{}) (*models.DimensionOption, error) {
 	var dim models.DimensionOption
-	bytes, err := bson.Marshal(data)
+	b, err := bson.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
 
-	bson.Unmarshal(bytes, &dim)
+	bson.Unmarshal(b, &dim)
 
 	return &dim, nil
 }
@@ -876,7 +876,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	bytes, err := json.Marshal(results)
+	b, err := json.Marshal(results)
 	if err != nil {
 		log.ErrorC("failed to marshal list of dimension option resources into bytes", err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -884,7 +884,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	}
 
 	setJSONContentType(w)
-	_, err = w.Write(bytes)
+	_, err = w.Write(b)
 	if err != nil {
 		log.Error(err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -953,7 +953,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		metaDataDoc = models.CreateMetaDataDoc(datasetDoc.Current, versionDoc, api.urlBuilder)
 	}
 
-	bytes, err := json.Marshal(metaDataDoc)
+	b, err := json.Marshal(metaDataDoc)
 	if err != nil {
 		log.ErrorC("failed to marshal metadata resource into bytes", err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -961,7 +961,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setJSONContentType(w)
-	_, err = w.Write(bytes)
+	_, err = w.Write(b)
 	if err != nil {
 		log.Error(err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

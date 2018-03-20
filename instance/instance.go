@@ -44,13 +44,13 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, err := json.Marshal(results)
+	b, err := json.Marshal(results)
 	if err != nil {
 		internalError(w, err)
 		return
 	}
 
-	writeBody(w, bytes)
+	writeBody(w, b)
 	log.Debug("get all instances", log.Data{"query": stateFilterQuery})
 }
 
@@ -72,13 +72,13 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, err := json.Marshal(instance)
+	b, err := json.Marshal(instance)
 	if err != nil {
 		internalError(w, err)
 		return
 	}
 
-	writeBody(w, bytes)
+	writeBody(w, b)
 	log.Debug("get instance", log.Data{"instance_id": id})
 }
 
@@ -103,7 +103,7 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, err := json.Marshal(instance)
+	b, err := json.Marshal(instance)
 	if err != nil {
 		internalError(w, err)
 		return
@@ -112,7 +112,7 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	w.WriteHeader(http.StatusCreated)
-	writeBody(w, bytes)
+	writeBody(w, b)
 	log.Debug("add instance", log.Data{"instance": instance})
 }
 
@@ -146,7 +146,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Read and unmarshal request body
-	bytes, err := ioutil.ReadAll(r.Body)
+	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.ErrorC("Error reading response.body.", err, nil)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -155,7 +155,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	var dim *models.CodeList
 
-	err = json.Unmarshal(bytes, &dim)
+	err = json.Unmarshal(b, &dim)
 	if err != nil {
 		log.ErrorC("Failing to model models.Codelist resource based on request", err, log.Data{"instance": id, "dimension": dimension})
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -528,13 +528,13 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 
 func unmarshalImportTasks(reader io.Reader) (*models.InstanceImportTasks, error) {
 
-	bytes, err := ioutil.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("failed to read message body")
 	}
 
 	var tasks models.InstanceImportTasks
-	err = json.Unmarshal(bytes, &tasks)
+	err = json.Unmarshal(b, &tasks)
 	if err != nil {
 		return nil, errors.New("failed to parse json body: " + err.Error())
 	}
@@ -543,13 +543,13 @@ func unmarshalImportTasks(reader io.Reader) (*models.InstanceImportTasks, error)
 }
 
 func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
-	bytes, err := ioutil.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
 	}
 
 	var instance models.Instance
-	err = json.Unmarshal(bytes, &instance)
+	err = json.Unmarshal(b, &instance)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body: " + err.Error())
 	}
@@ -598,9 +598,9 @@ func internalError(w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
-func writeBody(w http.ResponseWriter, bytes []byte) {
+func writeBody(w http.ResponseWriter, b []byte) {
 	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(bytes); err != nil {
+	if _, err := w.Write(b); err != nil {
 		log.Error(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

@@ -175,7 +175,7 @@ type DownloadList struct {
 // DownloadObject represents information on the downloadable file
 type DownloadObject struct {
 	URL string `bson:"url,omitempty"  json:"url,omitempty"`
-	// TODO size is in bytes and probably should be an int64 instead of a string this
+	// TODO size is in b and probably should be an int64 instead of a string this
 	// will have to change for several services (filter API, exporter services and web)
 	Size string `bson:"size,omitempty" json:"size,omitempty"`
 }
@@ -237,14 +237,14 @@ func CheckState(docType, state string) error {
 
 // CreateDataset manages the creation of a dataset from a reader
 func CreateDataset(reader io.Reader) (*Dataset, error) {
-	bytes, err := ioutil.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
 	}
 
 	var dataset Dataset
 
-	err = json.Unmarshal(bytes, &dataset)
+	err = json.Unmarshal(b, &dataset)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
 	}
@@ -253,7 +253,7 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 
 // CreateVersion manages the creation of a version from a reader
 func CreateVersion(reader io.Reader) (*Version, error) {
-	bytes, err := ioutil.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
 	}
@@ -262,7 +262,7 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 	// Create unique id
 	version.ID = uuid.NewV4().String()
 
-	err = json.Unmarshal(bytes, &version)
+	err = json.Unmarshal(b, &version)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
 	}
@@ -272,13 +272,13 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 
 // CreateDownloadList manages the creation of a list downloadable items from a reader
 func CreateDownloadList(reader io.Reader) (*DownloadList, error) {
-	bytes, err := ioutil.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response body")
 	}
 
 	var downloadList DownloadList
-	if err := json.Unmarshal(bytes, &downloadList); err != nil {
+	if err := json.Unmarshal(b, &downloadList); err != nil {
 		return nil, errors.Wrap(err, "failed to parse json to downloadList")
 	}
 
@@ -287,12 +287,12 @@ func CreateDownloadList(reader io.Reader) (*DownloadList, error) {
 
 // CreateContact manages the creation of a contact from a reader
 func CreateContact(reader io.Reader) (*Contact, error) {
-	bytes, err := ioutil.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
 	}
 	var contact Contact
-	err = json.Unmarshal(bytes, &contact)
+	err = json.Unmarshal(b, &contact)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
 	}
