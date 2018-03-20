@@ -90,7 +90,7 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 func TestWebSubnetEditionsEndpoint(t *testing.T) {
 	t.Parallel()
 
-	edition := &models.Edition{ID: "1234", State: models.PublishedState}
+	edition := &models.EditionUpdate{ID: "1234", Current: &models.Edition{State: models.PublishedState}}
 	var editionSearchState, datasetSearchState string
 
 	Convey("When the API is started with private endpoints disabled", t, func() {
@@ -103,10 +103,10 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 				datasetSearchState = state
 				return nil
 			},
-			GetEditionsFunc: func(ID, state string) (*models.EditionResults, error) {
+			GetEditionsFunc: func(ID, state string) (*models.EditionUpdateResults, error) {
 				editionSearchState = state
-				return &models.EditionResults{
-					Items: []models.Edition{*edition},
+				return &models.EditionUpdateResults{
+					Items: []*models.EditionUpdate{edition},
 				}, nil
 			},
 		}
@@ -123,7 +123,7 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 func TestWebSubnetEditionEndpoint(t *testing.T) {
 	t.Parallel()
 
-	edition := &models.Edition{ID: "1234", State: models.PublishedState}
+	edition := &models.EditionUpdate{ID: "1234", Current: &models.Edition{State: models.PublishedState}}
 	var editionSearchState, datasetSearchState string
 
 	Convey("When the API is started with private endpoints disabled", t, func() {
@@ -136,7 +136,7 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 				datasetSearchState = state
 				return nil
 			},
-			GetEditionFunc: func(ID, editionID, state string) (*models.Edition, error) {
+			GetEditionFunc: func(ID, editionID, state string) (*models.EditionUpdate, error) {
 				editionSearchState = state
 				return edition, nil
 			},

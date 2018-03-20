@@ -44,13 +44,13 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, err := json.Marshal(results)
+	b, err := json.Marshal(results)
 	if err != nil {
 		internalError(w, err)
 		return
 	}
 
-	writeBody(w, bytes)
+	writeBody(w, b)
 	log.Debug("get all instances", log.Data{"query": stateFilterQuery})
 }
 
@@ -72,13 +72,13 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, err := json.Marshal(instance)
+	b, err := json.Marshal(instance)
 	if err != nil {
 		internalError(w, err)
 		return
 	}
 
-	writeBody(w, bytes)
+	writeBody(w, b)
 	log.Debug("get instance", log.Data{"instance_id": id})
 }
 
@@ -103,7 +103,7 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, err := json.Marshal(instance)
+	b, err := json.Marshal(instance)
 	if err != nil {
 		internalError(w, err)
 		return
@@ -112,7 +112,7 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	w.WriteHeader(http.StatusCreated)
-	writeBody(w, bytes)
+	writeBody(w, b)
 	log.Debug("add instance", log.Data{"instance": instance})
 }
 
@@ -146,7 +146,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Read and unmarshal request body
-	bytes, err := ioutil.ReadAll(r.Body)
+	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.ErrorC("Error reading response.body.", err, nil)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -155,7 +155,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	var dim *models.CodeList
 
-	err = json.Unmarshal(bytes, &dim)
+	err = json.Unmarshal(b, &dim)
 	if err != nil {
 		log.ErrorC("Failing to model models.Codelist resource based on request", err, log.Data{"instance": id, "dimension": dimension})
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -279,6 +279,8 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Update with any edition.next changes
+		editionDoc.Next.State = instance.State
 		if err = s.UpsertEdition(datasetID, edition, editionDoc); err != nil {
 			log.ErrorR(r, err, nil)
 			handleErrorType(err, w)
@@ -334,7 +336,8 @@ func updateLinks(instance, currentInstance *models.Instance) *models.InstanceLin
 	return links
 }
 
-func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.Edition, error) {
+func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.EditionUpdate, error) {
+
 	editionDoc, err := s.GetEdition(datasetID, edition, "")
 	if err != nil {
 		if err != errs.ErrEditionNotFound {
@@ -344,40 +347,42 @@ func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.Editi
 		// create unique id for edition
 		editionID := uuid.NewV4().String()
 
-		editionDoc = &models.Edition{
-			ID:      editionID,
-			Edition: edition,
-			Links: &models.EditionLinks{
-				Dataset: &models.LinkObject{
-					ID:   datasetID,
-					HRef: fmt.Sprintf("%s/datasets/%s", s.Host, datasetID),
-				},
-				LatestVersion: &models.LinkObject{
-					ID:   "1",
-					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/1", s.Host, datasetID, edition),
-				},
-				Self: &models.LinkObject{
-					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", s.Host, datasetID, edition),
-				},
-				Versions: &models.LinkObject{
-					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
+		editionDoc = &models.EditionUpdate{
+			ID: editionID,
+			Next: &models.Edition{
+				Edition: edition,
+				State:   models.EditionConfirmedState,
+				Links: &models.EditionUpdateLinks{
+					Dataset: &models.LinkObject{
+						ID:   datasetID,
+						HRef: fmt.Sprintf("%s/datasets/%s", s.Host, datasetID),
+					},
+					Self: &models.LinkObject{
+						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", s.Host, datasetID, edition),
+					},
+					Versions: &models.LinkObject{
+						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
+					},
+					LatestVersion: &models.LinkObject{
+						ID:   "1",
+						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/1", s.Host, datasetID, edition),
+					},
 				},
 			},
-			State: models.CreatedState,
 		}
 	} else {
 
 		// Update the latest version for the dataset edition
-		version, err := strconv.Atoi(editionDoc.Links.LatestVersion.ID)
+		version, err := strconv.Atoi(editionDoc.Next.Links.LatestVersion.ID)
 		if err != nil {
-			log.ErrorC("unable to retrieve latest version", err, log.Data{"instance": instanceID, "edition": edition, "version": editionDoc.Links.LatestVersion.ID})
+			log.ErrorC("unable to retrieve latest version", err, log.Data{"instance": instanceID, "edition": edition, "version": editionDoc.Next.Links.LatestVersion.ID})
 			return nil, err
 		}
 
 		version++
 
-		editionDoc.Links.LatestVersion.ID = strconv.Itoa(version)
-		editionDoc.Links.LatestVersion.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", s.Host, datasetID, edition, strconv.Itoa(version))
+		editionDoc.Next.Links.LatestVersion.ID = strconv.Itoa(version)
+		editionDoc.Next.Links.LatestVersion.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", s.Host, datasetID, edition, strconv.Itoa(version))
 	}
 
 	return editionDoc, nil
@@ -396,22 +401,22 @@ func validateInstanceUpdate(expectedState string, currentInstance, instance *mod
 	return err
 }
 
-func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *models.Edition) *models.InstanceLinks {
+func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *models.EditionUpdate) *models.InstanceLinks {
 	stringifiedVersion := strconv.Itoa(instance.Version)
 
-	log.Debug("defining instance links", log.Data{"editionDoc": editionDoc.Links, "instance": instance})
+	log.Debug("defining instance links", log.Data{"editionDoc": editionDoc.Next, "instance": instance})
 
 	links := &models.InstanceLinks{
 		Dataset: &models.IDLink{
-			HRef: editionDoc.Links.Dataset.HRef,
-			ID:   editionDoc.Links.Dataset.ID,
+			HRef: editionDoc.Next.Links.Dataset.HRef,
+			ID:   editionDoc.Next.Links.Dataset.ID,
 		},
 		Dimensions: &models.IDLink{
-			HRef: fmt.Sprintf("%s/versions/%s/dimensions", editionDoc.Links.Self.HRef, stringifiedVersion),
+			HRef: fmt.Sprintf("%s/versions/%s/dimensions", editionDoc.Next.Links.Self.HRef, stringifiedVersion),
 		},
 		Edition: &models.IDLink{
-			HRef: editionDoc.Links.Self.HRef,
-			ID:   editionDoc.Edition,
+			HRef: editionDoc.Next.Links.Self.HRef,
+			ID:   editionDoc.Next.Edition,
 		},
 		Job: &models.IDLink{
 			HRef: instance.Links.Job.HRef,
@@ -421,7 +426,7 @@ func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *model
 			HRef: instance.Links.Self.HRef,
 		},
 		Version: &models.IDLink{
-			HRef: fmt.Sprintf("%s/versions/%s", editionDoc.Links.Self.HRef, stringifiedVersion),
+			HRef: fmt.Sprintf("%s/versions/%s", editionDoc.Next.Links.Self.HRef, stringifiedVersion),
 			ID:   stringifiedVersion,
 		},
 	}
@@ -523,13 +528,13 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 
 func unmarshalImportTasks(reader io.Reader) (*models.InstanceImportTasks, error) {
 
-	bytes, err := ioutil.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("failed to read message body")
 	}
 
 	var tasks models.InstanceImportTasks
-	err = json.Unmarshal(bytes, &tasks)
+	err = json.Unmarshal(b, &tasks)
 	if err != nil {
 		return nil, errors.New("failed to parse json body: " + err.Error())
 	}
@@ -538,13 +543,13 @@ func unmarshalImportTasks(reader io.Reader) (*models.InstanceImportTasks, error)
 }
 
 func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
-	bytes, err := ioutil.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
 	}
 
 	var instance models.Instance
-	err = json.Unmarshal(bytes, &instance)
+	err = json.Unmarshal(b, &instance)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body: " + err.Error())
 	}
@@ -593,9 +598,9 @@ func internalError(w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
-func writeBody(w http.ResponseWriter, bytes []byte) {
+func writeBody(w http.ResponseWriter, b []byte) {
 	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(bytes); err != nil {
+	if _, err := w.Write(b); err != nil {
 		log.Error(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
