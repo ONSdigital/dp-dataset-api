@@ -13,12 +13,12 @@ import (
 )
 
 func unmarshalEvent(reader io.Reader) (*models.Event, error) {
-	bytes, err := ioutil.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
 	}
 	var event models.Event
-	err = json.Unmarshal(bytes, &event)
+	err = json.Unmarshal(b, &event)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
 	}

@@ -82,7 +82,6 @@ func routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 
 	api.router.HandleFunc("/healthcheck", api.healthCheck).Methods("GET")
 
-	versionPublishChecker := PublishCheck{Datastore: dataStore.Backend}
 	api.router.HandleFunc("/datasets", api.getDatasets).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}", api.getDataset).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}/editions", api.getEditions).Methods("GET")
@@ -95,8 +94,9 @@ func routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 
 	if cfg.EnablePrivateEnpoints {
 
-		log.Debug("private endpoints have been enabled", log.Data{})
+		log.Debug("private endpoints have been enabled", nil)
 
+		versionPublishChecker := PublishCheck{Datastore: dataStore.Backend}
 		api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.addDataset)).Methods("POST")
 		api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.putDataset)).Methods("PUT")
 		api.router.HandleFunc("/datasets/{id}", api.privateAuth.Check(api.deleteDataset)).Methods("DELETE")

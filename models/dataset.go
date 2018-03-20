@@ -26,7 +26,13 @@ type DatasetUpdateResults struct {
 
 // EditionResults represents a structure for a list of editions for a dataset
 type EditionResults struct {
-	Items []Edition `json:"items"`
+	Items []*Edition `json:"items"`
+}
+
+// EditionUpdateResults represents a structure for a list of evolving dataset
+// with the current dataset and the updated dataset
+type EditionUpdateResults struct {
+	Items []*EditionUpdate `json:"items"`
 }
 
 // VersionResults represents a structure for a list of versions for an edition of a dataset
@@ -104,21 +110,28 @@ type ContactDetails struct {
 	Telephone string `bson:"telephone,omitempty"  json:"telephone,omitempty"`
 }
 
-// Edition represents information related to a single edition for a dataset
-type Edition struct {
-	Edition     string        `bson:"edition,omitempty"      json:"edition,omitempty"`
-	ID          string        `bson:"id,omitempty"          json:"id,omitempty"`
-	Links       *EditionLinks `bson:"links,omitempty"        json:"links,omitempty"`
-	State       string        `bson:"state,omitempty"        json:"state,omitempty"`
-	LastUpdated time.Time     `bson:"last_updated,omitempty" json:"-"`
+// EditionUpdate represents an evolving edition containing both the next and current edition
+type EditionUpdate struct {
+	ID      string   `bson:"_id,omitempty"         json:"id,omitempty"`
+	Current *Edition `bson:"current,omitempty"     json:"current,omitempty"`
+	Next    *Edition `bson:"next,omitempty"        json:"next,omitempty"`
 }
 
-// EditionLinks represents a list of specific links related to the edition resource of a dataset
-type EditionLinks struct {
+// EditionUpdateLinks represents those links common the both the current and next edition
+type EditionUpdateLinks struct {
 	Dataset       *LinkObject `bson:"dataset,omitempty"        json:"dataset,omitempty"`
-	LatestVersion *LinkObject `bson:"latest_version,omitempty" json:"latest_version,omitempty"`
 	Self          *LinkObject `bson:"self,omitempty"           json:"self,omitempty"`
 	Versions      *LinkObject `bson:"versions,omitempty"       json:"versions,omitempty"`
+	LatestVersion *LinkObject `bson:"latest_version,omitempty" json:"latest_version,omitempty"`
+}
+
+// Edition represents information related to a single edition for a dataset
+type Edition struct {
+	Edition     string              `bson:"edition,omitempty"     json:"edition,omitempty"`
+	ID          string              `bson:"id,omitempty"          json:"id,omitempty"`
+	Links       *EditionUpdateLinks `bson:"links,omitempty"       json:"links,omitempty"`
+	State       string              `bson:"state,omitempty"        json:"state,omitempty"`
+	LastUpdated time.Time           `bson:"last_updated,omitempty" json:"-"`
 }
 
 // Publisher represents an object containing information of the publisher
@@ -226,14 +239,14 @@ func CheckState(docType, state string) error {
 
 // CreateDataset manages the creation of a dataset from a reader
 func CreateDataset(reader io.Reader) (*Dataset, error) {
-	bytes, err := ioutil.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
 	}
 
 	var dataset Dataset
 
-	err = json.Unmarshal(bytes, &dataset)
+	err = json.Unmarshal(b, &dataset)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
 	}
@@ -242,7 +255,7 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 
 // CreateVersion manages the creation of a version from a reader
 func CreateVersion(reader io.Reader) (*Version, error) {
-	bytes, err := ioutil.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
 	}
@@ -251,7 +264,7 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 	// Create unique id
 	version.ID = uuid.NewV4().String()
 
-	err = json.Unmarshal(bytes, &version)
+	err = json.Unmarshal(b, &version)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
 	}
@@ -261,13 +274,13 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 
 // CreateDownloadList manages the creation of a list downloadable items from a reader
 func CreateDownloadList(reader io.Reader) (*DownloadList, error) {
-	bytes, err := ioutil.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response body")
 	}
 
 	var downloadList DownloadList
-	if err := json.Unmarshal(bytes, &downloadList); err != nil {
+	if err := json.Unmarshal(b, &downloadList); err != nil {
 		return nil, errors.Wrap(err, "failed to parse json to downloadList")
 	}
 
@@ -276,12 +289,12 @@ func CreateDownloadList(reader io.Reader) (*DownloadList, error) {
 
 // CreateContact manages the creation of a contact from a reader
 func CreateContact(reader io.Reader) (*Contact, error) {
-	bytes, err := ioutil.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
 	}
 	var contact Contact
-	err = json.Unmarshal(bytes, &contact)
+	err = json.Unmarshal(b, &contact)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
 	}
