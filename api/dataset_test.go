@@ -2438,62 +2438,6 @@ func TestCreateNewVersionDoc(t *testing.T) {
 	})
 }
 
-// func setUp(auth bool, state string) *storetest.StorerMock {
-// 	mockedDataStore := &storetest.StorerMock{
-// 		GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
-// 			return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{}}, nil
-// 		},
-// 		GetEditionFunc: func(string, string, string) (*models.EditionUpdate, error) {
-// 			return &models.EditionUpdate{}, nil
-// 		},
-// 		GetNextVersionFunc: func(string, string) (int, error) {
-// 			return 1, nil
-// 		},
-// 		UpdateDatasetWithAssociationFunc: func(string, string, *models.Version) error {
-// 			return nil
-// 		},
-// 		UpdateEditionFunc: func(string, string, *models.Version) error {
-// 			return nil
-// 		},
-// 		UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
-// 			return nil
-// 		},
-// 		UpsertVersionFunc: func(string, *models.Version) error {
-// 			return nil
-// 		},
-// 	}
-//
-// 	mockedDataStore.GetEdition("123", "2017", "")
-//
-// 	mockedDataStore.GetNextVersion("123", "2017")
-//
-// 	versionDoc := &models.Version{
-// 		State: state,
-// 	}
-// 	mockedDataStore.UpsertVersion("1", versionDoc)
-//
-// 	if state == models.PublishedState {
-// 		datasetDoc := &models.DatasetUpdate{
-// 			ID: "123",
-// 			Next: &models.Dataset{
-// 				State: state,
-// 			},
-// 		}
-// 		mockedDataStore.UpdateEdition("123", "2017", &models.Version{State: state})
-// 		mockedDataStore.GetDataset("123")
-// 		mockedDataStore.UpsertDataset("123", datasetDoc)
-// 	}
-//
-// 	if state == models.AssociatedState {
-// 		versionDoc := &models.Version{
-// 			State: state,
-// 		}
-// 		mockedDataStore.UpdateDatasetWithAssociation("123", state, versionDoc)
-// 	}
-//
-// 	return mockedDataStore
-// }
-
 // createDatasetDoc returns a datasetUpdate doc containing minimal fields but
 // there is a clear difference between the current and next sub documents
 func createDatasetDoc() *models.DatasetUpdate {

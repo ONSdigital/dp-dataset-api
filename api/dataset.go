@@ -148,7 +148,6 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 		handleErrorType(editionDocType, err, w)
 		return
 	}
-	log.Trace("what is the data", log.Data{"results": results.Items})
 
 	var logMessage string
 	var bytes []byte
