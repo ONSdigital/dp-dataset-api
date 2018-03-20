@@ -32,6 +32,7 @@ type DatasetAPI struct {
 	dataStore            store.DataStore
 	host                 string
 	internalToken        string
+	downloadServiceToken string
 	EnablePrePublishView bool
 	privateAuth          *auth.Authenticator
 	router               *mux.Router
@@ -71,6 +72,7 @@ func routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 		dataStore:            dataStore,
 		host:                 cfg.DatasetAPIURL,
 		internalToken:        cfg.SecretKey,
+		downloadServiceToken: cfg.DownloadServiceSecretKey,
 		EnablePrePublishView: cfg.EnablePrivateEnpoints,
 		router:               router,
 		urlBuilder:           urlBuilder,

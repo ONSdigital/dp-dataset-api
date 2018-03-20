@@ -177,7 +177,9 @@ type DownloadObject struct {
 	URL string `bson:"url,omitempty"  json:"url,omitempty"`
 	// TODO size is in b and probably should be an int64 instead of a string this
 	// will have to change for several services (filter API, exporter services and web)
-	Size string `bson:"size,omitempty" json:"size,omitempty"`
+	Size    string `bson:"size,omitempty" json:"size,omitempty"`
+	Public  string `bson:"public,omitempty" json:"public,omitempty"`
+	Private string `bson:"private,omitempty" json:"private,omitempty"`
 }
 
 // LatestChange represents an object contining
