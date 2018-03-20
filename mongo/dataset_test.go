@@ -16,12 +16,13 @@ var (
 	versionID = 2
 )
 
+
 func TestBuildEditionsQuery(t *testing.T) {
 	t.Parallel()
 	Convey("When no state was set", t, func() {
 
 		expectedSelector := bson.M{
-			"links.dataset.id": id,
+			"next.links.dataset.id": id,
 		}
 
 		selector := buildEditionsQuery(id, "")
@@ -32,8 +33,8 @@ func TestBuildEditionsQuery(t *testing.T) {
 	Convey("When state was set to published", t, func() {
 
 		expectedSelector := bson.M{
-			"links.dataset.id": id,
-			"state":            state,
+			"current.links.dataset.id": id,
+			"current.state":            state,
 		}
 
 		selector := buildEditionsQuery(id, state)
@@ -47,8 +48,8 @@ func TestBuildEditionQuery(t *testing.T) {
 	Convey("When no state was set", t, func() {
 
 		expectedSelector := bson.M{
-			"links.dataset.id": id,
-			"edition":          editionID,
+			"next.links.dataset.id": id,
+			"next.edition":          editionID,
 		}
 
 		selector := buildEditionQuery(id, editionID, "")
@@ -59,9 +60,9 @@ func TestBuildEditionQuery(t *testing.T) {
 	Convey("When state was set to published", t, func() {
 
 		expectedSelector := bson.M{
-			"links.dataset.id": id,
-			"edition":          editionID,
-			"state":            state,
+			"current.links.dataset.id": id,
+			"current.edition":          editionID,
+			"current.state":            state,
 		}
 
 		selector := buildEditionQuery(id, editionID, state)
@@ -69,6 +70,7 @@ func TestBuildEditionQuery(t *testing.T) {
 		So(selector, ShouldResemble, expectedSelector)
 	})
 }
+
 
 func TestBuildVersionsQuery(t *testing.T) {
 	t.Parallel()

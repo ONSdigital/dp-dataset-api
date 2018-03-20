@@ -47,13 +47,13 @@ func (s *Store) GetNodes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, err := json.Marshal(results)
+	b, err := json.Marshal(results)
 	if err != nil {
 		internalError(w, err)
 		return
 	}
 
-	writeBody(w, bytes)
+	writeBody(w, b)
 	log.Debug("get dimension nodes", log.Data{"instance": id})
 }
 
@@ -85,13 +85,13 @@ func (s *Store) GetUnique(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, err := json.Marshal(values)
+	b, err := json.Marshal(values)
 	if err != nil {
 		internalError(w, err)
 		return
 	}
 
-	writeBody(w, bytes)
+	writeBody(w, b)
 	log.Debug("get dimension values", log.Data{"instance": id})
 }
 
@@ -160,14 +160,14 @@ func (s *Store) AddNodeID(w http.ResponseWriter, r *http.Request) {
 
 // CreateDataset manages the creation of a dataset from a reader
 func unmarshalDimensionCache(reader io.Reader) (*models.CachedDimensionOption, error) {
-	bytes, err := ioutil.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errors.New("Failed to read message body")
 	}
 
 	var option models.CachedDimensionOption
 
-	err = json.Unmarshal(bytes, &option)
+	err = json.Unmarshal(b, &option)
 	if err != nil {
 		return nil, errors.New("Failed to parse json body")
 
@@ -195,9 +195,9 @@ func internalError(w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
-func writeBody(w http.ResponseWriter, bytes []byte) {
+func writeBody(w http.ResponseWriter, b []byte) {
 	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(bytes); err != nil {
+	if _, err := w.Write(b); err != nil {
 		log.Error(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

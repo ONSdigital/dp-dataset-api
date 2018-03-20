@@ -1,13 +1,13 @@
 package api
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"io/ioutil"
-
-	"encoding/json"
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
@@ -16,7 +16,6 @@ import (
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
-	"gopkg.in/mgo.v2/bson"
 )
 
 // The follow unit tests check that when ENABLE_PRIVATE_ENDPOINTS is set to false, only
@@ -89,7 +88,7 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 func TestWebSubnetEditionsEndpoint(t *testing.T) {
 	t.Parallel()
 
-	edition := &models.Edition{ID: "1234", State: models.PublishedState}
+	edition := &models.EditionUpdate{ID: "1234", Current: &models.Edition{State: models.PublishedState}}
 	var editionSearchState, datasetSearchState string
 
 	Convey("When the API is started with private endpoints disabled", t, func() {
@@ -101,10 +100,10 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 				datasetSearchState = state
 				return nil
 			},
-			GetEditionsFunc: func(ID, state string) (*models.EditionResults, error) {
+			GetEditionsFunc: func(ID, state string) (*models.EditionUpdateResults, error) {
 				editionSearchState = state
-				return &models.EditionResults{
-					Items: []models.Edition{*edition},
+				return &models.EditionUpdateResults{
+					Items: []*models.EditionUpdate{edition},
 				}, nil
 			},
 		}
@@ -121,7 +120,7 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 func TestWebSubnetEditionEndpoint(t *testing.T) {
 	t.Parallel()
 
-	edition := &models.Edition{ID: "1234", State: models.PublishedState}
+	edition := &models.EditionUpdate{ID: "1234", Current: &models.Edition{State: models.PublishedState}}
 	var editionSearchState, datasetSearchState string
 
 	Convey("When the API is started with private endpoints disabled", t, func() {
@@ -133,7 +132,7 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 				datasetSearchState = state
 				return nil
 			},
-			GetEditionFunc: func(ID, editionID, state string) (*models.Edition, error) {
+			GetEditionFunc: func(ID, editionID, state string) (*models.EditionUpdate, error) {
 				editionSearchState = state
 				return edition, nil
 			},

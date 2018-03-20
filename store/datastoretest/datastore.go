@@ -5,10 +5,11 @@ package storetest
 
 import (
 	"context"
-	"github.com/ONSdigital/dp-dataset-api/models"
-	"gopkg.in/mgo.v2/bson"
 	"sync"
 	"time"
+
+	"github.com/ONSdigital/dp-dataset-api/models"
+	"gopkg.in/mgo.v2/bson"
 )
 
 var (
@@ -197,10 +198,10 @@ type StorerMock struct {
 	GetDimensionsFunc func(datasetID string, versionID string) ([]bson.M, error)
 
 	// GetEditionFunc mocks the GetEdition method.
-	GetEditionFunc func(ID string, editionID string, state string) (*models.Edition, error)
+	GetEditionFunc func(ID, editionID, state string) (*models.EditionUpdate, error)
 
 	// GetEditionsFunc mocks the GetEditions method.
-	GetEditionsFunc func(ID string, state string) (*models.EditionResults, error)
+	GetEditionsFunc func(id, state string) (*models.EditionUpdateResults, error)
 
 	// GetInstanceFunc mocks the GetInstance method.
 	GetInstanceFunc func(ID string) (*models.Instance, error)
@@ -260,7 +261,7 @@ type StorerMock struct {
 	UpsertDatasetFunc func(ID string, datasetDoc *models.DatasetUpdate) error
 
 	// UpsertEditionFunc mocks the UpsertEdition method.
-	UpsertEditionFunc func(datasetID string, edition string, editionDoc *models.Edition) error
+	UpsertEditionFunc func(datasetID string, edition string, editionDoc *models.EditionUpdate) error
 
 	// UpsertVersionFunc mocks the UpsertVersion method.
 	UpsertVersionFunc func(ID string, versionDoc *models.Version) error
@@ -338,14 +339,14 @@ type StorerMock struct {
 			ID string
 			// EditionID is the editionID argument value.
 			EditionID string
-			// State is the state argument value.
+			// Auth reflects if the requester is authorised.
 			State string
 		}
 		// GetEditions holds details about calls to the GetEditions method.
 		GetEditions []struct {
 			// ID is the ID argument value.
 			ID string
-			// State is the state argument value.
+			// State reflects if the requester is authorised.
 			State string
 		}
 		// GetInstance holds details about calls to the GetInstance method.
@@ -496,7 +497,7 @@ type StorerMock struct {
 			// Edition is the edition argument value.
 			Edition string
 			// EditionDoc is the editionDoc argument value.
-			EditionDoc *models.Edition
+			EditionDoc *models.EditionUpdate
 		}
 		// UpsertVersion holds details about calls to the UpsertVersion method.
 		UpsertVersion []struct {
@@ -869,7 +870,7 @@ func (mock *StorerMock) GetDimensionsCalls() []struct {
 }
 
 // GetEdition calls GetEditionFunc.
-func (mock *StorerMock) GetEdition(ID string, editionID string, state string) (*models.Edition, error) {
+func (mock *StorerMock) GetEdition(ID string, editionID string, state string) (*models.EditionUpdate, error) {
 	if mock.GetEditionFunc == nil {
 		panic("moq: StorerMock.GetEditionFunc is nil but Storer.GetEdition was just called")
 	}
@@ -908,15 +909,15 @@ func (mock *StorerMock) GetEditionCalls() []struct {
 }
 
 // GetEditions calls GetEditionsFunc.
-func (mock *StorerMock) GetEditions(ID string, state string) (*models.EditionResults, error) {
+func (mock *StorerMock) GetEditions(ID string, state string) (*models.EditionUpdateResults, error) {
 	if mock.GetEditionsFunc == nil {
 		panic("moq: StorerMock.GetEditionsFunc is nil but Storer.GetEditions was just called")
 	}
 	callInfo := struct {
-		ID    string
+		ID   string
 		State string
 	}{
-		ID:    ID,
+		ID:   ID,
 		State: state,
 	}
 	lockStorerMockGetEditions.Lock()
@@ -929,11 +930,11 @@ func (mock *StorerMock) GetEditions(ID string, state string) (*models.EditionRes
 // Check the length with:
 //     len(mockedStorer.GetEditionsCalls())
 func (mock *StorerMock) GetEditionsCalls() []struct {
-	ID    string
+	ID   string
 	State string
 } {
 	var calls []struct {
-		ID    string
+		ID   string
 		State string
 	}
 	lockStorerMockGetEditions.RLock()
@@ -1624,14 +1625,14 @@ func (mock *StorerMock) UpsertDatasetCalls() []struct {
 }
 
 // UpsertEdition calls UpsertEditionFunc.
-func (mock *StorerMock) UpsertEdition(datasetID string, edition string, editionDoc *models.Edition) error {
+func (mock *StorerMock) UpsertEdition(datasetID string, edition string, editionDoc *models.EditionUpdate) error {
 	if mock.UpsertEditionFunc == nil {
 		panic("moq: StorerMock.UpsertEditionFunc is nil but Storer.UpsertEdition was just called")
 	}
 	callInfo := struct {
 		DatasetID  string
 		Edition    string
-		EditionDoc *models.Edition
+		EditionDoc *models.EditionUpdate
 	}{
 		DatasetID:  datasetID,
 		Edition:    edition,
@@ -1649,12 +1650,12 @@ func (mock *StorerMock) UpsertEdition(datasetID string, edition string, editionD
 func (mock *StorerMock) UpsertEditionCalls() []struct {
 	DatasetID  string
 	Edition    string
-	EditionDoc *models.Edition
+	EditionDoc *models.EditionUpdate
 } {
 	var calls []struct {
 		DatasetID  string
 		Edition    string
-		EditionDoc *models.Edition
+		EditionDoc *models.EditionUpdate
 	}
 	lockStorerMockUpsertEdition.RLock()
 	calls = mock.calls.UpsertEdition
