@@ -158,7 +158,7 @@ func buildEditionQuery(id, editionID, state string) bson.M {
 		selector = bson.M{
 			"current.links.dataset.id": id,
 			"current.edition":          editionID,
-			"current.state":			state,
+			"current.state":            state,
 		}
 	} else {
 		selector = bson.M{
@@ -458,11 +458,11 @@ func (m *Mongo) UpdateEdition(datasetID, edition string, version *models.Version
 			"next.links.latest_version.id":   version.Links.Version.ID,
 		},
 		"$setOnInsert": bson.M{
-			"last_updated": time.Now(),
+			"next.last_updated": time.Now(),
 		},
 	}
 
-	err = s.DB(m.Database).C(editionsCollection).Update(bson.M{"links.dataset.id": datasetID, "edition": edition}, update)
+	err = s.DB(m.Database).C(editionsCollection).Update(bson.M{"next.links.dataset.id": datasetID, "next.edition": edition}, update)
 	return
 }
 
@@ -628,7 +628,7 @@ func (m *Mongo) CheckEditionExists(id, editionID, state string) error {
 		query = bson.M{
 			"current.links.dataset.id": id,
 			"current.edition":          editionID,
-			"current.state":    state,
+			"current.state":            state,
 		}
 	}
 
