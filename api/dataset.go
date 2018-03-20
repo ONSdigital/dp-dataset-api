@@ -1100,18 +1100,18 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 								CSV: &models.DownloadObject{
 									Public: currentVersion.Downloads.CSV.Public,
 									Size:   currentVersion.Downloads.CSV.Size,
-									URL:    currentVersion.Downloads.CSV.URL,
+									HRef:   currentVersion.Downloads.CSV.HRef,
 								},
 							},
 						}
 					}
-					if currentVersion.Downloads.XLS != nil && currentVersion.Downloads.XLS.URL != "" {
+					if currentVersion.Downloads.XLS != nil && currentVersion.Downloads.XLS.Public != "" {
 						newVersion = &models.Version{
 							Downloads: &models.DownloadList{
 								XLS: &models.DownloadObject{
 									Public: currentVersion.Downloads.CSV.Public,
 									Size:   currentVersion.Downloads.CSV.Size,
-									URL:    currentVersion.Downloads.CSV.URL,
+									HRef:   currentVersion.Downloads.CSV.HRef,
 								},
 							},
 						}

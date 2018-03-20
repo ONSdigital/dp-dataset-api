@@ -124,11 +124,11 @@ var dimension = CodeList{
 
 var downloads = DownloadList{
 	CSV: &DownloadObject{
-		URL:  "https://www.aws/123",
+		HRef: "https://www.aws/123",
 		Size: "25",
 	},
 	XLS: &DownloadObject{
-		URL:  "https://www.aws/1234",
+		HRef: "https://www.aws/1234",
 		Size: "45",
 	},
 }

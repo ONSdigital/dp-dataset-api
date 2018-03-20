@@ -1379,7 +1379,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 					Downloads: &models.DownloadList{
 						CSV: &models.DownloadObject{
 							Private: "s3://csv-exported/myfile.csv",
-							URL:     "http://localhost:23600/datasets/123/editions/2017/versions/1.csv",
+							HRef:    "http://localhost:23600/datasets/123/editions/2017/versions/1.csv",
 							Size:    "1234",
 						},
 					},
@@ -1500,7 +1500,7 @@ func TestPutEmptyVersion(t *testing.T) {
 	var v models.Version
 	json.Unmarshal([]byte(versionAssociatedPayload), &v)
 	v.State = models.AssociatedState
-	xlsDownload := &models.DownloadList{XLS: &models.DownloadObject{Size: "1", URL: "/hello"}}
+	xlsDownload := &models.DownloadList{XLS: &models.DownloadObject{Size: "1", HRef: "/hello"}}
 
 	Convey("given an existing version with empty downloads", t, func() {
 		mockedDataStore := &storetest.StorerMock{
