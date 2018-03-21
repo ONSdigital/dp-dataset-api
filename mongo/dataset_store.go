@@ -90,7 +90,7 @@ func (m *Mongo) GetDataset(id string) (*models.DatasetUpdate, error) {
 }
 
 // GetEditions retrieves all edition documents for a dataset
-func (m *Mongo) GetEditions(id, state string) (*models.EditionResults, error) {
+func (m *Mongo) GetEditions(id, state string) (*models.EditionUpdateResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -104,7 +104,7 @@ func (m *Mongo) GetEditions(id, state string) (*models.EditionResults, error) {
 		}
 	}()
 
-	var results []models.Edition
+	var results []*models.EditionUpdate
 	if err := iter.All(&results); err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, errs.ErrEditionNotFound
@@ -115,19 +115,19 @@ func (m *Mongo) GetEditions(id, state string) (*models.EditionResults, error) {
 	if len(results) < 1 {
 		return nil, errs.ErrEditionNotFound
 	}
-	return &models.EditionResults{Items: results}, nil
+	return &models.EditionUpdateResults{Items: results}, nil
 }
 
 func buildEditionsQuery(id, state string) bson.M {
 	var selector bson.M
 	if state != "" {
 		selector = bson.M{
-			"links.dataset.id": id,
-			"state":            state,
+			"current.links.dataset.id": id,
+			"current.state":            state,
 		}
 	} else {
 		selector = bson.M{
-			"links.dataset.id": id,
+			"next.links.dataset.id": id,
 		}
 	}
 
@@ -135,13 +135,13 @@ func buildEditionsQuery(id, state string) bson.M {
 }
 
 // GetEdition retrieves an edition document for a dataset
-func (m *Mongo) GetEdition(id, editionID, state string) (*models.Edition, error) {
+func (m *Mongo) GetEdition(id, editionID, state string) (*models.EditionUpdate, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
 	selector := buildEditionQuery(id, editionID, state)
 
-	var edition models.Edition
+	var edition models.EditionUpdate
 	err := s.DB(m.Database).C(editionsCollection).Find(selector).One(&edition)
 	if err != nil {
 		if err == mgo.ErrNotFound {
@@ -154,16 +154,16 @@ func (m *Mongo) GetEdition(id, editionID, state string) (*models.Edition, error)
 
 func buildEditionQuery(id, editionID, state string) bson.M {
 	var selector bson.M
-	if state == "" {
+	if state != "" {
 		selector = bson.M{
-			"links.dataset.id": id,
-			"edition":          editionID,
+			"current.links.dataset.id": id,
+			"current.edition":          editionID,
+			"current.state":            state,
 		}
 	} else {
 		selector = bson.M{
-			"links.dataset.id": id,
-			"edition":          editionID,
-			"state":            state,
+			"next.links.dataset.id": id,
+			"next.edition":          editionID,
 		}
 	}
 
@@ -453,16 +453,16 @@ func (m *Mongo) UpdateEdition(datasetID, edition string, version *models.Version
 
 	update := bson.M{
 		"$set": bson.M{
-			"state":                     version.State,
-			"links.latest_version.href": version.Links.Version.HRef,
-			"links.latest_version.id":   version.Links.Version.ID,
+			"next.state":                     version.State,
+			"next.links.latest_version.href": version.Links.Version.HRef,
+			"next.links.latest_version.id":   version.Links.Version.ID,
 		},
 		"$setOnInsert": bson.M{
-			"last_updated": time.Now(),
+			"next.last_updated": time.Now(),
 		},
 	}
 
-	err = s.DB(m.Database).C(editionsCollection).Update(bson.M{"links.dataset.id": datasetID, "edition": edition}, update)
+	err = s.DB(m.Database).C(editionsCollection).Update(bson.M{"next.links.dataset.id": datasetID, "next.edition": edition}, update)
 	return
 }
 
@@ -540,16 +540,16 @@ func (m *Mongo) UpsertDataset(id string, datasetDoc *models.DatasetUpdate) (err 
 }
 
 // UpsertEdition adds or overides an existing edition document
-func (m *Mongo) UpsertEdition(datasetID, edition string, editionDoc *models.Edition) (err error) {
+func (m *Mongo) UpsertEdition(datasetID, edition string, editionDoc *models.EditionUpdate) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
 	selector := bson.M{
-		"edition":          edition,
-		"links.dataset.id": datasetID,
+		"next.edition":          edition,
+		"next.links.dataset.id": datasetID,
 	}
 
-	editionDoc.LastUpdated = time.Now()
+	editionDoc.Next.LastUpdated = time.Now()
 
 	update := bson.M{
 		"$set": editionDoc,
@@ -621,14 +621,14 @@ func (m *Mongo) CheckEditionExists(id, editionID, state string) error {
 	var query bson.M
 	if state == "" {
 		query = bson.M{
-			"links.dataset.id": id,
-			"edition":          editionID,
+			"next.links.dataset.id": id,
+			"next.edition":          editionID,
 		}
 	} else {
 		query = bson.M{
-			"links.dataset.id": id,
-			"edition":          editionID,
-			"state":            state,
+			"current.links.dataset.id": id,
+			"current.edition":          editionID,
+			"current.state":            state,
 		}
 	}
 

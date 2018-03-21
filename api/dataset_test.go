@@ -188,8 +188,8 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
-				return &models.EditionResults{}, nil
+			GetEditionsFunc: func(id string, state string) (*models.EditionUpdateResults, error) {
+				return &models.EditionUpdateResults{}, nil
 			},
 		}
 
@@ -248,7 +248,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
+			GetEditionsFunc: func(id string, state string) (*models.EditionUpdateResults, error) {
 				return nil, errs.ErrEditionNotFound
 			},
 		}
@@ -269,7 +269,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(id, state string) (*models.EditionResults, error) {
+			GetEditionsFunc: func(id string, state string) (*models.EditionUpdateResults, error) {
 				return nil, errs.ErrEditionNotFound
 			},
 		}
@@ -293,8 +293,8 @@ func TestGetEditionReturnsOK(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionFunc: func(id, editionID, state string) (*models.Edition, error) {
-				return &models.Edition{}, nil
+			GetEditionFunc: func(id string, editionID string, state string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{}, nil
 			},
 		}
 
@@ -353,7 +353,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionFunc: func(id, editionID, state string) (*models.Edition, error) {
+			GetEditionFunc: func(id string, editionID string, state string) (*models.EditionUpdate, error) {
 				return nil, errs.ErrEditionNotFound
 			},
 		}
@@ -374,7 +374,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionFunc: func(id, editionID, state string) (*models.Edition, error) {
+			GetEditionFunc: func(id string, editionID string, state string) (*models.EditionUpdate, error) {
 				return nil, errs.ErrEditionNotFound
 			},
 		}
@@ -1382,9 +1382,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			UpdateVersionFunc: func(string, *models.Version) error {
 				return nil
 			},
-			UpdateEditionFunc: func(string, string, *models.Version) error {
-				return nil
-			},
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{
 					ID:      "123",
@@ -1395,10 +1392,23 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
 				return nil
 			},
+			GetEditionFunc: func(string, string, string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{
+					ID: "123",
+					Next: &models.Edition{
+						State: models.PublishedState,
+					},
+					Current: &models.Edition{},
+				}, nil
+			},
+			UpsertEditionFunc: func(string, string, *models.EditionUpdate) error {
+				return nil
+			},
 		}
+
 		mockedDataStore.GetVersion("789", "2017", "1", "")
+		mockedDataStore.GetEdition("123", "2017", "")
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
-		mockedDataStore.UpdateEdition("123", "2017", &models.Version{State: "published"})
 		mockedDataStore.GetDataset("123")
 		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 
@@ -1408,7 +1418,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 3)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
