@@ -16,7 +16,6 @@ var (
 	versionID = 2
 )
 
-
 func TestBuildEditionsQuery(t *testing.T) {
 	t.Parallel()
 	Convey("When no state was set", t, func() {
@@ -70,7 +69,6 @@ func TestBuildEditionQuery(t *testing.T) {
 		So(selector, ShouldResemble, expectedSelector)
 	})
 }
-
 
 func TestBuildVersionsQuery(t *testing.T) {
 	t.Parallel()

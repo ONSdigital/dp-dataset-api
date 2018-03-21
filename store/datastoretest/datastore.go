@@ -914,10 +914,10 @@ func (mock *StorerMock) GetEditions(ID string, state string) (*models.EditionUpd
 		panic("moq: StorerMock.GetEditionsFunc is nil but Storer.GetEditions was just called")
 	}
 	callInfo := struct {
-		ID   string
+		ID    string
 		State string
 	}{
-		ID:   ID,
+		ID:    ID,
 		State: state,
 	}
 	lockStorerMockGetEditions.Lock()
@@ -930,11 +930,11 @@ func (mock *StorerMock) GetEditions(ID string, state string) (*models.EditionUpd
 // Check the length with:
 //     len(mockedStorer.GetEditionsCalls())
 func (mock *StorerMock) GetEditionsCalls() []struct {
-	ID   string
+	ID    string
 	State string
 } {
 	var calls []struct {
-		ID   string
+		ID    string
 		State string
 	}
 	lockStorerMockGetEditions.RLock()
