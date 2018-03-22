@@ -36,18 +36,9 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	authorised, logData := api.authenticate(r, log.Data{})
+
 	var b []byte
-	logData := log.Data{}
-
-	var authorised bool
-	var callerIdentity, userIdentity string
-	if api.EnablePrePublishView {
-		callerIdentity, userIdentity, authorised = authenticate(r)
-		logData["caller_identity"] = callerIdentity
-		logData["user_identity"] = userIdentity
-	}
-	logData["authenticated"] = authorised
-
 	if authorised {
 
 		// User has valid authentication to get raw dataset document
@@ -93,14 +84,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var authorised bool
-	var callerIdentity, userIdentity string
-	if api.EnablePrePublishView {
-		callerIdentity, userIdentity, authorised = authenticate(r)
-		logData["caller_identity"] = callerIdentity
-		logData["user_identity"] = userIdentity
-	}
-	logData["authenticated"] = authorised
+	authorised, logData := api.authenticate(r, logData)
 
 	var b []byte
 	if !authorised {
@@ -146,14 +130,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	logData := log.Data{"dataset_id": id}
 
-	var authorised bool
-	var callerIdentity, userIdentity string
-	if api.EnablePrePublishView {
-		callerIdentity, userIdentity, authorised = authenticate(r)
-		logData["caller_identity"] = callerIdentity
-		logData["user_identity"] = userIdentity
-	}
-	logData["authenticated"] = authorised
+	authorised, logData := api.authenticate(r, logData)
 
 	var state string
 	if !authorised {
@@ -222,14 +199,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	editionID := vars["edition"]
 	logData := log.Data{"dataset_id": id, "edition": editionID}
 
-	var authorised bool
-	var callerIdentity, userIdentity string
-	if api.EnablePrePublishView {
-		callerIdentity, userIdentity, authorised = authenticate(r)
-		logData["caller_identity"] = callerIdentity
-		logData["user_identity"] = userIdentity
-	}
-	logData["authenticated"] = authorised
+	authorised, logData := api.authenticate(r, logData)
 
 	var state string
 	if !authorised {
@@ -290,14 +260,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	editionID := vars["edition"]
 	logData := log.Data{"dataset_id": id, "edition": editionID}
 
-	var authorised bool
-	var callerIdentity, userIdentity string
-	if api.EnablePrePublishView {
-		callerIdentity, userIdentity, authorised = authenticate(r)
-		logData["caller_identity"] = callerIdentity
-		logData["user_identity"] = userIdentity
-	}
-	logData["authenticated"] = authorised
+	authorised, logData := api.authenticate(r, logData)
 
 	var state string
 	if !authorised {
@@ -374,14 +337,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	version := vars["version"]
 	logData := log.Data{"dataset_id": id, "edition": editionID, "version": version}
 
-	var authorised bool
-	var callerIdentity, userIdentity string
-	if api.EnablePrePublishView {
-		callerIdentity, userIdentity, authorised = authenticate(r)
-		logData["caller_identity"] = callerIdentity
-		logData["user_identity"] = userIdentity
-	}
-	logData["authenticated"] = authorised
+	authorised, logData := api.authenticate(r, logData)
 
 	var state string
 	if !authorised {
@@ -806,14 +762,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	version := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
-	var authorised bool
-	var callerIdentity, userIdentity string
-	if api.EnablePrePublishView {
-		callerIdentity, userIdentity, authorised = authenticate(r)
-		logData["caller_identity"] = callerIdentity
-		logData["user_identity"] = userIdentity
-	}
-	logData["authenticated"] = authorised
+	authorised, logData := api.authenticate(r, logData)
 
 	var state string
 	if !authorised {
@@ -919,14 +868,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 
 	logData := log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension}
 
-	var authorised bool
-	var callerIdentity, userIdentity string
-	if api.EnablePrePublishView {
-		callerIdentity, userIdentity, authorised = authenticate(r)
-		logData["caller_identity"] = callerIdentity
-		logData["user_identity"] = userIdentity
-	}
-	logData["authenticated"] = authorised
+	authorised, logData := api.authenticate(r, logData)
 
 	var state string
 	if !authorised {
@@ -985,14 +927,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var authorised bool
-	var callerIdentity, userIdentity string
-	if api.EnablePrePublishView {
-		callerIdentity, userIdentity, authorised = authenticate(r)
-		logData["caller_identity"] = callerIdentity
-		logData["user_identity"] = userIdentity
-	}
-	logData["authenticated"] = authorised
+	authorised, logData := api.authenticate(r, logData)
 
 	var state string
 
@@ -1183,22 +1118,30 @@ func setJSONContentType(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
-func authenticate(r *http.Request) (callerIdentity, userIdentity string, authorised bool) {
-	var hasCallerIdentity, hasUserIdentity bool
+func (api *DatasetAPI) authenticate(r *http.Request, logData map[string]interface{}) (bool, map[string]interface{}) {
+	var authorised bool
 
-	callerIdentity = identity.Caller(r.Context())
-	if callerIdentity != "" {
-		hasCallerIdentity = true
+	if api.EnablePrePublishView {
+		var hasCallerIdentity, hasUserIdentity bool
+
+		callerIdentity := identity.Caller(r.Context())
+		if callerIdentity != "" {
+			logData["caller_identity"] = callerIdentity
+			hasCallerIdentity = true
+		}
+
+		userIdentity := identity.User(r.Context())
+		if userIdentity != "" {
+			logData["user_identity"] = userIdentity
+			hasUserIdentity = true
+		}
+
+		if hasCallerIdentity || hasUserIdentity {
+			authorised = true
+		}
+		logData["authenticated"] = authorised
+
+		return authorised, logData
 	}
-
-	userIdentity = identity.User(r.Context())
-	if userIdentity != "" {
-		hasUserIdentity = true
-	}
-
-	if hasCallerIdentity || hasUserIdentity {
-		authorised = true
-	}
-
-	return
+	return authorised, logData
 }
