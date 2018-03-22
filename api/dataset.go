@@ -41,12 +41,13 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{}
 
 	var authorised bool
-	identity := ""
+	var callerIdentity, userIdentity string
 	if api.EnablePrePublishView {
-		identity, authorised = authenticate(r)
-		logData["authenticated"] = authorised
+		callerIdentity, userIdentity, authorised = authenticate(r)
+		logData["caller_identity"] = callerIdentity
+		logData["user_identity"] = userIdentity
 	}
-	logData["identity"] = identity
+	logData["authenticated"] = authorised
 
 	if authorised {
 
@@ -94,12 +95,13 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var authorised bool
-	identity := ""
+	var callerIdentity, userIdentity string
 	if api.EnablePrePublishView {
-		identity, authorised = authenticate(r)
-		logData["authenticated"] = authorised
+		callerIdentity, userIdentity, authorised = authenticate(r)
+		logData["caller_identity"] = callerIdentity
+		logData["user_identity"] = userIdentity
 	}
-	logData["identity"] = identity
+	logData["authenticated"] = authorised
 
 	var b []byte
 	if !authorised {
@@ -146,12 +148,13 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": id}
 
 	var authorised bool
-	identity := ""
+	var callerIdentity, userIdentity string
 	if api.EnablePrePublishView {
-		identity, authorised = authenticate(r)
-		logData["authenticated"] = authorised
+		callerIdentity, userIdentity, authorised = authenticate(r)
+		logData["caller_identity"] = callerIdentity
+		logData["user_identity"] = userIdentity
 	}
-	logData["identity"] = identity
+	logData["authenticated"] = authorised
 
 	var state string
 	if !authorised {
@@ -221,12 +224,13 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": id, "edition": editionID}
 
 	var authorised bool
-	identity := ""
+	var callerIdentity, userIdentity string
 	if api.EnablePrePublishView {
-		identity, authorised = authenticate(r)
-		logData["authenticated"] = authorised
+		callerIdentity, userIdentity, authorised = authenticate(r)
+		logData["caller_identity"] = callerIdentity
+		logData["user_identity"] = userIdentity
 	}
-	logData["identity"] = identity
+	logData["authenticated"] = authorised
 
 	var state string
 	if !authorised {
@@ -288,19 +292,17 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": id, "edition": editionID}
 
 	var authorised bool
-	identity := ""
+	var callerIdentity, userIdentity string
 	if api.EnablePrePublishView {
-		identity, authorised = authenticate(r)
-		logData["authenticated"] = authorised
+		callerIdentity, userIdentity, authorised = authenticate(r)
+		logData["caller_identity"] = callerIdentity
+		logData["user_identity"] = userIdentity
 	}
-	logData["identity"] = identity
+	logData["authenticated"] = authorised
 
 	var state string
-	if !api.EnablePrePublishView {
+	if !authorised {
 		state = models.PublishedState
-	} else if !authorised {
-		state = models.PublishedState
-	} else {
 	}
 
 	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
@@ -374,20 +376,17 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": id, "edition": editionID, "version": version}
 
 	var authorised bool
-	identity := ""
+	var callerIdentity, userIdentity string
 	if api.EnablePrePublishView {
-		identity, authorised = authenticate(r)
+		callerIdentity, userIdentity, authorised = authenticate(r)
+		logData["caller_identity"] = callerIdentity
+		logData["user_identity"] = userIdentity
 	}
-	logData["identity"] = identity
+	logData["authenticated"] = authorised
 
 	var state string
-	if !api.EnablePrePublishView {
+	if !authorised {
 		state = models.PublishedState
-	} else if !authorised {
-		logData["authenticated"] = false
-		state = models.PublishedState
-	} else {
-		logData["authenticated"] = true
 	}
 
 	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
@@ -809,20 +808,17 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	var authorised bool
-	identity := ""
+	var callerIdentity, userIdentity string
 	if api.EnablePrePublishView {
-		identity, authorised = authenticate(r)
+		callerIdentity, userIdentity, authorised = authenticate(r)
+		logData["caller_identity"] = callerIdentity
+		logData["user_identity"] = userIdentity
 	}
-	logData["identity"] = identity
+	logData["authenticated"] = authorised
 
 	var state string
-	if !api.EnablePrePublishView {
+	if !authorised {
 		state = models.PublishedState
-	} else if !authorised {
-		logData["authenticated"] = false
-		state = models.PublishedState
-	} else {
-		logData["authenticated"] = true
 	}
 
 	versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
@@ -925,20 +921,17 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	logData := log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension}
 
 	var authorised bool
-	identity := ""
+	var callerIdentity, userIdentity string
 	if api.EnablePrePublishView {
-		identity, authorised = authenticate(r)
+		callerIdentity, userIdentity, authorised = authenticate(r)
+		logData["caller_identity"] = callerIdentity
+		logData["user_identity"] = userIdentity
 	}
-	logData["identity"] = identity
+	logData["authenticated"] = authorised
 
 	var state string
-	if !api.EnablePrePublishView {
+	if !authorised {
 		state = models.PublishedState
-	} else if !authorised {
-		logData["authenticated"] = false
-		state = models.PublishedState
-	} else {
-		logData["authenticated"] = true
 	}
 
 	version, err := api.dataStore.Backend.GetVersion(datasetID, editionID, versionID, state)
@@ -994,18 +987,18 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var authorised bool
-	identity := ""
+	var callerIdentity, userIdentity string
 	if api.EnablePrePublishView {
-		identity, authorised = authenticate(r)
+		callerIdentity, userIdentity, authorised = authenticate(r)
+		logData["caller_identity"] = callerIdentity
+		logData["user_identity"] = userIdentity
 	}
-	logData["identity"] = identity
+	logData["authenticated"] = authorised
 
-	// Default state to published
 	var state string
 
 	// if request is authenticated then access resources of state other than published
 	if !authorised {
-		logData["authenticated"] = false
 		// Check for current sub document
 		if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
 			log.ErrorC("found dataset but currently unpublished", errs.ErrDatasetNotFound, log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "dataset": datasetDoc.Current})
@@ -1014,8 +1007,6 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		}
 
 		state = datasetDoc.Current.State
-	} else {
-		logData["authenticated"] = true
 	}
 
 	if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
@@ -1193,14 +1184,22 @@ func setJSONContentType(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
-func authenticate(r *http.Request) (string, bool) {
-	callerIdentity, ok := r.Context().Value(callerIdentityKey).(string)
-	if ok && callerIdentity != "" {
-		return callerIdentity, true
+func authenticate(r *http.Request) (callerIdentity, userIdentity string, authorised bool) {
+	var callerIdentityOk, userIdentityOk, hasCallerIdentity, hasUserIdentity bool
+
+	callerIdentity, callerIdentityOk = r.Context().Value(callerIdentityKey).(string)
+	if callerIdentityOk && callerIdentity != "" {
+		hasCallerIdentity = true
 	}
-	userIdentity, ok := r.Context().Value(userIdentityKey).(string)
-	if ok && userIdentity != "" {
-		return userIdentity, true
+
+	userIdentity, userIdentityOk = r.Context().Value(userIdentityKey).(string)
+	if userIdentityOk && userIdentity != "" {
+		hasUserIdentity = true
 	}
-	return "", false
+
+	if hasCallerIdentity || hasUserIdentity {
+		authorised = true
+	}
+
+	return
 }
