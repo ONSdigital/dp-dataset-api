@@ -112,7 +112,7 @@ type ContactDetails struct {
 
 // EditionUpdate represents an evolving edition containing both the next and current edition
 type EditionUpdate struct {
-	ID      string   `bson:"_id,omitempty"         json:"id,omitempty"`
+	ID      string   `bson:"id,omitempty"         json:"id,omitempty"`
 	Current *Edition `bson:"current,omitempty"     json:"current,omitempty"`
 	Next    *Edition `bson:"next,omitempty"        json:"next,omitempty"`
 }

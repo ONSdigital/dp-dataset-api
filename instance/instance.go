@@ -275,6 +275,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		// Only create edition if it doesn't already exist
 		editionDoc, err := s.getEdition(datasetID, edition, id)
 		if err != nil {
+			log.ErrorR(r, err, nil)
 			handleErrorType(err, w)
 			return
 		}
