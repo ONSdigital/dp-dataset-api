@@ -9,6 +9,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/go-ns/identity"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -18,8 +19,6 @@ import (
 const (
 	florenceHeaderKey = "X-Florence-Token"
 	authHeaderKey     = "Authorization"
-	userIdentityKey   = "User-Identity"
-	callerIdentityKey = "Caller-Identity"
 
 	datasetDocType         = "dataset"
 	editionDocType         = "edition"
@@ -1185,15 +1184,15 @@ func setJSONContentType(w http.ResponseWriter) {
 }
 
 func authenticate(r *http.Request) (callerIdentity, userIdentity string, authorised bool) {
-	var callerIdentityOk, userIdentityOk, hasCallerIdentity, hasUserIdentity bool
+	var hasCallerIdentity, hasUserIdentity bool
 
-	callerIdentity, callerIdentityOk = r.Context().Value(callerIdentityKey).(string)
-	if callerIdentityOk && callerIdentity != "" {
+	callerIdentity = identity.Caller(r.Context())
+	if callerIdentity != "" {
 		hasCallerIdentity = true
 	}
 
-	userIdentity, userIdentityOk = r.Context().Value(userIdentityKey).(string)
-	if userIdentityOk && userIdentity != "" {
+	userIdentity = identity.User(r.Context())
+	if userIdentity != "" {
 		hasUserIdentity = true
 	}
 

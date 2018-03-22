@@ -63,7 +63,7 @@ func GetAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDown
 func createRequestWithAuth(method, URL string, body io.Reader) (*http.Request, error) {
 	r, err := http.NewRequest(method, URL, body)
 	ctx := r.Context()
-	ctx = context.WithValue(ctx, callerIdentityKey, "someone@ons.gov.uk")
+	ctx = context.WithValue(ctx, "Caller-Identity", "someone@ons.gov.uk")
 	r = r.WithContext(ctx)
 	return r, err
 }

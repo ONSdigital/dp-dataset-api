@@ -2,12 +2,14 @@ package identity
 
 import (
 	"net/http"
+
 	"github.com/ONSdigital/go-ns/rchttp"
 
 	"context"
-	"github.com/ONSdigital/go-ns/log"
 	"encoding/json"
 	"io/ioutil"
+
+	"github.com/ONSdigital/go-ns/log"
 )
 
 //go:generate moq -out identitytest/http_client.go -pkg identitytest . HttpClient
