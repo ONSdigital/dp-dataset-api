@@ -1169,9 +1169,9 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 						newVersion = &models.Version{
 							Downloads: &models.DownloadList{
 								XLS: &models.DownloadObject{
-									Public: versionDoc.Downloads.CSV.Public,
-									Size:   versionDoc.Downloads.CSV.Size,
-									HRef:   versionDoc.Downloads.CSV.HRef,
+									Public: versionDoc.Downloads.XLS.Public,
+									Size:   versionDoc.Downloads.XLS.Size,
+									HRef:   versionDoc.Downloads.XLS.HRef,
 								},
 							},
 						}
