@@ -1152,43 +1152,45 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 				// We can allow public download links to be modified by the exporters when a version is published.
 				// Note that a new version will be created which contain only the download information to prevent
 				// any forbidden fields from being set on the published version
-				if versionDoc.Downloads != nil {
-					newVersion := new(models.Version)
-					if versionDoc.Downloads.CSV != nil && versionDoc.Downloads.CSV.Public != "" {
-						newVersion = &models.Version{
-							Downloads: &models.DownloadList{
-								CSV: &models.DownloadObject{
-									Public: versionDoc.Downloads.CSV.Public,
-									Size:   versionDoc.Downloads.CSV.Size,
-									HRef:   versionDoc.Downloads.CSV.HRef,
+				if r.Method == "PUT" {
+					if versionDoc.Downloads != nil {
+						newVersion := new(models.Version)
+						if versionDoc.Downloads.CSV != nil && versionDoc.Downloads.CSV.Public != "" {
+							newVersion = &models.Version{
+								Downloads: &models.DownloadList{
+									CSV: &models.DownloadObject{
+										Public: versionDoc.Downloads.CSV.Public,
+										Size:   versionDoc.Downloads.CSV.Size,
+										HRef:   versionDoc.Downloads.CSV.HRef,
+									},
 								},
-							},
+							}
 						}
-					}
-					if versionDoc.Downloads.XLS != nil && versionDoc.Downloads.XLS.Public != "" {
-						newVersion = &models.Version{
-							Downloads: &models.DownloadList{
-								XLS: &models.DownloadObject{
-									Public: versionDoc.Downloads.XLS.Public,
-									Size:   versionDoc.Downloads.XLS.Size,
-									HRef:   versionDoc.Downloads.XLS.HRef,
+						if versionDoc.Downloads.XLS != nil && versionDoc.Downloads.XLS.Public != "" {
+							newVersion = &models.Version{
+								Downloads: &models.DownloadList{
+									XLS: &models.DownloadObject{
+										Public: versionDoc.Downloads.XLS.Public,
+										Size:   versionDoc.Downloads.XLS.Size,
+										HRef:   versionDoc.Downloads.XLS.HRef,
+									},
 								},
-							},
+							}
 						}
-					}
-					if newVersion != nil {
-						b, err := json.Marshal(newVersion)
-						if err != nil {
-							http.Error(w, err.Error(), http.StatusForbidden)
+						if newVersion != nil {
+							b, err := json.Marshal(newVersion)
+							if err != nil {
+								http.Error(w, err.Error(), http.StatusForbidden)
+								return
+							}
+
+							if err := r.Body.Close(); err != nil {
+								log.ErrorC("could not close response body", err, nil)
+							}
+							r.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+							handle(w, r)
 							return
 						}
-
-						if err := r.Body.Close(); err != nil {
-							log.ErrorC("could not close response body", err, nil)
-						}
-						r.Body = ioutil.NopCloser(bytes.NewBuffer(b))
-						handle(w, r)
-						return
 					}
 				}
 
