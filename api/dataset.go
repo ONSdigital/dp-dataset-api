@@ -9,6 +9,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/go-ns/identity"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -16,7 +17,9 @@ import (
 )
 
 const (
-	internalToken          = "Internal-Token"
+	florenceHeaderKey = "X-Florence-Token"
+	authHeaderKey     = "Authorization"
+
 	datasetDocType         = "dataset"
 	editionDocType         = "edition"
 	versionDocType         = "version"
@@ -33,11 +36,12 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var b []byte
-	logData := log.Data{}
+	authorised, logData := api.authenticate(r, log.Data{})
 
-	if api.EnablePrePublishView && r.Header.Get(internalToken) == api.internalToken {
-		logData["authenticated"] = true
+	var b []byte
+	if authorised {
+
+		// User has valid authentication to get raw dataset document
 		datasets := &models.DatasetUpdateResults{}
 		datasets.Items = results
 		b, err = json.Marshal(datasets)
@@ -47,9 +51,9 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		logData["authenticated"] = true
-		datasets := &models.DatasetResults{}
 
+		// User is not authenticated and hance has only access to current sub document
+		datasets := &models.DatasetResults{}
 		datasets.Items = mapResults(results)
 
 		b, err = json.Marshal(datasets)
@@ -59,6 +63,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
 	setJSONContentType(w)
 	_, err = w.Write(b)
 	if err != nil {
@@ -79,9 +84,11 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	authorised, logData := api.authenticate(r, logData)
+
 	var b []byte
-	if !api.EnablePrePublishView || r.Header.Get(internalToken) != api.internalToken {
-		logData["authenticated"] = false
+	if !authorised {
+		// User is not authenticated and hance has only access to current sub document
 		if dataset.Current == nil {
 			log.Debug("published dataset not found", nil)
 			handleErrorType(datasetDocType, errs.ErrDatasetNotFound, w)
@@ -96,9 +103,9 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		logData["authenticated"] = true
+		// User has valid authentication to get raw dataset document
 		if dataset == nil {
-			log.Debug("published or unpublished dataset not found", nil)
+			log.Debug("published or unpublished dataset not found", logData)
 			handleErrorType(datasetDocType, errs.ErrDatasetNotFound, w)
 		}
 		b, err = json.Marshal(dataset)
@@ -123,17 +130,13 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	logData := log.Data{"dataset_id": id}
 
+	authorised, logData := api.authenticate(r, logData)
+
 	var state string
-	var auth bool
-	if !api.EnablePrePublishView {
+	if !authorised {
 		state = models.PublishedState
-	} else if r.Header.Get(internalToken) != api.internalToken {
-		logData["authenticated"] = auth
-		state = models.PublishedState
-	} else {
-		auth = true
-		logData["authenticated"] = auth
 	}
+
 	logData["state"] = state
 	log.Info("about to check resources exist", logData)
 
@@ -153,8 +156,9 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	var logMessage string
 	var b []byte
 
-	// If auth, we only return the .current document of editions (if a current doc exists then it's state is always published).
-	if auth {
+	if authorised {
+
+		// User has valid authentication to get raw edition document
 		b, err = json.Marshal(results)
 		if err != nil {
 			log.ErrorC("failed to marshal a list of edition resources into bytes", err, logData)
@@ -165,7 +169,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 
 	} else {
 
-		// flatten .current doc
+		// User is not authenticated and hance has only access to current sub document
 		var publicResults []*models.Edition
 		for i := range results.Items {
 			publicResults = append(publicResults, results.Items[i].Current)
@@ -195,16 +199,11 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	editionID := vars["edition"]
 	logData := log.Data{"dataset_id": id, "edition": editionID}
 
+	authorised, logData := api.authenticate(r, logData)
+
 	var state string
-	var auth bool
-	if !api.EnablePrePublishView {
+	if !authorised {
 		state = models.PublishedState
-	} else if r.Header.Get(internalToken) != api.internalToken {
-		logData["authenticated"] = auth
-		state = models.PublishedState
-	} else {
-		auth = true
-		logData["authenticated"] = auth
 	}
 
 	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
@@ -223,10 +222,9 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	var logMessage string
 	var b []byte
 
-	// If auth, we only return the .current document of editions (if a current doc exists then it's state = published).
-	if auth {
+	if authorised {
 
-		// Edition requester has auth and gets everything
+		// User has valid authentication to get raw edition document
 		b, err = json.Marshal(edition)
 		if err != nil {
 			log.ErrorC("failed to marshal edition resource into bytes", err, logData)
@@ -237,7 +235,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 
 	} else {
 
-		// User doesn't have auth so gets public edition response, (.current doc only).
+		// User is not authenticated and hance has only access to current sub document
 		b, err = json.Marshal(edition.Current)
 		if err != nil {
 			log.ErrorC("failed to marshal public edition resource into bytes", err, logData)
@@ -262,14 +260,11 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	editionID := vars["edition"]
 	logData := log.Data{"dataset_id": id, "edition": editionID}
 
+	authorised, logData := api.authenticate(r, logData)
+
 	var state string
-	if !api.EnablePrePublishView {
+	if !authorised {
 		state = models.PublishedState
-	} else if r.Header.Get(internalToken) != api.internalToken {
-		logData["authenticated"] = false
-		state = models.PublishedState
-	} else {
-		logData["authenticated"] = true
 	}
 
 	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
@@ -341,15 +336,12 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	editionID := vars["edition"]
 	version := vars["version"]
 	logData := log.Data{"dataset_id": id, "edition": editionID, "version": version}
-	var state string
 
-	if !api.EnablePrePublishView {
+	authorised, logData := api.authenticate(r, logData)
+
+	var state string
+	if !authorised {
 		state = models.PublishedState
-	} else if r.Header.Get(internalToken) != api.internalToken {
-		logData["authenticated"] = false
-		state = models.PublishedState
-	} else {
-		logData["authenticated"] = true
 	}
 
 	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
@@ -769,14 +761,12 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	edition := vars["edition"]
 	version := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
+
+	authorised, logData := api.authenticate(r, logData)
+
 	var state string
-	if !api.EnablePrePublishView {
+	if !authorised {
 		state = models.PublishedState
-	} else if r.Header.Get(internalToken) != api.internalToken {
-		logData["authenticated"] = false
-		state = models.PublishedState
-	} else {
-		logData["authenticated"] = true
 	}
 
 	versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
@@ -877,14 +867,12 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	dimension := vars["dimension"]
 
 	logData := log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension}
+
+	authorised, logData := api.authenticate(r, logData)
+
 	var state string
-	if !api.EnablePrePublishView {
+	if !authorised {
 		state = models.PublishedState
-	} else if r.Header.Get(internalToken) != api.internalToken {
-		logData["authenticated"] = false
-		state = models.PublishedState
-	} else {
-		logData["authenticated"] = true
 	}
 
 	version, err := api.dataStore.Backend.GetVersion(datasetID, editionID, versionID, state)
@@ -939,12 +927,12 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Default state to published
+	authorised, logData := api.authenticate(r, logData)
+
 	var state string
 
 	// if request is authenticated then access resources of state other than published
-	if !api.EnablePrePublishView || r.Header.Get(internalToken) != api.internalToken {
-		logData["authenticated"] = false
+	if !authorised {
 		// Check for current sub document
 		if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
 			log.ErrorC("found dataset but currently unpublished", errs.ErrDatasetNotFound, log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "dataset": datasetDoc.Current})
@@ -953,8 +941,6 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		}
 
 		state = datasetDoc.Current.State
-	} else {
-		logData["authenticated"] = true
 	}
 
 	if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
@@ -1130,4 +1116,32 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 
 func setJSONContentType(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
+}
+
+func (api *DatasetAPI) authenticate(r *http.Request, logData map[string]interface{}) (bool, map[string]interface{}) {
+	var authorised bool
+
+	if api.EnablePrePublishView {
+		var hasCallerIdentity, hasUserIdentity bool
+
+		callerIdentity := identity.Caller(r.Context())
+		if callerIdentity != "" {
+			logData["caller_identity"] = callerIdentity
+			hasCallerIdentity = true
+		}
+
+		userIdentity := identity.User(r.Context())
+		if userIdentity != "" {
+			logData["user_identity"] = userIdentity
+			hasUserIdentity = true
+		}
+
+		if hasCallerIdentity || hasUserIdentity {
+			authorised = true
+		}
+		logData["authenticated"] = authorised
+
+		return authorised, logData
+	}
+	return authorised, logData
 }

@@ -14,9 +14,10 @@ type Configuration struct {
 	GenerateDownloadsTopic   string        `envconfig:"GENERATE_DOWNLOADS_TOPIC"`
 	CodeListAPIURL           string        `envconfig:"CODE_LIST_API_URL"`
 	DatasetAPIURL            string        `envconfig:"DATASET_API_URL"`
-	DownloadServiceSecretKey string        `envconfig:"DOWNLOAD_SERVICE_SECRET_KEY"      json:"-"`
 	WebsiteURL               string        `envconfig:"WEBSITE_URL"`
-	SecretKey                string        `envconfig:"SECRET_KEY"                       json:"-"`
+	ZebedeeURL               string        `envconfig:"ZEBEDEE_URL"`
+	DownloadServiceSecretKey string        `envconfig:"DOWNLOAD_SERVICE_SECRET_KEY"      json:"-"`
+	ServiceAuthToken         string        `envconfig:"SERVICE_AUTH_TOKEN"               json:"-"`
 	GracefulShutdownTimeout  time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 	HealthCheckTimeout       time.Duration `envconfig:"HEALTHCHECK_TIMEOUT"`
 	EnablePrivateEnpoints    bool          `envconfig:"ENABLE_PRIVATE_ENDPOINTS"`
@@ -45,7 +46,8 @@ func Get() (*Configuration, error) {
 		CodeListAPIURL:           "http://localhost:22400",
 		DatasetAPIURL:            "http://localhost:22000",
 		WebsiteURL:               "http://localhost:20000",
-		SecretKey:                "FD0108EA-825D-411C-9B1D-41EF7727F465",
+		ZebedeeURL:               "http://localhost:8082",
+		ServiceAuthToken:         "FD0108EA-825D-411C-9B1D-41EF7727F465",
 		DownloadServiceSecretKey: "QB0108EZ-825D-412C-9B1D-41EF7747F462",
 		GracefulShutdownTimeout:  5 * time.Second,
 		HealthCheckTimeout:       2 * time.Second,
