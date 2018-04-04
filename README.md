@@ -60,6 +60,7 @@ one of:
 | HEALTHCHECK_TIMEOUT         | 2s                                     | The timeout that the healthcheck allows for checked subsystems
 | ENABLE_PRIVATE_ENDPOINTS    | false                                  | Enable private endpoints for the API
 | DOWNLOAD_SERVICE_SECRET_KEY | "QB0108EZ-825D-412C-9B1D-41EF7747F462" | A key specific for the download service to access public/private links
+| ZEBEDEE_URL                 | "http://localhost:8082"                | The host name for Zebedee
 
 ### Contributing
 

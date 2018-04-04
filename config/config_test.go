@@ -13,7 +13,7 @@ func TestSpec(t *testing.T) {
 
 		Convey("When the config values are retrieved", func() {
 
-			Convey("There should be no error returned", func() {
+			Convey("Then there should be no error returned", func() {
 				So(err, ShouldBeNil)
 			})
 
@@ -25,7 +25,8 @@ func TestSpec(t *testing.T) {
 				So(cfg.CodeListAPIURL, ShouldEqual, "http://localhost:22400")
 				So(cfg.DownloadServiceSecretKey, ShouldEqual, "QB0108EZ-825D-412C-9B1D-41EF7747F462")
 				So(cfg.WebsiteURL, ShouldEqual, "http://localhost:20000")
-				So(cfg.SecretKey, ShouldEqual, "FD0108EA-825D-411C-9B1D-41EF7727F465")
+				So(cfg.ZebedeeURL, ShouldEqual, "http://localhost:8082")
+				So(cfg.ServiceAuthToken, ShouldEqual, "FD0108EA-825D-411C-9B1D-41EF7727F465")
 				So(cfg.GracefulShutdownTimeout, ShouldEqual, 5*time.Second)
 				So(cfg.MongoConfig.BindAddr, ShouldEqual, "localhost:27017")
 				So(cfg.MongoConfig.Collection, ShouldEqual, "datasets")
