@@ -48,8 +48,14 @@ func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBu
 	router := mux.NewRouter()
 	routes(cfg, router, dataStore, urlBuilder, downloadsGenerator)
 
-	alice := alice.New(identity.Handler(true, cfg.ZebedeeURL)).Then(router)
-	httpServer = server.New(cfg.BindAddr, alice)
+	// Only add the identity middleware when running in publishing.
+	if cfg.EnablePrivateEnpoints {
+		alice := alice.New(identity.Handler(true, cfg.ZebedeeURL)).Then(router)
+		httpServer = server.New(cfg.BindAddr, alice)
+	} else {
+		httpServer = server.New(cfg.BindAddr, router)
+	}
+
 	// Disable this here to allow main to manage graceful shutdown of the entire app.
 	httpServer.HandleOSSignals = false
 
