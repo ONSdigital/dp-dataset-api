@@ -2,8 +2,10 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -29,7 +31,7 @@ import (
 
 const (
 	host          = "http://localhost:22000"
-	secretKey     = "coffee"
+	authToken     = "dataset"
 	healthTimeout = 2 * time.Second
 )
 
@@ -51,11 +53,19 @@ var (
 func GetAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator) *DatasetAPI {
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)
-	cfg.SecretKey = secretKey
+	cfg.ServiceAuthToken = authToken
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEnpoints = true
 	cfg.HealthCheckTimeout = healthTimeout
 	return routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads)
+}
+
+func createRequestWithAuth(method, URL string, body io.Reader) (*http.Request, error) {
+	r, err := http.NewRequest(method, URL, body)
+	ctx := r.Context()
+	ctx = context.WithValue(ctx, "Caller-Identity", "someone@ons.gov.uk")
+	r = r.WithContext(ctx)
+	return r, err
 }
 
 func TestGetDatasetsReturnsOK(t *testing.T) {
@@ -111,9 +121,10 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 	})
 
-	Convey("When dataset document has only a next sub document and request contains valid internal_token return status 200", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", nil)
-		r.Header.Add("internal-token", secretKey)
+	Convey("When dataset document has only a next sub document and request is authorised return status 200", t, func() {
+		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/123-456", nil)
+		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(id string) (*models.DatasetUpdate, error) {
@@ -746,8 +757,9 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 	Convey("A successful request to post dataset returns 200 OK response", t, func() {
 		var b string
 		b = datasetPayload
-		r := httptest.NewRequest("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", secretKey)
+		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
@@ -772,8 +784,9 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	Convey("When the request contain malformed json a bad request status is returned", t, func() {
 		var b string
 		b = "{"
-		r := httptest.NewRequest("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", secretKey)
+		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
@@ -796,8 +809,9 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
 		var b string
 		b = datasetPayload
-		r := httptest.NewRequest("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", secretKey)
+		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
@@ -834,7 +848,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldResemble, "Resource not found\n")
+		So(w.Body.String(), ShouldResemble, "requested resource not found\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -843,8 +857,9 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	Convey("When the dataset already exists and a request is sent to create the same dataset return status forbidden", t, func() {
 		var b string
 		b = datasetPayload
-		r := httptest.NewRequest("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", secretKey)
+		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
@@ -874,9 +889,9 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 	Convey("A successful request to put dataset returns 200 OK response", t, func() {
 		var b string
 		b = datasetPayload
-		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
@@ -905,9 +920,9 @@ func TestPutDatasetReturnsError(t *testing.T) {
 	Convey("When the request contain malformed json a bad request status is returned", t, func() {
 		var b string
 		b = "{"
-		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -931,9 +946,9 @@ func TestPutDatasetReturnsError(t *testing.T) {
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
 		var b string
 		b = versionPayload
-		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -962,9 +977,9 @@ func TestPutDatasetReturnsError(t *testing.T) {
 	Convey("When the dataset document cannot be found return status not found ", t, func() {
 		var b string
 		b = datasetPayload
-		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -985,7 +1000,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 	})
 
-	Convey("When the request does not contain a valid internal token return status not found", t, func() {
+	Convey("When the request is not authorised to update dataset return status not found", t, func() {
 		var b string
 		b = "{\"edition\":\"2017\",\"state\":\"created\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
@@ -1004,7 +1019,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldResemble, "Resource not found\n")
+		So(w.Body.String(), ShouldResemble, "requested resource not found\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
@@ -1014,9 +1029,9 @@ func TestPutDatasetReturnsError(t *testing.T) {
 func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 	t.Parallel()
 	Convey("A successful request to delete dataset returns 200 OK response", t, func() {
-		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", nil)
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
@@ -1035,12 +1050,12 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 	})
 }
 
-func TestDeleteDatasetOnPublishedReturnsForbidden(t *testing.T) {
+func TestDeleteDatasetReturnsError(t *testing.T) {
 	t.Parallel()
-	Convey("when a dataset is published it cannot be deleted", t, func() {
-		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", nil)
-		r.Header.Add("internal-token", "coffee")
+	Convey("When a request to delete a published dataset return status forbidden", t, func() {
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
@@ -1057,15 +1072,11 @@ func TestDeleteDatasetOnPublishedReturnsForbidden(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 	})
-}
-
-func TestDeleteDataset_DatastoreError(t *testing.T) {
-	t.Parallel()
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
-		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", nil)
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1085,13 +1096,11 @@ func TestDeleteDataset_DatastoreError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 	})
-}
 
-func TestDeleteDataset_NotFound(t *testing.T) {
 	Convey("When the dataset document cannot be found return status not found ", t, func() {
-		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", nil)
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1110,13 +1119,11 @@ func TestDeleteDataset_NotFound(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 	})
-}
 
-func TestDeleteDataset_GetDatasetError(t *testing.T) {
 	Convey("When the dataset document cannot be queried return status 500 ", t, func() {
-		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", nil)
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1135,14 +1142,13 @@ func TestDeleteDataset_GetDatasetError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 	})
-}
 
-func TestDeleteDataset_InvalidToken(t *testing.T) {
-	Convey("When the request does not contain a valid internal token return status not found", t, func() {
+	Convey("When the request is not authorised to delete the dataset return status not found", t, func() {
 		var b string
 		b = "{\"edition\":\"2017\",\"state\":\"created\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
 		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{}
@@ -1150,7 +1156,7 @@ func TestDeleteDataset_InvalidToken(t *testing.T) {
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldResemble, "Resource not found\n")
+		So(w.Body.String(), ShouldResemble, "requested resource not found\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
@@ -1168,9 +1174,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		var b string
 		b = versionPayload
-		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1233,9 +1239,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		var b string
 		b = versionAssociatedPayload
-		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1287,9 +1293,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		var b string
 		b = versionAssociatedPayload
-		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1344,9 +1350,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		var b string
 		b = versionPublishedPayload
-		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1459,12 +1465,12 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 		}
 
 		Convey("when put version is called with a valid request", func() {
-			r, _ := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
-			r.Header.Add("internal-token", "coffee")
+			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
+			So(err, ShouldBeNil)
+
 			w := httptest.NewRecorder()
 			cfg, err := config.Get()
 			So(err, ShouldBeNil)
-			cfg.SecretKey = secretKey
 			cfg.EnablePrivateEnpoints = true
 			api := routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockDownloadGenerator)
 			api.router.ServeHTTP(w, r)
@@ -1522,8 +1528,9 @@ func TestPutEmptyVersion(t *testing.T) {
 		}
 
 		Convey("when put version is called with an associated version with empty downloads", func() {
-			r, _ := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
-			r.Header.Add("internal-token", "coffee")
+			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
+			So(err, ShouldBeNil)
+
 			w := httptest.NewRecorder()
 
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -1561,8 +1568,8 @@ func TestPutEmptyVersion(t *testing.T) {
 		mockDownloadGenerator := &mocks.DownloadsGeneratorMock{}
 
 		Convey("when put version is called with an associated version with empty downloads", func() {
-			r, _ := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
-			r.Header.Add("internal-token", "coffee")
+			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -1611,9 +1618,9 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = "{"
-		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
@@ -1643,9 +1650,9 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = versionPayload
-		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
@@ -1675,9 +1682,9 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = versionPayload
-		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
@@ -1711,9 +1718,9 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = versionPayload
-		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
@@ -1747,9 +1754,9 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = versionPayload
-		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
@@ -1778,7 +1785,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 	})
 
-	Convey("When the request does not contain a valid internal token return status not found", t, func() {
+	Convey("When the request is not authorised to update version then response returns status not found", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
 			GenerateFunc: func(string, string, string, string) error {
 				return nil
@@ -1801,7 +1808,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldEqual, "Resource not found\n")
+		So(w.Body.String(), ShouldEqual, "requested resource not found\n")
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -1816,9 +1823,9 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = versionPayload
-		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
@@ -1849,9 +1856,9 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"associated"}`
-		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		r.Header.Add("internal-token", "coffee")
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
@@ -2121,9 +2128,10 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		datasetDoc := createDatasetDoc()
 		versionDoc := createVersionDoc()
 
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
-		r.Header.Add("Internal-Token", "coffee")
 
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
