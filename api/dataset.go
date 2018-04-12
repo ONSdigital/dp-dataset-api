@@ -1,8 +1,10 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -585,6 +587,22 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 			handleErrorType(versionDocType, err, w)
 			return
 		}
+
+		// Only want to generate downloads again if there is no public link available
+		if currentVersion.Downloads != nil && currentVersion.Downloads.CSV != nil && currentVersion.Downloads.CSV.Public == "" {
+			if err := api.downloadGenerator.Generate(datasetID, versionDoc.ID, edition, version); err != nil {
+				err = errors.Wrap(err, "error while attempting to generate full dataset version downloads on version publish")
+				log.Error(err, log.Data{
+					"dataset_id":  datasetID,
+					"instance_id": versionDoc.ID,
+					"edition":     edition,
+					"version":     version,
+					"state":       versionDoc.State,
+				})
+				// TODO - TECH DEBT - need to add an error event for this.
+				handleErrorType(versionDocType, err, w)
+			}
+		}
 	}
 
 	if versionDoc.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
@@ -597,12 +615,13 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		log.Info("generating full dataset version downloads", log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 
 		if err := api.downloadGenerator.Generate(datasetID, versionDoc.ID, edition, version); err != nil {
-			err = errors.Wrap(err, "error while attempting to generate full dataset version downloads")
+			err = errors.Wrap(err, "error while attempting to generate full dataset version downloads on version association")
 			log.Error(err, log.Data{
 				"dataset_id":  datasetID,
 				"instance_id": versionDoc.ID,
 				"edition":     edition,
 				"version":     version,
+				"state":       versionDoc.State,
 			})
 			// TODO - TECH DEBT - need to add an error event for this.
 			handleErrorType(versionDocType, err, w)
@@ -1090,7 +1109,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 		edition := vars["edition"]
 		version := vars["version"]
 
-		versionDoc, err := d.Datastore.GetVersion(id, edition, version, "")
+		currentVersion, err := d.Datastore.GetVersion(id, edition, version, "")
 		if err != nil {
 			if err != errs.ErrVersionNotFound {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -1101,10 +1120,68 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 			return
 		}
 
-		if versionDoc != nil {
-			if versionDoc.State == models.PublishedState {
+		if currentVersion != nil {
+			if currentVersion.State == models.PublishedState {
+				defer func() {
+					if err := r.Body.Close(); err != nil {
+						log.ErrorC("could not close response body", err, nil)
+					}
+				}()
+
+				versionDoc, err := models.CreateVersion(r.Body)
+				if err != nil {
+					log.ErrorC("failed to model version resource based on request", err, log.Data{"dataset_id": id, "edition": edition, "version": version})
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
+
+				// We can allow public download links to be modified by the exporters when a version is published.
+				// Note that a new version will be created which contain only the download information to prevent
+				// any forbidden fields from being set on the published version
+				if r.Method == "PUT" {
+					if versionDoc.Downloads != nil {
+						newVersion := new(models.Version)
+						if versionDoc.Downloads.CSV != nil && versionDoc.Downloads.CSV.Public != "" {
+							newVersion = &models.Version{
+								Downloads: &models.DownloadList{
+									CSV: &models.DownloadObject{
+										Public: versionDoc.Downloads.CSV.Public,
+										Size:   versionDoc.Downloads.CSV.Size,
+										HRef:   versionDoc.Downloads.CSV.HRef,
+									},
+								},
+							}
+						}
+						if versionDoc.Downloads.XLS != nil && versionDoc.Downloads.XLS.Public != "" {
+							newVersion = &models.Version{
+								Downloads: &models.DownloadList{
+									XLS: &models.DownloadObject{
+										Public: versionDoc.Downloads.XLS.Public,
+										Size:   versionDoc.Downloads.XLS.Size,
+										HRef:   versionDoc.Downloads.XLS.HRef,
+									},
+								},
+							}
+						}
+						if newVersion != nil {
+							b, err := json.Marshal(newVersion)
+							if err != nil {
+								http.Error(w, err.Error(), http.StatusForbidden)
+								return
+							}
+
+							if err := r.Body.Close(); err != nil {
+								log.ErrorC("could not close response body", err, nil)
+							}
+							r.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+							handle(w, r)
+							return
+						}
+					}
+				}
+
 				err = errors.New("unable to update version as it has been published")
-				log.Error(err, log.Data{"version": versionDoc})
+				log.Error(err, log.Data{"version": currentVersion})
 				http.Error(w, err.Error(), http.StatusForbidden)
 				return
 			}

@@ -174,8 +174,8 @@ type DownloadList struct {
 
 // DownloadObject represents information on the downloadable file
 type DownloadObject struct {
-	URL string `bson:"url,omitempty"  json:"url,omitempty"`
-	// TODO size is in b and probably should be an int64 instead of a string this
+	HRef string `bson:"href,omitempty"  json:"href,omitempty"`
+	// TODO size is in bytes and probably should be an int64 instead of a string this
 	// will have to change for several services (filter API, exporter services and web)
 	Size    string `bson:"size,omitempty" json:"size,omitempty"`
 	Public  string `bson:"public,omitempty" json:"public,omitempty"`
@@ -334,7 +334,7 @@ func ValidateVersion(version *Version) error {
 
 	if version.Downloads != nil {
 		if version.Downloads.XLS != nil {
-			if version.Downloads.XLS.URL == "" {
+			if version.Downloads.XLS.HRef == "" {
 				missingFields = append(missingFields, "Downloads.XLS.URL")
 			}
 			if version.Downloads.XLS.Size == "" {
@@ -346,7 +346,7 @@ func ValidateVersion(version *Version) error {
 		}
 
 		if version.Downloads.CSV != nil {
-			if version.Downloads.CSV.URL == "" {
+			if version.Downloads.CSV.HRef == "" {
 				missingFields = append(missingFields, "Downloads.CSV.URL")
 			}
 			if version.Downloads.CSV.Size == "" {

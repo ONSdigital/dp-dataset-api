@@ -1382,7 +1382,14 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 						},
 					},
 					ReleaseDate: "2017-12-12",
-					State:       models.EditionConfirmedState,
+					Downloads: &models.DownloadList{
+						CSV: &models.DownloadObject{
+							Private: "s3://csv-exported/myfile.csv",
+							HRef:    "http://localhost:23600/datasets/123/editions/2017/versions/1.csv",
+							Size:    "1234",
+						},
+					},
+					State: models.EditionConfirmedState,
 				}, nil
 			},
 			UpdateVersionFunc: func(string, *models.Version) error {
@@ -1428,7 +1435,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
-		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -1509,7 +1516,7 @@ func TestPutEmptyVersion(t *testing.T) {
 	var v models.Version
 	json.Unmarshal([]byte(versionAssociatedPayload), &v)
 	v.State = models.AssociatedState
-	xlsDownload := &models.DownloadList{XLS: &models.DownloadObject{Size: "1", URL: "/hello"}}
+	xlsDownload := &models.DownloadList{XLS: &models.DownloadObject{Size: "1", HRef: "/hello"}}
 
 	Convey("given an existing version with empty downloads", t, func() {
 		mockedDataStore := &storetest.StorerMock{

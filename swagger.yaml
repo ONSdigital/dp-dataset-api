@@ -1506,7 +1506,7 @@ definitions:
     description: "Object containing information of a downloadable file"
     type: object
     properties:
-      url:
+      href:
         type: string
         description: "The URL to the generated file"
       size:

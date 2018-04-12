@@ -192,22 +192,22 @@ func TestValidateVersion(t *testing.T) {
 		Convey("when version downloads are invalid", func() {
 			v := &Version{ReleaseDate: "Today", State: EditionConfirmedState}
 
-			v.Downloads = &DownloadList{XLS: &DownloadObject{URL: "", Size: "2"}}
+			v.Downloads = &DownloadList{XLS: &DownloadObject{HRef: "", Size: "2"}}
 			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLS.URL"}), v)
 
-			v.Downloads = &DownloadList{CSV: &DownloadObject{URL: "", Size: "2"}}
+			v.Downloads = &DownloadList{CSV: &DownloadObject{HRef: "", Size: "2"}}
 			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSV.URL"}), v)
 
-			v.Downloads = &DownloadList{XLS: &DownloadObject{URL: "/", Size: ""}}
+			v.Downloads = &DownloadList{XLS: &DownloadObject{HRef: "/", Size: ""}}
 			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLS.Size"}), v)
 
-			v.Downloads = &DownloadList{CSV: &DownloadObject{URL: "/", Size: ""}}
+			v.Downloads = &DownloadList{CSV: &DownloadObject{HRef: "/", Size: ""}}
 			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSV.Size"}), v)
 
-			v.Downloads = &DownloadList{XLS: &DownloadObject{URL: "/", Size: "bob"}}
+			v.Downloads = &DownloadList{XLS: &DownloadObject{HRef: "/", Size: "bob"}}
 			assertVersionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.XLS.Size not a number"}), v)
 
-			v.Downloads = &DownloadList{CSV: &DownloadObject{URL: "/", Size: "bob"}}
+			v.Downloads = &DownloadList{CSV: &DownloadObject{HRef: "/", Size: "bob"}}
 			assertVersionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.CSV.Size not a number"}), v)
 		})
 	})
@@ -231,7 +231,7 @@ func TestCreateDownloadList(t *testing.T) {
 		expected := &DownloadList{
 			XLS: &DownloadObject{
 				Size: "1",
-				URL:  "2",
+				HRef: "2",
 			},
 		}
 
