@@ -20,6 +20,12 @@ parameters:
     in: path
     required: true
     type: string
+  dimension_options:
+    description: "The name of the dimension option and a single value; these variables and their corresponding values (codes) must exist against the version"
+    name: "<dimension_options>"
+    in: query
+    required: true
+    type: string
   dimension_option:
     name: dimension_option
     description: "A dimension option from an instance"
@@ -464,6 +470,33 @@ paths:
               * edition was incorrect
         404:
           description: "Version not found"
+        500:
+          $ref: '#/responses/InternalError'
+  /datasets/{id}/editions/{edition}/versions/{version}/observation:
+    get:
+      tags:
+      - "Public"
+      summary: "Get a specific observation from version"
+      description: "Get observation from a version of the dataset by providing a single dimension option for each dimension"
+      parameters:
+        - $ref: '#/parameters/edition'
+        - $ref: '#/parameters/id'
+        - $ref: '#/parameters/version'
+        - $ref: '#/parameters/dimension_options'
+      responses:
+        200:
+          description: "Json object containing all metadata for a version"
+          schema:
+            $ref: '#/definitions/ObservationEndpoint'
+        400:
+          description: "Invalid request"
+            
+        404:
+          description: |
+            Resource not found, reasons can be one of the following:
+              * dataset id was incorrect
+              * edition was incorrect
+              * verion was incorrect
         500:
           $ref: '#/responses/InternalError'
   /instances:
@@ -1874,6 +1907,62 @@ definitions:
       href:
         description: "A URL to the version this resource relates to"
         type: string
+  ObservationEndpoint:
+    description: "An object containing information on a single observation for a given version of a dataset"
+    type: object
+    properties:
+      <dimension_option>:
+        description: "A link to the corresponding dimension code for query parameter (dimension option) chosen"
+        type: string
+      observation: 
+        description: "The observation value for the selection of query parameters (dimensions) chosen"
+        type: string
+      observation_level_metadata:
+        description: "Meta data related to the observation found against version of a dataset"
+        type: array
+        items:
+          type: object
+          properties:
+            <key>:
+              description: "A single meta data key value pair related to the observation found against version of a dataset, for example `coefficients of variation`"
+              type: string
+      data_marking:
+        description: ""
+        type: string
+      context:
+        description: ""
+        type: string
+      links:
+        $ref: '#/definitions/ObservationLinks'
+      user_notes:
+        description: "A list of notes to explain the observational meta data stored against this resource"
+        type: array
+        items:
+          type: object
+          properties:
+            description:
+              description: "The description given to an individual user note"
+              type: string
+            title:
+              description: "The title given to an individual user note"
+              type: string
+  ObservationLinks:
+    type: object
+    description: "A list of links related to this resource"
+    properties:
+      self:
+        $ref: '#/definitions/SelfLink'
+      dataset_metadata:
+        $ref: '#/definitions/MetadataLink'
+      version:
+        $ref: '#/definitions/VersionLink'
+  MetadataLink:
+    description: "The version metadata that is associated with this resource"
+    type: object
+    properties:
+      href:
+        description: "A URL to the version metadata this resource relates to"
+        type: string
   UserNote:
     description: "A note relating to the dataset. This will appear in downloaded datasets"
     type: object
@@ -1884,3 +1973,4 @@ definitions:
       note:
         description: "The content of the note"
         type: string
+
