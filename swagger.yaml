@@ -472,7 +472,7 @@ paths:
           description: "Version not found"
         500:
           $ref: '#/responses/InternalError'
-  /datasets/{id}/editions/{edition}/versions/{version}/observation:
+  /datasets/{id}/editions/{edition}/versions/{version}/observations:
     get:
       tags:
       - "Public"
@@ -490,13 +490,13 @@ paths:
             $ref: '#/definitions/ObservationEndpoint'
         400:
           description: "Invalid request"
-            
         404:
           description: |
             Resource not found, reasons can be one of the following:
               * dataset id was incorrect
               * edition was incorrect
               * verion was incorrect
+              * observations not found for selected query paramaters
         500:
           $ref: '#/responses/InternalError'
   /instances:
@@ -1911,31 +1911,43 @@ definitions:
     description: "An object containing information on a single observation for a given version of a dataset"
     type: object
     properties:
-      <dimension_option>:
-        description: "A link to the corresponding dimension code for query parameter (dimension option) chosen"
+      context:
+        description: ""
         type: string
+      dimensions:
+        description: "A list of dimensions for the given query"
+        type: object
+        properties:
+          <dimension>:
+            type: object
+            properties:
+              options:
+                description: "A list of links to the corresponding dimension codes for the given `dimension_options`"
+                type: array
+                items:
+                  properties:
+                    href:
+                      description: "A link to the corresponding dimension code for the given `dimension_option` (query parameter - e.g. 'geography: K02000001'"
+                      type: string
+                    id:
+                      description: "The id to the corresponding dimension code for the given `dimension_option`"
+                      type: string
+      links:
+        $ref: '#/definitions/ObservationLinks'
       observation: 
         description: "The observation value for the selection of query parameters (dimensions) chosen"
         type: string
       observation_level_metadata:
-        description: "Meta data related to the observation found against version of a dataset"
+        description: "Metadata related to the observation found against version of a dataset"
         type: array
         items:
           type: object
           properties:
             <key>:
-              description: "A single meta data key value pair related to the observation found against version of a dataset, for example `coefficients of variation`"
+              description: "A single metadata key-value pair related to the observation found against version of a dataset, for example 'coefficients of variation' or 'data marking'"
               type: string
-      data_marking:
-        description: ""
-        type: string
-      context:
-        description: ""
-        type: string
-      links:
-        $ref: '#/definitions/ObservationLinks'
-      user_notes:
-        description: "A list of notes to explain the observational meta data stored against this resource"
+      usage_notes:
+        description: "A list of notes to explain the observational metadata stored against this resource"
         type: array
         items:
           type: object
@@ -1950,10 +1962,10 @@ definitions:
     type: object
     description: "A list of links related to this resource"
     properties:
-      self:
-        $ref: '#/definitions/SelfLink'
       dataset_metadata:
         $ref: '#/definitions/MetadataLink'
+      self:
+        $ref: '#/definitions/SelfLink'
       version:
         $ref: '#/definitions/VersionLink'
   MetadataLink:
@@ -1961,7 +1973,7 @@ definitions:
     type: object
     properties:
       href:
-        description: "A URL to the version metadata this resource relates to"
+        description: "A URL for the version metadata this resource relates to"
         type: string
   UserNote:
     description: "A note relating to the dataset. This will appear in downloaded datasets"
