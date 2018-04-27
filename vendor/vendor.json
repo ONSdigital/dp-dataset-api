@@ -3,6 +3,12 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "w4WYJOG6u77qJORANUwGKdxkOYY=",
+			"path": "github.com/ONSdigital/dp-filter/observation",
+			"revision": "a3b43eb05f07f1ca05f19427dad23e4648516cb8",
+			"revisionTime": "2018-04-13T11:23:02Z"
+		},
+		{
 			"checksumSHA1": "WI5P8MbnHHGqzuQje+qFoQSUHgk=",
 			"path": "github.com/ONSdigital/go-ns/avro",
 			"revision": "6920413b753350672215a083e0f9d5c270a21075",

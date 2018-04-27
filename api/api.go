@@ -31,6 +31,7 @@ type DownloadsGenerator interface {
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
 	dataStore            store.DataStore
+	observationStore     ObservationStore
 	host                 string
 	zebedeeURL           string
 	internalToken        string
@@ -44,9 +45,9 @@ type DatasetAPI struct {
 }
 
 // CreateDatasetAPI manages all the routes configured to API
-func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadsGenerator DownloadsGenerator) {
+func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadsGenerator DownloadsGenerator, observationStore ObservationStore) {
 	router := mux.NewRouter()
-	routes(cfg, router, dataStore, urlBuilder, downloadsGenerator)
+	routes(cfg, router, dataStore, urlBuilder, downloadsGenerator, observationStore)
 
 	// Only add the identity middleware when running in publishing.
 	if cfg.EnablePrivateEnpoints {
@@ -68,10 +69,11 @@ func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBu
 	}()
 }
 
-func routes(cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator) *DatasetAPI {
+func routes(cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, observationStore ObservationStore) *DatasetAPI {
 
 	api := DatasetAPI{
 		dataStore:            dataStore,
+		observationStore:     observationStore,
 		host:                 cfg.DatasetAPIURL,
 		zebedeeURL:           cfg.ZebedeeURL,
 		serviceAuthToken:     cfg.ServiceAuthToken,
@@ -92,6 +94,7 @@ func routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions", api.getVersions).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", api.getVersion).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}/metadata", api.getMetadata).Methods("GET")
+	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}/observations", api.getObservations).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}/dimensions", api.getDimensions).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", api.getDimensionOptions).Methods("GET")
 
