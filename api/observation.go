@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -235,7 +234,7 @@ func (api *DatasetAPI) getObservationList(instanceID string, queryParamters map[
 	}
 	defer csvRowReader.Close()
 
-	headerRowReader := csv.NewReader(bytes.NewReader([]byte(headerRow)))
+	headerRowReader := csv.NewReader(strings.NewReader(headerRow))
 	headerRowArray, err := headerRowReader.Read()
 	if err != nil {
 		return nil, nil, err
@@ -263,7 +262,7 @@ func (api *DatasetAPI) getObservationList(instanceID string, queryParamters map[
 		observationRows = append(observationRows, observationRow)
 	}
 
-	observationRowReader := csv.NewReader(bytes.NewReader([]byte(observationRows[0])))
+	observationRowReader := csv.NewReader(strings.NewReader(observationRows[0]))
 	observationRowArray, err := observationRowReader.Read()
 	if err != nil {
 		return nil, nil, err

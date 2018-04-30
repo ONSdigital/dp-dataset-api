@@ -17,7 +17,8 @@ type ObservationLinks struct {
 	Version         *LinkObject `json:"version,omitempty"`
 }
 
-// Options ...
+// Options is a an object containing a list of link onjects that refer to the
+// code url for that dimension option
 type Options struct {
 	LinkObjects []*LinkObject `json:"options,omitempty"`
 }
@@ -45,7 +46,7 @@ func CreateObservationDoc(versionDoc *Version, headerRow, observationRow []strin
 
 	// add observation metadata
 	if dimensionOffset != 0 {
-		var observationMetaData = make(map[string]string)
+		observationMetaData := make(map[string]string)
 
 		for i := 1; i < dimensionOffset+1; i++ {
 			observationMetaData[headerRow[i]] = observationRow[i]
