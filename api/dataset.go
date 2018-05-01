@@ -11,7 +11,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/ONSdigital/go-ns/identity"
+	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -1201,13 +1201,13 @@ func (api *DatasetAPI) authenticate(r *http.Request, logData map[string]interfac
 	if api.EnablePrePublishView {
 		var hasCallerIdentity, hasUserIdentity bool
 
-		callerIdentity := identity.Caller(r.Context())
+		callerIdentity := common.Caller(r.Context())
 		if callerIdentity != "" {
 			logData["caller_identity"] = callerIdentity
 			hasCallerIdentity = true
 		}
 
-		userIdentity := identity.User(r.Context())
+		userIdentity := common.User(r.Context())
 		if userIdentity != "" {
 			logData["user_identity"] = userIdentity
 			hasUserIdentity = true

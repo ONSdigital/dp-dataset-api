@@ -262,7 +262,11 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 
 	var version Version
 	// Create unique id
-	version.ID = uuid.NewV4().String()
+	guid, err := uuid.NewV4()
+	if err != nil {
+		return nil, errors.Wrap(err, "CreateVersion: failed to obtain new uuid")
+	}
+	version.ID = guid.String()
 
 	err = json.Unmarshal(b, &version)
 	if err != nil {
@@ -300,7 +304,11 @@ func CreateContact(reader io.Reader) (*Contact, error) {
 	}
 
 	// Create unique id
-	contact.ID = (uuid.NewV4()).String()
+	guid, err := uuid.NewV4()
+	if err != nil {
+		return nil, errors.Wrap(err, "CreateContact: failed to obtain new uuid")
+	}
+	contact.ID = guid.String()
 
 	return &contact, nil
 }
