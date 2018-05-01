@@ -50,7 +50,7 @@ func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBu
 
 	// Only add the identity middleware when running in publishing.
 	if cfg.EnablePrivateEnpoints {
-		alice := alice.New(identity.Handler(true, cfg.ZebedeeURL)).Then(router)
+		alice := alice.New(identity.Handler(cfg.ZebedeeURL)).Then(router)
 		httpServer = server.New(cfg.BindAddr, alice)
 	} else {
 		httpServer = server.New(cfg.BindAddr, router)

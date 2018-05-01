@@ -92,7 +92,15 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	instance.InstanceID = uuid.NewV4().String()
+	// Create unique id
+	guid, err := uuid.NewV4()
+	if err != nil {
+		log.ErrorR(r, err, nil)
+		http.Error(w, "temporary internal error", http.StatusInternalServerError)
+		return
+	}
+	instance.InstanceID = guid.String()
+
 	instance.Links.Self = &models.IDLink{
 		HRef: fmt.Sprintf("%s/instances/%s", s.Host, instance.InstanceID),
 	}
@@ -346,7 +354,12 @@ func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.Editi
 			return nil, err
 		}
 		// create unique id for edition
-		editionID := uuid.NewV4().String()
+		guid, err := uuid.NewV4()
+		if err != nil {
+			log.Error(err, nil)
+			return nil, err
+		}
+		editionID := guid.String()
 
 		editionDoc = &models.EditionUpdate{
 			ID: editionID,

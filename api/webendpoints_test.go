@@ -294,15 +294,16 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 	t.Parallel()
 
 	type testEndpoint struct {
-		Method string
-		URL    string
+		Method     string
+		URL        string
+		ReturnCode int
 	}
 
 	var publishSubnetEndpoints = []testEndpoint{
 		// Dataset Endpoints
-		{Method: "POST", URL: "http://localhost:22000/datasets/1234"},
-		{Method: "PUT", URL: "http://localhost:22000/datasets/1234"},
-		{Method: "PUT", URL: "http://localhost:22000/datasets/1234/editions/1234/versions/2123"},
+		{Method: "POST", URL: "http://localhost:22000/datasets/1234", ReturnCode: http.StatusMethodNotAllowed},
+		{Method: "PUT", URL: "http://localhost:22000/datasets/1234", ReturnCode: http.StatusMethodNotAllowed},
+		{Method: "PUT", URL: "http://localhost:22000/datasets/1234/editions/1234/versions/2123", ReturnCode: http.StatusMethodNotAllowed},
 
 		// Instance endpoints
 		{Method: "GET", URL: "http://localhost:22000/instances"},
@@ -323,7 +324,7 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 
 	Convey("When the API is started with private endpoints disabled", t, func() {
 
-		for _, endpoint := range publishSubnetEndpoints {
+		for idx, endpoint := range publishSubnetEndpoints {
 			Convey("The following endpoint "+endpoint.URL+"(Method:"+endpoint.Method+") should return 404", func() {
 				r, err := createRequestWithAuth(endpoint.Method, endpoint.URL, nil)
 				So(err, ShouldBeNil)
@@ -332,7 +333,12 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 				mockedDataStore := &storetest.StorerMock{}
 				api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
 				api.router.ServeHTTP(w, r)
-				So(w.Code, ShouldEqual, http.StatusNotFound)
+				expectedReturnCode := endpoint.ReturnCode
+				if expectedReturnCode == 0 {
+					expectedReturnCode = http.StatusNotFound
+				}
+				expectedReturnCode += 1000 * idx
+				So(w.Code+1000*idx, ShouldEqual, expectedReturnCode)
 			})
 		}
 	})
