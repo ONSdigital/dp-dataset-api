@@ -57,7 +57,7 @@ func GetAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDown
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEnpoints = true
 	cfg.HealthCheckTimeout = healthTimeout
-	return routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads)
+	return routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, nil)
 }
 
 func createRequestWithAuth(method, URL string, body io.Reader) (*http.Request, error) {
@@ -1479,7 +1479,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 			cfg, err := config.Get()
 			So(err, ShouldBeNil)
 			cfg.EnablePrivateEnpoints = true
-			api := routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockDownloadGenerator)
+			api := routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockDownloadGenerator, nil)
 			api.router.ServeHTTP(w, r)
 
 			Convey("then an internal server error response is returned", func() {

@@ -345,5 +345,5 @@ func GetWebAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedD
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEnpoints = false
 	cfg.HealthCheckTimeout = healthTimeout
-	return routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads)
+	return routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, nil)
 }

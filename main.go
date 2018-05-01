@@ -13,6 +13,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/go-ns/audit"
 
 	"github.com/ONSdigital/go-ns/kafka"
 
@@ -41,6 +42,9 @@ func main() {
 		log.Error(errors.Wrap(err, "error creating kakfa producer"), nil)
 		os.Exit(1)
 	}
+
+	// TODO replace with real implementation when ready
+	auditor := &audit.NopAuditor{}
 
 	mongo := &mongo.Mongo{
 		CodeListURL: cfg.CodeListAPIURL,
@@ -73,7 +77,7 @@ func main() {
 
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
-	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator)
+	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {
