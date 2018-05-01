@@ -11,6 +11,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/identity"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
@@ -29,11 +30,14 @@ const (
 	dimensionDocType       = "dimension"
 	dimensionOptionDocType = "dimension-option"
 
-	// audit action/result keys
+	// audit actions
 	getDatasetsAction = "getDatasets"
-	actionAttempted   = "attempted"
-	actionSuccessful  = "successful"
-	notFound          = "notFound"
+	getDatasetAction  = "getDataset"
+
+	// audit results
+	actionAttempted  = "attempted"
+	actionSuccessful = "successful"
+	notFound         = "notFound"
 )
 
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +71,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 
-		// User is not authenticated and hance has only access to current sub document
+		// User is not authenticated and hence has only access to current sub document
 		datasets := &models.DatasetResults{}
 		datasets.Items = mapResults(results)
 
@@ -98,9 +102,18 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	logData := log.Data{"dataset_id": id}
+	auditParams := common.Params{"dataset_id": id}
+
+	if err := api.auditor.Record(r.Context(), getDatasetAction, actionAttempted, auditParams); err != nil {
+		log.ErrorC("error while auditing getDataset attempt action", err, logData)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	dataset, err := api.dataStore.Backend.GetDataset(id)
 	if err != nil {
 		log.Error(err, log.Data{"dataset_id": id})
+		api.auditor.Record(r.Context(), getDatasetAction, notFound, auditParams)
 		handleErrorType(datasetDocType, err, w)
 		return
 	}
@@ -109,7 +122,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 	var b []byte
 	if !authorised {
-		// User is not authenticated and hance has only access to current sub document
+		// User is not authenticated and hence has only access to current sub document
 		if dataset.Current == nil {
 			log.Debug("published dataset not found", nil)
 			handleErrorType(datasetDocType, errs.ErrDatasetNotFound, w)
@@ -135,6 +148,12 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+	}
+
+	if err := api.auditor.Record(r.Context(), getDatasetAction, actionSuccessful, auditParams); err != nil {
+		log.ErrorC("error while auditing getDataset successful action", err, logData)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	setJSONContentType(w)
