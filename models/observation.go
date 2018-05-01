@@ -24,7 +24,7 @@ type Options struct {
 }
 
 // CreateObservationDoc manages the creation of metadata across dataset and version docs
-func CreateObservationDoc(versionDoc *Version, headerRow, observationRow []string, dimensionOffset int, queryParameters map[string]string) *ObservationDoc {
+func CreateObservationDoc(rawQuery string, versionDoc *Version, headerRow, observationRow []string, dimensionOffset int, queryParameters map[string]string) *ObservationDoc {
 
 	observationDoc := &ObservationDoc{
 		Context: "",
@@ -33,7 +33,7 @@ func CreateObservationDoc(versionDoc *Version, headerRow, observationRow []strin
 				HRef: versionDoc.Links.Version.HRef + "/metadata",
 			},
 			Self: &LinkObject{
-				HRef: versionDoc.Links.Version.HRef + "/observations",
+				HRef: versionDoc.Links.Version.HRef + "/observations?" + rawQuery,
 			},
 			Version: &LinkObject{
 				HRef: versionDoc.Links.Version.HRef,

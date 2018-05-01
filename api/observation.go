@@ -124,20 +124,20 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	observationDoc := models.CreateObservationDoc(versionDoc, headerRow, observationRow, dimensionOffset, queryParameters)
+	observationDoc := models.CreateObservationDoc(r.URL.RawQuery, versionDoc, headerRow, observationRow, dimensionOffset, queryParameters)
 
-	b, err := json.Marshal(observationDoc)
-	if err != nil {
+	setJSONContentType(w)
+
+	// The ampersand "&" is escaped to "\u0026" to keep some browsers from
+	// misinterpreting JSON output as HTML. This escaping can be disabled using
+	// an Encoder that had SetEscapeHTML(false) called on it.
+	enc := json.NewEncoder(w)
+	enc.SetEscapeHTML(false)
+
+	if err = enc.Encode(observationDoc); err != nil {
 		log.ErrorC("failed to marshal metadata resource into bytes", err, logData)
 		handleObservationsErrorType(w, err)
 		return
-	}
-
-	setJSONContentType(w)
-	_, err = w.Write(b)
-	if err != nil {
-		log.Error(err, logData)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	log.Debug("get single observation relative to a selected set of dimension options for a version", logData)
