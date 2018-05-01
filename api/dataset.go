@@ -28,12 +28,25 @@ const (
 	downloadServiceToken   = "X-Download-Service-Token"
 	dimensionDocType       = "dimension"
 	dimensionOptionDocType = "dimension-option"
+
+	// audit action/result keys
+	getDatasetsAction = "getDatasets"
+	actionAttempted   = "attempted"
+	actionSuccessful  = "successful"
+	notFound          = "notFound"
 )
 
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
+	if err := api.auditor.Record(r.Context(), getDatasetsAction, actionAttempted, nil); err != nil {
+		log.ErrorC("error while auditing attempted getDatasets action event", err, nil)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
 	results, err := api.dataStore.Backend.GetDatasets()
 	if err != nil {
 		log.Error(err, nil)
+		api.auditor.Record(r.Context(), getDatasetsAction, notFound, nil)
 		handleErrorType(datasetDocType, err, w)
 		return
 	}
@@ -64,6 +77,12 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 			handleErrorType(datasetDocType, err, w)
 			return
 		}
+	}
+
+	if err := api.auditor.Record(r.Context(), getDatasetsAction, actionSuccessful, nil); err != nil {
+		log.ErrorC("error while auditing getDatasets success event", err, nil)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
 	}
 
 	setJSONContentType(w)

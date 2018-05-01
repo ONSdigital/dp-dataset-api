@@ -14,7 +14,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/go-ns/audit"
-
 	"github.com/ONSdigital/go-ns/kafka"
 
 	"github.com/ONSdigital/dp-dataset-api/url"
@@ -43,8 +42,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	auditProducer := &audit.DummyProducer{
+		OutputChan: make(chan []byte, 1),
+		ExitChan:   make(chan bool, 1),
+	}
+	auditProducer.Run()
+
 	// TODO replace with real implementation when ready
-	auditor := &audit.NopAuditor{}
+	auditor := audit.New(auditProducer, "dp-dataset-api")
 
 	mongo := &mongo.Mongo{
 		CodeListURL: cfg.CodeListAPIURL,
@@ -86,6 +91,9 @@ func main() {
 
 		// stop any incoming requests before closing any outbound connections
 		api.Close(ctx)
+
+		log.Debug("exiting dummy audit producer", nil)
+		auditProducer.ExitChan <- true
 
 		if err = mongoclosure.Close(ctx, session); err != nil {
 			log.Error(err, nil)
