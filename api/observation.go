@@ -230,6 +230,7 @@ func (api *DatasetAPI) getObservationList(instanceID string, queryParamters map[
 
 	headerRow, err := csvRowReader.Read()
 	if err != nil {
+
 		return nil, nil, err
 	}
 	defer csvRowReader.Close()
@@ -249,6 +250,9 @@ func (api *DatasetAPI) getObservationList(instanceID string, queryParamters map[
 			break
 		}
 		if err != nil {
+			if strings.Contains(err.Error(), "the filter options created no results") {
+				return nil, nil, errs.ErrObservationsNotFound
+			}
 			return nil, nil, err
 		}
 
