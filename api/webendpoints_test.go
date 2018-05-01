@@ -41,7 +41,7 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 			},
 		}
 		Convey("Calling the datasets endpoint should allow only published items", func() {
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedObservationStore)
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
 			api.router.ServeHTTP(w, r)
 			a, _ := ioutil.ReadAll(w.Body)
 			So(w.Code, ShouldEqual, http.StatusOK)
@@ -75,7 +75,7 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 			},
 		}
 		Convey("Calling the dataset endpoint should allow only published items", func() {
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedObservationStore)
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
 			api.router.ServeHTTP(w, r)
 			a, _ := ioutil.ReadAll(w.Body)
 			So(w.Code, ShouldEqual, http.StatusOK)
@@ -111,7 +111,7 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 			},
 		}
 		Convey("Calling the editions endpoint should allow only published items", func() {
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedObservationStore)
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
 			api.router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(datasetSearchState, ShouldEqual, models.PublishedState)
@@ -142,7 +142,7 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 			},
 		}
 		Convey("Calling the edition endpoint should allow only published items", func() {
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedObservationStore)
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
 			api.router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(datasetSearchState, ShouldEqual, models.PublishedState)
@@ -178,7 +178,7 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 			},
 		}
 		Convey("Calling the versions endpoint should allow only published items", func() {
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedObservationStore)
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
 			api.router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(datasetSearchState, ShouldEqual, models.PublishedState)
@@ -216,7 +216,7 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 			},
 		}
 		Convey("Calling the version endpoint should allow only published items", func() {
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedObservationStore)
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
 			api.router.ServeHTTP(w, r)
 
 			So(w.Code, ShouldEqual, http.StatusOK)
@@ -250,7 +250,7 @@ func TestWebSubnetDimensionsEndpoint(t *testing.T) {
 			},
 		}
 		Convey("Calling dimension endpoint should allow only published items", func() {
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedObservationStore)
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
 			api.router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(versionSearchState, ShouldEqual, models.PublishedState)
@@ -282,7 +282,7 @@ func TestWebSubnetDimensionOptionsEndpoint(t *testing.T) {
 		}
 
 		Convey("Calling dimension option endpoint should allow only published items", func() {
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedObservationStore)
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
 			api.router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(versionSearchState, ShouldEqual, models.PublishedState)
@@ -330,7 +330,7 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{}
-				api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedObservationStore)
+				api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
 				api.router.ServeHTTP(w, r)
 				So(w.Code, ShouldEqual, http.StatusNotFound)
 			})
