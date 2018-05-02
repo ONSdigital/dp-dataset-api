@@ -296,8 +296,8 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 			log.ErrorC("unpublished version has an invalid state", err, log.Data{"state": item.State})
 		}
 
-		// Only the download service should not have access to the public/private download
-		// fields
+		// Only the download service should have access to the
+		// public/private download fields
 		if r.Header.Get(downloadServiceToken) != api.downloadServiceToken {
 			if item.Downloads != nil {
 				if item.Downloads.CSV != nil {
