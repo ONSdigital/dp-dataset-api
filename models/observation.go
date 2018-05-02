@@ -2,11 +2,12 @@ package models
 
 // ObservationDoc represents information (metadata) relevant to a version
 type ObservationDoc struct {
-	Dimensions          map[string]Options `json:"dimensions,omitempty"`
+	Dimensions          map[string]Options `json:"dimensions"`
 	Context             string             `json:"context,omitempty"`
-	Links               *ObservationLinks  `json:"links,omitempty"`
-	Observation         string             `json:"observation,omitempty"`
+	Links               *ObservationLinks  `json:"links"`
+	Observation         string             `json:"observation"`
 	ObservationMetadata map[string]string  `json:"observation_level_metadata,omitempty"`
+	UnitOfMeasure       string             `json:"unit_of_measure,omitempty"`
 	UsageNotes          *[]UsageNote       `json:"usage_notes,omitempty"`
 }
 
@@ -17,14 +18,14 @@ type ObservationLinks struct {
 	Version         *LinkObject `json:"version,omitempty"`
 }
 
-// Options is a an object containing a list of link onjects that refer to the
+// Options represents an object containing a list of link objects that refer to the
 // code url for that dimension option
 type Options struct {
 	LinkObjects []*LinkObject `json:"options,omitempty"`
 }
 
 // CreateObservationDoc manages the creation of metadata across dataset and version docs
-func CreateObservationDoc(rawQuery string, versionDoc *Version, headerRow, observationRow []string, dimensionOffset int, queryParameters map[string]string) *ObservationDoc {
+func CreateObservationDoc(rawQuery string, versionDoc *Version, datasetDoc *Dataset, headerRow, observationRow []string, dimensionOffset int, queryParameters map[string]string) *ObservationDoc {
 
 	observationDoc := &ObservationDoc{
 		Context: "",
@@ -40,8 +41,9 @@ func CreateObservationDoc(rawQuery string, versionDoc *Version, headerRow, obser
 				ID:   versionDoc.Links.Version.ID,
 			},
 		},
-		Observation: observationRow[0],
-		UsageNotes:  versionDoc.UsageNotes,
+		Observation:   observationRow[0],
+		UnitOfMeasure: datasetDoc.UnitOfMeasure,
+		UsageNotes:    versionDoc.UsageNotes,
 	}
 
 	// add observation metadata
@@ -60,7 +62,6 @@ func CreateObservationDoc(rawQuery string, versionDoc *Version, headerRow, obser
 	// add the dimension codes
 	for paramKey, paramValue := range queryParameters {
 		for _, dimension := range versionDoc.Dimensions {
-
 			var linkObjects []*LinkObject
 			if dimension.Name == paramKey {
 

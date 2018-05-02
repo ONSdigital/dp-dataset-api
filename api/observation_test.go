@@ -16,6 +16,10 @@ import (
 
 var (
 	expectedObservationDoc = `{` +
+		`"dimensions":{` +
+		`"aggregate":{"options":[{"id":"cpi1dim1S40403","href":"http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1S40403"}]},` +
+		`"geography":{"options":[{"id":"K02000001","href":"http://localhost:8081/code-lists/uk-only/codes/K02000001"}]},` +
+		`"time":{"options":[{"id":"16-Aug","href":"http://localhost:8081/code-lists/time/codes/16-Aug"}]}},` +
 		`"links":{` +
 		`"dataset_metadata":{"href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1/metadata"},` +
 		`"self":{"href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001"},` +
@@ -32,6 +36,20 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug\x26aggregate=cpi1dim1S40403&geography=K02000001", nil)
 		w := httptest.NewRecorder()
 
+		dimensions := []models.CodeList{
+			models.CodeList{
+				Name: "aggregate",
+				HRef: "http://localhost:8081/code-lists/cpih1dim1aggid",
+			},
+			models.CodeList{
+				Name: "geography",
+				HRef: "http://localhost:8081/code-lists/uk-only",
+			},
+			models.CodeList{
+				Name: "time",
+				HRef: "http://localhost:8081/code-lists/time",
+			},
+		}
 		usagesNotes := &[]models.UsageNote{models.UsageNote{Title: "data_marking", Note: "this marks the obsevation with a special character"}}
 
 		mockedDataStore := &storetest.StorerMock{
@@ -43,7 +61,8 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			},
 			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
 				return &models.Version{
-					Headers: []string{"v4_2", "data_marking", "confidence_interval", "aggregate_code", "aggregate", "geography_code", "geography", "time", "time"},
+					Dimensions: dimensions,
+					Headers:    []string{"v4_2", "data_marking", "confidence_interval", "aggregate_code", "aggregate", "geography_code", "geography", "time", "time"},
 					Links: &models.VersionLinks{
 						Version: &models.LinkObject{
 							HRef: "http://localhost:8080/datasets/cpih012/editions/2017/versions/1",
@@ -239,7 +258,6 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldResemble, "missing headers from version doc\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -404,7 +422,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 	})
 }
 
-func TestGetListOfValidDimensionOptions(t *testing.T) {
+func TestgetListOfValidDimensionNames(t *testing.T) {
 	t.Parallel()
 	Convey("Given the version headers are valid", t, func() {
 		Convey("When the version has no meta data headers", func() {
@@ -420,8 +438,8 @@ func TestGetListOfValidDimensionOptions(t *testing.T) {
 				},
 			}
 
-			Convey("Then getListOfValidDimensionOptions func returns the correct number of headers", func() {
-				dimensionOptions, dimensionOffset, err := getListOfValidDimensionOptions(version.Headers)
+			Convey("Then getListOfValidDimensionNames func returns the correct number of headers", func() {
+				dimensionOptions, dimensionOffset, err := getListOfValidDimensionNames(version.Headers)
 
 				So(err, ShouldBeNil)
 				So(dimensionOffset, ShouldEqual, 0)
@@ -443,8 +461,8 @@ func TestGetListOfValidDimensionOptions(t *testing.T) {
 				},
 			}
 
-			Convey("Then getListOfValidDimensionOptions func returns the correct number of headers", func() {
-				dimensionOptions, dimensionOffset, err := getListOfValidDimensionOptions(version.Headers)
+			Convey("Then getListOfValidDimensionNames func returns the correct number of headers", func() {
+				dimensionOptions, dimensionOffset, err := getListOfValidDimensionNames(version.Headers)
 
 				So(err, ShouldBeNil)
 				So(dimensionOffset, ShouldEqual, 2)
@@ -455,7 +473,7 @@ func TestGetListOfValidDimensionOptions(t *testing.T) {
 	})
 
 	Convey("Given the first value in the header does not have an underscore `_` in value", t, func() {
-		Convey("When the getListOfValidDimensionOptions func is called", func() {
+		Convey("When the getListOfValidDimensionNames func is called", func() {
 			version := &models.Version{
 				Headers: []string{
 					"v4",
@@ -468,7 +486,7 @@ func TestGetListOfValidDimensionOptions(t *testing.T) {
 				},
 			}
 			Convey("Then function returns error, `index out of range`", func() {
-				dimensionOptions, dimensionOffset, err := getListOfValidDimensionOptions(version.Headers)
+				dimensionOptions, dimensionOffset, err := getListOfValidDimensionNames(version.Headers)
 
 				So(err, ShouldNotBeNil)
 				So(dimensionOffset, ShouldEqual, 0)
@@ -479,7 +497,7 @@ func TestGetListOfValidDimensionOptions(t *testing.T) {
 	})
 
 	Convey("Given the first value in the header does not follow the format `v4_1`", t, func() {
-		Convey("When the getListOfValidDimensionOptions func is called", func() {
+		Convey("When the getListOfValidDimensionNames func is called", func() {
 			version := &models.Version{
 				Headers: []string{
 					"v4_one",
@@ -492,7 +510,7 @@ func TestGetListOfValidDimensionOptions(t *testing.T) {
 				},
 			}
 			Convey("Then function returns error, `index out of range`", func() {
-				dimensionOptions, dimensionOffset, err := getListOfValidDimensionOptions(version.Headers)
+				dimensionOptions, dimensionOffset, err := getListOfValidDimensionNames(version.Headers)
 
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldResemble, "strconv.Atoi: parsing \"one\": invalid syntax")
@@ -520,7 +538,7 @@ func TestExtractQueryParameters(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("Then extractQueryParameters func returns a list of query parameters and there corresponding value", func() {
-				queryParameters, err := extractQueryParameters(r, headers)
+				queryParameters, err := extractQueryParameters(r.URL.Query(), headers)
 				So(err, ShouldBeNil)
 				So(len(queryParameters), ShouldEqual, 3)
 				So(queryParameters["time"], ShouldEqual, "JAN08")
@@ -537,7 +555,7 @@ func TestExtractQueryParameters(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("Then extractQueryParameters func returns an error", func() {
-				queryParameters, err := extractQueryParameters(r, headers)
+				queryParameters, err := extractQueryParameters(r.URL.Query(), headers)
 				So(err, ShouldNotBeNil)
 				So(err, ShouldResemble, errorMissingQueryParameters([]string{"aggregate"}))
 				So(queryParameters, ShouldBeNil)
@@ -552,7 +570,7 @@ func TestExtractQueryParameters(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("Then extractQueryParameters func returns an error", func() {
-				queryParameters, err := extractQueryParameters(r, headers)
+				queryParameters, err := extractQueryParameters(r.URL.Query(), headers)
 				So(err, ShouldNotBeNil)
 				So(err, ShouldResemble, errorIncorrectQueryParameters([]string{"age"}))
 				So(queryParameters, ShouldBeNil)

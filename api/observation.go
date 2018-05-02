@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -51,7 +52,10 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 
 	authorised, logData := api.authenticate(r, logData)
 
-	var state string
+	var (
+		state   string
+		dataset *models.Dataset
+	)
 
 	// if request is authenticated then access resources of state other than published
 	if !authorised {
@@ -63,7 +67,10 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		state = datasetDoc.Current.State
+		dataset = datasetDoc.Current
+		state = dataset.State
+	} else {
+		dataset = datasetDoc.Next
 	}
 
 	if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
@@ -89,21 +96,21 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 	if versionDoc.Headers == nil {
 		logData["version_doc"] = versionDoc
 		log.Error(errs.ErrMissingVersionHeaders, logData)
-		http.Error(w, errs.ErrMissingVersionHeaders.Error(), http.StatusInternalServerError)
+		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 
-	// loop through version headers to retrieve list of dimension options
-	validDimensionOptions, dimensionOffset, err := getListOfValidDimensionOptions(versionDoc.Headers)
+	// loop through version headers to retrieve list of dimension names
+	validDimensionNames, dimensionOffset, err := getListOfValidDimensionNames(versionDoc.Headers)
 	if err != nil {
 		log.ErrorC("unable to distinguish headers from version document", err, logData)
 		handleObservationsErrorType(w, err)
 		return
 	}
-	logData["dimension_options"] = validDimensionOptions
+	logData["dimension_names"] = validDimensionNames
 
 	// check query parameters match the version headers
-	queryParameters, err := extractQueryParameters(r, validDimensionOptions)
+	queryParameters, err := extractQueryParameters(r.URL.Query(), validDimensionNames)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -124,7 +131,7 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	observationDoc := models.CreateObservationDoc(r.URL.RawQuery, versionDoc, headerRow, observationRow, dimensionOffset, queryParameters)
+	observationDoc := models.CreateObservationDoc(r.URL.RawQuery, versionDoc, dataset, headerRow, observationRow, dimensionOffset, queryParameters)
 
 	setJSONContentType(w)
 
@@ -143,7 +150,7 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 	log.Debug("get single observation relative to a selected set of dimension options for a version", logData)
 }
 
-func getListOfValidDimensionOptions(headerRow []string) ([]string, int, error) {
+func getListOfValidDimensionNames(headerRow []string) ([]string, int, error) {
 	metaData := strings.Split(headerRow[0], "_")
 
 	if len(metaData) < 2 {
@@ -155,23 +162,21 @@ func getListOfValidDimensionOptions(headerRow []string) ([]string, int, error) {
 		return nil, 0, err
 	}
 
-	var headers []string
+	var dimensionNames []string
 	for i := dimensionOffset + 2; i <= len(headerRow); i += 2 {
-		headers = append(headers, headerRow[i])
+		dimensionNames = append(dimensionNames, headerRow[i])
 	}
 
-	return headers, dimensionOffset, nil
+	return dimensionNames, dimensionOffset, nil
 }
 
-func extractQueryParameters(r *http.Request, validDimensions []string) (map[string]string, error) {
+func extractQueryParameters(urlQuery url.Values, validDimensions []string) (map[string]string, error) {
 	queryParameters := make(map[string]string)
 	var incorrectQueryParameters, missingQueryParameters []string
 
-	urlValues := r.URL.Query()
-
 	// Determine if any request query parameters are invalid dimensions
 	// and map the dimensions with their equivalent values in map
-	for dimension, option := range urlValues {
+	for dimension, option := range urlQuery {
 		queryParamExists := false
 		for _, validDimension := range validDimensions {
 			if dimension == validDimension {
