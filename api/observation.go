@@ -52,7 +52,10 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 
 	authorised, logData := api.authenticate(r, logData)
 
-	var state string
+	var (
+		state   string
+		dataset *models.Dataset
+	)
 
 	// if request is authenticated then access resources of state other than published
 	if !authorised {
@@ -64,7 +67,10 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		state = datasetDoc.Current.State
+		dataset = datasetDoc.Current
+		state = dataset.State
+	} else {
+		dataset = datasetDoc.Next
 	}
 
 	if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
@@ -125,7 +131,7 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	observationDoc := models.CreateObservationDoc(r.URL.RawQuery, versionDoc, headerRow, observationRow, dimensionOffset, queryParameters)
+	observationDoc := models.CreateObservationDoc(r.URL.RawQuery, versionDoc, dataset, headerRow, observationRow, dimensionOffset, queryParameters)
 
 	setJSONContentType(w)
 

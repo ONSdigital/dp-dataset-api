@@ -7,6 +7,7 @@ type ObservationDoc struct {
 	Links               *ObservationLinks  `json:"links"`
 	Observation         string             `json:"observation"`
 	ObservationMetadata map[string]string  `json:"observation_level_metadata,omitempty"`
+	UnitOfMeasure       string             `json:"unit_of_measure,omitempty"`
 	UsageNotes          *[]UsageNote       `json:"usage_notes,omitempty"`
 }
 
@@ -24,7 +25,7 @@ type Options struct {
 }
 
 // CreateObservationDoc manages the creation of metadata across dataset and version docs
-func CreateObservationDoc(rawQuery string, versionDoc *Version, headerRow, observationRow []string, dimensionOffset int, queryParameters map[string]string) *ObservationDoc {
+func CreateObservationDoc(rawQuery string, versionDoc *Version, datasetDoc *Dataset, headerRow, observationRow []string, dimensionOffset int, queryParameters map[string]string) *ObservationDoc {
 
 	observationDoc := &ObservationDoc{
 		Context: "",
@@ -40,8 +41,9 @@ func CreateObservationDoc(rawQuery string, versionDoc *Version, headerRow, obser
 				ID:   versionDoc.Links.Version.ID,
 			},
 		},
-		Observation: observationRow[0],
-		UsageNotes:  versionDoc.UsageNotes,
+		Observation:   observationRow[0],
+		UnitOfMeasure: datasetDoc.UnitOfMeasure,
+		UsageNotes:    versionDoc.UsageNotes,
 	}
 
 	// add observation metadata

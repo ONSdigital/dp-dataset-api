@@ -1934,7 +1934,7 @@ definitions:
                       type: string
       links:
         $ref: '#/definitions/ObservationLinks'
-      observation: 
+      observation:
         description: "The observation value for the selection of query parameters (dimensions) chosen"
         type: string
       observation_level_metadata:
@@ -1946,6 +1946,9 @@ definitions:
             <key>:
               description: "A single metadata key-value pair related to the observation found against version of a dataset, for example 'coefficients of variation' or 'data marking'"
               type: string
+      unit_of_measure:
+        description: "The unit of measure for the dataset observations"
+        type: string
       usage_notes:
         description: "A list of notes to explain the observational metadata stored against this resource"
         type: array
@@ -1985,4 +1988,3 @@ definitions:
       note:
         description: "The content of the note"
         type: string
-
