@@ -20,4 +20,5 @@ var (
 	ErrMoreThanOneObservationFound = errors.New("More than one observation found, add more query parameters")
 	ErrIndexOutOfRange             = errors.New("index out of range")
 	ErrMissingVersionHeaders       = errors.New("missing headers from version doc")
+	ErrTooManyWildcards            = errors.New("only one wildcard (*) is allowed as a value in selected query parameters")
 )
