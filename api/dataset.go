@@ -33,6 +33,7 @@ const (
 	// audit actions
 	getDatasetsAction = "getDatasets"
 	getDatasetAction  = "getDataset"
+	getEditionsAction = "getEditions"
 
 	// audit results
 	actionAttempted  = "attempted"
@@ -169,6 +170,13 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	logData := log.Data{"dataset_id": id}
+	auditParams := common.Params{"dataset_id": id}
+
+	if err := api.auditor.Record(r.Context(), getEditionsAction, actionAttempted, auditParams); err != nil {
+		log.ErrorC("error while auditing getEditions action attempted event", err, logData)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	authorised, logData := api.authenticate(r, logData)
 
@@ -222,6 +230,12 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		logMessage = "get all editions without auth"
+	}
+
+	if err := api.auditor.Record(r.Context(), getEditionsAction, actionSuccessful, auditParams); err != nil {
+		log.ErrorC("error while auditing getEditions action successful event", err, logData)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	setJSONContentType(w)

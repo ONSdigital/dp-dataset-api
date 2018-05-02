@@ -377,11 +377,49 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusOK)
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getEditionsAction, actionSuccessful, auditParams)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestGetEditionsAuditingError(t *testing.T) {
+	t.Parallel()
+	Convey("given auditing get editions attempted action returns an error then a 500 response is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			GetEditionsFunc: func(id string, state string) (*models.EditionUpdateResults, error) {
+				return &models.EditionUpdateResults{}, nil
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			return errors.New("get editions action attempted audit event error")
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 1)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 	})
 }
 
