@@ -1911,9 +1911,6 @@ definitions:
     description: "An object containing information on a single observation for a given version of a dataset"
     type: object
     properties:
-      context:
-        description: ""
-        type: string
       dimensions:
         description: "A list of dimensions for the given query"
         type: object
@@ -1934,18 +1931,29 @@ definitions:
                       type: string
       links:
         $ref: '#/definitions/ObservationLinks'
-      observation: 
-        description: "The observation value for the selection of query parameters (dimensions) chosen"
-        type: string
-      observation_level_metadata:
-        description: "Metadata related to the observation found against version of a dataset"
+      observations:
+        description: "A list of observations found when filtering on query parameters"
         type: array
         items:
-          type: object
           properties:
-            <key>:
-              description: "A single metadata key-value pair related to the observation found against version of a dataset, for example 'coefficients of variation' or 'data marking'"
+            context:
+              description: ""
               type: string
+            metadata:
+              description: "Metadata related to the observation found against version of a dataset"
+              type: array
+              items:
+                type: object
+                properties:
+                  <key>:
+                    description: "A single metadata key-value pair related to the observation found against version of a dataset, for example 'coefficients of variation' or 'data marking'"
+                    type: string
+            observation: 
+              description: "The observation value for the selection of query parameters (dimensions) chosen"
+              type: string
+      unit_of_measure: 
+        description: "The unit of measure for the dataset observations"
+        type: string
       usage_notes:
         description: "A list of notes to explain the observational metadata stored against this resource"
         type: array
@@ -1985,4 +1993,3 @@ definitions:
       note:
         description: "The content of the note"
         type: string
-
