@@ -42,11 +42,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	auditProducer := &audit.DummyProducer{
-		OutputChan: make(chan []byte, 1),
-		ExitChan:   make(chan bool, 1),
+	auditProducer, err := kafka.NewProducer(cfg.KafkaAddr, "audit-events", 0)
+	if err != nil {
+		log.Error(errors.Wrap(err, "error creating kakfa producer"), nil)
+		os.Exit(1)
 	}
-	auditProducer.Run()
 
 	// TODO replace with real implementation when ready
 	auditor := audit.New(auditProducer, "dp-dataset-api")
@@ -82,6 +82,7 @@ func main() {
 
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
+	//api.CreateDatasetAPI(identity.Handler(cfg.ZebedeeURL), *cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor)
 	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor)
 
 	// Gracefully shutdown the application closing any open resources.
@@ -92,8 +93,8 @@ func main() {
 		// stop any incoming requests before closing any outbound connections
 		api.Close(ctx)
 
-		log.Debug("exiting dummy audit producer", nil)
-		auditProducer.ExitChan <- true
+		log.Debug("exiting audit producer", nil)
+		auditProducer.Close(ctx)
 
 		if err = mongoclosure.Close(ctx, session); err != nil {
 			log.Error(err, nil)

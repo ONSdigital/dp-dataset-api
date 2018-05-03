@@ -67,7 +67,8 @@ func GetAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDown
 func createRequestWithAuth(method, URL string, body io.Reader) (*http.Request, error) {
 	r, err := http.NewRequest(method, URL, body)
 	ctx := r.Context()
-	ctx = context.WithValue(ctx, "Caller-Identity", "someone@ons.gov.uk")
+	//ctx = context.WithValue(ctx, "Caller-Identity", "someone@ons.gov.uk")
+	ctx = common.SetCaller(ctx, "someone@ons.gov.uk")
 	r = r.WithContext(ctx)
 	return r, err
 }
@@ -1042,7 +1043,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 	})
 
-	Convey("When the request does not contain a valid internal token return status not found", t, func() {
+	Convey("When the request does not contain a valid internal token returns 401", t, func() {
 		var b string
 		b = datasetPayload
 		r := httptest.NewRequest("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
@@ -1058,8 +1059,8 @@ func TestPostDatasetReturnsError(t *testing.T) {
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldResemble, "requested resource not found\n")
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(w.Body.String(), ShouldResemble, "unauthenticated request\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -1229,8 +1230,8 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldResemble, "requested resource not found\n")
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(w.Body.String(), ShouldResemble, "unauthenticated request\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
@@ -1361,13 +1362,13 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
-
 		mockedDataStore := &storetest.StorerMock{}
-
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
+
 		api.router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldResemble, "requested resource not found\n")
+
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(w.Body.String(), ShouldResemble, "unauthenticated request\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
@@ -2025,8 +2026,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor())
 		api.router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldEqual, "requested resource not found\n")
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(w.Body.String(), ShouldEqual, "unauthenticated request\n")
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)

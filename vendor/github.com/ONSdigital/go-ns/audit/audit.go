@@ -5,17 +5,12 @@ import (
 	"fmt"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/handlers/requestID"
-	"github.com/ONSdigital/go-ns/identity"
 	"github.com/ONSdigital/go-ns/log"
 	"sort"
 	"time"
 )
 
 //go:generate moq -out generated_mocks.go -pkg audit . AuditorService OutboundProducer
-
-const nilStr = "nil"
-
-type contextKey string
 
 // Error represents containing details of an attempt to audit and action that failed.
 type Error struct {
@@ -77,9 +72,17 @@ func New(producer OutboundProducer, namespace string) *Auditor {
 //Record captures the provided action, result and parameters and an audit event. Common fields - time, user, service
 // are added automatically. An error is returned if there is a problem recording the event it is up to the caller to
 // decide what do with the error in these cases.
+// NOTE: Record relies on the identity middleware having run first. If no user / service identity is available in the
+// provided context an error will be returned.
 func (a *Auditor) Record(ctx context.Context, attemptedAction string, actionResult string, params common.Params) error {
 	//NOTE: for now we are only auditing user actions - this may be subject to change
-	user := identity.User(ctx)
+	user := common.User(ctx)
+	service := common.Caller(ctx)
+
+	if user == "" && service == "" {
+		return NewAuditError("expected user or caller identity but none found", attemptedAction, actionResult, params)
+	}
+
 	if user == "" {
 		log.Debug("not user attempted action: skipping audit event", nil)
 		return nil
@@ -105,29 +108,15 @@ func (a *Auditor) Record(ctx context.Context, attemptedAction string, actionResu
 
 	avroBytes, err := a.marshalToAvro(e)
 	if err != nil {
-		log.Error(err, nil)
 		return NewAuditError("error marshalling event to arvo", attemptedAction, actionResult, params)
 	}
 
-	log.Info("logging audit message", log.Data{"auditEvent": e})
 	a.producer.Output() <- avroBytes
 	return nil
 }
 
 //NewAuditError creates new audit.Error with default field values where necessary and orders the params alphabetically.
 func NewAuditError(cause string, attemptedAction string, actionResult string, params common.Params) Error {
-	if cause == "" {
-		cause = nilStr
-	}
-
-	if attemptedAction == "" {
-		attemptedAction = nilStr
-	}
-
-	if actionResult == "" {
-		actionResult = nilStr
-	}
-
 	return Error{
 		Cause:  cause,
 		Action: attemptedAction,

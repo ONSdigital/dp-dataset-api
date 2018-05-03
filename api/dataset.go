@@ -12,7 +12,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/identity"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -39,11 +38,13 @@ const (
 	actionAttempted  = "attempted"
 	actionSuccessful = "successful"
 	notFound         = "notFound"
+
+	auditError = "error while auditing event, failing request"
 )
 
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	if err := api.auditor.Record(r.Context(), getDatasetsAction, actionAttempted, nil); err != nil {
-		log.ErrorC("error while auditing attempted getDatasets action event", err, nil)
+		log.ErrorC(auditError, err, nil)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -85,7 +86,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := api.auditor.Record(r.Context(), getDatasetsAction, actionSuccessful, nil); err != nil {
-		log.ErrorC("error while auditing getDatasets success event", err, nil)
+		log.ErrorC(auditError, err, nil)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -170,13 +171,13 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	logData := log.Data{"dataset_id": id}
-	auditParams := common.Params{"dataset_id": id}
+	//auditParams := common.Params{"dataset_id": id}
 
-	if err := api.auditor.Record(r.Context(), getEditionsAction, actionAttempted, auditParams); err != nil {
-		log.ErrorC("error while auditing getEditions action attempted event", err, logData)
+	/*	if err := api.auditor.Record(r.Context(), getEditionsAction, actionAttempted, auditParams); err != nil {
+		log.ErrorC(auditError, err, logData)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
-	}
+	}*/
 
 	authorised, logData := api.authenticate(r, logData)
 
@@ -232,11 +233,11 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 		logMessage = "get all editions without auth"
 	}
 
-	if err := api.auditor.Record(r.Context(), getEditionsAction, actionSuccessful, auditParams); err != nil {
+	/*	if err := api.auditor.Record(r.Context(), getEditionsAction, actionSuccessful, auditParams); err != nil {
 		log.ErrorC("error while auditing getEditions action successful event", err, logData)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
-	}
+	}*/
 
 	setJSONContentType(w)
 	_, err = w.Write(b)
@@ -1253,13 +1254,13 @@ func (api *DatasetAPI) authenticate(r *http.Request, logData map[string]interfac
 	if api.EnablePrePublishView {
 		var hasCallerIdentity, hasUserIdentity bool
 
-		callerIdentity := identity.Caller(r.Context())
+		callerIdentity := common.Caller(r.Context())
 		if callerIdentity != "" {
 			logData["caller_identity"] = callerIdentity
 			hasCallerIdentity = true
 		}
 
-		userIdentity := identity.User(r.Context())
+		userIdentity := common.User(r.Context())
 		if userIdentity != "" {
 			logData["user_identity"] = userIdentity
 			hasUserIdentity = true
