@@ -2345,9 +2345,9 @@ func TestCreateNewVersionDoc(t *testing.T) {
 			CollectionID: "4321",
 		}
 
-		newVersion := createNewVersionDoc(currentVersion, version)
-		So(newVersion.CollectionID, ShouldNotBeNil)
-		So(newVersion.CollectionID, ShouldEqual, "4321")
+		populateNewVersionDoc(currentVersion, version)
+		So(version.CollectionID, ShouldNotBeNil)
+		So(version.CollectionID, ShouldEqual, "4321")
 	})
 
 	Convey("Check the version collection id does not get replaced by the current collection id when request contains a collection_id", t, func() {
@@ -2358,9 +2358,9 @@ func TestCreateNewVersionDoc(t *testing.T) {
 			CollectionID: "4321",
 		}
 
-		newVersion := createNewVersionDoc(currentVersion, version)
-		So(newVersion.CollectionID, ShouldNotBeNil)
-		So(newVersion.CollectionID, ShouldEqual, "4321")
+		populateNewVersionDoc(currentVersion, version)
+		So(version.CollectionID, ShouldNotBeNil)
+		So(version.CollectionID, ShouldEqual, "4321")
 	})
 
 	Convey("Check the version has the old collection id when request is missing a collection_id", t, func() {
@@ -2369,18 +2369,18 @@ func TestCreateNewVersionDoc(t *testing.T) {
 		}
 		version := &models.Version{}
 
-		newVersion := createNewVersionDoc(currentVersion, version)
-		So(newVersion.CollectionID, ShouldNotBeNil)
-		So(newVersion.CollectionID, ShouldEqual, "1234")
+		populateNewVersionDoc(currentVersion, version)
+		So(version.CollectionID, ShouldNotBeNil)
+		So(version.CollectionID, ShouldEqual, "1234")
 	})
 
 	Convey("check the version collection id is not set when both request body and current version document are missing a collection id", t, func() {
 		currentVersion := &models.Version{}
 		version := &models.Version{}
 
-		newVersion := createNewVersionDoc(currentVersion, version)
-		So(newVersion.CollectionID, ShouldNotBeNil)
-		So(newVersion.CollectionID, ShouldEqual, "")
+		populateNewVersionDoc(currentVersion, version)
+		So(version.CollectionID, ShouldNotBeNil)
+		So(version.CollectionID, ShouldEqual, "")
 	})
 
 	Convey("Check the version has the new spatial link when request contains a links.spatial.href", t, func() {
@@ -2393,10 +2393,10 @@ func TestCreateNewVersionDoc(t *testing.T) {
 			},
 		}
 
-		newVersion := createNewVersionDoc(currentVersion, version)
-		So(newVersion.Links, ShouldNotBeNil)
-		So(newVersion.Links.Spatial, ShouldNotBeNil)
-		So(newVersion.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/geographylist")
+		populateNewVersionDoc(currentVersion, version)
+		So(version.Links, ShouldNotBeNil)
+		So(version.Links.Spatial, ShouldNotBeNil)
+		So(version.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/geographylist")
 	})
 
 	Convey("Check the version links.spatial.href does not get replaced by the current version value", t, func() {
@@ -2415,10 +2415,10 @@ func TestCreateNewVersionDoc(t *testing.T) {
 			},
 		}
 
-		newVersion := createNewVersionDoc(currentVersion, version)
-		So(newVersion.Links, ShouldNotBeNil)
-		So(newVersion.Links.Spatial, ShouldNotBeNil)
-		So(newVersion.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/geographylist")
+		populateNewVersionDoc(currentVersion, version)
+		So(version.Links, ShouldNotBeNil)
+		So(version.Links.Spatial, ShouldNotBeNil)
+		So(version.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/geographylist")
 	})
 
 	Convey("Check the links.spatial.href has the old value when request does not contain a links.spatial.href", t, func() {
@@ -2431,10 +2431,10 @@ func TestCreateNewVersionDoc(t *testing.T) {
 		}
 		version := &models.Version{}
 
-		newVersion := createNewVersionDoc(currentVersion, version)
-		So(newVersion.Links, ShouldNotBeNil)
-		So(newVersion.Links.Spatial, ShouldNotBeNil)
-		So(newVersion.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/oldgeographylist")
+		populateNewVersionDoc(currentVersion, version)
+		So(version.Links, ShouldNotBeNil)
+		So(version.Links.Spatial, ShouldNotBeNil)
+		So(version.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/oldgeographylist")
 	})
 
 	Convey("check the version links.spatial.href is not set when both request body and current version document do not contain a links.spatial.href", t, func() {
@@ -2447,9 +2447,9 @@ func TestCreateNewVersionDoc(t *testing.T) {
 		}
 		version := &models.Version{}
 
-		newVersion := createNewVersionDoc(currentVersion, version)
-		So(newVersion.Links, ShouldNotBeNil)
-		So(newVersion.Links.Spatial, ShouldBeNil)
+		populateNewVersionDoc(currentVersion, version)
+		So(version.Links, ShouldNotBeNil)
+		So(version.Links.Spatial, ShouldBeNil)
 	})
 }
 

@@ -548,16 +548,16 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Combine update version document to existing version document
-	newVersion := createNewVersionDoc(currentVersion, versionDoc)
-	log.Debug("combined current version document with update request", log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "updated_version": newVersion})
+	populateNewVersionDoc(currentVersion, versionDoc)
+	log.Debug("combined current version document with update request", log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "updated_version": versionDoc})
 
-	if err = models.ValidateVersion(newVersion); err != nil {
+	if err = models.ValidateVersion(versionDoc); err != nil {
 		log.ErrorC("failed validation check for version update", err, nil)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := api.dataStore.Backend.UpdateVersion(newVersion.ID, versionDoc); err != nil {
+	if err := api.dataStore.Backend.UpdateVersion(versionDoc.ID, versionDoc); err != nil {
 		log.ErrorC("failed to update version document", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 		handleErrorType(versionDocType, err, w)
 		return
@@ -582,7 +582,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Pass in newVersion variable to include relevant data needed for update on dataset API (e.g. links)
-		if err := api.publishDataset(currentDataset, newVersion); err != nil {
+		if err := api.publishDataset(currentDataset, versionDoc); err != nil {
 			log.ErrorC("failed to update dataset document once version state changes to publish", err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
 			handleErrorType(versionDocType, err, w)
 			return
@@ -633,7 +633,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	log.Debug("update dataset", log.Data{"dataset_id": datasetID})
 }
 
-func createNewVersionDoc(currentVersion *models.Version, version *models.Version) *models.Version {
+func populateNewVersionDoc(currentVersion *models.Version, version *models.Version) *models.Version {
 
 	var alerts []models.Alert
 	if currentVersion.Alerts != nil {
@@ -657,6 +657,7 @@ func createNewVersionDoc(currentVersion *models.Version, version *models.Version
 	}
 
 	if version.CollectionID == "" {
+		// will be checked later if state:published
 		version.CollectionID = currentVersion.CollectionID
 	}
 
@@ -687,6 +688,11 @@ func createNewVersionDoc(currentVersion *models.Version, version *models.Version
 
 	if version.State == "" {
 		version.State = currentVersion.State
+	}
+
+	// when changing to (or updating) published state, ensure no CollectionID
+	if version.State == models.PublishedState && version.CollectionID != "" {
+		version.CollectionID = ""
 	}
 
 	if version.Temporal == nil {
@@ -745,7 +751,7 @@ func createNewVersionDoc(currentVersion *models.Version, version *models.Version
 
 func (api *DatasetAPI) publishDataset(currentDataset *models.DatasetUpdate, version *models.Version) error {
 	if version != nil {
-		currentDataset.Next.CollectionID = version.CollectionID
+		currentDataset.Next.CollectionID = ""
 
 		currentDataset.Next.Links.LatestVersion = &models.LinkObject{
 			ID:   version.Links.Version.ID,
@@ -983,7 +989,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 	var metaDataDoc *models.Metadata
 	// combine version and dataset metadata
-	if state != models.PublishedState && versionDoc.CollectionID == datasetDoc.Next.CollectionID {
+	if state != models.PublishedState { // && versionDoc.CollectionID == datasetDoc.Next.CollectionID {
 		metaDataDoc = models.CreateMetaDataDoc(datasetDoc.Next, versionDoc, api.urlBuilder)
 	} else {
 		metaDataDoc = models.CreateMetaDataDoc(datasetDoc.Current, versionDoc, api.urlBuilder)

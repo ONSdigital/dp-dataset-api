@@ -178,15 +178,16 @@ func TestValidateVersion(t *testing.T) {
 			So(err.Error(), ShouldResemble, errors.New("missing mandatory fields: [release_date]").Error())
 		})
 
-		Convey("when the version state is published but is missing collection_id", func() {
+		Convey("when the version state is published but has a collection_id", func() {
 			version := &Version{
-				ReleaseDate: "2016-04-04",
-				State:       PublishedState,
+				ReleaseDate:  "2016-04-04",
+				State:        PublishedState,
+				CollectionID: "cid01",
 			}
 
 			err := ValidateVersion(version)
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldResemble, errors.New("Missing collection_id for association between version and a collection").Error())
+			So(err.Error(), ShouldResemble, errors.New("Unexpected collection_id in published version").Error())
 		})
 
 		Convey("when version downloads are invalid", func() {

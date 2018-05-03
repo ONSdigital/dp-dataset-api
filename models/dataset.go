@@ -307,22 +307,21 @@ func CreateContact(reader io.Reader) (*Contact, error) {
 
 // ValidateVersion checks the content of the version structure
 func ValidateVersion(version *Version) error {
-	var hasAssociation bool
 
 	switch version.State {
 	case "":
 		return errs.ErrVersionMissingState
 	case EditionConfirmedState:
-	case AssociatedState:
-		hasAssociation = true
 	case PublishedState:
-		hasAssociation = true
+		if version.CollectionID != "" {
+			return errors.New("Unexpected collection_id in published version")
+		}
+	case AssociatedState:
+		if version.CollectionID == "" {
+			return errors.New("Missing collection_id for association between version and a collection")
+		}
 	default:
 		return errors.New("Incorrect state, can be one of the following: edition-confirmed, associated or published")
-	}
-
-	if hasAssociation && version.CollectionID == "" {
-		return errors.New("Missing collection_id for association between version and a collection")
 	}
 
 	var missingFields []string
