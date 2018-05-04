@@ -35,6 +35,7 @@ const (
 	getEditionsAction = "getEditions"
 	getEditionAction  = "getEdition"
 	getVersionsAction = "getVersions"
+	getVersionAction  = "getVersion"
 
 	// audit results
 	actionAttempted    = "attempted"
@@ -53,7 +54,10 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	results, err := api.dataStore.Backend.GetDatasets()
 	if err != nil {
 		log.Error(err, nil)
-		api.auditor.Record(r.Context(), getDatasetsAction, actionUnsuccessful, nil)
+		if err := api.auditor.Record(r.Context(), getDatasetsAction, actionUnsuccessful, nil); err != nil {
+			handleAuditingFailure(w, err, nil)
+			return
+		}
 		handleErrorType(datasetDocType, err, w)
 		return
 	}
@@ -447,6 +451,12 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	editionID := vars["edition"]
 	version := vars["version"]
 	logData := log.Data{"dataset_id": id, "edition": editionID, "version": version}
+	auditParams := common.Params{"dataset_id": id, "edition": editionID, "version": version}
+
+	if err := api.auditor.Record(r.Context(), getVersionAction, actionAttempted, auditParams); err != nil {
+		handleAuditingFailure(w, err, logData)
+		return
+	}
 
 	authorised, logData := api.authenticate(r, logData)
 
@@ -457,12 +467,20 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 
 	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
 		log.ErrorC("failed to find dataset", err, logData)
+		if err := api.auditor.Record(r.Context(), getVersionAction, actionUnsuccessful, auditParams); err != nil {
+			handleAuditingFailure(w, err, logData)
+			return
+		}
 		handleErrorType(versionDocType, err, w)
 		return
 	}
 
 	if err := api.dataStore.Backend.CheckEditionExists(id, editionID, state); err != nil {
 		log.ErrorC("failed to find edition for dataset", err, logData)
+		if err := api.auditor.Record(r.Context(), getVersionAction, actionUnsuccessful, auditParams); err != nil {
+			handleAuditingFailure(w, err, logData)
+			return
+		}
 		handleErrorType(versionDocType, err, w)
 		return
 	}
@@ -470,6 +488,10 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	results, err := api.dataStore.Backend.GetVersion(id, editionID, version, state)
 	if err != nil {
 		log.ErrorC("failed to find version for dataset edition", err, logData)
+		if err := api.auditor.Record(r.Context(), getVersionAction, actionUnsuccessful, auditParams); err != nil {
+			handleAuditingFailure(w, err, logData)
+			return
+		}
 		handleErrorType(versionDocType, err, w)
 		return
 	}
@@ -478,6 +500,10 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 
 	if err = models.CheckState("version", results.State); err != nil {
 		log.ErrorC("unpublished version has an invalid state", err, log.Data{"state": results.State})
+		if err := api.auditor.Record(r.Context(), getVersionAction, actionUnsuccessful, auditParams); err != nil {
+			handleAuditingFailure(w, err, logData)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -501,6 +527,11 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.ErrorC("failed to marshal version resource into bytes", err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := api.auditor.Record(r.Context(), getVersionAction, actionSuccessful, auditParams); err != nil {
+		handleAuditingFailure(w, err, logData)
 		return
 	}
 
