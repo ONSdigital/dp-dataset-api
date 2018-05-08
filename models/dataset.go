@@ -148,6 +148,7 @@ type Version struct {
 	Dimensions    []CodeList           `bson:"dimensions,omitempty"     json:"dimensions,omitempty"`
 	Downloads     *DownloadList        `bson:"downloads,omitempty"      json:"downloads,omitempty"`
 	Edition       string               `bson:"edition,omitempty"        json:"edition,omitempty"`
+	Headers       []string             `bson:"headers,omitempty"        json:"-"`
 	ID            string               `bson:"id,omitempty"             json:"id,omitempty"`
 	LatestChanges *[]LatestChange      `bson:"latest_changes,omitempty" json:"latest_changes,omitempty"`
 	Links         *VersionLinks        `bson:"links,omitempty"          json:"links,omitempty"`
@@ -156,7 +157,7 @@ type Version struct {
 	Temporal      *[]TemporalFrequency `bson:"temporal,omitempty"       json:"temporal,omitempty"`
 	LastUpdated   time.Time            `bson:"last_updated,omitempty"   json:"-"`
 	Version       int                  `bson:"version,omitempty"        json:"version,omitempty"`
-	UsageNotes    *[]UsageNote         `bson:"usage_notes,omitempty"     json:"usage_notes,omitempty"`
+	UsageNotes    *[]UsageNote         `bson:"usage_notes,omitempty"    json:"usage_notes,omitempty"`
 }
 
 // Alert represents an object containing information on an alert

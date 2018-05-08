@@ -25,6 +25,7 @@ const (
 	datasetDocType         = "dataset"
 	editionDocType         = "edition"
 	versionDocType         = "version"
+	observationDocType     = "observation"
 	downloadServiceToken   = "X-Download-Service-Token"
 	dimensionDocType       = "dimension"
 	dimensionOptionDocType = "dimension-option"
@@ -295,8 +296,8 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 			log.ErrorC("unpublished version has an invalid state", err, log.Data{"state": item.State})
 		}
 
-		// Only the download service should not have access to the public/private download
-		// fields
+		// Only the download service should have access to the
+		// public/private download fields
 		if r.Header.Get(downloadServiceToken) != api.downloadServiceToken {
 			if item.Downloads != nil {
 				if item.Downloads.CSV != nil {
@@ -936,12 +937,12 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	datasetID := vars["id"]
 	edition := vars["edition"]
 	version := vars["version"]
-	logData := log.Data{"dataset_id": datasetID, "edition": edition, version: version}
+	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	// get dataset document
 	datasetDoc, err := api.dataStore.Backend.GetDataset(datasetID)
 	if err != nil {
-		log.Error(err, log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+		log.Error(err, logData)
 		handleErrorType(versionDocType, err, w)
 		return
 	}

@@ -13,6 +13,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-filter/observation"
 
 	"github.com/ONSdigital/go-ns/kafka"
 
@@ -20,6 +21,8 @@ import (
 	"github.com/ONSdigital/go-ns/log"
 	mongoclosure "github.com/ONSdigital/go-ns/mongo"
 	"github.com/pkg/errors"
+
+	bolt "github.com/ONSdigital/golang-neo4j-bolt-driver"
 )
 
 func main() {
@@ -64,6 +67,14 @@ func main() {
 
 	store := store.DataStore{Backend: mongo}
 
+	neo4jConnPool, err := bolt.NewClosableDriverPool(cfg.Neo4jBindAddress, cfg.Neo4jPoolSize)
+	if err != nil {
+		log.ErrorC("failed to connect to neo4j connection pool", err, nil)
+		os.Exit(1)
+	}
+
+	observationStore := observation.NewStore(neo4jConnPool)
+
 	downloadGenerator := &download.Generator{
 		Producer:   generateDownloadsProducer,
 		Marshaller: schema.GenerateDownloadsEvent,
@@ -73,7 +84,7 @@ func main() {
 
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
-	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator)
+	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, observationStore)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {
@@ -84,6 +95,10 @@ func main() {
 		api.Close(ctx)
 
 		if err = mongoclosure.Close(ctx, session); err != nil {
+			log.Error(err, nil)
+		}
+
+		if err = neo4jConnPool.Close(); err != nil {
 			log.Error(err, nil)
 		}
 
