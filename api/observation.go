@@ -19,7 +19,12 @@ import (
 
 //go:generate moq -out ../mocks/observation_store.go -pkg mocks . ObservationStore
 
-const defaultObservationLimit = 2
+// Upper limit, if this is not big enough, we may need to consider increasing value
+// and then if this has a performance hit then consider paging
+const (
+	defaultObservationLimit = 10000
+	defaultOffset           = 0
+)
 
 func errorIncorrectQueryParameters(params []string) error {
 	return fmt.Errorf("Incorrect selection of query parameters: %v, these dimensions do not exist for this version of the dataset", params)
@@ -107,7 +112,7 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 		handleObservationsErrorType(w, err)
 		return
 	}
-	logData["dimension_names"] = validDimensionNames
+	logData["version_dimensions"] = validDimensionNames
 
 	// check query parameters match the version headers
 	queryParameters, err := extractQueryParameters(r.URL.Query(), validDimensionNames)
@@ -116,22 +121,17 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logData["query_parameters"] = queryParameters
+	log.Info("correctly identified query parameters", logData)
 
-	// use default limit of 2 to set the number of observations that can be returned
-	// this will allow the response from neo4j to be returned faster if more than 1
-	// observation is found for query and yet dataset API can understand that the request
-	// has not selected enough dimensions to find a single observation
-	observationLimit := defaultObservationLimit
-
-	// retrieve observations (for now it will only ever return a maximum of 1 observation)
-	headerRow, observationRow, err := api.getObservationList(versionDoc.ID, queryParameters, observationLimit)
+	// retrieve observations
+	observations, err := api.getObservationList(versionDoc, queryParameters, defaultObservationLimit, dimensionOffset, logData)
 	if err != nil {
-		log.ErrorC("unable to find a single observation", err, logData)
+		log.ErrorC("unable to retrieve observations", err, logData)
 		handleObservationsErrorType(w, err)
 		return
 	}
 
-	observationDoc := models.CreateObservationDoc(r.URL.RawQuery, versionDoc, dataset, headerRow, observationRow, dimensionOffset, queryParameters)
+	observationsDoc := models.CreateObservationsDoc(r.URL.RawQuery, versionDoc, dataset, observations, queryParameters, defaultOffset, defaultObservationLimit)
 
 	setJSONContentType(w)
 
@@ -141,13 +141,13 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
 
-	if err = enc.Encode(observationDoc); err != nil {
+	if err = enc.Encode(observationsDoc); err != nil {
 		log.ErrorC("failed to marshal metadata resource into bytes", err, logData)
 		handleObservationsErrorType(w, err)
 		return
 	}
 
-	log.Debug("get single observation relative to a selected set of dimension options for a version", logData)
+	log.Info("successfully retrieved observations relative to a selected set of dimension options for a version", logData)
 }
 
 func getListOfValidDimensionNames(headerRow []string) ([]string, int, error) {
@@ -175,7 +175,7 @@ func extractQueryParameters(urlQuery url.Values, validDimensions []string) (map[
 	var incorrectQueryParameters, missingQueryParameters []string
 
 	// Determine if any request query parameters are invalid dimensions
-	// and map the dimensions with their equivalent values in map
+	// and map the valid dimensions with their equivalent values in map
 	for dimension, option := range urlQuery {
 		queryParamExists := false
 		for _, validDimension := range validDimensions {
@@ -207,12 +207,23 @@ func extractQueryParameters(urlQuery url.Values, validDimensions []string) (map[
 	return queryParameters, nil
 }
 
-func (api *DatasetAPI) getObservationList(instanceID string, queryParamters map[string]string, limit int) ([]string, []string, error) {
+func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParamters map[string]string, limit, dimensionOffset int, logData log.Data) ([]models.Observation, error) {
 
 	// Build query (observation.Filter type)
 	var dimensionFilters []*observation.DimensionFilter
 
+	// Unable to have more than one wildcard per query parameter
+	var wildcards int
+	var wildcardParameter string
+
+	// Build dimension filter object to create queryObject for neo4j
 	for dimension, option := range queryParamters {
+		if option == "*" {
+			wildcardParameter = dimension
+			wildcards++
+			continue
+		}
+
 		dimensionFilter := &observation.DimensionFilter{
 			Name:    dimension,
 			Options: []string{option},
@@ -221,33 +232,38 @@ func (api *DatasetAPI) getObservationList(instanceID string, queryParamters map[
 		dimensionFilters = append(dimensionFilters, dimensionFilter)
 	}
 
-	query := observation.Filter{
-		InstanceID:       instanceID,
+	if wildcards > 1 {
+		return nil, errs.ErrTooManyWildcards
+	}
+
+	queryObject := observation.Filter{
+		InstanceID:       versionDoc.ID,
 		DimensionFilters: dimensionFilters,
 	}
+	logData["query_object"] = queryObject
 
-	csvRowReader, err := api.observationStore.GetCSVRows(&query, &limit)
+	log.Info("query object built to retrieve observations from neo4j", logData)
+
+	csvRowReader, err := api.observationStore.GetCSVRows(&queryObject, &limit)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-
-	observationCount := 0
 
 	headerRow, err := csvRowReader.Read()
 	if err != nil {
 
-		return nil, nil, err
+		return nil, err
 	}
 	defer csvRowReader.Close()
 
 	headerRowReader := csv.NewReader(strings.NewReader(headerRow))
 	headerRowArray, err := headerRowReader.Read()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	var observationRow string
-	var observationRows []string
+	var observations []models.Observation
 	// Iterate over observation row reader
 	for {
 		observationRow, err = csvRowReader.Read()
@@ -256,28 +272,65 @@ func (api *DatasetAPI) getObservationList(instanceID string, queryParamters map[
 		}
 		if err != nil {
 			if strings.Contains(err.Error(), "the filter options created no results") {
-				return nil, nil, errs.ErrObservationsNotFound
+				return nil, errs.ErrObservationsNotFound
 			}
-			return nil, nil, err
+			return nil, err
 		}
 
-		// only ever return one observation otherwise error
-		observationCount++
-
-		if observationCount > 1 {
-			return nil, nil, errs.ErrMoreThanOneObservationFound
+		observationRowReader := csv.NewReader(strings.NewReader(observationRow))
+		observationRowArray, err := observationRowReader.Read()
+		if err != nil {
+			return nil, err
 		}
 
-		observationRows = append(observationRows, observationRow)
+		// TODO for the below maybe put this in a seperate function?
+		observation := models.Observation{
+			Observation: observationRowArray[0],
+		}
+
+		// add observation metadata
+		if dimensionOffset != 0 {
+			observationMetaData := make(map[string]string)
+
+			for i := 1; i < dimensionOffset+1; i++ {
+				observationMetaData[headerRowArray[i]] = observationRowArray[i]
+			}
+
+			observation.Metadata = observationMetaData
+		}
+
+		if wildcardParameter != "" {
+			dimensions := make(map[string]*models.DimensionObject)
+
+			for i := dimensionOffset + 1; i < len(observationRowArray); i++ {
+
+				if strings.ToLower(headerRowArray[i]) == wildcardParameter {
+					for _, versionDimension := range versionDoc.Dimensions {
+						if versionDimension.Name == wildcardParameter {
+
+							dimensions[headerRowArray[i]] = &models.DimensionObject{
+								ID:    observationRowArray[i-1],
+								HRef:  versionDimension.HRef + "/codes/" + observationRowArray[i-1],
+								Label: observationRowArray[i],
+							}
+
+							break
+						}
+					}
+				}
+			}
+			observation.Dimensions = dimensions
+		}
+
+		observations = append(observations, observation)
 	}
 
-	observationRowReader := csv.NewReader(strings.NewReader(observationRows[0]))
-	observationRowArray, err := observationRowReader.Read()
-	if err != nil {
-		return nil, nil, err
-	}
+	// neo4j will always return the same list of observations in the same
+	// order as it is deterministic for static data, but this does not
+	// necessarily mean we won't want to return observations in a particular
+	// order (which may be costly on the services performance)
 
-	return headerRowArray, observationRowArray, nil
+	return observations, nil
 }
 
 func handleObservationsErrorType(w http.ResponseWriter, err error) {
@@ -292,7 +345,7 @@ func handleObservationsErrorType(w http.ResponseWriter, err error) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 	case errs.ErrObservationsNotFound:
 		http.Error(w, err.Error(), http.StatusNotFound)
-	case errs.ErrMoreThanOneObservationFound:
+	case errs.ErrTooManyWildcards:
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	default:
 		http.Error(w, err.Error(), http.StatusInternalServerError)

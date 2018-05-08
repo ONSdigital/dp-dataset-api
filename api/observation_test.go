@@ -15,17 +15,43 @@ import (
 )
 
 var (
-	expectedObservationDoc = `{` +
+	expectedDocWithSingleObservation = `{` +
 		`"dimensions":{` +
-		`"aggregate":{"options":[{"id":"cpi1dim1S40403","href":"http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1S40403"}]},` +
-		`"geography":{"options":[{"id":"K02000001","href":"http://localhost:8081/code-lists/uk-only/codes/K02000001"}]},` +
-		`"time":{"options":[{"id":"16-Aug","href":"http://localhost:8081/code-lists/time/codes/16-Aug"}]}},` +
+		`"aggregate":{"option":{"id":"cpi1dim1S40403","href":"http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1S40403"}},` +
+		`"geography":{"option":{"id":"K02000001","href":"http://localhost:8081/code-lists/uk-only/codes/K02000001"}},` +
+		`"time":{"option":{"id":"16-Aug","href":"http://localhost:8081/code-lists/time/codes/16-Aug"}}},` +
+		`"limit":10000,` +
 		`"links":{` +
 		`"dataset_metadata":{"href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1/metadata"},` +
 		`"self":{"href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001"},` +
 		`"version":{"id":"1","href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1"}},` +
-		`"observation":"146.3",` +
-		`"observation_level_metadata":{"confidence_interval":"2","data_marking":"p"},` +
+		`"observations":[{"metadata":{"confidence_interval":"2","data_marking":"p"},"observation":"146.3"}],` +
+		`"offset":0,` +
+		`"total_observations":1,` +
+		`"usage_notes":[{"title":"data_marking","note":"this marks the obsevation with a special character"}]` +
+		"}\n"
+)
+
+var (
+	expectedDocWithMultipleObservations = `{` +
+		`"dimensions":{` +
+		`"geography":{"option":{"id":"K02000001","href":"http://localhost:8081/code-lists/uk-only/codes/K02000001"}},` +
+		`"time":{"option":{"id":"16-Aug","href":"http://localhost:8081/code-lists/time/codes/16-Aug"}}},` +
+		`"limit":10000,` +
+		`"links":{` +
+		`"dataset_metadata":{"href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1/metadata"},` +
+		`"self":{"href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=*&geography=K02000001"},` +
+		`"version":{"id":"1","href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1"}},` +
+		`"observations":` +
+		`[{` +
+		`"dimensions":{"aggregate":{"href":"http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1G10100","id":"cpi1dim1G10100","label":"01.1 Food"}},` +
+		`"metadata":{"confidence_interval":"2","data_marking":"p"},"observation":"146.3"` +
+		`},{` +
+		`"dimensions":{"aggregate":{"href":"http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1G10101","id":"cpi1dim1G10101","label":"01.2 Waste"}},` +
+		`"metadata":{"confidence_interval":"","data_marking":""},"observation":"112.1"` +
+		`}],` +
+		`"offset":0,` +
+		`"total_observations":2,` +
 		`"usage_notes":[{"title":"data_marking","note":"this marks the obsevation with a special character"}]` +
 		"}\n"
 )
@@ -33,7 +59,7 @@ var (
 func TestGetObservationsReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("A successful request to get a single observation for a version of a dataset returns 200 OK response", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug\x26aggregate=cpi1dim1S40403&geography=K02000001", nil)
+		r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
 		w := httptest.NewRecorder()
 
 		dimensions := []models.CodeList{
@@ -101,13 +127,94 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(w.Body.String(), ShouldEqual, expectedObservationDoc)
+		So(w.Body.String(), ShouldEqual, expectedDocWithSingleObservation)
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
 		So(len(mockRowReader.ReadCalls()), ShouldEqual, 3)
+	})
+
+	Convey("A successful request to get multiple observations for a version of a dataset returns 200 OK response", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=*&geography=K02000001", nil)
+		w := httptest.NewRecorder()
+
+		dimensions := []models.CodeList{
+			models.CodeList{
+				Name: "aggregate",
+				HRef: "http://localhost:8081/code-lists/cpih1dim1aggid",
+			},
+			models.CodeList{
+				Name: "geography",
+				HRef: "http://localhost:8081/code-lists/uk-only",
+			},
+			models.CodeList{
+				Name: "time",
+				HRef: "http://localhost:8081/code-lists/time",
+			},
+		}
+		usagesNotes := &[]models.UsageNote{models.UsageNote{Title: "data_marking", Note: "this marks the obsevation with a special character"}}
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return nil
+			},
+			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					Dimensions: dimensions,
+					Headers:    []string{"v4_2", "data_marking", "confidence_interval", "aggregate_code", "aggregate", "geography_code", "geography", "time", "time"},
+					Links: &models.VersionLinks{
+						Version: &models.LinkObject{
+							HRef: "http://localhost:8080/datasets/cpih012/editions/2017/versions/1",
+							ID:   "1",
+						},
+					},
+					State:      models.PublishedState,
+					UsageNotes: usagesNotes,
+				}, nil
+			},
+		}
+
+		count := 0
+		mockRowReader := &mocks.CSVRowReaderMock{
+			ReadFunc: func() (string, error) {
+				if count == 0 {
+					count++
+					return "v4_2,data_marking,confidence_interval,time,time,geography_code,geography,aggregate_code,aggregate", nil
+				} else if count == 1 {
+					count++
+					return "146.3,p,2,Month,Aug-16,K02000001,,cpi1dim1G10100,01.1 Food", nil
+				} else if count == 2 {
+					count++
+					return "112.1,,,Month,Aug-16,K02000001,,cpi1dim1G10101,01.2 Waste", nil
+				}
+				return "", io.EOF
+			},
+			CloseFunc: func() error {
+				return nil
+			},
+		}
+
+		mockedObservationStore := &mocks.ObservationStoreMock{
+			GetCSVRowsFunc: func(*observation.Filter, *int) (observation.CSVRowReader, error) {
+				return mockRowReader, nil
+			},
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedObservationStore)
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(w.Body.String(), ShouldEqual, expectedDocWithMultipleObservations)
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
+		So(len(mockRowReader.ReadCalls()), ShouldEqual, 4)
 	})
 }
 
@@ -339,6 +446,31 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
 
+	Convey("When there are too many query parameters that are set to wildcard (*) value request returns 400 bad request", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/cpih012/editions/2017/versions/1/observations?time=*&aggregate=*&geography=K02000001", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return nil
+			},
+			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+				return &models.Version{Headers: []string{"v4_0", "time_code", "time", "aggregate_code", "aggregate", "geography_code", "geography"}, State: models.PublishedState}, nil
+			},
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldResemble, "only one wildcard (*) is allowed as a value in selected query parameters\n")
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+	})
+
 	Convey("When requested query does not find a unique observation return observation not found", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
 		w := httptest.NewRecorder()
@@ -370,59 +502,9 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
 	})
-
-	Convey("When requested query finds more than 1 observation return more than one observation found", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
-		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
-			},
-			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
-				return nil
-			},
-			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
-				return &models.Version{Headers: []string{"v4_0", "time_code", "time", "aggregate_code", "aggregate", "geography_code", "geography"}, State: models.PublishedState}, nil
-			},
-		}
-
-		count := 0
-		mockRowReader := &mocks.CSVRowReaderMock{
-			ReadFunc: func() (string, error) {
-				if count == 0 {
-					count++
-					return "v4_0,time,time,geography_code,geography,aggregate_code,aggregate", nil
-				} else if count <= 2 {
-					count++
-					return "146.3,Month,Aug-16,K02000001,,cpi1dim1G10100,01.1 Food", nil
-				}
-				return "", io.EOF
-			},
-			CloseFunc: func() error {
-				return nil
-			},
-		}
-
-		mockedObservationStore := &mocks.ObservationStoreMock{
-			GetCSVRowsFunc: func(*observation.Filter, *int) (observation.CSVRowReader, error) {
-				return mockRowReader, nil
-			},
-		}
-
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedObservationStore)
-		api.router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(w.Body.String(), ShouldResemble, "More than one observation found, add more query parameters\n")
-
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
-		So(len(mockRowReader.ReadCalls()), ShouldEqual, 3)
-	})
 }
 
-func TestgetListOfValidDimensionNames(t *testing.T) {
+func TestGetListOfValidDimensionNames(t *testing.T) {
 	t.Parallel()
 	Convey("Given the version headers are valid", t, func() {
 		Convey("When the version has no meta data headers", func() {

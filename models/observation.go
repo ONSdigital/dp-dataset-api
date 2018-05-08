@@ -1,14 +1,32 @@
 package models
 
-// ObservationDoc represents information (metadata) relevant to a version
-type ObservationDoc struct {
-	Dimensions          map[string]Options `json:"dimensions"`
-	Context             string             `json:"context,omitempty"`
-	Links               *ObservationLinks  `json:"links"`
-	Observation         string             `json:"observation"`
-	ObservationMetadata map[string]string  `json:"observation_level_metadata,omitempty"`
-	UnitOfMeasure       string             `json:"unit_of_measure,omitempty"`
-	UsageNotes          *[]UsageNote       `json:"usage_notes,omitempty"`
+const wildcard = "*"
+
+// ObservationsDoc represents information (observations) relevant to a version
+type ObservationsDoc struct {
+	Dimensions        map[string]Option `json:"dimensions"`
+	Limit             int               `json:"limit"`
+	Links             *ObservationLinks `json:"links"`
+	Observations      []Observation     `json:"observations"`
+	Offset            int               `json:"offset"`
+	TotalObservations int               `json:"total_observations"`
+	UnitOfMeasure     string            `json:"unit_of_measure,omitempty"`
+	UsageNotes        *[]UsageNote      `json:"usage_notes,omitempty"`
+}
+
+// Observation represents an object containing a single
+// observation and its equivalent metadata
+type Observation struct {
+	Dimensions  map[string]*DimensionObject `json:"dimensions,omitempty"`
+	Metadata    map[string]string           `json:"metadata,omitempty"`
+	Observation string                      `json:"observation"`
+}
+
+// DimensionObject represents the unique dimension option data relevant to the observation
+type DimensionObject struct {
+	HRef  string `json:"href"`
+	ID    string `json:"id"`
+	Label string `json:"label"`
 }
 
 // ObservationLinks represents a link object to list of links relevant to the observation
@@ -18,17 +36,17 @@ type ObservationLinks struct {
 	Version         *LinkObject `json:"version,omitempty"`
 }
 
-// Options represents an object containing a list of link objects that refer to the
+// Option represents an object containing a list of link objects that refer to the
 // code url for that dimension option
-type Options struct {
-	LinkObjects []*LinkObject `json:"options,omitempty"`
+type Option struct {
+	LinkObject *LinkObject `json:"option,omitempty"`
 }
 
-// CreateObservationDoc manages the creation of metadata across dataset and version docs
-func CreateObservationDoc(rawQuery string, versionDoc *Version, datasetDoc *Dataset, headerRow, observationRow []string, dimensionOffset int, queryParameters map[string]string) *ObservationDoc {
+// CreateObservationsDoc manages the creation of metadata across dataset and version docs
+func CreateObservationsDoc(rawQuery string, versionDoc *Version, datasetDoc *Dataset, observations []Observation, queryParameters map[string]string, offset, limit int) *ObservationsDoc {
 
-	observationDoc := &ObservationDoc{
-		Context: "",
+	observationsDoc := &ObservationsDoc{
+		Limit: limit,
 		Links: &ObservationLinks{
 			DatasetMetadata: &LinkObject{
 				HRef: versionDoc.Links.Version.HRef + "/metadata",
@@ -41,43 +59,34 @@ func CreateObservationDoc(rawQuery string, versionDoc *Version, datasetDoc *Data
 				ID:   versionDoc.Links.Version.ID,
 			},
 		},
-		Observation:   observationRow[0],
-		UnitOfMeasure: datasetDoc.UnitOfMeasure,
-		UsageNotes:    versionDoc.UsageNotes,
+		Observations:      observations,
+		Offset:            offset,
+		TotalObservations: len(observations),
+		UnitOfMeasure:     datasetDoc.UnitOfMeasure,
+		UsageNotes:        versionDoc.UsageNotes,
 	}
 
-	// add observation metadata
-	if dimensionOffset != 0 {
-		observationMetaData := make(map[string]string)
-
-		for i := 1; i < dimensionOffset+1; i++ {
-			observationMetaData[headerRow[i]] = observationRow[i]
-		}
-
-		observationDoc.ObservationMetadata = observationMetaData
-	}
-
-	var dimensions = make(map[string]Options)
+	var dimensions = make(map[string]Option)
 
 	// add the dimension codes
 	for paramKey, paramValue := range queryParameters {
 		for _, dimension := range versionDoc.Dimensions {
 			var linkObjects []*LinkObject
-			if dimension.Name == paramKey {
+			if dimension.Name == paramKey && paramValue != wildcard {
 
 				linkObject := &LinkObject{
 					HRef: dimension.HRef + "/codes/" + paramValue,
 					ID:   paramValue,
 				}
 				linkObjects = append(linkObjects, linkObject)
-				dimensions[paramKey] = Options{
-					LinkObjects: linkObjects,
+				dimensions[paramKey] = Option{
+					LinkObject: linkObject,
 				}
 				break
 			}
 		}
 	}
-	observationDoc.Dimensions = dimensions
+	observationsDoc.Dimensions = dimensions
 
-	return observationDoc
+	return observationsDoc
 }

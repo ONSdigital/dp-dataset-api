@@ -21,7 +21,7 @@ parameters:
     required: true
     type: string
   dimension_options:
-    description: "The name of the dimension option and a single value; these variables and their corresponding values (codes) must exist against the version"
+    description: "The name of the dimension option and a single value; each option (dimension) and corresponding value (code) must exist against the version - e.g. `age=30`"
     name: "<dimension_options>"
     in: query
     required: true
@@ -487,9 +487,13 @@ paths:
         200:
           description: "Json object containing all metadata for a version"
           schema:
-            $ref: '#/definitions/ObservationEndpoint'
+            $ref: '#/definitions/ObservationsEndpoint'
         400:
-          description: "Invalid request"
+          description: |
+            Invalid request, reasons can be one of the following:
+              * query parameters missing expected dimensions
+              * query parameters contain incorrect dimensions
+              * too many query parameters are set to wildcard (*) value; only one query parameter can be equal to *
         404:
           description: |
             Resource not found, reasons can be one of the following:
@@ -1530,11 +1534,11 @@ definitions:
         example: 1
         readOnly: true
         type: integer
-      user_notes:
-        description: "A list of user notes relating to the dataset"
+      usage_notes:
+        description: "A list of usage notes relating to the dataset"
         type: array
         items:
-          $ref: '#/definitions/UserNote'
+          $ref: '#/definitions/UsageNotes'
   DownloadFile:
     description: "Object containing information of a downloadable file"
     type: object
@@ -1907,60 +1911,84 @@ definitions:
       href:
         description: "A URL to the version this resource relates to"
         type: string
-  ObservationEndpoint:
-    description: "An object containing information on a single observation for a given version of a dataset"
+  ObservationsEndpoint:
+    description: "An object containing information on a list of observations for a given version of a dataset"
     type: object
     properties:
-      context:
-        description: ""
-        type: string
       dimensions:
         description: "A list of dimensions for the given query"
         type: object
         properties:
-          <dimension>:
+          <dimension name>:
             type: object
+            description: "Each anonymous field (<dimension name>) will represent a query parameter in request unless the query parameter is equal to a wildcard value (*)"
             properties:
-              options:
+              option:
                 description: "A list of links to the corresponding dimension codes for the given `dimension_options`"
-                type: array
-                items:
+                type: object
+                properties:
+                  href:
+                    description: "A link to the corresponding dimension code for the given `dimension_option`"
+                    type: string
+                    example: "http://localhost:8080/codelists/AB12CD34/codes/K02000001"
+                  id:
+                    description: "The id to the corresponding dimension code for the given `dimension_option`"
+                    type: string
+      limit:
+        description: "The maximum number of observations requested when filtering on query parameters (limited to 10000). If no limit is specified in request, value defaults to the maximum limit of 10000"
+        type: integer 
+      links:
+        $ref: '#/definitions/ObservationLinks'
+      observations:
+        description: "A list of observations found when filtering on query parameters"
+        type: array
+        items:
+          properties:
+            dimensions:
+              description: "Contains a list of dimension objects associated with observation. Each dimension combined with the top level list of dimensions result in this single observation only"
+              type: object
+              properties:
+                <dimension name>:
+                  type: object
+                  description: "Each anonymous field (<dimension name>) will represent a query parameter in request as long as the query parameter is equal to a wildcard value (*)"
                   properties:
                     href:
-                      description: "A link to the corresponding dimension code for the given `dimension_option` (query parameter - e.g. 'geography: K02000001'"
+                      description: "A link to the corresponding dimension code for the given `dimension_option`"
+                      example: "http://localhost:8080/codelists/AB12CD34/codes/K02000001"
                       type: string
                     id:
                       description: "The id to the corresponding dimension code for the given `dimension_option`"
+                      type: "string"
+                    label:
+                      description: "The label corresponding to the dimension code for the given `dimension_option`"
                       type: string
-      links:
-        $ref: '#/definitions/ObservationLinks'
-      observation:
-        description: "The observation value for the selection of query parameters (dimensions) chosen"
-        type: string
-      observation_level_metadata:
-        description: "Metadata related to the observation found against version of a dataset"
-        type: array
-        items:
-          type: object
-          properties:
-            <key>:
-              description: "A single metadata key-value pair related to the observation found against version of a dataset, for example 'coefficients of variation' or 'data marking'"
+            metadata:
+              description: "Metadata related to the observation found against version of a dataset"
+              type: array
+              items:
+                type: object
+                properties:
+                  <key>:
+                    description: "A single metadata key-value pair related to the observation found against version of a dataset, for example 'coefficients of variation' or 'data marking'"
+                    type: string
+            observation: 
+              description: "The observation value for the selection of query parameters (dimensions) chosen"
               type: string
-      unit_of_measure:
+          required: [observation]
+      offset:
+        description: "The offset into the entire list of observations found"
+        type: integer
+      total_observations:
+        description: "The number of observations found "
+        type: integer
+      unit_of_measure: 
         description: "The unit of measure for the dataset observations"
         type: string
       usage_notes:
-        description: "A list of notes to explain the observational metadata stored against this resource"
+        description: "A list of usage notes relating to the dataset"
         type: array
         items:
-          type: object
-          properties:
-            description:
-              description: "The description given to an individual user note"
-              type: string
-            title:
-              description: "The title given to an individual user note"
-              type: string
+          $ref: '#/definitions/UsageNotes'
   ObservationLinks:
     type: object
     description: "A list of links related to this resource"
@@ -1978,7 +2006,7 @@ definitions:
       href:
         description: "A URL for the version metadata this resource relates to"
         type: string
-  UserNote:
+  UsageNotes:
     description: "A note relating to the dataset. This will appear in downloaded datasets"
     type: object
     properties:
