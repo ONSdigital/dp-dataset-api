@@ -21,7 +21,7 @@ parameters:
     required: true
     type: string
   dimension_options:
-    description: "The name of the dimension option and a single value; these variables and their corresponding values (codes) must exist against the version"
+    description: "The name of the dimension option and a single value; each option (dimension) and corresponding value (code) must exist against the version - e.g. `age=30`"
     name: "<dimension_options>"
     in: query
     required: true
