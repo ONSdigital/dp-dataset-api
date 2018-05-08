@@ -989,7 +989,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 	var metaDataDoc *models.Metadata
 	// combine version and dataset metadata
-	if state != models.PublishedState { // && versionDoc.CollectionID == datasetDoc.Next.CollectionID {
+	if state != models.PublishedState {
 		metaDataDoc = models.CreateMetaDataDoc(datasetDoc.Next, versionDoc, api.urlBuilder)
 	} else {
 		metaDataDoc = models.CreateMetaDataDoc(datasetDoc.Current, versionDoc, api.urlBuilder)
