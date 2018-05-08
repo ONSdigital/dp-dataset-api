@@ -22,7 +22,7 @@ type Observation struct {
 	Observation string                      `json:"observation"`
 }
 
-// DimensionObject represents ...
+// DimensionObject represents the unique dimension option data relevant to the observation
 type DimensionObject struct {
 	HRef  string `json:"href"`
 	ID    string `json:"id"`

@@ -489,7 +489,11 @@ paths:
           schema:
             $ref: '#/definitions/ObservationsEndpoint'
         400:
-          description: "Invalid request"
+          description: |
+            Invalid request, reasons can be one of the following:
+              * query parameters missing expected dimensions
+              * query parameters contain incorrect dimensions
+              * too many query parameters are set to wildcard (*) value; only one query parameter can be equal to *
         404:
           description: |
             Resource not found, reasons can be one of the following:
@@ -1531,7 +1535,7 @@ definitions:
         readOnly: true
         type: integer
       usage_notes:
-        description: "A list of user notes relating to the dataset"
+        description: "A list of usage notes relating to the dataset"
         type: array
         items:
           $ref: '#/definitions/UsageNotes'
@@ -1917,14 +1921,16 @@ definitions:
         properties:
           <dimension name>:
             type: object
+            description: "Each anonymous field (<dimension name>) will represent a query parameter in request unless the query parameter is equal to a wildcard value (*)"
             properties:
               option:
                 description: "A list of links to the corresponding dimension codes for the given `dimension_options`"
                 type: object
                 properties:
                   href:
-                    description: "A link to the corresponding dimension code for the given `dimension_option` (query parameter - e.g. 'geography: K02000001'"
+                    description: "A link to the corresponding dimension code for the given `dimension_option`"
                     type: string
+                    example: "http://localhost:8080/codelists/AB12CD34/codes/K02000001"
                   id:
                     description: "The id to the corresponding dimension code for the given `dimension_option`"
                     type: string
@@ -1944,9 +1950,11 @@ definitions:
               properties:
                 <dimension name>:
                   type: object
+                  description: "Each anonymous field (<dimension name>) will represent a query parameter in request as long as the query parameter is equal to a wildcard value (*)"
                   properties:
                     href:
-                      description: "A link to the corresponding dimension code for the given `dimension_option` (query parameter - e.g. 'geography: K02000001'"
+                      description: "A link to the corresponding dimension code for the given `dimension_option`"
+                      example: "http://localhost:8080/codelists/AB12CD34/codes/K02000001"
                       type: string
                     id:
                       description: "The id to the corresponding dimension code for the given `dimension_option`"
@@ -1977,7 +1985,7 @@ definitions:
         description: "The unit of measure for the dataset observations"
         type: string
       usage_notes:
-        description: "A list of user notes relating to the dataset"
+        description: "A list of usage notes relating to the dataset"
         type: array
         items:
           $ref: '#/definitions/UsageNotes'
