@@ -39,19 +39,19 @@ func TestCreateObservationsDoc(t *testing.T) {
 		for i := 0; i < len(observationsDoc.Observations); i++ {
 			observation := observationsDoc.Observations[i]
 			if observation.Observation == "330" {
-				So(len(observation.Dimension), ShouldEqual, 1)
-				So(observation.Dimension["age"].HRef, ShouldEqual, "http://localhost:8080/codelists/456/codes/UTR234")
-				So(observation.Dimension["age"].ID, ShouldEqual, "UTR234")
-				So(observation.Dimension["age"].Label, ShouldEqual, "0-30")
+				So(len(observation.Dimensions), ShouldEqual, 1)
+				So(observation.Dimensions["age"].HRef, ShouldEqual, "http://localhost:8080/codelists/456/codes/UTR234")
+				So(observation.Dimensions["age"].ID, ShouldEqual, "UTR234")
+				So(observation.Dimensions["age"].Label, ShouldEqual, "0-30")
 				So(len(observation.Metadata), ShouldEqual, 2)
 				So(observation.Metadata["confidence interval"], ShouldEqual, "0.7")
 				So(observation.Metadata["data marking"], ShouldEqual, "")
 				So(observation.Observation, ShouldEqual, "330")
 			} else {
-				So(len(observation.Dimension), ShouldEqual, 1)
-				So(observation.Dimension["age"].HRef, ShouldEqual, "http://localhost:8080/codelists/456/codes/UTR567")
-				So(observation.Dimension["age"].ID, ShouldEqual, "UTR567")
-				So(observation.Dimension["age"].Label, ShouldEqual, "30+")
+				So(len(observation.Dimensions), ShouldEqual, 1)
+				So(observation.Dimensions["age"].HRef, ShouldEqual, "http://localhost:8080/codelists/456/codes/UTR567")
+				So(observation.Dimensions["age"].ID, ShouldEqual, "UTR567")
+				So(observation.Dimensions["age"].Label, ShouldEqual, "30+")
 				So(len(observation.Metadata), ShouldEqual, 2)
 				So(observation.Metadata["confidence interval"], ShouldEqual, "0.9")
 				So(observation.Metadata["data marking"], ShouldEqual, "p")
@@ -116,15 +116,15 @@ func setUpTestObservations() []Observation {
 		Label: "30+",
 	}
 
-	observationDimensionOne := make(map[string]*DimensionObject)
-	observationDimensionOne["age"] = ageDimensionOver30
+	observationDimensionsOne := make(map[string]*DimensionObject)
+	observationDimensionsOne["age"] = ageDimensionOver30
 
 	metadataOne := make(map[string]string)
 	metadataOne["data marking"] = "p"
 	metadataOne["confidence interval"] = "0.9"
 
 	observationOne := Observation{
-		Dimension:   observationDimensionOne,
+		Dimensions:  observationDimensionsOne,
 		Metadata:    metadataOne,
 		Observation: "155",
 	}
@@ -135,15 +135,15 @@ func setUpTestObservations() []Observation {
 		Label: "0-30",
 	}
 
-	observationDimensionTwo := make(map[string]*DimensionObject)
-	observationDimensionTwo["age"] = ageDimensionUnder30
+	observationDimensionsTwo := make(map[string]*DimensionObject)
+	observationDimensionsTwo["age"] = ageDimensionUnder30
 
 	metadataTwo := make(map[string]string)
 	metadataTwo["data marking"] = ""
 	metadataTwo["confidence interval"] = "0.7"
 
 	observationTwo := Observation{
-		Dimension:   observationDimensionTwo,
+		Dimensions:  observationDimensionsTwo,
 		Metadata:    metadataTwo,
 		Observation: "330",
 	}

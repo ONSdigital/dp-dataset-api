@@ -44,10 +44,10 @@ var (
 		`"version":{"id":"1","href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1"}},` +
 		`"observations":` +
 		`[{` +
-		`"dimension":{"aggregate":{"href":"http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1G10100","id":"cpi1dim1G10100","label":"01.1 Food"}},` +
+		`"dimensions":{"aggregate":{"href":"http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1G10100","id":"cpi1dim1G10100","label":"01.1 Food"}},` +
 		`"metadata":{"confidence_interval":"2","data_marking":"p"},"observation":"146.3"` +
 		`},{` +
-		`"dimension":{"aggregate":{"href":"http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1G10101","id":"cpi1dim1G10101","label":"01.2 Waste"}},` +
+		`"dimensions":{"aggregate":{"href":"http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1G10101","id":"cpi1dim1G10101","label":"01.2 Waste"}},` +
 		`"metadata":{"confidence_interval":"","data_marking":""},"observation":"112.1"` +
 		`}],` +
 		`"offset":0,` +

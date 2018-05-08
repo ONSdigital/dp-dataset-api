@@ -17,7 +17,7 @@ type ObservationsDoc struct {
 // Observation represents an object containing a single
 // observation and its equivalent metadata
 type Observation struct {
-	Dimension   map[string]*DimensionObject `json:"dimension,omitempty"`
+	Dimensions  map[string]*DimensionObject `json:"dimensions,omitempty"`
 	Metadata    map[string]string           `json:"metadata,omitempty"`
 	Observation string                      `json:"observation"`
 }

@@ -300,7 +300,7 @@ func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParam
 		}
 
 		if wildcardParameter != "" {
-			dimension := make(map[string]*models.DimensionObject)
+			dimensions := make(map[string]*models.DimensionObject)
 
 			for i := dimensionOffset + 1; i < len(observationRowArray); i++ {
 
@@ -308,7 +308,7 @@ func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParam
 					for _, versionDimension := range versionDoc.Dimensions {
 						if versionDimension.Name == wildcardParameter {
 
-							dimension[headerRowArray[i]] = &models.DimensionObject{
+							dimensions[headerRowArray[i]] = &models.DimensionObject{
 								ID:    observationRowArray[i-1],
 								HRef:  versionDimension.HRef + "/codes/" + observationRowArray[i-1],
 								Label: observationRowArray[i],
@@ -319,7 +319,7 @@ func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParam
 					}
 				}
 			}
-			observation.Dimension = dimension
+			observation.Dimensions = dimensions
 		}
 
 		observations = append(observations, observation)
