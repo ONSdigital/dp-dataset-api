@@ -25,9 +25,9 @@ var (
 		`"dataset_metadata":{"href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1/metadata"},` +
 		`"self":{"href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001"},` +
 		`"version":{"id":"1","href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1"}},` +
+		`"observations":[{"metadata":{"confidence_interval":"2","data_marking":"p"},"observation":"146.3"}],` +
 		`"offset":0,` +
 		`"total_observations":1,` +
-		`"observations":[{"metadata":{"confidence_interval":"2","data_marking":"p"},"observation":"146.3"}],` +
 		`"usage_notes":[{"title":"data_marking","note":"this marks the obsevation with a special character"}]` +
 		"}\n"
 )
@@ -42,8 +42,6 @@ var (
 		`"dataset_metadata":{"href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1/metadata"},` +
 		`"self":{"href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=*&geography=K02000001"},` +
 		`"version":{"id":"1","href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1"}},` +
-		`"offset":0,` +
-		`"total_observations":2,` +
 		`"observations":` +
 		`[{` +
 		`"dimension":{"aggregate":{"href":"http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1G10100","id":"cpi1dim1G10100","label":"01.1 Food"}},` +
@@ -52,6 +50,8 @@ var (
 		`"dimension":{"aggregate":{"href":"http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1G10101","id":"cpi1dim1G10101","label":"01.2 Waste"}},` +
 		`"metadata":{"confidence_interval":"","data_marking":""},"observation":"112.1"` +
 		`}],` +
+		`"offset":0,` +
+		`"total_observations":2,` +
 		`"usage_notes":[{"title":"data_marking","note":"this marks the obsevation with a special character"}]` +
 		"}\n"
 )

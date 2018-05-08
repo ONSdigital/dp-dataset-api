@@ -2,14 +2,14 @@ package models
 
 const wildcard = "*"
 
-// ObservationDoc represents information (observations) relevant to a version
-type ObservationDoc struct {
+// ObservationsDoc represents information (observations) relevant to a version
+type ObservationsDoc struct {
 	Dimensions        map[string]Option `json:"dimensions"`
 	Limit             int               `json:"limit"`
 	Links             *ObservationLinks `json:"links"`
+	Observations      []Observation     `json:"observations"`
 	Offset            int               `json:"offset"`
 	TotalObservations int               `json:"total_observations"`
-	Observations      []Observation     `json:"observations"`
 	UnitOfMeasure     string            `json:"unit_of_measure,omitempty"`
 	UsageNotes        *[]UsageNote      `json:"usage_notes,omitempty"`
 }
@@ -36,16 +36,16 @@ type ObservationLinks struct {
 	Version         *LinkObject `json:"version,omitempty"`
 }
 
-// Options represents an object containing a list of link objects that refer to the
+// Option represents an object containing a list of link objects that refer to the
 // code url for that dimension option
 type Option struct {
 	LinkObject *LinkObject `json:"option,omitempty"`
 }
 
-// CreateObservationDoc manages the creation of metadata across dataset and version docs
-func CreateObservationDoc(rawQuery string, versionDoc *Version, datasetDoc *Dataset, observations []Observation, queryParameters map[string]string, offset, limit int) *ObservationDoc {
+// CreateObservationsDoc manages the creation of metadata across dataset and version docs
+func CreateObservationsDoc(rawQuery string, versionDoc *Version, datasetDoc *Dataset, observations []Observation, queryParameters map[string]string, offset, limit int) *ObservationsDoc {
 
-	observationDoc := &ObservationDoc{
+	observationsDoc := &ObservationsDoc{
 		Limit: limit,
 		Links: &ObservationLinks{
 			DatasetMetadata: &LinkObject{
@@ -86,7 +86,7 @@ func CreateObservationDoc(rawQuery string, versionDoc *Version, datasetDoc *Data
 			}
 		}
 	}
-	observationDoc.Dimensions = dimensions
+	observationsDoc.Dimensions = dimensions
 
-	return observationDoc
+	return observationsDoc
 }
