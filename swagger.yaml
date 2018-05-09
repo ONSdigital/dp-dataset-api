@@ -499,7 +499,7 @@ paths:
             Resource not found, reasons can be one of the following:
               * dataset id was incorrect
               * edition was incorrect
-              * verion was incorrect
+              * version was incorrect
               * observations not found for selected query paramaters
         500:
           $ref: '#/responses/InternalError'
