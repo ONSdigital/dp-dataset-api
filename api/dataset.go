@@ -19,9 +19,6 @@ import (
 )
 
 const (
-	florenceHeaderKey = "X-Florence-Token"
-	authHeaderKey     = "Authorization"
-
 	datasetDocType         = "dataset"
 	editionDocType         = "edition"
 	versionDocType         = "version"

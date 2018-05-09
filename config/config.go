@@ -21,6 +21,7 @@ type Configuration struct {
 	GracefulShutdownTimeout  time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 	HealthCheckTimeout       time.Duration `envconfig:"HEALTHCHECK_TIMEOUT"`
 	EnablePrivateEnpoints    bool          `envconfig:"ENABLE_PRIVATE_ENDPOINTS"`
+	AuditEventsTopic         string        `envconfig:"AUDIT_EVENTS_TOPIC"`
 	MongoConfig              MongoConfig
 }
 
@@ -52,6 +53,7 @@ func Get() (*Configuration, error) {
 		GracefulShutdownTimeout:  5 * time.Second,
 		HealthCheckTimeout:       2 * time.Second,
 		EnablePrivateEnpoints:    false,
+		AuditEventsTopic:         "audit-events",
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",

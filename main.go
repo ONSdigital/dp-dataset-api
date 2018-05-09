@@ -42,14 +42,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	auditProducer, err := kafka.NewProducer(cfg.KafkaAddr, "audit-events", 0)
-	if err != nil {
-		log.Error(errors.Wrap(err, "error creating kakfa producer"), nil)
-		os.Exit(1)
-	}
+	var auditor audit.AuditorService
+	var auditProducer kafka.Producer
 
-	// TODO replace with real implementation when ready
-	auditor := audit.New(auditProducer, "dp-dataset-api")
+	if cfg.EnablePrivateEnpoints {
+		log.Info("private endpoints enabled, enabling action auditing", log.Data{"auditTopicName": cfg.AuditEventsTopic})
+
+		auditProducer, err = kafka.NewProducer(cfg.KafkaAddr, cfg.AuditEventsTopic, 0)
+		if err != nil {
+			log.Error(errors.Wrap(err, "error creating kakfa audit producer"), nil)
+			os.Exit(1)
+		}
+
+		auditor = audit.New(auditProducer, "dp-dataset-api")
+	} else {
+		log.Info("private endpoints disabled, auditing will not be enabled", nil)
+		auditor = &audit.NopAuditor{}
+	}
 
 	mongo := &mongo.Mongo{
 		CodeListURL: cfg.CodeListAPIURL,
@@ -82,7 +91,6 @@ func main() {
 
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
-	//api.CreateDatasetAPI(identity.Handler(cfg.ZebedeeURL), *cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor)
 	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor)
 
 	// Gracefully shutdown the application closing any open resources.
@@ -93,8 +101,12 @@ func main() {
 		// stop any incoming requests before closing any outbound connections
 		api.Close(ctx)
 
-		log.Debug("exiting audit producer", nil)
-		auditProducer.Close(ctx)
+		if cfg.EnablePrivateEnpoints {
+			log.Debug("exiting audit producer", nil)
+			if err = auditProducer.Close(ctx); err != nil {
+				log.Error(err, nil)
+			}
+		}
 
 		if err = mongoclosure.Close(ctx, session); err != nil {
 			log.Error(err, nil)
