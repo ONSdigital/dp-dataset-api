@@ -66,12 +66,12 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 		dataset *models.Dataset
 	)
 
-	// if request is authenticated then access resources of state other than published
+	// if request is not authenticated then only access resources of state published
 	if !authorised {
 		// Check for current sub document
 		if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
 			logData["dataset_doc"] = datasetDoc.Current
-			log.ErrorC("found dataset but currently unpublished", errs.ErrDatasetNotFound, logData)
+			log.ErrorC("found no published dataset", errs.ErrDatasetNotFound, logData)
 			http.Error(w, errs.ErrDatasetNotFound.Error(), http.StatusNotFound)
 			return
 		}
@@ -125,7 +125,6 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logData["query_parameters"] = queryParameters
-	log.Info("correctly identified query parameters", logData)
 
 	// retrieve observations
 	observations, err := api.getObservationList(versionDoc, queryParameters, defaultObservationLimit, dimensionOffset, logData)

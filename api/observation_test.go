@@ -323,7 +323,6 @@ func TestGetObservationsReturnsError(t *testing.T) {
 
 	Convey("When an unpublished version has an incorrect state for an edition of a dataset return an internal error", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
-		r.Header.Add("internal_token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
@@ -471,7 +470,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
 
-	Convey("When requested query does not find a unique observation return observation not found", t, func() {
+	Convey("When requested query does not find a unique observation return no observations found", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -495,7 +494,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldResemble, "Observation not found\n")
+		So(w.Body.String(), ShouldResemble, "No observations found\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -563,7 +562,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 func TestGetListOfValidDimensionNames(t *testing.T) {
 	t.Parallel()
 	Convey("Given the version headers are valid", t, func() {
-		Convey("When the version has no meta data headers", func() {
+		Convey("When the version has no metadata headers", func() {
 			version := &models.Version{
 				Headers: []string{
 					"v4_0",
@@ -588,7 +587,7 @@ func TestGetListOfValidDimensionNames(t *testing.T) {
 			})
 		})
 
-		Convey("When the version has meta data headers", func() {
+		Convey("When the version has metadata headers", func() {
 			version := &models.Version{
 				Headers: []string{
 					"V4_2",
@@ -675,7 +674,7 @@ func TestExtractQueryParameters(t *testing.T) {
 			)
 			So(err, ShouldBeNil)
 
-			Convey("Then extractQueryParameters func returns a list of query parameters and there corresponding value", func() {
+			Convey("Then extractQueryParameters func returns a list of query parameters and their corresponding value", func() {
 				queryParameters, err := extractQueryParameters(r.URL.Query(), headers)
 				So(err, ShouldBeNil)
 				So(len(queryParameters), ShouldEqual, 3)

@@ -16,7 +16,7 @@ var (
 	ErrResourceState         = errors.New("Incorrect resource state")
 	ErrVersionMissingState   = errors.New("Missing state from version")
 	ErrInternalServer        = errors.New("internal error")
-	ErrObservationsNotFound  = errors.New("Observation not found")
+	ErrObservationsNotFound  = errors.New("No observations found")
 	ErrIndexOutOfRange       = errors.New("index out of range")
 	ErrMissingVersionHeaders = errors.New("missing headers from version doc")
 	ErrTooManyWildcards      = errors.New("only one wildcard (*) is allowed as a value in selected query parameters")
