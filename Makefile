@@ -14,8 +14,10 @@ build:
 	go build -o $(BUILD_ARCH)/$(BIN_DIR)/dp-dataset-api main.go
 debug:
 	HUMAN_LOG=1 go run main.go
-acceptance: build
-	MONGODB_DATABASE=test HUMAN_LOG=1 go run main.go
+acceptance-publishing: build
+	ENABLE_PRIVATE_ENDPOINTS=true MONGODB_DATABASE=test HUMAN_LOG=1 go run main.go
+acceptance-web: build
+	ENABLE_PRIVATE_ENDPOINTS=false MONGODB_DATABASE=test HUMAN_LOG=1 go run main.go
 test:
 	go test -cover $(shell go list ./... | grep -v /vendor/)
 
