@@ -502,6 +502,62 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
 	})
+
+	Convey("When requested query has a multi-valued dimension return bad request", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001&geography=K02000002", nil)
+		w := httptest.NewRecorder()
+
+		dimensions := []models.CodeList{
+			models.CodeList{
+				Name: "aggregate",
+				HRef: "http://localhost:8081/code-lists/cpih1dim1aggid",
+			},
+			models.CodeList{
+				Name: "geography",
+				HRef: "http://localhost:8081/code-lists/uk-only",
+			},
+			models.CodeList{
+				Name: "time",
+				HRef: "http://localhost:8081/code-lists/time",
+			},
+		}
+		usagesNotes := &[]models.UsageNote{models.UsageNote{Title: "data_marking", Note: "this marks the obsevation with a special character"}}
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return nil
+			},
+			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					Dimensions: dimensions,
+					Headers:    []string{"v4_2", "data_marking", "confidence_interval", "aggregate_code", "aggregate", "geography_code", "geography", "time", "time"},
+					Links: &models.VersionLinks{
+						Version: &models.LinkObject{
+							HRef: "http://localhost:8080/datasets/cpih012/editions/2017/versions/1",
+							ID:   "1",
+						},
+					},
+					State:      models.PublishedState,
+					UsageNotes: usagesNotes,
+				}, nil
+			},
+		}
+
+		mockedObservationStore := &mocks.ObservationStoreMock{}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedObservationStore)
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldResemble, "Multi-valued query parameters for the following dimensions: [geography]\n")
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 0)
+	})
 }
 
 func TestGetListOfValidDimensionNames(t *testing.T) {
