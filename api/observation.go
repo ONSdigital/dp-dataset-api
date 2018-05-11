@@ -34,6 +34,10 @@ func errorMissingQueryParameters(params []string) error {
 	return fmt.Errorf("Missing query parameters for the following dimensions: %v", params)
 }
 
+func errorMultivaluedQueryParameters(params []string) error {
+	return fmt.Errorf("Multi-valued query parameters for the following dimensions: %v", params)
+}
+
 // ObservationStore provides filtered observation data in CSV rows.
 type ObservationStore interface {
 	GetCSVRows(filter *observation.Filter, limit *int) (observation.CSVRowReader, error)
@@ -163,7 +167,7 @@ func getListOfValidDimensionNames(headerRow []string) ([]string, int, error) {
 	}
 
 	var dimensionNames []string
-	for i := dimensionOffset + 2; i <= len(headerRow); i += 2 {
+	for i := dimensionOffset + 2; i < len(headerRow); i += 2 {
 		dimensionNames = append(dimensionNames, headerRow[i])
 	}
 
@@ -172,7 +176,7 @@ func getListOfValidDimensionNames(headerRow []string) ([]string, int, error) {
 
 func extractQueryParameters(urlQuery url.Values, validDimensions []string) (map[string]string, error) {
 	queryParameters := make(map[string]string)
-	var incorrectQueryParameters, missingQueryParameters []string
+	var incorrectQueryParameters, missingQueryParameters, multivaluedQueryParameters []string
 
 	// Determine if any request query parameters are invalid dimensions
 	// and map the valid dimensions with their equivalent values in map
@@ -182,6 +186,9 @@ func extractQueryParameters(urlQuery url.Values, validDimensions []string) (map[
 			if dimension == validDimension {
 				queryParamExists = true
 				queryParameters[dimension] = option[0]
+				if len(option) != 1 {
+					multivaluedQueryParameters = append(multivaluedQueryParameters, dimension)
+				}
 				break
 			}
 		}
@@ -192,6 +199,10 @@ func extractQueryParameters(urlQuery url.Values, validDimensions []string) (map[
 
 	if len(incorrectQueryParameters) > 0 {
 		return nil, errorIncorrectQueryParameters(incorrectQueryParameters)
+	}
+
+	if len(multivaluedQueryParameters) > 0 {
+		return nil, errorMultivaluedQueryParameters(multivaluedQueryParameters)
 	}
 
 	// Determine if any dimensions have not been set in request query parameters
