@@ -19,6 +19,23 @@ import (
 
 var httpServer *server.Server
 
+const (
+	// audit actions
+	getDatasetsAction = "getDatasets"
+	getDatasetAction  = "getDataset"
+	getEditionsAction = "getEditions"
+	getEditionAction  = "getEdition"
+	getVersionsAction = "getVersions"
+	getVersionAction  = "getVersion"
+
+	// audit results
+	actionAttempted    = "attempted"
+	actionSuccessful   = "successful"
+	actionUnsuccessful = "unsuccessful"
+
+	auditError = "error while attempting to record audit event, failing request"
+)
+
 //API provides an interface for the routes
 type API interface {
 	CreateDatasetAPI(string, *mux.Router, store.DataStore) *DatasetAPI
