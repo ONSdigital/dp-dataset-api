@@ -16,7 +16,7 @@ import (
 
 func TestAddEventReturnsOk(t *testing.T) {
 	t.Parallel()
-	Convey("Add an event to an instance returns ok", t, func() {
+	Convey("Add an event to an instance returns created", t, func() {
 		body := strings.NewReader(`{"message": "321", "type": "error", "message_offset":"00", "time":"2017-08-25T15:09:11.829+01:00" }`)
 		r := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
 		w := httptest.NewRecorder()
@@ -30,7 +30,7 @@ func TestAddEventReturnsOk(t *testing.T) {
 		instance := &instance.Store{Host: host, Storer: mockedDataStore}
 		instance.AddEvent(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusOK)
+		So(w.Code, ShouldEqual, http.StatusCreated)
 		So(len(mockedDataStore.AddEventToInstanceCalls()), ShouldEqual, 1)
 	})
 }

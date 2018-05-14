@@ -85,6 +85,7 @@ type Event struct {
 	Time          *time.Time `bson:"time,omitempty"           json:"time"`
 	Message       string     `bson:"message,omitempty"        json:"message"`
 	MessageOffset string     `bson:"message_offset,omitempty" json:"message_offset"`
+	Service       string     `bson:"service,omitempty"   	  json:"service"`
 }
 
 // InstanceResults wraps instances objects for pagination

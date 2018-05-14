@@ -49,6 +49,6 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 		handleErrorType(err, w)
 		return
 	}
-
+	w.WriteHeader(http.StatusCreated)
 	log.Debug("add event to instance", log.Data{"instance": id})
 }
