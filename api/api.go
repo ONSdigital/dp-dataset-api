@@ -54,14 +54,14 @@ func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBu
 	api := routes(cfg, router, dataStore, urlBuilder, downloadsGenerator, auditor)
 
 	healthCheckHandler := healthcheck.NewMiddleware(api.healthCheck)
-	alice := alice.New(healthCheckHandler)
+	middleware := alice.New(healthCheckHandler)
 
 	// Only add the identity middleware when running in publishing.
 	if cfg.EnablePrivateEnpoints {
-		alice = alice.Append(identity.Handler(cfg.ZebedeeURL))
+		middleware = middleware.Append(identity.Handler(cfg.ZebedeeURL))
 	}
 
-	httpServer = server.New(cfg.BindAddr, alice.Then(router))
+	httpServer = server.New(cfg.BindAddr, middleware.Then(router))
 
 	// Disable this here to allow main to manage graceful shutdown of the entire app.
 	httpServer.HandleOSSignals = false
