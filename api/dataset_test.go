@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ONSdigital/go-ns/audit"
+	"github.com/ONSdigital/go-ns/common"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/ONSdigital/dp-dataset-api/mocks"
@@ -30,9 +32,10 @@ import (
 )
 
 const (
-	host          = "http://localhost:22000"
-	authToken     = "dataset"
-	healthTimeout = 2 * time.Second
+	host              = "http://localhost:22000"
+	authToken         = "dataset"
+	healthTimeout     = 2 * time.Second
+	internalServerErr = "internal server error\n"
 )
 
 var (
@@ -47,25 +50,38 @@ var (
 	versionPublishedPayload  = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"published","collection_id":"12345"}`
 
 	urlBuilder = url.NewBuilder("localhost:20000")
+
+	auditParams = common.Params{"dataset_id": "123-456"}
 )
 
 // GetAPIWithMockedDatastore also used in other tests, so exported
-func GetAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator) *DatasetAPI {
+func GetAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, mockAuditor Auditor) *DatasetAPI {
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)
 	cfg.ServiceAuthToken = authToken
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEnpoints = true
 	cfg.HealthCheckTimeout = healthTimeout
-	return routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads)
+	return routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockAuditor)
 }
 
 func createRequestWithAuth(method, URL string, body io.Reader) (*http.Request, error) {
 	r, err := http.NewRequest(method, URL, body)
 	ctx := r.Context()
-	ctx = context.WithValue(ctx, "Caller-Identity", "someone@ons.gov.uk")
+	ctx = common.SetCaller(ctx, "someone@ons.gov.uk")
 	r = r.WithContext(ctx)
 	return r, err
+}
+
+func verifyAuditRecordCalls(c struct {
+	Ctx    context.Context
+	Action string
+	Result string
+	Params common.Params
+}, expectedAction string, expectedResult string, expectedParams common.Params) {
+	So(c.Action, ShouldEqual, expectedAction)
+	So(c.Result, ShouldEqual, expectedResult)
+	So(c.Params, ShouldResemble, expectedParams)
 }
 
 func TestGetDatasetsReturnsOK(t *testing.T) {
@@ -79,9 +95,77 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		mockAuditor := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockAuditor)
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusOK)
+
+		recCalls := mockAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getDatasetsAction, actionAttempted, nil)
+		verifyAuditRecordCalls(recCalls[1], getDatasetsAction, actionSuccessful, nil)
+		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
+	t.Parallel()
+	Convey("When auditing get datasets attempt returns an error an internal server error is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetsFunc: func() ([]models.DatasetUpdate, error) {
+				return nil, errInternal
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			return errors.New("boom!")
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 1)
+		verifyAuditRecordCalls(recCalls[0], getDatasetsAction, actionAttempted, nil)
+		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When auditing get datasets errors an internal server error is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetsFunc: func() ([]models.DatasetUpdate, error) {
+				return nil, errInternal
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getDatasetsAction && result == actionUnsuccessful {
+				return errors.New("boom!")
+			}
+			return nil
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getDatasetsAction, actionAttempted, nil)
+		verifyAuditRecordCalls(recCalls[1], getDatasetsAction, actionUnsuccessful, nil)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 	})
 }
@@ -97,10 +181,52 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getDatasetsAction, actionAttempted, nil)
+		verifyAuditRecordCalls(recCalls[1], getDatasetsAction, actionUnsuccessful, nil)
+
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestGetDatasetsAuditActionSuccessfulError(t *testing.T) {
+	t.Parallel()
+	Convey("when a successful request to get dataset fails to audit action successful then a 500 response is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetsFunc: func() ([]models.DatasetUpdate, error) {
+				return []models.DatasetUpdate{}, nil
+			},
+		}
+
+		mockAuditor := getMockAuditor()
+		mockAuditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getDatasetsAction && result == actionSuccessful {
+				return errors.New("boom")
+			}
+			return nil
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockAuditor)
+		api.router.ServeHTTP(w, r)
+
+		recCalls := mockAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getDatasetsAction, actionAttempted, nil)
+		verifyAuditRecordCalls(recCalls[1], getDatasetsAction, actionSuccessful, nil)
+
+		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
 	})
 }
 
@@ -115,8 +241,16 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getDatasetAction, actionAttempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getDatasetAction, actionSuccessful, auditParams)
+
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 	})
@@ -132,8 +266,14 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
 		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getDatasetAction, actionAttempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getDatasetAction, actionSuccessful, auditParams)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 	})
@@ -150,10 +290,17 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		verifyAuditRecordCalls(recCalls[0], getDatasetAction, actionAttempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getDatasetAction, actionUnsuccessful, auditParams)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
 	Convey("When dataset document has only a next sub document return status 404", t, func() {
@@ -165,7 +312,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -182,10 +329,105 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		verifyAuditRecordCalls(recCalls[0], getDatasetAction, actionAttempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getDatasetAction, actionUnsuccessful, auditParams)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestGetDatasetAuditingErrors(t *testing.T) {
+	Convey("when auditing get dataset attempt action returns an error then a 500 response is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", nil)
+		w := httptest.NewRecorder()
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			return errors.New("auditing error")
+		}
+		mockDatastore := &storetest.StorerMock{}
+		api := GetAPIWithMockedDatastore(mockDatastore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 1)
+		verifyAuditRecordCalls(recCalls[0], getDatasetAction, actionAttempted, auditParams)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+		So(len(mockDatastore.GetDatasetCalls()), ShouldEqual, 0)
+	})
+
+	Convey("when auditing get dataset successful action returns an error then a 500 response is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", nil)
+		w := httptest.NewRecorder()
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getDatasetAction && result == actionSuccessful {
+				return errors.New("auditing error")
+			}
+			return nil
+		}
+
+		mockDatastore := &storetest.StorerMock{
+			GetDatasetFunc: func(id string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123", Current: &models.Dataset{ID: "123"}}, nil
+			},
+		}
+		api := GetAPIWithMockedDatastore(mockDatastore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getDatasetAction, actionAttempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getDatasetAction, actionSuccessful, auditParams)
+
+		So(len(mockDatastore.GetDatasetCalls()), ShouldEqual, 1)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+	})
+
+	Convey("when get dataset errors and auditing action unsuccessful errors then a 500 response is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", nil)
+		w := httptest.NewRecorder()
+
+		mockDatastore := &storetest.StorerMock{
+			GetDatasetFunc: func(id string) (*models.DatasetUpdate, error) {
+				return nil, errors.New("get dataset error")
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getDatasetAction && result == actionUnsuccessful {
+				return errors.New("auditing error")
+			}
+			return nil
+		}
+		api := GetAPIWithMockedDatastore(mockDatastore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getDatasetAction, actionAttempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getDatasetAction, actionUnsuccessful, auditParams)
+
+		So(len(mockDatastore.GetDatasetCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -204,9 +446,152 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusOK)
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getEditionsAction, actionSuccessful, auditParams)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestGetEditionsAuditingError(t *testing.T) {
+	t.Parallel()
+	Convey("given auditing get editions attempted action returns an error then a 500 response is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			GetEditionsFunc: func(id string, state string) (*models.EditionUpdateResults, error) {
+				return &models.EditionUpdateResults{}, nil
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			return errors.New("get editions action attempted audit event error")
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldResemble, internalServerErr)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 1)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+	})
+
+	Convey("given auditing get editions action successful returns an error then a 500 response is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			GetEditionsFunc: func(id string, state string) (*models.EditionUpdateResults, error) {
+				return &models.EditionUpdateResults{}, nil
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getEditionsAction && result == actionSuccessful {
+				return errors.New("audit error")
+			}
+			return nil
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldResemble, internalServerErr)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getEditionsAction, actionSuccessful, auditParams)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
+	})
+
+	Convey("When the dataset does not exist and auditing the action result fails then return status 500", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
+		r.Header.Add("internal-token", "coffee")
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return errs.ErrDatasetNotFound
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getEditionsAction && result == actionUnsuccessful {
+				return errors.New(auditError)
+			}
+			return nil
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getEditionsAction, actionUnsuccessful, auditParams)
+
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When no published editions exist against a published dataset and auditing unsuccessful errors return status 500", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			GetEditionsFunc: func(id string, state string) (*models.EditionUpdateResults, error) {
+				return nil, errs.ErrEditionNotFound
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getEditionsAction && result == actionUnsuccessful {
+				return errors.New(auditError)
+			}
+			return nil
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldResemble, internalServerErr)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getEditionsAction, actionUnsuccessful, auditParams)
+
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 	})
@@ -223,10 +608,18 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getEditionsAction, actionUnsuccessful, auditParams)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
@@ -242,10 +635,18 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getEditionsAction, actionUnsuccessful, auditParams)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
@@ -264,10 +665,18 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Edition not found\n")
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getEditionsAction, actionUnsuccessful, auditParams)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
@@ -285,7 +694,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Edition not found\n")
@@ -309,9 +718,18 @@ func TestGetEditionReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+
 		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getEditionAction, actionSuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
@@ -328,10 +746,20 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
+
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getEditionAction, actionUnsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
@@ -347,10 +775,20 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
+
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getEditionAction, actionUnsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
@@ -369,11 +807,20 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Edition not found\n")
 
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getEditionAction, actionUnsuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
@@ -390,11 +837,150 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Edition not found\n")
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getEditionAction, actionUnsuccessful, p)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+	})
+}
 
+func TestGetEditionAuditErrors(t *testing.T) {
+	t.Parallel()
+	Convey("when auditing get edition attempted action errors then a 500 status is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			return errors.New("auditing error")
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+		So(len(recCalls), ShouldEqual, 1)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("when check dataset exists errors and auditing action unsuccessful errors then a 500 status is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(ID string, state string) error {
+				return errors.New("check dataset error")
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getEditionAction && result == actionUnsuccessful {
+				return errors.New("auditing error")
+			}
+			return nil
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getEditionAction, actionUnsuccessful, p)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("when check edition exists errors and auditing action unsuccessful errors then a 500 status is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(ID string, state string) error {
+				return nil
+			},
+			GetEditionFunc: func(ID, editionID, state string) (*models.EditionUpdate, error) {
+				return nil, errors.New("get edition error")
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getEditionAction && result == actionUnsuccessful {
+				return errors.New("auditing error")
+			}
+			return nil
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getEditionAction, actionUnsuccessful, p)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+	})
+
+	Convey("when get edition audit even successful errors then a 500 status is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			GetEditionFunc: func(id string, editionID string, state string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{}, nil
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getEditionAction && result == actionSuccessful {
+				return errors.New("error")
+			}
+			return nil
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getEditionAction, actionSuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
@@ -417,9 +1003,18 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+		recCalls := auditMock.RecordCalls()
+
 		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionSuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -428,6 +1023,8 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 
 func TestGetVersionsReturnsError(t *testing.T) {
 	t.Parallel()
+	p := common.Params{"dataset_id": "123-456", "edition": "678"}
+
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
 		w := httptest.NewRecorder()
@@ -437,11 +1034,17 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
-
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -456,11 +1059,16 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
 
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -478,10 +1086,18 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Edition not found\n")
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -504,10 +1120,18 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Version not found\n")
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -529,10 +1153,18 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Version not found\n")
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -557,11 +1189,232 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "Incorrect resource state\n")
 
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
+
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestGetVersionsAuditError(t *testing.T) {
+	t.Parallel()
+	p := common.Params{"dataset_id": "123-456", "edition": "678"}
+	err := errors.New("error")
+
+	Convey("when auditing get versions attempted action errors then a 500 status is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			return err
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+		So(len(recCalls), ShouldEqual, 1)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
+	})
+
+	Convey("when auditing check dataset exists error returns an error then a 500 status is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(ID string, state string) error {
+				return err
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getVersionsAction && result == actionUnsuccessful {
+				return errors.New("error")
+			}
+			return nil
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
+	})
+
+	Convey("when auditing check edition exists error returns an error then a 500 status is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(ID string, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
+				return err
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getVersionsAction && result == actionUnsuccessful {
+				return errors.New("error")
+			}
+			return nil
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
+	})
+
+	Convey("when auditing get versions error returns an error then a 500 status is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(ID string, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
+				return nil
+			},
+			GetVersionsFunc: func(datasetID string, editionID string, state string) (*models.VersionResults, error) {
+				return nil, err
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getVersionsAction && result == actionUnsuccessful {
+				return errors.New("error")
+			}
+			return nil
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
+	})
+
+	Convey("when auditing invalid state returns an error then a 500 status is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(ID string, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
+				return nil
+			},
+			GetVersionsFunc: func(datasetID string, editionID string, state string) (*models.VersionResults, error) {
+				return &models.VersionResults{
+					Items: []models.Version{{State: "not valid"}},
+				}, nil
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getVersionsAction && result == actionUnsuccessful {
+				return errors.New("error")
+			}
+			return nil
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		recCalls := auditMock.RecordCalls()
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
+	})
+
+	Convey("when auditing get versions successful event errors then an 500 status is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return nil
+			},
+			GetVersionsFunc: func(datasetID, editionID, state string) (*models.VersionResults, error) {
+				return &models.VersionResults{}, nil
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getVersionsAction && result == actionSuccessful {
+				return errors.New("error")
+			}
+			return nil
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+		recCalls := auditMock.RecordCalls()
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionSuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -594,9 +1447,17 @@ func TestGetVersionReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusOK)
+		p := common.Params{"dataset_id": "123-456", "edition": "678", "version": "1"}
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionSuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -604,6 +1465,7 @@ func TestGetVersionReturnsOK(t *testing.T) {
 }
 
 func TestGetVersionReturnsError(t *testing.T) {
+	p := common.Params{"dataset_id": "123-456", "edition": "678", "version": "1"}
 	t.Parallel()
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
@@ -614,10 +1476,17 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 	})
@@ -632,10 +1501,17 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -655,10 +1531,17 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Edition not found\n")
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -681,10 +1564,17 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Version not found\n")
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -706,10 +1596,17 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Version not found\n")
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -741,11 +1638,253 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		auditMock := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "Incorrect resource state\n")
 
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
+
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestGetVersionAuditErrors(t *testing.T) {
+	p := common.Params{"dataset_id": "123-456", "edition": "678", "version": "1"}
+	t.Parallel()
+	Convey("When auditing get version action attempted errors then a 500 status is returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return errInternal
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getVersionAction && result == actionAttempted {
+				return errors.New("error")
+			}
+			return nil
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldResemble, internalServerErr)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 1)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
+
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the dataset does not exist and audit errors then return a 500 status", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
+		r.Header.Add("internal_token", "coffee")
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return errs.ErrDatasetNotFound
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getVersionAction && result == actionUnsuccessful {
+				return errors.New("error")
+			}
+			return nil
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldResemble, internalServerErr)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
+
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the edition does not exist for a dataset and auditing errors then a 500 status", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
+		r.Header.Add("internal_token", "coffee")
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return errs.ErrEditionNotFound
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getVersionAction && result == actionUnsuccessful {
+				return errors.New("error")
+			}
+			return nil
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
+
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When version does not exist for an edition of a dataset and auditing errors then a 500 status", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
+		r.Header.Add("internal_token", "coffee")
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return nil
+			},
+			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+				return nil, errs.ErrVersionNotFound
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getVersionAction && result == actionUnsuccessful {
+				return errors.New("error")
+			}
+			return nil
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
+
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+	})
+
+	Convey("When version does not exist for an edition of a dataset and auditing errors then a 500 status", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
+		r.Header.Add("internal_token", "coffee")
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return nil
+			},
+			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+				return &models.Version{
+					State: "indifferent",
+					Links: &models.VersionLinks{
+						Self:    &models.LinkObject{HRef: "self"},
+						Version: &models.LinkObject{HRef: "version"},
+					},
+				}, nil
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getVersionAction && result == actionUnsuccessful {
+				return errors.New("error")
+			}
+			return nil
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
+
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+	})
+
+	Convey("when auditing a successful request to get a version errors then return a 500 status", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return nil
+			},
+			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+				return &models.Version{
+					State: models.EditionConfirmedState,
+					Links: &models.VersionLinks{
+						Self: &models.LinkObject{},
+						Version: &models.LinkObject{
+							HRef: "href",
+						},
+					},
+				}, nil
+			},
+		}
+
+		auditMock := getMockAuditor()
+		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == getVersionAction && result == actionSuccessful {
+				return errors.New("error")
+			}
+			return nil
+		}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api.router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, internalServerErr)
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionSuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -771,7 +1910,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		}
 		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusCreated)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -797,7 +1936,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "Failed to parse json body\n")
@@ -822,7 +1961,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
@@ -831,7 +1970,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 	})
 
-	Convey("When the request does not contain a valid internal token return status not found", t, func() {
+	Convey("When the request does not contain a valid internal token returns 401", t, func() {
 		var b string
 		b = datasetPayload
 		r := httptest.NewRequest("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
@@ -845,10 +1984,10 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldResemble, "requested resource not found\n")
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(w.Body.String(), ShouldResemble, "unauthenticated request\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -874,7 +2013,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(w.Body.String(), ShouldResemble, "forbidden - dataset already exists\n")
@@ -907,7 +2046,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		}
 		mockedDataStore.UpdateDataset("123", dataset, models.CreatedState)
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -934,7 +2073,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "Failed to parse json body\n")
@@ -965,7 +2104,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		}
 		mockedDataStore.UpdateDataset("123", dataset, models.CreatedState)
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
@@ -991,7 +2130,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
@@ -1016,10 +2155,10 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldResemble, "requested resource not found\n")
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(w.Body.String(), ShouldResemble, "unauthenticated request\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
@@ -1042,7 +2181,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNoContent)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -1066,7 +2205,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -1088,7 +2227,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
@@ -1112,7 +2251,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNoContent)
 
@@ -1135,7 +2274,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
@@ -1150,13 +2289,13 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
-
 		mockedDataStore := &storetest.StorerMock{}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		api.router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldResemble, "requested resource not found\n")
+
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(w.Body.String(), ShouldResemble, "unauthenticated request\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
@@ -1216,7 +2355,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		mockedDataStore.GetVersion("123", "2017", "1", "")
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -1267,7 +2406,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
 		mockedDataStore.UpdateDatasetWithAssociation("123", models.AssociatedState, &models.Version{})
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -1318,7 +2457,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 
 		select {
@@ -1425,7 +2564,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		mockedDataStore.GetDataset("123")
 		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -1479,7 +2618,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 			cfg, err := config.Get()
 			So(err, ShouldBeNil)
 			cfg.EnablePrivateEnpoints = true
-			api := routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockDownloadGenerator)
+			api := routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockDownloadGenerator, nil)
 			api.router.ServeHTTP(w, r)
 
 			Convey("then an internal server error response is returned", func() {
@@ -1540,7 +2679,7 @@ func TestPutEmptyVersion(t *testing.T) {
 
 			w := httptest.NewRecorder()
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 			api.router.ServeHTTP(w, r)
 
 			Convey("then a http status ok is returned", func() {
@@ -1579,7 +2718,7 @@ func TestPutEmptyVersion(t *testing.T) {
 			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 			api.router.ServeHTTP(w, r)
 
 			Convey("then a http status ok is returned", func() {
@@ -1638,7 +2777,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldEqual, "Failed to parse json body\n")
@@ -1670,7 +2809,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "internal error\n")
@@ -1705,7 +2844,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Dataset not found\n")
@@ -1741,7 +2880,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Edition not found\n")
@@ -1780,7 +2919,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Version not found\n")
@@ -1812,10 +2951,10 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor())
 		api.router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldEqual, "requested resource not found\n")
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(w.Body.String(), ShouldEqual, "unauthenticated request\n")
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -1845,7 +2984,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(w.Body.String(), ShouldEqual, "unable to update version as it has been published\n")
@@ -1882,7 +3021,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldEqual, "Missing collection_id for association between version and a collection\n")
@@ -1909,7 +3048,7 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -1928,7 +3067,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "internal error\n")
@@ -1946,7 +3085,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Version not found\n")
@@ -1967,7 +3106,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Dimensions not found\n")
@@ -1985,7 +3124,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "Incorrect resource state\n")
@@ -2009,7 +3148,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 	})
@@ -2026,7 +3165,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Version not found\n")
@@ -2047,7 +3186,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "internal error\n")
@@ -2065,7 +3204,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "Incorrect resource state\n")
@@ -2097,7 +3236,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -2152,7 +3291,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -2197,7 +3336,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "internal error\n")
@@ -2217,7 +3356,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Dataset not found\n")
@@ -2243,7 +3382,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Dataset not found\n")
@@ -2268,7 +3407,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Edition not found\n")
@@ -2297,7 +3436,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Version not found\n")
@@ -2326,7 +3465,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "Incorrect resource state\n")
@@ -2490,4 +3629,12 @@ func createVersionDoc() *models.Version {
 	}
 
 	return versionDoc
+}
+
+func getMockAuditor() *audit.AuditorServiceMock {
+	return &audit.AuditorServiceMock{
+		RecordFunc: func(ctx context.Context, action string, result string, params common.Params) error {
+			return nil
+		},
+	}
 }

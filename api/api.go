@@ -9,6 +9,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
+	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/identity"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/server"
@@ -28,6 +29,8 @@ type DownloadsGenerator interface {
 	Generate(datasetID, instanceID, edition, version string) error
 }
 
+type Auditor audit.AuditorService
+
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
 	dataStore            store.DataStore
@@ -41,16 +44,17 @@ type DatasetAPI struct {
 	downloadGenerator    DownloadsGenerator
 	healthCheckTimeout   time.Duration
 	serviceAuthToken     string
+	auditor              Auditor
 }
 
 // CreateDatasetAPI manages all the routes configured to API
-func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadsGenerator DownloadsGenerator) {
+func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadsGenerator DownloadsGenerator, auditor Auditor) {
 	router := mux.NewRouter()
-	routes(cfg, router, dataStore, urlBuilder, downloadsGenerator)
+	routes(cfg, router, dataStore, urlBuilder, downloadsGenerator, auditor)
 
 	// Only add the identity middleware when running in publishing.
 	if cfg.EnablePrivateEnpoints {
-		alice := alice.New(identity.Handler(true, cfg.ZebedeeURL)).Then(router)
+		alice := alice.New(identity.Handler(cfg.ZebedeeURL)).Then(router)
 		httpServer = server.New(cfg.BindAddr, alice)
 	} else {
 		httpServer = server.New(cfg.BindAddr, router)
@@ -68,7 +72,7 @@ func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBu
 	}()
 }
 
-func routes(cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator) *DatasetAPI {
+func routes(cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, auditor Auditor) *DatasetAPI {
 
 	api := DatasetAPI{
 		dataStore:            dataStore,
@@ -81,6 +85,7 @@ func routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 		urlBuilder:           urlBuilder,
 		downloadGenerator:    downloadGenerator,
 		healthCheckTimeout:   cfg.HealthCheckTimeout,
+		auditor:              auditor,
 	}
 
 	api.router.HandleFunc("/healthcheck", api.healthCheck).Methods("GET")
