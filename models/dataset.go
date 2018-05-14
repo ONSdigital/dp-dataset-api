@@ -334,7 +334,7 @@ func ValidateVersion(version *Version) error {
 	if version.Downloads != nil {
 		if version.Downloads.XLS != nil {
 			if version.Downloads.XLS.HRef == "" {
-				missingFields = append(missingFields, "Downloads.XLS.URL")
+				missingFields = append(missingFields, "Downloads.XLS.HRef")
 			}
 			if version.Downloads.XLS.Size == "" {
 				missingFields = append(missingFields, "Downloads.XLS.Size")
@@ -346,7 +346,7 @@ func ValidateVersion(version *Version) error {
 
 		if version.Downloads.CSV != nil {
 			if version.Downloads.CSV.HRef == "" {
-				missingFields = append(missingFields, "Downloads.CSV.URL")
+				missingFields = append(missingFields, "Downloads.CSV.HRef")
 			}
 			if version.Downloads.CSV.Size == "" {
 				missingFields = append(missingFields, "Downloads.CSV.Size")

@@ -194,10 +194,10 @@ func TestValidateVersion(t *testing.T) {
 			v := &Version{ReleaseDate: "Today", State: EditionConfirmedState}
 
 			v.Downloads = &DownloadList{XLS: &DownloadObject{HRef: "", Size: "2"}}
-			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLS.URL"}), v)
+			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLS.HRef"}), v)
 
 			v.Downloads = &DownloadList{CSV: &DownloadObject{HRef: "", Size: "2"}}
-			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSV.URL"}), v)
+			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSV.HRef"}), v)
 
 			v.Downloads = &DownloadList{XLS: &DownloadObject{HRef: "/", Size: ""}}
 			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLS.Size"}), v)
