@@ -10,6 +10,8 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/go-ns/healthcheck"
+	alice2 "github.com/justinas/alice"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -26,7 +28,11 @@ func TestHealthCheckReturnsOK(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
-		api.router.ServeHTTP(w, r)
+
+		healthCheck := healthcheck.NewMiddleware(api.healthCheck)
+		mainHandler := alice2.New(healthCheck).Then(api.router)
+
+		mainHandler.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		body := w.Body.String()
 		So(body, ShouldContainSubstring, `"status":"OK"`)
@@ -47,7 +53,11 @@ func TestHealthCheckReturnsError(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor())
-		api.router.ServeHTTP(w, r)
+		healthCheck := healthcheck.NewMiddleware(api.healthCheck)
+		mainHandler := alice2.New(healthCheck).Then(api.router)
+
+		mainHandler.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		body := w.Body.String()
 		So(body, ShouldContainSubstring, `"status":"error"`)
