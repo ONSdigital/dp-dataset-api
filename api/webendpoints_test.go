@@ -7,13 +7,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/ONSdigital/go-ns/audit"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -41,7 +42,9 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 			},
 		}
 		Convey("Calling the datasets endpoint should allow only published items", func() {
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
+
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+
 			api.router.ServeHTTP(w, r)
 			a, _ := ioutil.ReadAll(w.Body)
 			So(w.Code, ShouldEqual, http.StatusOK)
@@ -75,7 +78,9 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 			},
 		}
 		Convey("Calling the dataset endpoint should allow only published items", func() {
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
+
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+
 			api.router.ServeHTTP(w, r)
 			a, _ := ioutil.ReadAll(w.Body)
 			So(w.Code, ShouldEqual, http.StatusOK)
@@ -111,7 +116,9 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 			},
 		}
 		Convey("Calling the editions endpoint should allow only published items", func() {
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
+
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+
 			api.router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(datasetSearchState, ShouldEqual, models.PublishedState)
@@ -142,7 +149,9 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 			},
 		}
 		Convey("Calling the edition endpoint should allow only published items", func() {
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
+
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+
 			api.router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(datasetSearchState, ShouldEqual, models.PublishedState)
@@ -178,7 +187,9 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 			},
 		}
 		Convey("Calling the versions endpoint should allow only published items", func() {
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
+
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+
 			api.router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(datasetSearchState, ShouldEqual, models.PublishedState)
@@ -216,7 +227,9 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 			},
 		}
 		Convey("Calling the version endpoint should allow only published items", func() {
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
+
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+
 			api.router.ServeHTTP(w, r)
 
 			So(w.Code, ShouldEqual, http.StatusOK)
@@ -250,7 +263,9 @@ func TestWebSubnetDimensionsEndpoint(t *testing.T) {
 			},
 		}
 		Convey("Calling dimension endpoint should allow only published items", func() {
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
+
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+
 			api.router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(versionSearchState, ShouldEqual, models.PublishedState)
@@ -282,7 +297,9 @@ func TestWebSubnetDimensionOptionsEndpoint(t *testing.T) {
 		}
 
 		Convey("Calling dimension option endpoint should allow only published items", func() {
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
+
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+
 			api.router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(versionSearchState, ShouldEqual, models.PublishedState)
@@ -330,7 +347,9 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{}
-				api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
+
+				api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+
 				api.router.ServeHTTP(w, r)
 				So(w.Code, ShouldEqual, http.StatusNotFound)
 			})
@@ -338,12 +357,14 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 	})
 }
 
-func GetWebAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, mockedObservationStore ObservationStore) *DatasetAPI {
+func GetWebAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, mockAuditor *audit.AuditorServiceMock, mockedObservationStore ObservationStore) *DatasetAPI {
+
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)
 	cfg.ServiceAuthToken = authToken
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEnpoints = false
 	cfg.HealthCheckTimeout = healthTimeout
-	return routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockedObservationStore)
+
+	return routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockAuditor, mockedObservationStore)
 }

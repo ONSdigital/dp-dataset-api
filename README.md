@@ -32,9 +32,9 @@ Normal sequential order of states:
 5. `associated` (only on *version*) - dataset `next` sub-document will be updated again and so will the *edition*
 6. `published` (only on *version*) - both *edition* and *dataset* are updated - must not be changed
 
-There is the possibility to **rollback** from `associate`  to `edition-confirmed`
+There is the possibility to **rollback** from `associated`  to `edition-confirmed`
 where a PST user has attached the _version_ to the wrong collection and so not only does
-the `collection_id` need to be updated with the new one (or removed all together)
+the `collection_id` need to be updated with the new one (or removed altogether)
 but the state will need to revert back to `edition-confirmed`.
 
 Lastly, **skipping a state**: it is possibly to jump from `edition-confirmed` to `published`

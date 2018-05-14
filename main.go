@@ -15,6 +15,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-filter/observation"
 
+	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/kafka"
 
 	"github.com/ONSdigital/dp-dataset-api/url"
@@ -43,6 +44,24 @@ func main() {
 	if err != nil {
 		log.Error(errors.Wrap(err, "error creating kakfa producer"), nil)
 		os.Exit(1)
+	}
+
+	var auditor audit.AuditorService
+	var auditProducer kafka.Producer
+
+	if cfg.EnablePrivateEnpoints {
+		log.Info("private endpoints enabled, enabling action auditing", log.Data{"auditTopicName": cfg.AuditEventsTopic})
+
+		auditProducer, err = kafka.NewProducer(cfg.KafkaAddr, cfg.AuditEventsTopic, 0)
+		if err != nil {
+			log.Error(errors.Wrap(err, "error creating kakfa audit producer"), nil)
+			os.Exit(1)
+		}
+
+		auditor = audit.New(auditProducer, "dp-dataset-api")
+	} else {
+		log.Info("private endpoints disabled, auditing will not be enabled", nil)
+		auditor = &audit.NopAuditor{}
 	}
 
 	mongo := &mongo.Mongo{
@@ -84,7 +103,7 @@ func main() {
 
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
-	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, observationStore)
+	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor, observationStore)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {
@@ -102,8 +121,15 @@ func main() {
 			log.Error(err, nil)
 		}
 
-		if err := generateDownloadsProducer.Close(ctx); err != nil {
+		if err = generateDownloadsProducer.Close(ctx); err != nil {
 			log.Error(errors.Wrap(err, "error while attempting to shutdown kafka producer"), nil)
+		}
+
+		if cfg.EnablePrivateEnpoints {
+			log.Debug("exiting audit producer", nil)
+			if err = auditProducer.Close(ctx); err != nil {
+				log.Error(err, nil)
+			}
 		}
 
 		log.Info("shutdown complete", nil)

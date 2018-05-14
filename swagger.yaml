@@ -855,6 +855,9 @@ definitions:
       href:
         type: string
         description: "A url to the standard Government access right text for the dataset"
+  CollectionID:
+    type: string
+    description: "The id of the unpublished collection (of datasets) that this dataset is associated with"
   Contact:
     description: "A list of objects containing contact information for this dataset"
     type: object
@@ -906,8 +909,7 @@ definitions:
     type: object
     properties:
       collection_id:
-        type: string
-        description: "The id of a collection of datasets that a dataset is associated to"
+        $ref: '#/definitions/CollectionID'
       contacts:
         type: array
         description: "A list containing contact details of staticians for a dataset"
@@ -1120,8 +1122,7 @@ definitions:
         readOnly: true
         description: "A unique id for an instance"
       collection_id:
-        type: string
-        description: "The id of a collection of datasets that a dataset is associated to"
+        $ref: '#/definitions/CollectionID'
       dimensions:
         type: array
         description: "A list of codelists for each dimension of this instance"
@@ -1335,16 +1336,14 @@ definitions:
         - type: object
           properties:
             collection_id:
-              description: "The unique identifier for a collection of datasets that this dataset belongs"
-              type: string
+              $ref: '#/definitions/CollectionID'
         - $ref: "#/definitions/Dataset"
       next:
         allOf:
         - type: object
           properties:
             collection_id:
-              description: "The unique identifier for a collection of datasets that this dataset belongs"
-              type: string
+              $ref: '#/definitions/CollectionID'
         - $ref: "#/definitions/Dataset"
   NewVersionResponse:
     description: "A model for the response body when creating a new version for an edition of a dataset"
@@ -1356,8 +1355,7 @@ definitions:
             description: "An unique id for a dataset"
             example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91CD"
           collection_id:
-            description: "The unique identifier for a collection of datasets that this dataset belongs"
-            type: string
+            $ref: '#/definitions/CollectionID'
       - $ref: "#/definitions/Version"
   NewInstance:
     description: "A model for the request and response body for creating a new instance"
@@ -1493,8 +1491,7 @@ definitions:
         items:
           $ref: '#/definitions/Alert'
       collection_id:
-        type: string
-        description: "The id of a collection of datasets that a dataset is associated to"
+        $ref: '#/definitions/CollectionID'
       dimensions:
         type: array
         description: "A list of codelists for each dimension of this version"

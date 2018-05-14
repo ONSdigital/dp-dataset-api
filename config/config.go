@@ -11,6 +11,7 @@ import (
 type Configuration struct {
 	BindAddr                 string        `envconfig:"BIND_ADDR"`
 	KafkaAddr                []string      `envconfig:"KAFKA_ADDR"                       json:"-"`
+	AuditEventsTopic         string        `envconfig:"AUDIT_EVENTS_TOPIC"`
 	GenerateDownloadsTopic   string        `envconfig:"GENERATE_DOWNLOADS_TOPIC"`
 	CodeListAPIURL           string        `envconfig:"CODE_LIST_API_URL"`
 	DatasetAPIURL            string        `envconfig:"DATASET_API_URL"`
@@ -44,6 +45,7 @@ func Get() (*Configuration, error) {
 	cfg = &Configuration{
 		BindAddr:                 ":22000",
 		KafkaAddr:                []string{"localhost:9092"},
+		AuditEventsTopic:         "audit-events",
 		GenerateDownloadsTopic:   "filter-job-submitted",
 		CodeListAPIURL:           "http://localhost:22400",
 		DatasetAPIURL:            "http://localhost:22000",

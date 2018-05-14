@@ -10,6 +10,8 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/go-ns/healthcheck"
+	"github.com/justinas/alice"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -25,8 +27,13 @@ func TestHealthCheckReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+
+		healthCheck := healthcheck.NewMiddleware(api.healthCheck)
+		mainHandler := alice.New(healthCheck).Then(api.router)
+
+		mainHandler.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusOK)
 		body := w.Body.String()
 		So(body, ShouldContainSubstring, `"status":"OK"`)
@@ -46,8 +53,12 @@ func TestHealthCheckReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, genericMockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		healthCheck := healthcheck.NewMiddleware(api.healthCheck)
+		mainHandler := alice.New(healthCheck).Then(api.router)
+
+		mainHandler.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		body := w.Body.String()
 		So(body, ShouldContainSubstring, `"status":"error"`)
