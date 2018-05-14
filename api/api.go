@@ -10,6 +10,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/audit"
+	"github.com/ONSdigital/go-ns/healthcheck"
 	"github.com/ONSdigital/go-ns/identity"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/server"
@@ -50,15 +51,17 @@ type DatasetAPI struct {
 // CreateDatasetAPI manages all the routes configured to API
 func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadsGenerator DownloadsGenerator, auditor Auditor) {
 	router := mux.NewRouter()
-	routes(cfg, router, dataStore, urlBuilder, downloadsGenerator, auditor)
+	api := routes(cfg, router, dataStore, urlBuilder, downloadsGenerator, auditor)
+
+	healthCheckHandler := healthcheck.NewMiddleware(api.healthCheck)
+	middleware := alice.New(healthCheckHandler)
 
 	// Only add the identity middleware when running in publishing.
 	if cfg.EnablePrivateEnpoints {
-		alice := alice.New(identity.Handler(cfg.ZebedeeURL)).Then(router)
-		httpServer = server.New(cfg.BindAddr, alice)
-	} else {
-		httpServer = server.New(cfg.BindAddr, router)
+		middleware = middleware.Append(identity.Handler(cfg.ZebedeeURL))
 	}
+
+	httpServer = server.New(cfg.BindAddr, middleware.Then(router))
 
 	// Disable this here to allow main to manage graceful shutdown of the entire app.
 	httpServer.HandleOSSignals = false
@@ -87,8 +90,6 @@ func routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 		healthCheckTimeout:   cfg.HealthCheckTimeout,
 		auditor:              auditor,
 	}
-
-	api.router.HandleFunc("/healthcheck", api.healthCheck).Methods("GET")
 
 	api.router.HandleFunc("/datasets", api.getDatasets).Methods("GET")
 	api.router.HandleFunc("/datasets/{id}", api.getDataset).Methods("GET")

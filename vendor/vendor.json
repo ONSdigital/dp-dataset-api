@@ -33,6 +33,12 @@
 			"revisionTime": "2018-05-02T09:37:52Z"
 		},
 		{
+			"checksumSHA1": "p1fQ6Gqk1X/bTmhSqOnLDPOSD10=",
+			"path": "github.com/ONSdigital/go-ns/healthcheck",
+			"revision": "01c38ac76f9fdd25871a39b9e008d335ac251499",
+			"revisionTime": "2018-05-04T09:27:22Z"
+		},
+		{
 			"checksumSHA1": "tbpmGqkqN79SspYfFUgob5rxKik=",
 			"path": "github.com/ONSdigital/go-ns/identity",
 			"revision": "2a4ed4b9091e2042ae489ab492711ec1a866c94b",
