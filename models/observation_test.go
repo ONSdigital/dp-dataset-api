@@ -9,9 +9,10 @@ import (
 func TestCreateObservationsDoc(t *testing.T) {
 	query := "geography=K00001&age=*"
 
-	queryParams := make(map[string]string)
-	queryParams["geography"] = "K00001"
-	queryParams["age"] = "*"
+	queryParams := map[string]string{
+		"geography": "K00001",
+		"age":       "*",
+	}
 
 	t.Parallel()
 	Convey("Successfully create observations document with all fields", t, func() {

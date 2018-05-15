@@ -268,20 +268,22 @@ func extractQueryParameters(urlQuery url.Values, validDimensions []string) (map[
 	return queryParameters, nil
 }
 
-func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParamters map[string]string, limit, dimensionOffset int, logData log.Data) ([]models.Observation, error) {
+func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParameters map[string]string, limit, dimensionOffset int, logData log.Data) ([]models.Observation, error) {
 
 	// Build query (observation.Filter type)
 	var dimensionFilters []*observation.DimensionFilter
 
-	// Unable to have more than one wildcard per query parameter
-	var wildcards int
+	// Unable to have more than one wildcard parameter per query
 	var wildcardParameter string
 
 	// Build dimension filter object to create queryObject for neo4j
-	for dimension, option := range queryParamters {
+	for dimension, option := range queryParameters {
 		if option == "*" {
+			if wildcardParameter != "" {
+				return nil, errs.ErrTooManyWildcards
+			}
+
 			wildcardParameter = dimension
-			wildcards++
 			continue
 		}
 
@@ -291,10 +293,6 @@ func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParam
 		}
 
 		dimensionFilters = append(dimensionFilters, dimensionFilter)
-	}
-
-	if wildcards > 1 {
-		return nil, errs.ErrTooManyWildcards
 	}
 
 	queryObject := observation.Filter{
@@ -312,7 +310,6 @@ func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParam
 
 	headerRow, err := csvRowReader.Read()
 	if err != nil {
-
 		return nil, err
 	}
 	defer csvRowReader.Close()
@@ -326,11 +323,7 @@ func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParam
 	var observationRow string
 	var observations []models.Observation
 	// Iterate over observation row reader
-	for {
-		observationRow, err = csvRowReader.Read()
-		if err == io.EOF {
-			break
-		}
+	for observationRow, err = csvRowReader.Read(); err != io.EOF; observationRow, err = csvRowReader.Read() {
 		if err != nil {
 			if strings.Contains(err.Error(), "the filter options created no results") {
 				return nil, errs.ErrObservationsNotFound
@@ -378,6 +371,8 @@ func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParam
 							break
 						}
 					}
+
+					break
 				}
 			}
 			observation.Dimensions = dimensions
