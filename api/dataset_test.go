@@ -18,7 +18,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
-	"github.com/ian-kent/go-log/log"
+	"github.com/ONSdigital/go-ns/log"
 
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
