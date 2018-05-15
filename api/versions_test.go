@@ -22,6 +22,12 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+const (
+	versionPayload           = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04"}`
+	versionAssociatedPayload = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"associated","collection_id":"12345"}`
+	versionPublishedPayload  = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"published","collection_id":"12345"}`
+)
+
 func TestGetVersionsReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("A successful request to get version returns 200 OK response", t, func() {
@@ -1672,5 +1678,121 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+	})
+}
+
+func TestCreateNewVersionDoc(t *testing.T) {
+	t.Parallel()
+	Convey("Check the version has the new collection id when request contains a collection_id", t, func() {
+		currentVersion := &models.Version{}
+		version := &models.Version{
+			CollectionID: "4321",
+		}
+
+		populateNewVersionDoc(currentVersion, version)
+		So(version.CollectionID, ShouldNotBeNil)
+		So(version.CollectionID, ShouldEqual, "4321")
+	})
+
+	Convey("Check the version collection id does not get replaced by the current collection id when request contains a collection_id", t, func() {
+		currentVersion := &models.Version{
+			CollectionID: "1234",
+		}
+		version := &models.Version{
+			CollectionID: "4321",
+		}
+
+		populateNewVersionDoc(currentVersion, version)
+		So(version.CollectionID, ShouldNotBeNil)
+		So(version.CollectionID, ShouldEqual, "4321")
+	})
+
+	Convey("Check the version has the old collection id when request is missing a collection_id", t, func() {
+		currentVersion := &models.Version{
+			CollectionID: "1234",
+		}
+		version := &models.Version{}
+
+		populateNewVersionDoc(currentVersion, version)
+		So(version.CollectionID, ShouldNotBeNil)
+		So(version.CollectionID, ShouldEqual, "1234")
+	})
+
+	Convey("check the version collection id is not set when both request body and current version document are missing a collection id", t, func() {
+		currentVersion := &models.Version{}
+		version := &models.Version{}
+
+		populateNewVersionDoc(currentVersion, version)
+		So(version.CollectionID, ShouldNotBeNil)
+		So(version.CollectionID, ShouldEqual, "")
+	})
+
+	Convey("Check the version has the new spatial link when request contains a links.spatial.href", t, func() {
+		currentVersion := &models.Version{}
+		version := &models.Version{
+			Links: &models.VersionLinks{
+				Spatial: &models.LinkObject{
+					HRef: "http://ons.gov.uk/geographylist",
+				},
+			},
+		}
+
+		populateNewVersionDoc(currentVersion, version)
+		So(version.Links, ShouldNotBeNil)
+		So(version.Links.Spatial, ShouldNotBeNil)
+		So(version.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/geographylist")
+	})
+
+	Convey("Check the version links.spatial.href does not get replaced by the current version value", t, func() {
+		currentVersion := &models.Version{
+			Links: &models.VersionLinks{
+				Spatial: &models.LinkObject{
+					HRef: "http://ons.gov.uk/oldgeographylist",
+				},
+			},
+		}
+		version := &models.Version{
+			Links: &models.VersionLinks{
+				Spatial: &models.LinkObject{
+					HRef: "http://ons.gov.uk/geographylist",
+				},
+			},
+		}
+
+		populateNewVersionDoc(currentVersion, version)
+		So(version.Links, ShouldNotBeNil)
+		So(version.Links.Spatial, ShouldNotBeNil)
+		So(version.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/geographylist")
+	})
+
+	Convey("Check the links.spatial.href has the old value when request does not contain a links.spatial.href", t, func() {
+		currentVersion := &models.Version{
+			Links: &models.VersionLinks{
+				Spatial: &models.LinkObject{
+					HRef: "http://ons.gov.uk/oldgeographylist",
+				},
+			},
+		}
+		version := &models.Version{}
+
+		populateNewVersionDoc(currentVersion, version)
+		So(version.Links, ShouldNotBeNil)
+		So(version.Links.Spatial, ShouldNotBeNil)
+		So(version.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/oldgeographylist")
+	})
+
+	Convey("check the version links.spatial.href is not set when both request body and current version document do not contain a links.spatial.href", t, func() {
+		currentVersion := &models.Version{
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://ons.gov.uk/datasets/123",
+				},
+			},
+		}
+		version := &models.Version{}
+
+		populateNewVersionDoc(currentVersion, version)
+		So(version.Links, ShouldNotBeNil)
+		So(version.Links.Spatial, ShouldBeNil)
 	})
 }
