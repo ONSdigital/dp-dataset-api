@@ -1,9 +1,13 @@
 package api
 
 import (
+	"bytes"
+	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -11,49 +15,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-filter/observation"
+	"github.com/ONSdigital/go-ns/log"
 	. "github.com/smartystreets/goconvey/convey"
-)
-
-var (
-	expectedDocWithSingleObservation = `{` +
-		`"dimensions":{` +
-		`"aggregate":{"option":{"id":"cpi1dim1S40403","href":"http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1S40403"}},` +
-		`"geography":{"option":{"id":"K02000001","href":"http://localhost:8081/code-lists/uk-only/codes/K02000001"}},` +
-		`"time":{"option":{"id":"16-Aug","href":"http://localhost:8081/code-lists/time/codes/16-Aug"}}},` +
-		`"limit":10000,` +
-		`"links":{` +
-		`"dataset_metadata":{"href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1/metadata"},` +
-		`"self":{"href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001"},` +
-		`"version":{"id":"1","href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1"}},` +
-		`"observations":[{"metadata":{"confidence_interval":"2","data_marking":"p"},"observation":"146.3"}],` +
-		`"offset":0,` +
-		`"total_observations":1,` +
-		`"usage_notes":[{"title":"data_marking","note":"this marks the obsevation with a special character"}]` +
-		"}\n"
-)
-
-var (
-	expectedDocWithMultipleObservations = `{` +
-		`"dimensions":{` +
-		`"geography":{"option":{"id":"K02000001","href":"http://localhost:8081/code-lists/uk-only/codes/K02000001"}},` +
-		`"time":{"option":{"id":"16-Aug","href":"http://localhost:8081/code-lists/time/codes/16-Aug"}}},` +
-		`"limit":10000,` +
-		`"links":{` +
-		`"dataset_metadata":{"href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1/metadata"},` +
-		`"self":{"href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=*&geography=K02000001"},` +
-		`"version":{"id":"1","href":"http://localhost:8080/datasets/cpih012/editions/2017/versions/1"}},` +
-		`"observations":` +
-		`[{` +
-		`"dimensions":{"aggregate":{"href":"http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1G10100","id":"cpi1dim1G10100","label":"01.1 Food"}},` +
-		`"metadata":{"confidence_interval":"2","data_marking":"p"},"observation":"146.3"` +
-		`},{` +
-		`"dimensions":{"aggregate":{"href":"http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1G10101","id":"cpi1dim1G10101","label":"01.2 Waste"}},` +
-		`"metadata":{"confidence_interval":"","data_marking":""},"observation":"112.1"` +
-		`}],` +
-		`"offset":0,` +
-		`"total_observations":2,` +
-		`"usage_notes":[{"title":"data_marking","note":"this marks the obsevation with a special character"}]` +
-		"}\n"
 )
 
 func TestGetObservationsReturnsOK(t *testing.T) {
@@ -104,11 +67,10 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		count := 0
 		mockRowReader := &mocks.CSVRowReaderMock{
 			ReadFunc: func() (string, error) {
-				if count == 0 {
-					count++
+				count++
+				if count == 1 {
 					return "v4_2,data_marking,confidence_interval,time,time,geography_code,geography,aggregate_code,aggregate", nil
-				} else if count == 1 {
-					count++
+				} else if count == 2 {
 					return "146.3,p,2,Month,Aug-16,K02000001,,cpi1dim1G10100,01.1 Food", nil
 				}
 				return "", io.EOF
@@ -127,7 +89,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), mockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(w.Body.String(), ShouldEqual, expectedDocWithSingleObservation)
+		So(w.Body.String(), ShouldContainSubstring, getTestData("expectedDocWithSingleObservation"))
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -136,7 +98,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		So(len(mockRowReader.ReadCalls()), ShouldEqual, 3)
 	})
 
-	Convey("A successful request to get multiple observations for a version of a dataset returns 200 OK response", t, func() {
+	Convey("A successful request to get multiple observations via a wildcard for a version of a dataset returns 200 OK response", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=*&geography=K02000001", nil)
 		w := httptest.NewRecorder()
 
@@ -154,7 +116,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 				HRef: "http://localhost:8081/code-lists/time",
 			},
 		}
-		usagesNotes := &[]models.UsageNote{models.UsageNote{Title: "data_marking", Note: "this marks the obsevation with a special character"}}
+		usagesNotes := &[]models.UsageNote{models.UsageNote{Title: "data_marking", Note: "this marks the observation with a special character"}}
 
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
@@ -182,14 +144,12 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		count := 0
 		mockRowReader := &mocks.CSVRowReaderMock{
 			ReadFunc: func() (string, error) {
-				if count == 0 {
-					count++
+				count++
+				if count == 1 {
 					return "v4_2,data_marking,confidence_interval,time,time,geography_code,geography,aggregate_code,aggregate", nil
-				} else if count == 1 {
-					count++
-					return "146.3,p,2,Month,Aug-16,K02000001,,cpi1dim1G10100,01.1 Food", nil
 				} else if count == 2 {
-					count++
+					return "146.3,p,2,Month,Aug-16,K02000001,,cpi1dim1G10100,01.1 Food", nil
+				} else if count == 3 {
 					return "112.1,,,Month,Aug-16,K02000001,,cpi1dim1G10101,01.2 Waste", nil
 				}
 				return "", io.EOF
@@ -208,7 +168,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), mockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(w.Body.String(), ShouldEqual, expectedDocWithMultipleObservations)
+		So(w.Body.String(), ShouldContainSubstring, getTestData("expectedDocWithMultipleObservations"))
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -714,4 +674,19 @@ func TestExtractQueryParameters(t *testing.T) {
 			})
 		})
 	})
+}
+
+func getTestData(filename string) string {
+	jsonBytes, err := ioutil.ReadFile("./observation_test_data/" + filename + ".json")
+	if err != nil {
+		log.ErrorC("unable to read json file into bytes", err, log.Data{"filename": filename})
+		os.Exit(1)
+	}
+	buffer := new(bytes.Buffer)
+	if err := json.Compact(buffer, jsonBytes); err != nil {
+		log.ErrorC("unable to remove whitespace from json bytes", err, log.Data{"filename": filename})
+		os.Exit(1)
+	}
+
+	return buffer.String()
 }
