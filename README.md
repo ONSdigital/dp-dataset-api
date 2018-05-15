@@ -9,13 +9,13 @@ A ONS API used to navigate datasets, editions and versions - which are published
 * Run `brew services start mongodb`
 
 * Run `brew install neo4j`
-* Configure neo4j, edit /usr/local/Cellar/neo4j/3.2.0/libexec/conf/neo4j.conf
+* Configure neo4j, edit `/usr/local/Cellar/neo4j/3.2.0/libexec/conf/neo4j.conf`
 * Set `dbms.security.auth_enabled=false`
 * Run `brew services restart neo4j`
 
 #### Getting started
 
-* Run api auth stub, see documentation [here](https://github.com/ONSdigital/dp-auth-api-stub)
+* Run api auth stub, [see documentation](https://github.com/ONSdigital/dp-auth-api-stub)
 * Run `make debug`
 
 ### State changes
