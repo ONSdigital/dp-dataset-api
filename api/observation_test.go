@@ -1,6 +1,8 @@
 package api
 
 import (
+	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +13,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-filter/observation"
+	"github.com/ONSdigital/go-ns/common"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -124,7 +127,9 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), mockedObservationStore)
+		mockedAuditor := getMockAuditor()
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, mockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(w.Body.String(), ShouldEqual, expectedDocWithSingleObservation)
@@ -134,6 +139,11 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
 		So(len(mockRowReader.ReadCalls()), ShouldEqual, 3)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionSuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
 	})
 
 	Convey("A successful request to get multiple observations for a version of a dataset returns 200 OK response", t, func() {
@@ -205,7 +215,9 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), mockedObservationStore)
+		mockedAuditor := getMockAuditor()
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, mockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(w.Body.String(), ShouldEqual, expectedDocWithMultipleObservations)
@@ -215,6 +227,11 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
 		So(len(mockRowReader.ReadCalls()), ShouldEqual, 4)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionSuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
 	})
 }
 
@@ -229,13 +246,20 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		auditMock := getMockAuditor()
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+
+		recCalls := auditMock.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionUnsuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
 	})
 
 	Convey("When the dataset does not exist return status not found", t, func() {
@@ -247,13 +271,20 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		mockedAuditor := getMockAuditor()
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, genericMockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionUnsuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
 	})
 
 	Convey("When the dataset exists but is unpublished return status not found", t, func() {
@@ -265,13 +296,20 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		mockedAuditor := getMockAuditor()
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, genericMockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionUnsuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
 	})
 
 	Convey("When the edition of a dataset does not exist return status not found", t, func() {
@@ -286,7 +324,9 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		mockedAuditor := getMockAuditor()
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, genericMockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Edition not found\n")
@@ -294,6 +334,11 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionUnsuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
 	})
 
 	Convey("When version does not exist for an edition of a dataset returns status not found", t, func() {
@@ -311,7 +356,9 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		mockedAuditor := getMockAuditor()
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, genericMockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Version not found\n")
@@ -319,6 +366,11 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionUnsuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
 	})
 
 	Convey("When an unpublished version has an incorrect state for an edition of a dataset return an internal error", t, func() {
@@ -336,7 +388,9 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		mockedAuditor := getMockAuditor()
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, genericMockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "Incorrect resource state\n")
@@ -344,6 +398,11 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionUnsuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
 	})
 
 	Convey("When a version document has not got a headers field return an internal server error", t, func() {
@@ -361,13 +420,20 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		mockedAuditor := getMockAuditor()
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, genericMockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionUnsuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
 	})
 
 	Convey("When the first header in array does not describe the header row correctly return internal error", t, func() {
@@ -385,7 +451,9 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		mockedAuditor := getMockAuditor()
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, genericMockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "index out of range\n")
@@ -393,6 +461,11 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionUnsuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
 	})
 
 	Convey("When an invalid query parameter is set in request return 400 bad request with an error message containing a list of incorrect query parameters", t, func() {
@@ -410,7 +483,9 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		mockedAuditor := getMockAuditor()
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, genericMockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "Incorrect selection of query parameters: [geography], these dimensions do not exist for this version of the dataset\n")
@@ -418,6 +493,11 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionUnsuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
 	})
 
 	Convey("When there is a missing query parameter that is expected to be set in request return 400 bad request with an error message containing a list of missing query parameters", t, func() {
@@ -435,7 +515,9 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		mockedAuditor := getMockAuditor()
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, genericMockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "Missing query parameters for the following dimensions: [age]\n")
@@ -443,6 +525,11 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionUnsuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
 	})
 
 	Convey("When there are too many query parameters that are set to wildcard (*) value request returns 400 bad request", t, func() {
@@ -460,7 +547,9 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		mockedAuditor := getMockAuditor()
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, genericMockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "only one wildcard (*) is allowed as a value in selected query parameters\n")
@@ -468,6 +557,11 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionUnsuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
 	})
 
 	Convey("When requested query does not find a unique observation return no observations found", t, func() {
@@ -491,7 +585,9 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), mockedObservationStore)
+		mockedAuditor := getMockAuditor()
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, mockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "No observations found\n")
@@ -500,6 +596,11 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionUnsuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
 	})
 
 	Convey("When requested query has a multi-valued dimension return bad request", t, func() {
@@ -547,7 +648,9 @@ func TestGetObservationsReturnsError(t *testing.T) {
 
 		mockedObservationStore := &mocks.ObservationStoreMock{}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), mockedObservationStore)
+		mockedAuditor := getMockAuditor()
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, mockedObservationStore)
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "Multi-valued query parameters for the following dimensions: [geography]\n")
@@ -556,6 +659,162 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 0)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionUnsuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+	})
+
+	// Fail to successfully audit attempted/unsuccessful/successful actions
+	Convey("When the dataset does not exist return status internal server error due to failing to audit request/action", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+		}
+
+		mockedAuditor := getMockAuditor()
+		mockedAuditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if result == actionUnsuccessful {
+				return errors.New("failed to audit action")
+			}
+			return nil
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, &mocks.ObservationStoreMock{})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionUnsuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+	})
+
+	Convey("A valid request to get a single observation for a version of a dataset returns 500 internal server error due to failing to audit request/action", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
+			},
+		}
+
+		mockedAuditor := getMockAuditor()
+		mockedAuditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if result == actionAttempted {
+				return errors.New("failed to audit action")
+			}
+			return nil
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, &mocks.ObservationStoreMock{})
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 1)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+	})
+
+	Convey("A valid request to get a single observation for a version of a dataset returns 500 internal server error due to failing to audit successful action", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
+		w := httptest.NewRecorder()
+
+		dimensions := []models.CodeList{
+			models.CodeList{
+				Name: "aggregate",
+				HRef: "http://localhost:8081/code-lists/cpih1dim1aggid",
+			},
+			models.CodeList{
+				Name: "geography",
+				HRef: "http://localhost:8081/code-lists/uk-only",
+			},
+			models.CodeList{
+				Name: "time",
+				HRef: "http://localhost:8081/code-lists/time",
+			},
+		}
+		usagesNotes := &[]models.UsageNote{models.UsageNote{Title: "data_marking", Note: "this marks the obsevation with a special character"}}
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return nil
+			},
+			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					Dimensions: dimensions,
+					Headers:    []string{"v4_2", "data_marking", "confidence_interval", "aggregate_code", "aggregate", "geography_code", "geography", "time", "time"},
+					Links: &models.VersionLinks{
+						Version: &models.LinkObject{
+							HRef: "http://localhost:8080/datasets/cpih012/editions/2017/versions/1",
+							ID:   "1",
+						},
+					},
+					State:      models.PublishedState,
+					UsageNotes: usagesNotes,
+				}, nil
+			},
+		}
+
+		count := 0
+		mockRowReader := &mocks.CSVRowReaderMock{
+			ReadFunc: func() (string, error) {
+				if count == 0 {
+					count++
+					return "v4_2,data_marking,confidence_interval,time,time,geography_code,geography,aggregate_code,aggregate", nil
+				} else if count == 1 {
+					count++
+					return "146.3,p,2,Month,Aug-16,K02000001,,cpi1dim1G10100,01.1 Food", nil
+				}
+				return "", io.EOF
+			},
+			CloseFunc: func() error {
+				return nil
+			},
+		}
+
+		mockedObservationStore := &mocks.ObservationStoreMock{
+			GetCSVRowsFunc: func(*observation.Filter, *int) (observation.CSVRowReader, error) {
+				return mockRowReader, nil
+			},
+		}
+
+		mockedAuditor := getMockAuditor()
+		mockedAuditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
+			if result == actionSuccessful {
+				return errors.New("failed to audit action")
+			}
+			return nil
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockedAuditor, mockedObservationStore)
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
+		So(len(mockRowReader.ReadCalls()), ShouldEqual, 3)
+
+		recCalls := mockedAuditor.RecordCalls()
+		So(len(recCalls), ShouldEqual, 2)
+		verifyAuditRecordCalls(recCalls[0], getObservationsAction, actionAttempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
+		verifyAuditRecordCalls(recCalls[1], getObservationsAction, actionSuccessful, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
 	})
 }
 

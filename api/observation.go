@@ -13,6 +13,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-filter/observation"
+	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
 )
@@ -24,6 +25,8 @@ import (
 const (
 	defaultObservationLimit = 10000
 	defaultOffset           = 0
+
+	getObservationsAction = "getObservations"
 )
 
 func errorIncorrectQueryParameters(params []string) error {
@@ -50,11 +53,21 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 	version := vars["version"]
 
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
+	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": version}
+
+	if auditErr := api.auditor.Record(r.Context(), getObservationsAction, actionAttempted, auditParams); auditErr != nil {
+		handleAuditingFailure(w, auditErr, logData)
+		return
+	}
 
 	// get dataset document
 	datasetDoc, err := api.dataStore.Backend.GetDataset(datasetID)
 	if err != nil {
 		log.Error(err, logData)
+		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, actionUnsuccessful, auditParams); auditErr != nil {
+			handleAuditingFailure(w, auditErr, logData)
+			return
+		}
 		handleObservationsErrorType(w, err)
 		return
 	}
@@ -72,6 +85,10 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 		if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
 			logData["dataset_doc"] = datasetDoc.Current
 			log.ErrorC("found no published dataset", errs.ErrDatasetNotFound, logData)
+			if auditErr := api.auditor.Record(r.Context(), getObservationsAction, actionUnsuccessful, auditParams); auditErr != nil {
+				handleAuditingFailure(w, auditErr, logData)
+				return
+			}
 			http.Error(w, errs.ErrDatasetNotFound.Error(), http.StatusNotFound)
 			return
 		}
@@ -84,6 +101,10 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 
 	if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
 		log.ErrorC("failed to find edition for dataset", err, logData)
+		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, actionUnsuccessful, auditParams); auditErr != nil {
+			handleAuditingFailure(w, auditErr, logData)
+			return
+		}
 		handleObservationsErrorType(w, err)
 		return
 	}
@@ -91,6 +112,10 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 	versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
 	if err != nil {
 		log.ErrorC("failed to find version for dataset edition", err, logData)
+		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, actionUnsuccessful, auditParams); auditErr != nil {
+			handleAuditingFailure(w, auditErr, logData)
+			return
+		}
 		handleObservationsErrorType(w, err)
 		return
 	}
@@ -98,6 +123,10 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 	if err = models.CheckState("version", versionDoc.State); err != nil {
 		logData["state"] = versionDoc.State
 		log.ErrorC("unpublished version has an invalid state", err, logData)
+		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, actionUnsuccessful, auditParams); auditErr != nil {
+			handleAuditingFailure(w, auditErr, logData)
+			return
+		}
 		handleObservationsErrorType(w, err)
 		return
 	}
@@ -105,6 +134,10 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 	if versionDoc.Headers == nil {
 		logData["version_doc"] = versionDoc
 		log.Error(errs.ErrMissingVersionHeaders, logData)
+		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, actionUnsuccessful, auditParams); auditErr != nil {
+			handleAuditingFailure(w, auditErr, logData)
+			return
+		}
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
@@ -113,6 +146,10 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 	validDimensionNames, dimensionOffset, err := getListOfValidDimensionNames(versionDoc.Headers)
 	if err != nil {
 		log.ErrorC("unable to distinguish headers from version document", err, logData)
+		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, actionUnsuccessful, auditParams); auditErr != nil {
+			handleAuditingFailure(w, auditErr, logData)
+			return
+		}
 		handleObservationsErrorType(w, err)
 		return
 	}
@@ -121,6 +158,11 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 	// check query parameters match the version headers
 	queryParameters, err := extractQueryParameters(r.URL.Query(), validDimensionNames)
 	if err != nil {
+		log.Error(err, logData)
+		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, actionUnsuccessful, auditParams); auditErr != nil {
+			handleAuditingFailure(w, auditErr, logData)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -130,11 +172,20 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 	observations, err := api.getObservationList(versionDoc, queryParameters, defaultObservationLimit, dimensionOffset, logData)
 	if err != nil {
 		log.ErrorC("unable to retrieve observations", err, logData)
+		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, actionUnsuccessful, auditParams); auditErr != nil {
+			handleAuditingFailure(w, auditErr, logData)
+			return
+		}
 		handleObservationsErrorType(w, err)
 		return
 	}
 
 	observationsDoc := models.CreateObservationsDoc(r.URL.RawQuery, versionDoc, dataset, observations, queryParameters, defaultOffset, defaultObservationLimit)
+
+	if auditErr := api.auditor.Record(r.Context(), getObservationsAction, actionSuccessful, auditParams); auditErr != nil {
+		handleAuditingFailure(w, auditErr, logData)
+		return
+	}
 
 	setJSONContentType(w)
 
