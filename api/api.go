@@ -52,10 +52,10 @@ type DatasetAPI struct {
 // CreateDatasetAPI manages all the routes configured to API
 func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadsGenerator DownloadsGenerator, auditor Auditor, observationStore ObservationStore) {
 	router := mux.NewRouter()
-	api := routes(cfg, router, dataStore, urlBuilder, downloadsGenerator, auditor, observationStore)
+	routes(cfg, router, dataStore, urlBuilder, downloadsGenerator, auditor, observationStore)
 
-	healthCheckHandler := healthcheck.NewMiddleware(api.healthCheck)
-	middleware := alice.New(healthCheckHandler)
+	healthcheckHandler := healthcheck.NewMiddleware(healthcheck.Do)
+	middleware := alice.New(healthcheckHandler)
 
 	// Only add the identity middleware when running in publishing.
 	if cfg.EnablePrivateEnpoints {

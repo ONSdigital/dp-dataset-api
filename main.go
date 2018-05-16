@@ -16,11 +16,13 @@ import (
 	"github.com/ONSdigital/dp-filter/observation"
 
 	"github.com/ONSdigital/go-ns/audit"
+	"github.com/ONSdigital/go-ns/healthcheck"
 	"github.com/ONSdigital/go-ns/kafka"
+	neo4jhealth "github.com/ONSdigital/go-ns/neo4j"
 
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/log"
-	mongoclosure "github.com/ONSdigital/go-ns/mongo"
+	mongolib "github.com/ONSdigital/go-ns/mongo"
 	"github.com/pkg/errors"
 
 	bolt "github.com/ONSdigital/golang-neo4j-bolt-driver"
@@ -99,6 +101,12 @@ func main() {
 		Marshaller: schema.GenerateDownloadsEvent,
 	}
 
+	healthTicker := healthcheck.NewTicker(
+		cfg.HealthCheckInterval,
+		neo4jhealth.NewHealthCheckClient(neo4jConnPool),
+		mongolib.NewHealthCheckClient(mongo.Session),
+	)
+
 	apiErrors := make(chan error, 1)
 
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
@@ -113,7 +121,9 @@ func main() {
 		// stop any incoming requests before closing any outbound connections
 		api.Close(ctx)
 
-		if err = mongoclosure.Close(ctx, session); err != nil {
+		healthTicker.Close()
+
+		if err = mongolib.Close(ctx, session); err != nil {
 			log.Error(err, nil)
 		}
 
