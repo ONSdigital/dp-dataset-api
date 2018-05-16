@@ -356,7 +356,7 @@ func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParam
 		if wildcardParameter != "" {
 			dimensions := make(map[string]*models.DimensionObject)
 
-			for i := dimensionOffset + 1; i < len(observationRowArray); i++ {
+			for i := dimensionOffset + 2; i < len(observationRowArray); i += 2 {
 
 				if strings.ToLower(headerRowArray[i]) == wildcardParameter {
 					for _, versionDimension := range versionDoc.Dimensions {
