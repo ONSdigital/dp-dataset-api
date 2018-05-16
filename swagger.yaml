@@ -21,7 +21,7 @@ parameters:
     required: true
     type: string
   dimension_options:
-    description: "The name of the dimension option and a single value; each option (dimension) and corresponding value (code) must exist against the version - e.g. `age=30`"
+    description: "The name of the dimension option and a single value; each option (dimension) and corresponding value (code) must exist against the version - e.g. `age=30` or one of the dimension options can be represented by a wildcard value `*` e.g. `geography=*`"
     name: "<dimension_options>"
     in: query
     required: true
@@ -251,7 +251,7 @@ paths:
           schema:
             $ref: '#/definitions/NewDatasetResponse'
         400:
-          description: "Bad Request due to invalid json in request body"
+          description: "Bad Request due to invalid json in the request body"
         401:
           description: "Unauthorised to update dataset"
         404:
@@ -1918,7 +1918,7 @@ definitions:
         properties:
           <dimension name>:
             type: object
-            description: "Each anonymous field (<dimension name>) will represent a query parameter in request unless the query parameter is equal to a wildcard value (*)"
+            description: "Each field is a dimension (<dimension name>) and will represent a query parameter in the request unless the query parameter is equal to a wildcard value (*)"
             properties:
               option:
                 description: "A list of links to the corresponding dimension codes for the given `dimension_options`"
@@ -1929,11 +1929,11 @@ definitions:
                     type: string
                     example: "http://localhost:8080/codelists/AB12CD34/codes/K02000001"
                   id:
-                    description: "The id to the corresponding dimension code for the given `dimension_option`"
+                    description: "The id of the corresponding dimension code for the given `dimension_option`"
                     type: string
       limit:
-        description: "The maximum number of observations requested when filtering on query parameters (limited to 10000). If no limit is specified in request, value defaults to the maximum limit of 10000"
-        type: integer 
+        description: "The maximum number of observations requested when filtering on query parameters (limited to 10000). Defaults to 10000 observations."
+        type: integer
       links:
         $ref: '#/definitions/ObservationLinks'
       observations:
@@ -1942,19 +1942,19 @@ definitions:
         items:
           properties:
             dimensions:
-              description: "Contains a list of dimension objects associated with observation. Each dimension combined with the top level list of dimensions result in this single observation only"
+              description: "Contains a list of dimension objects associated with an observation. Each dimension combined with the top level list of dimensions result in this single observation only"
               type: object
               properties:
                 <dimension name>:
                   type: object
-                  description: "Each anonymous field (<dimension name>) will represent a query parameter in request as long as the query parameter is equal to a wildcard value (*)"
+                  description: "Each field is a dimension (<dimension name>) and will represent a query parameter in the request as long as the query parameter is equal to a wildcard value (*)"
                   properties:
                     href:
                       description: "A link to the corresponding dimension code for the given `dimension_option`"
                       example: "http://localhost:8080/codelists/AB12CD34/codes/K02000001"
                       type: string
                     id:
-                      description: "The id to the corresponding dimension code for the given `dimension_option`"
+                      description: "The id of the corresponding dimension code for the given `dimension_option`"
                       type: "string"
                     label:
                       description: "The label corresponding to the dimension code for the given `dimension_option`"
@@ -1968,7 +1968,7 @@ definitions:
                   <key>:
                     description: "A single metadata key-value pair related to the observation found against version of a dataset, for example 'coefficients of variation' or 'data marking'"
                     type: string
-            observation: 
+            observation:
               description: "The observation value for the selection of query parameters (dimensions) chosen"
               type: string
           required: [observation]
@@ -1976,9 +1976,9 @@ definitions:
         description: "The offset into the entire list of observations found"
         type: integer
       total_observations:
-        description: "The number of observations found "
+        description: "The number of observations found"
         type: integer
-      unit_of_measure: 
+      unit_of_measure:
         description: "The unit of measure for the dataset observations"
         type: string
       usage_notes:

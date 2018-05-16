@@ -85,7 +85,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 	dataset, err := api.dataStore.Backend.GetDataset(id)
 	if err != nil {
-		log.Error(err, log.Data{"dataset_id": id})
+		log.Error(err, logData)
 		if auditErr := api.auditor.Record(r.Context(), getDatasetAction, actionUnsuccessful, auditParams); auditErr != nil {
 			handleAuditingFailure(w, auditErr, logData)
 			return
@@ -144,10 +144,12 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
 
+	// TODO Could just do an insert, if dataset already existed we would get a duplicate key error
+	// instead of reading then writing doc
 	_, err := api.dataStore.Backend.GetDataset(datasetID)
 	if err != nil {
 		if err != errs.ErrDatasetNotFound {
-			log.ErrorC("failed to find dataset", err, log.Data{"dataset_id": datasetID})
+			log.ErrorC("failed to check if dataset exists", err, log.Data{"dataset_id": datasetID})
 			handleErrorType(datasetDocType, err, w)
 			return
 		}
