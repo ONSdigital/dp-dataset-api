@@ -182,9 +182,10 @@ func extractQueryParameters(urlQuery url.Values, validDimensions []string) (map[
 	for dimension, option := range urlQuery {
 		queryParamExists := false
 		for _, validDimension := range validDimensions {
-			if dimension == validDimension {
+			// Ignore case sensitivity
+			if strings.ToLower(dimension) == strings.ToLower(validDimension) {
 				queryParamExists = true
-				queryParameters[dimension] = option[0]
+				queryParameters[validDimension] = option[0]
 				if len(option) != 1 {
 					multivaluedQueryParameters = append(multivaluedQueryParameters, dimension)
 				}
@@ -232,7 +233,7 @@ func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParam
 				return nil, errs.ErrTooManyWildcards
 			}
 
-			wildcardParameter = dimension
+			wildcardParameter = strings.ToLower(dimension)
 			continue
 		}
 
@@ -309,9 +310,9 @@ func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParam
 
 				if strings.ToLower(headerRowArray[i]) == wildcardParameter {
 					for _, versionDimension := range versionDoc.Dimensions {
-						if versionDimension.Name == wildcardParameter {
+						if strings.ToLower(versionDimension.Name) == wildcardParameter {
 
-							dimensions[headerRowArray[i]] = &models.DimensionObject{
+							dimensions[strings.ToLower(headerRowArray[i])] = &models.DimensionObject{
 								ID:    observationRowArray[i-1],
 								HRef:  versionDimension.HRef + "/codes/" + observationRowArray[i-1],
 								Label: observationRowArray[i],
