@@ -19,6 +19,13 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+var (
+	dimension1 = models.CodeList{Name: "aggregate"}
+	dimension2 = models.CodeList{Name: "geography"}
+	dimension3 = models.CodeList{Name: "time"}
+	dimension4 = models.CodeList{Name: "age"}
+)
+
 func TestGetObservationsReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("A successful request to get a single observation for a version of a dataset returns 200 OK response", t, func() {
@@ -317,7 +324,37 @@ func TestGetObservationsReturnsError(t *testing.T) {
 				return nil
 			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
-				return &models.Version{State: models.PublishedState}, nil
+				return &models.Version{
+					Dimensions: []models.CodeList{dimension1, dimension2, dimension3},
+					State:      models.PublishedState,
+				}, nil
+			},
+		}
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		api.router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+	})
+
+	Convey("When a version document has not got any dimensions field return an internal server error", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
+			},
+			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+				return nil
+			},
+			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+				return &models.Version{
+					Headers: []string{"v4_0", "time_code", "time", "aggregate_code", "aggregate"},
+					State:   models.PublishedState,
+				}, nil
 			},
 		}
 
@@ -341,7 +378,11 @@ func TestGetObservationsReturnsError(t *testing.T) {
 				return nil
 			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
-				return &models.Version{Headers: []string{"v4"}, State: models.PublishedState}, nil
+				return &models.Version{
+					Dimensions: []models.CodeList{dimension1, dimension2, dimension3},
+					Headers:    []string{"v4"},
+					State:      models.PublishedState,
+				}, nil
 			},
 		}
 
@@ -366,7 +407,11 @@ func TestGetObservationsReturnsError(t *testing.T) {
 				return nil
 			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
-				return &models.Version{Headers: []string{"v4_0", "time_code", "time", "aggregate_code", "aggregate"}, State: models.PublishedState}, nil
+				return &models.Version{
+					Dimensions: []models.CodeList{dimension1, dimension3},
+					Headers:    []string{"v4_0", "time_code", "time", "aggregate_code", "aggregate"},
+					State:      models.PublishedState,
+				}, nil
 			},
 		}
 
@@ -391,7 +436,11 @@ func TestGetObservationsReturnsError(t *testing.T) {
 				return nil
 			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
-				return &models.Version{Headers: []string{"v4_0", "time_code", "time", "aggregate_code", "aggregate", "geography_code", "geography", "age_code", "age"}, State: models.PublishedState}, nil
+				return &models.Version{
+					Dimensions: []models.CodeList{dimension1, dimension2, dimension3, dimension4},
+					Headers:    []string{"v4_0", "time_code", "time", "aggregate_code", "aggregate", "geography_code", "geography", "age_code", "age"},
+					State:      models.PublishedState,
+				}, nil
 			},
 		}
 
@@ -416,7 +465,11 @@ func TestGetObservationsReturnsError(t *testing.T) {
 				return nil
 			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
-				return &models.Version{Headers: []string{"v4_0", "time_code", "time", "aggregate_code", "aggregate", "geography_code", "geography"}, State: models.PublishedState}, nil
+				return &models.Version{
+					Dimensions: []models.CodeList{dimension1, dimension2, dimension3},
+					Headers:    []string{"v4_0", "time_code", "time", "aggregate_code", "aggregate", "geography_code", "geography"},
+					State:      models.PublishedState,
+				}, nil
 			},
 		}
 
@@ -441,7 +494,12 @@ func TestGetObservationsReturnsError(t *testing.T) {
 				return nil
 			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
-				return &models.Version{Headers: []string{"v4_0", "time_code", "time", "aggregate_code", "aggregate", "geography_code", "geography"}, State: models.PublishedState}, nil
+				return &models.Version{
+						Dimensions: []models.CodeList{dimension1, dimension2, dimension3},
+						Headers:    []string{"v4_0", "time_code", "time", "aggregate_code", "aggregate", "geography_code", "geography"},
+						State:      models.PublishedState,
+					},
+					nil
 			},
 		}
 
@@ -521,6 +579,38 @@ func TestGetObservationsReturnsError(t *testing.T) {
 
 func TestGetListOfValidDimensionNames(t *testing.T) {
 	t.Parallel()
+	Convey("Given a list of valid dimension codelist objects", t, func() {
+		Convey("When getListOfValidDimensionNames is called", func() {
+			dimension1 := models.CodeList{
+				Name: "time",
+			}
+
+			dimension2 := models.CodeList{
+				Name: "aggregate",
+			}
+
+			dimension3 := models.CodeList{
+				Name: "geography",
+			}
+
+			version := &models.Version{
+				Dimensions: []models.CodeList{dimension1, dimension2, dimension3},
+			}
+
+			Convey("Then func returns the correct number of dimensions", func() {
+				validDimensions := getListOfValidDimensionNames(version.Dimensions)
+
+				So(len(validDimensions), ShouldEqual, 3)
+				So(validDimensions[0], ShouldEqual, "time")
+				So(validDimensions[1], ShouldEqual, "aggregate")
+				So(validDimensions[2], ShouldEqual, "geography")
+			})
+		})
+	})
+}
+
+func TestGetDimensionOffsetInHeaderRow(t *testing.T) {
+	t.Parallel()
 	Convey("Given the version headers are valid", t, func() {
 		Convey("When the version has no metadata headers", func() {
 			version := &models.Version{
@@ -536,14 +626,10 @@ func TestGetListOfValidDimensionNames(t *testing.T) {
 			}
 
 			Convey("Then getListOfValidDimensionNames func returns the correct number of headers", func() {
-				dimensionOptions, dimensionOffset, err := getListOfValidDimensionNames(version.Headers)
+				dimensionOffset, err := getDimensionOffsetInHeaderRow(version.Headers)
 
 				So(err, ShouldBeNil)
 				So(dimensionOffset, ShouldEqual, 0)
-				So(len(dimensionOptions), ShouldEqual, 3)
-				So(dimensionOptions[0], ShouldEqual, "time")
-				So(dimensionOptions[1], ShouldEqual, "Aggregate")
-				So(dimensionOptions[2], ShouldEqual, "geography")
 			})
 		})
 
@@ -559,12 +645,10 @@ func TestGetListOfValidDimensionNames(t *testing.T) {
 			}
 
 			Convey("Then getListOfValidDimensionNames func returns the correct number of headers", func() {
-				dimensionOptions, dimensionOffset, err := getListOfValidDimensionNames(version.Headers)
+				dimensionOffset, err := getDimensionOffsetInHeaderRow(version.Headers)
 
 				So(err, ShouldBeNil)
 				So(dimensionOffset, ShouldEqual, 2)
-				So(len(dimensionOptions), ShouldEqual, 1)
-				So(dimensionOptions[0], ShouldEqual, "time")
 			})
 		})
 	})
@@ -583,12 +667,11 @@ func TestGetListOfValidDimensionNames(t *testing.T) {
 				},
 			}
 			Convey("Then function returns error, `index out of range`", func() {
-				dimensionOptions, dimensionOffset, err := getListOfValidDimensionNames(version.Headers)
+				dimensionOffset, err := getDimensionOffsetInHeaderRow(version.Headers)
 
 				So(err, ShouldNotBeNil)
-				So(dimensionOffset, ShouldEqual, 0)
 				So(err.Error(), ShouldResemble, "index out of range")
-				So(dimensionOptions, ShouldBeNil)
+				So(dimensionOffset, ShouldEqual, 0)
 			})
 		})
 	})
@@ -607,12 +690,11 @@ func TestGetListOfValidDimensionNames(t *testing.T) {
 				},
 			}
 			Convey("Then function returns error, `index out of range`", func() {
-				dimensionOptions, dimensionOffset, err := getListOfValidDimensionNames(version.Headers)
+				dimensionOffset, err := getDimensionOffsetInHeaderRow(version.Headers)
 
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldResemble, "strconv.Atoi: parsing \"one\": invalid syntax")
 				So(dimensionOffset, ShouldEqual, 0)
-				So(dimensionOptions, ShouldBeNil)
 			})
 		})
 	})
@@ -670,6 +752,21 @@ func TestExtractQueryParameters(t *testing.T) {
 				queryParameters, err := extractQueryParameters(r.URL.Query(), headers)
 				So(err, ShouldNotBeNil)
 				So(err, ShouldResemble, errorIncorrectQueryParameters([]string{"age"}))
+				So(queryParameters, ShouldBeNil)
+			})
+		})
+
+		Convey("When a request is made containing all query parameters for each dimensions/headers but there is a duplicate", func() {
+			r, err := http.NewRequest("GET",
+				"http://localhost:22000/datasets/123/editions/2017/versions/1/observations?time=JAN08&aggregate=Food&geography=wales&time=JAN0",
+				nil,
+			)
+			So(err, ShouldBeNil)
+
+			Convey("Then extractQueryParameters func returns an error", func() {
+				queryParameters, err := extractQueryParameters(r.URL.Query(), headers)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldResemble, errorMultivaluedQueryParameters([]string{"time"}))
 				So(queryParameters, ShouldBeNil)
 			})
 		})
