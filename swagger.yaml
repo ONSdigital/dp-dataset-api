@@ -5,7 +5,8 @@ info:
   Data in each version is broken down by `dimensions`, and a unique combination
   of dimension `options` in a version can be used to retrieve `observation` level data."
   version: "1.0.0"
-  title: "Find data"
+  title: "Dataset API"
+  x-label: "Find data"
   license:
     name: "Open Government Licence v3.0"
     url: "http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
