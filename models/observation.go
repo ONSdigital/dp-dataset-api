@@ -1,5 +1,7 @@
 package models
 
+import "strings"
+
 const wildcard = "*"
 
 // ObservationsDoc represents information (observations) relevant to a version
@@ -72,14 +74,15 @@ func CreateObservationsDoc(rawQuery string, versionDoc *Version, datasetDoc *Dat
 	for paramKey, paramValue := range queryParameters {
 		for _, dimension := range versionDoc.Dimensions {
 			var linkObjects []*LinkObject
-			if dimension.Name == paramKey && paramValue != wildcard {
+			// Ignore case sensitivity
+			if strings.ToLower(dimension.Name) == strings.ToLower(paramKey) && paramValue != wildcard {
 
 				linkObject := &LinkObject{
 					HRef: dimension.HRef + "/codes/" + paramValue,
 					ID:   paramValue,
 				}
 				linkObjects = append(linkObjects, linkObject)
-				dimensions[paramKey] = Option{
+				dimensions[strings.ToLower(paramKey)] = Option{
 					LinkObject: linkObject,
 				}
 				break
