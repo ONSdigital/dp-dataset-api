@@ -28,9 +28,7 @@ var (
 
 func TestGetObservationsReturnsOK(t *testing.T) {
 	t.Parallel()
-	Convey("A successful request to get a single observation for a version of a dataset returns 200 OK response", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
-		w := httptest.NewRecorder()
+	Convey("Given a request to get a single observation for a version of a dataset returns 200 OK response", t, func() {
 
 		dimensions := []models.CodeList{
 			models.CodeList{
@@ -94,15 +92,36 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), mockedObservationStore)
-		api.router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusOK)
-		So(w.Body.String(), ShouldContainSubstring, getTestData("expectedDocWithSingleObservation"))
 
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
-		So(len(mockRowReader.ReadCalls()), ShouldEqual, 3)
+		Convey("When request contains query parameters where the dimension name is in lower casing", func() {
+			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
+			w := httptest.NewRecorder()
+
+			api.router.ServeHTTP(w, r)
+			So(w.Code, ShouldEqual, http.StatusOK)
+			So(w.Body.String(), ShouldContainSubstring, getTestData("expectedDocWithSingleObservation"))
+
+			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+			So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
+			So(len(mockRowReader.ReadCalls()), ShouldEqual, 3)
+		})
+
+		Convey("When request contains query parameters where the dimension name is in upper casing", func() {
+			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&AggregaTe=cpi1dim1S40403&GEOGRAPHY=K02000001", nil)
+			w := httptest.NewRecorder()
+
+			api.router.ServeHTTP(w, r)
+			So(w.Code, ShouldEqual, http.StatusOK)
+			So(w.Body.String(), ShouldContainSubstring, getTestData("expectedSecondDocWithSingleObservation"))
+
+			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+			So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
+			So(len(mockRowReader.ReadCalls()), ShouldEqual, 3)
+		})
 	})
 
 	Convey("A successful request to get multiple observations via a wildcard for a version of a dataset returns 200 OK response", t, func() {
