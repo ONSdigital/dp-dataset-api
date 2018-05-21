@@ -7,7 +7,16 @@ A ONS API used to navigate datasets, editions and versions - which are published
 #### Database
 * Run `brew install mongo`
 * Run `brew services start mongodb`
-* Run `./scripts/InitDatabase.sh`
+
+* Run `brew install neo4j`
+* Configure neo4j, edit `/usr/local/Cellar/neo4j/3.2.0/libexec/conf/neo4j.conf`
+* Set `dbms.security.auth_enabled=false`
+* Run `brew services restart neo4j`
+
+#### Getting started
+
+* Run api auth stub, [see documentation](https://github.com/ONSdigital/dp-auth-api-stub)
+* Run `make debug`
 
 ### State changes
 
@@ -23,9 +32,9 @@ Normal sequential order of states:
 5. `associated` (only on *version*) - dataset `next` sub-document will be updated again and so will the *edition*
 6. `published` (only on *version*) - both *edition* and *dataset* are updated - must not be changed
 
-There is the possibility to **rollback** from `associate`  to `edition-confirmed`
+There is the possibility to **rollback** from `associated`  to `edition-confirmed`
 where a PST user has attached the _version_ to the wrong collection and so not only does
-the `collection_id` need to be updated with the new one (or removed all together)
+the `collection_id` need to be updated with the new one (or removed altogether)
 but the state will need to revert back to `edition-confirmed`.
 
 Lastly, **skipping a state**: it is possibly to jump from `edition-confirmed` to `published`
@@ -47,6 +56,8 @@ one of:
 | Environment variable        | Default                                | Description
 | --------------------------- | ---------------------------------------| -----------
 | BIND_ADDR                   | :22000                                 | The host and port to bind to
+| NEO4J_BIND_ADDRESS          | bolt://localhost:7687                  | The address of the neo4j database to retrieve dataset data from
+| NEO4J_POOL_SIZE             | 5                                      | The number of neo4j connections to pool
 | MONGODB_BIND_ADDR           | localhost:27017                        | The MongoDB bind address
 | MONGODB_DATABASE            | datasets                               | The MongoDB dataset database
 | MONGODB_COLLECTION          | datasets                               | MongoDB collection
@@ -55,8 +66,9 @@ one of:
 | DATASET_API_URL             | http://localhost:22000                 | The host name for the Dataset API
 | GRACEFUL_SHUTDOWN_TIMEOUT   | 5s                                     | The graceful shutdown timeout in seconds
 | WEBSITE_URL                 | http://localhost:20000                 | The host name for the website
-| KAFKA_ADDR                  | "localhost:9092"                       | The list of kafka hosts
-| GENERATE_DOWNLOADS_TOPIC    | "filter-job-submitted"                 | The topic to send generate full dataset version downloads to
+| KAFKA_ADDR                  | localhost:9092                         | The list of kafka hosts
+| GENERATE_DOWNLOADS_TOPIC    | filter-job-submitted                   | The topic to send generate full dataset version downloads to
+| HEALTHCHECK_INTERVAL       | 30s                                       | Time between self-healthchecks (`time.Duration` format)
 | HEALTHCHECK_TIMEOUT         | 2s                                     | The timeout that the healthcheck allows for checked subsystems
 | ENABLE_PRIVATE_ENDPOINTS    | false                                  | Enable private endpoints for the API
 | DOWNLOAD_SERVICE_SECRET_KEY | QB0108EZ-825D-412C-9B1D-41EF7747F462   | A key specific for the download service to access public/private links

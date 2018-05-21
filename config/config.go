@@ -11,6 +11,7 @@ import (
 type Configuration struct {
 	BindAddr                 string        `envconfig:"BIND_ADDR"`
 	KafkaAddr                []string      `envconfig:"KAFKA_ADDR"                       json:"-"`
+	AuditEventsTopic         string        `envconfig:"AUDIT_EVENTS_TOPIC"`
 	GenerateDownloadsTopic   string        `envconfig:"GENERATE_DOWNLOADS_TOPIC"`
 	CodeListAPIURL           string        `envconfig:"CODE_LIST_API_URL"`
 	DatasetAPIURL            string        `envconfig:"DATASET_API_URL"`
@@ -19,8 +20,11 @@ type Configuration struct {
 	DownloadServiceSecretKey string        `envconfig:"DOWNLOAD_SERVICE_SECRET_KEY"      json:"-"`
 	ServiceAuthToken         string        `envconfig:"SERVICE_AUTH_TOKEN"               json:"-"`
 	GracefulShutdownTimeout  time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
+	HealthCheckInterval      time.Duration `envconfig:"HEALTHCHECK_INTERVAL"`
 	HealthCheckTimeout       time.Duration `envconfig:"HEALTHCHECK_TIMEOUT"`
 	EnablePrivateEnpoints    bool          `envconfig:"ENABLE_PRIVATE_ENDPOINTS"`
+	Neo4jBindAddress         string        `envconfig:"NEO4J_BIND_ADDRESS" json:"-"`
+	Neo4jPoolSize            int           `envconfig:"NEO4J_POOL_SIZE"`
 	MongoConfig              MongoConfig
 }
 
@@ -42,6 +46,7 @@ func Get() (*Configuration, error) {
 	cfg = &Configuration{
 		BindAddr:                 ":22000",
 		KafkaAddr:                []string{"localhost:9092"},
+		AuditEventsTopic:         "audit-events",
 		GenerateDownloadsTopic:   "filter-job-submitted",
 		CodeListAPIURL:           "http://localhost:22400",
 		DatasetAPIURL:            "http://localhost:22000",
@@ -50,8 +55,11 @@ func Get() (*Configuration, error) {
 		ServiceAuthToken:         "FD0108EA-825D-411C-9B1D-41EF7727F465",
 		DownloadServiceSecretKey: "QB0108EZ-825D-412C-9B1D-41EF7747F462",
 		GracefulShutdownTimeout:  5 * time.Second,
+		HealthCheckInterval:      30 * time.Second,
 		HealthCheckTimeout:       2 * time.Second,
 		EnablePrivateEnpoints:    false,
+		Neo4jBindAddress:         "bolt://localhost:7687",
+		Neo4jPoolSize:            5,
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",

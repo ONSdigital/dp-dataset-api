@@ -194,7 +194,6 @@ var associatedVersion = Version{
 
 var publishedVersion = Version{
 	Alerts:        &[]Alert{alert},
-	CollectionID:  collectionID,
 	Dimensions:    []CodeList{dimension},
 	Downloads:     &downloads,
 	Edition:       "2017",

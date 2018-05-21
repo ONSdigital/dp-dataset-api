@@ -148,6 +148,7 @@ type Version struct {
 	Dimensions    []CodeList           `bson:"dimensions,omitempty"     json:"dimensions,omitempty"`
 	Downloads     *DownloadList        `bson:"downloads,omitempty"      json:"downloads,omitempty"`
 	Edition       string               `bson:"edition,omitempty"        json:"edition,omitempty"`
+	Headers       []string             `bson:"headers,omitempty"        json:"-"`
 	ID            string               `bson:"id,omitempty"             json:"id,omitempty"`
 	LatestChanges *[]LatestChange      `bson:"latest_changes,omitempty" json:"latest_changes,omitempty"`
 	Links         *VersionLinks        `bson:"links,omitempty"          json:"links,omitempty"`
@@ -156,7 +157,7 @@ type Version struct {
 	Temporal      *[]TemporalFrequency `bson:"temporal,omitempty"       json:"temporal,omitempty"`
 	LastUpdated   time.Time            `bson:"last_updated,omitempty"   json:"-"`
 	Version       int                  `bson:"version,omitempty"        json:"version,omitempty"`
-	UsageNotes    *[]UsageNote         `bson:"usage_notes,omitempty"     json:"usage_notes,omitempty"`
+	UsageNotes    *[]UsageNote         `bson:"usage_notes,omitempty"    json:"usage_notes,omitempty"`
 }
 
 // Alert represents an object containing information on an alert
@@ -307,22 +308,21 @@ func CreateContact(reader io.Reader) (*Contact, error) {
 
 // ValidateVersion checks the content of the version structure
 func ValidateVersion(version *Version) error {
-	var hasAssociation bool
 
 	switch version.State {
 	case "":
 		return errs.ErrVersionMissingState
 	case EditionConfirmedState:
-	case AssociatedState:
-		hasAssociation = true
 	case PublishedState:
-		hasAssociation = true
+		if version.CollectionID != "" {
+			return errors.New("Unexpected collection_id in published version")
+		}
+	case AssociatedState:
+		if version.CollectionID == "" {
+			return errors.New("Missing collection_id for association between version and a collection")
+		}
 	default:
 		return errors.New("Incorrect state, can be one of the following: edition-confirmed, associated or published")
-	}
-
-	if hasAssociation && version.CollectionID == "" {
-		return errors.New("Missing collection_id for association between version and a collection")
 	}
 
 	var missingFields []string
@@ -335,7 +335,7 @@ func ValidateVersion(version *Version) error {
 	if version.Downloads != nil {
 		if version.Downloads.XLS != nil {
 			if version.Downloads.XLS.HRef == "" {
-				missingFields = append(missingFields, "Downloads.XLS.URL")
+				missingFields = append(missingFields, "Downloads.XLS.HRef")
 			}
 			if version.Downloads.XLS.Size == "" {
 				missingFields = append(missingFields, "Downloads.XLS.Size")
@@ -347,7 +347,7 @@ func ValidateVersion(version *Version) error {
 
 		if version.Downloads.CSV != nil {
 			if version.Downloads.CSV.HRef == "" {
-				missingFields = append(missingFields, "Downloads.CSV.URL")
+				missingFields = append(missingFields, "Downloads.CSV.HRef")
 			}
 			if version.Downloads.CSV.Size == "" {
 				missingFields = append(missingFields, "Downloads.CSV.Size")

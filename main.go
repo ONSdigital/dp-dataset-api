@@ -13,13 +13,19 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-filter/observation"
 
+	"github.com/ONSdigital/go-ns/audit"
+	"github.com/ONSdigital/go-ns/healthcheck"
 	"github.com/ONSdigital/go-ns/kafka"
+	neo4jhealth "github.com/ONSdigital/go-ns/neo4j"
 
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/log"
-	mongoclosure "github.com/ONSdigital/go-ns/mongo"
+	mongolib "github.com/ONSdigital/go-ns/mongo"
 	"github.com/pkg/errors"
+
+	bolt "github.com/ONSdigital/golang-neo4j-bolt-driver"
 )
 
 func main() {
@@ -40,6 +46,24 @@ func main() {
 	if err != nil {
 		log.Error(errors.Wrap(err, "error creating kakfa producer"), nil)
 		os.Exit(1)
+	}
+
+	var auditor audit.AuditorService
+	var auditProducer kafka.Producer
+
+	if cfg.EnablePrivateEnpoints {
+		log.Info("private endpoints enabled, enabling action auditing", log.Data{"auditTopicName": cfg.AuditEventsTopic})
+
+		auditProducer, err = kafka.NewProducer(cfg.KafkaAddr, cfg.AuditEventsTopic, 0)
+		if err != nil {
+			log.Error(errors.Wrap(err, "error creating kakfa audit producer"), nil)
+			os.Exit(1)
+		}
+
+		auditor = audit.New(auditProducer, "dp-dataset-api")
+	} else {
+		log.Info("private endpoints disabled, auditing will not be enabled", nil)
+		auditor = &audit.NopAuditor{}
 	}
 
 	mongo := &mongo.Mongo{
@@ -64,16 +88,30 @@ func main() {
 
 	store := store.DataStore{Backend: mongo}
 
+	neo4jConnPool, err := bolt.NewClosableDriverPool(cfg.Neo4jBindAddress, cfg.Neo4jPoolSize)
+	if err != nil {
+		log.ErrorC("failed to connect to neo4j connection pool", err, nil)
+		os.Exit(1)
+	}
+
+	observationStore := observation.NewStore(neo4jConnPool)
+
 	downloadGenerator := &download.Generator{
 		Producer:   generateDownloadsProducer,
 		Marshaller: schema.GenerateDownloadsEvent,
 	}
 
+	healthTicker := healthcheck.NewTicker(
+		cfg.HealthCheckInterval,
+		neo4jhealth.NewHealthCheckClient(neo4jConnPool),
+		mongolib.NewHealthCheckClient(mongo.Session),
+	)
+
 	apiErrors := make(chan error, 1)
 
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
-	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator)
+	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor, observationStore)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {
@@ -83,12 +121,25 @@ func main() {
 		// stop any incoming requests before closing any outbound connections
 		api.Close(ctx)
 
-		if err = mongoclosure.Close(ctx, session); err != nil {
+		healthTicker.Close()
+
+		if err = mongolib.Close(ctx, session); err != nil {
 			log.Error(err, nil)
 		}
 
-		if err := generateDownloadsProducer.Close(ctx); err != nil {
+		if err = neo4jConnPool.Close(); err != nil {
+			log.Error(err, nil)
+		}
+
+		if err = generateDownloadsProducer.Close(ctx); err != nil {
 			log.Error(errors.Wrap(err, "error while attempting to shutdown kafka producer"), nil)
+		}
+
+		if cfg.EnablePrivateEnpoints {
+			log.Debug("exiting audit producer", nil)
+			if err = auditProducer.Close(ctx); err != nil {
+				log.Error(err, nil)
+			}
 		}
 
 		log.Info("shutdown complete", nil)
