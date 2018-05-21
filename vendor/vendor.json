@@ -63,10 +63,16 @@
 			"revisionTime": "2017-11-28T09:28:02Z"
 		},
 		{
-			"checksumSHA1": "4TZpshhXxRKFxKy3PIok84P5cvo=",
+			"checksumSHA1": "7qnU2KaLcrNltdsVw4zWEh4vmTM=",
 			"path": "github.com/ONSdigital/go-ns/mongo",
-			"revision": "6920413b753350672215a083e0f9d5c270a21075",
-			"revisionTime": "2017-11-28T09:28:02Z"
+			"revision": "7d241b721903e1b6a9a1f5c916cdbfa661d230f1",
+			"revisionTime": "2018-05-08T08:56:58Z"
+		},
+		{
+			"checksumSHA1": "rFpFke/Hl7rcH3ND5b4M0idiL0c=",
+			"path": "github.com/ONSdigital/go-ns/neo4j",
+			"revision": "7d241b721903e1b6a9a1f5c916cdbfa661d230f1",
+			"revisionTime": "2018-05-08T08:56:58Z"
 		},
 		{
 			"checksumSHA1": "qIw/Zr/SVxTRbznJGR4upRI4x8M=",
