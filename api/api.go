@@ -38,12 +38,13 @@ const (
 	dimensionOptionDocType = "dimension-option"
 
 	// audit actions
-	getDatasetsAction = "getDatasets"
-	getDatasetAction  = "getDataset"
-	getEditionsAction = "getEditions"
-	getEditionAction  = "getEdition"
-	getVersionsAction = "getVersions"
-	getVersionAction  = "getVersion"
+	getDatasetsAction   = "getDatasets"
+	getDatasetAction    = "getDataset"
+	getEditionsAction   = "getEditions"
+	getEditionAction    = "getEdition"
+	getVersionsAction   = "getVersions"
+	getVersionAction    = "getVersion"
+	deleteDatasetAction = "deleteDataset"
 
 	// audit results
 	actionAttempted    = "attempted"
@@ -183,8 +184,18 @@ func handleErrorType(docType string, err error, w http.ResponseWriter) {
 
 	switch docType {
 	default:
-		if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
+		if err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	case "dataset":
+		if err == errs.ErrDatasetNotFound {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else if err == errs.ErrDeleteDatasetNotFound {
+			http.Error(w, err.Error(), http.StatusNoContent)
+		} else if err == errs.ErrDeletePublishedDatasetForbidden {
+			http.Error(w, err.Error(), http.StatusForbidden)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
