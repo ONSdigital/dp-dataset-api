@@ -5,8 +5,6 @@ import "errors"
 // Error messages for Dataset API
 var (
 	ErrDatasetNotFound                 = errors.New("Dataset not found")
-	ErrDeletePublishedDatasetForbidden = errors.New("Published dataset cannot be deleted") // attempting to delete a published dataset
-	ErrDeleteDatasetNotFound           = errors.New("Dataset not found")                   // attempting to delete a dataset that does not exist
 	ErrEditionNotFound                 = errors.New("Edition not found")
 	ErrVersionNotFound                 = errors.New("Version not found")
 	ErrDimensionNodeNotFound           = errors.New("Dimension node not found")
@@ -22,4 +20,6 @@ var (
 	ErrIndexOutOfRange                 = errors.New("index out of range")
 	ErrMissingVersionHeaders           = errors.New("missing headers from version doc")
 	ErrTooManyWildcards                = errors.New("only one wildcard (*) is allowed as a value in selected query parameters")
+	ErrDeletePublishedDatasetForbidden = errors.New("Published dataset cannot be deleted")
+	ErrDeleteDatasetNotFound           = errors.New("Dataset not found")
 )
