@@ -131,9 +131,9 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if versionDoc.Headers == nil {
+	if versionDoc.Headers == nil || versionDoc.Dimensions == nil {
 		logData["version_doc"] = versionDoc
-		log.Error(errs.ErrMissingVersionHeaders, logData)
+		log.Error(errs.ErrMissingVersionHeadersOrDimensions, logData)
 		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, actionUnsuccessful, auditParams); auditErr != nil {
 			handleAuditingFailure(w, auditErr, logData)
 			return
@@ -142,8 +142,11 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// loop through version headers to retrieve list of dimension names
-	validDimensionNames, dimensionOffset, err := getListOfValidDimensionNames(versionDoc.Headers)
+	// loop through version dimensions to retrieve list of dimension names
+	validDimensionNames := getListOfValidDimensionNames(versionDoc.Dimensions)
+	logData["version_dimensions"] = validDimensionNames
+
+	dimensionOffset, err := getDimensionOffsetInHeaderRow(versionDoc.Headers)
 	if err != nil {
 		log.ErrorC("unable to distinguish headers from version document", err, logData)
 		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, actionUnsuccessful, auditParams); auditErr != nil {
@@ -153,7 +156,6 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 		handleObservationsErrorType(w, err)
 		return
 	}
-	logData["version_dimensions"] = validDimensionNames
 
 	// check query parameters match the version headers
 	queryParameters, err := extractQueryParameters(r.URL.Query(), validDimensionNames)
@@ -204,24 +206,29 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 	log.Info("successfully retrieved observations relative to a selected set of dimension options for a version", logData)
 }
 
-func getListOfValidDimensionNames(headerRow []string) ([]string, int, error) {
+func getDimensionOffsetInHeaderRow(headerRow []string) (int, error) {
 	metaData := strings.Split(headerRow[0], "_")
 
 	if len(metaData) < 2 {
-		return nil, 0, errs.ErrIndexOutOfRange
+		return 0, errs.ErrIndexOutOfRange
 	}
 
 	dimensionOffset, err := strconv.Atoi(metaData[1])
 	if err != nil {
-		return nil, 0, err
+		return 0, err
 	}
+
+	return dimensionOffset, nil
+}
+
+func getListOfValidDimensionNames(dimensions []models.CodeList) []string {
 
 	var dimensionNames []string
-	for i := dimensionOffset + 2; i < len(headerRow); i += 2 {
-		dimensionNames = append(dimensionNames, headerRow[i])
+	for _, dimension := range dimensions {
+		dimensionNames = append(dimensionNames, dimension.Name)
 	}
 
-	return dimensionNames, dimensionOffset, nil
+	return dimensionNames
 }
 
 func extractQueryParameters(urlQuery url.Values, validDimensions []string) (map[string]string, error) {
@@ -230,20 +237,23 @@ func extractQueryParameters(urlQuery url.Values, validDimensions []string) (map[
 
 	// Determine if any request query parameters are invalid dimensions
 	// and map the valid dimensions with their equivalent values in map
-	for dimension, option := range urlQuery {
+	for rawDimension, option := range urlQuery {
+		// Ignore case sensitivity
+		dimension := strings.ToLower(rawDimension)
+
 		queryParamExists := false
 		for _, validDimension := range validDimensions {
 			if dimension == validDimension {
 				queryParamExists = true
 				queryParameters[dimension] = option[0]
 				if len(option) != 1 {
-					multivaluedQueryParameters = append(multivaluedQueryParameters, dimension)
+					multivaluedQueryParameters = append(multivaluedQueryParameters, rawDimension)
 				}
 				break
 			}
 		}
 		if !queryParamExists {
-			incorrectQueryParameters = append(incorrectQueryParameters, dimension)
+			incorrectQueryParameters = append(incorrectQueryParameters, rawDimension)
 		}
 	}
 
