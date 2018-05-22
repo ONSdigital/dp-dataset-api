@@ -894,7 +894,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 func TestDeleteDatasetAuditErrors(t *testing.T) {
 	t.Parallel()
 
-	Convey("When auditing an attempt to delete a dataset errors then a 500 status is returned", t, func() {
+	Convey("When auditing delete a dataset attempted returns an errors then a 500 status is returned", t, func() {
 		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 		So(err, ShouldBeNil)
 
@@ -922,7 +922,7 @@ func TestDeleteDatasetAuditErrors(t *testing.T) {
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 	})
 
-	Convey("When auditing delete dataset unsuccessful errors then a 500 status is returned", t, func() {
+	Convey("When auditing delete dataset unsuccessful returns an errors then a 500 status is returned", t, func() {
 		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 		So(err, ShouldBeNil)
 
@@ -958,7 +958,7 @@ func TestDeleteDatasetAuditErrors(t *testing.T) {
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 	})
 
-	Convey("When auditing delete dataset unsuccessful errors then a 500 status is returned", t, func() {
+	Convey("When auditing delete dataset successful returns an errors then a 500 status is returned", t, func() {
 		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 		So(err, ShouldBeNil)
 
