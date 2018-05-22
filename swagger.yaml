@@ -1,8 +1,11 @@
 swagger: "2.0"
 info:
-  description: "An API used to query information about datasets published by the ONS."
+  description: "Used to find information about data published by the ONS.
+  `Datasets` are published in unique `versions`, which are categorized by `edition`.
+  Data in each version is broken down by `dimensions`, and a unique combination
+  of dimension `options` in a version can be used to retrieve `observation` level data."
   version: "1.0.0"
-  title: "Dataset API"
+  title: "Explore our data"
   license:
     name: "Open Government Licence v3.0"
     url: "http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
@@ -158,27 +161,6 @@ securityDefinitions:
     in: header
     type: apiKey
 paths:
-  /search/datasets:
-    get:
-      tags:
-      - "Public"
-      summary: "Search for datasets"
-      description: "Perform a search on all published datasets by the ONS"
-      parameters:
-      - $ref: '#/parameters/limit'
-      - $ref: '#/parameters/offset'
-      - $ref: '#/parameters/query'
-      produces:
-      - "application/json"
-      responses:
-        200:
-          description: "A json list containing datasets which have been published"
-          schema:
-            $ref: '#/definitions/Datasets'
-        400:
-          description: "Body of the post request is invalid"
-        500:
-          description: "Failed to process the request due to an internal error"
   /datasets:
     get:
       tags:
@@ -278,8 +260,8 @@ paths:
     get:
       tags:
       - "Public"
-      summary: "Get a list of all editions from a dataset"
-      description: "Get a list of editions from a type of dataset"
+      summary: "Get a list of editions of a dataset"
+      description: "Get a list of editions of a type of dataset"
       parameters:
       - $ref: '#/parameters/id'
       - $ref: '#/parameters/limit'
@@ -319,7 +301,7 @@ paths:
     get:
       tags:
       - "Public"
-      summary: "Get a list of all versions from an edition of a dataset"
+      summary: "Get a list of versions of an edition"
       description: "Get a list of all versions for an edition of a dataset"
       parameters:
       - $ref: '#/parameters/edition'
@@ -344,7 +326,7 @@ paths:
     put:
       tags:
       - "Private user"
-      summary: "Update a version for an edition of a dataset"
+      summary: "Update a version"
       description: "Update a version for an edition of a dataset, if the state is changed to associated or published, the parent documents(dataset and edition resources) will also be updated. A version can only be updated if the state is not published"
       parameters:
       - $ref: '#/parameters/id'
@@ -372,8 +354,8 @@ paths:
     get:
       tags:
       - "Public"
-      summary: "Get a specific version and edition of a dataset"
-      description: "Get a specific version and edition of a dataset"
+      summary: "Get a version"
+      description: "Get a specific version of an edition of a dataset"
       parameters:
       - $ref: '#/parameters/edition'
       - $ref: '#/parameters/id'
@@ -396,7 +378,7 @@ paths:
     get:
       tags:
       - "Public"
-      summary: "Get all dimensions from a dataset"
+      summary: "Get a list of dimensions from a dataset"
       description: "Get all dimensions which are used in the dataset"
       parameters:
       - $ref: '#/parameters/edition'
@@ -423,7 +405,7 @@ paths:
     get:
       tags:
       - "Public"
-      summary: "Get all options from a dimension"
+      summary: "Get a list of options from a dimension"
       description: "Get a list of all options which appear in this dimension and dataset"
       parameters:
       - $ref: '#/parameters/dimension'
@@ -452,7 +434,7 @@ paths:
     get:
       tags:
       - "Public"
-      summary: "Get metadata relevant to a version"
+      summary: "Get metadata for a version"
       description: "Get all metadata relevant to a version"
       parameters:
       - $ref: '#/parameters/edition'
@@ -476,8 +458,11 @@ paths:
     get:
       tags:
       - "Public"
-      summary: "Get a specific observation from version"
-      description: "Get observation from a version of the dataset by providing a single dimension option for each dimension"
+      summary: "Get specific observations"
+      description: "Get observations from a version of the dataset. By providing
+      a single option for each dimension, a single observation will be returned.
+      A wildcard (*) can be provided for one dimension, to retrieve a list of
+      observations."
       parameters:
         - $ref: '#/parameters/edition'
         - $ref: '#/parameters/id'
@@ -507,7 +492,7 @@ paths:
     get:
       tags:
       - "Private user"
-      summary: "Get a list of instances"
+      summary: "Get instances"
       description: "Get a list of instances which has been paged"
       parameters:
         - $ref: '#/parameters/limit'
@@ -557,7 +542,7 @@ paths:
     get:
       tags:
       - "Private user"
-      summary: "Get Information about an instance"
+      summary: "Get an instance"
       description: "Get the current state of an instance, this includes all events which have happened."
       parameters:
       - $ref: '#/parameters/instance_id'
@@ -579,7 +564,7 @@ paths:
     put:
       tags:
       - "Private"
-      summary: "Update an instances properties"
+      summary: "Update an instance"
       description: "Update an instance by providing an unique id and a set of properties to over write"
       parameters:
       - $ref: '#/parameters/instance_id'
@@ -605,7 +590,7 @@ paths:
     get:
       tags:
       - "Private user"
-      summary: "Get all dimensions from an instance"
+      summary: "Get a list of dimensions for an instance"
       description: "Get all dimensions from an instance"
       parameters:
       - $ref: '#/parameters/instance_id'
@@ -633,7 +618,7 @@ paths:
     post:
       tags:
       - "Private"
-      summary: "Create a new dimension"
+      summary: "Create a dimension"
       description: "Create a new dimension which is related to an instance"
       parameters:
       - $ref: '#/parameters/instance_id'
@@ -653,7 +638,7 @@ paths:
     put:
       tags:
       - "Private user"
-      summary: "Update dimension description and/or label"
+      summary: "Update dimension"
       description: "Update the label and/or description of a dimension within an instance, by providing dimension name and properties to over write"
       parameters:
       - $ref: '#/parameters/instance_id'
@@ -678,7 +663,7 @@ paths:
     get:
       tags:
       - "Private user"
-      summary: "Get all unique options from a dimension"
+      summary: "Get a list of options for a dimension"
       description: "Get all unique options from a dimension"
       parameters:
       - $ref: '#/parameters/instance_id'
@@ -740,7 +725,7 @@ paths:
     put:
       tags:
       - "Private"
-      summary: "Increment the observation inserted count"
+      summary: "Increment the inserted observation count"
       description: "This will add to the number already store in the api"
       parameters:
       - $ref: '#/parameters/instance_id'
@@ -762,7 +747,7 @@ paths:
     put:
       tags:
       - "Private"
-      summary: "Update the state of an import task in an instance"
+      summary: "Update import tasks for an instance"
       description: "The instance import process involves multiple tasks. This endpoint updates the state of an import task."
       parameters:
       - $ref: '#/parameters/instance_id'
@@ -784,7 +769,7 @@ paths:
     put:
       tags:
       - "Private"
-      summary: "Add an option to a dimension within the instance"
+      summary: "Add an option to an instance dimension"
       description: |
         Add a option to a dimension which has been found in the V4 data
       parameters:
