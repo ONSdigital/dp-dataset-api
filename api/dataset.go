@@ -14,53 +14,57 @@ import (
 )
 
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
-	if err := api.auditor.Record(r.Context(), getDatasetsAction, actionAttempted, nil); err != nil {
-		handleAuditingFailure(w, err, nil)
+	ctx := r.Context()
+	if err := api.auditor.Record(ctx, getDatasetsAction, actionAttempted, nil); err != nil {
+		auditActionFailure(ctx, getDatasetsAction, actionAttempted, err, nil)
+		handleErrorType(datasetDocType, errs.ErrAuditActionAttemptedFailure, w)
 		return
 	}
 
-	results, err := api.dataStore.Backend.GetDatasets()
+	b, err := func() ([]byte, error) {
+		results, err := api.dataStore.Backend.GetDatasets()
+		if err != nil {
+			log.Error(err, nil)
+			return nil, err
+		}
+		authorised, logData := api.authenticate(r, log.Data{})
+
+		var b []byte
+		if authorised {
+
+			// User has valid authentication to get raw dataset document
+			datasets := &models.DatasetUpdateResults{}
+			datasets.Items = results
+			b, err = json.Marshal(datasets)
+			if err != nil {
+				log.ErrorC("failed to marshal dataset resource into bytes", err, logData)
+				return nil, err
+			}
+		} else {
+
+			// User is not authenticated and hence has only access to current sub document
+			datasets := &models.DatasetResults{}
+			datasets.Items = mapResults(results)
+
+			b, err = json.Marshal(datasets)
+			if err != nil {
+				log.ErrorC("failed to marshal dataset resource into bytes", err, logData)
+				return nil, err
+			}
+		}
+		return b, err
+	}()
+
 	if err != nil {
-		log.Error(err, nil)
-		if auditErr := api.auditor.Record(r.Context(), getDatasetsAction, actionUnsuccessful, nil); auditErr != nil {
-			handleAuditingFailure(w, auditErr, nil)
-			return
+		if auditErr := api.auditor.Record(ctx, getDatasetsAction, actionUnsuccessful, nil); auditErr != nil {
+			auditActionFailure(ctx, getDatasetsAction, actionUnsuccessful, auditErr, nil)
 		}
 		handleErrorType(datasetDocType, err, w)
 		return
 	}
 
-	authorised, logData := api.authenticate(r, log.Data{})
-
-	var b []byte
-	if authorised {
-
-		// User has valid authentication to get raw dataset document
-		datasets := &models.DatasetUpdateResults{}
-		datasets.Items = results
-		b, err = json.Marshal(datasets)
-		if err != nil {
-			log.ErrorC("failed to marshal dataset resource into bytes", err, nil)
-			handleErrorType(datasetDocType, err, w)
-			return
-		}
-	} else {
-
-		// User is not authenticated and hence has only access to current sub document
-		datasets := &models.DatasetResults{}
-		datasets.Items = mapResults(results)
-
-		b, err = json.Marshal(datasets)
-		if err != nil {
-			log.ErrorC("failed to marshal dataset resource into bytes", err, nil)
-			handleErrorType(datasetDocType, err, w)
-			return
-		}
-	}
-
-	if auditErr := api.auditor.Record(r.Context(), getDatasetsAction, actionSuccessful, nil); auditErr != nil {
-		handleAuditingFailure(w, auditErr, logData)
-		return
+	if auditErr := api.auditor.Record(ctx, getDatasetsAction, actionSuccessful, nil); auditErr != nil {
+		auditActionFailure(ctx, getDatasetsAction, actionSuccessful, auditErr, nil)
 	}
 
 	setJSONContentType(w)
@@ -69,7 +73,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 		log.Error(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	log.Debug("get all datasets", logData)
+	log.Debug("get all datasets", nil)
 }
 
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
@@ -290,7 +294,8 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	auditParams := common.Params{"dataset_id": datasetID}
 
 	if err := api.auditor.Record(ctx, deleteDatasetAction, actionAttempted, auditParams); err != nil {
-		actionAttemptedAuditFailure(ctx, w, deleteDatasetAction, err, logData)
+		auditActionFailure(ctx, deleteDatasetAction, actionAttempted, err, logData)
+		handleErrorType(datasetDocType, err, w)
 		return
 	}
 
@@ -322,15 +327,15 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		if err := api.auditor.Record(ctx, deleteDatasetAction, actionUnsuccessful, auditParams); err != nil {
-			auditActionUnsuccessfulFailure(ctx, deleteDatasetAction, err, logData)
+		if auditErr := api.auditor.Record(ctx, deleteDatasetAction, actionUnsuccessful, auditParams); auditErr != nil {
+			auditActionFailure(ctx, deleteDatasetAction, actionUnsuccessful, auditErr, logData)
 		}
 		handleErrorType(datasetDocType, err, w)
 		return
 	}
 
 	if err := api.auditor.Record(ctx, deleteDatasetAction, actionSuccessful, auditParams); err != nil {
-		auditActionSuccessfulFailure(ctx, deleteDatasetAction, err, logData)
+		auditActionFailure(ctx, deleteDatasetAction, actionSuccessful, err, logData)
 		// fall through and return the origin status code as the action has been carried out at this point.
 	}
 	w.WriteHeader(http.StatusNoContent)

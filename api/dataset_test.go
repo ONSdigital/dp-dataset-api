@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -152,7 +153,7 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 		api.router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
+		So(strings.TrimSpace(w.Body.String()), ShouldEqual, errInternal.Error())
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
@@ -191,7 +192,7 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 
 func TestGetDatasetsAuditActionSuccessfulError(t *testing.T) {
 	t.Parallel()
-	Convey("when a successful request to get dataset fails to audit action successful then a 500 response is returned", t, func() {
+	Convey("when a successful request to get dataset fails to audit action successful then a 200 response is returned", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -217,8 +218,7 @@ func TestGetDatasetsAuditActionSuccessfulError(t *testing.T) {
 		verifyAuditRecordCalls(recCalls[1], getDatasetsAction, actionSuccessful, nil)
 
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
+		So(w.Code, ShouldEqual, http.StatusOK)
 	})
 }
 
@@ -912,7 +912,6 @@ func TestDeleteDatasetAuditActionAttemptedError(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(w.Body.String(), ShouldEqual, internalServerErr)
 
 				calls := auditorMock.RecordCalls()
 				ap := common.Params{"dataset_id": "123"}

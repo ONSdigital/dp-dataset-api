@@ -22,4 +22,5 @@ var (
 	ErrTooManyWildcards                  = errors.New("only one wildcard (*) is allowed as a value in selected query parameters")
 	ErrDeletePublishedDatasetForbidden   = errors.New("a published dataset cannot be deleted")
 	ErrDeleteDatasetNotFound             = errors.New("dataset not found")
+	ErrAuditActionAttemptedFailure       = errors.New("internal server error")
 )

@@ -52,10 +52,8 @@ const (
 	actionSuccessful   = "successful"
 	actionUnsuccessful = "unsuccessful"
 
-	auditError                 = "error while attempting to record audit event, failing request"
-	actionAttemptedAuditErr    = "failed to audit action attempted event, returning internal server error"
-	auditActionUnsuccessfulErr = "failed to audit action unsuccessful event"
-	auditActionSuccessfulErr   = "failed to audit action successful event"
+	auditError     = "error while attempting to record audit event, failing request"
+	auditActionErr = "failed to audit action"
 )
 
 // PublishCheck Checks if an version has been published
@@ -360,48 +358,19 @@ func handleAuditingFailure(w http.ResponseWriter, err error, logData log.Data) {
 	http.Error(w, "internal server error", http.StatusInternalServerError)
 }
 
-func actionAttemptedAuditFailure(ctx context.Context, w http.ResponseWriter, auditedAction string, err error, logData log.Data) {
+func auditActionFailure(ctx context.Context, auditedAction string, auditedResult string, err error, logData log.Data) {
+	if logData == nil {
+		logData = log.Data{}
+	}
+
 	logData["auditAction"] = auditedAction
-	logData["result"] = actionAttempted
+	logData["auditResult"] = auditedResult
 
 	if user := common.User(ctx); user != "" {
 		logData["user"] = user
 	}
 
-	wrappedErr := errors.WithMessage(err, actionAttemptedAuditErr)
-	if reqID := requestID.Get(ctx); reqID != "" {
-		log.ErrorC(reqID, wrappedErr, logData)
-	} else {
-		log.Error(wrappedErr, logData)
-	}
-	http.Error(w, "internal server error", http.StatusInternalServerError)
-}
-
-func auditActionUnsuccessfulFailure(ctx context.Context, auditedAction string, err error, logData log.Data) {
-	logData["action"] = auditedAction
-	logData["result"] = actionUnsuccessful
-
-	if user := common.User(ctx); user != "" {
-		logData["user"] = user
-	}
-	wrappedErr := errors.WithMessage(err, auditActionUnsuccessfulErr)
-	if reqID := requestID.Get(ctx); reqID != "" {
-		log.ErrorC(reqID, wrappedErr, logData)
-	} else {
-		log.Error(wrappedErr, logData)
-	}
-
-}
-
-func auditActionSuccessfulFailure(ctx context.Context, auditedAction string, err error, logData log.Data) {
-	logData["auditAction"] = auditedAction
-	logData["auditResult"] = actionSuccessful
-
-	if user := common.User(ctx); user != "" {
-		logData["user"] = user
-	}
-
-	wrappedErr := errors.WithMessage(err, auditActionSuccessfulErr)
+	wrappedErr := errors.WithMessage(err, auditActionErr)
 	if reqID := requestID.Get(ctx); reqID != "" {
 		log.ErrorC(reqID, wrappedErr, logData)
 	} else {
