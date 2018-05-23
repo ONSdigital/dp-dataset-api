@@ -283,13 +283,14 @@ func (api *DatasetAPI) publishDataset(currentDataset *models.DatasetUpdate, vers
 }
 
 func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
 	logData := log.Data{"dataset_id": datasetID}
 	auditParams := common.Params{"dataset_id": datasetID}
 
-	if err := api.auditor.Record(r.Context(), deleteDatasetAction, actionAttempted, auditParams); err != nil {
-		handleAuditingFailure(w, err, logData)
+	if err := api.auditor.Record(ctx, deleteDatasetAction, actionAttempted, auditParams); err != nil {
+		actionAttemptedAuditFailure(ctx, w, deleteDatasetAction, err, logData)
 		return
 	}
 
@@ -320,19 +321,17 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 		return nil
 	}()
 
-	// audit the outcome
 	if err != nil {
-		if err := api.auditor.Record(r.Context(), deleteDatasetAction, actionUnsuccessful, auditParams); err != nil {
-			handleAuditingFailure(w, err, logData)
-			return
+		if err := api.auditor.Record(ctx, deleteDatasetAction, actionUnsuccessful, auditParams); err != nil {
+			auditActionUnsuccessfulFailure(ctx, deleteDatasetAction, err, logData)
 		}
 		handleErrorType(datasetDocType, err, w)
 		return
 	}
 
-	if err := api.auditor.Record(r.Context(), deleteDatasetAction, actionSuccessful, auditParams); err != nil {
-		handleAuditingFailure(w, err, logData)
-		return
+	if err := api.auditor.Record(ctx, deleteDatasetAction, actionSuccessful, auditParams); err != nil {
+		auditActionSuccessfulFailure(ctx, deleteDatasetAction, err, logData)
+		// fall through and return the origin status code as the action has been carried out at this point.
 	}
 	w.WriteHeader(http.StatusNoContent)
 	log.Debug("delete dataset", logData)
