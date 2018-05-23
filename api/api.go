@@ -370,11 +370,10 @@ func auditActionFailure(ctx context.Context, auditedAction string, auditedResult
 		logData["user"] = user
 	}
 
-	wrappedErr := errors.WithMessage(err, auditActionErr)
 	if reqID := requestID.Get(ctx); reqID != "" {
-		log.ErrorC(reqID, wrappedErr, logData)
+		log.ErrorC(reqID, errors.WithMessage(err, auditActionErr), logData)
 	} else {
-		log.Error(wrappedErr, logData)
+		log.Error(errors.WithMessage(err, auditActionErr), logData)
 	}
 }
 

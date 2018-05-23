@@ -9,8 +9,10 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/go-ns/common"
+	"github.com/ONSdigital/go-ns/handlers/requestID"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 )
 
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
@@ -77,61 +79,67 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	id := vars["id"]
 	logData := log.Data{"dataset_id": id}
 	auditParams := common.Params{"dataset_id": id}
 
-	if auditErr := api.auditor.Record(r.Context(), getDatasetAction, actionAttempted, auditParams); auditErr != nil {
-		handleAuditingFailure(w, auditErr, logData)
+	if auditErr := api.auditor.Record(ctx, getDatasetAction, actionAttempted, auditParams); auditErr != nil {
+		auditActionFailure(ctx, getDatasetAction, actionAttempted, auditErr, logData)
+		handleErrorType(datasetDocType, errs.ErrInternalServer, w)
 		return
 	}
 
-	dataset, err := api.dataStore.Backend.GetDataset(id)
+	b, err := func() ([]byte, error) {
+		dataset, err := api.dataStore.Backend.GetDataset(id)
+		if err != nil {
+			log.ErrorC(requestID.Get(ctx), errors.WithMessage(err, "getDataset dataStore.Backend.GetDataset returned an error"), logData)
+			return nil, err
+		}
+
+		authorised, logData := api.authenticate(r, logData)
+
+		var b []byte
+		if !authorised {
+			// User is not authenticated and hence has only access to current sub document
+			if dataset.Current == nil {
+				log.Debug("published dataset not found", logData)
+				return nil, errs.ErrDatasetNotFound
+			}
+
+			dataset.Current.ID = dataset.ID
+			b, err = json.Marshal(dataset.Current)
+			if err != nil {
+				log.ErrorC(requestID.Get(ctx), errors.WithMessage(err, "getDataset failed to marshal dataset current sub document resource into bytes"), logData)
+				return nil, err
+			}
+		} else {
+			// User has valid authentication to get raw dataset document
+			if dataset == nil {
+				log.Debug("published or unpublished dataset not found", logData)
+				return nil, errs.ErrDatasetNotFound
+			}
+			b, err = json.Marshal(dataset)
+			if err != nil {
+				log.ErrorC(requestID.Get(ctx), errors.WithMessage(err, "getDataset failed to marshal dataset current sub document resource into bytes"), logData)
+				return nil, err
+			}
+		}
+		return b, nil
+	}()
+
 	if err != nil {
-		log.Error(err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getDatasetAction, actionUnsuccessful, auditParams); auditErr != nil {
-			handleAuditingFailure(w, auditErr, logData)
-			return
+		if auditErr := api.auditor.Record(ctx, getDatasetAction, actionUnsuccessful, auditParams); auditErr != nil {
+			auditActionFailure(ctx, getDatasetAction, actionUnsuccessful, auditErr, logData)
 		}
 		handleErrorType(datasetDocType, err, w)
 		return
 	}
 
-	authorised, logData := api.authenticate(r, logData)
-
-	var b []byte
-	if !authorised {
-		// User is not authenticated and hence has only access to current sub document
-		if dataset.Current == nil {
-			log.Debug("published dataset not found", nil)
-			handleErrorType(datasetDocType, errs.ErrDatasetNotFound, w)
-			return
-		}
-
-		dataset.Current.ID = dataset.ID
-		b, err = json.Marshal(dataset.Current)
-		if err != nil {
-			log.ErrorC("failed to marshal dataset current sub document resource into bytes", err, logData)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		// User has valid authentication to get raw dataset document
-		if dataset == nil {
-			log.Debug("published or unpublished dataset not found", logData)
-			handleErrorType(datasetDocType, errs.ErrDatasetNotFound, w)
-		}
-		b, err = json.Marshal(dataset)
-		if err != nil {
-			log.ErrorC("failed to marshal dataset current sub document resource into bytes", err, logData)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	if auditErr := api.auditor.Record(r.Context(), getDatasetAction, actionSuccessful, auditParams); auditErr != nil {
-		handleAuditingFailure(w, auditErr, logData)
+	if auditErr := api.auditor.Record(ctx, getDatasetAction, actionSuccessful, auditParams); auditErr != nil {
+		auditActionFailure(ctx, getDatasetAction, actionSuccessful, auditErr, logData)
+		handleErrorType(datasetDocType, errs.ErrInternalServer, w)
 		return
 	}
 
