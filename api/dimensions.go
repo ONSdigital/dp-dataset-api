@@ -91,7 +91,8 @@ func (api *DatasetAPI) createListOfDimensions(versionDoc *models.Version, dimens
 		dimension.Links.CodeList = opt.Links.CodeList
 		dimension.Links.Options = models.LinkObject{ID: opt.Name, HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s/dimensions/%s/options",
 			api.host, versionDoc.Links.Dataset.ID, versionDoc.Edition, versionDoc.Links.Version.ID, opt.Name)}
-		dimension.Links.Version = *versionDoc.Links.Self
+		dimension.Links.Version = models.LinkObject{HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s",
+			api.host, versionDoc.Links.Dataset.ID, versionDoc.Edition, versionDoc.Links.Version.ID)}
 
 		// Add description to dimension from hash map
 		dimension.Description = dimensionDescriptions[dimension.Name]
@@ -149,6 +150,11 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		log.ErrorC("failed to get a list of dimension options", err, logData)
 		handleErrorType(dimensionOptionDocType, err, w)
 		return
+	}
+
+	for i := range results.Items {
+		results.Items[i].Links.Version.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s",
+			api.host, datasetID, editionID, versionID)
 	}
 
 	b, err := json.Marshal(results)
