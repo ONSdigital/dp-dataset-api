@@ -5,6 +5,8 @@ import "errors"
 // Error messages for Dataset API
 var (
 	ErrDatasetNotFound                   = errors.New("Dataset not found")
+	ErrAddDatasetAlreadyExists           = errors.New("forbidden - dataset already exists")
+	ErrAddDatasetBadRequest              = errors.New("Failed to parse json body")
 	ErrEditionNotFound                   = errors.New("Edition not found")
 	ErrVersionNotFound                   = errors.New("Version not found")
 	ErrDimensionNodeNotFound             = errors.New("Dimension node not found")

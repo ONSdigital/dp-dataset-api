@@ -46,6 +46,7 @@ const (
 	getVersionsAction   = "getVersions"
 	getVersionAction    = "getVersion"
 	deleteDatasetAction = "deleteDataset"
+	addDatasetAction    = "addDataset"
 
 	// audit results
 	actionAttempted    = "attempted"
@@ -196,8 +197,10 @@ func handleErrorType(docType string, err error, w http.ResponseWriter) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else if err == errs.ErrDeleteDatasetNotFound {
 			http.Error(w, err.Error(), http.StatusNoContent)
-		} else if err == errs.ErrDeletePublishedDatasetForbidden {
+		} else if err == errs.ErrDeletePublishedDatasetForbidden || err == errs.ErrAddDatasetAlreadyExists {
 			http.Error(w, err.Error(), http.StatusForbidden)
+		} else if err == errs.ErrAddDatasetBadRequest {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
