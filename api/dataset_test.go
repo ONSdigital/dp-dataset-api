@@ -642,6 +642,63 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 				verifyAuditRecordCalls(calls[0], addDatasetAction, actionAttempted, ap)
 			})
 		})
+
+		Convey("when datastore getdataset returns an existing dataset", func() {
+			r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString("{"))
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+					return &models.DatasetUpdate{}, nil
+				},
+			}
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+			api.router.ServeHTTP(w, r)
+
+			Convey("then a 403 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusForbidden)
+				So(strings.TrimSpace(w.Body.String()), ShouldEqual, errs.ErrAddDatasetAlreadyExists.Error())
+
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditRecordCalls(calls[0], addDatasetAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[1], addDatasetAction, actionUnsuccessful, ap)
+			})
+		})
+
+		Convey("when datastore upsertDataset returns error", func() {
+			r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(datasetPayload))
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+					return nil, errs.ErrDatasetNotFound
+				},
+				UpsertDatasetFunc: func(ID string, datasetDoc *models.DatasetUpdate) error {
+					return errors.New("upsert datset error")
+				},
+			}
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+			api.router.ServeHTTP(w, r)
+
+			Convey("then a 500 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(strings.TrimSpace(w.Body.String()), ShouldEqual, "upsert datset error")
+
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditRecordCalls(calls[0], addDatasetAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[1], addDatasetAction, actionUnsuccessful, ap)
+			})
+		})
 	})
 }
 
