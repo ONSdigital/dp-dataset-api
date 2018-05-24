@@ -11,6 +11,7 @@ import (
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 )
 
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +25,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	b, err := func() ([]byte, error) {
 		results, err := api.dataStore.Backend.GetDatasets()
 		if err != nil {
-			log.Error(err, nil)
+			logError(ctx, errors.WithMessage(err, "api endpoint getDatasets datastore.GetDatasets returned an error"), nil)
 			return nil, err
 		}
 		authorised, logData := api.authenticate(r, log.Data{})
@@ -37,7 +38,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 			datasets.Items = results
 			b, err = json.Marshal(datasets)
 			if err != nil {
-				log.ErrorC("failed to marshal dataset resource into bytes", err, logData)
+				logError(ctx, errors.WithMessage(err, "api endpoint getDatasets failed to marshal dataset resource into bytes"), logData)
 				return nil, err
 			}
 		} else {
@@ -48,7 +49,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 
 			b, err = json.Marshal(datasets)
 			if err != nil {
-				log.ErrorC("failed to marshal dataset resource into bytes", err, logData)
+				logError(ctx, errors.WithMessage(err, "api endpoint getDatasets failed to marshal dataset resource into bytes"), logData)
 				return nil, err
 			}
 		}
@@ -70,10 +71,10 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	setJSONContentType(w)
 	_, err = w.Write(b)
 	if err != nil {
-		log.Error(err, nil)
+		logError(ctx, errors.WithMessage(err, "api endpoint getDatasets error writing response body"), nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	log.Debug("get all datasets", nil)
+	logInfo(ctx, "api endpoint getDatasets request successful", nil)
 }
 
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {

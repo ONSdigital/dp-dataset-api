@@ -366,16 +366,37 @@ func auditActionFailure(ctx context.Context, auditedAction string, auditedResult
 	logData["auditAction"] = auditedAction
 	logData["auditResult"] = auditedResult
 
+	logError(ctx, errors.WithMessage(err, auditActionErr), logData)
+}
+
+func logError(ctx context.Context, err error, data log.Data) {
+	if data == nil {
+		data = log.Data{}
+	}
+	reqID := requestID.Get(ctx)
 	if user := common.User(ctx); user != "" {
-		logData["user"] = user
+		data["user"] = user
 	}
 
-	wrappedErr := errors.WithMessage(err, auditActionErr)
-	if reqID := requestID.Get(ctx); reqID != "" {
-		log.ErrorC(reqID, wrappedErr, logData)
-	} else {
-		log.Error(wrappedErr, logData)
+	if caller := common.Caller(ctx); caller != "" {
+		data["caller"] = caller
 	}
+	log.ErrorC(reqID, err, data)
+}
+
+func logInfo(ctx context.Context, message string, data log.Data) {
+	if data == nil {
+		data = log.Data{}
+	}
+	reqID := requestID.Get(ctx)
+	if user := common.User(ctx); user != "" {
+		data["user"] = user
+	}
+
+	if caller := common.Caller(ctx); caller != "" {
+		data["caller"] = caller
+	}
+	log.InfoC(reqID, message, data)
 }
 
 // Close represents the graceful shutting down of the http server
