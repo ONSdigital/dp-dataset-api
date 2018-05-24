@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -18,12 +17,14 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
+	"github.com/ONSdigital/go-ns/handlers/requestID"
 	"github.com/ONSdigital/go-ns/healthcheck"
 	"github.com/ONSdigital/go-ns/identity"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/server"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
+	"github.com/pkg/errors"
 )
 
 var httpServer *server.Server
@@ -38,19 +39,21 @@ const (
 	dimensionOptionDocType = "dimension-option"
 
 	// audit actions
-	getDatasetsAction = "getDatasets"
-	getDatasetAction  = "getDataset"
-	getEditionsAction = "getEditions"
-	getEditionAction  = "getEdition"
-	getVersionsAction = "getVersions"
-	getVersionAction  = "getVersion"
+	getDatasetsAction   = "getDatasets"
+	getDatasetAction    = "getDataset"
+	getEditionsAction   = "getEditions"
+	getEditionAction    = "getEdition"
+	getVersionsAction   = "getVersions"
+	getVersionAction    = "getVersion"
+	deleteDatasetAction = "deleteDataset"
 
 	// audit results
 	actionAttempted    = "attempted"
 	actionSuccessful   = "successful"
 	actionUnsuccessful = "unsuccessful"
 
-	auditError = "error while attempting to record audit event, failing request"
+	auditError     = "error while attempting to record audit event, failing request"
+	auditActionErr = "failed to audit action"
 )
 
 // PublishCheck Checks if an version has been published
@@ -183,8 +186,18 @@ func handleErrorType(docType string, err error, w http.ResponseWriter) {
 
 	switch docType {
 	default:
-		if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
+		if err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	case "dataset":
+		if err == errs.ErrDatasetNotFound {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else if err == errs.ErrDeleteDatasetNotFound {
+			http.Error(w, err.Error(), http.StatusNoContent)
+		} else if err == errs.ErrDeletePublishedDatasetForbidden {
+			http.Error(w, err.Error(), http.StatusForbidden)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -343,6 +356,47 @@ func (api *DatasetAPI) authenticate(r *http.Request, logData map[string]interfac
 func handleAuditingFailure(w http.ResponseWriter, err error, logData log.Data) {
 	log.ErrorC(auditError, err, logData)
 	http.Error(w, "internal server error", http.StatusInternalServerError)
+}
+
+func auditActionFailure(ctx context.Context, auditedAction string, auditedResult string, err error, logData log.Data) {
+	if logData == nil {
+		logData = log.Data{}
+	}
+
+	logData["auditAction"] = auditedAction
+	logData["auditResult"] = auditedResult
+
+	logError(ctx, errors.WithMessage(err, auditActionErr), logData)
+}
+
+func logError(ctx context.Context, err error, data log.Data) {
+	if data == nil {
+		data = log.Data{}
+	}
+	reqID := requestID.Get(ctx)
+	if user := common.User(ctx); user != "" {
+		data["user"] = user
+	}
+
+	if caller := common.Caller(ctx); caller != "" {
+		data["caller"] = caller
+	}
+	log.ErrorC(reqID, err, data)
+}
+
+func logInfo(ctx context.Context, message string, data log.Data) {
+	if data == nil {
+		data = log.Data{}
+	}
+	reqID := requestID.Get(ctx)
+	if user := common.User(ctx); user != "" {
+		data["user"] = user
+	}
+
+	if caller := common.Caller(ctx); caller != "" {
+		data["caller"] = caller
+	}
+	log.InfoC(reqID, message, data)
 }
 
 // Close represents the graceful shutting down of the http server

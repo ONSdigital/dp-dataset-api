@@ -11,65 +11,70 @@ import (
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 )
 
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
-	if err := api.auditor.Record(r.Context(), getDatasetsAction, actionAttempted, nil); err != nil {
-		handleAuditingFailure(w, err, nil)
+	ctx := r.Context()
+	if err := api.auditor.Record(ctx, getDatasetsAction, actionAttempted, nil); err != nil {
+		auditActionFailure(ctx, getDatasetsAction, actionAttempted, err, nil)
+		handleErrorType(datasetDocType, errs.ErrAuditActionAttemptedFailure, w)
 		return
 	}
 
-	results, err := api.dataStore.Backend.GetDatasets()
+	b, err := func() ([]byte, error) {
+		results, err := api.dataStore.Backend.GetDatasets()
+		if err != nil {
+			logError(ctx, errors.WithMessage(err, "api endpoint getDatasets datastore.GetDatasets returned an error"), nil)
+			return nil, err
+		}
+		authorised, logData := api.authenticate(r, log.Data{})
+
+		var b []byte
+		if authorised {
+
+			// User has valid authentication to get raw dataset document
+			datasets := &models.DatasetUpdateResults{}
+			datasets.Items = results
+			b, err = json.Marshal(datasets)
+			if err != nil {
+				logError(ctx, errors.WithMessage(err, "api endpoint getDatasets failed to marshal dataset resource into bytes"), logData)
+				return nil, err
+			}
+		} else {
+
+			// User is not authenticated and hence has only access to current sub document
+			datasets := &models.DatasetResults{}
+			datasets.Items = mapResults(results)
+
+			b, err = json.Marshal(datasets)
+			if err != nil {
+				logError(ctx, errors.WithMessage(err, "api endpoint getDatasets failed to marshal dataset resource into bytes"), logData)
+				return nil, err
+			}
+		}
+		return b, err
+	}()
+
 	if err != nil {
-		log.Error(err, nil)
-		if auditErr := api.auditor.Record(r.Context(), getDatasetsAction, actionUnsuccessful, nil); auditErr != nil {
-			handleAuditingFailure(w, auditErr, nil)
-			return
+		if auditErr := api.auditor.Record(ctx, getDatasetsAction, actionUnsuccessful, nil); auditErr != nil {
+			auditActionFailure(ctx, getDatasetsAction, actionUnsuccessful, auditErr, nil)
 		}
 		handleErrorType(datasetDocType, err, w)
 		return
 	}
 
-	authorised, logData := api.authenticate(r, log.Data{})
-
-	var b []byte
-	if authorised {
-
-		// User has valid authentication to get raw dataset document
-		datasets := &models.DatasetUpdateResults{}
-		datasets.Items = results
-		b, err = json.Marshal(datasets)
-		if err != nil {
-			log.ErrorC("failed to marshal dataset resource into bytes", err, nil)
-			handleErrorType(datasetDocType, err, w)
-			return
-		}
-	} else {
-
-		// User is not authenticated and hence has only access to current sub document
-		datasets := &models.DatasetResults{}
-		datasets.Items = mapResults(results)
-
-		b, err = json.Marshal(datasets)
-		if err != nil {
-			log.ErrorC("failed to marshal dataset resource into bytes", err, nil)
-			handleErrorType(datasetDocType, err, w)
-			return
-		}
-	}
-
-	if auditErr := api.auditor.Record(r.Context(), getDatasetsAction, actionSuccessful, nil); auditErr != nil {
-		handleAuditingFailure(w, auditErr, logData)
-		return
+	if auditErr := api.auditor.Record(ctx, getDatasetsAction, actionSuccessful, nil); auditErr != nil {
+		auditActionFailure(ctx, getDatasetsAction, actionSuccessful, auditErr, nil)
 	}
 
 	setJSONContentType(w)
 	_, err = w.Write(b)
 	if err != nil {
-		log.Error(err, nil)
+		logError(ctx, errors.WithMessage(err, "api endpoint getDatasets error writing response body"), nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	log.Debug("get all datasets", logData)
+	logInfo(ctx, "api endpoint getDatasets request successful", nil)
 }
 
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
@@ -283,36 +288,59 @@ func (api *DatasetAPI) publishDataset(currentDataset *models.DatasetUpdate, vers
 }
 
 func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
+	logData := log.Data{"dataset_id": datasetID}
+	auditParams := common.Params{"dataset_id": datasetID}
 
-	currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
-	if err == errs.ErrDatasetNotFound {
-		log.Debug("cannot delete dataset, it does not exist", log.Data{"dataset_id": datasetID})
-		w.WriteHeader(http.StatusNoContent) // idempotent
+	if err := api.auditor.Record(ctx, deleteDatasetAction, actionAttempted, auditParams); err != nil {
+		auditActionFailure(ctx, deleteDatasetAction, actionAttempted, err, logData)
+		handleErrorType(datasetDocType, err, w)
 		return
 	}
+
+	// attempt to delete the dataset.
+	err := func() error {
+		currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
+
+		if err == errs.ErrDatasetNotFound {
+			log.Debug("cannot delete dataset, it does not exist", logData)
+			return errs.ErrDeleteDatasetNotFound
+		}
+
+		if err != nil {
+			log.ErrorC("failed to run query for existing dataset", err, logData)
+			return err
+		}
+
+		if currentDataset.Current != nil && currentDataset.Current.State == models.PublishedState {
+			log.ErrorC("unable to delete a published dataset", errs.ErrDeletePublishedDatasetForbidden, logData)
+			return errs.ErrDeletePublishedDatasetForbidden
+		}
+
+		if err := api.dataStore.Backend.DeleteDataset(datasetID); err != nil {
+			log.ErrorC("failed to delete dataset", err, logData)
+			return err
+		}
+		log.Debug("dataset deleted successfully", logData)
+		return nil
+	}()
+
 	if err != nil {
-		log.ErrorC("failed to run query for existing dataset", err, log.Data{"dataset_id": datasetID})
+		if auditErr := api.auditor.Record(ctx, deleteDatasetAction, actionUnsuccessful, auditParams); auditErr != nil {
+			auditActionFailure(ctx, deleteDatasetAction, actionUnsuccessful, auditErr, logData)
+		}
 		handleErrorType(datasetDocType, err, w)
 		return
 	}
 
-	if currentDataset.Current != nil && currentDataset.Current.State == models.PublishedState {
-		err = fmt.Errorf("forbidden - a published dataset cannot be deleted")
-		log.ErrorC("unable to delete a published dataset", err, log.Data{"dataset_id": datasetID})
-		http.Error(w, err.Error(), http.StatusForbidden)
-		return
+	if err := api.auditor.Record(ctx, deleteDatasetAction, actionSuccessful, auditParams); err != nil {
+		auditActionFailure(ctx, deleteDatasetAction, actionSuccessful, err, logData)
+		// fall through and return the origin status code as the action has been carried out at this point.
 	}
-
-	if err := api.dataStore.Backend.DeleteDataset(datasetID); err != nil {
-		log.ErrorC("failed to delete dataset", err, log.Data{"dataset_id": datasetID})
-		handleErrorType(datasetDocType, err, w)
-		return
-	}
-
 	w.WriteHeader(http.StatusNoContent)
-	log.Debug("delete dataset", log.Data{"dataset_id": datasetID})
+	log.Debug("delete dataset", logData)
 }
 
 func mapResults(results []models.DatasetUpdate) []*models.Dataset {
