@@ -1,73 +1,81 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"gopkg.in/mgo.v2/bson"
 )
 
 func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
 	edition := vars["edition"]
 	version := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
-	authorised, logData := api.authenticate(r, logData)
+	b, err := func() ([]byte, error) {
+		authorised, logData := api.authenticate(r, logData)
 
-	var state string
-	if !authorised {
-		state = models.PublishedState
-	}
+		var state string
+		if !authorised {
+			state = models.PublishedState
+		}
 
-	versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
+		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
+		if err != nil {
+			logError(ctx, errors.WithMessage(err, "getDimensions endpoint: datastore.getversion returned an error"), logData)
+			return nil, err
+		}
+
+		if err = models.CheckState("version", versionDoc.State); err != nil {
+			logData["state"] = versionDoc.State
+			logError(ctx, errors.WithMessage(err, "getDimensions endpoint: unpublished version has an invalid state"), logData)
+			return nil, err
+		}
+
+		dimensions, err := api.dataStore.Backend.GetDimensions(datasetID, versionDoc.ID)
+		if err != nil {
+			logError(ctx, errors.WithMessage(err, "getDimensions endpoint: failed to get version dimensions"), logData)
+			return nil, err
+		}
+
+		results, err := api.createListOfDimensions(versionDoc, dimensions)
+		if err != nil {
+			logError(ctx, errors.WithMessage(err, "getDimensions endpoint: failed to convert bson to dimension"), logData)
+			return nil, err
+		}
+
+		listOfDimensions := &models.DatasetDimensionResults{Items: results}
+
+		b, err := json.Marshal(listOfDimensions)
+		if err != nil {
+			logError(ctx, errors.WithMessage(err, "getDimensions endpoint: failed to marshal list of dimension resources into bytes"), logData)
+			return nil, err
+		}
+		return b, nil
+	}()
+
 	if err != nil {
-		log.ErrorC("failed to get version", err, logData)
-		handleErrorType(dimensionDocType, err, w)
-		return
-	}
-
-	if err = models.CheckState("version", versionDoc.State); err != nil {
-		log.ErrorC("unpublished version has an invalid state", err, log.Data{"state": versionDoc.State})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	dimensions, err := api.dataStore.Backend.GetDimensions(datasetID, versionDoc.ID)
-	if err != nil {
-		log.ErrorC("failed to get version dimensions", err, logData)
-		handleErrorType(dimensionDocType, err, w)
-		return
-	}
-
-	results, err := api.createListOfDimensions(versionDoc, dimensions)
-	if err != nil {
-		log.ErrorC("failed to convert bson to dimension", err, logData)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	listOfDimensions := &models.DatasetDimensionResults{Items: results}
-
-	b, err := json.Marshal(listOfDimensions)
-	if err != nil {
-		log.ErrorC("failed to marshal list of dimension resources into bytes", err, logData)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleDimensionsErr(ctx, w, err)
 		return
 	}
 
 	setJSONContentType(w)
 	_, err = w.Write(b)
 	if err != nil {
-		log.Error(err, logData)
+		logError(ctx, errors.WithMessage(err, "getDimensions endpoint: error writing bytes to response"), logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-
-	log.Debug("get dimensions", log.Data{"dataset_id": datasetID, "edition": edition, "version": version})
+	logInfo(ctx, "getDimensions endpoint: request successful", logData)
 }
 
 func (api *DatasetAPI) createListOfDimensions(versionDoc *models.Version, dimensions []bson.M) ([]models.Dimension, error) {
@@ -172,4 +180,24 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	}
 
 	log.Debug("get dimension options", logData)
+}
+
+func handleDimensionsErr(ctx context.Context, w http.ResponseWriter, err error) {
+	var responseStatus int
+
+	switch {
+	case err == errs.ErrDatasetNotFound:
+		responseStatus = http.StatusNotFound
+	case err == errs.ErrEditionNotFound:
+		responseStatus = http.StatusNotFound
+	case err == errs.ErrVersionNotFound:
+		responseStatus = http.StatusNotFound
+	case err == errs.ErrDimensionsNotFound:
+		responseStatus = http.StatusNotFound
+	default:
+		responseStatus = http.StatusInternalServerError
+	}
+
+	logError(ctx, errors.WithMessage(err, "request unsuccessful"), log.Data{"responseStatus": responseStatus})
+	http.Error(w, err.Error(), responseStatus)
 }
