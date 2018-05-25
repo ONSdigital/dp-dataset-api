@@ -446,8 +446,43 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 			api.router.ServeHTTP(w, r)
 
-			Convey("then a 404 status is returned", func() {
+			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusNotFound)
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditRecordCalls(calls[0], getMetadataAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[1], getMetadataAction, actionUnsuccessful, ap)
+
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+			})
+		})
+
+		Convey("when version not published", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+			w := httptest.NewRecorder()
+			versionDoc := createVersionDoc()
+			versionDoc.State = "not published"
+
+			mockedDataStore := &storetest.StorerMock{
+				GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
+					return createDatasetDoc(), nil
+				},
+				CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
+					return nil
+				},
+				GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+					return versionDoc, nil
+				},
+			}
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+
+			api.router.ServeHTTP(w, r)
+
+			Convey("then a 500 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
