@@ -495,6 +495,50 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			})
 		})
 	})
+
+	Convey("given auditing action successful returns an error", t, func() {
+		auditor := getMockAuditorFunc(func(a string, r string) error {
+			if a == getMetadataAction && r == actionSuccessful {
+				return errors.New("audit error")
+			}
+			return nil
+		})
+
+		Convey("when get metadata is called", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
+					return createDatasetDoc(), nil
+				},
+				CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
+					return nil
+				},
+				GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+					return createVersionDoc(), nil
+				},
+			}
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+
+			api.router.ServeHTTP(w, r)
+
+			Convey("then a 500 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditRecordCalls(calls[0], getMetadataAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[1], getMetadataAction, actionSuccessful, ap)
+
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+			})
+		})
+
+	})
+
 }
 
 // createDatasetDoc returns a datasetUpdate doc containing minimal fields but

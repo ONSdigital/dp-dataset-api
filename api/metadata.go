@@ -111,8 +111,6 @@ func handleMetadataErr(w http.ResponseWriter, err error) {
 	switch {
 	case err == errs.ErrEditionNotFound:
 		responseStatus = http.StatusNotFound
-	case err == errs.ErrMetadataNoCurrentPublished:
-		responseStatus = http.StatusNotFound
 	case err == errs.ErrMetadataVersionNotFound:
 		responseStatus = http.StatusNotFound
 	case err == errs.ErrDatasetNotFound:

@@ -27,6 +27,5 @@ var (
 	ErrAuditActionAttemptedFailure       = errors.New("internal server error")
 
 	// metadata endpoint errors
-	ErrMetadataNoCurrentPublished = errors.New("bob")
-	ErrMetadataVersionNotFound    = errors.New("Version not found")
+	ErrMetadataVersionNotFound = errors.New("Version not found")
 )
