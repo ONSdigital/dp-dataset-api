@@ -6,6 +6,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -18,6 +19,13 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	edition := vars["edition"]
 	version := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
+	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": version}
+
+	if auditErr := api.auditor.Record(ctx, getMetadataAction, actionAttempted, auditParams); auditErr != nil {
+		auditActionFailure(ctx, getMetadataAction, actionAttempted, auditErr, logData)
+		handleMetadataErr(w, auditErr)
+		return
+	}
 
 	b, err := func() ([]byte, error) {
 		datasetDoc, err := api.dataStore.Backend.GetDataset(datasetID)
@@ -75,18 +83,26 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
+		if auditErr := api.auditor.Record(ctx, getMetadataAction, actionUnsuccessful, auditParams); auditErr != nil {
+			auditActionFailure(ctx, getMetadataAction, actionUnsuccessful, auditErr, logData)
+		}
 		handleMetadataErr(w, err)
+		return
+	}
+
+	if auditErr := api.auditor.Record(ctx, getMetadataAction, actionSuccessful, auditParams); auditErr != nil {
+		auditActionFailure(ctx, getMetadataAction, actionSuccessful, auditErr, logData)
+		handleMetadataErr(w, auditErr)
 		return
 	}
 
 	setJSONContentType(w)
 	_, err = w.Write(b)
 	if err != nil {
-		log.Error(err, logData)
+		logError(ctx, errors.WithMessage(err, "getMetadata endpoint: failed to write bytes to response"), logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-
-	log.Debug("get metadata relevant to version", logData)
+	logInfo(ctx, "getMetadata endpoint: get metadata request successful", logData)
 }
 
 func handleMetadataErr(w http.ResponseWriter, err error) {
