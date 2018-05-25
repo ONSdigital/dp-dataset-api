@@ -47,6 +47,7 @@ const (
 	getVersionAction    = "getVersion"
 	deleteDatasetAction = "deleteDataset"
 	addDatasetAction    = "addDataset"
+	getDimensionsAction = "getDimensions"
 
 	// audit results
 	actionAttempted    = "attempted"

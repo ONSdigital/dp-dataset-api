@@ -8,6 +8,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -21,6 +22,13 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	edition := vars["edition"]
 	version := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
+	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": version}
+
+	if err := api.auditor.Record(ctx, getDimensionsAction, actionAttempted, auditParams); err != nil {
+		auditActionFailure(ctx, getDimensionsAction, actionAttempted, err, logData)
+		handleDimensionsErr(ctx, w, err)
+		return
+	}
 
 	b, err := func() ([]byte, error) {
 		authorised, logData := api.authenticate(r, logData)
@@ -66,6 +74,12 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		handleDimensionsErr(ctx, w, err)
+		return
+	}
+
+	if auditErr := api.auditor.Record(ctx, getDimensionsAction, actionSuccessful, auditParams); auditErr != nil {
+		auditActionFailure(ctx, getDimensionsAction, actionAttempted, auditErr, logData)
+		handleDimensionsErr(ctx, w, auditErr)
 		return
 	}
 
