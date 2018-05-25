@@ -49,6 +49,12 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 }
 
 func TestGetDimensionsReturnsErrors(t *testing.T) {
+	ap := common.Params{
+		"dataset_id": "123",
+		"edition":    "2017",
+		"version":    "1",
+	}
+
 	t.Parallel()
 	Convey("When the api cannot connect to datastore to get dimension resource return an internal server error", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
@@ -59,7 +65,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		auditor := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -67,6 +74,11 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditRecordCalls(calls[0], getDimensionsAction, actionAttempted, ap)
+		verifyAuditRecordCalls(calls[1], getDimensionsAction, actionUnsuccessful, ap)
 	})
 
 	Convey("When the request contain an invalid version return not found", t, func() {
@@ -78,7 +90,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		auditor := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -86,6 +99,12 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
+
+		calls := auditor.RecordCalls()
+
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditRecordCalls(calls[0], getDimensionsAction, actionAttempted, ap)
+		verifyAuditRecordCalls(calls[1], getDimensionsAction, actionUnsuccessful, ap)
 	})
 
 	Convey("When there are no dimensions then return not found error", t, func() {
@@ -100,7 +119,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		auditor := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -108,6 +128,11 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditRecordCalls(calls[0], getDimensionsAction, actionAttempted, ap)
+		verifyAuditRecordCalls(calls[1], getDimensionsAction, actionUnsuccessful, ap)
 	})
 
 	Convey("When the version has an invalid state return internal server error", t, func() {
@@ -119,7 +144,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		auditor := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -127,6 +153,11 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditRecordCalls(calls[0], getDimensionsAction, actionAttempted, ap)
+		verifyAuditRecordCalls(calls[1], getDimensionsAction, actionUnsuccessful, ap)
 	})
 }
 
