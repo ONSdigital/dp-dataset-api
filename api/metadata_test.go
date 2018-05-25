@@ -13,6 +13,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/go-ns/common"
+	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -297,6 +298,41 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestGetMetadataAuditingErrors(t *testing.T) {
+	ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
+
+	Convey("given auditing action attempted returns an error", t, func() {
+		auditor := getMockAuditorFunc(func(a string, r string) error {
+			if a == getMetadataAction && r == actionAttempted {
+				return errors.New("audit error")
+			}
+			return nil
+		})
+
+		Convey("when get metadata is called", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{}
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+
+			api.router.ServeHTTP(w, r)
+
+			Convey("then a 500 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 1)
+				verifyAuditRecordCalls(calls[0], getMetadataAction, actionAttempted, ap)
+
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+			})
+		})
 	})
 }
 
