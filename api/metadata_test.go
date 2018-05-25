@@ -369,6 +369,96 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 			})
 		})
+
+		Convey("when dataset.current is empty", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
+					return &models.DatasetUpdate{}, nil
+				},
+			}
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+
+			api.router.ServeHTTP(w, r)
+
+			Convey("then a 404 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusNotFound)
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditRecordCalls(calls[0], getMetadataAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[1], getMetadataAction, actionUnsuccessful, ap)
+
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+			})
+		})
+
+		Convey("when dataset edition does not exist", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
+					return createDatasetDoc(), nil
+				},
+				CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
+					return errs.ErrEditionNotFound
+				},
+			}
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+
+			api.router.ServeHTTP(w, r)
+
+			Convey("then a 404 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusNotFound)
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditRecordCalls(calls[0], getMetadataAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[1], getMetadataAction, actionUnsuccessful, ap)
+
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+			})
+		})
+
+		Convey("when dataset version does not exist", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
+					return createDatasetDoc(), nil
+				},
+				CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
+					return nil
+				},
+				GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+					return nil, errs.ErrVersionNotFound
+				},
+			}
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+
+			api.router.ServeHTTP(w, r)
+
+			Convey("then a 404 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusNotFound)
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditRecordCalls(calls[0], getMetadataAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[1], getMetadataAction, actionUnsuccessful, ap)
+
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+			})
+		})
 	})
 }
 
