@@ -9,6 +9,7 @@ var (
 	ErrAddDatasetBadRequest              = errors.New("Failed to parse json body")
 	ErrEditionNotFound                   = errors.New("Edition not found")
 	ErrVersionNotFound                   = errors.New("Version not found")
+	ErrVersionBadRequest                 = errors.New("Failed to parse json body")
 	ErrDimensionNodeNotFound             = errors.New("Dimension node not found")
 	ErrDimensionNotFound                 = errors.New("Dimension not found")
 	ErrDimensionsNotFound                = errors.New("Dimensions not found")
