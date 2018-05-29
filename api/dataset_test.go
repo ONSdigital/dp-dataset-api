@@ -762,12 +762,19 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		}
 		mockedDataStore.UpdateDataset("123", dataset, models.CreatedState)
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		auditor := createAuditor("", "")
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditRecordCalls(calls[0], putDatasetAction, actionAttempted, common.Params{"dataset_id": "123"})
+		verifyAuditRecordCalls(calls[1], putDatasetAction, actionSuccessful, common.Params{"dataset_id": "123"})
 	})
 }
 
@@ -790,7 +797,8 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		auditor := createAuditor("", "")
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
 
@@ -799,6 +807,11 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditRecordCalls(calls[0], putDatasetAction, actionAttempted, common.Params{"dataset_id": "123"})
+		verifyAuditRecordCalls(calls[1], putDatasetAction, actionUnsuccessful, common.Params{"dataset_id": "123"})
 	})
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {

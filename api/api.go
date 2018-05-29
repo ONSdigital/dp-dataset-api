@@ -41,12 +41,13 @@ const (
 	// audit actions
 	getDatasetsAction   = "getDatasets"
 	getDatasetAction    = "getDataset"
+	deleteDatasetAction = "deleteDataset"
+	addDatasetAction    = "addDataset"
+	putDatasetAction    = "putDataset"
 	getEditionsAction   = "getEditions"
 	getEditionAction    = "getEdition"
 	getVersionsAction   = "getVersions"
 	getVersionAction    = "getVersion"
-	deleteDatasetAction = "deleteDataset"
-	addDatasetAction    = "addDataset"
 	getDimensionsAction = "getDimensions"
 	getMetadataAction   = "getMetadata"
 
