@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -18,7 +19,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if err := api.auditor.Record(ctx, getDatasetsAction, actionAttempted, nil); err != nil {
 		auditActionFailure(ctx, getDatasetsAction, actionAttempted, err, nil)
-		handleErrorType(datasetDocType, errs.ErrAuditActionAttemptedFailure, w)
+		handleDatasetAPIErr(ctx, errs.ErrAuditActionAttemptedFailure, w, nil)
 		return
 	}
 
@@ -60,7 +61,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 		if auditErr := api.auditor.Record(ctx, getDatasetsAction, actionUnsuccessful, nil); auditErr != nil {
 			auditActionFailure(ctx, getDatasetsAction, actionUnsuccessful, auditErr, nil)
 		}
-		handleErrorType(datasetDocType, err, w)
+		handleDatasetAPIErr(ctx, err, w, nil)
 		return
 	}
 
@@ -86,7 +87,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 	if auditErr := api.auditor.Record(ctx, getDatasetAction, actionAttempted, auditParams); auditErr != nil {
 		auditActionFailure(ctx, getDatasetAction, actionAttempted, auditErr, logData)
-		handleErrorType(datasetDocType, errs.ErrInternalServer, w)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, logData)
 		return
 	}
 
@@ -132,13 +133,13 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		if auditErr := api.auditor.Record(ctx, getDatasetAction, actionUnsuccessful, auditParams); auditErr != nil {
 			auditActionFailure(ctx, getDatasetAction, actionUnsuccessful, auditErr, logData)
 		}
-		handleErrorType(datasetDocType, err, w)
+		handleDatasetAPIErr(ctx, err, w, logData)
 		return
 	}
 
 	if auditErr := api.auditor.Record(ctx, getDatasetAction, actionSuccessful, auditParams); auditErr != nil {
 		auditActionFailure(ctx, getDatasetAction, actionSuccessful, auditErr, logData)
-		handleErrorType(datasetDocType, errs.ErrInternalServer, w)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, logData)
 		return
 	}
 
@@ -161,7 +162,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 
 	if err := api.auditor.Record(ctx, addDatasetAction, actionAttempted, auditParams); err != nil {
 		auditActionFailure(ctx, addDatasetAction, actionAttempted, err, logData)
-		handleErrorType(datasetDocType, errs.ErrInternalServer, w)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, logData)
 		return
 	}
 
@@ -225,12 +226,12 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 		if auditErr := api.auditor.Record(ctx, addDatasetAction, actionUnsuccessful, auditParams); auditErr != nil {
 			auditActionFailure(ctx, addDatasetAction, actionUnsuccessful, auditErr, logData)
 		}
-		handleErrorType(datasetDocType, err, w)
+		handleDatasetAPIErr(ctx, err, w, logData)
 		return
 	}
 
 	if auditErr := api.auditor.Record(ctx, addDatasetAction, actionSuccessful, auditParams); auditErr != nil {
-		auditActionFailure(ctx, addDatasetAction, actionUnsuccessful, auditErr, logData)
+		auditActionFailure(ctx, addDatasetAction, actionSuccessful, auditErr, logData)
 	}
 
 	setJSONContentType(w)
@@ -252,7 +253,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 
 	if err := api.auditor.Record(ctx, putDatasetAction, actionAttempted, auditParams); err != nil {
 		auditActionFailure(ctx, putDatasetAction, actionAttempted, err, data)
-		handleErrorType(datasetDocType, err, w)
+		handleDatasetAPIErr(ctx, err, w, data)
 		return
 	}
 
@@ -289,7 +290,8 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		if err := api.auditor.Record(ctx, putDatasetAction, actionUnsuccessful, auditParams); err != nil {
 			auditActionFailure(ctx, putDatasetAction, actionUnsuccessful, err, data)
 		}
-		handleErrorType(datasetDocType, err, w)
+
+		handleDatasetAPIErr(ctx, err, w, data)
 		return
 	}
 
@@ -342,7 +344,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 	if err := api.auditor.Record(ctx, deleteDatasetAction, actionAttempted, auditParams); err != nil {
 		auditActionFailure(ctx, deleteDatasetAction, actionAttempted, err, logData)
-		handleErrorType(datasetDocType, err, w)
+		handleDatasetAPIErr(ctx, err, w, logData)
 		return
 	}
 
@@ -377,7 +379,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 		if auditErr := api.auditor.Record(ctx, deleteDatasetAction, actionUnsuccessful, auditParams); auditErr != nil {
 			auditActionFailure(ctx, deleteDatasetAction, actionUnsuccessful, auditErr, logData)
 		}
-		handleErrorType(datasetDocType, err, w)
+		handleDatasetAPIErr(ctx, err, w, logData)
 		return
 	}
 
@@ -400,4 +402,30 @@ func mapResults(results []models.DatasetUpdate) []*models.Dataset {
 		items = append(items, item.Current)
 	}
 	return items
+}
+
+func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, data log.Data) {
+	if data == nil {
+		data = log.Data{}
+	}
+
+	var status int
+	switch {
+	case err == errs.ErrDeletePublishedDatasetForbidden:
+		status = http.StatusForbidden
+	case err == errs.ErrAddDatasetAlreadyExists:
+		status = http.StatusForbidden
+	case err == errs.ErrDatasetNotFound:
+		status = http.StatusNotFound
+	case err == errs.ErrDeleteDatasetNotFound:
+		status = http.StatusNoContent
+	case err == errs.ErrAddUpdateDatasetBadRequest:
+		status = http.StatusBadRequest
+	default:
+		status = http.StatusInternalServerError
+	}
+
+	data["responseStatus"] = status
+	logError(ctx, errors.WithMessage(err, "request unsuccessful"), data)
+	http.Error(w, err.Error(), status)
 }
