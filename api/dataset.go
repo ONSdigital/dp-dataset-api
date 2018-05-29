@@ -182,7 +182,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 		dataset, err := models.CreateDataset(r.Body)
 		if err != nil {
 			logError(ctx, errors.WithMessage(err, "addDataset endpoint: failed to model dataset resource based on request"), logData)
-			return nil, errs.ErrAddDatasetBadRequest
+			return nil, errs.ErrAddUpdateDatasetBadRequest
 		}
 
 		dataset.State = models.CreatedState
@@ -244,41 +244,48 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
+	data := log.Data{"dataset_id": datasetID}
 
-	dataset, err := models.CreateDataset(r.Body)
-	if err != nil {
-		log.ErrorC("failed to model dataset resource based on request", err, log.Data{"dataset_id": datasetID})
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
+	err := func() error {
+		defer r.Body.Close()
 
-	currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
+		dataset, err := models.CreateDataset(r.Body)
+		if err != nil {
+			logError(ctx, errors.WithMessage(err, "putDataset endpoint: failed to model dataset resource based on request"), data)
+			return errs.ErrAddUpdateDatasetBadRequest
+		}
+
+		currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
+		if err != nil {
+			logError(ctx, errors.WithMessage(err, "putDataset endpoint: datastore.getDataset returned an error"), data)
+			return err
+		}
+
+		if dataset.State == models.PublishedState {
+			if err := api.publishDataset(currentDataset, nil); err != nil {
+				logError(ctx, errors.WithMessage(err, "putDataset endpoint: failed to update dataset document to published"), data)
+				return err
+			}
+		} else {
+			if err := api.dataStore.Backend.UpdateDataset(datasetID, dataset, currentDataset.Next.State); err != nil {
+				logError(ctx, errors.WithMessage(err, "putDataset endpoint: failed to update dataset resource"), data)
+				return err
+			}
+		}
+		return nil
+	}()
+
 	if err != nil {
-		log.ErrorC("failed to find dataset", err, log.Data{"dataset_id": datasetID})
 		handleErrorType(datasetDocType, err, w)
 		return
 	}
 
-	if dataset.State == models.PublishedState {
-		if err := api.publishDataset(currentDataset, nil); err != nil {
-			log.ErrorC("failed to update dataset document to published", err, log.Data{"dataset_id": datasetID})
-			handleErrorType(versionDocType, err, w)
-			return
-		}
-	} else {
-		if err := api.dataStore.Backend.UpdateDataset(datasetID, dataset, currentDataset.Next.State); err != nil {
-			log.ErrorC("failed to update dataset resource", err, log.Data{"dataset_id": datasetID})
-			handleErrorType(datasetDocType, err, w)
-			return
-		}
-	}
-
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
-	log.Debug("update dataset", log.Data{"dataset_id": datasetID})
+	logInfo(ctx, "putDataset endpoint: request successful", data)
 }
 
 func (api *DatasetAPI) publishDataset(currentDataset *models.DatasetUpdate, version *models.Version) error {

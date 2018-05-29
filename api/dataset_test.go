@@ -793,6 +793,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "Failed to parse json body\n")
 
