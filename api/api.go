@@ -48,6 +48,7 @@ const (
 	deleteDatasetAction = "deleteDataset"
 	addDatasetAction    = "addDataset"
 	getDimensionsAction = "getDimensions"
+	getMetadataAction   = "getMetadata"
 
 	// audit results
 	actionAttempted    = "attempted"

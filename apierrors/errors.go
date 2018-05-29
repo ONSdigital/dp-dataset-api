@@ -25,4 +25,7 @@ var (
 	ErrDeletePublishedDatasetForbidden   = errors.New("a published dataset cannot be deleted")
 	ErrDeleteDatasetNotFound             = errors.New("dataset not found")
 	ErrAuditActionAttemptedFailure       = errors.New("internal server error")
+
+	// metadata endpoint errors
+	ErrMetadataVersionNotFound = errors.New("Version not found")
 )
