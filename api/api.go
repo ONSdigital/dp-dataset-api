@@ -45,6 +45,7 @@ const (
 	getEditionAction    = "getEdition"
 	getVersionsAction   = "getVersions"
 	getVersionAction    = "getVersion"
+	putVersionAction    = "putVersion"
 	deleteDatasetAction = "deleteDataset"
 	addDatasetAction    = "addDataset"
 	getDimensionsAction = "getDimensions"

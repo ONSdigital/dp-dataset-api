@@ -1292,10 +1292,10 @@ func getMockAuditor() *audit.AuditorServiceMock {
 	}
 }
 
-func createAuditor(a string, r string) *audit.AuditorServiceMock {
+func createAuditor(actionErrTrigger string, resultErrTrigger string) *audit.AuditorServiceMock {
 	return &audit.AuditorServiceMock{
 		RecordFunc: func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == a && result == r {
+			if action == actionErrTrigger && result == resultErrTrigger {
 				return errors.New("auditing error")
 			}
 			return nil
