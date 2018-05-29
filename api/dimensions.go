@@ -74,14 +74,14 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if auditErr := api.auditor.Record(ctx, getDimensionsAction, actionUnsuccessful, auditParams); auditErr != nil {
-			auditActionFailure(ctx, getDimensionsAction, actionAttempted, auditErr, logData)
+			auditActionFailure(ctx, getDimensionsAction, actionUnsuccessful, auditErr, logData)
 		}
 		handleDimensionsErr(ctx, w, err)
 		return
 	}
 
 	if auditErr := api.auditor.Record(ctx, getDimensionsAction, actionSuccessful, auditParams); auditErr != nil {
-		auditActionFailure(ctx, getDimensionsAction, actionAttempted, auditErr, logData)
+		auditActionFailure(ctx, getDimensionsAction, actionSuccessful, auditErr, logData)
 		handleDimensionsErr(ctx, w, auditErr)
 		return
 	}
