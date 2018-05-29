@@ -250,7 +250,11 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	data := log.Data{"dataset_id": datasetID}
 	auditParams := common.Params{"dataset_id": datasetID}
 
-	api.auditor.Record(ctx, putDatasetAction, actionAttempted, auditParams)
+	if err := api.auditor.Record(ctx, putDatasetAction, actionAttempted, auditParams); err != nil {
+		auditActionFailure(ctx, putDatasetAction, actionAttempted, err, data)
+		handleErrorType(datasetDocType, err, w)
+		return
+	}
 
 	err := func() error {
 		defer r.Body.Close()
@@ -282,12 +286,16 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		api.auditor.Record(ctx, putDatasetAction, actionUnsuccessful, auditParams)
+		if err := api.auditor.Record(ctx, putDatasetAction, actionUnsuccessful, auditParams); err != nil {
+			auditActionFailure(ctx, putDatasetAction, actionUnsuccessful, err, data)
+		}
 		handleErrorType(datasetDocType, err, w)
 		return
 	}
 
-	api.auditor.Record(ctx, putDatasetAction, actionSuccessful, auditParams)
+	if err := api.auditor.Record(ctx, putDatasetAction, actionSuccessful, auditParams); err != nil {
+		auditActionFailure(ctx, putDatasetAction, actionSuccessful, err, data)
+	}
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
