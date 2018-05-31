@@ -1245,7 +1245,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 func TestPutVersionGenerateDownloadsError(t *testing.T) {
 	Convey("given download generator returns an error", t, func() {
-
+		ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
 		mockedErr := errors.New("spectacular explosion")
 		var v models.Version
 		json.Unmarshal([]byte(versionAssociatedPayload), &v)
@@ -1284,7 +1284,8 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 			So(err, ShouldBeNil)
 			cfg.EnablePrivateEnpoints = true
 
-			api := routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockDownloadGenerator, getMockAuditor(), genericMockedObservationStore)
+			auditor := getMockAuditor()
+			api := routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockDownloadGenerator, auditor, genericMockedObservationStore)
 
 			api.router.ServeHTTP(w, r)
 
@@ -1313,6 +1314,13 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 				So(genCalls[0].DatasetID, ShouldEqual, "123")
 				So(genCalls[0].Edition, ShouldEqual, "2017")
 				So(genCalls[0].Version, ShouldEqual, "1")
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 4)
+				verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[1], updateVersionAction, actionSuccessful, ap)
+				verifyAuditRecordCalls(calls[2], associateVersionAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[3], associateVersionAction, actionUnsuccessful, ap)
 			})
 		})
 	})
