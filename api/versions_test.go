@@ -1443,6 +1443,47 @@ func TestPutEmptyVersion(t *testing.T) {
 	})
 }
 
+func TestPutActionAttemptedErrors(t *testing.T) {
+	ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
+
+	t.Parallel()
+
+	Convey("given audit action attempted returns an error", t, func() {
+		auditor := createAuditor(updateVersionAction, actionAttempted)
+
+		Convey("when updateVersion is called with a valid request", func() {
+			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionPayload))
+			So(err, ShouldBeNil)
+
+			store := &storetest.StorerMock{}
+			api := GetAPIWithMockedDatastore(&storetest.StorerMock{}, nil, auditor, nil)
+
+			versionDetails := versionDetails{
+				datasetID: "123",
+				edition:   "2017",
+				version:   "1",
+			}
+			currentDataset, currentVersion, updateVersion, err := api.updateVersion(r.Context(), r.Body, versionDetails)
+
+			Convey("then an error is returned and updateVersion fails", func() {
+				So(err, ShouldNotBeNil)
+				So(currentDataset, ShouldBeNil)
+				So(currentVersion, ShouldBeNil)
+				So(updateVersion, ShouldBeNil)
+				So(len(store.GetDatasetCalls()), ShouldEqual, 0)
+				So(len(store.CheckEditionExistsCalls()), ShouldEqual, 0)
+				So(len(store.GetVersionCalls()), ShouldEqual, 0)
+				So(len(store.UpdateVersionCalls()), ShouldEqual, 0)
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 1)
+				verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
+			})
+		})
+
+	})
+}
+
 func TestPutVersionReturnsError(t *testing.T) {
 	ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
 	t.Parallel()
