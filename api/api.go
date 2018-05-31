@@ -45,7 +45,6 @@ const (
 	getEditionAction       = "getEdition"
 	getVersionsAction      = "getVersions"
 	getVersionAction       = "getVersion"
-	putVersionAction       = "putVersion"
 	updateVersionAction    = "updateVersion"
 	publishVersionAction   = "publishVersion"
 	associateVersionAction = "associateVersionAction"
@@ -205,7 +204,7 @@ func handleErrorType(docType string, err error, w http.ResponseWriter) {
 			http.Error(w, err.Error(), http.StatusNoContent)
 		} else if err == errs.ErrDeletePublishedDatasetForbidden || err == errs.ErrAddDatasetAlreadyExists {
 			http.Error(w, err.Error(), http.StatusForbidden)
-		} else if err == errs.ErrAddDatasetBadRequest {
+		} else if err == errs.ErrAddUpdateDatasetBadRequest {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
