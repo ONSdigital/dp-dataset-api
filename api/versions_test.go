@@ -1327,6 +1327,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 }
 
 func TestPutEmptyVersion(t *testing.T) {
+	ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
 	var v models.Version
 	json.Unmarshal([]byte(versionAssociatedPayload), &v)
 	v.State = models.AssociatedState
@@ -1354,7 +1355,8 @@ func TestPutEmptyVersion(t *testing.T) {
 
 			w := httptest.NewRecorder()
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+			auditor := getMockAuditor()
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
 			api.router.ServeHTTP(w, r)
 
@@ -1366,6 +1368,11 @@ func TestPutEmptyVersion(t *testing.T) {
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 				So(mockedDataStore.UpdateVersionCalls()[0].Version.Downloads, ShouldBeNil)
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[1], updateVersionAction, actionSuccessful, ap)
 			})
 		})
 	})
@@ -1394,7 +1401,8 @@ func TestPutEmptyVersion(t *testing.T) {
 			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+			auditor := getMockAuditor()
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
 			api.router.ServeHTTP(w, r)
 
@@ -1425,6 +1433,11 @@ func TestPutEmptyVersion(t *testing.T) {
 				So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 				So(len(mockDownloadGenerator.GenerateCalls()), ShouldEqual, 0)
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[1], updateVersionAction, actionSuccessful, ap)
 			})
 		})
 	})
