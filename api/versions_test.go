@@ -1444,6 +1444,7 @@ func TestPutEmptyVersion(t *testing.T) {
 }
 
 func TestPutVersionReturnsError(t *testing.T) {
+	ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
 	t.Parallel()
 	Convey("When the request contain malformed json a bad request status is returned", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
@@ -1467,7 +1468,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor(), genericMockedObservationStore)
+		auditor := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -1476,6 +1478,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
+		verifyAuditRecordCalls(calls[1], updateVersionAction, actionUnsuccessful, ap)
 	})
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
@@ -1500,15 +1507,18 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor(), genericMockedObservationStore)
+		auditor := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
+
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "internal error\n")
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+		So(len(auditor.RecordCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the dataset document cannot be found for version return status not found", t, func() {
@@ -1536,7 +1546,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor(), genericMockedObservationStore)
+		auditor := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -1546,6 +1557,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
+		verifyAuditRecordCalls(calls[1], updateVersionAction, actionUnsuccessful, ap)
 	})
 
 	Convey("When the edition document cannot be found for version return status not found", t, func() {
@@ -1573,7 +1589,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor(), genericMockedObservationStore)
+		auditor := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -1583,6 +1600,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
+		verifyAuditRecordCalls(calls[1], updateVersionAction, actionUnsuccessful, ap)
 	})
 
 	Convey("When the version document cannot be found return status not found", t, func() {
@@ -1613,7 +1635,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor(), genericMockedObservationStore)
+		auditor := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -1624,6 +1647,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
+		verifyAuditRecordCalls(calls[1], updateVersionAction, actionUnsuccessful, ap)
 	})
 
 	Convey("When the request is not authorised to update version then response returns status not found", t, func() {
@@ -1646,7 +1674,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor(), genericMockedObservationStore)
+		auditor := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
@@ -1654,6 +1683,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+		So(len(auditor.RecordCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the version document has already been published return status forbidden", t, func() {
@@ -1680,7 +1710,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor(), genericMockedObservationStore)
+		auditor := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -1688,6 +1719,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+		So(len(auditor.RecordCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the request body is invalid return status bad request", t, func() {
@@ -1717,8 +1749,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 				return nil
 			},
 		}
-
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, getMockAuditor(), genericMockedObservationStore)
+		auditor := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -1729,6 +1761,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
+		verifyAuditRecordCalls(calls[1], updateVersionAction, actionUnsuccessful, ap)
+
 	})
 }
 
