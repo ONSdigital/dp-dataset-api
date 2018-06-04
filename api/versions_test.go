@@ -1443,8 +1443,36 @@ func TestPutEmptyVersion(t *testing.T) {
 	})
 }
 
-func TestPutActionAttemptedErrors(t *testing.T) {
+func TestUpdateVersionAuditErrors(t *testing.T) {
 	ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
+
+	versionDetails := versionDetails{
+		datasetID: "123",
+		edition:   "2017",
+		version:   "1",
+	}
+
+	currentVersion := &models.Version{
+		ID: "789",
+		Links: &models.VersionLinks{
+			Dataset: &models.LinkObject{
+				HRef: "http://localhost:22000/datasets/123",
+				ID:   "123",
+			},
+			Dimensions: &models.LinkObject{
+				HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
+			},
+			Edition: &models.LinkObject{
+				HRef: "http://localhost:22000/datasets/123/editions/2017",
+				ID:   "456",
+			},
+			Self: &models.LinkObject{
+				HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+			},
+		},
+		ReleaseDate: "2017",
+		State:       models.EditionConfirmedState,
+	}
 
 	t.Parallel()
 
@@ -1458,11 +1486,6 @@ func TestPutActionAttemptedErrors(t *testing.T) {
 			store := &storetest.StorerMock{}
 			api := GetAPIWithMockedDatastore(&storetest.StorerMock{}, nil, auditor, nil)
 
-			versionDetails := versionDetails{
-				datasetID: "123",
-				edition:   "2017",
-				version:   "1",
-			}
 			currentDataset, currentVersion, updateVersion, err := api.updateVersion(r.Context(), r.Body, versionDetails)
 
 			Convey("then an error is returned and updateVersion fails", func() {
@@ -1480,7 +1503,91 @@ func TestPutActionAttemptedErrors(t *testing.T) {
 				verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
 			})
 		})
+	})
 
+	Convey("given audit action successful returns an error", t, func() {
+		auditor := createAuditor(updateVersionAction, actionSuccessful)
+
+		Convey("when updateVersion is called with a valid request", func() {
+
+			store := &storetest.StorerMock{
+				GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+					return &models.DatasetUpdate{}, nil
+				},
+				CheckEditionExistsFunc: func(string, string, string) error {
+					return nil
+				},
+				GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+					return currentVersion, nil
+				},
+				UpdateVersionFunc: func(string, *models.Version) error {
+					return nil
+				},
+			}
+
+			var expectedUpdateVersion models.Version
+			err := json.Unmarshal([]byte(versionPayload), &expectedUpdateVersion)
+			So(err, ShouldBeNil)
+			expectedUpdateVersion.Downloads = currentVersion.Downloads
+			expectedUpdateVersion.Links = currentVersion.Links
+			expectedUpdateVersion.ID = currentVersion.ID
+			expectedUpdateVersion.State = models.EditionConfirmedState
+
+			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionPayload))
+			So(err, ShouldBeNil)
+			api := GetAPIWithMockedDatastore(store, nil, auditor, nil)
+
+			actualCurrentDataset, actualCurrentVersion, actualUpdateVersion, err := api.updateVersion(r.Context(), r.Body, versionDetails)
+
+			Convey("then the expected audit events are recorded and the expected error is returned", func() {
+				So(err, ShouldBeNil)
+				So(actualCurrentDataset, ShouldResemble, &models.DatasetUpdate{})
+				So(actualCurrentVersion, ShouldResemble, currentVersion)
+				So(actualUpdateVersion, ShouldResemble, &expectedUpdateVersion)
+				So(len(store.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(store.CheckEditionExistsCalls()), ShouldEqual, 1)
+				So(len(store.GetVersionCalls()), ShouldEqual, 1)
+				So(len(store.UpdateVersionCalls()), ShouldEqual, 1)
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[1], updateVersionAction, actionSuccessful, ap)
+			})
+		})
+	})
+
+	Convey("given audit action unsuccessful returns an error", t, func() {
+		auditor := createAuditor(updateVersionAction, actionUnsuccessful)
+
+		Convey("when update version is unsuccessful", func() {
+			store := &storetest.StorerMock{
+				GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+					return nil, errs.ErrDatasetNotFound
+				},
+			}
+			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionPayload))
+			So(err, ShouldBeNil)
+			api := GetAPIWithMockedDatastore(store, nil, auditor, nil)
+
+			actualCurrentDataset, actualCurrentVersion, actualUpdateVersion, err := api.updateVersion(r.Context(), r.Body, versionDetails)
+
+			Convey("then the expected audit events are recorded and the expected error is returned", func() {
+				So(err, ShouldEqual, errs.ErrDatasetNotFound)
+				So(actualCurrentDataset, ShouldBeNil)
+				So(actualCurrentVersion, ShouldBeNil)
+				So(actualUpdateVersion, ShouldBeNil)
+				So(len(store.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(store.CheckEditionExistsCalls()), ShouldEqual, 0)
+				So(len(store.GetVersionCalls()), ShouldEqual, 0)
+				So(len(store.UpdateVersionCalls()), ShouldEqual, 0)
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[1], updateVersionAction, actionUnsuccessful, ap)
+			})
+		})
 	})
 }
 
