@@ -47,7 +47,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": id, "edition": editionID}
 	auditParams := common.Params{"dataset_id": id, "edition": editionID}
 
-	if auditErr := api.auditor.Record(r.Context(), getVersionsAction, actionAttempted, auditParams); auditErr != nil {
+	if auditErr := api.auditor.Record(r.Context(), getVersionsAction, audit.Attempted, auditParams); auditErr != nil {
 		handleAuditingFailure(w, auditErr, logData)
 		return
 	}
@@ -61,7 +61,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 
 	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
 		log.ErrorC("failed to find dataset for list of versions", err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getVersionsAction, actionUnsuccessful, auditParams); auditErr != nil {
+		if auditErr := api.auditor.Record(r.Context(), getVersionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			handleAuditingFailure(w, auditErr, logData)
 			return
 		}
@@ -71,7 +71,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 
 	if err := api.dataStore.Backend.CheckEditionExists(id, editionID, state); err != nil {
 		log.ErrorC("failed to find edition for list of versions", err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getVersionsAction, actionUnsuccessful, auditParams); auditErr != nil {
+		if auditErr := api.auditor.Record(r.Context(), getVersionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			handleAuditingFailure(w, auditErr, logData)
 			return
 		}
@@ -82,7 +82,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	results, err := api.dataStore.Backend.GetVersions(id, editionID, state)
 	if err != nil {
 		log.ErrorC("failed to find any versions for dataset edition", err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getVersionsAction, actionUnsuccessful, auditParams); auditErr != nil {
+		if auditErr := api.auditor.Record(r.Context(), getVersionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			handleAuditingFailure(w, auditErr, logData)
 			return
 		}
@@ -114,7 +114,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if hasInvalidState {
-		if auditErr := api.auditor.Record(r.Context(), getVersionsAction, actionUnsuccessful, auditParams); auditErr != nil {
+		if auditErr := api.auditor.Record(r.Context(), getVersionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			handleAuditingFailure(w, auditErr, logData)
 			return
 		}
@@ -129,7 +129,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if auditErr := api.auditor.Record(r.Context(), getVersionsAction, actionSuccessful, auditParams); auditErr != nil {
+	if auditErr := api.auditor.Record(r.Context(), getVersionsAction, audit.Successful, auditParams); auditErr != nil {
 		handleAuditingFailure(w, auditErr, logData)
 		return
 	}
@@ -151,7 +151,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": id, "edition": editionID, "version": version}
 	auditParams := common.Params{"dataset_id": id, "edition": editionID, "version": version}
 
-	if auditErr := api.auditor.Record(r.Context(), getVersionAction, actionAttempted, auditParams); auditErr != nil {
+	if auditErr := api.auditor.Record(r.Context(), getVersionAction, audit.Attempted, auditParams); auditErr != nil {
 		handleAuditingFailure(w, auditErr, logData)
 		return
 	}
@@ -165,7 +165,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 
 	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
 		log.ErrorC("failed to find dataset", err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getVersionAction, actionUnsuccessful, auditParams); auditErr != nil {
+		if auditErr := api.auditor.Record(r.Context(), getVersionAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			handleAuditingFailure(w, auditErr, logData)
 			return
 		}
@@ -175,7 +175,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 
 	if err := api.dataStore.Backend.CheckEditionExists(id, editionID, state); err != nil {
 		log.ErrorC("failed to find edition for dataset", err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getVersionAction, actionUnsuccessful, auditParams); auditErr != nil {
+		if auditErr := api.auditor.Record(r.Context(), getVersionAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			handleAuditingFailure(w, auditErr, logData)
 			return
 		}
@@ -186,7 +186,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	results, err := api.dataStore.Backend.GetVersion(id, editionID, version, state)
 	if err != nil {
 		log.ErrorC("failed to find version for dataset edition", err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getVersionAction, actionUnsuccessful, auditParams); auditErr != nil {
+		if auditErr := api.auditor.Record(r.Context(), getVersionAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			handleAuditingFailure(w, auditErr, logData)
 			return
 		}
@@ -198,7 +198,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 
 	if err = models.CheckState("version", results.State); err != nil {
 		log.ErrorC("unpublished version has an invalid state", err, log.Data{"state": results.State})
-		if auditErr := api.auditor.Record(r.Context(), getVersionAction, actionUnsuccessful, auditParams); auditErr != nil {
+		if auditErr := api.auditor.Record(r.Context(), getVersionAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			handleAuditingFailure(w, auditErr, logData)
 			return
 		}
@@ -228,7 +228,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if auditErr := api.auditor.Record(r.Context(), getVersionAction, actionSuccessful, auditParams); auditErr != nil {
+	if auditErr := api.auditor.Record(r.Context(), getVersionAction, audit.Successful, auditParams); auditErr != nil {
 		handleAuditingFailure(w, auditErr, logData)
 		return
 	}
@@ -349,8 +349,8 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 	ap := versionDetails.baseAuditParams()
 	data := versionDetails.baseLogData()
 
-	if auditErr := api.auditor.Record(ctx, publishVersionAction, actionAttempted, ap); auditErr != nil {
-		auditActionFailure(ctx, publishVersionAction, actionAttempted, auditErr, data)
+	if auditErr := api.auditor.Record(ctx, publishVersionAction, audit.Attempted, ap); auditErr != nil {
+		auditActionFailure(ctx, publishVersionAction, audit.Attempted, auditErr, data)
 		return auditErr
 	}
 
@@ -391,14 +391,14 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 	}()
 
 	if err != nil {
-		if auditErr := api.auditor.Record(ctx, publishVersionAction, actionUnsuccessful, ap); auditErr != nil {
-			auditActionFailure(ctx, publishVersionAction, actionUnsuccessful, auditErr, data)
+		if auditErr := api.auditor.Record(ctx, publishVersionAction, audit.Unsuccessful, ap); auditErr != nil {
+			auditActionFailure(ctx, publishVersionAction, audit.Unsuccessful, auditErr, data)
 		}
 		return err
 	}
 
-	if auditErr := api.auditor.Record(ctx, publishVersionAction, actionSuccessful, ap); auditErr != nil {
-		auditActionFailure(ctx, publishVersionAction, actionSuccessful, auditErr, data)
+	if auditErr := api.auditor.Record(ctx, publishVersionAction, audit.Successful, ap); auditErr != nil {
+		auditActionFailure(ctx, publishVersionAction, audit.Successful, auditErr, data)
 	}
 
 	logInfo(ctx, "publish version completed successfully", data)
@@ -409,8 +409,8 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion *mod
 	data := versionDetails.baseLogData()
 	ap := versionDetails.baseAuditParams()
 
-	if auditErr := api.auditor.Record(ctx, associateVersionAction, actionAttempted, ap); auditErr != nil {
-		auditActionFailure(ctx, associateVersionAction, actionAttempted, auditErr, data)
+	if auditErr := api.auditor.Record(ctx, associateVersionAction, audit.Attempted, ap); auditErr != nil {
+		auditActionFailure(ctx, associateVersionAction, audit.Attempted, auditErr, data)
 		return auditErr
 	}
 
@@ -433,14 +433,14 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion *mod
 	}()
 
 	if associateVersionErr != nil {
-		if auditErr := api.auditor.Record(ctx, associateVersionAction, actionUnsuccessful, ap); auditErr != nil {
-			auditActionFailure(ctx, associateVersionAction, actionUnsuccessful, auditErr, data)
+		if auditErr := api.auditor.Record(ctx, associateVersionAction, audit.Unsuccessful, ap); auditErr != nil {
+			auditActionFailure(ctx, associateVersionAction, audit.Unsuccessful, auditErr, data)
 		}
 		return associateVersionErr
 	}
 
-	if auditErr := api.auditor.Record(ctx, associateVersionAction, actionSuccessful, ap); auditErr != nil {
-		auditActionFailure(ctx, associateVersionAction, actionSuccessful, auditErr, data)
+	if auditErr := api.auditor.Record(ctx, associateVersionAction, audit.Successful, ap); auditErr != nil {
+		auditActionFailure(ctx, associateVersionAction, audit.Successful, auditErr, data)
 	}
 
 	logInfo(ctx, "associate version completed successfully", data)

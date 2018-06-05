@@ -16,6 +16,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
@@ -55,8 +56,8 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionSuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, audit.Successful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -85,8 +86,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldResemble, "internal error\n")
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, audit.Unsuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -109,8 +110,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, audit.Unsuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -138,8 +139,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, audit.Unsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -172,8 +173,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, audit.Unsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -205,8 +206,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, audit.Unsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -241,8 +242,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, audit.Unsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -273,7 +274,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, internalServerErr)
 		So(len(recCalls), ShouldEqual, 1)
-		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -290,7 +291,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getVersionsAction && result == actionUnsuccessful {
+			if action == getVersionsAction && result == audit.Unsuccessful {
 				return errors.New("error")
 			}
 			return nil
@@ -304,8 +305,8 @@ func TestGetVersionsAuditError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, internalServerErr)
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, audit.Unsuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -325,7 +326,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getVersionsAction && result == actionUnsuccessful {
+			if action == getVersionsAction && result == audit.Unsuccessful {
 				return errors.New("error")
 			}
 			return nil
@@ -339,8 +340,8 @@ func TestGetVersionsAuditError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, internalServerErr)
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, audit.Unsuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -363,7 +364,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getVersionsAction && result == actionUnsuccessful {
+			if action == getVersionsAction && result == audit.Unsuccessful {
 				return errors.New("error")
 			}
 			return nil
@@ -377,8 +378,8 @@ func TestGetVersionsAuditError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, internalServerErr)
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, audit.Unsuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -403,7 +404,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getVersionsAction && result == actionUnsuccessful {
+			if action == getVersionsAction && result == audit.Unsuccessful {
 				return errors.New("error")
 			}
 			return nil
@@ -417,8 +418,8 @@ func TestGetVersionsAuditError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, internalServerErr)
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, audit.Unsuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -441,7 +442,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getVersionsAction && result == actionSuccessful {
+			if action == getVersionsAction && result == audit.Successful {
 				return errors.New("error")
 			}
 			return nil
@@ -455,8 +456,8 @@ func TestGetVersionsAuditError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionsAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionsAction, actionSuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionsAction, audit.Successful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -498,8 +499,8 @@ func TestGetVersionReturnsOK(t *testing.T) {
 		p := common.Params{"dataset_id": "123-456", "edition": "678", "version": "1"}
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionSuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, audit.Successful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -527,8 +528,8 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, audit.Unsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 	})
@@ -552,8 +553,8 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, audit.Unsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -582,8 +583,8 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, audit.Unsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -615,8 +616,8 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, audit.Unsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -647,8 +648,8 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, audit.Unsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -689,8 +690,8 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, audit.Unsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -712,7 +713,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getVersionAction && result == actionAttempted {
+			if action == getVersionAction && result == audit.Attempted {
 				return errors.New("error")
 			}
 			return nil
@@ -725,7 +726,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 1)
-		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
 	})
@@ -742,7 +743,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getVersionAction && result == actionUnsuccessful {
+			if action == getVersionAction && result == audit.Unsuccessful {
 				return errors.New("error")
 			}
 			return nil
@@ -755,8 +756,8 @@ func TestGetVersionAuditErrors(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, audit.Unsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -778,7 +779,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getVersionAction && result == actionUnsuccessful {
+			if action == getVersionAction && result == audit.Unsuccessful {
 				return errors.New("error")
 			}
 			return nil
@@ -792,8 +793,8 @@ func TestGetVersionAuditErrors(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, audit.Unsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -818,7 +819,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getVersionAction && result == actionUnsuccessful {
+			if action == getVersionAction && result == audit.Unsuccessful {
 				return errors.New("error")
 			}
 			return nil
@@ -832,8 +833,8 @@ func TestGetVersionAuditErrors(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, audit.Unsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -864,7 +865,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getVersionAction && result == actionUnsuccessful {
+			if action == getVersionAction && result == audit.Unsuccessful {
 				return errors.New("error")
 			}
 			return nil
@@ -878,8 +879,8 @@ func TestGetVersionAuditErrors(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, audit.Unsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -912,7 +913,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getVersionAction && result == actionSuccessful {
+			if action == getVersionAction && result == audit.Successful {
 				return errors.New("error")
 			}
 			return nil
@@ -925,8 +926,8 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		So(w.Body.String(), ShouldEqual, internalServerErr)
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getVersionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getVersionAction, actionSuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getVersionAction, audit.Successful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -1004,8 +1005,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		calls := auditor.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], updateVersionAction, actionSuccessful, ap)
+		verifyAuditRecordCalls(calls[0], updateVersionAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], updateVersionAction, audit.Successful, ap)
 	})
 
 	Convey("When state is set to associated", t, func() {
@@ -1062,8 +1063,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		calls := auditor.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], updateVersionAction, actionSuccessful, ap)
+		verifyAuditRecordCalls(calls[0], updateVersionAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], updateVersionAction, audit.Successful, ap)
 	})
 
 	Convey("When state is set to edition-confirmed", t, func() {
@@ -1129,10 +1130,10 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		calls := auditor.RecordCalls()
 		So(len(calls), ShouldEqual, 4)
-		verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], updateVersionAction, actionSuccessful, ap)
-		verifyAuditRecordCalls(calls[2], associateVersionAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[3], associateVersionAction, actionSuccessful, ap)
+		verifyAuditRecordCalls(calls[0], updateVersionAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], updateVersionAction, audit.Successful, ap)
+		verifyAuditRecordCalls(calls[2], associateVersionAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[3], associateVersionAction, audit.Successful, ap)
 	})
 
 	Convey("When state is set to published", t, func() {
@@ -1236,10 +1237,10 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		calls := auditor.RecordCalls()
 		So(len(calls), ShouldEqual, 4)
-		verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], updateVersionAction, actionSuccessful, ap)
-		verifyAuditRecordCalls(calls[2], publishVersionAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[3], publishVersionAction, actionSuccessful, ap)
+		verifyAuditRecordCalls(calls[0], updateVersionAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], updateVersionAction, audit.Successful, ap)
+		verifyAuditRecordCalls(calls[2], publishVersionAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[3], publishVersionAction, audit.Successful, ap)
 	})
 }
 
@@ -1317,10 +1318,10 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 4)
-				verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], updateVersionAction, actionSuccessful, ap)
-				verifyAuditRecordCalls(calls[2], associateVersionAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[3], associateVersionAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], updateVersionAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], updateVersionAction, audit.Successful, ap)
+				verifyAuditRecordCalls(calls[2], associateVersionAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[3], associateVersionAction, audit.Unsuccessful, ap)
 			})
 		})
 	})
@@ -1371,8 +1372,8 @@ func TestPutEmptyVersion(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], updateVersionAction, actionSuccessful, ap)
+				verifyAuditRecordCalls(calls[0], updateVersionAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], updateVersionAction, audit.Successful, ap)
 			})
 		})
 	})
@@ -1436,8 +1437,8 @@ func TestPutEmptyVersion(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], updateVersionAction, actionSuccessful, ap)
+				verifyAuditRecordCalls(calls[0], updateVersionAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], updateVersionAction, audit.Successful, ap)
 			})
 		})
 	})
@@ -1477,7 +1478,7 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 	t.Parallel()
 
 	Convey("given audit action attempted returns an error", t, func() {
-		auditor := createAuditor(updateVersionAction, actionAttempted)
+		auditor := createAuditor(updateVersionAction, audit.Attempted)
 
 		Convey("when updateVersion is called with a valid request", func() {
 			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionPayload))
@@ -1500,13 +1501,13 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 1)
-				verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[0], updateVersionAction, audit.Attempted, ap)
 			})
 		})
 	})
 
 	Convey("given audit action successful returns an error", t, func() {
-		auditor := createAuditor(updateVersionAction, actionSuccessful)
+		auditor := createAuditor(updateVersionAction, audit.Successful)
 
 		Convey("when updateVersion is called with a valid request", func() {
 
@@ -1551,14 +1552,14 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], updateVersionAction, actionSuccessful, ap)
+				verifyAuditRecordCalls(calls[0], updateVersionAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], updateVersionAction, audit.Successful, ap)
 			})
 		})
 	})
 
 	Convey("given audit action unsuccessful returns an error", t, func() {
-		auditor := createAuditor(updateVersionAction, actionUnsuccessful)
+		auditor := createAuditor(updateVersionAction, audit.Unsuccessful)
 
 		Convey("when update version is unsuccessful", func() {
 			store := &storetest.StorerMock{
@@ -1584,8 +1585,8 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], updateVersionAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], updateVersionAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], updateVersionAction, audit.Unsuccessful, ap)
 			})
 		})
 	})
@@ -1600,7 +1601,7 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 	}
 
 	Convey("given audit action attempted returns an error", t, func() {
-		auditor := createAuditor(publishVersionAction, actionAttempted)
+		auditor := createAuditor(publishVersionAction, audit.Attempted)
 
 		Convey("when publish version is called", func() {
 			store := &storetest.StorerMock{}
@@ -1611,14 +1612,14 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 			Convey("then the expected audit events are recorded and an error is returned", func() {
 				c := auditor.RecordCalls()
 				So(len(c), ShouldEqual, 1)
-				verifyAuditRecordCalls(c[0], publishVersionAction, actionAttempted, ap)
+				verifyAuditRecordCalls(c[0], publishVersionAction, audit.Attempted, ap)
 				So(err, ShouldNotBeNil)
 			})
 		})
 	})
 
 	Convey("given audit action unsuccessful returns an error", t, func() {
-		auditor := createAuditor(publishVersionAction, actionUnsuccessful)
+		auditor := createAuditor(publishVersionAction, audit.Unsuccessful)
 
 		Convey("when publish version returns an error", func() {
 			store := &storetest.StorerMock{
@@ -1634,15 +1635,15 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 				So(len(store.GetEditionCalls()), ShouldEqual, 1)
 				c := auditor.RecordCalls()
 				So(len(c), ShouldEqual, 2)
-				verifyAuditRecordCalls(c[0], publishVersionAction, actionAttempted, ap)
-				verifyAuditRecordCalls(c[1], publishVersionAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(c[0], publishVersionAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(c[1], publishVersionAction, audit.Unsuccessful, ap)
 				So(err, ShouldNotBeNil)
 			})
 		})
 	})
 
 	Convey("given audit action successful returns an error", t, func() {
-		auditor := createAuditor(publishVersionAction, actionSuccessful)
+		auditor := createAuditor(publishVersionAction, audit.Successful)
 
 		Convey("when publish version returns an error", func() {
 			store := &storetest.StorerMock{
@@ -1707,8 +1708,8 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 				So(len(store.GetEditionCalls()), ShouldEqual, 1)
 				c := auditor.RecordCalls()
 				So(len(c), ShouldEqual, 2)
-				verifyAuditRecordCalls(c[0], publishVersionAction, actionAttempted, ap)
-				verifyAuditRecordCalls(c[1], publishVersionAction, actionSuccessful, ap)
+				verifyAuditRecordCalls(c[0], publishVersionAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(c[1], publishVersionAction, audit.Successful, ap)
 				So(err, ShouldBeNil)
 			})
 		})
@@ -1753,8 +1754,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		calls := auditor.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], updateVersionAction, actionUnsuccessful, ap)
+		verifyAuditRecordCalls(calls[0], updateVersionAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], updateVersionAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
@@ -1832,8 +1833,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		calls := auditor.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], updateVersionAction, actionUnsuccessful, ap)
+		verifyAuditRecordCalls(calls[0], updateVersionAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], updateVersionAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("When the edition document cannot be found for version return status not found", t, func() {
@@ -1875,8 +1876,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		calls := auditor.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], updateVersionAction, actionUnsuccessful, ap)
+		verifyAuditRecordCalls(calls[0], updateVersionAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], updateVersionAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("When the version document cannot be found return status not found", t, func() {
@@ -1922,8 +1923,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		calls := auditor.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], updateVersionAction, actionUnsuccessful, ap)
+		verifyAuditRecordCalls(calls[0], updateVersionAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], updateVersionAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("When the request is not authorised to update version then response returns status not found", t, func() {
@@ -2035,8 +2036,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 		calls := auditor.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], updateVersionAction, actionUnsuccessful, ap)
+		verifyAuditRecordCalls(calls[0], updateVersionAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], updateVersionAction, audit.Unsuccessful, ap)
 
 	})
 }

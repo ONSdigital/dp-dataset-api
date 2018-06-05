@@ -8,6 +8,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
@@ -24,8 +25,8 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": version}
 
-	if err := api.auditor.Record(ctx, getDimensionsAction, actionAttempted, auditParams); err != nil {
-		auditActionFailure(ctx, getDimensionsAction, actionAttempted, err, logData)
+	if err := api.auditor.Record(ctx, getDimensionsAction, audit.Attempted, auditParams); err != nil {
+		auditActionFailure(ctx, getDimensionsAction, audit.Attempted, err, logData)
 		handleDimensionsErr(ctx, w, err)
 		return
 	}
@@ -73,15 +74,15 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		if auditErr := api.auditor.Record(ctx, getDimensionsAction, actionUnsuccessful, auditParams); auditErr != nil {
-			auditActionFailure(ctx, getDimensionsAction, actionUnsuccessful, auditErr, logData)
+		if auditErr := api.auditor.Record(ctx, getDimensionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
+			auditActionFailure(ctx, getDimensionsAction, audit.Unsuccessful, auditErr, logData)
 		}
 		handleDimensionsErr(ctx, w, err)
 		return
 	}
 
-	if auditErr := api.auditor.Record(ctx, getDimensionsAction, actionSuccessful, auditParams); auditErr != nil {
-		auditActionFailure(ctx, getDimensionsAction, actionSuccessful, auditErr, logData)
+	if auditErr := api.auditor.Record(ctx, getDimensionsAction, audit.Successful, auditParams); auditErr != nil {
+		auditActionFailure(ctx, getDimensionsAction, audit.Successful, auditErr, logData)
 		handleDimensionsErr(ctx, w, auditErr)
 		return
 	}

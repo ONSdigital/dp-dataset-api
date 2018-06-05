@@ -53,11 +53,6 @@ const (
 	getDimensionsAction    = "getDimensions"
 	getMetadataAction      = "getMetadata"
 
-	// audit results
-	actionAttempted    = "attempted"
-	actionSuccessful   = "successful"
-	actionUnsuccessful = "unsuccessful"
-
 	auditError     = "error while attempting to record audit event, failing request"
 	auditActionErr = "failed to audit action"
 )

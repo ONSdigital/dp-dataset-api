@@ -11,6 +11,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -42,8 +43,8 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getEditionsAction, actionSuccessful, auditParams)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getEditionsAction, audit.Successful, auditParams)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 	})
@@ -76,7 +77,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 1)
-		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 	})
@@ -95,7 +96,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getEditionsAction && result == actionSuccessful {
+			if action == getEditionsAction && result == audit.Successful {
 				return errors.New("audit error")
 			}
 			return nil
@@ -110,8 +111,8 @@ func TestGetEditionsAuditingError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getEditionsAction, actionSuccessful, auditParams)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getEditionsAction, audit.Successful, auditParams)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 	})
@@ -128,7 +129,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getEditionsAction && result == actionUnsuccessful {
+			if action == getEditionsAction && result == audit.Unsuccessful {
 				return errors.New(auditError)
 			}
 			return nil
@@ -142,8 +143,8 @@ func TestGetEditionsAuditingError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getEditionsAction, actionUnsuccessful, auditParams)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getEditionsAction, audit.Unsuccessful, auditParams)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
@@ -163,7 +164,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getEditionsAction && result == actionUnsuccessful {
+			if action == getEditionsAction && result == audit.Unsuccessful {
 				return errors.New(auditError)
 			}
 			return nil
@@ -177,8 +178,8 @@ func TestGetEditionsAuditingError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getEditionsAction, actionUnsuccessful, auditParams)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getEditionsAction, audit.Unsuccessful, auditParams)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
@@ -206,8 +207,8 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getEditionsAction, actionUnsuccessful, auditParams)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getEditionsAction, audit.Unsuccessful, auditParams)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
@@ -233,8 +234,8 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getEditionsAction, actionUnsuccessful, auditParams)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getEditionsAction, audit.Unsuccessful, auditParams)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
@@ -263,8 +264,8 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionsAction, actionAttempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getEditionsAction, actionUnsuccessful, auditParams)
+		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getEditionsAction, audit.Unsuccessful, auditParams)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
@@ -317,8 +318,8 @@ func TestGetEditionReturnsOK(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getEditionAction, actionSuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Successful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
@@ -347,8 +348,8 @@ func TestGetEditionReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldResemble, "internal error\n")
 
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getEditionAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Unsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
@@ -376,8 +377,8 @@ func TestGetEditionReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
 
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getEditionAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Unsuccessful, p)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
@@ -408,8 +409,8 @@ func TestGetEditionReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldResemble, "Edition not found\n")
 
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getEditionAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Unsuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
@@ -437,8 +438,8 @@ func TestGetEditionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Edition not found\n")
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getEditionAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Unsuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
@@ -465,7 +466,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, internalServerErr)
 		So(len(recCalls), ShouldEqual, 1)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
 	})
@@ -481,7 +482,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getEditionAction && result == actionUnsuccessful {
+			if action == getEditionAction && result == audit.Unsuccessful {
 				return errors.New("auditing error")
 			}
 			return nil
@@ -496,8 +497,8 @@ func TestGetEditionAuditErrors(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, internalServerErr)
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getEditionAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Unsuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
 	})
@@ -517,7 +518,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getEditionAction && result == actionUnsuccessful {
+			if action == getEditionAction && result == audit.Unsuccessful {
 				return errors.New("auditing error")
 			}
 			return nil
@@ -532,8 +533,8 @@ func TestGetEditionAuditErrors(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, internalServerErr)
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getEditionAction, actionUnsuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Unsuccessful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
@@ -552,7 +553,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getEditionAction && result == actionSuccessful {
+			if action == getEditionAction && result == audit.Successful {
 				return errors.New("error")
 			}
 			return nil
@@ -568,8 +569,8 @@ func TestGetEditionAuditErrors(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, internalServerErr)
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, actionAttempted, p)
-		verifyAuditRecordCalls(recCalls[1], getEditionAction, actionSuccessful, p)
+		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
+		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Successful, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
