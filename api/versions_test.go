@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -82,8 +83,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 		api.router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldResemble, "internal error\n")
+		assertInternalServerErr(w)
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
 		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
@@ -237,8 +237,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 		api.router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldResemble, "Incorrect resource state\n")
+		assertInternalServerErr(w)
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
@@ -271,8 +270,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
+		assertInternalServerErr(w)
 		So(len(recCalls), ShouldEqual, 1)
 		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
@@ -302,8 +300,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
+		assertInternalServerErr(w)
 		So(len(recCalls), ShouldEqual, 2)
 		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
 		verifyAuditRecordCalls(recCalls[1], getVersionsAction, audit.Unsuccessful, p)
@@ -337,8 +334,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
+		assertInternalServerErr(w)
 		So(len(recCalls), ShouldEqual, 2)
 		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
 		verifyAuditRecordCalls(recCalls[1], getVersionsAction, audit.Unsuccessful, p)
@@ -375,8 +371,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
+		assertInternalServerErr(w)
 		So(len(recCalls), ShouldEqual, 2)
 		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
 		verifyAuditRecordCalls(recCalls[1], getVersionsAction, audit.Unsuccessful, p)
@@ -415,8 +410,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
+		assertInternalServerErr(w)
 		So(len(recCalls), ShouldEqual, 2)
 		verifyAuditRecordCalls(recCalls[0], getVersionsAction, audit.Attempted, p)
 		verifyAuditRecordCalls(recCalls[1], getVersionsAction, audit.Unsuccessful, p)
@@ -523,9 +517,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldResemble, "internal error\n")
-
+		assertInternalServerErr(w)
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
 		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
@@ -721,9 +713,8 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldResemble, internalServerErr)
 
+		assertInternalServerErr(w)
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 1)
 		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
@@ -2156,4 +2147,9 @@ func TestCreateNewVersionDoc(t *testing.T) {
 		So(version.Links, ShouldNotBeNil)
 		So(version.Links.Spatial, ShouldBeNil)
 	})
+}
+
+func assertInternalServerErr(w *httptest.ResponseRecorder) {
+	So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	So(strings.TrimSpace(w.Body.String()), ShouldEqual, errs.ErrInternalServer.Error())
 }
