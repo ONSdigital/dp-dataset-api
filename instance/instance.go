@@ -1,8 +1,8 @@
 package instance
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,16 +13,28 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/go-ns/audit"
+	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 )
 
 //Store provides a backend for instances
 type Store struct {
-	Host string
+	Auditor audit.AuditorService
+	Host    string
 	store.Storer
 }
+
+// List of audit actions for instances
+const (
+	PutInstanceAction       = "putInstance"
+	PutDimensionAction      = "putDimension"
+	PutInsertedObservations = "putInsertedObservations"
+	PutImportTasks          = "putImportTasks"
+)
 
 //GetList a list of all instances
 func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
@@ -610,28 +622,70 @@ func writeBody(w http.ResponseWriter, b []byte) {
 // PublishCheck Checks if an instance has been published
 type PublishCheck struct {
 	Datastore store.Storer
+	Auditor   audit.AuditorService
 }
 
 // Check wraps a HTTP handle. Checks that the state is not published
-func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), action string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
+		ctx := r.Context()
 		vars := mux.Vars(r)
-		id := vars["id"]
-		instance, err := d.Datastore.GetInstance(id)
-		if err != nil {
-			log.Error(err, nil)
-			handleErrorType(err, w)
+		instanceID := vars["id"]
+		logData := log.Data{"instance_id": instanceID}
+		auditParams := common.Params{"instance_id": instanceID}
+
+		if err := d.Auditor.Record(ctx, action, audit.Attempted, auditParams); err != nil {
+			audit.LogActionFailure(ctx, action, audit.Attempted, err, logData)
+			handleErr(ctx, errs.ErrAuditActionAttemptedFailure, 0, w, logData)
 			return
 		}
 
-		if instance.State == models.PublishedState {
-			err = errors.New("unable to update instance as it has been published")
-			log.Error(err, log.Data{"instance": instance})
-			http.Error(w, err.Error(), http.StatusForbidden)
+		statusCode, err := d.checkState(w, instanceID)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "errored whilst checking instance state"), logData)
+			if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
+				audit.LogActionFailure(ctx, action, audit.Unsuccessful, auditErr, logData)
+				handleErr(ctx, errs.ErrAuditActionAttemptedFailure, 0, w, logData)
+				return
+			}
+
+			handleErr(ctx, err, statusCode, w, logData)
 			return
 		}
 
 		handle(w, r)
 	})
+}
+
+func (d *PublishCheck) checkState(w http.ResponseWriter, instanceID string) (int, error) {
+	instance, err := d.Datastore.GetInstance(instanceID)
+	if err != nil {
+		return 0, err
+	}
+
+	if instance.State == models.PublishedState {
+		err = errors.New("unable to update instance as it has been published")
+		return 403, err
+	}
+
+	return 0, nil
+}
+
+func handleErr(ctx context.Context, err error, status int, w http.ResponseWriter, data log.Data) {
+	if data == nil {
+		data = log.Data{}
+	}
+
+	switch {
+	case err == errs.ErrDatasetNotFound || err == errs.ErrInstanceNotFound || err == errs.ErrDimensionNodeNotFound:
+		status = http.StatusNotFound
+	default:
+		if status == 0 {
+			status = http.StatusInternalServerError
+		}
+	}
+
+	data["responseStatus"] = status
+	audit.LogError(ctx, errors.WithMessage(err, "request unsuccessful"), data)
+	http.Error(w, err.Error(), status)
 }
