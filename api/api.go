@@ -17,7 +17,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/handlers/requestID"
 	"github.com/ONSdigital/go-ns/healthcheck"
 	"github.com/ONSdigital/go-ns/identity"
 	"github.com/ONSdigital/go-ns/log"
@@ -382,7 +381,7 @@ func logError(ctx context.Context, err error, data log.Data) {
 	if data == nil {
 		data = log.Data{}
 	}
-	reqID := requestID.Get(ctx)
+	reqID := common.GetRequestId(ctx)
 	if user := common.User(ctx); user != "" {
 		data["user"] = user
 	}
@@ -396,7 +395,7 @@ func logInfo(ctx context.Context, message string, data log.Data) {
 	if data == nil {
 		data = log.Data{}
 	}
-	reqID := requestID.Get(ctx)
+	reqID := common.GetRequestId(ctx)
 	if user := common.User(ctx); user != "" {
 		data["user"] = user
 	}

@@ -1484,7 +1484,7 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			store := &storetest.StorerMock{}
-			api := GetAPIWithMockedDatastore(&storetest.StorerMock{}, nil, auditor, nil)
+			api := GetAPIWithMockedDatastore(store, nil, auditor, nil)
 
 			currentDataset, currentVersion, updateVersion, err := api.updateVersion(r.Context(), r.Body, versionDetails)
 
@@ -1586,6 +1586,130 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 				So(len(calls), ShouldEqual, 2)
 				verifyAuditRecordCalls(calls[0], updateVersionAction, actionAttempted, ap)
 				verifyAuditRecordCalls(calls[1], updateVersionAction, actionUnsuccessful, ap)
+			})
+		})
+	})
+}
+
+func TestPublishVersionAuditErrors(t *testing.T) {
+	ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
+	versionDetails := versionDetails{
+		datasetID: "123",
+		edition:   "2017",
+		version:   "1",
+	}
+
+	Convey("given audit action attempted returns an error", t, func() {
+		auditor := createAuditor(publishVersionAction, actionAttempted)
+
+		Convey("when publish version is called", func() {
+			store := &storetest.StorerMock{}
+			api := GetAPIWithMockedDatastore(store, nil, auditor, nil)
+
+			err := api.publishVersion(context.Background(), nil, nil, nil, versionDetails)
+
+			Convey("then the expected audit events are recorded and an error is returned", func() {
+				c := auditor.RecordCalls()
+				So(len(c), ShouldEqual, 1)
+				verifyAuditRecordCalls(c[0], publishVersionAction, actionAttempted, ap)
+				So(err, ShouldNotBeNil)
+			})
+		})
+	})
+
+	Convey("given audit action unsuccessful returns an error", t, func() {
+		auditor := createAuditor(publishVersionAction, actionUnsuccessful)
+
+		Convey("when publish version returns an error", func() {
+			store := &storetest.StorerMock{
+				GetEditionFunc: func(ID, editionID, state string) (*models.EditionUpdate, error) {
+					return nil, errs.ErrEditionNotFound
+				},
+			}
+
+			api := GetAPIWithMockedDatastore(store, nil, auditor, nil)
+			err := api.publishVersion(context.Background(), nil, nil, nil, versionDetails)
+
+			Convey("then the expected audit events are recorded and the expected error is returned", func() {
+				So(len(store.GetEditionCalls()), ShouldEqual, 1)
+				c := auditor.RecordCalls()
+				So(len(c), ShouldEqual, 2)
+				verifyAuditRecordCalls(c[0], publishVersionAction, actionAttempted, ap)
+				verifyAuditRecordCalls(c[1], publishVersionAction, actionUnsuccessful, ap)
+				So(err, ShouldNotBeNil)
+			})
+		})
+	})
+
+	Convey("given audit action successful returns an error", t, func() {
+		auditor := createAuditor(publishVersionAction, actionSuccessful)
+
+		Convey("when publish version returns an error", func() {
+			store := &storetest.StorerMock{
+				GetEditionFunc: func(string, string, string) (*models.EditionUpdate, error) {
+					return &models.EditionUpdate{
+						ID: "123",
+						Next: &models.Edition{
+							State: models.PublishedState,
+						},
+						Current: &models.Edition{},
+					}, nil
+				},
+				UpsertEditionFunc: func(datasetID string, edition string, editionDoc *models.EditionUpdate) error {
+					return nil
+				},
+				UpsertDatasetFunc: func(ID string, datasetDoc *models.DatasetUpdate) error {
+					return nil
+				},
+			}
+
+			currentDataset := &models.DatasetUpdate{
+				ID:      "123",
+				Next:    &models.Dataset{Links: &models.DatasetLinks{}},
+				Current: &models.Dataset{Links: &models.DatasetLinks{}},
+			}
+
+			currentVersion := &models.Version{
+				ID: "789",
+				Links: &models.VersionLinks{
+					Dataset: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/123",
+						ID:   "123",
+					},
+					Dimensions: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
+					},
+					Edition: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/123/editions/2017",
+						ID:   "456",
+					},
+					Self: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+					},
+					Version: &models.LinkObject{
+						HRef: "",
+					},
+				},
+				ReleaseDate: "2017-12-12",
+				State:       models.EditionConfirmedState,
+			}
+
+			var updateVersion models.Version
+			err := json.Unmarshal([]byte(versionPublishedPayload), &updateVersion)
+			So(err, ShouldBeNil)
+			updateVersion.Links = currentVersion.Links
+
+			api := GetAPIWithMockedDatastore(store, nil, auditor, nil)
+
+			err = api.publishVersion(context.Background(), currentDataset, currentVersion, &updateVersion, versionDetails)
+
+			Convey("then the expected audit events are recorded and the expected error is returned", func() {
+				So(len(store.GetEditionCalls()), ShouldEqual, 1)
+				c := auditor.RecordCalls()
+				So(len(c), ShouldEqual, 2)
+				verifyAuditRecordCalls(c[0], publishVersionAction, actionAttempted, ap)
+				verifyAuditRecordCalls(c[1], publishVersionAction, actionSuccessful, ap)
+				So(err, ShouldBeNil)
 			})
 		})
 	})

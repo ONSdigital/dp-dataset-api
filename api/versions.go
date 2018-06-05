@@ -11,6 +11,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
@@ -280,8 +281,8 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	data := versionDetails.baseLogData()
 	ap := versionDetails.baseAuditParams()
 
-	if auditErr := api.auditor.Record(ctx, updateVersionAction, actionAttempted, ap); auditErr != nil {
-		auditActionFailure(ctx, updateVersionAction, actionAttempted, auditErr, data)
+	if auditErr := api.auditor.Record(ctx, updateVersionAction, audit.Attempted, ap); auditErr != nil {
+		audit.LogActionFailure(ctx, updateVersionAction, audit.Attempted, auditErr, data)
 		return nil, nil, nil, auditErr
 	}
 
@@ -330,14 +331,14 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 
 	// audit update unsuccessful if error
 	if err != nil {
-		if auditErr := api.auditor.Record(ctx, updateVersionAction, actionUnsuccessful, ap); auditErr != nil {
-			auditActionFailure(ctx, updateVersionAction, actionUnsuccessful, auditErr, data)
+		if auditErr := api.auditor.Record(ctx, updateVersionAction, audit.Unsuccessful, ap); auditErr != nil {
+			audit.LogActionFailure(ctx, updateVersionAction, audit.Unsuccessful, auditErr, data)
 		}
 		return nil, nil, nil, err
 	}
 
-	if auditErr := api.auditor.Record(ctx, updateVersionAction, actionSuccessful, ap); auditErr != nil {
-		auditActionFailure(ctx, updateVersionAction, actionSuccessful, auditErr, data)
+	if auditErr := api.auditor.Record(ctx, updateVersionAction, audit.Successful, ap); auditErr != nil {
+		audit.LogActionFailure(ctx, updateVersionAction, audit.Successful, auditErr, data)
 	}
 
 	logInfo(ctx, "update version completed successfully", data)

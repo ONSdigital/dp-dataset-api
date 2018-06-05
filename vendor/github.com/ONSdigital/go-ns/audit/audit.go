@@ -3,14 +3,24 @@ package audit
 import (
 	"context"
 	"fmt"
-	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/handlers/requestID"
-	"github.com/ONSdigital/go-ns/log"
 	"sort"
 	"time"
+
+	"github.com/ONSdigital/go-ns/common"
+	"github.com/ONSdigital/go-ns/log"
 )
 
 //go:generate moq -out generated_mocks.go -pkg audit . AuditorService OutboundProducer
+
+// List of audit messages
+const (
+	Attempted    = "attempted"
+	Successful   = "successful"
+	Unsuccessful = "unsuccessful"
+
+	AuditError     = "error while attempting to record audit event, failing request"
+	AuditActionErr = "failed to audit action"
+)
 
 // Error represents containing details of an attempt to audit and action that failed.
 type Error struct {
@@ -84,7 +94,7 @@ func (a *Auditor) Record(ctx context.Context, attemptedAction string, actionResu
 	}
 
 	if user == "" {
-		log.Debug("not user attempted action: skipping audit event", nil)
+		log.DebugCtx(ctx, "not user attempted action: skipping audit event", nil)
 		return nil
 	}
 
@@ -104,13 +114,14 @@ func (a *Auditor) Record(ctx context.Context, attemptedAction string, actionResu
 		Params:          params,
 	}
 
-	e.RequestID = requestID.Get(ctx)
+	e.RequestID = common.GetRequestId(ctx)
 
 	avroBytes, err := a.marshalToAvro(e)
 	if err != nil {
-		return NewAuditError("error marshalling event to arvo", attemptedAction, actionResult, params)
+		return NewAuditError("error marshalling event to avro", attemptedAction, actionResult, params)
 	}
 
+	LogInfo(ctx, "capturing audit event", log.Data{"auditEvent": e})
 	a.producer.Output() <- avroBytes
 	return nil
 }
