@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -21,6 +20,7 @@ import (
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -1702,6 +1702,154 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 				verifyAuditRecordCalls(c[0], publishVersionAction, audit.Attempted, ap)
 				verifyAuditRecordCalls(c[1], publishVersionAction, audit.Successful, ap)
 				So(err, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestAssociateVersionAuditErrors(t *testing.T) {
+	ap := common.Params{"dataset_id": "123", "edition": "2018", "version": "1"}
+	currentVersion := &models.Version{
+		ID: "789",
+		Links: &models.VersionLinks{
+			Dataset: &models.LinkObject{
+				HRef: "http://localhost:22000/datasets/123",
+				ID:   "123",
+			},
+			Dimensions: &models.LinkObject{
+				HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
+			},
+			Edition: &models.LinkObject{
+				HRef: "http://localhost:22000/datasets/123/editions/2017",
+				ID:   "456",
+			},
+			Self: &models.LinkObject{
+				HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+			},
+			Version: &models.LinkObject{
+				HRef: "",
+			},
+		},
+		ReleaseDate: "2017-12-12",
+		State:       models.EditionConfirmedState,
+	}
+
+	var versionDoc models.Version
+	json.Unmarshal([]byte(versionAssociatedPayload), &versionDoc)
+
+	v := versionDetails{
+		datasetID: "123",
+		edition:   "2018",
+		version:   "1",
+	}
+
+	expectedErr := errors.New("err")
+
+	Convey("given audit action attempted returns an error", t, func() {
+		auditor := createAuditor(associateVersionAction, audit.Attempted)
+
+		Convey("when associate version is called", func() {
+
+			store := &storetest.StorerMock{}
+			gen := &mocks.DownloadsGeneratorMock{}
+			api := GetAPIWithMockedDatastore(store, gen, auditor, genericMockedObservationStore)
+
+			err := api.associateVersion(context.Background(), currentVersion, &versionDoc, v)
+
+			Convey("then the expected audit event is captured and the expected error is returned", func() {
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 1)
+				verifyAuditRecordCalls(calls[0], associateVersionAction, audit.Attempted, ap)
+
+				So(err, ShouldEqual, auditTestErr)
+				So(len(store.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
+				So(len(gen.GenerateCalls()), ShouldEqual, 0)
+			})
+
+		})
+	})
+
+	Convey("given audit action unsuccessful returns an error", t, func() {
+		auditor := createAuditor(associateVersionAction, audit.Unsuccessful)
+
+		Convey("when datastore.UpdateDatasetWithAssociation returns an error", func() {
+			store := &storetest.StorerMock{
+				UpdateDatasetWithAssociationFunc: func(ID string, state string, version *models.Version) error {
+					return expectedErr
+				},
+			}
+			gen := &mocks.DownloadsGeneratorMock{}
+			api := GetAPIWithMockedDatastore(store, gen, auditor, genericMockedObservationStore)
+
+			err := api.associateVersion(context.Background(), currentVersion, &versionDoc, v)
+
+			Convey("then the expected audit event is captured and the expected error is returned", func() {
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditRecordCalls(calls[0], associateVersionAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], associateVersionAction, audit.Unsuccessful, ap)
+
+				So(err, ShouldEqual, expectedErr)
+				So(len(store.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
+				So(len(gen.GenerateCalls()), ShouldEqual, 0)
+			})
+		})
+
+		Convey("when generating downloads returns an error", func() {
+			store := &storetest.StorerMock{
+				UpdateDatasetWithAssociationFunc: func(ID string, state string, version *models.Version) error {
+					return nil
+				},
+			}
+			gen := &mocks.DownloadsGeneratorMock{
+				GenerateFunc: func(datasetID string, instanceID string, edition string, version string) error {
+					return expectedErr
+				},
+			}
+			api := GetAPIWithMockedDatastore(store, gen, auditor, genericMockedObservationStore)
+
+			err := api.associateVersion(context.Background(), currentVersion, &versionDoc, v)
+
+			Convey("then the expected audit event is captured and the expected error is returned", func() {
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditRecordCalls(calls[0], associateVersionAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], associateVersionAction, audit.Unsuccessful, ap)
+
+				So(expectedErr.Error(), ShouldEqual, errors.Cause(err).Error())
+				So(len(store.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
+				So(len(gen.GenerateCalls()), ShouldEqual, 1)
+			})
+		})
+	})
+
+	Convey("given audit action successful returns an error", t, func() {
+		auditor := createAuditor(associateVersionAction, audit.Successful)
+
+		Convey("when associateVersion is called", func() {
+			store := &storetest.StorerMock{
+				UpdateDatasetWithAssociationFunc: func(ID string, state string, version *models.Version) error {
+					return nil
+				},
+			}
+			gen := &mocks.DownloadsGeneratorMock{
+				GenerateFunc: func(datasetID string, instanceID string, edition string, version string) error {
+					return nil
+				},
+			}
+			api := GetAPIWithMockedDatastore(store, gen, auditor, genericMockedObservationStore)
+
+			err := api.associateVersion(context.Background(), currentVersion, &versionDoc, v)
+
+			Convey("then the expected audit event is captured and the expected error is returned", func() {
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditRecordCalls(calls[0], associateVersionAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], associateVersionAction, audit.Successful, ap)
+
+				So(err, ShouldBeNil)
+				So(len(store.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
+				So(len(gen.GenerateCalls()), ShouldEqual, 1)
 			})
 		})
 	})
