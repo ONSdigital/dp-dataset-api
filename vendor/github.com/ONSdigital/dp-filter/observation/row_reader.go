@@ -3,8 +3,8 @@ package observation
 import (
 	"io"
 
-	bolt "github.com/ONSdigital/golang-neo4j-bolt-driver"
-	"github.com/ONSdigital/golang-neo4j-bolt-driver/errors"
+	bolt "github.com/johnnadratowski/golang-neo4j-bolt-driver"
+	"github.com/johnnadratowski/golang-neo4j-bolt-driver/errors"
 )
 
 //go:generate moq -out observationtest/bolt_rows.go -pkg observationtest . BoltRows

@@ -25,7 +25,7 @@ import (
 	mongolib "github.com/ONSdigital/go-ns/mongo"
 	"github.com/pkg/errors"
 
-	bolt "github.com/ONSdigital/golang-neo4j-bolt-driver"
+	bolt "github.com/johnnadratowski/golang-neo4j-bolt-driver"
 )
 
 func main() {
