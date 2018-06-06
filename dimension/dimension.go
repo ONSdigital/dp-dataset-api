@@ -30,6 +30,12 @@ const (
 	PutNodeIDAction      = "putNodeID"
 )
 
+var notFound = map[error]bool{
+	errs.ErrDatasetNotFound:       true,
+	errs.ErrInstanceNotFound:      true,
+	errs.ErrDimensionNodeNotFound: true,
+}
+
 // GetNodesHandler list from a specified instance
 func (s *Store) GetNodesHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -116,18 +122,15 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 
 	statusCode, err := s.add(ctx, w, r, instanceID, logData)
 	if err != nil {
-		if auditErr := s.Auditor.Record(ctx, PostDimensionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			audit.LogActionFailure(ctx, PostDimensionsAction, audit.Unsuccessful, auditErr, logData)
-		}
+		s.Auditor.Record(ctx, PostDimensionsAction, audit.Unsuccessful, auditParams)
+
 		handleDimensionErr(ctx, err, statusCode, w, logData)
 		return
 	}
 
-	if auditErr := s.Auditor.Record(ctx, PostDimensionsAction, audit.Successful, auditParams); auditErr != nil {
-		audit.LogActionFailure(ctx, PostDimensionsAction, audit.Successful, auditErr, logData)
-	}
+	s.Auditor.Record(ctx, PostDimensionsAction, audit.Successful, auditParams)
 
-	audit.LogInfo(ctx, "added dimension to instance resource", logData)
+	log.InfoCtx(ctx, "added dimension to instance resource", logData)
 }
 
 func (s *Store) add(ctx context.Context, w http.ResponseWriter, r *http.Request, instanceID string, logData log.Data) (int, error) {
@@ -174,18 +177,14 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 	dim := models.DimensionOption{Name: dimensionName, Option: value, NodeID: nodeID, InstanceID: instanceID}
 
 	if err := s.addNodeID(ctx, w, r, dim, logData); err != nil {
-		if auditErr := s.Auditor.Record(ctx, PutNodeIDAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			audit.LogActionFailure(ctx, PutNodeIDAction, audit.Unsuccessful, auditErr, logData)
-		}
+		s.Auditor.Record(ctx, PutNodeIDAction, audit.Unsuccessful, auditParams)
 		handleDimensionErr(ctx, err, 0, w, logData)
 		return
 	}
 
-	if auditErr := s.Auditor.Record(ctx, PutNodeIDAction, audit.Successful, auditParams); auditErr != nil {
-		audit.LogActionFailure(ctx, PutNodeIDAction, audit.Successful, auditErr, logData)
-	}
+	s.Auditor.Record(ctx, PutNodeIDAction, audit.Successful, auditParams)
 
-	audit.LogInfo(ctx, "added node id to dimension of an instance resource", logData)
+	log.InfoCtx(ctx, "added node id to dimension of an instance resource", logData)
 }
 
 func (s *Store) addNodeID(ctx context.Context, w http.ResponseWriter, r *http.Request, dim models.DimensionOption, logData log.Data) error {
@@ -243,7 +242,6 @@ func handleErrorType(err error, w http.ResponseWriter) {
 	}
 
 	http.Error(w, err.Error(), status)
-
 }
 
 func internalError(w http.ResponseWriter, err error) {
@@ -265,7 +263,7 @@ func handleDimensionErr(ctx context.Context, err error, status int, w http.Respo
 	}
 
 	switch {
-	case err == errs.ErrDatasetNotFound || err == errs.ErrInstanceNotFound || err == errs.ErrDimensionNodeNotFound:
+	case notFound[err]:
 		status = http.StatusNotFound
 	default:
 		if status == 0 {
