@@ -1731,7 +1731,7 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 				So(len(calls), ShouldEqual, 1)
 				verifyAuditRecordCalls(calls[0], associateVersionAction, audit.Attempted, ap)
 
-				So(err, ShouldEqual, auditTestErr)
+				So(err, ShouldEqual, ErrAuditTest)
 				So(len(store.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 				So(len(gen.GenerateCalls()), ShouldEqual, 0)
 			})

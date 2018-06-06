@@ -44,7 +44,7 @@ var (
 	urlBuilder                    = url.NewBuilder("localhost:20000")
 	genericMockedObservationStore = &mocks.ObservationStoreMock{}
 	auditParams                   = common.Params{"dataset_id": "123-456"}
-	auditTestErr                  = errors.New("auditing error")
+	ErrAuditTest                  = errors.New("auditing error")
 )
 
 // GetAPIWithMockedDatastore also used in other tests, so exported
@@ -1520,8 +1520,8 @@ func createAuditor(actionErrTrigger string, resultErrTrigger string) *audit.Audi
 	return &audit.AuditorServiceMock{
 		RecordFunc: func(ctx context.Context, action string, result string, params common.Params) error {
 			if action == actionErrTrigger && result == resultErrTrigger {
-				audit.LogActionFailure(ctx, action, result, auditTestErr, nil)
-				return auditTestErr
+				audit.LogActionFailure(ctx, action, result, ErrAuditTest, nil)
+				return ErrAuditTest
 			}
 			return nil
 		},
