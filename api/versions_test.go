@@ -732,18 +732,11 @@ func TestGetVersionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditMock := getMockAuditor()
-		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getVersionAction && result == audit.Unsuccessful {
-				return errors.New("error")
-			}
-			return nil
-		}
+		auditMock := createAuditor(getVersionAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldResemble, internalServerErr)
+		assertInternalServerErr(w)
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
@@ -768,13 +761,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditMock := getMockAuditor()
-		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getVersionAction && result == audit.Unsuccessful {
-				return errors.New("error")
-			}
-			return nil
-		}
+		auditMock := createAuditor(getVersionAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
@@ -808,13 +795,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditMock := getMockAuditor()
-		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getVersionAction && result == audit.Unsuccessful {
-				return errors.New("error")
-			}
-			return nil
-		}
+		auditMock := createAuditor(getVersionAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
@@ -854,13 +835,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditMock := getMockAuditor()
-		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getVersionAction && result == audit.Unsuccessful {
-				return errors.New("error")
-			}
-			return nil
-		}
+		auditMock := createAuditor(getVersionAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)
@@ -902,13 +877,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditMock := getMockAuditor()
-		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getVersionAction && result == audit.Successful {
-				return errors.New("error")
-			}
-			return nil
-		}
+		auditMock := createAuditor(getVersionAction, audit.Successful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.router.ServeHTTP(w, r)

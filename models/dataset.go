@@ -2,13 +2,21 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"strconv"
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
+)
+
+var (
+	ErrPublishedVersionCollectionIDInvalid  = errors.New("Unexpected collection_id in published version")
+	ErrAssociatedVersionCollectionIDInvalid = errors.New("Missing collection_id for association between version and a collection")
+	ErrVersionStateInvalid                  = errors.New("Incorrect state, can be one of the following: edition-confirmed, associated or published")
 )
 
 // DatasetResults represents a structure for a list of datasets
@@ -302,4 +310,67 @@ func CreateContact(reader io.Reader) (*Contact, error) {
 	contact.ID = (uuid.NewV4()).String()
 
 	return &contact, nil
+}
+
+// ValidateVersion checks the content of the version structure
+func ValidateVersion(version *Version) error {
+
+	switch version.State {
+	case "":
+		return errs.ErrVersionMissingState
+	case EditionConfirmedState:
+	case PublishedState:
+		if version.CollectionID != "" {
+			return ErrPublishedVersionCollectionIDInvalid
+		}
+	case AssociatedState:
+		if version.CollectionID == "" {
+			return ErrAssociatedVersionCollectionIDInvalid
+		}
+	default:
+		return ErrVersionStateInvalid
+	}
+
+	var missingFields []string
+	var invalidFields []string
+
+	if version.ReleaseDate == "" {
+		missingFields = append(missingFields, "release_date")
+	}
+
+	if version.Downloads != nil {
+		if version.Downloads.XLS != nil {
+			if version.Downloads.XLS.HRef == "" {
+				missingFields = append(missingFields, "Downloads.XLS.HRef")
+			}
+			if version.Downloads.XLS.Size == "" {
+				missingFields = append(missingFields, "Downloads.XLS.Size")
+			}
+			if _, err := strconv.Atoi(version.Downloads.XLS.Size); err != nil {
+				invalidFields = append(invalidFields, "Downloads.XLS.Size not a number")
+			}
+		}
+
+		if version.Downloads.CSV != nil {
+			if version.Downloads.CSV.HRef == "" {
+				missingFields = append(missingFields, "Downloads.CSV.HRef")
+			}
+			if version.Downloads.CSV.Size == "" {
+				missingFields = append(missingFields, "Downloads.CSV.Size")
+			}
+			if _, err := strconv.Atoi(version.Downloads.CSV.Size); err != nil {
+				invalidFields = append(invalidFields, "Downloads.CSV.Size not a number")
+			}
+		}
+	}
+
+	if missingFields != nil {
+		return fmt.Errorf("missing mandatory fields: %v", missingFields)
+	}
+
+	if invalidFields != nil {
+		return fmt.Errorf("invalid fields: %v", invalidFields)
+	}
+
+	return nil
 }

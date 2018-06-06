@@ -1520,6 +1520,7 @@ func createAuditor(actionErrTrigger string, resultErrTrigger string) *audit.Audi
 	return &audit.AuditorServiceMock{
 		RecordFunc: func(ctx context.Context, action string, result string, params common.Params) error {
 			if action == actionErrTrigger && result == resultErrTrigger {
+				audit.LogActionFailure(ctx, action, result, auditTestErr, nil)
 				return auditTestErr
 			}
 			return nil
