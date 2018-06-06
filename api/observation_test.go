@@ -97,7 +97,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
 			w := httptest.NewRecorder()
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(w.Body.String(), ShouldContainSubstring, getTestData("expectedDocWithSingleObservation"))
 
@@ -112,7 +112,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&AggregaTe=cpi1dim1S40403&GEOGRAPHY=K02000001", nil)
 			w := httptest.NewRecorder()
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(w.Body.String(), ShouldContainSubstring, getTestData("expectedSecondDocWithSingleObservation"))
 
@@ -192,7 +192,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), mockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(w.Body.String(), ShouldContainSubstring, getTestData("expectedDocWithMultipleObservations"))
 
@@ -216,7 +216,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
 
@@ -234,7 +234,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
 
@@ -252,7 +252,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
 
@@ -273,7 +273,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Edition not found\n")
 
@@ -298,7 +298,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Version not found\n")
 
@@ -323,7 +323,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "Incorrect resource state\n")
 
@@ -351,7 +351,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -378,7 +378,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -406,7 +406,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "index out of range\n")
 
@@ -435,7 +435,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "Incorrect selection of query parameters: [geography], these dimensions do not exist for this version of the dataset\n")
 
@@ -464,7 +464,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "Missing query parameters for the following dimensions: [age]\n")
 
@@ -493,7 +493,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "only one wildcard (*) is allowed as a value in selected query parameters\n")
 
@@ -529,7 +529,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), mockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "No observations found\n")
 
@@ -585,7 +585,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		mockedObservationStore := &mocks.ObservationStoreMock{}
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), mockedObservationStore)
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "Multi-valued query parameters for the following dimensions: [geography]\n")
 

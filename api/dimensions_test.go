@@ -32,7 +32,7 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 		auditor := getMockAuditor()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
@@ -69,7 +69,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		auditor := getMockAuditor()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "internal error\n")
 
@@ -94,7 +94,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		auditor := getMockAuditor()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Version not found\n")
 
@@ -123,7 +123,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		auditor := getMockAuditor()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Dimensions not found\n")
 
@@ -148,7 +148,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		auditor := getMockAuditor()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "Incorrect resource state\n")
 
@@ -175,7 +175,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 			mockedDataStore := &storetest.StorerMock{}
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -205,7 +205,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 			}
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -233,7 +233,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 			}
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -257,7 +257,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 			}
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -284,7 +284,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 			}
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -316,7 +316,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 	})
 }
@@ -334,7 +334,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Version not found\n")
 
@@ -356,7 +356,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "internal error\n")
 
@@ -375,7 +375,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "Incorrect resource state\n")
 
