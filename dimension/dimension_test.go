@@ -84,8 +84,8 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
 
-		verifyAuditorCalls(calls[0], dimension.PutNodeIDAction, audit.ActionAttempted, common.Params{"instance_id": "123"})
-		verifyAuditorCalls(calls[1], dimension.PutNodeIDAction, audit.ActionSuccessful, common.Params{"dimension_name": "age", "instance_id": "123", "node_id": "11", "option": "55"})
+		verifyAuditorCalls(calls[0], dimension.PutNodeIDAction, audit.Attempted, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[1], dimension.PutNodeIDAction, audit.Successful, common.Params{"dimension_name": "age", "instance_id": "123", "node_id": "11", "option": "55"})
 	})
 }
 
@@ -118,8 +118,8 @@ func TestAddNodeIDToDimensionReturnsBadRequest(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
 
-		verifyAuditorCalls(calls[0], dimension.PutNodeIDAction, audit.ActionAttempted, common.Params{"instance_id": "123"})
-		verifyAuditorCalls(calls[1], dimension.PutNodeIDAction, audit.ActionUnsuccessful, common.Params{"dimension_name": "age", "instance_id": "123", "node_id": "11", "option": "55"})
+		verifyAuditorCalls(calls[0], dimension.PutNodeIDAction, audit.Attempted, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[1], dimension.PutNodeIDAction, audit.Unsuccessful, common.Params{"dimension_name": "age", "instance_id": "123", "node_id": "11", "option": "55"})
 	})
 }
 
@@ -149,8 +149,8 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
 
-		verifyAuditorCalls(calls[0], dimension.PutNodeIDAction, audit.ActionAttempted, common.Params{"instance_id": "123"})
-		verifyAuditorCalls(calls[1], dimension.PutNodeIDAction, audit.ActionUnsuccessful, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[0], dimension.PutNodeIDAction, audit.Attempted, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[1], dimension.PutNodeIDAction, audit.Unsuccessful, common.Params{"instance_id": "123"})
 	})
 
 	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
@@ -177,8 +177,8 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
 
-		verifyAuditorCalls(calls[0], dimension.PutNodeIDAction, audit.ActionAttempted, common.Params{"instance_id": "123"})
-		verifyAuditorCalls(calls[1], dimension.PutNodeIDAction, audit.ActionUnsuccessful, common.Params{"dimension_name": "age", "instance_id": "123", "node_id": "11", "option": "55"})
+		verifyAuditorCalls(calls[0], dimension.PutNodeIDAction, audit.Attempted, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[1], dimension.PutNodeIDAction, audit.Unsuccessful, common.Params{"dimension_name": "age", "instance_id": "123", "node_id": "11", "option": "55"})
 	})
 }
 
@@ -208,8 +208,8 @@ func TestAddNodeIDToDimensionReturnsForbidden(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
 
-		verifyAuditorCalls(calls[0], dimension.PutNodeIDAction, audit.ActionAttempted, common.Params{"instance_id": "123"})
-		verifyAuditorCalls(calls[1], dimension.PutNodeIDAction, audit.ActionUnsuccessful, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[0], dimension.PutNodeIDAction, audit.Attempted, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[1], dimension.PutNodeIDAction, audit.Unsuccessful, common.Params{"instance_id": "123"})
 	})
 }
 
@@ -269,7 +269,7 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 1)
 
-		verifyAuditorCalls(calls[0], dimension.PutNodeIDAction, audit.ActionAttempted, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[0], dimension.PutNodeIDAction, audit.Attempted, common.Params{"instance_id": "123"})
 	})
 
 	Convey("When request to add node id to dimension is forbidden but audit fails returns an error of internal server error", t, func() {
@@ -303,8 +303,8 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
 
-		verifyAuditorCalls(calls[0], dimension.PutNodeIDAction, audit.ActionAttempted, common.Params{"instance_id": "123"})
-		verifyAuditorCalls(calls[1], dimension.PutNodeIDAction, audit.ActionUnsuccessful, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[0], dimension.PutNodeIDAction, audit.Attempted, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[1], dimension.PutNodeIDAction, audit.Unsuccessful, common.Params{"instance_id": "123"})
 	})
 
 	Convey("When request to add node id to dimension and audit fails to send success message return 200 response", t, func() {
@@ -341,8 +341,8 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
 
-		verifyAuditorCalls(calls[0], dimension.PutNodeIDAction, audit.ActionAttempted, common.Params{"instance_id": "123"})
-		verifyAuditorCalls(calls[1], dimension.PutNodeIDAction, audit.ActionSuccessful, common.Params{"dimension_name": "age", "instance_id": "123", "node_id": "11", "option": "55"})
+		verifyAuditorCalls(calls[0], dimension.PutNodeIDAction, audit.Attempted, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[1], dimension.PutNodeIDAction, audit.Successful, common.Params{"dimension_name": "age", "instance_id": "123", "node_id": "11", "option": "55"})
 	})
 }
 
@@ -375,8 +375,8 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
 
-		verifyAuditorCalls(calls[0], dimension.PostDimensionsAction, audit.ActionAttempted, common.Params{"instance_id": "123"})
-		verifyAuditorCalls(calls[1], dimension.PostDimensionsAction, audit.ActionSuccessful, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[0], dimension.PostDimensionsAction, audit.Attempted, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[1], dimension.PostDimensionsAction, audit.Successful, common.Params{"instance_id": "123"})
 	})
 }
 
@@ -410,8 +410,8 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
 
-		verifyAuditorCalls(calls[0], dimension.PostDimensionsAction, audit.ActionAttempted, common.Params{"instance_id": "123"})
-		verifyAuditorCalls(calls[1], dimension.PostDimensionsAction, audit.ActionUnsuccessful, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[0], dimension.PostDimensionsAction, audit.Attempted, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[1], dimension.PostDimensionsAction, audit.Unsuccessful, common.Params{"instance_id": "123"})
 	})
 }
 
@@ -445,8 +445,8 @@ func TestAddDimensionToInstanceReturnsForbidden(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
 
-		verifyAuditorCalls(calls[0], dimension.PostDimensionsAction, audit.ActionAttempted, common.Params{"instance_id": "123"})
-		verifyAuditorCalls(calls[1], dimension.PostDimensionsAction, audit.ActionUnsuccessful, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[0], dimension.PostDimensionsAction, audit.Attempted, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[1], dimension.PostDimensionsAction, audit.Unsuccessful, common.Params{"instance_id": "123"})
 	})
 }
 
@@ -508,8 +508,8 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
 
-		verifyAuditorCalls(calls[0], dimension.PostDimensionsAction, audit.ActionAttempted, common.Params{"instance_id": "123"})
-		verifyAuditorCalls(calls[1], dimension.PostDimensionsAction, audit.ActionUnsuccessful, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[0], dimension.PostDimensionsAction, audit.Attempted, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[1], dimension.PostDimensionsAction, audit.Unsuccessful, common.Params{"instance_id": "123"})
 	})
 
 	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
@@ -540,8 +540,8 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
 
-		verifyAuditorCalls(calls[0], dimension.PostDimensionsAction, audit.ActionAttempted, common.Params{"instance_id": "123"})
-		verifyAuditorCalls(calls[1], dimension.PostDimensionsAction, audit.ActionUnsuccessful, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[0], dimension.PostDimensionsAction, audit.Attempted, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[1], dimension.PostDimensionsAction, audit.Unsuccessful, common.Params{"instance_id": "123"})
 	})
 }
 
@@ -574,7 +574,7 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 1)
 
-		verifyAuditorCalls(calls[0], dimension.PostDimensionsAction, audit.ActionAttempted, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[0], dimension.PostDimensionsAction, audit.Attempted, common.Params{"instance_id": "123"})
 	})
 
 	Convey("When request to add a dimension is forbidden but audit fails returns an error of internal server error", t, func() {
@@ -609,8 +609,8 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
 
-		verifyAuditorCalls(calls[0], dimension.PostDimensionsAction, audit.ActionAttempted, common.Params{"instance_id": "123"})
-		verifyAuditorCalls(calls[1], dimension.PostDimensionsAction, audit.ActionUnsuccessful, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[0], dimension.PostDimensionsAction, audit.Attempted, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[1], dimension.PostDimensionsAction, audit.Unsuccessful, common.Params{"instance_id": "123"})
 	})
 
 	Convey("When request to add dimension and audit fails to send success message return 200 response", t, func() {
@@ -648,8 +648,8 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
 
-		verifyAuditorCalls(calls[0], dimension.PostDimensionsAction, audit.ActionAttempted, common.Params{"instance_id": "123"})
-		verifyAuditorCalls(calls[1], dimension.PostDimensionsAction, audit.ActionSuccessful, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[0], dimension.PostDimensionsAction, audit.Attempted, common.Params{"instance_id": "123"})
+		verifyAuditorCalls(calls[1], dimension.PostDimensionsAction, audit.Successful, common.Params{"instance_id": "123"})
 	})
 }
 
