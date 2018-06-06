@@ -9,6 +9,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
 	. "github.com/smartystreets/goconvey/convey"
 	"gopkg.in/mgo.v2/bson"
@@ -43,8 +44,8 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 			"version":    "1",
 		}
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], getDimensionsAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], getDimensionsAction, actionSuccessful, ap)
+		verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Successful, ap)
 	})
 }
 
@@ -77,8 +78,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 
 		calls := auditor.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], getDimensionsAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], getDimensionsAction, actionUnsuccessful, ap)
+		verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("When the request contain an invalid version return not found", t, func() {
@@ -103,8 +104,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		calls := auditor.RecordCalls()
 
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], getDimensionsAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], getDimensionsAction, actionUnsuccessful, ap)
+		verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("When there are no dimensions then return not found error", t, func() {
@@ -131,8 +132,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 
 		calls := auditor.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], getDimensionsAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], getDimensionsAction, actionUnsuccessful, ap)
+		verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("When the version has an invalid state return internal server error", t, func() {
@@ -156,8 +157,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 
 		calls := auditor.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], getDimensionsAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], getDimensionsAction, actionUnsuccessful, ap)
+		verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Unsuccessful, ap)
 	})
 }
 
@@ -166,7 +167,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 	ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
 
 	Convey("given audit action attempted returns an error", t, func() {
-		auditor := createAuditor(getDimensionsAction, actionAttempted)
+		auditor := createAuditor(getDimensionsAction, audit.Attempted)
 
 		Convey("when get dimensions is called", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
@@ -183,13 +184,13 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 1)
-				verifyAuditRecordCalls(calls[0], getDimensionsAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
 			})
 		})
 	})
 
 	Convey("given audit action successful returns an error", t, func() {
-		auditor := createAuditor(getDimensionsAction, actionSuccessful)
+		auditor := createAuditor(getDimensionsAction, audit.Successful)
 
 		Convey("when get dimensions is called", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
@@ -213,14 +214,14 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getDimensionsAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], getDimensionsAction, actionSuccessful, ap)
+				verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Successful, ap)
 			})
 		})
 	})
 
 	Convey("given audit action unsuccessful returns an error", t, func() {
-		auditor := createAuditor(getDimensionsAction, actionUnsuccessful)
+		auditor := createAuditor(getDimensionsAction, audit.Unsuccessful)
 
 		Convey("when datastore.getVersion returns an error", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
@@ -241,8 +242,8 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getDimensionsAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], getDimensionsAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Unsuccessful, ap)
 			})
 		})
 
@@ -265,8 +266,8 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getDimensionsAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], getDimensionsAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Unsuccessful, ap)
 			})
 		})
 
@@ -292,8 +293,8 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getDimensionsAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], getDimensionsAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Unsuccessful, ap)
 			})
 		})
 	})

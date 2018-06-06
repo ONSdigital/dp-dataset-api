@@ -12,6 +12,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
@@ -51,8 +52,8 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		calls := auditor.RecordCalls()
 		ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], getMetadataAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], getMetadataAction, actionSuccessful, ap)
+		verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], getMetadataAction, audit.Successful, ap)
 
 		bytes, err := ioutil.ReadAll(w.Body)
 		if err != nil {
@@ -114,8 +115,8 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		calls := auditor.RecordCalls()
 		ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], getMetadataAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], getMetadataAction, actionSuccessful, ap)
+		verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], getMetadataAction, audit.Successful, ap)
 
 		bytes, err := ioutil.ReadAll(w.Body)
 		if err != nil {
@@ -306,7 +307,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 	Convey("given auditing action attempted returns an error", t, func() {
 		auditor := getMockAuditorFunc(func(a string, r string) error {
-			if a == getMetadataAction && r == actionAttempted {
+			if a == getMetadataAction && r == audit.Attempted {
 				return errors.New("audit error")
 			}
 			return nil
@@ -326,7 +327,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 1)
-				verifyAuditRecordCalls(calls[0], getMetadataAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -337,7 +338,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 	Convey("given auditing action unsuccessful returns an error", t, func() {
 		auditor := getMockAuditorFunc(func(a string, r string) error {
-			if a == getMetadataAction && r == actionUnsuccessful {
+			if a == getMetadataAction && r == audit.Unsuccessful {
 				return errors.New("audit error")
 			}
 			return nil
@@ -361,8 +362,8 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getMetadataAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], getMetadataAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], getMetadataAction, audit.Unsuccessful, ap)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -388,8 +389,8 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getMetadataAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], getMetadataAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], getMetadataAction, audit.Unsuccessful, ap)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -418,8 +419,8 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getMetadataAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], getMetadataAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], getMetadataAction, audit.Unsuccessful, ap)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -451,8 +452,8 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getMetadataAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], getMetadataAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], getMetadataAction, audit.Unsuccessful, ap)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -486,8 +487,8 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getMetadataAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], getMetadataAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], getMetadataAction, audit.Unsuccessful, ap)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -498,7 +499,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 	Convey("given auditing action successful returns an error", t, func() {
 		auditor := getMockAuditorFunc(func(a string, r string) error {
-			if a == getMetadataAction && r == actionSuccessful {
+			if a == getMetadataAction && r == audit.Successful {
 				return errors.New("audit error")
 			}
 			return nil
@@ -528,8 +529,8 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getMetadataAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], getMetadataAction, actionSuccessful, ap)
+				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], getMetadataAction, audit.Successful, ap)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)

@@ -44,6 +44,7 @@ var (
 	urlBuilder                    = url.NewBuilder("localhost:20000")
 	genericMockedObservationStore = &mocks.ObservationStoreMock{}
 	auditParams                   = common.Params{"dataset_id": "123-456"}
+	auditTestErr                  = errors.New("auditing error")
 )
 
 // GetAPIWithMockedDatastore also used in other tests, so exported
@@ -97,8 +98,8 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 
 		recCalls := mockAuditor.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getDatasetsAction, actionAttempted, nil)
-		verifyAuditRecordCalls(recCalls[1], getDatasetsAction, actionSuccessful, nil)
+		verifyAuditRecordCalls(recCalls[0], getDatasetsAction, audit.Attempted, nil)
+		verifyAuditRecordCalls(recCalls[1], getDatasetsAction, audit.Successful, nil)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 	})
 }
@@ -128,7 +129,7 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 1)
-		verifyAuditRecordCalls(recCalls[0], getDatasetsAction, actionAttempted, nil)
+		verifyAuditRecordCalls(recCalls[0], getDatasetsAction, audit.Attempted, nil)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 0)
 	})
 
@@ -143,7 +144,7 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getDatasetsAction && result == actionUnsuccessful {
+			if action == getDatasetsAction && result == audit.Unsuccessful {
 				return errors.New("boom!")
 			}
 			return nil
@@ -158,8 +159,8 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getDatasetsAction, actionAttempted, nil)
-		verifyAuditRecordCalls(recCalls[1], getDatasetsAction, actionUnsuccessful, nil)
+		verifyAuditRecordCalls(recCalls[0], getDatasetsAction, audit.Attempted, nil)
+		verifyAuditRecordCalls(recCalls[1], getDatasetsAction, audit.Unsuccessful, nil)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 	})
 }
@@ -184,14 +185,14 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getDatasetsAction, actionAttempted, nil)
-		verifyAuditRecordCalls(recCalls[1], getDatasetsAction, actionUnsuccessful, nil)
+		verifyAuditRecordCalls(recCalls[0], getDatasetsAction, audit.Attempted, nil)
+		verifyAuditRecordCalls(recCalls[1], getDatasetsAction, audit.Unsuccessful, nil)
 
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 	})
 }
 
-func TestGetDatasetsAuditActionSuccessfulError(t *testing.T) {
+func TestGetDatasetsAuditauditSuccessfulError(t *testing.T) {
 	t.Parallel()
 	Convey("when a successful request to get dataset fails to audit action successful then a 200 response is returned", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
@@ -204,7 +205,7 @@ func TestGetDatasetsAuditActionSuccessfulError(t *testing.T) {
 
 		mockAuditor := getMockAuditor()
 		mockAuditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getDatasetsAction && result == actionSuccessful {
+			if action == getDatasetsAction && result == audit.Successful {
 				return errors.New("boom")
 			}
 			return nil
@@ -215,8 +216,8 @@ func TestGetDatasetsAuditActionSuccessfulError(t *testing.T) {
 
 		recCalls := mockAuditor.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getDatasetsAction, actionAttempted, nil)
-		verifyAuditRecordCalls(recCalls[1], getDatasetsAction, actionSuccessful, nil)
+		verifyAuditRecordCalls(recCalls[0], getDatasetsAction, audit.Attempted, nil)
+		verifyAuditRecordCalls(recCalls[1], getDatasetsAction, audit.Successful, nil)
 
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -241,8 +242,8 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getDatasetAction, actionAttempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getDatasetAction, actionSuccessful, auditParams)
+		verifyAuditRecordCalls(recCalls[0], getDatasetAction, audit.Attempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getDatasetAction, audit.Successful, auditParams)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -266,8 +267,8 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getDatasetAction, actionAttempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getDatasetAction, actionSuccessful, auditParams)
+		verifyAuditRecordCalls(recCalls[0], getDatasetAction, audit.Attempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getDatasetAction, audit.Successful, auditParams)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 	})
@@ -292,8 +293,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		verifyAuditRecordCalls(recCalls[0], getDatasetAction, actionAttempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getDatasetAction, actionUnsuccessful, auditParams)
+		verifyAuditRecordCalls(recCalls[0], getDatasetAction, audit.Attempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getDatasetAction, audit.Unsuccessful, auditParams)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
@@ -332,8 +333,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		verifyAuditRecordCalls(recCalls[0], getDatasetAction, actionAttempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getDatasetAction, actionUnsuccessful, auditParams)
+		verifyAuditRecordCalls(recCalls[0], getDatasetAction, audit.Attempted, auditParams)
+		verifyAuditRecordCalls(recCalls[1], getDatasetAction, audit.Unsuccessful, auditParams)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 	})
@@ -358,7 +359,7 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 			Convey("then a 500 status is returned", func() {
 				recCalls := auditMock.RecordCalls()
 				So(len(recCalls), ShouldEqual, 1)
-				verifyAuditRecordCalls(recCalls[0], getDatasetAction, actionAttempted, auditParams)
+				verifyAuditRecordCalls(recCalls[0], getDatasetAction, audit.Attempted, auditParams)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(strings.TrimSpace(w.Body.String()), ShouldEqual, errs.ErrInternalServer.Error())
@@ -370,7 +371,7 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 	Convey("given audit action successful returns an error", t, func() {
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getDatasetAction && result == actionSuccessful {
+			if action == getDatasetAction && result == audit.Successful {
 				return errors.New("auditing error")
 			}
 			return nil
@@ -392,8 +393,8 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 			Convey("then a 500 status is returned", func() {
 				recCalls := auditMock.RecordCalls()
 				So(len(recCalls), ShouldEqual, 2)
-				verifyAuditRecordCalls(recCalls[0], getDatasetAction, actionAttempted, auditParams)
-				verifyAuditRecordCalls(recCalls[1], getDatasetAction, actionSuccessful, auditParams)
+				verifyAuditRecordCalls(recCalls[0], getDatasetAction, audit.Attempted, auditParams)
+				verifyAuditRecordCalls(recCalls[1], getDatasetAction, audit.Successful, auditParams)
 
 				So(len(mockDatastore.GetDatasetCalls()), ShouldEqual, 1)
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -405,7 +406,7 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 	Convey("given auditing action unsuccessful returns an error", t, func() {
 		auditMock := getMockAuditor()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getDatasetAction && result == actionUnsuccessful {
+			if action == getDatasetAction && result == audit.Unsuccessful {
 				return errors.New("auditing error")
 			}
 			return nil
@@ -430,8 +431,8 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 
 				recCalls := auditMock.RecordCalls()
 				So(len(recCalls), ShouldEqual, 2)
-				verifyAuditRecordCalls(recCalls[0], getDatasetAction, actionAttempted, auditParams)
-				verifyAuditRecordCalls(recCalls[1], getDatasetAction, actionUnsuccessful, auditParams)
+				verifyAuditRecordCalls(recCalls[0], getDatasetAction, audit.Attempted, auditParams)
+				verifyAuditRecordCalls(recCalls[1], getDatasetAction, audit.Unsuccessful, auditParams)
 
 				So(len(mockDatastore.GetDatasetCalls()), ShouldEqual, 1)
 			})
@@ -581,7 +582,7 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 
 	Convey("given audit action attempted returns an error", t, func() {
 		auditor := getMockAuditorFunc(func(a string, r string) error {
-			if a == addDatasetAction && r == actionAttempted {
+			if a == addDatasetAction && r == audit.Attempted {
 				return errors.New("auditing error")
 			}
 			return nil
@@ -605,14 +606,14 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 1)
-				verifyAuditRecordCalls(calls[0], addDatasetAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[0], addDatasetAction, audit.Attempted, ap)
 			})
 		})
 	})
 
 	Convey("given audit action unsuccessful returns an error", t, func() {
 		auditor := getMockAuditorFunc(func(a string, r string) error {
-			if a == addDatasetAction && r == actionUnsuccessful {
+			if a == addDatasetAction && r == audit.Unsuccessful {
 				return errors.New("auditing error")
 			}
 			return nil
@@ -640,7 +641,7 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], addDatasetAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[0], addDatasetAction, audit.Attempted, ap)
 			})
 		})
 
@@ -666,8 +667,8 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], addDatasetAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], addDatasetAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], addDatasetAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], addDatasetAction, audit.Unsuccessful, ap)
 			})
 		})
 
@@ -696,15 +697,15 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], addDatasetAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], addDatasetAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], addDatasetAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], addDatasetAction, audit.Unsuccessful, ap)
 			})
 		})
 	})
 
 	Convey("given audit action successful returns an error", t, func() {
 		auditor := getMockAuditorFunc(func(a string, r string) error {
-			if a == addDatasetAction && r == actionSuccessful {
+			if a == addDatasetAction && r == audit.Successful {
 				return errors.New("auditing error")
 			}
 			return nil
@@ -733,8 +734,8 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], addDatasetAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], addDatasetAction, actionSuccessful, ap)
+				verifyAuditRecordCalls(calls[0], addDatasetAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], addDatasetAction, audit.Successful, ap)
 			})
 		})
 	})
@@ -774,8 +775,8 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 
 		calls := auditor.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], putDatasetAction, actionAttempted, common.Params{"dataset_id": "123"})
-		verifyAuditRecordCalls(calls[1], putDatasetAction, actionSuccessful, common.Params{"dataset_id": "123"})
+		verifyAuditRecordCalls(calls[0], putDatasetAction, audit.Attempted, common.Params{"dataset_id": "123"})
+		verifyAuditRecordCalls(calls[1], putDatasetAction, audit.Successful, common.Params{"dataset_id": "123"})
 	})
 }
 
@@ -811,8 +812,8 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		calls := auditor.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], putDatasetAction, actionAttempted, common.Params{"dataset_id": "123"})
-		verifyAuditRecordCalls(calls[1], putDatasetAction, actionUnsuccessful, common.Params{"dataset_id": "123"})
+		verifyAuditRecordCalls(calls[0], putDatasetAction, audit.Attempted, common.Params{"dataset_id": "123"})
+		verifyAuditRecordCalls(calls[1], putDatasetAction, audit.Unsuccessful, common.Params{"dataset_id": "123"})
 	})
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
@@ -849,8 +850,8 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		calls := auditor.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], putDatasetAction, actionAttempted, common.Params{"dataset_id": "123"})
-		verifyAuditRecordCalls(calls[1], putDatasetAction, actionUnsuccessful, common.Params{"dataset_id": "123"})
+		verifyAuditRecordCalls(calls[0], putDatasetAction, audit.Attempted, common.Params{"dataset_id": "123"})
+		verifyAuditRecordCalls(calls[1], putDatasetAction, audit.Unsuccessful, common.Params{"dataset_id": "123"})
 	})
 
 	Convey("When the dataset document cannot be found return status not found ", t, func() {
@@ -882,8 +883,8 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		calls := auditor.RecordCalls()
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], putDatasetAction, actionAttempted, common.Params{"dataset_id": "123"})
-		verifyAuditRecordCalls(calls[1], putDatasetAction, actionUnsuccessful, common.Params{"dataset_id": "123"})
+		verifyAuditRecordCalls(calls[0], putDatasetAction, audit.Attempted, common.Params{"dataset_id": "123"})
+		verifyAuditRecordCalls(calls[1], putDatasetAction, audit.Unsuccessful, common.Params{"dataset_id": "123"})
 	})
 
 	Convey("When the request is not authorised to update dataset return status not found", t, func() {
@@ -920,7 +921,7 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 
 	t.Parallel()
 	Convey("given audit action attempted returns an error", t, func() {
-		auditor := createAuditor(putDatasetAction, actionAttempted)
+		auditor := createAuditor(putDatasetAction, audit.Attempted)
 
 		Convey("when put dataset is called", func() {
 			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(datasetPayload))
@@ -947,13 +948,13 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 1)
-				verifyAuditRecordCalls(calls[0], putDatasetAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[0], putDatasetAction, audit.Attempted, ap)
 			})
 		})
 	})
 
 	Convey("given audit action successful returns an error", t, func() {
-		auditor := createAuditor(putDatasetAction, actionSuccessful)
+		auditor := createAuditor(putDatasetAction, audit.Successful)
 
 		Convey("when a put dataset request is successful", func() {
 			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(datasetPayload))
@@ -979,14 +980,14 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], putDatasetAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], putDatasetAction, actionSuccessful, ap)
+				verifyAuditRecordCalls(calls[0], putDatasetAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], putDatasetAction, audit.Successful, ap)
 			})
 		})
 	})
 
 	Convey("given audit action unsuccessful returns an error", t, func() {
-		auditor := createAuditor(putDatasetAction, actionUnsuccessful)
+		auditor := createAuditor(putDatasetAction, audit.Unsuccessful)
 
 		Convey("when a put dataset request contains an invalid dataset body", func() {
 			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString("`zxcvbnm,./"))
@@ -1012,8 +1013,8 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], putDatasetAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], putDatasetAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], putDatasetAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], putDatasetAction, audit.Unsuccessful, ap)
 			})
 		})
 
@@ -1038,8 +1039,8 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], putDatasetAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], putDatasetAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], putDatasetAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], putDatasetAction, audit.Unsuccessful, ap)
 			})
 		})
 
@@ -1073,8 +1074,8 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], putDatasetAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], putDatasetAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], putDatasetAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], putDatasetAction, audit.Unsuccessful, ap)
 			})
 		})
 
@@ -1102,8 +1103,8 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], putDatasetAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], putDatasetAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], putDatasetAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], putDatasetAction, audit.Unsuccessful, ap)
 			})
 		})
 	})
@@ -1135,8 +1136,8 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNoContent)
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], deleteDatasetAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], deleteDatasetAction, actionSuccessful, ap)
+		verifyAuditRecordCalls(calls[0], deleteDatasetAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], deleteDatasetAction, audit.Successful, ap)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 	})
@@ -1170,8 +1171,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		ap := common.Params{"dataset_id": "123"}
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], deleteDatasetAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], deleteDatasetAction, actionUnsuccessful, ap)
+		verifyAuditRecordCalls(calls[0], deleteDatasetAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], deleteDatasetAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
@@ -1203,8 +1204,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		ap := common.Params{"dataset_id": "123"}
 
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], deleteDatasetAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], deleteDatasetAction, actionUnsuccessful, ap)
+		verifyAuditRecordCalls(calls[0], deleteDatasetAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], deleteDatasetAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("When the dataset document cannot be found return status not found ", t, func() {
@@ -1235,8 +1236,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		ap := common.Params{"dataset_id": "123"}
 
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], deleteDatasetAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], deleteDatasetAction, actionUnsuccessful, ap)
+		verifyAuditRecordCalls(calls[0], deleteDatasetAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], deleteDatasetAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("When the dataset document cannot be queried return status 500 ", t, func() {
@@ -1266,8 +1267,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		calls := auditorMock.RecordCalls()
 		ap := common.Params{"dataset_id": "123"}
 		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], deleteDatasetAction, actionAttempted, ap)
-		verifyAuditRecordCalls(calls[1], deleteDatasetAction, actionUnsuccessful, ap)
+		verifyAuditRecordCalls(calls[0], deleteDatasetAction, audit.Attempted, ap)
+		verifyAuditRecordCalls(calls[1], deleteDatasetAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("When the request is not authorised to delete the dataset return status not found", t, func() {
@@ -1316,7 +1317,7 @@ func TestDeleteDatasetAuditActionAttemptedError(t *testing.T) {
 				calls := auditorMock.RecordCalls()
 				ap := common.Params{"dataset_id": "123"}
 				So(len(calls), ShouldEqual, 1)
-				verifyAuditRecordCalls(calls[0], deleteDatasetAction, actionAttempted, ap)
+				verifyAuditRecordCalls(calls[0], deleteDatasetAction, audit.Attempted, ap)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
@@ -1325,11 +1326,11 @@ func TestDeleteDatasetAuditActionAttemptedError(t *testing.T) {
 	})
 }
 
-func TestDeleteDatasetAuditActionUnsuccessfulError(t *testing.T) {
+func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 	getAuditor := func() *audit.AuditorServiceMock {
 		return &audit.AuditorServiceMock{
 			RecordFunc: func(ctx context.Context, action string, result string, params common.Params) error {
-				if deleteDatasetAction == action && result == actionUnsuccessful {
+				if deleteDatasetAction == action && result == audit.Unsuccessful {
 					return errors.New("audit error")
 				}
 				return nil
@@ -1361,8 +1362,8 @@ func TestDeleteDatasetAuditActionUnsuccessfulError(t *testing.T) {
 				calls := auditorMock.RecordCalls()
 				ap := common.Params{"dataset_id": "123"}
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], deleteDatasetAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], deleteDatasetAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], deleteDatasetAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], deleteDatasetAction, audit.Unsuccessful, ap)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
@@ -1391,8 +1392,8 @@ func TestDeleteDatasetAuditActionUnsuccessfulError(t *testing.T) {
 				calls := auditorMock.RecordCalls()
 				ap := common.Params{"dataset_id": "123"}
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], deleteDatasetAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], deleteDatasetAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], deleteDatasetAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], deleteDatasetAction, audit.Unsuccessful, ap)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
@@ -1421,8 +1422,8 @@ func TestDeleteDatasetAuditActionUnsuccessfulError(t *testing.T) {
 				calls := auditorMock.RecordCalls()
 				ap := common.Params{"dataset_id": "123"}
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], deleteDatasetAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], deleteDatasetAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], deleteDatasetAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], deleteDatasetAction, audit.Unsuccessful, ap)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
@@ -1454,8 +1455,8 @@ func TestDeleteDatasetAuditActionUnsuccessfulError(t *testing.T) {
 				calls := auditorMock.RecordCalls()
 				ap := common.Params{"dataset_id": "123"}
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], deleteDatasetAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], deleteDatasetAction, actionUnsuccessful, ap)
+				verifyAuditRecordCalls(calls[0], deleteDatasetAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], deleteDatasetAction, audit.Unsuccessful, ap)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
@@ -1481,7 +1482,7 @@ func TestDeleteDatasetAuditActionSuccessfulError(t *testing.T) {
 
 		auditorMock := &audit.AuditorServiceMock{
 			RecordFunc: func(ctx context.Context, action string, result string, params common.Params) error {
-				if deleteDatasetAction == action && result == actionSuccessful {
+				if deleteDatasetAction == action && result == audit.Successful {
 					return errors.New("audit error")
 				}
 				return nil
@@ -1497,8 +1498,8 @@ func TestDeleteDatasetAuditActionSuccessfulError(t *testing.T) {
 				calls := auditorMock.RecordCalls()
 				ap := common.Params{"dataset_id": "123"}
 				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], deleteDatasetAction, actionAttempted, ap)
-				verifyAuditRecordCalls(calls[1], deleteDatasetAction, actionSuccessful, ap)
+				verifyAuditRecordCalls(calls[0], deleteDatasetAction, audit.Attempted, ap)
+				verifyAuditRecordCalls(calls[1], deleteDatasetAction, audit.Successful, ap)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
@@ -1515,11 +1516,12 @@ func getMockAuditor() *audit.AuditorServiceMock {
 	}
 }
 
-func createAuditor(a string, r string) *audit.AuditorServiceMock {
+func createAuditor(actionErrTrigger string, resultErrTrigger string) *audit.AuditorServiceMock {
 	return &audit.AuditorServiceMock{
 		RecordFunc: func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == a && result == r {
-				return errors.New("auditing error")
+			if action == actionErrTrigger && result == resultErrTrigger {
+				audit.LogActionFailure(ctx, action, result, auditTestErr, nil)
+				return auditTestErr
 			}
 			return nil
 		},

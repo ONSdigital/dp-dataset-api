@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
@@ -16,7 +17,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": id}
 	auditParams := common.Params{"dataset_id": id}
 
-	if auditErr := api.auditor.Record(r.Context(), getEditionsAction, actionAttempted, auditParams); auditErr != nil {
+	if auditErr := api.auditor.Record(r.Context(), getEditionsAction, audit.Attempted, auditParams); auditErr != nil {
 		handleAuditingFailure(w, auditErr, logData)
 		return
 	}
@@ -33,7 +34,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 
 	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
 		log.ErrorC("unable to find dataset", err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getEditionsAction, actionUnsuccessful, auditParams); auditErr != nil {
+		if auditErr := api.auditor.Record(r.Context(), getEditionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			handleAuditingFailure(w, auditErr, logData)
 			return
 
@@ -46,7 +47,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.ErrorC("unable to find editions for dataset", err, logData)
 
-		if auditErr := api.auditor.Record(r.Context(), getEditionsAction, actionUnsuccessful, auditParams); auditErr != nil {
+		if auditErr := api.auditor.Record(r.Context(), getEditionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			handleAuditingFailure(w, auditErr, logData)
 			return
 		}
@@ -86,7 +87,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 		logMessage = "get all editions without auth"
 	}
 
-	if auditErr := api.auditor.Record(r.Context(), getEditionsAction, actionSuccessful, auditParams); auditErr != nil {
+	if auditErr := api.auditor.Record(r.Context(), getEditionsAction, audit.Successful, auditParams); auditErr != nil {
 		handleAuditingFailure(w, auditErr, logData)
 		return
 	}
@@ -107,7 +108,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": id, "edition": editionID}
 	auditParams := common.Params{"dataset_id": id, "edition": editionID}
 
-	if auditErr := api.auditor.Record(r.Context(), getEditionAction, actionAttempted, auditParams); auditErr != nil {
+	if auditErr := api.auditor.Record(r.Context(), getEditionAction, audit.Attempted, auditParams); auditErr != nil {
 		handleAuditingFailure(w, auditErr, logData)
 		return
 	}
@@ -121,7 +122,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 
 	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
 		log.ErrorC("unable to find dataset", err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getEditionAction, actionUnsuccessful, auditParams); auditErr != nil {
+		if auditErr := api.auditor.Record(r.Context(), getEditionAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			handleAuditingFailure(w, auditErr, logData)
 			return
 		}
@@ -132,7 +133,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	edition, err := api.dataStore.Backend.GetEdition(id, editionID, state)
 	if err != nil {
 		log.ErrorC("unable to find edition", err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getEditionAction, actionUnsuccessful, auditParams); auditErr != nil {
+		if auditErr := api.auditor.Record(r.Context(), getEditionAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			handleAuditingFailure(w, auditErr, logData)
 			return
 		}
@@ -166,7 +167,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 		logMessage = "get public edition without auth"
 	}
 
-	if auditErr := api.auditor.Record(r.Context(), getEditionAction, actionSuccessful, auditParams); auditErr != nil {
+	if auditErr := api.auditor.Record(r.Context(), getEditionAction, audit.Successful, auditParams); auditErr != nil {
 		handleAuditingFailure(w, auditErr, logData)
 		return
 	}

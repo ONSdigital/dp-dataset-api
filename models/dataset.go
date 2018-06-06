@@ -13,6 +13,12 @@ import (
 	"github.com/satori/go.uuid"
 )
 
+var (
+	ErrPublishedVersionCollectionIDInvalid  = errors.New("Unexpected collection_id in published version")
+	ErrAssociatedVersionCollectionIDInvalid = errors.New("Missing collection_id for association between version and a collection")
+	ErrVersionStateInvalid                  = errors.New("Incorrect state, can be one of the following: edition-confirmed, associated or published")
+)
+
 // DatasetResults represents a structure for a list of datasets
 type DatasetResults struct {
 	Items []*Dataset `json:"items"`
@@ -315,14 +321,14 @@ func ValidateVersion(version *Version) error {
 	case EditionConfirmedState:
 	case PublishedState:
 		if version.CollectionID != "" {
-			return errors.New("Unexpected collection_id in published version")
+			return ErrPublishedVersionCollectionIDInvalid
 		}
 	case AssociatedState:
 		if version.CollectionID == "" {
-			return errors.New("Missing collection_id for association between version and a collection")
+			return ErrAssociatedVersionCollectionIDInvalid
 		}
 	default:
-		return errors.New("Incorrect state, can be one of the following: edition-confirmed, associated or published")
+		return ErrVersionStateInvalid
 	}
 
 	var missingFields []string
