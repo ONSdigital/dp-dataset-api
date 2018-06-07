@@ -2,7 +2,6 @@ package instance
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,15 +12,33 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/go-ns/audit"
+	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 )
 
+var updateImportTaskAction = "updateImportTask"
+
 //Store provides a backend for instances
 type Store struct {
-	Host string
 	store.Storer
+	Host    string
+	Auditor audit.AuditorService
+}
+
+type updateTaskErr struct {
+	error  error
+	status int
+}
+
+func (e updateTaskErr) Error() string {
+	if e.error != nil {
+		return e.Error()
+	}
+	return ""
 }
 
 //GetList a list of all instances
@@ -461,70 +478,83 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
-
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	id := vars["id"]
-
+	ap := common.Params{"ID": id}
+	data := audit.ToLogData(ap)
 	defer r.Body.Close()
 
-	tasks, err := unmarshalImportTasks(r.Body)
-	if err != nil {
-		log.Error(err, nil)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if auditErr := s.Auditor.Record(ctx, updateImportTaskAction, audit.Attempted, ap); auditErr != nil {
+		audit.LogActionFailure(ctx, updateImportTaskAction, audit.Attempted, auditErr, data)
+		http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	validationErrs := make([]error, 0)
-
-	if tasks.ImportObservations != nil {
-		if tasks.ImportObservations.State != "" {
-			if tasks.ImportObservations.State != models.CompletedState {
-				validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value for import observations: %v", tasks.ImportObservations.State))
-			} else if err := s.UpdateImportObservationsTaskState(id, tasks.ImportObservations.State); err != nil {
-				log.Error(err, nil)
-				http.Error(w, "Failed to update import observations task state", http.StatusInternalServerError)
-				return
-			}
+	updateErr := func() *updateTaskErr {
+		tasks, err := unmarshalImportTasks(r.Body)
+		if err != nil {
+			audit.LogError(ctx, errors.WithMessage(err, "failed to unmarshal request body to UpdateImportTasks model"), data)
+			return &updateTaskErr{err, http.StatusBadRequest}
 		}
-	}
 
-	if tasks.BuildHierarchyTasks != nil {
-		for _, task := range tasks.BuildHierarchyTasks {
-			if task.State != "" {
-				if task.State != models.CompletedState {
-					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
-				} else if err := s.UpdateBuildHierarchyTaskState(id, task.DimensionName, task.State); err != nil {
-					log.Error(err, nil)
-					http.Error(w, "Failed to update build hierarchy task state", http.StatusInternalServerError)
-					return
+		validationErrs := make([]error, 0)
+
+		if tasks.ImportObservations != nil {
+			if tasks.ImportObservations.State != "" {
+				if tasks.ImportObservations.State != models.CompletedState {
+					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value for import observations: %v", tasks.ImportObservations.State))
+				} else if err := s.UpdateImportObservationsTaskState(id, tasks.ImportObservations.State); err != nil {
+					audit.LogError(ctx, errors.WithMessage(err, "Failed to update import observations task state"), data)
+					return &updateTaskErr{err, http.StatusInternalServerError}
 				}
 			}
 		}
-	}
 
-	if tasks.BuildSearchIndexTasks != nil {
-		for _, task := range tasks.BuildSearchIndexTasks {
-			if task.State != "" {
-				if task.State != models.CompletedState {
-					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
-				} else if err := s.UpdateBuildSearchTaskState(id, task.DimensionName, task.State); err != nil {
-					log.Error(err, nil)
-					http.Error(w, "Failed to update build search index task state", http.StatusInternalServerError)
-					return
+		if tasks.BuildHierarchyTasks != nil {
+			for _, task := range tasks.BuildHierarchyTasks {
+				if task.State != "" {
+					if task.State != models.CompletedState {
+						validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
+					} else if err := s.UpdateBuildHierarchyTaskState(id, task.DimensionName, task.State); err != nil {
+						audit.LogError(ctx, errors.WithMessage(err, "Failed to update build hierarchy task state"), data)
+						return &updateTaskErr{err, http.StatusInternalServerError}
+					}
 				}
 			}
 		}
-	}
 
-	if len(validationErrs) > 0 {
-		for _, err := range validationErrs {
-			log.Error(err, nil)
+		if tasks.BuildSearchIndexTasks != nil {
+			for _, task := range tasks.BuildSearchIndexTasks {
+				if task.State != "" {
+					if task.State != models.CompletedState {
+						validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
+					} else if err := s.UpdateBuildSearchTaskState(id, task.DimensionName, task.State); err != nil {
+						audit.LogError(ctx, errors.WithMessage(err, "Failed to update build search index task state"), data)
+						return &updateTaskErr{err, http.StatusInternalServerError}
+					}
+				}
+			}
 		}
-		// todo: add all validation errors to the response
-		http.Error(w, validationErrs[0].Error(), http.StatusBadRequest)
+
+		if len(validationErrs) > 0 {
+			for _, err := range validationErrs {
+				audit.LogError(ctx, errors.WithMessage(err, "validation error"), data)
+			}
+			// todo: add all validation errors to the response
+			return &updateTaskErr{validationErrs[0], http.StatusBadRequest}
+		}
+		return nil
+	}()
+
+	if updateErr != nil {
+		if auditErr := s.Auditor.Record(ctx, updateImportTaskAction, audit.Unsuccessful, ap); auditErr != nil {
+			updateErr = &updateTaskErr{errs.ErrInternalServer, http.StatusInternalServerError}
+		}
+		http.Error(w, updateErr.Error(), updateErr.status)
 		return
 	}
-
+	audit.LogInfo(ctx, "updateImportTask endpoint: request successful", data)
 }
 
 func unmarshalImportTasks(reader io.Reader) (*models.InstanceImportTasks, error) {
