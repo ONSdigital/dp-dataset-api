@@ -237,7 +237,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 		api.router.ServeHTTP(w, r)
 
-		assertInternalServerErr(w)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldEqual, "Incorrect resource state\n")
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
@@ -766,8 +767,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 
 		api.router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
+		assertInternalServerErr(w)
 
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
@@ -800,9 +800,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 
 		api.router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
-
+		assertInternalServerErr(w)
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
 		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
@@ -840,9 +838,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 
 		api.router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
-
+		assertInternalServerErr(w)
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
 		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
@@ -882,8 +878,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 
 		api.router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
+		assertInternalServerErr(w)
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
 		verifyAuditRecordCalls(recCalls[0], getVersionAction, audit.Attempted, p)
