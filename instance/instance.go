@@ -554,6 +554,13 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, updateErr.Error(), updateErr.status)
 		return
 	}
+
+	if auditErr := s.Auditor.Record(ctx, updateImportTaskAction, audit.Successful, ap); auditErr != nil {
+		updateErr = &updateTaskErr{errs.ErrInternalServer, http.StatusInternalServerError}
+		http.Error(w, updateErr.Error(), updateErr.status)
+		return
+	}
+
 	audit.LogInfo(ctx, "updateImportTask endpoint: request successful", data)
 }
 
