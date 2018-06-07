@@ -266,9 +266,8 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	data := log.Data{"dataset_id": datasetID}
 	auditParams := common.Params{"dataset_id": datasetID}
 
-	if err := api.auditor.Record(ctx, putDatasetAction, audit.Attempted, auditParams); err != nil {
-		auditActionFailure(ctx, putDatasetAction, audit.Attempted, err, data)
-		handleDatasetAPIErr(ctx, err, w, data)
+	if auditErr := api.auditor.Record(ctx, putDatasetAction, audit.Attempted, auditParams); auditErr != nil {
+		handleDatasetAPIErr(ctx, auditErr, w, data)
 		return
 	}
 
@@ -277,24 +276,24 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 
 		dataset, err := models.CreateDataset(r.Body)
 		if err != nil {
-			logError(ctx, errors.WithMessage(err, "putDataset endpoint: failed to model dataset resource based on request"), data)
+			audit.LogError(ctx, errors.WithMessage(err, "putDataset endpoint: failed to model dataset resource based on request"), data)
 			return errs.ErrAddUpdateDatasetBadRequest
 		}
 
 		currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
 		if err != nil {
-			logError(ctx, errors.WithMessage(err, "putDataset endpoint: datastore.getDataset returned an error"), data)
+			audit.LogError(ctx, errors.WithMessage(err, "putDataset endpoint: datastore.getDataset returned an error"), data)
 			return err
 		}
 
 		if dataset.State == models.PublishedState {
 			if err := api.publishDataset(currentDataset, nil); err != nil {
-				logError(ctx, errors.WithMessage(err, "putDataset endpoint: failed to update dataset document to published"), data)
+				audit.LogError(ctx, errors.WithMessage(err, "putDataset endpoint: failed to update dataset document to published"), data)
 				return err
 			}
 		} else {
 			if err := api.dataStore.Backend.UpdateDataset(datasetID, dataset, currentDataset.Next.State); err != nil {
-				logError(ctx, errors.WithMessage(err, "putDataset endpoint: failed to update dataset resource"), data)
+				audit.LogError(ctx, errors.WithMessage(err, "putDataset endpoint: failed to update dataset resource"), data)
 				return err
 			}
 		}
@@ -302,21 +301,16 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		if err := api.auditor.Record(ctx, putDatasetAction, audit.Unsuccessful, auditParams); err != nil {
-			auditActionFailure(ctx, putDatasetAction, audit.Unsuccessful, err, data)
-		}
-
+		api.auditor.Record(ctx, putDatasetAction, audit.Unsuccessful, auditParams)
 		handleDatasetAPIErr(ctx, err, w, data)
 		return
 	}
 
-	if err := api.auditor.Record(ctx, putDatasetAction, audit.Successful, auditParams); err != nil {
-		auditActionFailure(ctx, putDatasetAction, audit.Successful, err, data)
-	}
+	api.auditor.Record(ctx, putDatasetAction, audit.Successful, auditParams)
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
-	logInfo(ctx, "putDataset endpoint: request successful", data)
+	audit.LogInfo(ctx, "putDataset endpoint: request successful", data)
 }
 
 func (api *DatasetAPI) publishDataset(currentDataset *models.DatasetUpdate, version *models.Version) error {
