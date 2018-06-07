@@ -108,7 +108,6 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	auditParams := common.Params{"dataset_id": id}
 
 	if auditErr := api.auditor.Record(ctx, getDatasetAction, audit.Attempted, auditParams); auditErr != nil {
-		auditActionFailure(ctx, getDatasetAction, audit.Attempted, auditErr, logData)
 		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, logData)
 		return
 	}
@@ -116,7 +115,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	b, err := func() ([]byte, error) {
 		dataset, err := api.dataStore.Backend.GetDataset(id)
 		if err != nil {
-			logError(ctx, errors.WithMessage(err, "getDataset endpoint: dataStore.Backend.GetDataset returned an error"), logData)
+			audit.LogError(ctx, errors.WithMessage(err, "getDataset endpoint: dataStore.Backend.GetDataset returned an error"), logData)
 			return nil, err
 		}
 
@@ -126,25 +125,25 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		if !authorised {
 			// User is not authenticated and hence has only access to current sub document
 			if dataset.Current == nil {
-				logInfo(ctx, "getDataste endpoint: published dataset not found", logData)
+				audit.LogInfo(ctx, "getDataste endpoint: published dataset not found", logData)
 				return nil, errs.ErrDatasetNotFound
 			}
 
 			dataset.Current.ID = dataset.ID
 			b, err = json.Marshal(dataset.Current)
 			if err != nil {
-				logError(ctx, errors.WithMessage(err, "getDataset endpoint: failed to marshal dataset current sub document resource into bytes"), logData)
+				audit.LogError(ctx, errors.WithMessage(err, "getDataset endpoint: failed to marshal dataset current sub document resource into bytes"), logData)
 				return nil, err
 			}
 		} else {
 			// User has valid authentication to get raw dataset document
 			if dataset == nil {
-				logInfo(ctx, "getDataset endpoint: published or unpublished dataset not found", logData)
+				audit.LogInfo(ctx, "getDataset endpoint: published or unpublished dataset not found", logData)
 				return nil, errs.ErrDatasetNotFound
 			}
 			b, err = json.Marshal(dataset)
 			if err != nil {
-				logError(ctx, errors.WithMessage(err, "getDataset endpoint: failed to marshal dataset current sub document resource into bytes"), logData)
+				audit.LogError(ctx, errors.WithMessage(err, "getDataset endpoint: failed to marshal dataset current sub document resource into bytes"), logData)
 				return nil, err
 			}
 		}
@@ -153,25 +152,24 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if auditErr := api.auditor.Record(ctx, getDatasetAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			auditActionFailure(ctx, getDatasetAction, audit.Unsuccessful, auditErr, logData)
+			err = auditErr
 		}
 		handleDatasetAPIErr(ctx, err, w, logData)
 		return
 	}
 
 	if auditErr := api.auditor.Record(ctx, getDatasetAction, audit.Successful, auditParams); auditErr != nil {
-		auditActionFailure(ctx, getDatasetAction, audit.Successful, auditErr, logData)
-		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, logData)
+		handleDatasetAPIErr(ctx, auditErr, w, logData)
 		return
 	}
 
 	setJSONContentType(w)
 	_, err = w.Write(b)
 	if err != nil {
-		logError(ctx, errors.WithMessage(err, "getDataset endpoint: error writing bytes to response"), logData)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		audit.LogError(ctx, errors.WithMessage(err, "getDataset endpoint: error writing bytes to response"), logData)
+		handleDatasetAPIErr(ctx, err, w, logData)
 	}
-	logInfo(ctx, "getDataset endpoint: request successful", logData)
+	audit.LogInfo(ctx, "getDataset endpoint: request successful", logData)
 }
 
 func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
