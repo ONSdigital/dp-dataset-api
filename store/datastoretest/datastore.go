@@ -88,10 +88,10 @@ var (
 //             GetDimensionsFunc: func(datasetID string, versionID string) ([]bson.M, error) {
 // 	               panic("TODO: mock out the GetDimensions method")
 //             },
-//             GetEditionFunc: func(ID string, editionID string, state string) (*models.Edition, error) {
+//             GetEditionFunc: func(ID string, editionID string, state string) (*models.EditionUpdate, error) {
 // 	               panic("TODO: mock out the GetEdition method")
 //             },
-//             GetEditionsFunc: func(ID string, state string) (*models.EditionResults, error) {
+//             GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
 // 	               panic("TODO: mock out the GetEditions method")
 //             },
 //             GetInstanceFunc: func(ID string) (*models.Instance, error) {
@@ -151,7 +151,7 @@ var (
 //             UpsertDatasetFunc: func(ID string, datasetDoc *models.DatasetUpdate) error {
 // 	               panic("TODO: mock out the UpsertDataset method")
 //             },
-//             UpsertEditionFunc: func(datasetID string, edition string, editionDoc *models.Edition) error {
+//             UpsertEditionFunc: func(datasetID string, edition string, editionDoc *models.EditionUpdate) error {
 // 	               panic("TODO: mock out the UpsertEdition method")
 //             },
 //             UpsertVersionFunc: func(ID string, versionDoc *models.Version) error {
@@ -198,10 +198,10 @@ type StorerMock struct {
 	GetDimensionsFunc func(datasetID string, versionID string) ([]bson.M, error)
 
 	// GetEditionFunc mocks the GetEdition method.
-	GetEditionFunc func(ID, editionID, state string) (*models.EditionUpdate, error)
+	GetEditionFunc func(ID string, editionID string, state string) (*models.EditionUpdate, error)
 
 	// GetEditionsFunc mocks the GetEditions method.
-	GetEditionsFunc func(id, state string) (*models.EditionUpdateResults, error)
+	GetEditionsFunc func(ID string, state string) (*models.EditionUpdateResults, error)
 
 	// GetInstanceFunc mocks the GetInstance method.
 	GetInstanceFunc func(ID string) (*models.Instance, error)
@@ -339,14 +339,14 @@ type StorerMock struct {
 			ID string
 			// EditionID is the editionID argument value.
 			EditionID string
-			// Auth reflects if the requester is authorised.
+			// State is the state argument value.
 			State string
 		}
 		// GetEditions holds details about calls to the GetEditions method.
 		GetEditions []struct {
 			// ID is the ID argument value.
 			ID string
-			// State reflects if the requester is authorised.
+			// State is the state argument value.
 			State string
 		}
 		// GetInstance holds details about calls to the GetInstance method.
@@ -400,8 +400,8 @@ type StorerMock struct {
 		}
 		// UpdateBuildHierarchyTaskState holds details about calls to the UpdateBuildHierarchyTaskState method.
 		UpdateBuildHierarchyTaskState []struct {
-			// Id is the id argument value.
-			Id string
+			// ID is the id argument value.
+			ID string
 			// Dimension is the dimension argument value.
 			Dimension string
 			// State is the state argument value.
@@ -409,8 +409,8 @@ type StorerMock struct {
 		}
 		// UpdateBuildSearchTaskState holds details about calls to the UpdateBuildSearchTaskState method.
 		UpdateBuildSearchTaskState []struct {
-			// Id is the id argument value.
-			Id string
+			// ID is the id argument value.
+			ID string
 			// Dimension is the dimension argument value.
 			Dimension string
 			// State is the state argument value.
@@ -450,8 +450,8 @@ type StorerMock struct {
 		}
 		// UpdateImportObservationsTaskState holds details about calls to the UpdateImportObservationsTaskState method.
 		UpdateImportObservationsTaskState []struct {
-			// Id is the id argument value.
-			Id string
+			// ID is the id argument value.
+			ID string
 			// State is the state argument value.
 			State string
 		}
@@ -1194,11 +1194,11 @@ func (mock *StorerMock) UpdateBuildHierarchyTaskState(id string, dimension strin
 		panic("moq: StorerMock.UpdateBuildHierarchyTaskStateFunc is nil but Storer.UpdateBuildHierarchyTaskState was just called")
 	}
 	callInfo := struct {
-		Id        string
+		ID        string
 		Dimension string
 		State     string
 	}{
-		Id:        id,
+		ID:        id,
 		Dimension: dimension,
 		State:     state,
 	}
@@ -1212,12 +1212,12 @@ func (mock *StorerMock) UpdateBuildHierarchyTaskState(id string, dimension strin
 // Check the length with:
 //     len(mockedStorer.UpdateBuildHierarchyTaskStateCalls())
 func (mock *StorerMock) UpdateBuildHierarchyTaskStateCalls() []struct {
-	Id        string
+	ID        string
 	Dimension string
 	State     string
 } {
 	var calls []struct {
-		Id        string
+		ID        string
 		Dimension string
 		State     string
 	}
@@ -1233,11 +1233,11 @@ func (mock *StorerMock) UpdateBuildSearchTaskState(id string, dimension string, 
 		panic("moq: StorerMock.UpdateBuildSearchTaskStateFunc is nil but Storer.UpdateBuildSearchTaskState was just called")
 	}
 	callInfo := struct {
-		Id        string
+		ID        string
 		Dimension string
 		State     string
 	}{
-		Id:        id,
+		ID:        id,
 		Dimension: dimension,
 		State:     state,
 	}
@@ -1251,12 +1251,12 @@ func (mock *StorerMock) UpdateBuildSearchTaskState(id string, dimension string, 
 // Check the length with:
 //     len(mockedStorer.UpdateBuildSearchTaskStateCalls())
 func (mock *StorerMock) UpdateBuildSearchTaskStateCalls() []struct {
-	Id        string
+	ID        string
 	Dimension string
 	State     string
 } {
 	var calls []struct {
-		Id        string
+		ID        string
 		Dimension string
 		State     string
 	}
@@ -1420,10 +1420,10 @@ func (mock *StorerMock) UpdateImportObservationsTaskState(id string, state strin
 		panic("moq: StorerMock.UpdateImportObservationsTaskStateFunc is nil but Storer.UpdateImportObservationsTaskState was just called")
 	}
 	callInfo := struct {
-		Id    string
+		ID    string
 		State string
 	}{
-		Id:    id,
+		ID:    id,
 		State: state,
 	}
 	lockStorerMockUpdateImportObservationsTaskState.Lock()
@@ -1436,11 +1436,11 @@ func (mock *StorerMock) UpdateImportObservationsTaskState(id string, state strin
 // Check the length with:
 //     len(mockedStorer.UpdateImportObservationsTaskStateCalls())
 func (mock *StorerMock) UpdateImportObservationsTaskStateCalls() []struct {
-	Id    string
+	ID    string
 	State string
 } {
 	var calls []struct {
-		Id    string
+		ID    string
 		State string
 	}
 	lockStorerMockUpdateImportObservationsTaskState.RLock()

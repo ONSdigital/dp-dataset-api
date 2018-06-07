@@ -59,7 +59,6 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	auditParams := common.Params{"dataset_id": id, "edition": editionID}
 
 	if auditErr := api.auditor.Record(ctx, getVersionsAction, audit.Attempted, auditParams); auditErr != nil {
-		//audit.LogActionFailure(ctx, getVersionsAction, audit.Attempted, auditErr, logData)
 		handleVersionAPIErr(ctx, errs.ErrInternalServer, w, logData)
 		return
 	}
@@ -177,7 +176,6 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 		log.ErrorC("failed to find edition for dataset", err, logData)
 		if auditErr := api.auditor.Record(r.Context(), getVersionAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			handleAuditingFailure(w, auditErr, logData)
-			//audit.LogActionFailure(ctx, getVersionAction, audit.Unsuccessful)
 			return
 		}
 		handleVersionAPIErr(ctx, err, w, logData)
