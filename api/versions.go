@@ -212,14 +212,14 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if getVersionErr != nil {
-		if auditErr := api.auditor.Record(r.Context(), getVersionAction, audit.Unsuccessful, auditParams); auditErr != nil {
+		if auditErr := api.auditor.Record(ctx, getVersionAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			getVersionErr = auditErr
 		}
 		handleVersionAPIErr(ctx, getVersionErr, w, logData)
 		return
 	}
 
-	if auditErr := api.auditor.Record(r.Context(), getVersionAction, audit.Successful, auditParams); auditErr != nil {
+	if auditErr := api.auditor.Record(ctx, getVersionAction, audit.Successful, auditParams); auditErr != nil {
 		handleVersionAPIErr(ctx, auditErr, w, logData)
 		return
 	}
