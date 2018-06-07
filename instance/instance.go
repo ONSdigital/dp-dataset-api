@@ -551,13 +551,12 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 		if auditErr := s.Auditor.Record(ctx, updateImportTaskAction, audit.Unsuccessful, ap); auditErr != nil {
 			updateErr = &updateTaskErr{errs.ErrInternalServer, http.StatusInternalServerError}
 		}
+		audit.LogError(ctx, errors.WithMessage(updateErr, "updateImportTask endpoint: request unsuccessful"), data)
 		http.Error(w, updateErr.Error(), updateErr.status)
 		return
 	}
 
 	if auditErr := s.Auditor.Record(ctx, updateImportTaskAction, audit.Successful, ap); auditErr != nil {
-		updateErr = &updateTaskErr{errs.ErrInternalServer, http.StatusInternalServerError}
-		http.Error(w, updateErr.Error(), updateErr.status)
 		return
 	}
 
