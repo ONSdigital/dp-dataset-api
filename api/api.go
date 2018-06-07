@@ -93,6 +93,20 @@ type DatasetAPI struct {
 	auditor              Auditor
 }
 
+type httpError struct {
+	//cause the original error
+	cause error
+	//status the http status code to write in the response.
+	status int
+}
+
+func (e *httpError) Error() string {
+	if e != nil {
+		return e.cause.Error()
+	}
+	return ""
+}
+
 func setJSONContentType(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 }
