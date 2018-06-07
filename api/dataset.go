@@ -16,18 +16,37 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	//
+	datasetsForbidden = map[error]bool{
+		errs.ErrDeletePublishedDatasetForbidden: true,
+		errs.ErrAddDatasetAlreadyExists:         true,
+	}
+
+	datasetsNotFound = map[error]bool{
+		errs.ErrDatasetNotFound: true,
+	}
+
+	datasetsNoContent = map[error]bool{
+		errs.ErrDeleteDatasetNotFound: true,
+	}
+
+	datasetsBadRequest = map[error]bool{
+		errs.ErrAddUpdateDatasetBadRequest: true,
+	}
+)
+
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if err := api.auditor.Record(ctx, getDatasetsAction, audit.Attempted, nil); err != nil {
-		auditActionFailure(ctx, getDatasetsAction, audit.Attempted, err, nil)
-		handleDatasetAPIErr(ctx, errs.ErrAuditActionAttemptedFailure, w, nil)
+		http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	b, err := func() ([]byte, error) {
 		results, err := api.dataStore.Backend.GetDatasets()
 		if err != nil {
-			logError(ctx, errors.WithMessage(err, "api endpoint getDatasets datastore.GetDatasets returned an error"), nil)
+			audit.LogError(ctx, errors.WithMessage(err, "api endpoint getDatasets datastore.GetDatasets returned an error"), nil)
 			return nil, err
 		}
 		authorised, logData := api.authenticate(r, log.Data{})
@@ -40,7 +59,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 			datasets.Items = results
 			b, err = json.Marshal(datasets)
 			if err != nil {
-				logError(ctx, errors.WithMessage(err, "api endpoint getDatasets failed to marshal dataset resource into bytes"), logData)
+				audit.LogError(ctx, errors.WithMessage(err, "api endpoint getDatasets failed to marshal dataset resource into bytes"), logData)
 				return nil, err
 			}
 		} else {
@@ -51,7 +70,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 
 			b, err = json.Marshal(datasets)
 			if err != nil {
-				logError(ctx, errors.WithMessage(err, "api endpoint getDatasets failed to marshal dataset resource into bytes"), logData)
+				audit.LogError(ctx, errors.WithMessage(err, "api endpoint getDatasets failed to marshal dataset resource into bytes"), logData)
 				return nil, err
 			}
 		}
@@ -60,21 +79,23 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if auditErr := api.auditor.Record(ctx, getDatasetsAction, audit.Unsuccessful, nil); auditErr != nil {
-			auditActionFailure(ctx, getDatasetsAction, audit.Unsuccessful, auditErr, nil)
+			err = auditErr
 		}
 		handleDatasetAPIErr(ctx, err, w, nil)
 		return
 	}
 
 	if auditErr := api.auditor.Record(ctx, getDatasetsAction, audit.Successful, nil); auditErr != nil {
-		auditActionFailure(ctx, getDatasetsAction, audit.Successful, auditErr, nil)
+		handleDatasetAPIErr(ctx, auditErr, w, nil)
+		return
 	}
 
 	setJSONContentType(w)
 	_, err = w.Write(b)
 	if err != nil {
-		logError(ctx, errors.WithMessage(err, "api endpoint getDatasets error writing response body"), nil)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		audit.LogError(ctx, errors.WithMessage(err, "api endpoint getDatasets error writing response body"), nil)
+		handleDatasetAPIErr(ctx, err, w, nil)
+		return
 	}
 	logInfo(ctx, "api endpoint getDatasets request successful", nil)
 }
@@ -412,17 +433,16 @@ func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 
 	var status int
 	switch {
-	case err == errs.ErrDeletePublishedDatasetForbidden:
+	case datasetsForbidden[err]:
 		status = http.StatusForbidden
-	case err == errs.ErrAddDatasetAlreadyExists:
-		status = http.StatusForbidden
-	case err == errs.ErrDatasetNotFound:
+	case datasetsNotFound[err]:
 		status = http.StatusNotFound
-	case err == errs.ErrDeleteDatasetNotFound:
+	case datasetsNoContent[err]:
 		status = http.StatusNoContent
-	case err == errs.ErrAddUpdateDatasetBadRequest:
+	case datasetsBadRequest[err]:
 		status = http.StatusBadRequest
 	default:
+		err = errs.ErrInternalServer
 		status = http.StatusInternalServerError
 	}
 
