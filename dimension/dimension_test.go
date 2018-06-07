@@ -17,19 +17,13 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
-)
-
-const (
-	host          = "http://localhost:22000"
-	authToken     = "dataset"
-	healthTimeout = 2 * time.Second
 )
 
 var (
@@ -78,6 +72,8 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
+		// Gets called twice as there is a check wrapper around this route which
+		// checks the instance is not published before entering handler
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 1)
 
@@ -112,6 +108,8 @@ func TestAddNodeIDToDimensionReturnsBadRequest(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+		// Gets called twice as there is a check wrapper around this route which
+		// checks the instance is not published before entering handler
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 1)
 
@@ -171,6 +169,8 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		// Gets called twice as there is a check wrapper around this route which
+		// checks the instance is not published before entering handler
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 0)
 
@@ -263,7 +263,7 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, "internal server error")
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
 
 		calls := auditorMock.RecordCalls()
@@ -297,7 +297,7 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, "internal server error")
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 
 		calls := auditorMock.RecordCalls()
@@ -335,6 +335,8 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
+		// Gets called twice as there is a check wrapper around this route which
+		// checks the instance is not published before entering handler
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 1)
 
@@ -369,6 +371,8 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
+		// Gets called twice as there is a check wrapper around this route which
+		// checks the instance is not published before entering handler
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
 
@@ -404,6 +408,9 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrDimensionNodeNotFound.Error())
+		// Gets called twice as there is a check wrapper around this route which
+		// checks the instance is not published before entering handler
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
 
@@ -439,6 +446,7 @@ func TestAddDimensionToInstanceReturnsForbidden(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrResourcePublished.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 0)
 
@@ -471,6 +479,7 @@ func TestAddDimensionToInstanceReturnsUnauthorized(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(w.Body.String(), ShouldContainSubstring, "unauthenticated request")
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
 
 		calls := auditorMock.RecordCalls()
@@ -502,6 +511,8 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 0)
 
@@ -534,6 +545,9 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+		// Gets called twice as there is a check wrapper around this route which
+		// checks the instance is not published before entering handler
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 0)
 
@@ -568,7 +582,7 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, "internal server error")
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
 
 		calls := auditorMock.RecordCalls()
@@ -603,7 +617,7 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, "internal server error")
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 
 		calls := auditorMock.RecordCalls()
@@ -642,6 +656,8 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
+		// Gets called twice as there is a check wrapper around this route which
+		// checks the instance is not published before entering handler
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
 
@@ -697,7 +713,7 @@ func TestGetDimensionNodesReturnsNotFound(t *testing.T) {
 				return &models.Instance{State: models.CreatedState}, nil
 			},
 			GetDimensionNodesFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
-				return nil, errs.ErrInstanceNotFound
+				return nil, errs.ErrDimensionNodeNotFound
 			},
 		}
 
@@ -707,6 +723,7 @@ func TestGetDimensionNodesReturnsNotFound(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrDimensionNodeNotFound.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionNodesFromInstanceCalls()), ShouldEqual, 1)
 
@@ -738,6 +755,7 @@ func TestGetDimensionNodesReturnsInternalError(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionNodesFromInstanceCalls()), ShouldEqual, 0)
 
@@ -766,6 +784,7 @@ func TestGetDimensionNodesReturnsInternalError(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionNodesFromInstanceCalls()), ShouldEqual, 0)
 
@@ -827,6 +846,7 @@ func TestGetUniqueDimensionValuesReturnsNotFound(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetUniqueDimensionValuesCalls()), ShouldEqual, 1)
 
@@ -857,6 +877,7 @@ func TestGetUniqueDimensionValuesReturnsInternalError(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetUniqueDimensionValuesCalls()), ShouldEqual, 0)
 
@@ -884,6 +905,7 @@ func TestGetUniqueDimensionValuesReturnsInternalError(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetUniqueDimensionValuesCalls()), ShouldEqual, 0)
 
@@ -904,10 +926,10 @@ func newAuditorMock() *audit.AuditorServiceMock {
 func getAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, mockAuditor api.Auditor, mockedObservationStore api.ObservationStore) *api.DatasetAPI {
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)
-	cfg.ServiceAuthToken = authToken
-	cfg.DatasetAPIURL = host
+	cfg.ServiceAuthToken = "dataset"
+	cfg.DatasetAPIURL = "http://localhost:22000"
 	cfg.EnablePrivateEnpoints = true
-	cfg.HealthCheckTimeout = healthTimeout
+	cfg.HealthCheckTimeout = 2 * time.Second
 
 	return api.Routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockAuditor, mockedObservationStore)
 }

@@ -636,21 +636,18 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 		auditParams := common.Params{"instance_id": instanceID}
 
 		if err := d.Auditor.Record(ctx, action, audit.Attempted, auditParams); err != nil {
-			audit.LogActionFailure(ctx, action, audit.Attempted, err, logData)
-			handleErr(ctx, errs.ErrAuditActionAttemptedFailure, 0, w, logData)
+			handleErr(ctx, errs.ErrAuditActionAttemptedFailure, w, logData)
 			return
 		}
 
-		statusCode, err := d.checkState(w, instanceID)
-		if err != nil {
+		if err := d.checkState(instanceID); err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "errored whilst checking instance state"), logData)
 			if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
-				audit.LogActionFailure(ctx, action, audit.Unsuccessful, auditErr, logData)
-				handleErr(ctx, errs.ErrAuditActionAttemptedFailure, 0, w, logData)
+				handleErr(ctx, errs.ErrAuditActionAttemptedFailure, w, logData)
 				return
 			}
 
-			handleErr(ctx, err, statusCode, w, logData)
+			handleErr(ctx, err, w, logData)
 			return
 		}
 
@@ -658,35 +655,39 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 	})
 }
 
-func (d *PublishCheck) checkState(w http.ResponseWriter, instanceID string) (int, error) {
+func (d *PublishCheck) checkState(instanceID string) error {
 	instance, err := d.Datastore.GetInstance(instanceID)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	if instance.State == models.PublishedState {
-		err = errors.New("unable to update instance as it has been published")
-		return 403, err
+		return errs.ErrResourcePublished
 	}
 
-	return 0, nil
+	return nil
 }
 
-func handleErr(ctx context.Context, err error, status int, w http.ResponseWriter, data log.Data) {
+func handleErr(ctx context.Context, err error, w http.ResponseWriter, data log.Data) {
 	if data == nil {
 		data = log.Data{}
 	}
 
+	var status int
+	response := err
+
 	switch {
-	case err == errs.ErrDatasetNotFound || err == errs.ErrInstanceNotFound || err == errs.ErrDimensionNodeNotFound:
+	case errs.NotFoundMap[err]:
 		status = http.StatusNotFound
+	case err == errs.ErrResourcePublished:
+		status = http.StatusForbidden
 	default:
-		if status == 0 {
-			status = http.StatusInternalServerError
-		}
+		status = http.StatusInternalServerError
+		response = errs.ErrInternalServer
 	}
 
 	data["responseStatus"] = status
 	audit.LogError(ctx, errors.WithMessage(err, "request unsuccessful"), data)
-	http.Error(w, err.Error(), status)
+
+	http.Error(w, response.Error(), status)
 }

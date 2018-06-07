@@ -30,85 +30,87 @@ const (
 	PutNodeIDAction      = "putNodeID"
 )
 
-var notFound = map[error]bool{
-	errs.ErrDatasetNotFound:       true,
-	errs.ErrInstanceNotFound:      true,
-	errs.ErrDimensionNodeNotFound: true,
-}
-
 // GetNodesHandler list from a specified instance
 func (s *Store) GetNodesHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
-	id := vars["id"]
+	instanceID := vars["id"]
+	logData := log.Data{"instance_id": instanceID}
 
 	// Get instance
-	instance, err := s.GetInstance(id)
+	instance, err := s.GetInstance(instanceID)
 	if err != nil {
-		log.ErrorC("failed to GET instance", err, log.Data{"instance": id})
-		handleErrorType(err, w)
+		log.ErrorCtx(ctx, errors.Wrap(err, "getNodes endpoint: failed to get instance"), logData)
+		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
 
 	// Early return if instance state is invalid
 	if err = models.CheckState("instance", instance.State); err != nil {
-		log.ErrorC("current instance has an invalid state", err, log.Data{"state": instance.State})
-		handleErrorType(errs.ErrInternalServer, w)
+		logData["state"] = instance.State
+		log.ErrorCtx(ctx, errors.Wrap(err, "current instance has an invalid state"), logData)
+		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
 
-	results, err := s.GetDimensionNodesFromInstance(id)
+	results, err := s.GetDimensionNodesFromInstance(instanceID)
 	if err != nil {
-		log.Error(err, nil)
-		handleErrorType(err, w)
+		log.ErrorCtx(ctx, errors.Wrap(err, "failed to get dimension nodes from instance"), logData)
+		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
 
 	b, err := json.Marshal(results)
 	if err != nil {
-		internalError(w, err)
+		log.ErrorCtx(ctx, errors.Wrap(err, "failed to marshal dimension nodes to json"), logData)
+		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
 
-	writeBody(w, b)
-	log.Debug("get dimension nodes", log.Data{"instance": id})
+	writeBody(ctx, w, b, logData)
+	log.InfoCtx(ctx, "get dimension nodes", logData)
 }
 
 // GetUniqueHandler dimension values from a specified dimension
 func (s *Store) GetUniqueHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
-	id := vars["id"]
+	instanceID := vars["id"]
 	dimension := vars["dimension"]
+	logData := log.Data{"instance_id": instanceID, "dimension": dimension}
 
 	// Get instance
-	instance, err := s.GetInstance(id)
+	instance, err := s.GetInstance(instanceID)
 	if err != nil {
-		log.ErrorC("failed to GET instance", err, log.Data{"instance": id})
-		handleErrorType(err, w)
+		log.ErrorCtx(ctx, errors.Wrap(err, "getDimensionValues endpoint: failed to get instance"), logData)
+		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
 
 	// Early return if instance state is invalid
 	if err = models.CheckState("instance", instance.State); err != nil {
-		log.ErrorC("current instance has an invalid state", err, log.Data{"state": instance.State})
-		handleErrorType(errs.ErrInternalServer, w)
+		logData["state"] = instance.State
+		log.ErrorCtx(ctx, errors.Wrap(err, "current instance has an invalid state"), logData)
+		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
 
-	values, err := s.GetUniqueDimensionValues(id, dimension)
+	values, err := s.GetUniqueDimensionValues(instanceID, dimension)
 	if err != nil {
-		log.Error(err, nil)
-		handleErrorType(err, w)
+		log.ErrorCtx(ctx, errors.Wrap(err, "failed to get unique dimension values for instance"), logData)
+		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
 
 	b, err := json.Marshal(values)
 	if err != nil {
-		internalError(w, err)
+		log.ErrorCtx(ctx, errors.Wrap(err, "failed to marshal dimension values to json"), logData)
+		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
 
-	writeBody(w, b)
-	log.Debug("get dimension values", log.Data{"instance": id})
+	writeBody(ctx, w, b, logData)
+	log.InfoCtx(ctx, "get dimension values", logData)
 }
 
 // AddHandler represents adding a dimension to a specific instance
@@ -120,11 +122,24 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"instance_id": instanceID}
 	auditParams := common.Params{"instance_id": instanceID}
 
-	statusCode, err := s.add(ctx, w, r, instanceID, logData)
+	option, err := unmarshalDimensionCache(r.Body)
 	if err != nil {
-		s.Auditor.Record(ctx, PostDimensionsAction, audit.Unsuccessful, auditParams)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "failed to unmarshal dimension cache"), logData)
 
-		handleDimensionErr(ctx, err, statusCode, w, logData)
+		if auditErr := s.Auditor.Record(ctx, PostDimensionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
+			err = auditErr
+		}
+
+		handleDimensionErr(ctx, w, err, logData)
+		return
+	}
+
+	if err := s.add(ctx, instanceID, option, logData); err != nil {
+		if auditErr := s.Auditor.Record(ctx, PostDimensionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
+			err = auditErr
+		}
+
+		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
 
@@ -133,34 +148,28 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 	log.InfoCtx(ctx, "added dimension to instance resource", logData)
 }
 
-func (s *Store) add(ctx context.Context, w http.ResponseWriter, r *http.Request, instanceID string, logData log.Data) (int, error) {
+func (s *Store) add(ctx context.Context, instanceID string, option *models.CachedDimensionOption, logData log.Data) error {
 	// Get instance
 	instance, err := s.GetInstance(instanceID)
 	if err != nil {
-		log.ErrorCtx(ctx, errors.WithMessage(err, "addDimensions endpoint: failed to GET instance"), logData)
-		return 0, err
+		log.ErrorCtx(ctx, errors.WithMessage(err, "addDimensions endpoint: failed to get instance"), logData)
+		return err
 	}
 
 	// Early return if instance state is invalid
 	if err = models.CheckState("instance", instance.State); err != nil {
 		logData["state"] = instance.State
 		log.ErrorCtx(ctx, errors.WithMessage(err, "current instance has an invalid state"), logData)
-		return 0, err
-	}
-
-	option, err := unmarshalDimensionCache(r.Body)
-	if err != nil {
-		log.ErrorCtx(ctx, err, logData)
-		return 400, err
+		return err
 	}
 
 	option.InstanceID = instanceID
 	if err := s.AddDimensionToInstance(option); err != nil {
-		log.ErrorCtx(ctx, err, logData)
-		return 0, err
+		log.ErrorCtx(ctx, errors.WithMessage(err, "failed to upsert dimension for an instance"), logData)
+		return err
 	}
 
-	return 201, nil
+	return nil
 }
 
 // AddNodeIDHandler against a specific value for dimension
@@ -176,9 +185,9 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	dim := models.DimensionOption{Name: dimensionName, Option: value, NodeID: nodeID, InstanceID: instanceID}
 
-	if err := s.addNodeID(ctx, w, r, dim, logData); err != nil {
+	if err := s.addNodeID(ctx, dim, logData); err != nil {
 		s.Auditor.Record(ctx, PutNodeIDAction, audit.Unsuccessful, auditParams)
-		handleDimensionErr(ctx, err, 0, w, logData)
+		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
 
@@ -187,91 +196,75 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 	log.InfoCtx(ctx, "added node id to dimension of an instance resource", logData)
 }
 
-func (s *Store) addNodeID(ctx context.Context, w http.ResponseWriter, r *http.Request, dim models.DimensionOption, logData log.Data) error {
+func (s *Store) addNodeID(ctx context.Context, dim models.DimensionOption, logData log.Data) error {
 	// Get instance
 	instance, err := s.GetInstance(dim.InstanceID)
 	if err != nil {
-		log.ErrorC("Failed to GET instance when attempting to update a dimension of that instance.", err, logData)
-		handleErrorType(err, w)
+		log.ErrorCtx(ctx, errors.Wrap(err, "failed to get instance"), logData)
 		return err
 	}
 
 	// Early return if instance state is invalid
 	if err = models.CheckState("instance", instance.State); err != nil {
 		logData["state"] = instance.State
-		log.ErrorC("current instance has an invalid state", err, logData)
-		handleErrorType(errs.ErrInternalServer, w)
+		log.ErrorCtx(ctx, errors.Wrap(err, "current instance has an invalid state"), logData)
 		return err
 	}
 
 	if err := s.UpdateDimensionNodeID(&dim); err != nil {
-		log.Error(err, nil)
-		handleErrorType(err, w)
+		log.ErrorCtx(ctx, errors.Wrap(err, "failed to update a dimension of that instance"), logData)
 		return err
 	}
 
 	return nil
 }
 
-// CreateDataset manages the creation of a dataset from a reader
 func unmarshalDimensionCache(reader io.Reader) (*models.CachedDimensionOption, error) {
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return nil, errors.New("Failed to read message body")
+		return nil, errs.ErrUnableToReadMessage
 	}
 
 	var option models.CachedDimensionOption
 
 	err = json.Unmarshal(b, &option)
 	if err != nil {
-		return nil, errors.New("Failed to parse json body")
+		return nil, errs.ErrUnableToParseJSON
 
 	}
 	if option.Name == "" || (option.Option == "" && option.CodeList == "") {
-		return nil, errors.New("Missing properties in JSON")
+		return nil, errs.ErrMissingParameters
 	}
 
 	return &option, nil
 }
 
-func handleErrorType(err error, w http.ResponseWriter) {
-	status := http.StatusInternalServerError
-
-	if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
-		status = http.StatusNotFound
-	}
-
-	http.Error(w, err.Error(), status)
-}
-
-func internalError(w http.ResponseWriter, err error) {
-	log.Error(err, nil)
-	http.Error(w, err.Error(), http.StatusInternalServerError)
-}
-
-func writeBody(w http.ResponseWriter, b []byte) {
+func writeBody(ctx context.Context, w http.ResponseWriter, b []byte, data log.Data) {
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(b); err != nil {
-		log.Error(err, nil)
+		log.ErrorCtx(ctx, errors.Wrap(err, "failed to write response body"), data)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-func handleDimensionErr(ctx context.Context, err error, status int, w http.ResponseWriter, data log.Data) {
+func handleDimensionErr(ctx context.Context, w http.ResponseWriter, err error, data log.Data) {
 	if data == nil {
 		data = log.Data{}
 	}
 
+	var status int
+	resource := err
 	switch {
-	case notFound[err]:
+	case errs.NotFoundMap[err]:
 		status = http.StatusNotFound
+	case errs.BadRequestMap[err]:
+		status = http.StatusBadRequest
 	default:
-		if status == 0 {
-			status = http.StatusInternalServerError
-		}
+		status = http.StatusInternalServerError
+		resource = errs.ErrInternalServer
 	}
 
 	data["responseStatus"] = status
 	audit.LogError(ctx, errors.WithMessage(err, "request unsuccessful"), data)
-	http.Error(w, err.Error(), status)
+	http.Error(w, resource.Error(), status)
 }
