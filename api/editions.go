@@ -38,6 +38,9 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 
 		if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
 			audit.LogError(ctx, errors.WithMessage(err, "getEditions endpoint: unable to find dataset"), logData)
+			if err != errs.ErrDatasetNotFound {
+				return nil, &httpError{errs.ErrInternalServer, http.StatusInternalServerError}
+			}
 			return nil, &httpError{errs.ErrDatasetNotFound, http.StatusNotFound}
 		}
 
@@ -78,7 +81,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 
 	if taskErr != nil {
 		if auditErr := api.auditor.Record(ctx, getEditionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			taskErr = &httpError{auditErr, http.StatusInternalServerError}
+			taskErr = &httpError{errs.ErrInternalServer, http.StatusInternalServerError}
 		}
 		http.Error(w, taskErr.Error(), taskErr.status)
 		return
