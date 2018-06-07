@@ -17,20 +17,23 @@ import (
 )
 
 var (
-	//
+	// errors that should return a 403 status
 	datasetsForbidden = map[error]bool{
 		errs.ErrDeletePublishedDatasetForbidden: true,
 		errs.ErrAddDatasetAlreadyExists:         true,
 	}
 
+	// errors that should return a 404 status
 	datasetsNotFound = map[error]bool{
 		errs.ErrDatasetNotFound: true,
 	}
 
+	// errors that should return a 204 status
 	datasetsNoContent = map[error]bool{
 		errs.ErrDeleteDatasetNotFound: true,
 	}
 
+	// errors that should return a 400 status
 	datasetsBadRequest = map[error]bool{
 		errs.ErrAddUpdateDatasetBadRequest: true,
 	}
@@ -287,7 +290,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if dataset.State == models.PublishedState {
-			if err := api.publishDataset(currentDataset, nil); err != nil {
+			if err := api.publishDataset(ctx, currentDataset, nil); err != nil {
 				audit.LogError(ctx, errors.WithMessage(err, "putDataset endpoint: failed to update dataset document to published"), data)
 				return err
 			}
@@ -313,7 +316,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	audit.LogInfo(ctx, "putDataset endpoint: request successful", data)
 }
 
-func (api *DatasetAPI) publishDataset(currentDataset *models.DatasetUpdate, version *models.Version) error {
+func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *models.DatasetUpdate, version *models.Version) error {
 	if version != nil {
 		currentDataset.Next.CollectionID = ""
 
@@ -337,7 +340,7 @@ func (api *DatasetAPI) publishDataset(currentDataset *models.DatasetUpdate, vers
 	}
 
 	if err := api.dataStore.Backend.UpsertDataset(currentDataset.ID, newDataset); err != nil {
-		log.ErrorC("unable to update dataset", err, log.Data{"dataset_id": currentDataset.ID})
+		audit.LogError(ctx, errors.WithMessage(err, "unable to update dataset"), log.Data{"dataset_id": currentDataset.ID})
 		return err
 	}
 
@@ -351,9 +354,8 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID}
 	auditParams := common.Params{"dataset_id": datasetID}
 
-	if err := api.auditor.Record(ctx, deleteDatasetAction, audit.Attempted, auditParams); err != nil {
-		auditActionFailure(ctx, deleteDatasetAction, audit.Attempted, err, logData)
-		handleDatasetAPIErr(ctx, err, w, logData)
+	if auditErr := api.auditor.Record(ctx, deleteDatasetAction, audit.Attempted, auditParams); auditErr != nil {
+		handleDatasetAPIErr(ctx, auditErr, w, logData)
 		return
 	}
 
@@ -362,40 +364,35 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 		currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
 
 		if err == errs.ErrDatasetNotFound {
-			log.Debug("cannot delete dataset, it does not exist", logData)
+			audit.LogInfo(ctx, "cannot delete dataset, it does not exist", logData)
 			return errs.ErrDeleteDatasetNotFound
 		}
 
 		if err != nil {
-			log.ErrorC("failed to run query for existing dataset", err, logData)
+			audit.LogError(ctx, errors.WithMessage(err, "failed to run query for existing dataset"), logData)
 			return err
 		}
 
 		if currentDataset.Current != nil && currentDataset.Current.State == models.PublishedState {
-			log.ErrorC("unable to delete a published dataset", errs.ErrDeletePublishedDatasetForbidden, logData)
+			audit.LogError(ctx, errors.WithMessage(errs.ErrDeletePublishedDatasetForbidden, "unable to delete a published dataset"), logData)
 			return errs.ErrDeletePublishedDatasetForbidden
 		}
 
 		if err := api.dataStore.Backend.DeleteDataset(datasetID); err != nil {
-			log.ErrorC("failed to delete dataset", err, logData)
+			audit.LogError(ctx, errors.WithMessage(err, "failed to delete dataset"), logData)
 			return err
 		}
-		log.Debug("dataset deleted successfully", logData)
+		audit.LogInfo(ctx, "dataset deleted successfully", logData)
 		return nil
 	}()
 
 	if err != nil {
-		if auditErr := api.auditor.Record(ctx, deleteDatasetAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			auditActionFailure(ctx, deleteDatasetAction, audit.Unsuccessful, auditErr, logData)
-		}
+		api.auditor.Record(ctx, deleteDatasetAction, audit.Unsuccessful, auditParams)
 		handleDatasetAPIErr(ctx, err, w, logData)
 		return
 	}
 
-	if err := api.auditor.Record(ctx, deleteDatasetAction, audit.Successful, auditParams); err != nil {
-		auditActionFailure(ctx, deleteDatasetAction, audit.Successful, err, logData)
-		// fall through and return the origin status code as the action has been carried out at this point.
-	}
+	api.auditor.Record(ctx, deleteDatasetAction, audit.Successful, auditParams)
 	w.WriteHeader(http.StatusNoContent)
 	log.Debug("delete dataset", logData)
 }
@@ -434,6 +431,6 @@ func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	}
 
 	data["responseStatus"] = status
-	logError(ctx, errors.WithMessage(err, "request unsuccessful"), data)
+	audit.LogError(ctx, errors.WithMessage(err, "request unsuccessful"), data)
 	http.Error(w, err.Error(), status)
 }

@@ -373,7 +373,7 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 		}
 
 		// Pass in newVersion variable to include relevant data needed for update on dataset API (e.g. links)
-		if err := api.publishDataset(currentDataset, versionDoc); err != nil {
+		if err := api.publishDataset(ctx, currentDataset, versionDoc); err != nil {
 			audit.LogError(ctx, errors.WithMessage(err, "putVersion endpoint: failed to update dataset document once version state changes to publish"), data)
 			return err
 		}
