@@ -93,20 +93,6 @@ type DatasetAPI struct {
 	auditor              Auditor
 }
 
-type httpError struct {
-	//cause the original error
-	cause error
-	//status the http status code to write in the response.
-	status int
-}
-
-func (e *httpError) Error() string {
-	if e != nil {
-		return e.cause.Error()
-	}
-	return ""
-}
-
 func setJSONContentType(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 }
@@ -205,36 +191,6 @@ func handleErrorType(docType string, err error, w http.ResponseWriter) {
 	switch docType {
 	default:
 		if err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	case "dataset":
-		if err == errs.ErrDatasetNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else if err == errs.ErrDeleteDatasetNotFound {
-			http.Error(w, err.Error(), http.StatusNoContent)
-		} else if err == errs.ErrDeletePublishedDatasetForbidden || err == errs.ErrAddDatasetAlreadyExists {
-			http.Error(w, err.Error(), http.StatusForbidden)
-		} else if err == errs.ErrAddUpdateDatasetBadRequest {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	case "edition":
-		if err == errs.ErrDatasetNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else if err == errs.ErrEditionNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	case "version":
-		if err == errs.ErrDatasetNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else if err == errs.ErrEditionNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else if err == errs.ErrVersionNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

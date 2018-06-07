@@ -25,7 +25,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, taskErr := func() ([]byte, *httpError) {
+	b, err := func() ([]byte, error) {
 		authorised, logData := api.authenticate(r, logData)
 
 		var state string
@@ -38,16 +38,13 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 
 		if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
 			audit.LogError(ctx, errors.WithMessage(err, "getEditions endpoint: unable to find dataset"), logData)
-			if err != errs.ErrDatasetNotFound {
-				return nil, &httpError{errs.ErrInternalServer, http.StatusInternalServerError}
-			}
-			return nil, &httpError{errs.ErrDatasetNotFound, http.StatusNotFound}
+			return nil, err
 		}
 
 		results, err := api.dataStore.Backend.GetEditions(id, state)
 		if err != nil {
 			audit.LogError(ctx, errors.WithMessage(err, "getEditions endpoint: unable to find editions for dataset"), logData)
-			return nil, &httpError{errs.ErrEditionNotFound, http.StatusNotFound}
+			return nil, err
 		}
 
 		var editionBytes []byte
@@ -58,7 +55,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 			editionBytes, err = json.Marshal(results)
 			if err != nil {
 				audit.LogError(ctx, errors.WithMessage(err, "getEditions endpoint: failed to marshal a list of edition resources into bytes"), logData)
-				return nil, &httpError{err, http.StatusInternalServerError}
+				return nil, err
 			}
 			audit.LogInfo(ctx, "getEditions endpoint: get all edition with auth", logData)
 
@@ -72,18 +69,23 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 			editionBytes, err = json.Marshal(&models.EditionResults{Items: publicResults})
 			if err != nil {
 				audit.LogError(ctx, errors.WithMessage(err, "getEditions endpoint: failed to marshal a list of edition resources into bytes"), logData)
-				return nil, &httpError{err, http.StatusInternalServerError}
+				return nil, err
 			}
 			audit.LogInfo(ctx, "getEditions endpoint: get all edition without auth", logData)
 		}
 		return editionBytes, nil
 	}()
 
-	if taskErr != nil {
+	if err != nil {
 		if auditErr := api.auditor.Record(ctx, getEditionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			taskErr = &httpError{errs.ErrInternalServer, http.StatusInternalServerError}
+			err = auditErr
 		}
-		http.Error(w, taskErr.Error(), taskErr.status)
+
+		if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -93,7 +95,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setJSONContentType(w)
-	_, err := w.Write(b)
+	_, err = w.Write(b)
 	if err != nil {
 		audit.LogError(ctx, errors.WithMessage(err, "getEditions endpoint: failed writing bytes to response"), logData)
 		http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
@@ -102,81 +104,84 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	id := vars["id"]
 	editionID := vars["edition"]
-	logData := log.Data{"dataset_id": id, "edition": editionID}
 	auditParams := common.Params{"dataset_id": id, "edition": editionID}
+	logData := audit.ToLogData(auditParams)
 
 	if auditErr := api.auditor.Record(r.Context(), getEditionAction, audit.Attempted, auditParams); auditErr != nil {
-		handleAuditingFailure(w, auditErr, logData)
+		http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	authorised, logData := api.authenticate(r, logData)
+	b, err := func() ([]byte, error) {
+		authorised, logData := api.authenticate(r, logData)
 
-	var state string
-	if !authorised {
-		state = models.PublishedState
-	}
-
-	if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
-		log.ErrorC("unable to find dataset", err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getEditionAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			handleAuditingFailure(w, auditErr, logData)
-			return
+		var state string
+		if !authorised {
+			state = models.PublishedState
 		}
-		handleErrorType(editionDocType, err, w)
-		return
-	}
 
-	edition, err := api.dataStore.Backend.GetEdition(id, editionID, state)
+		if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
+			audit.LogError(ctx, errors.WithMessage(err, "getEdition endpoint: unable to find dataset"), logData)
+			return nil, err
+		}
+
+		edition, err := api.dataStore.Backend.GetEdition(id, editionID, state)
+		if err != nil {
+			audit.LogError(ctx, errors.WithMessage(err, "getEdition endpoint: unable to find edition"), logData)
+			return nil, err
+		}
+
+		var b []byte
+
+		if authorised {
+			// User has valid authentication to get raw edition document
+			b, err = json.Marshal(edition)
+			if err != nil {
+				audit.LogError(ctx, errors.WithMessage(err, "getEdition endpoint: failed to marshal edition resource into bytes"), logData)
+				return nil, err
+			}
+			audit.LogInfo(ctx, "getEdition endpoint: get edition with auth", logData)
+		} else {
+
+			// User is not authenticated and hence has only access to current sub document
+			b, err = json.Marshal(edition.Current)
+			if err != nil {
+				audit.LogError(ctx, errors.WithMessage(err, "getEdition endpoint: failed to marshal edition resource into bytes"), logData)
+				return nil, err
+			}
+			audit.LogInfo(ctx, "getEdition endpoint: get edition without auth", logData)
+		}
+		return b, nil
+	}()
+
 	if err != nil {
-		log.ErrorC("unable to find edition", err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getEditionAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			handleAuditingFailure(w, auditErr, logData)
-			return
+		if auditErr := api.auditor.Record(ctx, getEditionAction, audit.Unsuccessful, auditParams); auditErr != nil {
+			err = auditErr
 		}
-		handleErrorType(editionDocType, err, w)
+
+		if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
-	var logMessage string
-	var b []byte
-
-	if authorised {
-
-		// User has valid authentication to get raw edition document
-		b, err = json.Marshal(edition)
-		if err != nil {
-			log.ErrorC("failed to marshal edition resource into bytes", err, logData)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		logMessage = "get edition with auth"
-
-	} else {
-
-		// User is not authenticated and hance has only access to current sub document
-		b, err = json.Marshal(edition.Current)
-		if err != nil {
-			log.ErrorC("failed to marshal public edition resource into bytes", err, logData)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		logMessage = "get public edition without auth"
-	}
-
-	if auditErr := api.auditor.Record(r.Context(), getEditionAction, audit.Successful, auditParams); auditErr != nil {
-		handleAuditingFailure(w, auditErr, logData)
+	if auditErr := api.auditor.Record(ctx, getEditionAction, audit.Successful, auditParams); auditErr != nil {
+		http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	setJSONContentType(w)
 	_, err = w.Write(b)
 	if err != nil {
-		log.Error(err, logData)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		audit.LogError(ctx, errors.WithMessage(err, "getEdition endpoint: failed to write byte to response"), logData)
+		http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+		return
 	}
-	log.Debug(logMessage, logData)
+	audit.LogInfo(ctx, "getEdition endpoint: request successful", logData)
 }
