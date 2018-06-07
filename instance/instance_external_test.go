@@ -1,6 +1,7 @@
 package instance_test
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,7 +11,10 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/go-ns/audit"
+	"github.com/ONSdigital/go-ns/common"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -18,6 +22,8 @@ import (
 
 const secretKey = "coffee"
 const host = "http://localhost:8080"
+
+var errAudit = errors.New("auditing error")
 
 func createRequestWithToken(method, url string, body io.Reader) *http.Request {
 	r := httptest.NewRequest(method, url, body)
@@ -556,7 +562,7 @@ func TestStore_UpdateImportTask_UpdateImportObservations(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditorMock()}
 
 		instance.UpdateImportTask(w, r)
 
@@ -580,7 +586,7 @@ func TestStore_UpdateImportTask_UpdateImportObservations_InvalidState(t *testing
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditorMock()}
 
 		instance.UpdateImportTask(w, r)
 
@@ -604,7 +610,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_InvalidState(t *testing
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditorMock()}
 
 		instance.UpdateImportTask(w, r)
 
@@ -628,7 +634,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditorMock()}
 
 		instance.UpdateImportTask(w, r)
 
@@ -652,7 +658,7 @@ func TestStore_UpdateImportTask_ReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditorMock()}
 
 		instance.UpdateImportTask(w, r)
 
@@ -873,7 +879,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_InvalidState(t *testi
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditorMock()}
 
 		instance.UpdateImportTask(w, r)
 
@@ -898,7 +904,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditorMock()}
 
 		instance.UpdateImportTask(w, r)
 
@@ -907,4 +913,24 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask(t *testing.T) {
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
 	})
+}
+
+func auditorMockWithErr(a string, r string) *audit.AuditorServiceMock {
+	return &audit.AuditorServiceMock{
+		RecordFunc: func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == a && r == result {
+				audit.LogActionFailure(ctx, a, r, errAudit, audit.ToLogData(params))
+				return errAudit
+			}
+			return nil
+		},
+	}
+}
+
+func auditorMock() *audit.AuditorServiceMock {
+	return &audit.AuditorServiceMock{
+		RecordFunc: func(ctx context.Context, action string, result string, params common.Params) error {
+			return nil
+		},
+	}
 }

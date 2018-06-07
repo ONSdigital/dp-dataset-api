@@ -36,7 +36,7 @@ type updateTaskErr struct {
 
 func (e updateTaskErr) Error() string {
 	if e.error != nil {
-		return e.Error()
+		return e.error.Error()
 	}
 	return ""
 }
