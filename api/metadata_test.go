@@ -43,7 +43,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		auditor := getMockAuditor()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -106,7 +106,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		auditor := getMockAuditor()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -158,7 +158,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "internal error\n")
 
@@ -179,7 +179,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Dataset not found\n")
 
@@ -206,7 +206,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Dataset not found\n")
 
@@ -232,7 +232,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Edition not found\n")
 
@@ -262,7 +262,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldEqual, "Version not found\n")
 
@@ -292,7 +292,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-		api.router.ServeHTTP(w, r)
+		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "Incorrect resource state\n")
 
@@ -320,7 +320,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			mockedDataStore := &storetest.StorerMock{}
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -355,7 +355,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			}
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 404 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -382,7 +382,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			}
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 404 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -412,7 +412,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			}
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 404 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -445,7 +445,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			}
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -480,7 +480,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			}
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -522,7 +522,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			}
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
