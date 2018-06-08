@@ -13,6 +13,7 @@ import (
 	"github.com/satori/go.uuid"
 )
 
+// List of error variables
 var (
 	ErrPublishedVersionCollectionIDInvalid  = errors.New("Unexpected collection_id in published version")
 	ErrAssociatedVersionCollectionIDInvalid = errors.New("Missing collection_id for association between version and a collection")
@@ -204,6 +205,7 @@ type TemporalFrequency struct {
 	StartDate string `bson:"start_date,omitempty"  json:"start_date,omitempty"`
 }
 
+// UsageNote represents a note containing extra information associated to the resource
 type UsageNote struct {
 	Title string `bson:"title,omitempty"    json:"title,omitempty"`
 	Note  string `bson:"note,omitempty"     json:"note,omitempty"`

@@ -45,7 +45,7 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 
 			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 			a, _ := ioutil.ReadAll(w.Body)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
@@ -81,7 +81,7 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 
 			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 			a, _ := ioutil.ReadAll(w.Body)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -119,7 +119,7 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 
 			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(datasetSearchState, ShouldEqual, models.PublishedState)
 			So(editionSearchState, ShouldEqual, models.PublishedState)
@@ -152,7 +152,7 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 
 			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(datasetSearchState, ShouldEqual, models.PublishedState)
 			So(editionSearchState, ShouldEqual, models.PublishedState)
@@ -190,7 +190,7 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 
 			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(datasetSearchState, ShouldEqual, models.PublishedState)
 			So(editionSearchState, ShouldEqual, models.PublishedState)
@@ -230,7 +230,7 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 
 			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(datasetSearchState, ShouldEqual, models.PublishedState)
@@ -266,7 +266,7 @@ func TestWebSubnetDimensionsEndpoint(t *testing.T) {
 
 			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(versionSearchState, ShouldEqual, models.PublishedState)
 		})
@@ -300,7 +300,7 @@ func TestWebSubnetDimensionOptionsEndpoint(t *testing.T) {
 
 			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-			api.router.ServeHTTP(w, r)
+			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(versionSearchState, ShouldEqual, models.PublishedState)
 		})
@@ -350,7 +350,7 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 
 				api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
-				api.router.ServeHTTP(w, r)
+				api.Router.ServeHTTP(w, r)
 				So(w.Code, ShouldEqual, http.StatusNotFound)
 			})
 		}
@@ -366,5 +366,5 @@ func GetWebAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedD
 	cfg.EnablePrivateEnpoints = false
 	cfg.HealthCheckTimeout = healthTimeout
 
-	return routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockAuditor, mockedObservationStore)
+	return Routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockAuditor, mockedObservationStore)
 }
