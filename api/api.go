@@ -195,36 +195,6 @@ func handleErrorType(docType string, err error, w http.ResponseWriter) {
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-	case "dataset":
-		if err == errs.ErrDatasetNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else if err == errs.ErrDeleteDatasetNotFound {
-			http.Error(w, err.Error(), http.StatusNoContent)
-		} else if err == errs.ErrDeletePublishedDatasetForbidden || err == errs.ErrAddDatasetAlreadyExists {
-			http.Error(w, err.Error(), http.StatusForbidden)
-		} else if err == errs.ErrAddUpdateDatasetBadRequest {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	case "edition":
-		if err == errs.ErrDatasetNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else if err == errs.ErrEditionNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	case "version":
-		if err == errs.ErrDatasetNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else if err == errs.ErrEditionNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else if err == errs.ErrVersionNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
 	case "dimension":
 		if err == errs.ErrDatasetNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)

@@ -72,9 +72,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldResemble, internalServerErr)
-
+		assertInternalServerErr(w)
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 1)
 		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
@@ -94,21 +92,12 @@ func TestGetEditionsAuditingError(t *testing.T) {
 			},
 		}
 
-		auditMock := getMockAuditor()
-		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getEditionsAction && result == audit.Successful {
-				return errors.New("audit error")
-			}
-			return nil
-		}
-
+		auditMock := createAuditor(getEditionsAction, audit.Successful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldResemble, internalServerErr)
-
+		assertInternalServerErr(w)
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
 		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
@@ -127,20 +116,12 @@ func TestGetEditionsAuditingError(t *testing.T) {
 			},
 		}
 
-		auditMock := getMockAuditor()
-		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getEditionsAction && result == audit.Unsuccessful {
-				return errors.New(auditError)
-			}
-			return nil
-		}
+		auditMock := createAuditor(getEditionsAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
-
+		assertInternalServerErr(w)
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
 		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
@@ -162,20 +143,12 @@ func TestGetEditionsAuditingError(t *testing.T) {
 			},
 		}
 
-		auditMock := getMockAuditor()
-		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getEditionsAction && result == audit.Unsuccessful {
-				return errors.New(auditError)
-			}
-			return nil
-		}
+		auditMock := createAuditor(getEditionsAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldResemble, internalServerErr)
-
+		assertInternalServerErr(w)
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 2)
 		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
@@ -452,10 +425,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
 
-		auditMock := getMockAuditor()
-		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			return errors.New("auditing error")
-		}
+		auditMock := createAuditor(getEditionAction, audit.Attempted)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -463,8 +433,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 		recCalls := auditMock.RecordCalls()
 		p := common.Params{"dataset_id": "123-456", "edition": "678"}
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
+		assertInternalServerErr(w)
 		So(len(recCalls), ShouldEqual, 1)
 		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
@@ -480,13 +449,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditMock := getMockAuditor()
-		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getEditionAction && result == audit.Unsuccessful {
-				return errors.New("auditing error")
-			}
-			return nil
-		}
+		auditMock := createAuditor(getEditionAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -494,8 +457,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 		recCalls := auditMock.RecordCalls()
 		p := common.Params{"dataset_id": "123-456", "edition": "678"}
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
+		assertInternalServerErr(w)
 		So(len(recCalls), ShouldEqual, 2)
 		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
 		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Unsuccessful, p)
@@ -516,13 +478,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditMock := getMockAuditor()
-		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getEditionAction && result == audit.Unsuccessful {
-				return errors.New("auditing error")
-			}
-			return nil
-		}
+		auditMock := createAuditor(getEditionAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -530,8 +486,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 		recCalls := auditMock.RecordCalls()
 		p := common.Params{"dataset_id": "123-456", "edition": "678"}
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
+		assertInternalServerErr(w)
 		So(len(recCalls), ShouldEqual, 2)
 		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
 		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Unsuccessful, p)
@@ -551,14 +506,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditMock := getMockAuditor()
-		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getEditionAction && result == audit.Successful {
-				return errors.New("error")
-			}
-			return nil
-		}
-
+		auditMock := createAuditor(getEditionAction, audit.Successful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -566,8 +514,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 		recCalls := auditMock.RecordCalls()
 		p := common.Params{"dataset_id": "123-456", "edition": "678"}
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
+		assertInternalServerErr(w)
 		So(len(recCalls), ShouldEqual, 2)
 		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
 		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Successful, p)
