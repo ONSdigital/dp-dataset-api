@@ -115,7 +115,7 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 			// Check for current sub document
 			if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
 				logData["dataset_doc"] = datasetDoc.Current
-				log.ErrorC("found no published dataset", errs.ErrDatasetNotFound, logData)
+				audit.LogError(ctx, errors.WithMessage(errs.ErrDatasetNotFound, "found no published dataset"), logData)
 				return nil, errs.ErrDatasetNotFound
 			}
 
@@ -126,25 +126,25 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
-			log.ErrorC("failed to find edition for dataset", err, logData)
+			audit.LogError(ctx, errors.WithMessage(err, "failed to find edition for dataset"), logData)
 			return nil, err
 		}
 
 		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
 		if err != nil {
-			log.ErrorC("failed to find version for dataset edition", err, logData)
+			audit.LogError(ctx, errors.WithMessage(err, "failed to find version for dataset edition"), logData)
 			return nil, err
 		}
 
 		if err = models.CheckState("version", versionDoc.State); err != nil {
 			logData["state"] = versionDoc.State
-			log.ErrorC("unpublished version has an invalid state", err, logData)
+			audit.LogError(ctx, errors.WithMessage(err, "unpublished version has an invalid state"), logData)
 			return nil, err
 		}
 
 		if versionDoc.Headers == nil || versionDoc.Dimensions == nil {
 			logData["version_doc"] = versionDoc
-			log.Error(errs.ErrMissingVersionHeadersOrDimensions, logData)
+			audit.LogError(ctx, errs.ErrMissingVersionHeadersOrDimensions, logData)
 			return nil, errs.ErrMissingVersionHeadersOrDimensions
 		}
 
@@ -154,15 +154,14 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 
 		dimensionOffset, err := getDimensionOffsetInHeaderRow(versionDoc.Headers)
 		if err != nil {
-			log.ErrorC("unable to distinguish headers from version document", err, logData)
+			audit.LogError(ctx, errors.WithMessage(err, "unable to distinguish headers from version document"), logData)
 			return nil, err
 		}
 
 		// check query parameters match the version headers
 		queryParameters, err := extractQueryParameters(r.URL.Query(), validDimensionNames)
 		if err != nil {
-			log.Error(err, logData)
-			//http.Error(w, err.Error(), http.StatusBadRequest)
+			audit.LogError(ctx, errors.WithMessage(err, "error extracting query parameters"), logData)
 			return nil, err
 		}
 		logData["query_parameters"] = queryParameters
@@ -170,7 +169,7 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 		// retrieve observations
 		observations, err := api.getObservationList(versionDoc, queryParameters, defaultObservationLimit, dimensionOffset, logData)
 		if err != nil {
-			log.ErrorC("unable to retrieve observations", err, logData)
+			audit.LogError(ctx, errors.WithMessage(err, "unable to retrieve observations"), logData)
 			return nil, err
 		}
 
@@ -199,12 +198,11 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 	enc.SetEscapeHTML(false)
 
 	if err = enc.Encode(observationsDoc); err != nil {
-		log.ErrorC("failed to marshal metadata resource into bytes", err, logData)
-		handleObservationsErrorType(ctx, w, err, logData)
+		handleObservationsErrorType(ctx, w, errors.WithMessage(err, "failed to marshal metadata resource into bytes"), logData)
 		return
 	}
 
-	log.Info("successfully retrieved observations relative to a selected set of dimension options for a version", logData)
+	audit.LogInfo(ctx, "get observations endpoint: successfully retrieved observations relative to a selected set of dimension options for a version", logData)
 }
 
 func getDimensionOffsetInHeaderRow(headerRow []string) (int, error) {
@@ -401,7 +399,6 @@ func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParam
 }
 
 func handleObservationsErrorType(ctx context.Context, w http.ResponseWriter, err error, data log.Data) {
-
 	obErr, isObservationErr := err.(observationQueryError)
 	var status int
 
@@ -422,7 +419,6 @@ func handleObservationsErrorType(ctx context.Context, w http.ResponseWriter, err
 	}
 
 	data["responseStatus"] = status
-	audit.LogError(ctx, errors.WithMessage(err, "observation endpoint: request unsuccessful"), data)
-
+	audit.LogError(ctx, errors.WithMessage(err, "get observation endpoint: request unsuccessful"), data)
 	http.Error(w, err.Error(), status)
 }

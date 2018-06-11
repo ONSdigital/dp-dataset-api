@@ -13,9 +13,8 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-filter/observation"
-	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -310,10 +309,6 @@ func TestGetObservationsReturnsError(t *testing.T) {
 
 	Convey("When an unpublished version has an incorrect state for an edition of a dataset return an internal error", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
-
-		common.AddRequestIdHeader(r, "abc123")
-		r = r.WithContext(common.SetUser(r.Context(), "dave@test.com"))
-
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
