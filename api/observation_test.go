@@ -15,6 +15,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-filter/observation"
+	"github.com/ONSdigital/go-ns/audit"
+	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -91,7 +93,8 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), mockedObservationStore)
+		auditor := getMockAuditor()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, mockedObservationStore)
 
 		Convey("When request contains query parameters where the dimension name is in lower casing", func() {
 			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
@@ -106,6 +109,11 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 			So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
 			So(len(mockRowReader.ReadCalls()), ShouldEqual, 3)
+
+			ap := common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"}
+			So(len(auditor.RecordCalls()), ShouldEqual, 2)
+			verifyAuditRecordCalls(auditor.RecordCalls()[0], getObservationsAction, audit.Attempted, ap)
+			verifyAuditRecordCalls(auditor.RecordCalls()[1], getObservationsAction, audit.Successful, ap)
 		})
 
 		Convey("When request contains query parameters where the dimension name is in upper casing", func() {
@@ -121,6 +129,11 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 			So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
 			So(len(mockRowReader.ReadCalls()), ShouldEqual, 3)
+
+			ap := common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"}
+			So(len(auditor.RecordCalls()), ShouldEqual, 2)
+			verifyAuditRecordCalls(auditor.RecordCalls()[0], getObservationsAction, audit.Attempted, ap)
+			verifyAuditRecordCalls(auditor.RecordCalls()[1], getObservationsAction, audit.Successful, ap)
 		})
 	})
 
