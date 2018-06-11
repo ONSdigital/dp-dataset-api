@@ -7,13 +7,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gedge/mgo"
+	"github.com/gedge/mgo/bson"
+
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/go-ns/log"
-
-	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 )
 
 var _ store.Storer = &Mongo{}

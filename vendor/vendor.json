@@ -63,10 +63,10 @@
 			"revisionTime": "2018-06-07T08:14:26Z"
 		},
 		{
-			"checksumSHA1": "7qnU2KaLcrNltdsVw4zWEh4vmTM=",
+			"checksumSHA1": "/I1BHzejhYoOtk9JrLHAqmt5HTs=",
 			"path": "github.com/ONSdigital/go-ns/mongo",
-			"revision": "7d241b721903e1b6a9a1f5c916cdbfa661d230f1",
-			"revisionTime": "2018-05-08T08:56:58Z"
+			"revision": "491470a66fbb2471ff3fd02f8159b7158d9281ab",
+			"revisionTime": "2018-06-07T13:26:14Z"
 		},
 		{
 			"checksumSHA1": "ZXfEqZ/3ekHfv7QKSUO+av7SEWA=",
@@ -127,6 +127,36 @@
 			"path": "github.com/eapache/queue",
 			"revision": "6920413b753350672215a083e0f9d5c270a21075",
 			"revisionTime": "2017-11-28T09:28:02Z"
+		},
+		{
+			"checksumSHA1": "Tsc4M+xTb2NgaCq3y8dbIcgBJ0A=",
+			"path": "github.com/gedge/mgo",
+			"revision": "a170908eafcff6f64b9ad83db3943fe6332d52a1",
+			"revisionTime": "2018-05-23T09:46:01Z"
+		},
+		{
+			"checksumSHA1": "SAegSFbBQ3lKgxV3opxcqTPwz+o=",
+			"path": "github.com/gedge/mgo/bson",
+			"revision": "a170908eafcff6f64b9ad83db3943fe6332d52a1",
+			"revisionTime": "2018-05-23T09:46:01Z"
+		},
+		{
+			"checksumSHA1": "+soDoin5Apt/Dyk73uC1trzHx5M=",
+			"path": "github.com/gedge/mgo/internal/json",
+			"revision": "a170908eafcff6f64b9ad83db3943fe6332d52a1",
+			"revisionTime": "2018-05-23T09:46:01Z"
+		},
+		{
+			"checksumSHA1": "PZU+CtYXLjDXogLC2nNePsLBlkU=",
+			"path": "github.com/gedge/mgo/internal/sasl",
+			"revision": "a170908eafcff6f64b9ad83db3943fe6332d52a1",
+			"revisionTime": "2018-05-23T09:46:01Z"
+		},
+		{
+			"checksumSHA1": "Uoi1jh9qrlyApl2Q5JgW7OW9wy4=",
+			"path": "github.com/gedge/mgo/internal/scram",
+			"revision": "a170908eafcff6f64b9ad83db3943fe6332d52a1",
+			"revisionTime": "2018-05-23T09:46:01Z"
 		},
 		{
 			"checksumSHA1": "I6MnUzkLJt+sh73CodD0NKswFrs=",
@@ -310,36 +340,6 @@
 			"path": "golang.org/x/net/context/ctxhttp",
 			"revision": "98b5dee4d793d5a0547b7bc7d18aceb353c88a54",
 			"revisionTime": "2018-03-18T14:57:33Z"
-		},
-		{
-			"checksumSHA1": "1D8GzeoFGUs5FZOoyC2DpQg8c5Y=",
-			"path": "gopkg.in/mgo.v2",
-			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
-			"revisionTime": "2016-08-18T02:01:20Z"
-		},
-		{
-			"checksumSHA1": "YsB2DChSV9HxdzHaKATllAUKWSI=",
-			"path": "gopkg.in/mgo.v2/bson",
-			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
-			"revisionTime": "2016-08-18T02:01:20Z"
-		},
-		{
-			"checksumSHA1": "XQsrqoNT1U0KzLxOFcAZVvqhLfk=",
-			"path": "gopkg.in/mgo.v2/internal/json",
-			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
-			"revisionTime": "2016-08-18T02:01:20Z"
-		},
-		{
-			"checksumSHA1": "LEvMCnprte47qdAxWvQ/zRxVF1U=",
-			"path": "gopkg.in/mgo.v2/internal/sasl",
-			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
-			"revisionTime": "2016-08-18T02:01:20Z"
-		},
-		{
-			"checksumSHA1": "+1WDRPaOphSCmRMxVPIPBV4aubc=",
-			"path": "gopkg.in/mgo.v2/internal/scram",
-			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
-			"revisionTime": "2016-08-18T02:01:20Z"
 		}
 	],
 	"rootPath": "github.com/ONSdigital/dp-dataset-api"

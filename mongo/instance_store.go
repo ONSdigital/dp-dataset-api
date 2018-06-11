@@ -6,8 +6,8 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/go-ns/log"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+	"github.com/gedge/mgo"
+	"github.com/gedge/mgo/bson"
 )
 
 const instanceCollection = "instances"
