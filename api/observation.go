@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -17,6 +18,7 @@ import (
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 )
 
 //go:generate moq -out ../mocks/observation_store.go -pkg mocks . ObservationStore
@@ -30,16 +32,47 @@ const (
 	getObservationsAction = "getObservations"
 )
 
+var (
+	observationNotFound = map[error]bool{
+		errs.ErrDatasetNotFound:      true,
+		errs.ErrEditionNotFound:      true,
+		errs.ErrVersionNotFound:      true,
+		errs.ErrObservationsNotFound: true,
+	}
+
+	observationBadRequest = map[error]bool{
+		errs.ErrTooManyWildcards: true,
+	}
+)
+
+type observationQueryError struct {
+	message string
+	status  int
+}
+
+func (e observationQueryError) Error() string {
+	return e.message
+}
+
 func errorIncorrectQueryParameters(params []string) error {
-	return fmt.Errorf("Incorrect selection of query parameters: %v, these dimensions do not exist for this version of the dataset", params)
+	return observationQueryError{
+		message: fmt.Sprintf("Incorrect selection of query parameters: %v, these dimensions do not exist for this version of the dataset", params),
+		status:  http.StatusBadRequest,
+	}
 }
 
 func errorMissingQueryParameters(params []string) error {
-	return fmt.Errorf("Missing query parameters for the following dimensions: %v", params)
+	return observationQueryError{
+		message: fmt.Sprintf("Missing query parameters for the following dimensions: %v", params),
+		status:  http.StatusBadRequest,
+	}
 }
 
 func errorMultivaluedQueryParameters(params []string) error {
-	return fmt.Errorf("Multi-valued query parameters for the following dimensions: %v", params)
+	return observationQueryError{
+		message: fmt.Sprintf("Multi-valued query parameters for the following dimensions: %v", params),
+		status:  http.StatusBadRequest,
+	}
 }
 
 // ObservationStore provides filtered observation data in CSV rows.
@@ -48,145 +81,112 @@ type ObservationStore interface {
 }
 
 func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
 	edition := vars["edition"]
 	version := vars["version"]
 
-	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": version}
+	logData := audit.ToLogData(auditParams)
 
-	if auditErr := api.auditor.Record(r.Context(), getObservationsAction, audit.Attempted, auditParams); auditErr != nil {
+	if auditErr := api.auditor.Record(ctx, getObservationsAction, audit.Attempted, auditParams); auditErr != nil {
 		handleAuditingFailure(w, auditErr, logData)
 		return
 	}
 
-	// get dataset document
-	datasetDoc, err := api.dataStore.Backend.GetDataset(datasetID)
-	if err != nil {
-		log.Error(err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			handleAuditingFailure(w, auditErr, logData)
-			return
+	observationsDoc, err := func() (*models.ObservationsDoc, error) {
+		// get dataset document
+		datasetDoc, err := api.dataStore.Backend.GetDataset(datasetID)
+		if err != nil {
+			log.Error(err, logData)
+			return nil, err
 		}
-		handleObservationsErrorType(w, err)
-		return
-	}
 
-	authorised, logData := api.authenticate(r, logData)
+		authorised, logData := api.authenticate(r, logData)
 
-	var (
-		state   string
-		dataset *models.Dataset
-	)
+		var (
+			state   string
+			dataset *models.Dataset
+		)
 
-	// if request is not authenticated then only access resources of state published
-	if !authorised {
-		// Check for current sub document
-		if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
-			logData["dataset_doc"] = datasetDoc.Current
-			log.ErrorC("found no published dataset", errs.ErrDatasetNotFound, logData)
-			if auditErr := api.auditor.Record(r.Context(), getObservationsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-				handleAuditingFailure(w, auditErr, logData)
-				return
+		// if request is not authenticated then only access resources of state published
+		if !authorised {
+			// Check for current sub document
+			if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
+				logData["dataset_doc"] = datasetDoc.Current
+				log.ErrorC("found no published dataset", errs.ErrDatasetNotFound, logData)
+				return nil, errs.ErrDatasetNotFound
 			}
-			http.Error(w, errs.ErrDatasetNotFound.Error(), http.StatusNotFound)
-			return
+
+			dataset = datasetDoc.Current
+			state = dataset.State
+		} else {
+			dataset = datasetDoc.Next
 		}
 
-		dataset = datasetDoc.Current
-		state = dataset.State
-	} else {
-		dataset = datasetDoc.Next
-	}
-
-	if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
-		log.ErrorC("failed to find edition for dataset", err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			handleAuditingFailure(w, auditErr, logData)
-			return
+		if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
+			log.ErrorC("failed to find edition for dataset", err, logData)
+			return nil, err
 		}
-		handleObservationsErrorType(w, err)
-		return
-	}
 
-	versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
+		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
+		if err != nil {
+			log.ErrorC("failed to find version for dataset edition", err, logData)
+			return nil, err
+		}
+
+		if err = models.CheckState("version", versionDoc.State); err != nil {
+			logData["state"] = versionDoc.State
+			log.ErrorC("unpublished version has an invalid state", err, logData)
+			return nil, err
+		}
+
+		if versionDoc.Headers == nil || versionDoc.Dimensions == nil {
+			logData["version_doc"] = versionDoc
+			log.Error(errs.ErrMissingVersionHeadersOrDimensions, logData)
+			return nil, errs.ErrMissingVersionHeadersOrDimensions
+		}
+
+		// loop through version dimensions to retrieve list of dimension names
+		validDimensionNames := getListOfValidDimensionNames(versionDoc.Dimensions)
+		logData["version_dimensions"] = validDimensionNames
+
+		dimensionOffset, err := getDimensionOffsetInHeaderRow(versionDoc.Headers)
+		if err != nil {
+			log.ErrorC("unable to distinguish headers from version document", err, logData)
+			return nil, err
+		}
+
+		// check query parameters match the version headers
+		queryParameters, err := extractQueryParameters(r.URL.Query(), validDimensionNames)
+		if err != nil {
+			log.Error(err, logData)
+			//http.Error(w, err.Error(), http.StatusBadRequest)
+			return nil, err
+		}
+		logData["query_parameters"] = queryParameters
+
+		// retrieve observations
+		observations, err := api.getObservationList(versionDoc, queryParameters, defaultObservationLimit, dimensionOffset, logData)
+		if err != nil {
+			log.ErrorC("unable to retrieve observations", err, logData)
+			return nil, err
+		}
+
+		return models.CreateObservationsDoc(r.URL.RawQuery, versionDoc, dataset, observations, queryParameters, defaultOffset, defaultObservationLimit), nil
+	}()
+
 	if err != nil {
-		log.ErrorC("failed to find version for dataset edition", err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			handleAuditingFailure(w, auditErr, logData)
-			return
+		if auditErr := api.auditor.Record(ctx, getObservationsAction, audit.Unsuccessful, auditParams); auditErr != nil {
+			err = auditErr
 		}
-		handleObservationsErrorType(w, err)
+		handleObservationsErrorType(ctx, w, err, logData)
 		return
 	}
 
-	if err = models.CheckState("version", versionDoc.State); err != nil {
-		logData["state"] = versionDoc.State
-		log.ErrorC("unpublished version has an invalid state", err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			handleAuditingFailure(w, auditErr, logData)
-			return
-		}
-		handleObservationsErrorType(w, err)
-		return
-	}
-
-	if versionDoc.Headers == nil || versionDoc.Dimensions == nil {
-		logData["version_doc"] = versionDoc
-		log.Error(errs.ErrMissingVersionHeadersOrDimensions, logData)
-		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			handleAuditingFailure(w, auditErr, logData)
-			return
-		}
-		http.Error(w, "", http.StatusInternalServerError)
-		return
-	}
-
-	// loop through version dimensions to retrieve list of dimension names
-	validDimensionNames := getListOfValidDimensionNames(versionDoc.Dimensions)
-	logData["version_dimensions"] = validDimensionNames
-
-	dimensionOffset, err := getDimensionOffsetInHeaderRow(versionDoc.Headers)
-	if err != nil {
-		log.ErrorC("unable to distinguish headers from version document", err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			handleAuditingFailure(w, auditErr, logData)
-			return
-		}
-		handleObservationsErrorType(w, err)
-		return
-	}
-
-	// check query parameters match the version headers
-	queryParameters, err := extractQueryParameters(r.URL.Query(), validDimensionNames)
-	if err != nil {
-		log.Error(err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			handleAuditingFailure(w, auditErr, logData)
-			return
-		}
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	logData["query_parameters"] = queryParameters
-
-	// retrieve observations
-	observations, err := api.getObservationList(versionDoc, queryParameters, defaultObservationLimit, dimensionOffset, logData)
-	if err != nil {
-		log.ErrorC("unable to retrieve observations", err, logData)
-		if auditErr := api.auditor.Record(r.Context(), getObservationsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			handleAuditingFailure(w, auditErr, logData)
-			return
-		}
-		handleObservationsErrorType(w, err)
-		return
-	}
-
-	observationsDoc := models.CreateObservationsDoc(r.URL.RawQuery, versionDoc, dataset, observations, queryParameters, defaultOffset, defaultObservationLimit)
-
-	if auditErr := api.auditor.Record(r.Context(), getObservationsAction, audit.Successful, auditParams); auditErr != nil {
-		handleAuditingFailure(w, auditErr, logData)
+	if auditErr := api.auditor.Record(ctx, getObservationsAction, audit.Successful, auditParams); auditErr != nil {
+		handleObservationsErrorType(ctx, w, auditErr, logData)
 		return
 	}
 
@@ -200,7 +200,7 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 
 	if err = enc.Encode(observationsDoc); err != nil {
 		log.ErrorC("failed to marshal metadata resource into bytes", err, logData)
-		handleObservationsErrorType(w, err)
+		handleObservationsErrorType(ctx, w, err, logData)
 		return
 	}
 
@@ -400,21 +400,29 @@ func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParam
 	return observations, nil
 }
 
-func handleObservationsErrorType(w http.ResponseWriter, err error) {
-	log.Error(err, nil)
+func handleObservationsErrorType(ctx context.Context, w http.ResponseWriter, err error, data log.Data) {
 
-	switch err {
-	case errs.ErrDatasetNotFound:
-		http.Error(w, err.Error(), http.StatusNotFound)
-	case errs.ErrEditionNotFound:
-		http.Error(w, err.Error(), http.StatusNotFound)
-	case errs.ErrVersionNotFound:
-		http.Error(w, err.Error(), http.StatusNotFound)
-	case errs.ErrObservationsNotFound:
-		http.Error(w, err.Error(), http.StatusNotFound)
-	case errs.ErrTooManyWildcards:
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	obErr, isObservationErr := err.(observationQueryError)
+	var status int
+
+	switch {
+	case isObservationErr:
+		status = obErr.status
+	case observationNotFound[err]:
+		status = http.StatusNotFound
+	case observationBadRequest[err]:
+		status = http.StatusBadRequest
 	default:
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		err = errs.ErrInternalServer
+		status = http.StatusInternalServerError
 	}
+
+	if data == nil {
+		data = log.Data{}
+	}
+
+	data["responseStatus"] = status
+	audit.LogError(ctx, errors.WithMessage(err, "observation endpoint: request unsuccessful"), data)
+
+	http.Error(w, err.Error(), status)
 }

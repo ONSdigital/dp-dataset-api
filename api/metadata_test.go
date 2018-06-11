@@ -293,9 +293,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, "Incorrect resource state\n")
-
+		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -357,9 +355,8 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 			api.Router.ServeHTTP(w, r)
 
-			Convey("then a 404 status is returned", func() {
-				So(w.Code, ShouldEqual, http.StatusNotFound)
-
+			Convey("then a 500 status is returned", func() {
+				assertInternalServerErr(w)
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
 				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
@@ -384,9 +381,8 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 			api.Router.ServeHTTP(w, r)
 
-			Convey("then a 404 status is returned", func() {
-				So(w.Code, ShouldEqual, http.StatusNotFound)
-
+			Convey("then a 500 status is returned", func() {
+				assertInternalServerErr(w)
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
 				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
@@ -414,9 +410,8 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 			api.Router.ServeHTTP(w, r)
 
-			Convey("then a 404 status is returned", func() {
-				So(w.Code, ShouldEqual, http.StatusNotFound)
-
+			Convey("then a 500 status is returned", func() {
+				assertInternalServerErr(w)
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
 				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
@@ -448,8 +443,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
-				So(w.Code, ShouldEqual, http.StatusNotFound)
-
+				assertInternalServerErr(w)
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
 				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
@@ -483,8 +477,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
-				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-
+				assertInternalServerErr(w)
 				calls := auditor.RecordCalls()
 				So(len(calls), ShouldEqual, 2)
 				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
