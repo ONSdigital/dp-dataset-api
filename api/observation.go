@@ -91,7 +91,7 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 	logData := audit.ToLogData(auditParams)
 
 	if auditErr := api.auditor.Record(ctx, getObservationsAction, audit.Attempted, auditParams); auditErr != nil {
-		handleAuditingFailure(w, auditErr, logData)
+		handleObservationsErrorType(ctx, w, auditErr, logData)
 		return
 	}
 
