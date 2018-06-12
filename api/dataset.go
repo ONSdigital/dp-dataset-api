@@ -47,7 +47,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, err := func() ([]byte, error) {
-		results, err := api.dataStore.Backend.GetDatasets()
+		datasets, err := api.dataStore.Backend.GetDatasets()
 		if err != nil {
 			audit.LogError(ctx, errors.WithMessage(err, "api endpoint getDatasets datastore.GetDatasets returned an error"), nil)
 			return nil, err
@@ -55,29 +55,24 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 		authorised, logData := api.authenticate(r, log.Data{})
 
 		var b []byte
+		var datasetsResponse interface{}
+
 		if authorised {
-
 			// User has valid authentication to get raw dataset document
-			datasets := &models.DatasetUpdateResults{}
-			datasets.Items = results
-			b, err = json.Marshal(datasets)
-			if err != nil {
-				audit.LogError(ctx, errors.WithMessage(err, "api endpoint getDatasets failed to marshal dataset resource into bytes"), logData)
-				return nil, err
-			}
+			datasetsResponse = &models.DatasetUpdateResults{Items: datasets}
 		} else {
-
 			// User is not authenticated and hence has only access to current sub document
-			datasets := &models.DatasetResults{}
-			datasets.Items = mapResults(results)
-
-			b, err = json.Marshal(datasets)
-			if err != nil {
-				audit.LogError(ctx, errors.WithMessage(err, "api endpoint getDatasets failed to marshal dataset resource into bytes"), logData)
-				return nil, err
-			}
+			datasetsResponse = &models.DatasetResults{Items: mapResults(datasets)}
 		}
-		return b, err
+
+		b, err = json.Marshal(datasetsResponse)
+
+		if err != nil {
+			audit.LogError(ctx, errors.WithMessage(err, "api endpoint getDatasets failed to marshal dataset resource into bytes"), logData)
+			return nil, err
+		}
+
+		return b, nil
 	}()
 
 	if err != nil {
@@ -125,6 +120,9 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		authorised, logData := api.authenticate(r, logData)
 
 		var b []byte
+		var datasetResponse interface{}
+
+		//		var marshallErr error
 		if !authorised {
 			// User is not authenticated and hence has only access to current sub document
 			if dataset.Current == nil {
@@ -132,24 +130,26 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 				return nil, errs.ErrDatasetNotFound
 			}
 
+			audit.LogInfo(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", logData)
+
 			dataset.Current.ID = dataset.ID
-			b, err = json.Marshal(dataset.Current)
-			if err != nil {
-				audit.LogError(ctx, errors.WithMessage(err, "getDataset endpoint: failed to marshal dataset current sub document resource into bytes"), logData)
-				return nil, err
-			}
+			datasetResponse = dataset.Current
 		} else {
 			// User has valid authentication to get raw dataset document
 			if dataset == nil {
 				audit.LogInfo(ctx, "getDataset endpoint: published or unpublished dataset not found", logData)
 				return nil, errs.ErrDatasetNotFound
 			}
-			b, err = json.Marshal(dataset)
-			if err != nil {
-				audit.LogError(ctx, errors.WithMessage(err, "getDataset endpoint: failed to marshal dataset current sub document resource into bytes"), logData)
-				return nil, err
-			}
+			audit.LogInfo(ctx, "getDataset endpoint: caller not authorised returning dataset", logData)
+			datasetResponse = dataset
 		}
+
+		b, err = json.Marshal(datasetResponse)
+		if err != nil {
+			audit.LogError(ctx, errors.WithMessage(err, "getDataset endpoint: failed to marshal dataset resource into bytes"), logData)
+			return nil, err
+		}
+
 		return b, nil
 	}()
 
