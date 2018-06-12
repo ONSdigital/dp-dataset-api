@@ -62,8 +62,11 @@ func (m *Mongo) AddInstance(instance *models.Instance) (*models.Instance, error)
 	defer s.Close()
 
 	instance.LastUpdated = time.Now().UTC()
-	err := s.DB(m.Database).C(instanceCollection).Insert(&instance)
-	if err != nil {
+	var err error
+	if instance.UniqueTimestamp, err = bson.NewMongoTimestamp(instance.LastUpdated, 1); err != nil {
+		return nil, err
+	}
+	if err = s.DB(m.Database).C(instanceCollection).Insert(&instance); err != nil {
 		return nil, err
 	}
 
