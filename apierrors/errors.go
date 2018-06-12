@@ -12,6 +12,7 @@ var (
 	ErrVersionBadRequest                 = errors.New("Failed to parse json body")
 	ErrDimensionNodeNotFound             = errors.New("Dimension node not found")
 	ErrDimensionNotFound                 = errors.New("Dimension not found")
+	ErrDimensionOptionNotFound           = errors.New("Dimension option not found")
 	ErrDimensionsNotFound                = errors.New("Dimensions not found")
 	ErrInstanceNotFound                  = errors.New("Instance not found")
 	ErrUnauthorised                      = errors.New("Unauthorised access to API")
@@ -35,11 +36,12 @@ var (
 	ErrMetadataVersionNotFound = errors.New("Version not found")
 
 	NotFoundMap = map[error]bool{
-		ErrDatasetNotFound:       true,
-		ErrEditionNotFound:       true,
-		ErrVersionNotFound:       true,
-		ErrInstanceNotFound:      true,
-		ErrDimensionNodeNotFound: true,
+		ErrDatasetNotFound:         true,
+		ErrEditionNotFound:         true,
+		ErrVersionNotFound:         true,
+		ErrInstanceNotFound:        true,
+		ErrDimensionNodeNotFound:   true,
+		ErrDimensionOptionNotFound: true,
 	}
 
 	BadRequestMap = map[error]bool{
