@@ -6,7 +6,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"gopkg.in/mgo.v2/bson"
+	"github.com/gedge/mgo/bson"
 )
 
 const dimensionOptions = "dimension.options"

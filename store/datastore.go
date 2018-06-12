@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/gedge/mgo/bson"
+
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"gopkg.in/mgo.v2/bson"
 )
 
 // DataStore provides a datastore.Storer interface used to store, retrieve, remove or update datasets
