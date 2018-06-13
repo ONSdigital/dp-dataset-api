@@ -11,8 +11,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
+	"github.com/gedge/mgo/bson"
 	. "github.com/smartystreets/goconvey/convey"
-	"gopkg.in/mgo.v2/bson"
 )
 
 func TestGetDimensionsReturnsOk(t *testing.T) {

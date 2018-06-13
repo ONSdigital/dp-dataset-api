@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/gedge/mgo/bson"
 )
 
 // Instance which presents a single dataset being imported
@@ -24,6 +26,7 @@ type Instance struct {
 	TotalObservations *int                 `bson:"total_observations,omitempty"          json:"total_observations,omitempty"`
 	Version           int                  `bson:"version,omitempty"                     json:"version,omitempty"`
 	LastUpdated       time.Time            `bson:"last_updated,omitempty"                json:"last_updated,omitempty"`
+	UniqueTimestamp   bson.MongoTimestamp  `bson:"unique_timestamp"                      json:"-"`
 	ImportTasks       *InstanceImportTasks `bson:"import_tasks,omitempty"                json:"import_tasks"`
 }
 

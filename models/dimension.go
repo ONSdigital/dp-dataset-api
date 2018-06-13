@@ -31,24 +31,24 @@ type DimensionLink struct {
 
 // CachedDimensionOption contains information used to create a dimension option
 type CachedDimensionOption struct {
-	Name       string `bson:"name,omitempty"           json:"dimension"`
 	Code       string `bson:"code,omitempty"           json:"code"`
-	NodeID     string `bson:"node_id,omitempty"        json:"node_id"`
-	InstanceID string `bson:"instance_id,omitempty"    json:"instance_id,omitempty"`
 	CodeList   string `bson:"code_list,omitempty"      json:"code_list,omitempty"`
-	Option     string `bson:"option,omitempty"         json:"option"`
+	InstanceID string `bson:"instance_id,omitempty"    json:"instance_id,omitempty"`
 	Label      string `bson:"label,omitempty"          json:"label"`
+	Name       string `bson:"name,omitempty"           json:"dimension"`
+	NodeID     string `bson:"node_id,omitempty"        json:"node_id"`
+	Option     string `bson:"option,omitempty"         json:"option"`
 }
 
 // DimensionOption contains unique information and metadata used when processing the data
 type DimensionOption struct {
-	Name        string               `bson:"name,omitempty"           json:"dimension"`
-	Label       string               `bson:"label,omitempty"          json:"label"`
-	Links       DimensionOptionLinks `bson:"links,omitempty"          json:"links"`
-	Option      string               `bson:"option,omitempty"         json:"option"`
-	NodeID      string               `bson:"node_id,omitempty"        json:"node_id"`
 	InstanceID  string               `bson:"instance_id,omitempty"    json:"instance_id,omitempty"`
+	Label       string               `bson:"label,omitempty"          json:"label"`
 	LastUpdated time.Time            `bson:"last_updated,omitempty"   json:"-"`
+	Links       DimensionOptionLinks `bson:"links,omitempty"          json:"links"`
+	Name        string               `bson:"name,omitempty"           json:"dimension"`
+	NodeID      string               `bson:"node_id,omitempty"        json:"node_id"`
+	Option      string               `bson:"option,omitempty"         json:"option"`
 }
 
 // PublicDimensionOption hides values which are only used by interval services
