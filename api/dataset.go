@@ -49,7 +49,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	b, err := func() ([]byte, error) {
 		datasets, err := api.dataStore.Backend.GetDatasets()
 		if err != nil {
-			audit.LogError(ctx, errors.WithMessage(err, "api endpoint getDatasets datastore.GetDatasets returned an error"), nil)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "api endpoint getDatasets datastore.GetDatasets returned an error"), nil)
 			return nil, err
 		}
 		authorised, logData := api.authenticate(r, log.Data{})
@@ -68,7 +68,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 		b, err = json.Marshal(datasetsResponse)
 
 		if err != nil {
-			audit.LogError(ctx, errors.WithMessage(err, "api endpoint getDatasets failed to marshal dataset resource into bytes"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "api endpoint getDatasets failed to marshal dataset resource into bytes"), logData)
 			return nil, err
 		}
 
@@ -91,11 +91,11 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	setJSONContentType(w)
 	_, err = w.Write(b)
 	if err != nil {
-		audit.LogError(ctx, errors.WithMessage(err, "api endpoint getDatasets error writing response body"), nil)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "api endpoint getDatasets error writing response body"), nil)
 		handleDatasetAPIErr(ctx, err, w, nil)
 		return
 	}
-	logInfo(ctx, "api endpoint getDatasets request successful", nil)
+	log.InfoCtx(ctx, "api endpoint getDatasets request successful", nil)
 }
 
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +113,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	b, err := func() ([]byte, error) {
 		dataset, err := api.dataStore.Backend.GetDataset(id)
 		if err != nil {
-			audit.LogError(ctx, errors.WithMessage(err, "getDataset endpoint: dataStore.Backend.GetDataset returned an error"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "getDataset endpoint: dataStore.Backend.GetDataset returned an error"), logData)
 			return nil, err
 		}
 
@@ -126,27 +126,27 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		if !authorised {
 			// User is not authenticated and hence has only access to current sub document
 			if dataset.Current == nil {
-				audit.LogInfo(ctx, "getDataste endpoint: published dataset not found", logData)
+				log.InfoCtx(ctx, "getDataste endpoint: published dataset not found", logData)
 				return nil, errs.ErrDatasetNotFound
 			}
 
-			audit.LogInfo(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", logData)
+			log.InfoCtx(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", logData)
 
 			dataset.Current.ID = dataset.ID
 			datasetResponse = dataset.Current
 		} else {
 			// User has valid authentication to get raw dataset document
 			if dataset == nil {
-				audit.LogInfo(ctx, "getDataset endpoint: published or unpublished dataset not found", logData)
+				log.InfoCtx(ctx, "getDataset endpoint: published or unpublished dataset not found", logData)
 				return nil, errs.ErrDatasetNotFound
 			}
-			audit.LogInfo(ctx, "getDataset endpoint: caller not authorised returning dataset", logData)
+			log.InfoCtx(ctx, "getDataset endpoint: caller not authorised returning dataset", logData)
 			datasetResponse = dataset
 		}
 
 		b, err = json.Marshal(datasetResponse)
 		if err != nil {
-			audit.LogError(ctx, errors.WithMessage(err, "getDataset endpoint: failed to marshal dataset resource into bytes"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "getDataset endpoint: failed to marshal dataset resource into bytes"), logData)
 			return nil, err
 		}
 
@@ -169,10 +169,10 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	setJSONContentType(w)
 	_, err = w.Write(b)
 	if err != nil {
-		audit.LogError(ctx, errors.WithMessage(err, "getDataset endpoint: error writing bytes to response"), logData)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "getDataset endpoint: error writing bytes to response"), logData)
 		handleDatasetAPIErr(ctx, err, w, logData)
 	}
-	audit.LogInfo(ctx, "getDataset endpoint: request successful", logData)
+	log.InfoCtx(ctx, "getDataset endpoint: request successful", logData)
 }
 
 func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
@@ -193,18 +193,18 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 		_, err := api.dataStore.Backend.GetDataset(datasetID)
 		if err != nil {
 			if err != errs.ErrDatasetNotFound {
-				audit.LogError(ctx, errors.WithMessage(err, "addDataset endpoint: error checking if dataset exists"), logData)
+				log.ErrorCtx(ctx, errors.WithMessage(err, "addDataset endpoint: error checking if dataset exists"), logData)
 				return nil, err
 			}
 		} else {
-			audit.LogError(ctx, errors.WithMessage(errs.ErrAddDatasetAlreadyExists, "addDataset endpoint: unable to create a dataset that already exists"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrAddDatasetAlreadyExists, "addDataset endpoint: unable to create a dataset that already exists"), logData)
 			return nil, errs.ErrAddDatasetAlreadyExists
 		}
 
 		defer r.Body.Close()
 		dataset, err := models.CreateDataset(r.Body)
 		if err != nil {
-			audit.LogError(ctx, errors.WithMessage(err, "addDataset endpoint: failed to model dataset resource based on request"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "addDataset endpoint: failed to model dataset resource based on request"), logData)
 			return nil, errs.ErrAddUpdateDatasetBadRequest
 		}
 
@@ -232,13 +232,13 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 
 		if err = api.dataStore.Backend.UpsertDataset(datasetID, datasetDoc); err != nil {
 			logData["new_dataset"] = datasetID
-			audit.LogError(ctx, errors.WithMessage(err, "addDataset endpoint: failed to insert dataset resource to datastore"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "addDataset endpoint: failed to insert dataset resource to datastore"), logData)
 			return nil, err
 		}
 
 		b, err := json.Marshal(datasetDoc)
 		if err != nil {
-			audit.LogError(ctx, errors.WithMessage(err, "addDataset endpoint: failed to marshal dataset resource into bytes"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "addDataset endpoint: failed to marshal dataset resource into bytes"), logData)
 			return nil, err
 		}
 		return b, nil
@@ -256,10 +256,10 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	_, err = w.Write(b)
 	if err != nil {
-		audit.LogError(ctx, errors.WithMessage(err, "addDataset endpoint: error writing bytes to response"), logData)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "addDataset endpoint: error writing bytes to response"), logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	audit.LogInfo(ctx, "addDataset endpoint: request completed successfully", logData)
+	log.InfoCtx(ctx, "addDataset endpoint: request completed successfully", logData)
 }
 
 func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
@@ -279,24 +279,24 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 
 		dataset, err := models.CreateDataset(r.Body)
 		if err != nil {
-			audit.LogError(ctx, errors.WithMessage(err, "putDataset endpoint: failed to model dataset resource based on request"), data)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "putDataset endpoint: failed to model dataset resource based on request"), data)
 			return errs.ErrAddUpdateDatasetBadRequest
 		}
 
 		currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
 		if err != nil {
-			audit.LogError(ctx, errors.WithMessage(err, "putDataset endpoint: datastore.getDataset returned an error"), data)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "putDataset endpoint: datastore.getDataset returned an error"), data)
 			return err
 		}
 
 		if dataset.State == models.PublishedState {
 			if err := api.publishDataset(ctx, currentDataset, nil); err != nil {
-				audit.LogError(ctx, errors.WithMessage(err, "putDataset endpoint: failed to update dataset document to published"), data)
+				log.ErrorCtx(ctx, errors.WithMessage(err, "putDataset endpoint: failed to update dataset document to published"), data)
 				return err
 			}
 		} else {
 			if err := api.dataStore.Backend.UpdateDataset(datasetID, dataset, currentDataset.Next.State); err != nil {
-				audit.LogError(ctx, errors.WithMessage(err, "putDataset endpoint: failed to update dataset resource"), data)
+				log.ErrorCtx(ctx, errors.WithMessage(err, "putDataset endpoint: failed to update dataset resource"), data)
 				return err
 			}
 		}
@@ -313,7 +313,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
-	audit.LogInfo(ctx, "putDataset endpoint: request successful", data)
+	log.InfoCtx(ctx, "putDataset endpoint: request successful", data)
 }
 
 func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *models.DatasetUpdate, version *models.Version) error {
@@ -340,7 +340,7 @@ func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *model
 	}
 
 	if err := api.dataStore.Backend.UpsertDataset(currentDataset.ID, newDataset); err != nil {
-		audit.LogError(ctx, errors.WithMessage(err, "unable to update dataset"), log.Data{"dataset_id": currentDataset.ID})
+		log.ErrorCtx(ctx, errors.WithMessage(err, "unable to update dataset"), log.Data{"dataset_id": currentDataset.ID})
 		return err
 	}
 
@@ -364,25 +364,25 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 		currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
 
 		if err == errs.ErrDatasetNotFound {
-			audit.LogInfo(ctx, "cannot delete dataset, it does not exist", logData)
+			log.InfoCtx(ctx, "cannot delete dataset, it does not exist", logData)
 			return errs.ErrDeleteDatasetNotFound
 		}
 
 		if err != nil {
-			audit.LogError(ctx, errors.WithMessage(err, "failed to run query for existing dataset"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to run query for existing dataset"), logData)
 			return err
 		}
 
 		if currentDataset.Current != nil && currentDataset.Current.State == models.PublishedState {
-			audit.LogError(ctx, errors.WithMessage(errs.ErrDeletePublishedDatasetForbidden, "unable to delete a published dataset"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrDeletePublishedDatasetForbidden, "unable to delete a published dataset"), logData)
 			return errs.ErrDeletePublishedDatasetForbidden
 		}
 
 		if err := api.dataStore.Backend.DeleteDataset(datasetID); err != nil {
-			audit.LogError(ctx, errors.WithMessage(err, "failed to delete dataset"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to delete dataset"), logData)
 			return err
 		}
-		audit.LogInfo(ctx, "dataset deleted successfully", logData)
+		log.InfoCtx(ctx, "dataset deleted successfully", logData)
 		return nil
 	}()
 
@@ -431,6 +431,6 @@ func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	}
 
 	data["responseStatus"] = status
-	audit.LogError(ctx, errors.WithMessage(err, "request unsuccessful"), data)
+	log.ErrorCtx(ctx, errors.WithMessage(err, "request unsuccessful"), data)
 	http.Error(w, err.Error(), status)
 }
