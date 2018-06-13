@@ -89,8 +89,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setJSONContentType(w)
-	_, err = w.Write(b)
-	if err != nil {
+	if _, err = w.Write(b); err != nil {
 		log.ErrorCtx(ctx, errors.WithMessage(err, "api endpoint getDatasets error writing response body"), nil)
 		handleDatasetAPIErr(ctx, err, w, nil)
 		return
@@ -167,8 +166,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setJSONContentType(w)
-	_, err = w.Write(b)
-	if err != nil {
+	if _, err = w.Write(b); err != nil {
 		log.ErrorCtx(ctx, errors.WithMessage(err, "getDataset endpoint: error writing bytes to response"), logData)
 		handleDatasetAPIErr(ctx, err, w, logData)
 	}
@@ -254,8 +252,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusCreated)
-	_, err = w.Write(b)
-	if err != nil {
+	if _, err = w.Write(b); err != nil {
 		log.ErrorCtx(ctx, errors.WithMessage(err, "addDataset endpoint: error writing bytes to response"), logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
