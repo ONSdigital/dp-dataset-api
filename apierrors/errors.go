@@ -40,6 +40,7 @@ var (
 		ErrVersionNotFound:       true,
 		ErrInstanceNotFound:      true,
 		ErrDimensionNodeNotFound: true,
+		ErrDimensionNotFound:     true,
 	}
 
 	BadRequestMap = map[error]bool{

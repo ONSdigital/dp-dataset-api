@@ -46,7 +46,7 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 
 	if err = s.AddEventToInstance(id, event); err != nil {
 		log.Error(err, nil)
-		handleErrorType(err, w)
+		handleInstanceErr(r.Context(), err, w, nil)
 		return
 	}
 
