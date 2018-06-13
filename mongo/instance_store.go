@@ -6,8 +6,8 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/go-ns/log"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+	"github.com/gedge/mgo"
+	"github.com/gedge/mgo/bson"
 )
 
 const instanceCollection = "instances"
@@ -62,8 +62,11 @@ func (m *Mongo) AddInstance(instance *models.Instance) (*models.Instance, error)
 	defer s.Close()
 
 	instance.LastUpdated = time.Now().UTC()
-	err := s.DB(m.Database).C(instanceCollection).Insert(&instance)
-	if err != nil {
+	var err error
+	if instance.UniqueTimestamp, err = bson.NewMongoTimestamp(instance.LastUpdated, 1); err != nil {
+		return nil, err
+	}
+	if err = s.DB(m.Database).C(instanceCollection).Insert(&instance); err != nil {
 		return nil, err
 	}
 
@@ -116,7 +119,7 @@ func (m *Mongo) UpdateDimensionNodeID(dimension *models.DimensionOption) error {
 	err := s.DB(m.Database).C(dimensionOptions).Update(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
 		"option": dimension.Option}, bson.M{"$set": bson.M{"node_id": &dimension.NodeID, "last_updated": time.Now().UTC()}})
 	if err == mgo.ErrNotFound {
-		return errs.ErrInstanceNotFound
+		return errs.ErrDimensionOptionNotFound
 	}
 
 	if err != nil {
