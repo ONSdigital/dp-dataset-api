@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ONSdigital/dp-filter-api/models"
 	"github.com/gedge/mgo/bson"
 )
 
@@ -45,15 +46,18 @@ type ImportObservationsTask struct {
 
 // BuildHierarchyTask represents a task of importing a single hierarchy.
 type BuildHierarchyTask struct {
-	State         string `bson:"state,omitempty"          json:"state,omitempty"`
+	CodeListID string `bson:"code_list_id,omitempty"   json:"code_list_id,omitempty"`
+	GenericTaskDetails
+}
+
+type GenericTaskDetails struct {
 	DimensionName string `bson:"dimension_name,omitempty" json:"dimension_name,omitempty"`
-	CodeListID    string `bson:"code_list_id,omitempty"   json:"code_list_id,omitempty"`
+	State         string `bson:"state,omitempty"          json:"state,omitempty"`
 }
 
 // BuildSearchIndexTask represents a task of importing a single search index into search.
 type BuildSearchIndexTask struct {
-	State         string `bson:"state,omitempty"          json:"state,omitempty"`
-	DimensionName string `bson:"dimension_name,omitempty" json:"dimension_name,omitempty"`
+	GenericTaskDetails
 }
 
 // CodeList for a dimension within an instance
@@ -141,6 +145,29 @@ func ValidateInstanceState(state string) error {
 	if invalidInstantStateValues != nil {
 		err := fmt.Errorf("bad request - invalid filter state values: %v", invalidInstantStateValues)
 		return err
+	}
+
+	return nil
+}
+
+// ValidateImportTask checks the task contains mandatory fields
+func ValidateImportTask(task GenericTaskDetails) error {
+	var missingFields []string
+
+	if task.DimensionName == "" {
+		missingFields = append(missingFields, "dimension_name")
+	}
+
+	if task.State == "" {
+		missingFields = append(missingFields, "state")
+	}
+
+	if len(missingFields) > 0 {
+		return fmt.Errorf("bad request - missing mandatory fields: %v", missingFields)
+	}
+
+	if task.State != models.CompletedState {
+		return fmt.Errorf("bad request - invalid task state value: %v", task.State)
 	}
 
 	return nil

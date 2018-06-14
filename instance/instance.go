@@ -488,45 +488,77 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	validationErrs := make([]error, 0)
+	var hasImportTasks bool
 
 	if tasks.ImportObservations != nil {
+		hasImportTasks = true
 		if tasks.ImportObservations.State != "" {
 			if tasks.ImportObservations.State != models.CompletedState {
 				validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value for import observations: %v", tasks.ImportObservations.State))
-			} else if err := s.UpdateImportObservationsTaskState(id, tasks.ImportObservations.State); err != nil {
-				log.Error(err, nil)
-				http.Error(w, "Failed to update import observations task state", http.StatusInternalServerError)
-				return
+			} else {
+				if err := s.UpdateImportObservationsTaskState(id, tasks.ImportObservations.State); err != nil {
+					log.Error(err, nil)
+					http.Error(w, "Failed to update import observations task state", http.StatusInternalServerError)
+					return
+				}
 			}
+		} else {
+			validationErrs = append(validationErrs, errors.New("bad request - invalid import observation task, must include state"))
 		}
 	}
 
 	if tasks.BuildHierarchyTasks != nil {
+		hasImportTasks = true
+		var hasHierarchyImportTask bool
 		for _, task := range tasks.BuildHierarchyTasks {
-			if task.State != "" {
-				if task.State != models.CompletedState {
-					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
-				} else if err := s.UpdateBuildHierarchyTaskState(id, task.DimensionName, task.State); err != nil {
+			hasHierarchyImportTask = true
+			if err := models.ValidateImportTask(task.GenericTaskDetails); err != nil {
+				validationErrs = append(validationErrs, err)
+			} else {
+				if err := s.UpdateBuildHierarchyTaskState(id, task.DimensionName, task.State); err != nil {
 					log.Error(err, nil)
-					http.Error(w, "Failed to update build hierarchy task state", http.StatusInternalServerError)
+					if err.Error() == "not found" {
+						notFoundErr := task.DimensionName + " hierarchy import task does not exist"
+						http.Error(w, notFoundErr, http.StatusNotFound)
+						return
+					}
+					http.Error(w, "failed to update build hierarchy task state", http.StatusInternalServerError)
 					return
 				}
 			}
 		}
+		if !hasHierarchyImportTask {
+			validationErrs = append(validationErrs, errors.New("bad request - missing hierarchy task"))
+		}
 	}
 
 	if tasks.BuildSearchIndexTasks != nil {
+		hasImportTasks = true
+		var hasSearchIndexImportTask bool
 		for _, task := range tasks.BuildSearchIndexTasks {
-			if task.State != "" {
-				if task.State != models.CompletedState {
-					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
-				} else if err := s.UpdateBuildSearchTaskState(id, task.DimensionName, task.State); err != nil {
+			hasSearchIndexImportTask = true
+			if err := models.ValidateImportTask(task.GenericTaskDetails); err != nil {
+				validationErrs = append(validationErrs, err)
+			} else {
+				if err := s.UpdateBuildSearchTaskState(id, task.DimensionName, task.State); err != nil {
 					log.Error(err, nil)
+					if err.Error() == "not found" {
+						notFoundErr := task.DimensionName + " search index import task does not exist"
+						http.Error(w, notFoundErr, http.StatusNotFound)
+						return
+					}
 					http.Error(w, "Failed to update build search index task state", http.StatusInternalServerError)
 					return
 				}
 			}
 		}
+		if !hasSearchIndexImportTask {
+			validationErrs = append(validationErrs, errors.New("bad request - missing search index task"))
+		}
+	}
+
+	if !hasImportTasks {
+		validationErrs = append(validationErrs, errors.New("bad request - request body does not contain any import tasks"))
 	}
 
 	if len(validationErrs) > 0 {
