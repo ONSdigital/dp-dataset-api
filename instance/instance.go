@@ -269,7 +269,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	instance.Links = updateLinks(instance, currentInstance)
 
 	logData := log.Data{"instance_id": id, "current_state": currentInstance.State, "requested_state": instance.State}
-	if instance.State != currentInstance.State {
+	if instance.State != currentInstance.State && instance.State != "" {
 		var expectedState string
 
 		switch instance.State {
