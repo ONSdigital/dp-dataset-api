@@ -282,9 +282,11 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		case models.PublishedState:
 			expectedState = models.AssociatedState
 		default:
-			log.ErrorCtx(ctx, errors.Errorf("instance update: instance state invalid"), logData)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			if err != nil {
+				log.ErrorCtx(ctx, errors.Errorf("instance update: instance state invalid"), logData)
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 		}
 
 		if err = validateInstanceUpdate(expectedState, currentInstance, instance); err != nil {
