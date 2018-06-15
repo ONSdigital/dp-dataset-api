@@ -112,9 +112,10 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			So(len(mockRowReader.ReadCalls()), ShouldEqual, 3)
 
 			ap := common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"}
-			So(len(auditor.RecordCalls()), ShouldEqual, 2)
-			verifyAuditRecordCalls(auditor.RecordCalls()[0], getObservationsAction, audit.Attempted, ap)
-			verifyAuditRecordCalls(auditor.RecordCalls()[1], getObservationsAction, audit.Successful, ap)
+			auditor.AssertRecordCalls(
+				audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
+				audit_mock.Expected{getObservationsAction, audit.Successful, ap},
+			)
 		})
 
 		Convey("When request contains query parameters where the dimension name is in upper casing", func() {
@@ -132,9 +133,10 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			So(len(mockRowReader.ReadCalls()), ShouldEqual, 3)
 
 			ap := common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"}
-			So(len(auditor.RecordCalls()), ShouldEqual, 2)
-			verifyAuditRecordCalls(auditor.RecordCalls()[0], getObservationsAction, audit.Attempted, ap)
-			verifyAuditRecordCalls(auditor.RecordCalls()[1], getObservationsAction, audit.Successful, ap)
+			auditor.AssertRecordCalls(
+				audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
+				audit_mock.Expected{getObservationsAction, audit.Successful, ap},
+			)
 		})
 	})
 
@@ -820,10 +822,9 @@ func TestGetObservationAuditAttemptedError(t *testing.T) {
 
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
-
-				So(len(auditor.RecordCalls()), ShouldEqual, 1)
-				verifyAuditRecordCalls(auditor.RecordCalls()[0], getObservationsAction, audit.Attempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"})
-
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getObservationsAction, audit.Attempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"}},
+				)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -855,10 +856,10 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
-
-				So(len(auditor.RecordCalls()), ShouldEqual, 2)
-				verifyAuditRecordCalls(auditor.RecordCalls()[0], getObservationsAction, audit.Attempted, ap)
-				verifyAuditRecordCalls(auditor.RecordCalls()[1], getObservationsAction, audit.Unsuccessful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
+					audit_mock.Expected{getObservationsAction, audit.Unsuccessful, ap},
+				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -888,10 +889,10 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
-
-				So(len(auditor.RecordCalls()), ShouldEqual, 2)
-				verifyAuditRecordCalls(auditor.RecordCalls()[0], getObservationsAction, audit.Attempted, ap)
-				verifyAuditRecordCalls(auditor.RecordCalls()[1], getObservationsAction, audit.Unsuccessful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
+					audit_mock.Expected{getObservationsAction, audit.Unsuccessful, ap},
+				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -924,10 +925,10 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
-
-				So(len(auditor.RecordCalls()), ShouldEqual, 2)
-				verifyAuditRecordCalls(auditor.RecordCalls()[0], getObservationsAction, audit.Attempted, ap)
-				verifyAuditRecordCalls(auditor.RecordCalls()[1], getObservationsAction, audit.Unsuccessful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
+					audit_mock.Expected{getObservationsAction, audit.Unsuccessful, ap},
+				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -960,9 +961,10 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
-				So(len(auditor.RecordCalls()), ShouldEqual, 2)
-				verifyAuditRecordCalls(auditor.RecordCalls()[0], getObservationsAction, audit.Attempted, ap)
-				verifyAuditRecordCalls(auditor.RecordCalls()[1], getObservationsAction, audit.Unsuccessful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
+					audit_mock.Expected{getObservationsAction, audit.Unsuccessful, ap},
+				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -1050,11 +1052,12 @@ func TestGetObservationAuditSuccessfulError(t *testing.T) {
 				ap := common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"}
 
 				assertInternalServerErr(w)
-				So(len(auditor.RecordCalls()), ShouldEqual, 2)
-				verifyAuditRecordCalls(auditor.RecordCalls()[0], getObservationsAction, audit.Attempted, ap)
-				verifyAuditRecordCalls(auditor.RecordCalls()[1], getObservationsAction, audit.Successful, ap)
-				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
+					audit_mock.Expected{getObservationsAction, audit.Successful, ap},
+				)
 
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
