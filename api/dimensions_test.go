@@ -38,15 +38,15 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
 
-		calls := auditor.RecordCalls()
 		ap := common.Params{
 			"dataset_id": "123",
 			"edition":    "2017",
 			"version":    "1",
 		}
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
-		verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Successful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
+			audit_mock.Expected{getDimensionsAction, audit.Successful, ap},
+		)
 	})
 }
 
@@ -76,11 +76,10 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
-		verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
+			audit_mock.Expected{getDimensionsAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("When the request contain an invalid version return not found", t, func() {
@@ -101,12 +100,10 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
-
-		calls := auditor.RecordCalls()
-
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
-		verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
+			audit_mock.Expected{getDimensionsAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("When there are no dimensions then return not found error", t, func() {
@@ -130,11 +127,10 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
-		verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
+			audit_mock.Expected{getDimensionsAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("When the version has an invalid state return internal server error", t, func() {
@@ -155,11 +151,10 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
-		verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
+			audit_mock.Expected{getDimensionsAction, audit.Unsuccessful, ap},
+		)
 	})
 }
 
@@ -182,10 +177,9 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
-
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 1)
-				verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
+				)
 			})
 		})
 	})
@@ -212,11 +206,10 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
-
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
-				verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Successful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
+					audit_mock.Expected{getDimensionsAction, audit.Successful, ap},
+				)
 			})
 		})
 	})
@@ -241,10 +234,10 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
 
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
-				verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Unsuccessful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
+					audit_mock.Expected{getDimensionsAction, audit.Unsuccessful, ap},
+				)
 			})
 		})
 
@@ -264,11 +257,10 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
-
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
-				verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Unsuccessful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
+					audit_mock.Expected{getDimensionsAction, audit.Unsuccessful, ap},
+				)
 			})
 		})
 
@@ -291,11 +283,10 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusNotFound)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
-
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getDimensionsAction, audit.Attempted, ap)
-				verifyAuditRecordCalls(calls[1], getDimensionsAction, audit.Unsuccessful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
+					audit_mock.Expected{getDimensionsAction, audit.Unsuccessful, ap},
+				)
 			})
 		})
 	})
