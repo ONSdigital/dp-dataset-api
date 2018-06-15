@@ -34,12 +34,12 @@ var (
 	ErrVersionNotFound                   = errors.New("Version not found")
 
 	NotFoundMap = map[error]bool{
-		ErrDatasetNotFound:       true,
-    ErrDimensionNodeNotFound:   true,
+		ErrDatasetNotFound:         true,
+		ErrDimensionNodeNotFound:   true,
 		ErrDimensionOptionNotFound: true,
-		ErrEditionNotFound:       true,
-		ErrInstanceNotFound:      true,    
-		ErrVersionNotFound:       true,
+		ErrEditionNotFound:         true,
+		ErrInstanceNotFound:        true,
+		ErrVersionNotFound:         true,
 
 		ErrDimensionNodeNotFound: true,
 		ErrDimensionNotFound:     true,
