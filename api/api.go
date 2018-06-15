@@ -163,7 +163,7 @@ func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 		api.Router.HandleFunc("/datasets/{id}", identity.Check(api.deleteDataset)).Methods("DELETE")
 		api.Router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", identity.Check(versionPublishChecker.Check(api.putVersion))).Methods("PUT")
 
-		instanceAPI := instance.Store{Host: api.host, Storer: api.dataStore.Backend}
+		instanceAPI := instance.Store{Host: api.host, Storer: api.dataStore.Backend, Auditor: auditor}
 		instancePublishChecker := instance.PublishCheck{Auditor: auditor, Datastore: dataStore.Backend}
 		api.Router.HandleFunc("/instances", identity.Check(instanceAPI.GetList)).Methods("GET")
 		api.Router.HandleFunc("/instances", identity.Check(instanceAPI.Add)).Methods("POST")
