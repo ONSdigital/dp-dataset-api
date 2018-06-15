@@ -43,8 +43,8 @@ func TestGetInstancesReturnsOK(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore}
-		instance.GetList(w, r)
+		instanceAPI := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore}
+		instanceAPI.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
@@ -65,8 +65,8 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore}
-		instance.GetList(w, r)
+		instanceAPI := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore}
+		instanceAPI.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
@@ -85,8 +85,8 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore}
-		instance.GetList(w, r)
+		instanceAPI := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore}
+		instanceAPI.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
@@ -106,8 +106,8 @@ func TestGetInstancesReturnsError(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.GetList(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
@@ -119,8 +119,8 @@ func TestGetInstancesReturnsError(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.GetList(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 0)
@@ -139,8 +139,8 @@ func TestGetInstanceReturnsOK(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.Get(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Get(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
@@ -159,8 +159,8 @@ func TestGetInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.Get(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Get(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
@@ -178,8 +178,8 @@ func TestGetInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.Get(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Get(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "Incorrect resource state\n")
@@ -200,8 +200,8 @@ func TestAddInstancesReturnsCreated(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.Add(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Add(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusCreated)
 		So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 1)
@@ -221,8 +221,8 @@ func TestAddInstancesReturnsBadRequest(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.Add(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Add(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
@@ -238,8 +238,8 @@ func TestAddInstancesReturnsBadRequest(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.Add(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Add(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
@@ -257,8 +257,8 @@ func TestAddInstancesReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.Add(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Add(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 1)
@@ -281,8 +281,8 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.Update(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Update(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
@@ -330,8 +330,8 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.Update(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Update(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
@@ -355,8 +355,8 @@ func TestUpdateInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.Update(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Update(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
@@ -374,8 +374,8 @@ func TestUpdateInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.Update(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Update(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
@@ -393,8 +393,8 @@ func TestUpdateInstanceFailure(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.Update(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Update(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
@@ -410,8 +410,8 @@ func TestUpdateInstanceFailure(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.Update(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Update(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
@@ -445,8 +445,8 @@ func TestUpdatePublishedInstanceToCompletedReturnsForbidden(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.Update(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Update(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
@@ -480,8 +480,8 @@ func TestUpdateEditionConfirmedInstanceToCompletedReturnsForbidden(t *testing.T)
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.Update(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Update(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
@@ -500,10 +500,10 @@ func TestInsertedObservationsReturnsOk(t *testing.T) {
 				return nil
 			},
 		}
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
 
 		router := mux.NewRouter()
-		router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", instance.UpdateObservations).Methods("PUT")
+		router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", instanceAPI.UpdateObservations).Methods("PUT")
 		router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -518,8 +518,8 @@ func TestInsertedObservationsReturnsBadRequest(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.UpdateObservations(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.UpdateObservations(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
@@ -537,10 +537,10 @@ func TestInsertedObservationsReturnsNotFound(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
 
 		router := mux.NewRouter()
-		router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", instance.UpdateObservations).Methods("PUT")
+		router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}", instanceAPI.UpdateObservations).Methods("PUT")
 		router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -563,9 +563,9 @@ func TestStore_UpdateImportTask_UpdateImportObservations(t *testing.T) {
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
@@ -595,9 +595,9 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, "failed to parse json body: unexpected end of JSON input")
@@ -625,9 +625,9 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, "bad request - invalid import observation task, must include state")
@@ -654,9 +654,9 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, "bad request - invalid task state value for import observations: notvalid")
@@ -688,9 +688,9 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, "failed to parse json body: unexpected end of JSON input")
@@ -719,9 +719,9 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, "bad request - request body does not contain any import tasks")
@@ -750,9 +750,9 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, "bad request - missing hierarchy task")
@@ -781,9 +781,9 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, "bad request - missing mandatory fields: [dimension_name]")
@@ -812,9 +812,9 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, "bad request - missing mandatory fields: [state]")
@@ -843,9 +843,9 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, "bad request - invalid task state value: notvalid")
@@ -874,9 +874,9 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, "geography hierarchy import task does not exist")
@@ -905,9 +905,9 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, "internal error")
@@ -940,9 +940,9 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask(t *testing.T) {
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
@@ -973,9 +973,9 @@ func TestStore_UpdateImportTask_ReturnsInternalError(t *testing.T) {
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
@@ -1006,8 +1006,8 @@ func TestUpdateInstanceReturnsErrorWhenStateIsPublished(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.Update(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Update(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
@@ -1030,8 +1030,8 @@ func TestUpdateDimensionReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.UpdateDimension(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.UpdateDimension(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
@@ -1052,8 +1052,8 @@ func TestUpdateDimensionReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.UpdateDimension(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.UpdateDimension(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
@@ -1073,8 +1073,8 @@ func TestUpdateDimensionReturnsNotFound(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.UpdateDimension(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.UpdateDimension(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
@@ -1098,8 +1098,8 @@ func TestUpdateDimensionReturnsForbidden(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.UpdateDimension(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.UpdateDimension(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
@@ -1120,8 +1120,8 @@ func TestUpdateDimensionReturnsBadRequest(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
-		instance.UpdateDimension(w, r)
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.UpdateDimension(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
@@ -1145,10 +1145,10 @@ func TestUpdateDimensionReturnsNotFoundWithWrongName(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
 
 		router := mux.NewRouter()
-		router.HandleFunc("/instances/{id}/dimensions/{dimension}", instance.UpdateDimension).Methods("PUT")
+		router.HandleFunc("/instances/{id}/dimensions/{dimension}", instanceAPI.UpdateDimension).Methods("PUT")
 
 		router.ServeHTTP(w, r)
 
@@ -1176,9 +1176,9 @@ func TestUpdateDimensionReturnsOk(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
 		router := mux.NewRouter()
-		router.HandleFunc("/instances/{id}/dimensions/{dimension}", instance.UpdateDimension).Methods("PUT")
+		router.HandleFunc("/instances/{id}/dimensions/{dimension}", instanceAPI.UpdateDimension).Methods("PUT")
 
 		router.ServeHTTP(w, r)
 
@@ -1203,9 +1203,9 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, "failed to parse json body: unexpected end of JSON input")
@@ -1234,9 +1234,9 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, "bad request - request body does not contain any import tasks")
@@ -1265,9 +1265,9 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, "bad request - missing search index task")
@@ -1296,9 +1296,9 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, "bad request - missing mandatory fields: [dimension_name]")
@@ -1319,9 +1319,9 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, "bad request - missing mandatory fields: [state]")
@@ -1350,9 +1350,9 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, "bad request - invalid task state value: notvalid")
@@ -1381,9 +1381,9 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, "geography search index import task does not exist")
@@ -1412,9 +1412,9 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, "internal error")
@@ -1447,9 +1447,9 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask(t *testing.T) {
 		}
 
 		auditor := auditorMock()
-		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
-		instance.UpdateImportTask(w, r)
+		instanceAPI.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
@@ -1477,8 +1477,8 @@ func TestStore_UpdateImportTask_AuditAttemptedError(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{}
-			instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
-			instance.UpdateImportTask(w, r)
+			instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+			instanceAPI.UpdateImportTask(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1507,8 +1507,8 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 
 			mockedDataStore := &storetest.StorerMock{}
 			auditor := auditorMockWithErr(updateImportTaskAction, audit.Unsuccessful)
-			instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
-			instance.UpdateImportTask(w, r)
+			instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+			instanceAPI.UpdateImportTask(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1538,8 +1538,8 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 			}
 
 			auditor := auditorMockWithErr(updateImportTaskAction, audit.Unsuccessful)
-			instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
-			instance.UpdateImportTask(w, r)
+			instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+			instanceAPI.UpdateImportTask(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1569,8 +1569,8 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 			}
 
 			auditor := auditorMockWithErr(updateImportTaskAction, audit.Unsuccessful)
-			instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
-			instance.UpdateImportTask(w, r)
+			instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+			instanceAPI.UpdateImportTask(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1600,8 +1600,8 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 					return errors.New("error")
 				},
 			}
-			instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
-			instance.UpdateImportTask(w, r)
+			instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+			instanceAPI.UpdateImportTask(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1636,8 +1636,8 @@ func TestStore_UpdateImportTask_AuditSuccessfulError(t *testing.T) {
 					return nil
 				},
 			}
-			instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
-			instance.UpdateImportTask(w, r)
+			instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+			instanceAPI.UpdateImportTask(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusOK)

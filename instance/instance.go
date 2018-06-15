@@ -73,11 +73,11 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 
 	b, err := json.Marshal(results)
 	if err != nil {
-		internalError(w, err)
+		internalError(ctx, w, err)
 		return
 	}
 
-	writeBody(w, b)
+	writeBody(ctx, w, b)
 	log.InfoCtx(ctx, "instance getList: request successful", log.Data{"query": stateFilterQuery})
 }
 
@@ -99,18 +99,18 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	if err = models.CheckState("instance", instance.State); err != nil {
 		data["state"] = instance.State
 		log.ErrorCtx(ctx, errors.WithMessage(err, "instance get: instance has an invalid state"), data)
-		internalError(w, err)
+		internalError(ctx, w, err)
 		return
 	}
 
 	b, err := json.Marshal(instance)
 	if err != nil {
 		log.ErrorCtx(ctx, errors.WithMessage(err, "failed to marshal instance to json"), data)
-		internalError(w, err)
+		internalError(ctx, w, err)
 		return
 	}
 
-	writeBody(w, b)
+	writeBody(ctx, w, b)
 	log.InfoCtx(ctx, "instance get: request successful", data)
 }
 
@@ -135,20 +135,20 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	instance, err = s.AddInstance(instance)
 	if err != nil {
 		log.ErrorCtx(ctx, errors.WithMessage(err, "instance add: store.AddInstance returned an error"), data)
-		internalError(w, err)
+		internalError(ctx, w, err)
 		return
 	}
 
 	b, err := json.Marshal(instance)
 	if err != nil {
 		log.ErrorCtx(ctx, errors.WithMessage(err, "instance add: failed to marshal instance to json"), data)
-		internalError(w, err)
+		internalError(ctx, w, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	writeBody(w, b)
+	writeBody(ctx, w, b)
 	log.InfoCtx(ctx, "instance add: request successful", data)
 }
 
@@ -567,7 +567,6 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 					validationErrs = append(validationErrs, err)
 				} else {
 					if err := s.UpdateBuildSearchTaskState(id, task.DimensionName, task.State); err != nil {
-						log.Error(err, nil)
 						if err.Error() == "not found" {
 							notFoundErr := task.DimensionName + " search index import task does not exist"
 							log.ErrorCtx(ctx, errors.WithMessage(err, notFoundErr), data)
@@ -670,15 +669,15 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 	return &instance, nil
 }
 
-func internalError(w http.ResponseWriter, err error) {
-	log.Error(err, nil)
+func internalError(ctx context.Context, w http.ResponseWriter, err error) {
+	log.ErrorCtx(ctx, err, nil)
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
-func writeBody(w http.ResponseWriter, b []byte) {
+func writeBody(ctx context.Context, w http.ResponseWriter, b []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(b); err != nil {
-		log.Error(err, nil)
+		log.ErrorCtx(ctx, err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
