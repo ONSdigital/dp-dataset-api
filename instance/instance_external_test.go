@@ -1,6 +1,7 @@
 package instance_test
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -566,9 +567,52 @@ func TestStore_UpdateImportTask_UpdateImportObservations(t *testing.T) {
 	})
 }
 
-func TestStore_UpdateImportTask_UpdateImportObservations_InvalidState(t *testing.T) {
+func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 
 	t.Parallel()
+	Convey("update to an import task with invalid json returns http 400 response", t, func() {
+		body := strings.NewReader(`{`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "failed to parse json body: unexpected end of JSON input")
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+	})
+
+	Convey("update to an import task but missing mandatory field, 'state' returns http 400 response", t, func() {
+		body := strings.NewReader(`{"import_observations":{}}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "bad request - invalid import observation task, must include state")
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+	})
+
 	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
 		body := strings.NewReader(`{"import_observations":{"state":"notvalid"}}`)
 		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
@@ -585,16 +629,17 @@ func TestStore_UpdateImportTask_UpdateImportObservations_InvalidState(t *testing
 		instance.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "bad request - invalid task state value for import observations: notvalid")
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 	})
 }
 
-func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_InvalidState(t *testing.T) {
+func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 
 	t.Parallel()
-	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
-		body := strings.NewReader(`{"build_hierarchies":[{"state":"notvalid"}]}`)
+	Convey("update to an import task with invalid json returns http 400 response", t, func() {
+		body := strings.NewReader(`{`)
 		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 		w := httptest.NewRecorder()
 
@@ -609,8 +654,164 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_InvalidState(t *testing
 		instance.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "failed to parse json body: unexpected end of JSON input")
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+	})
+
+	Convey("update to an import task with an empty request body returns http 400 response", t, func() {
+		body := strings.NewReader(`{}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "bad request - request body does not contain any import tasks")
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+	})
+
+	Convey("update to an import task without specifying a task returns http 400 response", t, func() {
+		body := strings.NewReader(`{"build_hierarchies":[]}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "bad request - missing hierarchy task")
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+	})
+
+	Convey("update to an import task without a 'dimension_name' returns http 400 response", t, func() {
+		body := strings.NewReader(`{"build_hierarchies":[{"state":"completed"}]}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "bad request - missing mandatory fields: [dimension_name]")
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+	})
+
+	Convey("update to an import task without a 'dimension_name' returns http 400 response", t, func() {
+		body := strings.NewReader(`{"build_hierarchies":[{"dimension_name":"geography"}]}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "bad request - missing mandatory fields: [state]")
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+	})
+
+	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
+		body := strings.NewReader(`{"build_hierarchies":[{"state":"notvalid", "dimension_name": "geography"}]}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "bad request - invalid task state value: notvalid")
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+	})
+
+	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
+		body := strings.NewReader(`{"build_hierarchies":[{"state":"completed", "dimension_name": "geography"}]}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
+				return errors.New("not found")
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, "geography hierarchy import task does not exist")
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+	})
+
+	Convey("update to an import task but lose connection to datastore when updating resource", t, func() {
+		body := strings.NewReader(`{"build_hierarchies":[{"state":"completed", "dimension_name": "geography"}]}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
+				return errors.New("internal error")
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, "failed to update build hierarchy task state")
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 	})
 }
 
@@ -618,7 +819,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask(t *testing.T) {
 
 	t.Parallel()
 	Convey("update to an import task returns http 200 response if no errors occur", t, func() {
-		body := strings.NewReader(`{"build_hierarchies":[{"state":"completed"}]}`)
+		body := strings.NewReader(`{"build_hierarchies":[{"state":"completed", "dimension_name":"geography"}]}`)
 		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 		w := httptest.NewRecorder()
 
@@ -859,11 +1060,11 @@ func TestUpdateDimensionReturnsOk(t *testing.T) {
 	})
 }
 
-func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_InvalidState(t *testing.T) {
+func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 
 	t.Parallel()
-	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
-		body := strings.NewReader(`{"build_search_indexes":[{"state":"notvalid"}]}`)
+	Convey("update to an import task with invalid json returns http 400 response", t, func() {
+		body := strings.NewReader(`{`)
 		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 		w := httptest.NewRecorder()
 
@@ -878,9 +1079,164 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_InvalidState(t *testi
 		instance.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "failed to parse json body: unexpected end of JSON input")
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+	})
+
+	Convey("update to an import task with an empty request body returns http 400 response", t, func() {
+		body := strings.NewReader(`{}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "bad request - request body does not contain any import tasks")
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+	})
+
+	Convey("update to an import task without specifying a task returns http 400 response", t, func() {
+		body := strings.NewReader(`{"build_search_indexes":[]}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "bad request - missing search index task")
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+	})
+
+	Convey("update to an import task without a 'dimension_name' returns http 400 response", t, func() {
+		body := strings.NewReader(`{"build_search_indexes":[{"state":"completed"}]}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "bad request - missing mandatory fields: [dimension_name]")
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+	})
+
+	Convey("update to an import task without a 'dimension_name' returns http 400 response", t, func() {
+		body := strings.NewReader(`{"build_search_indexes":[{"dimension_name":"geography"}]}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "bad request - missing mandatory fields: [state]")
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+	})
+
+	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
+		body := strings.NewReader(`{"build_search_indexes":[{"state":"notvalid", "dimension_name": "geography"}]}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
+				return nil
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "bad request - invalid task state value: notvalid")
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+	})
+
+	Convey("update to an import task with a dimension that does not exist returns http 404 response", t, func() {
+		body := strings.NewReader(`{"build_search_indexes":[{"state":"completed", "dimension_name": "geography"}]}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
+				return errors.New("not found")
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, "geography search index import task does not exist")
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
+	})
+
+	Convey("update to an import task but lose connection to datastore when updating resource", t, func() {
+		body := strings.NewReader(`{"build_search_indexes":[{"state":"completed", "dimension_name": "geography"}]}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
+				return errors.New("internal error")
+			},
+		}
+
+		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+
+		instance.UpdateImportTask(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, "failed to update build search index task state")
+		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -888,7 +1244,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask(t *testing.T) {
 
 	t.Parallel()
 	Convey("update to an import task returns http 200 response if no errors occur", t, func() {
-		body := strings.NewReader(`{"build_search_indexes":[{"state":"completed"}]}`)
+		body := strings.NewReader(`{"build_search_indexes":[{"state":"completed", "dimension_name": "geography"}]}`)
 		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 		w := httptest.NewRecorder()
 

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ONSdigital/dp-filter-api/models"
 	"github.com/gedge/mgo/bson"
 )
 
@@ -166,7 +165,7 @@ func ValidateImportTask(task GenericTaskDetails) error {
 		return fmt.Errorf("bad request - missing mandatory fields: %v", missingFields)
 	}
 
-	if task.State != models.CompletedState {
+	if task.State != CompletedState {
 		return fmt.Errorf("bad request - invalid task state value: %v", task.State)
 	}
 

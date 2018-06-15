@@ -547,7 +547,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 						http.Error(w, notFoundErr, http.StatusNotFound)
 						return
 					}
-					http.Error(w, "Failed to update build search index task state", http.StatusInternalServerError)
+					http.Error(w, "failed to update build search index task state", http.StatusInternalServerError)
 					return
 				}
 			}
