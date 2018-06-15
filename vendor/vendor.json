@@ -15,6 +15,12 @@
 			"revisionTime": "2018-06-07T08:14:26Z"
 		},
 		{
+			"checksumSHA1": "o/fpgmAmHKUqXwe0w0NTU9bc9Eg=",
+			"path": "github.com/ONSdigital/go-ns/audit/audit_mock",
+			"revision": "1635ecccecca0963006e1640baeeeca1f558a8f7",
+			"revisionTime": "2018-06-14T13:29:57Z"
+		},
+		{
 			"checksumSHA1": "vyzH2Rju6G4A/uK4zqWIidfk3dA=",
 			"path": "github.com/ONSdigital/go-ns/avro",
 			"revision": "e89bb271c005948b66da47ec485f1fb786753612",
