@@ -269,31 +269,15 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	instance.Links = updateLinks(instance, currentInstance)
 
 	logData := log.Data{"instance_id": id, "current_state": currentInstance.State, "requested_state": instance.State}
-	if instance.State != currentInstance.State && instance.State != "" {
-		var expectedState string
+	if instance.State != "" && instance.State != currentInstance.State {
 
-		switch instance.State {
-		case models.CompletedState:
-			expectedState = models.SubmittedState
-		case models.EditionConfirmedState:
-			expectedState = models.CompletedState
-		case models.AssociatedState:
-			expectedState = models.EditionConfirmedState
-		case models.PublishedState:
-			expectedState = models.AssociatedState
-		default:
-			if err != nil {
-				log.ErrorCtx(ctx, errors.Errorf("instance update: instance state invalid"), logData)
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-		}
-
-		if err = validateInstanceUpdate(expectedState, currentInstance, instance); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: instance validation failure"), logData)
-			http.Error(w, err.Error(), http.StatusForbidden)
+		status, err := validateInstanceStateUpdate(instance, currentInstance)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.Errorf("instance update: instance state invalid"), logData)
+			http.Error(w, err.Error(), status)
 			return
 		}
+
 	}
 
 	if instance.State == models.EditionConfirmedState {
@@ -349,6 +333,32 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.InfoCtx(ctx, "instance update: request successful", data)
+}
+
+func validateInstanceStateUpdate(instance, currentInstance *models.Instance) (state int, err error) {
+	if instance.State != "" && instance.State != currentInstance.State {
+		switch currentInstance.State {
+		case models.CreatedState:
+			fallthrough
+		case models.SubmittedState:
+			fallthrough
+		case models.CompletedState:
+			break
+		case models.AssociatedState:
+			fallthrough
+		case models.PublishedState:
+			fallthrough
+		case models.EditionConfirmedState:
+			err = errors.New("forbidden - unable to update instance resource from " + currentInstance.State)
+			return http.StatusForbidden, err
+		default:
+			err = errors.New("instance resource has an invalid state")
+			return http.StatusInternalServerError, err
+		}
+
+	}
+
+	return http.StatusOK, nil
 }
 
 func updateLinks(instance, currentInstance *models.Instance) *models.InstanceLinks {
@@ -428,8 +438,6 @@ func validateInstanceUpdate(expectedState string, currentInstance, instance *mod
 	var err error
 	if currentInstance.State == models.PublishedState {
 		err = fmt.Errorf("Unable to update resource state, as the version has been published")
-	} else if currentInstance.State != expectedState {
-		err = fmt.Errorf("Unable to update resource, expected resource to have a state of %s", expectedState)
 	} else if instance.State == models.EditionConfirmedState && currentInstance.Edition == "" && instance.Edition == "" {
 		err = errors.New("Unable to update resource, missing a value for the edition")
 	}
