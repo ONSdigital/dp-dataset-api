@@ -14,7 +14,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
-	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -306,12 +305,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 	ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
 
 	Convey("given auditing action attempted returns an error", t, func() {
-		auditor := getMockAuditorFunc(func(a string, r string) error {
-			if a == getMetadataAction && r == audit.Attempted {
-				return errors.New("audit error")
-			}
-			return nil
-		})
+		auditor := createAuditor(getMetadataAction, audit.Attempted)
 
 		Convey("when get metadata is called", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
@@ -337,12 +331,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 	})
 
 	Convey("given auditing action unsuccessful returns an error", t, func() {
-		auditor := getMockAuditorFunc(func(a string, r string) error {
-			if a == getMetadataAction && r == audit.Unsuccessful {
-				return errors.New("audit error")
-			}
-			return nil
-		})
+		auditor := createAuditor(getMetadataAction, audit.Unsuccessful)
 
 		Convey("when datastore getDataset returns dataset not found error", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
@@ -498,12 +487,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 	})
 
 	Convey("given auditing action successful returns an error", t, func() {
-		auditor := getMockAuditorFunc(func(a string, r string) error {
-			if a == getMetadataAction && r == audit.Successful {
-				return errors.New("audit error")
-			}
-			return nil
-		})
+		auditor := createAuditor(getMetadataAction, audit.Successful)
 
 		Convey("when get metadata is called", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)

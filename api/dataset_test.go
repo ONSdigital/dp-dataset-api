@@ -124,9 +124,7 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldEqual, internalServerErr)
-
+		assertInternalServerErr(w)
 		recCalls := auditMock.RecordCalls()
 		So(len(recCalls), ShouldEqual, 1)
 		verifyAuditRecordCalls(recCalls[0], getDatasetsAction, audit.Attempted, nil)
@@ -194,7 +192,7 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 
 func TestGetDatasetsAuditauditSuccessfulError(t *testing.T) {
 	t.Parallel()
-	Convey("when a successful request to get dataset fails to audit action successful then a 200 response is returned", t, func() {
+	Convey("when a successful request to get dataset fails to audit action successful then a 500 response is returned", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -203,13 +201,7 @@ func TestGetDatasetsAuditauditSuccessfulError(t *testing.T) {
 			},
 		}
 
-		mockAuditor := getMockAuditor()
-		mockAuditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == getDatasetsAction && result == audit.Successful {
-				return errors.New("boom")
-			}
-			return nil
-		}
+		mockAuditor := createAuditor(getDatasetsAction, audit.Successful)
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockAuditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
@@ -220,7 +212,7 @@ func TestGetDatasetsAuditauditSuccessfulError(t *testing.T) {
 		verifyAuditRecordCalls(recCalls[1], getDatasetsAction, audit.Successful, nil)
 
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
-		So(w.Code, ShouldEqual, http.StatusOK)
+		assertInternalServerErr(w)
 	})
 }
 
@@ -361,8 +353,7 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 				So(len(recCalls), ShouldEqual, 1)
 				verifyAuditRecordCalls(recCalls[0], getDatasetAction, audit.Attempted, auditParams)
 
-				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(strings.TrimSpace(w.Body.String()), ShouldEqual, errs.ErrInternalServer.Error())
+				assertInternalServerErr(w)
 				So(len(mockDatastore.GetDatasetCalls()), ShouldEqual, 0)
 			})
 		})
@@ -397,8 +388,7 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 				verifyAuditRecordCalls(recCalls[1], getDatasetAction, audit.Successful, auditParams)
 
 				So(len(mockDatastore.GetDatasetCalls()), ShouldEqual, 1)
-				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(strings.TrimSpace(w.Body.String()), ShouldEqual, errs.ErrInternalServer.Error())
+				assertInternalServerErr(w)
 			})
 		})
 	})
@@ -426,8 +416,7 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
-				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(strings.TrimSpace(w.Body.String()), ShouldEqual, "get dataset error")
+				assertInternalServerErr(w)
 
 				recCalls := auditMock.RecordCalls()
 				So(len(recCalls), ShouldEqual, 2)
@@ -581,12 +570,7 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 	ap := common.Params{"dataset_id": "123"}
 
 	Convey("given audit action attempted returns an error", t, func() {
-		auditor := getMockAuditorFunc(func(a string, r string) error {
-			if a == addDatasetAction && r == audit.Attempted {
-				return errors.New("auditing error")
-			}
-			return nil
-		})
+		auditor := createAuditor(addDatasetAction, audit.Attempted)
 
 		Convey("when add dataset is called", func() {
 			r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString("{"))
@@ -598,9 +582,8 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
-				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(strings.TrimSpace(w.Body.String()), ShouldEqual, errs.ErrInternalServer.Error())
 
+				assertInternalServerErr(w)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
@@ -612,12 +595,7 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 	})
 
 	Convey("given audit action unsuccessful returns an error", t, func() {
-		auditor := getMockAuditorFunc(func(a string, r string) error {
-			if a == addDatasetAction && r == audit.Unsuccessful {
-				return errors.New("auditing error")
-			}
-			return nil
-		})
+		auditor := createAuditor(addDatasetAction, audit.Unsuccessful)
 
 		Convey("when datastore getdataset returns an error", func() {
 			r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString("{"))
@@ -633,9 +611,7 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
-				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(strings.TrimSpace(w.Body.String()), ShouldEqual, "get dataset error")
-
+				assertInternalServerErr(w)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
@@ -689,8 +665,7 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
-				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(strings.TrimSpace(w.Body.String()), ShouldEqual, "upsert datset error")
+				assertInternalServerErr(w)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
@@ -704,12 +679,7 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 	})
 
 	Convey("given audit action successful returns an error", t, func() {
-		auditor := getMockAuditorFunc(func(a string, r string) error {
-			if a == addDatasetAction && r == audit.Successful {
-				return errors.New("auditing error")
-			}
-			return nil
-		})
+		auditor := createAuditor(addDatasetAction, audit.Successful)
 
 		Convey("when add dataset is successful", func() {
 			r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(datasetPayload))
@@ -1524,14 +1494,6 @@ func createAuditor(actionErrTrigger string, resultErrTrigger string) *audit.Audi
 				return ErrAuditTest
 			}
 			return nil
-		},
-	}
-}
-
-func getMockAuditorFunc(f func(action string, result string) error) *audit.AuditorServiceMock {
-	return &audit.AuditorServiceMock{
-		RecordFunc: func(ctx context.Context, action string, result string, params common.Params) error {
-			return f(action, result)
 		},
 	}
 }

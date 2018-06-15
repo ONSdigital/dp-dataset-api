@@ -1,6 +1,7 @@
 package instance_test
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -8,17 +9,21 @@ import (
 	"strings"
 	"testing"
 
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/go-ns/audit"
+	"github.com/ONSdigital/go-ns/common"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
-
-	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 )
 
 const secretKey = "coffee"
 const host = "http://localhost:8080"
+
+var errAudit = errors.New("auditing error")
+var updateImportTaskAction = "updateImportTask"
 
 func createRequestWithToken(method, url string, body io.Reader) *http.Request {
 	r := httptest.NewRequest(method, url, body)
@@ -557,13 +562,21 @@ func TestStore_UpdateImportTask_UpdateImportObservations(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Successful, ap)
 	})
 }
 
@@ -581,7 +594,8 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -590,6 +604,13 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("update to an import task but missing mandatory field, 'state' returns http 400 response", t, func() {
@@ -603,7 +624,8 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -611,6 +633,13 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, "bad request - invalid import observation task, must include state")
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
@@ -624,7 +653,8 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -632,6 +662,14 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, "bad request - invalid task state value for import observations: notvalid")
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 }
 
@@ -649,7 +687,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -658,6 +697,14 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("update to an import task with an empty request body returns http 400 response", t, func() {
@@ -671,7 +718,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -680,6 +728,14 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("update to an import task without specifying a task returns http 400 response", t, func() {
@@ -693,7 +749,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -702,6 +759,14 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("update to an import task without a 'dimension_name' returns http 400 response", t, func() {
@@ -715,7 +780,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -724,6 +790,14 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("update to an import task without a 'dimension_name' returns http 400 response", t, func() {
@@ -737,7 +811,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -746,6 +821,14 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
@@ -759,7 +842,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -768,6 +852,14 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
@@ -781,7 +873,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -790,6 +883,14 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("update to an import task but lose connection to datastore when updating resource", t, func() {
@@ -803,15 +904,24 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, "failed to update build hierarchy task state")
+		So(w.Body.String(), ShouldContainSubstring, "internal error")
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 }
 
@@ -829,13 +939,22 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Successful, ap)
 	})
 }
 
@@ -853,12 +972,21 @@ func TestStore_UpdateImportTask_ReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 }
 
@@ -1074,7 +1202,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -1083,6 +1212,14 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("update to an import task with an empty request body returns http 400 response", t, func() {
@@ -1096,7 +1233,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -1105,6 +1243,14 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("update to an import task without specifying a task returns http 400 response", t, func() {
@@ -1118,7 +1264,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -1127,6 +1274,14 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("update to an import task without a 'dimension_name' returns http 400 response", t, func() {
@@ -1140,7 +1295,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -1162,7 +1318,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -1171,6 +1328,14 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
@@ -1184,7 +1349,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -1193,6 +1359,14 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("update to an import task with a dimension that does not exist returns http 404 response", t, func() {
@@ -1206,7 +1380,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -1215,6 +1390,14 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 
 	Convey("update to an import task but lose connection to datastore when updating resource", t, func() {
@@ -1228,15 +1411,24 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, "failed to update build search index task state")
+		So(w.Body.String(), ShouldContainSubstring, "internal error")
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
 	})
 }
 
@@ -1254,7 +1446,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask(t *testing.T) {
 			},
 		}
 
-		instance := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := auditorMock()
+		instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instance.UpdateImportTask(w, r)
 
@@ -1262,5 +1455,235 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask(t *testing.T) {
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
+
+		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+		// router so no URL params are available in the test - hence empty string.
+
+		calls := auditor.RecordCalls()
+		So(len(calls), ShouldEqual, 2)
+		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+		verifyAuditCall(calls[1], updateImportTaskAction, audit.Successful, ap)
 	})
+}
+
+func TestStore_UpdateImportTask_AuditAttemptedError(t *testing.T) {
+	t.Parallel()
+	Convey("given audit action attempted returns an error", t, func() {
+		auditor := auditorMockWithErr(updateImportTaskAction, audit.Attempted)
+
+		Convey("when update import task is called", func() {
+			body := strings.NewReader(`{"build_search_indexes":[{"state":"completed"}]}`)
+			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{}
+			instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+			instance.UpdateImportTask(w, r)
+
+			Convey("then a 500 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+				// router so no URL params are available in the test - hence empty string.
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 1)
+				verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+			})
+		})
+	})
+}
+
+func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
+	t.Parallel()
+	Convey("given audit action unsuccessful returns an error", t, func() {
+		Convey("when the request body fails to marshal into the updateImportTask model", func() {
+			body := strings.NewReader(`THIS IS NOT JSON`)
+			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{}
+			auditor := auditorMockWithErr(updateImportTaskAction, audit.Unsuccessful)
+			instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+			instance.UpdateImportTask(w, r)
+
+			Convey("then a 500 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+				// router so no URL params are available in the test - hence empty string.
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+				verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+			})
+		})
+
+		Convey("when UpdateImportObservationsTaskState returns an error", func() {
+			body := strings.NewReader(`{"import_observations":{"state":"completed"}}`)
+			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
+					return errors.New("error")
+				},
+			}
+
+			auditor := auditorMockWithErr(updateImportTaskAction, audit.Unsuccessful)
+			instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+			instance.UpdateImportTask(w, r)
+
+			Convey("then a 500 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+				// router so no URL params are available in the test - hence empty string.
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+				verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+			})
+		})
+
+		Convey("when UpdateBuildHierarchyTaskState returns an error", func() {
+			body := strings.NewReader(`{"build_hierarchies":[{"dimension_name": "geography", "state":"completed"}]}`)
+			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
+					return errors.New("error")
+				},
+			}
+
+			auditor := auditorMockWithErr(updateImportTaskAction, audit.Unsuccessful)
+			instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+			instance.UpdateImportTask(w, r)
+
+			Convey("then a 500 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(w.Body.String(), ShouldContainSubstring, "internal error")
+				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+				// router so no URL params are available in the test - hence empty string.
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+				verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+			})
+		})
+
+		Convey("when UpdateBuildSearchTaskState returns an error", func() {
+			auditor := auditorMockWithErr(updateImportTaskAction, audit.Unsuccessful)
+			body := strings.NewReader(`{"build_search_indexes":[{"dimension_name": "geography", "state":"completed"}]}`)
+			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
+					return errors.New("error")
+				},
+			}
+			instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+			instance.UpdateImportTask(w, r)
+
+			Convey("then a 500 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
+
+				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+				// router so no URL params are available in the test - hence empty string.
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+				verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+			})
+		})
+	})
+}
+
+func TestStore_UpdateImportTask_AuditSuccessfulError(t *testing.T) {
+	t.Parallel()
+	Convey("given audit action successful returns an error", t, func() {
+		auditor := auditorMockWithErr(updateImportTaskAction, audit.Successful)
+
+		Convey("when update import task is called", func() {
+			body := strings.NewReader(`{"import_observations":{"state":"completed"}}`)
+			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
+					return nil
+				},
+			}
+			instance := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+			instance.UpdateImportTask(w, r)
+
+			Convey("then a 500 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
+				// router so no URL params are available in the test - hence empty string.
+
+				calls := auditor.RecordCalls()
+				So(len(calls), ShouldEqual, 2)
+				verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+				verifyAuditCall(calls[1], updateImportTaskAction, audit.Successful, ap)
+			})
+		})
+	})
+}
+
+func auditorMockWithErr(a string, r string) *audit.AuditorServiceMock {
+	return &audit.AuditorServiceMock{
+		RecordFunc: func(ctx context.Context, action string, result string, params common.Params) error {
+			if action == a && r == result {
+				audit.LogActionFailure(ctx, a, r, errAudit, audit.ToLogData(params))
+				return errAudit
+			}
+			return nil
+		},
+	}
+}
+
+func auditorMock() *audit.AuditorServiceMock {
+	return &audit.AuditorServiceMock{
+		RecordFunc: func(ctx context.Context, action string, result string, params common.Params) error {
+			return nil
+		},
+	}
+}
+
+func verifyAuditCall(call struct {
+	Ctx    context.Context
+	Action string
+	Result string
+	Params common.Params
+}, expectedAction string, expectedResult string, expectedParams common.Params) {
+	So(call.Action, ShouldEqual, expectedAction)
+	So(call.Result, ShouldEqual, expectedResult)
+	So(call.Params, ShouldResemble, expectedParams)
 }
