@@ -73,11 +73,11 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 
 	b, err := json.Marshal(results)
 	if err != nil {
-		internalError(w, err)
+		internalError(ctx, w, err)
 		return
 	}
 
-	writeBody(w, b)
+	writeBody(ctx, w, b)
 	log.InfoCtx(ctx, "instance getList: request successful", log.Data{"query": stateFilterQuery})
 }
 
@@ -99,18 +99,18 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	if err = models.CheckState("instance", instance.State); err != nil {
 		data["state"] = instance.State
 		log.ErrorCtx(ctx, errors.WithMessage(err, "instance get: instance has an invalid state"), data)
-		internalError(w, err)
+		internalError(ctx, w, err)
 		return
 	}
 
 	b, err := json.Marshal(instance)
 	if err != nil {
 		log.ErrorCtx(ctx, errors.WithMessage(err, "failed to marshal instance to json"), data)
-		internalError(w, err)
+		internalError(ctx, w, err)
 		return
 	}
 
-	writeBody(w, b)
+	writeBody(ctx, w, b)
 	log.InfoCtx(ctx, "instance get: request successful", data)
 }
 
@@ -135,20 +135,20 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	instance, err = s.AddInstance(instance)
 	if err != nil {
 		log.ErrorCtx(ctx, errors.WithMessage(err, "instance add: store.AddInstance returned an error"), data)
-		internalError(w, err)
+		internalError(ctx, w, err)
 		return
 	}
 
 	b, err := json.Marshal(instance)
 	if err != nil {
 		log.ErrorCtx(ctx, errors.WithMessage(err, "instance add: failed to marshal instance to json"), data)
-		internalError(w, err)
+		internalError(ctx, w, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	writeBody(w, b)
+	writeBody(ctx, w, b)
 	log.InfoCtx(ctx, "instance add: request successful", data)
 }
 
@@ -516,42 +516,74 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 		}
 
 		validationErrs := make([]error, 0)
+		var hasImportTasks bool
 
 		if tasks.ImportObservations != nil {
+			hasImportTasks = true
 			if tasks.ImportObservations.State != "" {
 				if tasks.ImportObservations.State != models.CompletedState {
 					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value for import observations: %v", tasks.ImportObservations.State))
-				} else if err := s.UpdateImportObservationsTaskState(id, tasks.ImportObservations.State); err != nil {
-					log.ErrorCtx(ctx, errors.WithMessage(err, "Failed to update import observations task state"), data)
-					return &updateTaskErr{err, http.StatusInternalServerError}
+				} else {
+					if err := s.UpdateImportObservationsTaskState(id, tasks.ImportObservations.State); err != nil {
+						log.ErrorCtx(ctx, errors.WithMessage(err, "Failed to update import observations task state"), data)
+						return &updateTaskErr{err, http.StatusInternalServerError}
+					}
 				}
+			} else {
+				validationErrs = append(validationErrs, errors.New("bad request - invalid import observation task, must include state"))
 			}
 		}
 
 		if tasks.BuildHierarchyTasks != nil {
+			hasImportTasks = true
+			var hasHierarchyImportTask bool
 			for _, task := range tasks.BuildHierarchyTasks {
-				if task.State != "" {
-					if task.State != models.CompletedState {
-						validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
-					} else if err := s.UpdateBuildHierarchyTaskState(id, task.DimensionName, task.State); err != nil {
-						log.ErrorCtx(ctx, errors.WithMessage(err, "Failed to update build hierarchy task state"), data)
+				hasHierarchyImportTask = true
+				if err := models.ValidateImportTask(task.GenericTaskDetails); err != nil {
+					validationErrs = append(validationErrs, err)
+				} else {
+					if err := s.UpdateBuildHierarchyTaskState(id, task.DimensionName, task.State); err != nil {
+						if err.Error() == "not found" {
+							notFoundErr := task.DimensionName + " hierarchy import task does not exist"
+							log.ErrorCtx(ctx, errors.WithMessage(err, notFoundErr), data)
+							return &updateTaskErr{errors.New(notFoundErr), http.StatusNotFound}
+						}
+						log.ErrorCtx(ctx, errors.WithMessage(err, "failed to update build hierarchy task state"), data)
 						return &updateTaskErr{err, http.StatusInternalServerError}
 					}
 				}
+			}
+			if !hasHierarchyImportTask {
+				validationErrs = append(validationErrs, errors.New("bad request - missing hierarchy task"))
 			}
 		}
 
 		if tasks.BuildSearchIndexTasks != nil {
+			hasImportTasks = true
+			var hasSearchIndexImportTask bool
 			for _, task := range tasks.BuildSearchIndexTasks {
-				if task.State != "" {
-					if task.State != models.CompletedState {
-						validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
-					} else if err := s.UpdateBuildSearchTaskState(id, task.DimensionName, task.State); err != nil {
-						log.ErrorCtx(ctx, errors.WithMessage(err, "Failed to update build search index task state"), data)
+				hasSearchIndexImportTask = true
+				if err := models.ValidateImportTask(task.GenericTaskDetails); err != nil {
+					validationErrs = append(validationErrs, err)
+				} else {
+					if err := s.UpdateBuildSearchTaskState(id, task.DimensionName, task.State); err != nil {
+						if err.Error() == "not found" {
+							notFoundErr := task.DimensionName + " search index import task does not exist"
+							log.ErrorCtx(ctx, errors.WithMessage(err, notFoundErr), data)
+							return &updateTaskErr{errors.New(notFoundErr), http.StatusNotFound}
+						}
+						log.ErrorCtx(ctx, errors.WithMessage(err, "failed to update build hierarchy task state"), data)
 						return &updateTaskErr{err, http.StatusInternalServerError}
 					}
 				}
 			}
+			if !hasSearchIndexImportTask {
+				validationErrs = append(validationErrs, errors.New("bad request - missing search index task"))
+			}
+		}
+
+		if !hasImportTasks {
+			validationErrs = append(validationErrs, errors.New("bad request - request body does not contain any import tasks"))
 		}
 
 		if len(validationErrs) > 0 {
@@ -637,15 +669,15 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 	return &instance, nil
 }
 
-func internalError(w http.ResponseWriter, err error) {
-	log.Error(err, nil)
+func internalError(ctx context.Context, w http.ResponseWriter, err error) {
+	log.ErrorCtx(ctx, err, nil)
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
-func writeBody(w http.ResponseWriter, b []byte) {
+func writeBody(ctx context.Context, w http.ResponseWriter, b []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(b); err != nil {
-		log.Error(err, nil)
+		log.ErrorCtx(ctx, err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
