@@ -434,17 +434,6 @@ func (s *Store) getEdition(ctx context.Context, datasetID, edition, instanceID s
 	return editionDoc, nil
 }
 
-func validateInstanceUpdate(expectedState string, currentInstance, instance *models.Instance) error {
-	var err error
-	if currentInstance.State == models.PublishedState {
-		err = fmt.Errorf("Unable to update resource state, as the version has been published")
-	} else if instance.State == models.EditionConfirmedState && currentInstance.Edition == "" && instance.Edition == "" {
-		err = errors.New("Unable to update resource, missing a value for the edition")
-	}
-
-	return err
-}
-
 func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *models.EditionUpdate) *models.InstanceLinks {
 	stringifiedVersion := strconv.Itoa(instance.Version)
 
