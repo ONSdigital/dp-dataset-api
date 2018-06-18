@@ -67,17 +67,6 @@ func createRequestWithAuth(method, URL string, body io.Reader) (*http.Request, e
 	return r, err
 }
 
-func verifyAuditRecordCalls(c struct {
-	Ctx    context.Context
-	Action string
-	Result string
-	Params common.Params
-}, expectedAction string, expectedResult string, expectedParams common.Params) {
-	So(c.Action, ShouldEqual, expectedAction)
-	So(c.Result, ShouldEqual, expectedResult)
-	So(c.Params, ShouldResemble, expectedParams)
-}
-
 func TestGetDatasetsReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("A successful request to get dataset returns 200 OK response", t, func() {

@@ -42,10 +42,11 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		recCalls := auditMock.RecordCalls()
-		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getEditionsAction, audit.Successful, auditParams)
+		auditMock.AssertRecordCalls(
+			audit_mock.Expected{getEditionsAction, audit.Attempted, auditParams},
+			audit_mock.Expected{getEditionsAction, audit.Successful, auditParams},
+		)
+
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 	})
@@ -74,9 +75,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		recCalls := auditMock.RecordCalls()
-		So(len(recCalls), ShouldEqual, 1)
-		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
+		auditMock.AssertRecordCalls(audit_mock.Expected{getEditionsAction, audit.Attempted, auditParams})
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 	})
@@ -99,10 +98,10 @@ func TestGetEditionsAuditingError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		recCalls := auditMock.RecordCalls()
-		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getEditionsAction, audit.Successful, auditParams)
+		auditMock.AssertRecordCalls(
+			audit_mock.Expected{getEditionsAction, audit.Attempted, auditParams},
+			audit_mock.Expected{getEditionsAction, audit.Successful, auditParams},
+		)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 	})
@@ -123,10 +122,10 @@ func TestGetEditionsAuditingError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		recCalls := auditMock.RecordCalls()
-		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getEditionsAction, audit.Unsuccessful, auditParams)
+		auditMock.AssertRecordCalls(
+			audit_mock.Expected{getEditionsAction, audit.Attempted, auditParams},
+			audit_mock.Expected{getEditionsAction, audit.Unsuccessful, auditParams},
+		)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
@@ -150,10 +149,10 @@ func TestGetEditionsAuditingError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		recCalls := auditMock.RecordCalls()
-		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getEditionsAction, audit.Unsuccessful, auditParams)
+		auditMock.AssertRecordCalls(
+			audit_mock.Expected{getEditionsAction, audit.Attempted, auditParams},
+			audit_mock.Expected{getEditionsAction, audit.Unsuccessful, auditParams},
+		)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
@@ -179,10 +178,10 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
 
-		recCalls := auditMock.RecordCalls()
-		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getEditionsAction, audit.Unsuccessful, auditParams)
+		auditMock.AssertRecordCalls(
+			audit_mock.Expected{getEditionsAction, audit.Attempted, auditParams},
+			audit_mock.Expected{getEditionsAction, audit.Unsuccessful, auditParams},
+		)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
@@ -206,10 +205,10 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
 
-		recCalls := auditMock.RecordCalls()
-		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getEditionsAction, audit.Unsuccessful, auditParams)
+		auditMock.AssertRecordCalls(
+			audit_mock.Expected{getEditionsAction, audit.Attempted, auditParams},
+			audit_mock.Expected{getEditionsAction, audit.Unsuccessful, auditParams},
+		)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
@@ -236,10 +235,10 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Edition not found\n")
 
-		recCalls := auditMock.RecordCalls()
-		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionsAction, audit.Attempted, auditParams)
-		verifyAuditRecordCalls(recCalls[1], getEditionsAction, audit.Unsuccessful, auditParams)
+		auditMock.AssertRecordCalls(
+			audit_mock.Expected{getEditionsAction, audit.Attempted, auditParams},
+			audit_mock.Expected{getEditionsAction, audit.Unsuccessful, auditParams},
+		)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
@@ -287,13 +286,12 @@ func TestGetEditionReturnsOK(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		recCalls := auditMock.RecordCalls()
-		p := common.Params{"dataset_id": "123-456", "edition": "678"}
-
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
-		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Successful, p)
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+		auditMock.AssertRecordCalls(
+			audit_mock.Expected{getEditionAction, audit.Attempted, p},
+			audit_mock.Expected{getEditionAction, audit.Successful, p},
+		)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
@@ -315,15 +313,14 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		recCalls := auditMock.RecordCalls()
-		p := common.Params{"dataset_id": "123-456", "edition": "678"}
-
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
 
-		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
-		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Unsuccessful, p)
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+		auditMock.AssertRecordCalls(
+			audit_mock.Expected{getEditionAction, audit.Attempted, p},
+			audit_mock.Expected{getEditionAction, audit.Unsuccessful, p},
+		)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
@@ -344,15 +341,14 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		recCalls := auditMock.RecordCalls()
-		p := common.Params{"dataset_id": "123-456", "edition": "678"}
-
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
 
-		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
-		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Unsuccessful, p)
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+		auditMock.AssertRecordCalls(
+			audit_mock.Expected{getEditionAction, audit.Attempted, p},
+			audit_mock.Expected{getEditionAction, audit.Unsuccessful, p},
+		)
 
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
@@ -376,15 +372,15 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		recCalls := auditMock.RecordCalls()
-		p := common.Params{"dataset_id": "123-456", "edition": "678"}
-
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Edition not found\n")
 
-		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
-		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Unsuccessful, p)
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+		auditMock.AssertRecordCalls(
+			audit_mock.Expected{getEditionAction, audit.Attempted, p},
+			audit_mock.Expected{getEditionAction, audit.Unsuccessful, p},
+		)
+
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
@@ -406,14 +402,14 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		recCalls := auditMock.RecordCalls()
-		p := common.Params{"dataset_id": "123-456", "edition": "678"}
-
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Edition not found\n")
-		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
-		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Unsuccessful, p)
+
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+		auditMock.AssertRecordCalls(
+			audit_mock.Expected{getEditionAction, audit.Attempted, p},
+			audit_mock.Expected{getEditionAction, audit.Unsuccessful, p},
+		)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
@@ -431,12 +427,10 @@ func TestGetEditionAuditErrors(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		recCalls := auditMock.RecordCalls()
-		p := common.Params{"dataset_id": "123-456", "edition": "678"}
-
 		assertInternalServerErr(w)
-		So(len(recCalls), ShouldEqual, 1)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
+		auditMock.AssertRecordCalls(
+			audit_mock.Expected{getEditionAction, audit.Attempted, common.Params{"dataset_id": "123-456", "edition": "678"}},
+		)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
 	})
@@ -455,13 +449,13 @@ func TestGetEditionAuditErrors(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		recCalls := auditMock.RecordCalls()
-		p := common.Params{"dataset_id": "123-456", "edition": "678"}
-
 		assertInternalServerErr(w)
-		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
-		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Unsuccessful, p)
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+		auditMock.AssertRecordCalls(
+			audit_mock.Expected{getEditionAction, audit.Attempted, p},
+			audit_mock.Expected{getEditionAction, audit.Unsuccessful, p},
+		)
+
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
 	})
@@ -484,13 +478,12 @@ func TestGetEditionAuditErrors(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		recCalls := auditMock.RecordCalls()
-		p := common.Params{"dataset_id": "123-456", "edition": "678"}
-
 		assertInternalServerErr(w)
-		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
-		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Unsuccessful, p)
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+		auditMock.AssertRecordCalls(
+			audit_mock.Expected{getEditionAction, audit.Attempted, p},
+			audit_mock.Expected{getEditionAction, audit.Unsuccessful, p},
+		)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
@@ -512,13 +505,12 @@ func TestGetEditionAuditErrors(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		recCalls := auditMock.RecordCalls()
-		p := common.Params{"dataset_id": "123-456", "edition": "678"}
-
 		assertInternalServerErr(w)
-		So(len(recCalls), ShouldEqual, 2)
-		verifyAuditRecordCalls(recCalls[0], getEditionAction, audit.Attempted, p)
-		verifyAuditRecordCalls(recCalls[1], getEditionAction, audit.Successful, p)
+		p := common.Params{"dataset_id": "123-456", "edition": "678"}
+		auditMock.AssertRecordCalls(
+			audit_mock.Expected{getEditionAction, audit.Attempted, p},
+			audit_mock.Expected{getEditionAction, audit.Successful, p},
+		)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
