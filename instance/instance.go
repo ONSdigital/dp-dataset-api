@@ -337,20 +337,37 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 func validateInstanceStateUpdate(instance, currentInstance *models.Instance) (state int, err error) {
 	if instance.State != "" && instance.State != currentInstance.State {
-		switch currentInstance.State {
-		case models.CreatedState:
-			fallthrough
+		switch instance.State {
+		/*		case models.CreatedState:
+				if currentInstance.State != models.SubmittedState {
+					return http.StatusForbidden, errors.New("Unable to update resource, expected resource to have a state of " + models.SubmittedState)
+				}
+				break*/
 		case models.SubmittedState:
-			fallthrough
+			if currentInstance.State != models.CreatedState {
+				return http.StatusForbidden, errors.New("Unable to update resource, expected resource to have a state of " + models.CreatedState)
+			}
+			break
 		case models.CompletedState:
+			if currentInstance.State != models.SubmittedState {
+				return http.StatusForbidden, errors.New("Unable to update resource, expected resource to have a state of " + models.SubmittedState)
+			}
+			break
+		case models.EditionConfirmedState:
+			if currentInstance.State != models.CompletedState {
+				return http.StatusForbidden, errors.New("Unable to update resource, expected resource to have a state of " + models.CompletedState)
+			}
 			break
 		case models.AssociatedState:
-			fallthrough
+			if currentInstance.State != models.EditionConfirmedState {
+				return http.StatusForbidden, errors.New("Unable to update resource, expected resource to have a state of " + models.EditionConfirmedState)
+			}
+			break
 		case models.PublishedState:
-			fallthrough
-		case models.EditionConfirmedState:
-			err = errors.New("forbidden - unable to update instance resource from " + currentInstance.State)
-			return http.StatusForbidden, err
+			if currentInstance.State != models.AssociatedState {
+				return http.StatusForbidden, errors.New("Unable to update resource, expected resource to have a state of " + models.AssociatedState)
+			}
+			break
 		default:
 			err = errors.New("instance resource has an invalid state")
 			return http.StatusInternalServerError, err
