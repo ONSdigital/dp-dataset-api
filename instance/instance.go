@@ -338,11 +338,6 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 func validateInstanceStateUpdate(instance, currentInstance *models.Instance) (state int, err error) {
 	if instance.State != "" && instance.State != currentInstance.State {
 		switch instance.State {
-		/*		case models.CreatedState:
-				if currentInstance.State != models.SubmittedState {
-					return http.StatusForbidden, errors.New("Unable to update resource, expected resource to have a state of " + models.SubmittedState)
-				}
-				break*/
 		case models.SubmittedState:
 			if currentInstance.State != models.CreatedState {
 				return http.StatusForbidden, errors.New("Unable to update resource, expected resource to have a state of " + models.CreatedState)
