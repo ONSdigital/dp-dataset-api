@@ -49,11 +49,11 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 
-		calls := auditor.RecordCalls()
 		ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
-		verifyAuditRecordCalls(calls[1], getMetadataAction, audit.Successful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{getMetadataAction, audit.Attempted, ap},
+			audit_mock.Expected{getMetadataAction, audit.Successful, ap},
+		)
 
 		bytes, err := ioutil.ReadAll(w.Body)
 		if err != nil {
@@ -112,11 +112,11 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 
-		calls := auditor.RecordCalls()
 		ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
-		verifyAuditRecordCalls(calls[1], getMetadataAction, audit.Successful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{getMetadataAction, audit.Attempted, ap},
+			audit_mock.Expected{getMetadataAction, audit.Successful, ap},
+		)
 
 		bytes, err := ioutil.ReadAll(w.Body)
 		if err != nil {
@@ -318,9 +318,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 1)
-				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
+				auditor.AssertRecordCalls(audit_mock.Expected{getMetadataAction, audit.Attempted, ap})
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -347,10 +345,10 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
-				verifyAuditRecordCalls(calls[1], getMetadataAction, audit.Unsuccessful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getMetadataAction, audit.Attempted, ap},
+					audit_mock.Expected{getMetadataAction, audit.Unsuccessful, ap},
+				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -373,10 +371,10 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
-				verifyAuditRecordCalls(calls[1], getMetadataAction, audit.Unsuccessful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getMetadataAction, audit.Attempted, ap},
+					audit_mock.Expected{getMetadataAction, audit.Unsuccessful, ap},
+				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -402,10 +400,10 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
-				verifyAuditRecordCalls(calls[1], getMetadataAction, audit.Unsuccessful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getMetadataAction, audit.Attempted, ap},
+					audit_mock.Expected{getMetadataAction, audit.Unsuccessful, ap},
+				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -434,10 +432,10 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
-				verifyAuditRecordCalls(calls[1], getMetadataAction, audit.Unsuccessful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getMetadataAction, audit.Attempted, ap},
+					audit_mock.Expected{getMetadataAction, audit.Unsuccessful, ap},
+				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -468,10 +466,10 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
-				verifyAuditRecordCalls(calls[1], getMetadataAction, audit.Unsuccessful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getMetadataAction, audit.Attempted, ap},
+					audit_mock.Expected{getMetadataAction, audit.Unsuccessful, ap},
+				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -505,10 +503,10 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 2)
-				verifyAuditRecordCalls(calls[0], getMetadataAction, audit.Attempted, ap)
-				verifyAuditRecordCalls(calls[1], getMetadataAction, audit.Successful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getMetadataAction, audit.Attempted, ap},
+					audit_mock.Expected{getMetadataAction, audit.Successful, ap},
+				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
