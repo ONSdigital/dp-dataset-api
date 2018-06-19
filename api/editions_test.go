@@ -36,7 +36,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New()
+		auditMock := audit_mock.New(t)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -66,7 +66,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New()
+		auditMock := audit_mock.New(t)
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			return errors.New("get editions action attempted audit event error")
 		}
@@ -92,7 +92,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.NewErroring(getEditionsAction, audit.Successful)
+		auditMock := audit_mock.NewErroring(t, getEditionsAction, audit.Successful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -116,7 +116,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.NewErroring(getEditionsAction, audit.Unsuccessful)
+		auditMock := audit_mock.NewErroring(t, getEditionsAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -143,7 +143,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.NewErroring(getEditionsAction, audit.Unsuccessful)
+		auditMock := audit_mock.NewErroring(t, getEditionsAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -170,7 +170,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New()
+		auditMock := audit_mock.New(t)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -197,7 +197,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New()
+		auditMock := audit_mock.New(t)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -227,7 +227,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New()
+		auditMock := audit_mock.New(t)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -256,7 +256,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -281,7 +281,7 @@ func TestGetEditionReturnsOK(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New()
+		auditMock := audit_mock.New(t)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -308,7 +308,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New()
+		auditMock := audit_mock.New(t)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -336,7 +336,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New()
+		auditMock := audit_mock.New(t)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -367,7 +367,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New()
+		auditMock := audit_mock.New(t)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -397,7 +397,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New()
+		auditMock := audit_mock.New(t)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -422,7 +422,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
 
-		auditMock := audit_mock.NewErroring(getEditionAction, audit.Attempted)
+		auditMock := audit_mock.NewErroring(t, getEditionAction, audit.Attempted)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -444,7 +444,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.NewErroring(getEditionAction, audit.Unsuccessful)
+		auditMock := audit_mock.NewErroring(t, getEditionAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -473,7 +473,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.NewErroring(getEditionAction, audit.Unsuccessful)
+		auditMock := audit_mock.NewErroring(t, getEditionAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -500,7 +500,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.NewErroring(getEditionAction, audit.Successful)
+		auditMock := audit_mock.NewErroring(t, getEditionAction, audit.Successful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)

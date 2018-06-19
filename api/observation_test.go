@@ -94,7 +94,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := audit_mock.New(t)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, mockedObservationStore)
 
 		Convey("When request contains query parameters where the dimension name is in lower casing", func() {
@@ -207,7 +207,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), mockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), mockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(w.Body.String(), ShouldContainSubstring, getTestData("expectedDocWithMultipleObservations"))
@@ -231,7 +231,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
@@ -249,7 +249,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
@@ -267,7 +267,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
@@ -288,7 +288,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Edition not found\n")
@@ -313,7 +313,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Version not found\n")
@@ -338,7 +338,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -365,7 +365,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
@@ -392,7 +392,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
@@ -420,7 +420,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -448,7 +448,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "Incorrect selection of query parameters: [geography], these dimensions do not exist for this version of the dataset\n")
@@ -477,7 +477,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "Missing query parameters for the following dimensions: [age]\n")
@@ -506,7 +506,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "only one wildcard (*) is allowed as a value in selected query parameters\n")
@@ -542,7 +542,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), mockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), mockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "No observations found\n")
@@ -598,7 +598,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 
 		mockedObservationStore := &mocks.ObservationStoreMock{}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), mockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), mockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "Multi-valued query parameters for the following dimensions: [geography]\n")
@@ -808,7 +808,7 @@ func TestExtractQueryParameters(t *testing.T) {
 
 func TestGetObservationAuditAttemptedError(t *testing.T) {
 	Convey("given audit action attempted returns an error", t, func() {
-		auditor := audit_mock.NewErroring(getObservationsAction, audit.Attempted)
+		auditor := audit_mock.NewErroring(t, getObservationsAction, audit.Attempted)
 
 		mockedDataStore := &storetest.StorerMock{}
 		mockedObservationStore := &mocks.ObservationStoreMock{}
@@ -839,7 +839,7 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 	Convey("given audit action unsuccessful returns an error", t, func() {
 
 		Convey("when datastore.getDataset returns an error", func() {
-			auditor := audit_mock.NewErroring(getObservationsAction, audit.Unsuccessful)
+			auditor := audit_mock.NewErroring(t, getObservationsAction, audit.Unsuccessful)
 
 			mockedDataStore := &storetest.StorerMock{
 				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
@@ -869,7 +869,7 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 		})
 
 		Convey("when datastore.getEdition returns an error", func() {
-			auditor := audit_mock.NewErroring(getObservationsAction, audit.Unsuccessful)
+			auditor := audit_mock.NewErroring(t, getObservationsAction, audit.Unsuccessful)
 
 			mockedDataStore := &storetest.StorerMock{
 				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
@@ -902,7 +902,7 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 		})
 
 		Convey("when datastore.getVersion returns an error", func() {
-			auditor := audit_mock.NewErroring(getObservationsAction, audit.Unsuccessful)
+			auditor := audit_mock.NewErroring(t, getObservationsAction, audit.Unsuccessful)
 
 			mockedDataStore := &storetest.StorerMock{
 				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
@@ -938,7 +938,7 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 		})
 
 		Convey("when the version does not have no header data", func() {
-			auditor := audit_mock.NewErroring(getObservationsAction, audit.Unsuccessful)
+			auditor := audit_mock.NewErroring(t, getObservationsAction, audit.Unsuccessful)
 
 			mockedDataStore := &storetest.StorerMock{
 				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
@@ -977,7 +977,7 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 
 func TestGetObservationAuditSuccessfulError(t *testing.T) {
 	Convey("given audit action successful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(getObservationsAction, audit.Successful)
+		auditor := audit_mock.NewErroring(t, getObservationsAction, audit.Successful)
 
 		Convey("when get observations is called with a valid request", func() {
 
