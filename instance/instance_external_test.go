@@ -43,11 +43,13 @@ func TestGetInstancesReturnsOK(t *testing.T) {
 			},
 		}
 
-		instanceAPI := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore}
+		auditor := audit_mock.New(t)
+		instanceAPI := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore, Auditor: auditor}
 		instanceAPI.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
+		auditor.AssertRecordCalls(audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil})
 	})
 }
 
@@ -65,7 +67,8 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 			},
 		}
 
-		instanceAPI := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore}
+		auditor := audit_mock.New(t)
+		instanceAPI := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore, Auditor: auditor}
 		instanceAPI.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)

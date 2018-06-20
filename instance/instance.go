@@ -44,6 +44,7 @@ func (e updateTaskErr) Error() string {
 
 // List of audit actions for instances
 const (
+	GetInstancesAction      = "getInstances"
 	PutInstanceAction       = "putInstance"
 	PutDimensionAction      = "putDimension"
 	PutInsertedObservations = "putInsertedObservations"
@@ -53,6 +54,12 @@ const (
 //GetList a list of all instances
 func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
+	if err := s.Auditor.Record(ctx, GetInstancesAction, audit.Attempted, nil); err != nil {
+		handleInstanceErr(ctx, err, w, nil)
+		return
+	}
+
 	stateFilterQuery := r.URL.Query().Get("state")
 	var stateFilterList []string
 	if stateFilterQuery != "" {
