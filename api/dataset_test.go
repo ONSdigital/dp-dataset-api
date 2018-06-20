@@ -1104,7 +1104,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		ap := common.Params{"dataset_id": "123"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{deleteDatasetAction, audit.Attempted, ap},
-			//audit_mock.Expected{deleteDatasetAction, audit.Unsuccessful, ap},
+			audit_mock.Expected{deleteDatasetAction, audit.Unsuccessful, ap},
 		)
 	})
 

@@ -15,10 +15,10 @@
 			"revisionTime": "2018-06-07T08:14:26Z"
 		},
 		{
-			"checksumSHA1": "JFQH6sppY2PC3hxgGS2dLqrOowo=",
+			"checksumSHA1": "mp6nFue/RhvFd1wTkMuDs9B9j7Q=",
 			"path": "github.com/ONSdigital/go-ns/audit/audit_mock",
-			"revision": "7b75d25c0bc3ff61c5a7dd15f43cf30f0cb38a92",
-			"revisionTime": "2018-06-19T09:38:17Z"
+			"revision": "decf24c7278b350616b4a394883e2a3307b8dec9",
+			"revisionTime": "2018-06-19T13:52:32Z"
 		},
 		{
 			"checksumSHA1": "vyzH2Rju6G4A/uK4zqWIidfk3dA=",
