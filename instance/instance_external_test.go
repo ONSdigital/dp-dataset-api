@@ -43,13 +43,16 @@ func TestGetInstancesReturnsOK(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore, Auditor: auditor}
 		instanceAPI.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
-		auditor.AssertRecordCalls(audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil})
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil},
+			audit_mock.Expected{instance.GetInstancesAction, audit.Successful, nil},
+		)
 	})
 }
 
@@ -67,13 +70,17 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore, Auditor: auditor}
 		instanceAPI.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 		So(result, ShouldResemble, []string{models.CompletedState})
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil},
+			audit_mock.Expected{instance.GetInstancesAction, audit.Successful, common.Params{"query": "completed"}},
+		)
 	})
 
 	Convey("Get instances filtered by multiple state values returns only instances with those values", t, func() {
@@ -88,12 +95,17 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 			},
 		}
 
-		instanceAPI := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore}
+		auditor := audit_mock.New()
+		instanceAPI := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore, Auditor: auditor}
 		instanceAPI.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 		So(result, ShouldResemble, []string{models.CompletedState, models.EditionConfirmedState})
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil},
+			audit_mock.Expected{instance.GetInstancesAction, audit.Successful, common.Params{"query": "completed,edition-confirmed"}},
+		)
 	})
 }
 
@@ -109,11 +121,16 @@ func TestGetInstancesReturnsError(t *testing.T) {
 			},
 		}
 
-		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := audit_mock.New()
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 		instanceAPI.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil},
+			audit_mock.Expected{instance.GetInstancesAction, audit.Unsuccessful, nil},
+		)
 	})
 
 	Convey("Get instances returns bad request error", t, func() {
@@ -122,11 +139,16 @@ func TestGetInstancesReturnsError(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{}
 
-		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		auditor := audit_mock.New()
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 		instanceAPI.GetList(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 0)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil},
+			audit_mock.Expected{instance.GetInstancesAction, audit.Unsuccessful, common.Params{"query": "foo"}},
+		)
 	})
 }
 

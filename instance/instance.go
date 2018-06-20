@@ -30,12 +30,12 @@ type Store struct {
 	Auditor audit.AuditorService
 }
 
-type updateTaskErr struct {
+type taskErr struct {
 	error  error
 	status int
 }
 
-func (e updateTaskErr) Error() string {
+func (e taskErr) Error() string {
 	if e.error != nil {
 		return e.error.Error()
 	}
@@ -54,38 +54,58 @@ const (
 //GetList a list of all instances
 func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	data := log.Data{}
+	var stateFilterQuery string
+	var ap common.Params = nil
 
 	if err := s.Auditor.Record(ctx, GetInstancesAction, audit.Attempted, nil); err != nil {
 		handleInstanceErr(ctx, err, w, nil)
 		return
 	}
 
-	stateFilterQuery := r.URL.Query().Get("state")
-	var stateFilterList []string
-	if stateFilterQuery != "" {
-		stateFilterList = strings.Split(stateFilterQuery, ",")
-		if err := models.ValidateStateFilter(stateFilterList); err != nil {
-			log.ErrorCtx(ctx, err, nil)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+	b, err := func() ([]byte, error) {
+		stateFilterQuery = r.URL.Query().Get("state")
+		var stateFilterList []string
+		if stateFilterQuery != "" {
+			data["query"] = stateFilterQuery
+			ap = common.Params{"query": stateFilterQuery}
+			stateFilterList = strings.Split(stateFilterQuery, ",")
+			if err := models.ValidateStateFilter(stateFilterList); err != nil {
+				log.ErrorCtx(ctx, err, data)
+				return nil, taskErr{error: err, status: http.StatusBadRequest}
+			}
 		}
-	}
 
-	results, err := s.GetInstances(stateFilterList)
+		results, err := s.GetInstances(stateFilterList)
+		if err != nil {
+			log.ErrorCtx(ctx, err, nil)
+			handleInstanceErr(ctx, err, w, data)
+			return nil, err
+		}
+
+		b, err := json.Marshal(results)
+		if err != nil {
+			internalError(ctx, w, err)
+			return nil, err
+		}
+		return b, nil
+	}()
+
 	if err != nil {
-		log.ErrorCtx(ctx, err, nil)
-		handleInstanceErr(ctx, err, w, nil)
+		if auditErr := s.Auditor.Record(ctx, GetInstancesAction, audit.Unsuccessful, ap); auditErr != nil {
+			err = auditErr
+		}
+		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
-	b, err := json.Marshal(results)
-	if err != nil {
-		internalError(ctx, w, err)
+	if auditErr := s.Auditor.Record(ctx, GetInstancesAction, audit.Successful, ap); auditErr != nil {
+		handleInstanceErr(ctx, auditErr, w, data)
 		return
 	}
 
 	writeBody(ctx, w, b)
-	log.InfoCtx(ctx, "instance getList: request successful", log.Data{"query": stateFilterQuery})
+	log.InfoCtx(ctx, "instance getList: request successful", data)
 }
 
 //Get a single instance by id
@@ -526,11 +546,11 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updateErr := func() *updateTaskErr {
+	updateErr := func() *taskErr {
 		tasks, err := unmarshalImportTasks(r.Body)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to unmarshal request body to UpdateImportTasks model"), data)
-			return &updateTaskErr{err, http.StatusBadRequest}
+			return &taskErr{err, http.StatusBadRequest}
 		}
 
 		validationErrs := make([]error, 0)
@@ -544,7 +564,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 				} else {
 					if err := s.UpdateImportObservationsTaskState(id, tasks.ImportObservations.State); err != nil {
 						log.ErrorCtx(ctx, errors.WithMessage(err, "Failed to update import observations task state"), data)
-						return &updateTaskErr{err, http.StatusInternalServerError}
+						return &taskErr{err, http.StatusInternalServerError}
 					}
 				}
 			} else {
@@ -564,10 +584,10 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 						if err.Error() == "not found" {
 							notFoundErr := task.DimensionName + " hierarchy import task does not exist"
 							log.ErrorCtx(ctx, errors.WithMessage(err, notFoundErr), data)
-							return &updateTaskErr{errors.New(notFoundErr), http.StatusNotFound}
+							return &taskErr{errors.New(notFoundErr), http.StatusNotFound}
 						}
 						log.ErrorCtx(ctx, errors.WithMessage(err, "failed to update build hierarchy task state"), data)
-						return &updateTaskErr{err, http.StatusInternalServerError}
+						return &taskErr{err, http.StatusInternalServerError}
 					}
 				}
 			}
@@ -588,10 +608,10 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 						if err.Error() == "not found" {
 							notFoundErr := task.DimensionName + " search index import task does not exist"
 							log.ErrorCtx(ctx, errors.WithMessage(err, notFoundErr), data)
-							return &updateTaskErr{errors.New(notFoundErr), http.StatusNotFound}
+							return &taskErr{errors.New(notFoundErr), http.StatusNotFound}
 						}
 						log.ErrorCtx(ctx, errors.WithMessage(err, "failed to update build hierarchy task state"), data)
-						return &updateTaskErr{err, http.StatusInternalServerError}
+						return &taskErr{err, http.StatusInternalServerError}
 					}
 				}
 			}
@@ -609,14 +629,14 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 				log.ErrorCtx(ctx, errors.WithMessage(err, "validation error"), data)
 			}
 			// todo: add all validation errors to the response
-			return &updateTaskErr{validationErrs[0], http.StatusBadRequest}
+			return &taskErr{validationErrs[0], http.StatusBadRequest}
 		}
 		return nil
 	}()
 
 	if updateErr != nil {
 		if auditErr := s.Auditor.Record(ctx, updateImportTaskAction, audit.Unsuccessful, ap); auditErr != nil {
-			updateErr = &updateTaskErr{errs.ErrInternalServer, http.StatusInternalServerError}
+			updateErr = &taskErr{errs.ErrInternalServer, http.StatusInternalServerError}
 		}
 		log.ErrorCtx(ctx, errors.WithMessage(updateErr, "updateImportTask endpoint: request unsuccessful"), data)
 		http.Error(w, updateErr.Error(), updateErr.status)
@@ -753,10 +773,14 @@ func handleInstanceErr(ctx context.Context, err error, w http.ResponseWriter, da
 		data = log.Data{}
 	}
 
+	taskErr, isTaskErr := err.(taskErr)
+
 	var status int
 	response := err
 
 	switch {
+	case isTaskErr:
+		status = taskErr.status
 	case errs.NotFoundMap[err]:
 		status = http.StatusNotFound
 	case err == errs.ErrResourcePublished:
