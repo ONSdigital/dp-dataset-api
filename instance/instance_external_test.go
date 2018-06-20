@@ -565,7 +565,7 @@ func TestStore_UpdateImportTask_UpdateImportObservations(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -597,7 +597,7 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -627,7 +627,7 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -656,7 +656,7 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -690,7 +690,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -720,7 +720,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -750,7 +750,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -780,7 +780,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -810,7 +810,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -840,7 +840,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -870,7 +870,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -900,7 +900,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -934,7 +934,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -966,7 +966,7 @@ func TestStore_UpdateImportTask_ReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1195,7 +1195,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1225,7 +1225,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1255,7 +1255,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1285,7 +1285,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1308,7 +1308,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1338,7 +1338,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1368,7 +1368,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1398,7 +1398,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1432,7 +1432,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1454,7 +1454,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask(t *testing.T) {
 func TestStore_UpdateImportTask_AuditAttemptedError(t *testing.T) {
 	t.Parallel()
 	Convey("given audit action attempted returns an error", t, func() {
-		auditor := audit_mock.NewErroring(t, updateImportTaskAction, audit.Attempted)
+		auditor := audit_mock.NewErroring(updateImportTaskAction, audit.Attempted)
 
 		Convey("when update import task is called", func() {
 			body := strings.NewReader(`{"build_search_indexes":[{"state":"completed"}]}`)
@@ -1483,7 +1483,7 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 	t.Parallel()
 	Convey("given audit action unsuccessful returns an error", t, func() {
 		Convey("when the request body fails to marshal into the updateImportTask model", func() {
-			auditor := audit_mock.NewErroring(t, updateImportTaskAction, audit.Unsuccessful)
+			auditor := audit_mock.NewErroring(updateImportTaskAction, audit.Unsuccessful)
 			body := strings.NewReader(`THIS IS NOT JSON`)
 			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			w := httptest.NewRecorder()
@@ -1508,7 +1508,7 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 		})
 
 		Convey("when UpdateImportObservationsTaskState returns an error", func() {
-			auditor := audit_mock.NewErroring(t, updateImportTaskAction, audit.Unsuccessful)
+			auditor := audit_mock.NewErroring(updateImportTaskAction, audit.Unsuccessful)
 			body := strings.NewReader(`{"import_observations":{"state":"completed"}}`)
 			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			w := httptest.NewRecorder()
@@ -1538,7 +1538,7 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 		})
 
 		Convey("when UpdateBuildHierarchyTaskState returns an error", func() {
-			auditor := audit_mock.NewErroring(t, updateImportTaskAction, audit.Unsuccessful)
+			auditor := audit_mock.NewErroring(updateImportTaskAction, audit.Unsuccessful)
 			body := strings.NewReader(`{"build_hierarchies":[{"dimension_name": "geography", "state":"completed"}]}`)
 			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			w := httptest.NewRecorder()
@@ -1569,7 +1569,7 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 		})
 
 		Convey("when UpdateBuildSearchTaskState returns an error", func() {
-			auditor := audit_mock.NewErroring(t, updateImportTaskAction, audit.Unsuccessful)
+			auditor := audit_mock.NewErroring(updateImportTaskAction, audit.Unsuccessful)
 			body := strings.NewReader(`{"build_search_indexes":[{"dimension_name": "geography", "state":"completed"}]}`)
 			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			w := httptest.NewRecorder()
@@ -1602,7 +1602,7 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 func TestStore_UpdateImportTask_AuditSuccessfulError(t *testing.T) {
 	t.Parallel()
 	Convey("given audit action successful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(t, updateImportTaskAction, audit.Successful)
+		auditor := audit_mock.NewErroring(updateImportTaskAction, audit.Successful)
 
 		Convey("when update import task is called", func() {
 			body := strings.NewReader(`{"import_observations":{"state":"completed"}}`)

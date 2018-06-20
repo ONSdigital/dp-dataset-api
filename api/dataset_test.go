@@ -78,7 +78,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 			},
 		}
 
-		mockAuditor := audit_mock.New(t)
+		mockAuditor := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockAuditor, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -103,7 +103,7 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New(t)
+		auditMock := audit_mock.New()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			return errors.New("boom!")
 		}
@@ -126,7 +126,7 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New(t)
+		auditMock := audit_mock.New()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if action == getDatasetsAction && result == audit.Unsuccessful {
 				return errors.New("boom!")
@@ -159,7 +159,7 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New(t)
+		auditMock := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -185,7 +185,7 @@ func TestGetDatasetsAuditSuccessfulError(t *testing.T) {
 			},
 		}
 
-		mockAuditor := audit_mock.NewErroring(t, getDatasetsAction, audit.Successful)
+		mockAuditor := audit_mock.NewErroring(getDatasetsAction, audit.Successful)
 
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, mockAuditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
@@ -210,7 +210,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New(t)
+		auditMock := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -235,7 +235,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New(t)
+		auditMock := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -260,7 +260,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New(t)
+		auditMock := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -282,7 +282,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -300,7 +300,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		auditMock := audit_mock.New(t)
+		auditMock := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -317,7 +317,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 
 func TestGetDatasetAuditingErrors(t *testing.T) {
 	Convey("given auditing attempted action returns an error", t, func() {
-		auditMock := audit_mock.New(t)
+		auditMock := audit_mock.New()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			return errors.New("auditing error")
 		}
@@ -342,7 +342,7 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 	})
 
 	Convey("given audit action successful returns an error", t, func() {
-		auditMock := audit_mock.New(t)
+		auditMock := audit_mock.New()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if action == getDatasetAction && result == audit.Successful {
 				return errors.New("auditing error")
@@ -375,7 +375,7 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 	})
 
 	Convey("given auditing action unsuccessful returns an error", t, func() {
-		auditMock := audit_mock.New(t)
+		auditMock := audit_mock.New()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if action == getDatasetAction && result == audit.Unsuccessful {
 				return errors.New("auditing error")
@@ -428,7 +428,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		}
 		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusCreated)
@@ -455,7 +455,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -481,7 +481,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -505,7 +505,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
@@ -535,7 +535,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -550,7 +550,7 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 	ap := common.Params{"dataset_id": "123"}
 
 	Convey("given audit action attempted returns an error", t, func() {
-		auditor := audit_mock.NewErroring(t, addDatasetAction, audit.Attempted)
+		auditor := audit_mock.NewErroring(addDatasetAction, audit.Attempted)
 
 		Convey("when add dataset is called", func() {
 			r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString("{"))
@@ -574,7 +574,7 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 	})
 
 	Convey("given audit action unsuccessful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(t, addDatasetAction, audit.Unsuccessful)
+		auditor := audit_mock.NewErroring(addDatasetAction, audit.Unsuccessful)
 
 		Convey("when datastore getdataset returns an error", func() {
 			r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString("{"))
@@ -656,7 +656,7 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 	})
 
 	Convey("given audit action successful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(t, addDatasetAction, audit.Successful)
+		auditor := audit_mock.NewErroring(addDatasetAction, audit.Successful)
 
 		Convey("when add dataset is successful", func() {
 			r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(datasetPayload))
@@ -710,7 +710,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		}
 		mockedDataStore.UpdateDataset("123", dataset, models.CreatedState)
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -745,7 +745,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -783,7 +783,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		}
 		mockedDataStore.UpdateDataset("123", dataset, models.CreatedState)
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -815,7 +815,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -846,7 +846,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -864,7 +864,7 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 
 	t.Parallel()
 	Convey("given audit action attempted returns an error", t, func() {
-		auditor := audit_mock.NewErroring(t, putDatasetAction, audit.Attempted)
+		auditor := audit_mock.NewErroring(putDatasetAction, audit.Attempted)
 
 		Convey("when put dataset is called", func() {
 			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(datasetPayload))
@@ -894,7 +894,7 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 	})
 
 	Convey("given audit action successful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(t, putDatasetAction, audit.Successful)
+		auditor := audit_mock.NewErroring(putDatasetAction, audit.Successful)
 
 		Convey("when a put dataset request is successful", func() {
 			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(datasetPayload))
@@ -926,7 +926,7 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 	})
 
 	Convey("given audit action unsuccessful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(t, putDatasetAction, audit.Unsuccessful)
+		auditor := audit_mock.NewErroring(putDatasetAction, audit.Unsuccessful)
 
 		Convey("when a put dataset request contains an invalid dataset body", func() {
 			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString("`zxcvbnm,./"))
@@ -1061,7 +1061,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -1093,7 +1093,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -1123,7 +1123,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -1154,7 +1154,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -1185,7 +1185,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -1209,7 +1209,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -1225,7 +1225,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 func TestDeleteDatasetAuditActionAttemptedError(t *testing.T) {
 	t.Parallel()
 	Convey("given audit action attempted returns an error", t, func() {
-		auditorMock := audit_mock.NewErroring(t, deleteDatasetAction, audit.Attempted)
+		auditorMock := audit_mock.NewErroring(deleteDatasetAction, audit.Attempted)
 
 		Convey("when delete dataset is called", func() {
 			r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
@@ -1253,7 +1253,7 @@ func TestDeleteDatasetAuditActionAttemptedError(t *testing.T) {
 
 func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 	Convey("given auditing action unsuccessful returns an errors", t, func() {
-		auditorMock := audit_mock.NewErroring(t, deleteDatasetAction, audit.Unsuccessful)
+		auditorMock := audit_mock.NewErroring(deleteDatasetAction, audit.Unsuccessful)
 
 		Convey("when attempting to delete a dataset that does not exist", func() {
 
@@ -1284,7 +1284,7 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 		})
 
 		Convey("when dataStore.Backend.GetDataset returns an error", func() {
-			auditorMock = audit_mock.NewErroring(t, deleteDatasetAction, audit.Unsuccessful)
+			auditorMock = audit_mock.NewErroring(deleteDatasetAction, audit.Unsuccessful)
 
 			r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 			So(err, ShouldBeNil)
@@ -1313,7 +1313,7 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 		})
 
 		Convey("when attempting to delete a published dataset", func() {
-			auditorMock = audit_mock.NewErroring(t, deleteDatasetAction, audit.Unsuccessful)
+			auditorMock = audit_mock.NewErroring(deleteDatasetAction, audit.Unsuccessful)
 
 			r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 			So(err, ShouldBeNil)
@@ -1342,7 +1342,7 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 		})
 
 		Convey("when dataStore.Backend.DeleteDataset returns an error", func() {
-			auditorMock = audit_mock.NewErroring(t, deleteDatasetAction, audit.Unsuccessful)
+			auditorMock = audit_mock.NewErroring(deleteDatasetAction, audit.Unsuccessful)
 
 			r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 			So(err, ShouldBeNil)
@@ -1390,7 +1390,7 @@ func TestDeleteDatasetAuditActionSuccessfulError(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.NewErroring(t, deleteDatasetAction, audit.Successful)
+		auditorMock := audit_mock.NewErroring(deleteDatasetAction, audit.Successful)
 
 		Convey("when delete dataset is called", func() {
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, genericMockedObservationStore)
