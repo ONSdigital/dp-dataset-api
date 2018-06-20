@@ -152,6 +152,84 @@ func TestGetInstancesReturnsError(t *testing.T) {
 	})
 }
 
+func TestGetInstancesAuditErrors(t *testing.T) {
+	t.Parallel()
+	Convey("given audit action attempted returns an error", t, func() {
+
+		auditor := audit_mock.NewErroring(instance.GetInstancesAction, audit.Attempted)
+
+		Convey("when get instances is called", func() {
+			r := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{}
+
+			instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+			instanceAPI.GetList(w, r)
+
+			Convey("then a 500 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 0)
+				auditor.AssertRecordCalls(audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil})
+			})
+		})
+	})
+
+	Convey("given audit action unsuccessful returns an error", t, func() {
+		auditor := audit_mock.NewErroring(instance.GetInstancesAction, audit.Unsuccessful)
+
+		Convey("when get instances return an error", func() {
+			r := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				GetInstancesFunc: func([]string) (*models.InstanceResults, error) {
+					return nil, errs.ErrInternalServer
+				},
+			}
+
+			instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
+			instanceAPI.GetList(w, r)
+
+			Convey("then a 500 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil},
+					audit_mock.Expected{instance.GetInstancesAction, audit.Unsuccessful, nil},
+				)
+			})
+		})
+	})
+
+	Convey("given audit action successful returns an error", t, func() {
+		auditor := audit_mock.NewErroring(instance.GetInstancesAction, audit.Successful)
+
+		Convey("when get instances is called", func() {
+			r := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				GetInstancesFunc: func([]string) (*models.InstanceResults, error) {
+					return &models.InstanceResults{}, nil
+				},
+			}
+
+			instanceAPI := &instance.Store{Host: "http://lochost://8080", Storer: mockedDataStore, Auditor: auditor}
+			instanceAPI.GetList(w, r)
+
+			Convey("then a 500 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil},
+					audit_mock.Expected{instance.GetInstancesAction, audit.Successful, nil},
+				)
+			})
+		})
+	})
+}
+
 func TestGetInstanceReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("Get instance returns a ok status code", t, func() {

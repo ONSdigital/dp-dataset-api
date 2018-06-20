@@ -71,21 +71,20 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 			ap = common.Params{"query": stateFilterQuery}
 			stateFilterList = strings.Split(stateFilterQuery, ",")
 			if err := models.ValidateStateFilter(stateFilterList); err != nil {
-				log.ErrorCtx(ctx, err, data)
+				log.ErrorCtx(ctx, errors.WithMessage(err, "get instances: filter state invalid"), data)
 				return nil, taskErr{error: err, status: http.StatusBadRequest}
 			}
 		}
 
 		results, err := s.GetInstances(stateFilterList)
 		if err != nil {
-			log.ErrorCtx(ctx, err, nil)
-			handleInstanceErr(ctx, err, w, data)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "get instances: store.GetInstances returned and error"), nil)
 			return nil, err
 		}
 
 		b, err := json.Marshal(results)
 		if err != nil {
-			internalError(ctx, w, err)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "get instances: failed to marshal results to json"), nil)
 			return nil, err
 		}
 		return b, nil
@@ -105,7 +104,7 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeBody(ctx, w, b)
-	log.InfoCtx(ctx, "instance getList: request successful", data)
+	log.InfoCtx(ctx, "get instances: request successful", data)
 }
 
 //Get a single instance by id
