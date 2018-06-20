@@ -55,7 +55,7 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -90,7 +90,7 @@ func TestAddNodeIDToDimensionReturnsBadRequest(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -122,7 +122,7 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -150,7 +150,7 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -182,7 +182,7 @@ func TestAddNodeIDToDimensionReturnsForbidden(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -216,7 +216,7 @@ func TestAddNodeIDToDimensionReturnsUnauthorized(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -242,7 +242,7 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 		auditorMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			return errors.New("unable to send message to kafka audit topic")
 		}
@@ -268,7 +268,7 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 		}
 
 		count := 1
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 		auditorMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if count == 1 {
 				count++
@@ -305,7 +305,7 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 		}
 
 		count := 1
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 		auditorMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if count <= 2 {
 				count++
@@ -347,7 +347,7 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -387,7 +387,7 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -425,7 +425,7 @@ func TestAddDimensionToInstanceReturnsForbidden(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -458,7 +458,7 @@ func TestAddDimensionToInstanceReturnsUnauthorized(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -490,7 +490,7 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -524,7 +524,7 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -558,7 +558,7 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 		auditorMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			return errors.New("unable to send message to kafka audit topic")
 		}
@@ -587,7 +587,7 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 		}
 
 		count := 1
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 		auditorMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if count == 1 {
 				count++
@@ -626,7 +626,7 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 		}
 
 		count := 1
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 		auditorMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if count <= 2 {
 				count++
@@ -669,7 +669,7 @@ func TestGetDimensionNodesReturnsOk(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -700,7 +700,7 @@ func TestGetDimensionNodesReturnsNotFound(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -732,7 +732,7 @@ func TestGetDimensionNodesReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -761,7 +761,7 @@ func TestGetDimensionNodesReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -793,7 +793,7 @@ func TestGetUniqueDimensionValuesReturnsOk(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -823,7 +823,7 @@ func TestGetUniqueDimensionValuesReturnsNotFound(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -854,7 +854,7 @@ func TestGetUniqueDimensionValuesReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -882,7 +882,7 @@ func TestGetUniqueDimensionValuesReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditorMock := audit_mock.New(t)
+		auditorMock := audit_mock.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditorMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)

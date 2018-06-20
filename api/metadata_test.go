@@ -40,7 +40,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -103,7 +103,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New(t)
+		auditor := audit_mock.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -156,7 +156,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -177,7 +177,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -204,7 +204,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -230,7 +230,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -260,7 +260,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -290,7 +290,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(t), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
 		assertInternalServerErr(w)
@@ -304,7 +304,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 	ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
 
 	Convey("given auditing action attempted returns an error", t, func() {
-		auditor := audit_mock.NewErroring(t, getMetadataAction, audit.Attempted)
+		auditor := audit_mock.NewErroring(getMetadataAction, audit.Attempted)
 
 		Convey("when get metadata is called", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
@@ -328,7 +328,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 	})
 
 	Convey("given auditing action unsuccessful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(t, getMetadataAction, audit.Unsuccessful)
+		auditor := audit_mock.NewErroring(getMetadataAction, audit.Unsuccessful)
 
 		Convey("when datastore getDataset returns dataset not found error", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
@@ -479,7 +479,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 	})
 
 	Convey("given auditing action successful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(t, getMetadataAction, audit.Successful)
+		auditor := audit_mock.NewErroring(getMetadataAction, audit.Successful)
 
 		Convey("when get metadata is called", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
