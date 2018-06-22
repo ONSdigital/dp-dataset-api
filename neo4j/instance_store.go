@@ -12,6 +12,12 @@ import (
 
 const addVersionDetailsToInstance = "MATCH (i:`_%s_Instance`) SET i.dataset_id = {dataset_id}, i.edition = {edition}, i.version = {version} RETURN i"
 
+//go:generate moq -out ./mocks/bolt.go -pkg mocks . DBPool BoltConn BoltStmt BoltResult
+
+type BoltConn bolt.Conn
+type BoltStmt bolt.Stmt
+type BoltResult bolt.Result
+
 // DBPool provides a pool of database connections
 type DBPool interface {
 	OpenPool() (bolt.Conn, error)
@@ -45,6 +51,8 @@ func (c *Neo4j) AddVersionDetailsToInstance(ctx context.Context, instanceID stri
 		return errors.WithMessage(err, "neoClient AddVersionDetailsToInstance: error preparing neo update statement")
 	}
 
+	defer stmt.Close()
+
 	result, err := stmt.ExecNeo(map[string]interface{}{
 		"dataset_id": datasetID,
 		"edition":    edition,
@@ -61,7 +69,7 @@ func (c *Neo4j) AddVersionDetailsToInstance(ctx context.Context, instanceID stri
 	}
 
 	if rowsAffected != 1 {
-		return errors.WithMessage(err, fmt.Sprintf("neoClient AddVersionDetailsToInstance: unexpected rows affected expected 1 but was %d", rowsAffected))
+		return errors.Errorf("neoClient AddVersionDetailsToInstance: unexpected rows affected expected 1 but was %d", rowsAffected)
 	}
 
 	log.InfoCtx(ctx, "neoClient AddVersionDetailsToInstance: update successful", data)
