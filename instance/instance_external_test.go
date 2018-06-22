@@ -328,6 +328,9 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 			UpdateInstanceFunc: func(id string, i *models.Instance) error {
 				return nil
 			},
+			AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
+				return nil
+			},
 		}
 
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
@@ -339,6 +342,7 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetNextVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 1)
 	})
 }
 

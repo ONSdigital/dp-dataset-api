@@ -12,11 +12,8 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/go-ns/log"
 )
-
-var _ store.Storer = &Mongo{}
 
 // Mongo represents a simplistic MongoDB configuration.
 type Mongo struct {
