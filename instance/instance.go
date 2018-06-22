@@ -326,9 +326,9 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// moving into edition confirmed for the first time.
-		if instance.State == models.EditionConfirmedState && currentInstance.State != models.EditionConfirmedState {
+		if currentInstance.State != models.EditionConfirmedState {
 			if err := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); err != nil {
-				log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: neo4jClient return error while attempting to update instance node."), data)
+				log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: datastore.AddVersionDetailsToInstance returned an error"), data)
 				handleInstanceErr(ctx, err, w, data)
 				return
 			}

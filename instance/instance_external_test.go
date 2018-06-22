@@ -1,6 +1,7 @@
 package instance_test
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -419,6 +420,61 @@ func TestUpdateInstanceFailure(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+	})
+	Convey("when store.AddVersionDetailsToInstance return an error", t, func() {
+		body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
+		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		w := httptest.NewRecorder()
+
+		currentInstanceTestData := &models.Instance{
+			Edition: "2017",
+			Links: &models.InstanceLinks{
+				Job: &models.IDLink{
+					ID:   "7654",
+					HRef: "job-link",
+				},
+				Dataset: &models.IDLink{
+					ID:   "4567",
+					HRef: "dataset-link",
+				},
+				Self: &models.IDLink{
+					HRef: "self-link",
+				},
+			},
+			State: models.CompletedState,
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(id string) (*models.Instance, error) {
+				return currentInstanceTestData, nil
+			},
+			GetEditionFunc: func(datasetID string, edition string, state string) (*models.EditionUpdate, error) {
+				return nil, errs.ErrEditionNotFound
+			},
+			UpsertEditionFunc: func(datasetID, edition string, editionDoc *models.EditionUpdate) error {
+				return nil
+			},
+			GetNextVersionFunc: func(string, string) (int, error) {
+				return 1, nil
+			},
+			UpdateInstanceFunc: func(id string, i *models.Instance) error {
+				return nil
+			},
+			AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
+				return errors.New("boom")
+			},
+		}
+
+		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
+		instanceAPI.Update(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetNextVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 	})
 }
