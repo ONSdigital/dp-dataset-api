@@ -1,7 +1,6 @@
 package instance_test
 
 import (
-	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/go-ns/audit"
+	"github.com/ONSdigital/go-ns/audit/audit_mock"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
@@ -566,7 +566,7 @@ func TestStore_UpdateImportTask_UpdateImportObservations(t *testing.T) {
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -576,11 +576,11 @@ func TestStore_UpdateImportTask_UpdateImportObservations(t *testing.T) {
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
-		// router so no URL params are available in the test - hence empty string.
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Successful, ap)
+		// router so no URL params are available in the test - hence empty string. )
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Successful, ap},
+		)
 	})
 }
 
@@ -598,7 +598,7 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -611,10 +611,10 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("update to an import task but missing mandatory field, 'state' returns http 400 response", t, func() {
@@ -628,7 +628,7 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -640,10 +640,10 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
@@ -657,7 +657,7 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -670,10 +670,10 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 }
 
@@ -691,7 +691,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -704,11 +704,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("update to an import task with an empty request body returns http 400 response", t, func() {
@@ -722,7 +721,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -735,11 +734,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("update to an import task without specifying a task returns http 400 response", t, func() {
@@ -753,7 +751,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -766,11 +764,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("update to an import task without a 'dimension_name' returns http 400 response", t, func() {
@@ -784,7 +781,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -797,11 +794,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("update to an import task without a 'dimension_name' returns http 400 response", t, func() {
@@ -815,7 +811,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -828,11 +824,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
@@ -846,7 +841,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -859,11 +854,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
@@ -877,7 +871,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -890,11 +884,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("update to an import task but lose connection to datastore when updating resource", t, func() {
@@ -908,7 +901,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -921,11 +914,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 }
 
@@ -943,7 +935,7 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask(t *testing.T) {
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -954,11 +946,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask(t *testing.T) {
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Successful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Successful, ap},
+		)
 	})
 }
 
@@ -976,7 +967,7 @@ func TestStore_UpdateImportTask_ReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -986,11 +977,10 @@ func TestStore_UpdateImportTask_ReturnsInternalError(t *testing.T) {
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 }
 
@@ -1206,7 +1196,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1219,11 +1209,10 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("update to an import task with an empty request body returns http 400 response", t, func() {
@@ -1237,7 +1226,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1250,11 +1239,10 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("update to an import task without specifying a task returns http 400 response", t, func() {
@@ -1268,7 +1256,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1281,11 +1269,10 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("update to an import task without a 'dimension_name' returns http 400 response", t, func() {
@@ -1299,7 +1286,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1322,7 +1309,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1335,11 +1322,10 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
@@ -1353,7 +1339,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1366,11 +1352,10 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("update to an import task with a dimension that does not exist returns http 404 response", t, func() {
@@ -1384,7 +1369,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1397,11 +1382,10 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 
 	Convey("update to an import task but lose connection to datastore when updating resource", t, func() {
@@ -1415,7 +1399,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1428,11 +1412,10 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+		)
 	})
 }
 
@@ -1450,7 +1433,7 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask(t *testing.T) {
 			},
 		}
 
-		auditor := auditorMock()
+		auditor := audit_mock.New()
 		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 
 		instanceAPI.UpdateImportTask(w, r)
@@ -1462,18 +1445,17 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask(t *testing.T) {
 
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
-
-		calls := auditor.RecordCalls()
-		So(len(calls), ShouldEqual, 2)
-		verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-		verifyAuditCall(calls[1], updateImportTaskAction, audit.Successful, ap)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+			audit_mock.Expected{updateImportTaskAction, audit.Successful, ap},
+		)
 	})
 }
 
 func TestStore_UpdateImportTask_AuditAttemptedError(t *testing.T) {
 	t.Parallel()
 	Convey("given audit action attempted returns an error", t, func() {
-		auditor := auditorMockWithErr(updateImportTaskAction, audit.Attempted)
+		auditor := audit_mock.NewErroring(updateImportTaskAction, audit.Attempted)
 
 		Convey("when update import task is called", func() {
 			body := strings.NewReader(`{"build_search_indexes":[{"state":"completed"}]}`)
@@ -1492,10 +1474,7 @@ func TestStore_UpdateImportTask_AuditAttemptedError(t *testing.T) {
 
 				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 				// router so no URL params are available in the test - hence empty string.
-
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 1)
-				verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
+				auditor.AssertRecordCalls(audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap})
 			})
 		})
 	})
@@ -1505,12 +1484,12 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 	t.Parallel()
 	Convey("given audit action unsuccessful returns an error", t, func() {
 		Convey("when the request body fails to marshal into the updateImportTask model", func() {
+			auditor := audit_mock.NewErroring(updateImportTaskAction, audit.Unsuccessful)
 			body := strings.NewReader(`THIS IS NOT JSON`)
 			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{}
-			auditor := auditorMockWithErr(updateImportTaskAction, audit.Unsuccessful)
 			instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 			instanceAPI.UpdateImportTask(w, r)
 
@@ -1522,15 +1501,15 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 
 				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 				// router so no URL params are available in the test - hence empty string.
-
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 2)
-				verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-				verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+					audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+				)
 			})
 		})
 
 		Convey("when UpdateImportObservationsTaskState returns an error", func() {
+			auditor := audit_mock.NewErroring(updateImportTaskAction, audit.Unsuccessful)
 			body := strings.NewReader(`{"import_observations":{"state":"completed"}}`)
 			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			w := httptest.NewRecorder()
@@ -1541,7 +1520,6 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				},
 			}
 
-			auditor := auditorMockWithErr(updateImportTaskAction, audit.Unsuccessful)
 			instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 			instanceAPI.UpdateImportTask(w, r)
 
@@ -1553,15 +1531,15 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 
 				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 				// router so no URL params are available in the test - hence empty string.
-
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 2)
-				verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-				verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+					audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+				)
 			})
 		})
 
 		Convey("when UpdateBuildHierarchyTaskState returns an error", func() {
+			auditor := audit_mock.NewErroring(updateImportTaskAction, audit.Unsuccessful)
 			body := strings.NewReader(`{"build_hierarchies":[{"dimension_name": "geography", "state":"completed"}]}`)
 			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			w := httptest.NewRecorder()
@@ -1572,7 +1550,6 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				},
 			}
 
-			auditor := auditorMockWithErr(updateImportTaskAction, audit.Unsuccessful)
 			instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore, Auditor: auditor}
 			instanceAPI.UpdateImportTask(w, r)
 
@@ -1585,16 +1562,15 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 
 				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 				// router so no URL params are available in the test - hence empty string.
-
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 2)
-				verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-				verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+					audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+				)
 			})
 		})
 
 		Convey("when UpdateBuildSearchTaskState returns an error", func() {
-			auditor := auditorMockWithErr(updateImportTaskAction, audit.Unsuccessful)
+			auditor := audit_mock.NewErroring(updateImportTaskAction, audit.Unsuccessful)
 			body := strings.NewReader(`{"build_search_indexes":[{"dimension_name": "geography", "state":"completed"}]}`)
 			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			w := httptest.NewRecorder()
@@ -1615,11 +1591,10 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 
 				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 				// router so no URL params are available in the test - hence empty string.
-
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 2)
-				verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-				verifyAuditCall(calls[1], updateImportTaskAction, audit.Unsuccessful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+					audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+				)
 			})
 		})
 	})
@@ -1628,7 +1603,7 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 func TestStore_UpdateImportTask_AuditSuccessfulError(t *testing.T) {
 	t.Parallel()
 	Convey("given audit action successful returns an error", t, func() {
-		auditor := auditorMockWithErr(updateImportTaskAction, audit.Successful)
+		auditor := audit_mock.NewErroring(updateImportTaskAction, audit.Successful)
 
 		Convey("when update import task is called", func() {
 			body := strings.NewReader(`{"import_observations":{"state":"completed"}}`)
@@ -1651,43 +1626,11 @@ func TestStore_UpdateImportTask_AuditSuccessfulError(t *testing.T) {
 
 				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 				// router so no URL params are available in the test - hence empty string.
-
-				calls := auditor.RecordCalls()
-				So(len(calls), ShouldEqual, 2)
-				verifyAuditCall(calls[0], updateImportTaskAction, audit.Attempted, ap)
-				verifyAuditCall(calls[1], updateImportTaskAction, audit.Successful, ap)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
+					audit_mock.Expected{updateImportTaskAction, audit.Successful, ap},
+				)
 			})
 		})
 	})
-}
-
-func auditorMockWithErr(a string, r string) *audit.AuditorServiceMock {
-	return &audit.AuditorServiceMock{
-		RecordFunc: func(ctx context.Context, action string, result string, params common.Params) error {
-			if action == a && r == result {
-				audit.LogActionFailure(ctx, a, r, errAudit, audit.ToLogData(params))
-				return errAudit
-			}
-			return nil
-		},
-	}
-}
-
-func auditorMock() *audit.AuditorServiceMock {
-	return &audit.AuditorServiceMock{
-		RecordFunc: func(ctx context.Context, action string, result string, params common.Params) error {
-			return nil
-		},
-	}
-}
-
-func verifyAuditCall(call struct {
-	Ctx    context.Context
-	Action string
-	Result string
-	Params common.Params
-}, expectedAction string, expectedResult string, expectedParams common.Params) {
-	So(call.Action, ShouldEqual, expectedAction)
-	So(call.Result, ShouldEqual, expectedResult)
-	So(call.Params, ShouldResemble, expectedParams)
 }

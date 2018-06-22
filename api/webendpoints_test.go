@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/ONSdigital/go-ns/audit"
+	"github.com/ONSdigital/go-ns/audit/audit_mock"
 	"github.com/gedge/mgo/bson"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -43,7 +43,7 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 		}
 		Convey("Calling the datasets endpoint should allow only published items", func() {
 
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 			api.Router.ServeHTTP(w, r)
 			a, _ := ioutil.ReadAll(w.Body)
@@ -79,7 +79,7 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 		}
 		Convey("Calling the dataset endpoint should allow only published items", func() {
 
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 			api.Router.ServeHTTP(w, r)
 			a, _ := ioutil.ReadAll(w.Body)
@@ -117,7 +117,7 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 		}
 		Convey("Calling the editions endpoint should allow only published items", func() {
 
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
@@ -150,7 +150,7 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 		}
 		Convey("Calling the edition endpoint should allow only published items", func() {
 
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
@@ -188,7 +188,7 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 		}
 		Convey("Calling the versions endpoint should allow only published items", func() {
 
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
@@ -228,7 +228,7 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 		}
 		Convey("Calling the version endpoint should allow only published items", func() {
 
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 			api.Router.ServeHTTP(w, r)
 
@@ -264,7 +264,7 @@ func TestWebSubnetDimensionsEndpoint(t *testing.T) {
 		}
 		Convey("Calling dimension endpoint should allow only published items", func() {
 
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
@@ -298,7 +298,7 @@ func TestWebSubnetDimensionOptionsEndpoint(t *testing.T) {
 
 		Convey("Calling dimension option endpoint should allow only published items", func() {
 
-			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+			api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
@@ -348,7 +348,7 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{}
 
-				api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+				api := GetWebAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 
 				api.Router.ServeHTTP(w, r)
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -357,7 +357,7 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 	})
 }
 
-func GetWebAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, mockAuditor *audit.AuditorServiceMock, mockedObservationStore ObservationStore) *DatasetAPI {
+func GetWebAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, mockAuditor Auditor, mockedObservationStore ObservationStore) *DatasetAPI {
 
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)

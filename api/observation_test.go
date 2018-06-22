@@ -13,8 +13,11 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-filter/observation"
+	"github.com/ONSdigital/go-ns/audit"
+	"github.com/ONSdigital/go-ns/audit/audit_mock"
+	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -91,7 +94,8 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), mockedObservationStore)
+		auditor := audit_mock.New()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, mockedObservationStore)
 
 		Convey("When request contains query parameters where the dimension name is in lower casing", func() {
 			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
@@ -106,6 +110,12 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 			So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
 			So(len(mockRowReader.ReadCalls()), ShouldEqual, 3)
+
+			ap := common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"}
+			auditor.AssertRecordCalls(
+				audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
+				audit_mock.Expected{getObservationsAction, audit.Successful, ap},
+			)
 		})
 
 		Convey("When request contains query parameters where the dimension name is in upper casing", func() {
@@ -121,6 +131,12 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 			So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
 			So(len(mockRowReader.ReadCalls()), ShouldEqual, 3)
+
+			ap := common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"}
+			auditor.AssertRecordCalls(
+				audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
+				audit_mock.Expected{getObservationsAction, audit.Successful, ap},
+			)
 		})
 	})
 
@@ -191,7 +207,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), mockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), mockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(w.Body.String(), ShouldContainSubstring, getTestData("expectedDocWithMultipleObservations"))
@@ -215,7 +231,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
@@ -233,7 +249,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
@@ -251,7 +267,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Dataset not found\n")
@@ -272,7 +288,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Edition not found\n")
@@ -297,7 +313,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "Version not found\n")
@@ -322,11 +338,10 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldResemble, "Incorrect resource state\n")
 
+		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -350,7 +365,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
@@ -377,7 +392,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
@@ -405,11 +420,10 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldResemble, "index out of range\n")
 
+		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -434,7 +448,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "Incorrect selection of query parameters: [geography], these dimensions do not exist for this version of the dataset\n")
@@ -463,7 +477,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "Missing query parameters for the following dimensions: [age]\n")
@@ -492,7 +506,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "only one wildcard (*) is allowed as a value in selected query parameters\n")
@@ -528,7 +542,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), mockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), mockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldResemble, "No observations found\n")
@@ -584,7 +598,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 
 		mockedObservationStore := &mocks.ObservationStoreMock{}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getMockAuditor(), mockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, audit_mock.New(), mockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "Multi-valued query parameters for the following dimensions: [geography]\n")
@@ -788,6 +802,267 @@ func TestExtractQueryParameters(t *testing.T) {
 				So(err, ShouldResemble, errorMultivaluedQueryParameters([]string{"time"}))
 				So(queryParameters, ShouldBeNil)
 			})
+		})
+	})
+}
+
+func TestGetObservationAuditAttemptedError(t *testing.T) {
+	Convey("given audit action attempted returns an error", t, func() {
+		auditor := audit_mock.NewErroring(getObservationsAction, audit.Attempted)
+
+		mockedDataStore := &storetest.StorerMock{}
+		mockedObservationStore := &mocks.ObservationStoreMock{}
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, mockedObservationStore)
+
+		Convey("when get observation is called", func() {
+			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
+			w := httptest.NewRecorder()
+
+			api.Router.ServeHTTP(w, r)
+
+			Convey("then a 500 response status is returned", func() {
+				assertInternalServerErr(w)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getObservationsAction, audit.Attempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"}},
+				)
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
+			})
+		})
+	})
+}
+
+func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
+	ap := common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"}
+
+	Convey("given audit action unsuccessful returns an error", t, func() {
+
+		Convey("when datastore.getDataset returns an error", func() {
+			auditor := audit_mock.NewErroring(getObservationsAction, audit.Unsuccessful)
+
+			mockedDataStore := &storetest.StorerMock{
+				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+					return nil, errs.ErrDatasetNotFound
+				},
+			}
+
+			mockedObservationStore := &mocks.ObservationStoreMock{}
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, mockedObservationStore)
+			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
+			w := httptest.NewRecorder()
+
+			api.Router.ServeHTTP(w, r)
+
+			Convey("then a 500 response status is returned", func() {
+				assertInternalServerErr(w)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
+					audit_mock.Expected{getObservationsAction, audit.Unsuccessful, ap},
+				)
+
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+				So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 0)
+			})
+		})
+
+		Convey("when datastore.getEdition returns an error", func() {
+			auditor := audit_mock.NewErroring(getObservationsAction, audit.Unsuccessful)
+
+			mockedDataStore := &storetest.StorerMock{
+				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+					return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
+				},
+				CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
+					return errs.ErrEditionNotFound
+				},
+			}
+
+			mockedObservationStore := &mocks.ObservationStoreMock{}
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, mockedObservationStore)
+			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
+			w := httptest.NewRecorder()
+
+			api.Router.ServeHTTP(w, r)
+
+			Convey("then a 500 response status is returned", func() {
+				assertInternalServerErr(w)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
+					audit_mock.Expected{getObservationsAction, audit.Unsuccessful, ap},
+				)
+
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+				So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 0)
+			})
+		})
+
+		Convey("when datastore.getVersion returns an error", func() {
+			auditor := audit_mock.NewErroring(getObservationsAction, audit.Unsuccessful)
+
+			mockedDataStore := &storetest.StorerMock{
+				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+					return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
+				},
+				CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
+					return nil
+				},
+				GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+					return nil, errs.ErrVersionNotFound
+				},
+			}
+
+			mockedObservationStore := &mocks.ObservationStoreMock{}
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, mockedObservationStore)
+			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
+			w := httptest.NewRecorder()
+
+			api.Router.ServeHTTP(w, r)
+
+			Convey("then a 500 response status is returned", func() {
+				assertInternalServerErr(w)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
+					audit_mock.Expected{getObservationsAction, audit.Unsuccessful, ap},
+				)
+
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+				So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 0)
+			})
+		})
+
+		Convey("when the version does not have no header data", func() {
+			auditor := audit_mock.NewErroring(getObservationsAction, audit.Unsuccessful)
+
+			mockedDataStore := &storetest.StorerMock{
+				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+					return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
+				},
+				CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
+					return nil
+				},
+				GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+					return &models.Version{}, nil
+				},
+			}
+
+			mockedObservationStore := &mocks.ObservationStoreMock{}
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, mockedObservationStore)
+			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
+			w := httptest.NewRecorder()
+
+			api.Router.ServeHTTP(w, r)
+
+			Convey("then a 500 response status is returned", func() {
+				assertInternalServerErr(w)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
+					audit_mock.Expected{getObservationsAction, audit.Unsuccessful, ap},
+				)
+
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+				So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 0)
+			})
+		})
+	})
+}
+
+func TestGetObservationAuditSuccessfulError(t *testing.T) {
+	Convey("given audit action successful returns an error", t, func() {
+		auditor := audit_mock.NewErroring(getObservationsAction, audit.Successful)
+
+		Convey("when get observations is called with a valid request", func() {
+
+			dimensions := []models.CodeList{
+				models.CodeList{
+					Name: "aggregate",
+					HRef: "http://localhost:8081/code-lists/cpih1dim1aggid",
+				},
+				models.CodeList{
+					Name: "geography",
+					HRef: "http://localhost:8081/code-lists/uk-only",
+				},
+				models.CodeList{
+					Name: "time",
+					HRef: "http://localhost:8081/code-lists/time",
+				},
+			}
+			usagesNotes := &[]models.UsageNote{models.UsageNote{Title: "data_marking", Note: "this marks the obsevation with a special character"}}
+
+			mockedDataStore := &storetest.StorerMock{
+				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+					return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
+				},
+				CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
+					return nil
+				},
+				GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+					return &models.Version{
+						Dimensions: dimensions,
+						Headers:    []string{"v4_2", "data_marking", "confidence_interval", "aggregate_code", "aggregate", "geography_code", "geography", "time", "time"},
+						Links: &models.VersionLinks{
+							Version: &models.LinkObject{
+								HRef: "http://localhost:8080/datasets/cpih012/editions/2017/versions/1",
+								ID:   "1",
+							},
+						},
+						State:      models.PublishedState,
+						UsageNotes: usagesNotes,
+					}, nil
+				},
+			}
+
+			count := 0
+			mockRowReader := &mocks.CSVRowReaderMock{
+				ReadFunc: func() (string, error) {
+					count++
+					if count == 1 {
+						return "v4_2,data_marking,confidence_interval,time,time,geography_code,geography,aggregate_code,aggregate", nil
+					} else if count == 2 {
+						return "146.3,p,2,Month,Aug-16,K02000001,,cpi1dim1G10100,01.1 Food", nil
+					}
+					return "", io.EOF
+				},
+				CloseFunc: func() error {
+					return nil
+				},
+			}
+
+			mockedObservationStore := &mocks.ObservationStoreMock{
+				GetCSVRowsFunc: func(*observation.Filter, *int) (observation.CSVRowReader, error) {
+					return mockRowReader, nil
+				},
+			}
+
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, mockedObservationStore)
+			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
+			w := httptest.NewRecorder()
+
+			api.Router.ServeHTTP(w, r)
+
+			Convey("then a 500 status response is returned", func() {
+				ap := common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"}
+
+				assertInternalServerErr(w)
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
+					audit_mock.Expected{getObservationsAction, audit.Successful, ap},
+				)
+
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+				So(len(mockedObservationStore.GetCSVRowsCalls()), ShouldEqual, 1)
+			})
+
 		})
 	})
 }
