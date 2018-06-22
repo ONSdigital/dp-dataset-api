@@ -45,7 +45,7 @@ type ImportObservationsTask struct {
 
 // BuildHierarchyTask represents a task of importing a single hierarchy.
 type BuildHierarchyTask struct {
-	CodeListID string `bson:"code_list_id,omitempty"   json:"code_list_id,omitempty"`
+	CodeListID         string `bson:"code_list_id,omitempty"   json:"code_list_id,omitempty"`
 	GenericTaskDetails `bson:",inline"`
 }
 

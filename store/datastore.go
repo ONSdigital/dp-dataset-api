@@ -1,9 +1,6 @@
 package store
 
 import (
-	"context"
-	"time"
-
 	"github.com/gedge/mgo/bson"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -50,6 +47,5 @@ type Storer interface {
 	UpsertDataset(ID string, datasetDoc *models.DatasetUpdate) error
 	UpsertEdition(datasetID, edition string, editionDoc *models.EditionUpdate) error
 	UpsertVersion(ID string, versionDoc *models.Version) error
-	Ping(ctx context.Context) (time.Time, error)
 	DeleteDataset(ID string) error
 }
