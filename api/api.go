@@ -274,13 +274,14 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 							}
 						}
 						if newVersion != nil {
-							b, err := json.Marshal(newVersion)
+							var b []byte
+							b, err = json.Marshal(newVersion)
 							if err != nil {
 								http.Error(w, err.Error(), http.StatusForbidden)
 								return
 							}
 
-							if err := r.Body.Close(); err != nil {
+							if err = r.Body.Close(); err != nil {
 								log.ErrorC("could not close response body", err, nil)
 							}
 							r.Body = ioutil.NopCloser(bytes.NewBuffer(b))

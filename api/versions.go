@@ -38,13 +38,14 @@ var (
 	}
 )
 
-type versionDetails struct {
+// VersionDetails contains the details that uniquely identify a version resource
+type VersionDetails struct {
 	datasetID string
 	edition   string
 	version   string
 }
 
-func (v versionDetails) baseAuditParams() common.Params {
+func (v VersionDetails) baseAuditParams() common.Params {
 	return common.Params{"dataset_id": v.datasetID, "edition": v.edition, "version": v.version}
 }
 
@@ -236,7 +237,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	versionDetails := versionDetails{
+	versionDetails := VersionDetails{
 		datasetID: vars["id"],
 		edition:   vars["edition"],
 		version:   vars["version"],
@@ -272,7 +273,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	audit.LogInfo(ctx, "putVersion endpoint: request successful", data)
 }
 
-func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, versionDetails versionDetails) (*models.DatasetUpdate, *models.Version, *models.Version, error) {
+func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, versionDetails VersionDetails) (*models.DatasetUpdate, *models.Version, *models.Version, error) {
 	ap := versionDetails.baseAuditParams()
 	data := audit.ToLogData(ap)
 
@@ -340,7 +341,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	return currentDataset, currentVersion, versionUpdate, nil
 }
 
-func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *models.DatasetUpdate, currentVersion *models.Version, versionDoc *models.Version, versionDetails versionDetails) error {
+func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *models.DatasetUpdate, currentVersion *models.Version, versionDoc *models.Version, versionDetails VersionDetails) error {
 	ap := versionDetails.baseAuditParams()
 	data := audit.ToLogData(ap)
 
@@ -400,7 +401,7 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 	return nil
 }
 
-func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion *models.Version, versionDoc *models.Version, versionDetails versionDetails) error {
+func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion *models.Version, versionDoc *models.Version, versionDetails VersionDetails) error {
 	ap := versionDetails.baseAuditParams()
 	data := audit.ToLogData(ap)
 
