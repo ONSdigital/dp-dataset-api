@@ -4,11 +4,9 @@
 package storetest
 
 import (
-	"context"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/gedge/mgo/bson"
 	"sync"
-	"time"
 )
 
 var (
@@ -31,7 +29,6 @@ var (
 	lockStorerMockGetUniqueDimensionValues          sync.RWMutex
 	lockStorerMockGetVersion                        sync.RWMutex
 	lockStorerMockGetVersions                       sync.RWMutex
-	lockStorerMockPing                              sync.RWMutex
 	lockStorerMockUpdateBuildHierarchyTaskState     sync.RWMutex
 	lockStorerMockUpdateBuildSearchTaskState        sync.RWMutex
 	lockStorerMockUpdateDataset                     sync.RWMutex
@@ -110,9 +107,6 @@ var (
 //             },
 //             GetVersionsFunc: func(datasetID string, editionID string, state string) (*models.VersionResults, error) {
 // 	               panic("TODO: mock out the GetVersions method")
-//             },
-//             PingFunc: func(ctx context.Context) (time.Time, error) {
-// 	               panic("TODO: mock out the Ping method")
 //             },
 //             UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
 // 	               panic("TODO: mock out the UpdateBuildHierarchyTaskState method")
@@ -219,9 +213,6 @@ type StorerMock struct {
 
 	// GetVersionsFunc mocks the GetVersions method.
 	GetVersionsFunc func(datasetID string, editionID string, state string) (*models.VersionResults, error)
-
-	// PingFunc mocks the Ping method.
-	PingFunc func(ctx context.Context) (time.Time, error)
 
 	// UpdateBuildHierarchyTaskStateFunc mocks the UpdateBuildHierarchyTaskState method.
 	UpdateBuildHierarchyTaskStateFunc func(id string, dimension string, state string) error
@@ -391,11 +382,6 @@ type StorerMock struct {
 			EditionID string
 			// State is the state argument value.
 			State string
-		}
-		// Ping holds details about calls to the Ping method.
-		Ping []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
 		}
 		// UpdateBuildHierarchyTaskState holds details about calls to the UpdateBuildHierarchyTaskState method.
 		UpdateBuildHierarchyTaskState []struct {
@@ -1153,37 +1139,6 @@ func (mock *StorerMock) GetVersionsCalls() []struct {
 	lockStorerMockGetVersions.RLock()
 	calls = mock.calls.GetVersions
 	lockStorerMockGetVersions.RUnlock()
-	return calls
-}
-
-// Ping calls PingFunc.
-func (mock *StorerMock) Ping(ctx context.Context) (time.Time, error) {
-	if mock.PingFunc == nil {
-		panic("moq: StorerMock.PingFunc is nil but Storer.Ping was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-	}{
-		Ctx: ctx,
-	}
-	lockStorerMockPing.Lock()
-	mock.calls.Ping = append(mock.calls.Ping, callInfo)
-	lockStorerMockPing.Unlock()
-	return mock.PingFunc(ctx)
-}
-
-// PingCalls gets all the calls that were made to Ping.
-// Check the length with:
-//     len(mockedStorer.PingCalls())
-func (mock *StorerMock) PingCalls() []struct {
-	Ctx context.Context
-} {
-	var calls []struct {
-		Ctx context.Context
-	}
-	lockStorerMockPing.RLock()
-	calls = mock.calls.Ping
-	lockStorerMockPing.RUnlock()
 	return calls
 }
 
