@@ -185,31 +185,6 @@ func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 	return &api
 }
 
-func handleErrorType(docType string, err error, w http.ResponseWriter) {
-	log.Error(err, nil)
-
-	switch docType {
-	default:
-		if err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	case "dimension":
-		if err == errs.ErrDatasetNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else if err == errs.ErrEditionNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else if err == errs.ErrVersionNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else if err == errs.ErrDimensionsNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	}
-}
-
 // Check wraps a HTTP handle. Checks that the state is not published
 func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

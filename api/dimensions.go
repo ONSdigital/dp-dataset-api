@@ -143,6 +143,7 @@ func convertBSONToDimensionOption(data interface{}) (*models.DimensionOption, er
 }
 
 func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	datasetID := vars["id"]
 	editionID := vars["edition"]
@@ -161,7 +162,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	version, err := api.dataStore.Backend.GetVersion(datasetID, editionID, versionID, state)
 	if err != nil {
 		log.ErrorC("failed to get version", err, logData)
-		handleErrorType(versionDocType, err, w)
+		handleDimensionsErr(ctx, w, err)
 		return
 	}
 
@@ -174,7 +175,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	results, err := api.dataStore.Backend.GetDimensionOptions(version, dimension)
 	if err != nil {
 		log.ErrorC("failed to get a list of dimension options", err, logData)
-		handleErrorType(dimensionOptionDocType, err, w)
+		handleDimensionsErr(ctx, w, err)
 		return
 	}
 
@@ -204,13 +205,7 @@ func handleDimensionsErr(ctx context.Context, w http.ResponseWriter, err error) 
 	var responseStatus int
 
 	switch {
-	case err == errs.ErrDatasetNotFound:
-		responseStatus = http.StatusNotFound
-	case err == errs.ErrEditionNotFound:
-		responseStatus = http.StatusNotFound
-	case err == errs.ErrVersionNotFound:
-		responseStatus = http.StatusNotFound
-	case err == errs.ErrDimensionsNotFound:
+	case errs.NotFoundMap[err]:
 		responseStatus = http.StatusNotFound
 	default:
 		responseStatus = http.StatusInternalServerError
