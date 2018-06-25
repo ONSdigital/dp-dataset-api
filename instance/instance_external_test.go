@@ -288,6 +288,7 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 	})
 
 	Convey("when an instance changes its state to edition-confirmed", t, func() {
@@ -368,6 +369,7 @@ func TestUpdateInstanceReturnsInternalError(t *testing.T) {
 
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 	})
 
 	Convey("Given the current instance state is invalid, then response returns an internal error", t, func() {
@@ -387,6 +389,7 @@ func TestUpdateInstanceReturnsInternalError(t *testing.T) {
 
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 	})
 }
 
@@ -403,6 +406,7 @@ func TestUpdateInstanceFailure(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 	})
 
 	Convey("when the instance does not exist return status not found", t, func() {
@@ -421,6 +425,7 @@ func TestUpdateInstanceFailure(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 	})
 	Convey("when store.AddVersionDetailsToInstance return an error", t, func() {
 		body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
@@ -511,6 +516,7 @@ func TestUpdatePublishedInstanceToCompletedReturnsForbidden(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 	})
 }
 
@@ -546,6 +552,7 @@ func TestUpdateEditionConfirmedInstanceToCompletedReturnsForbidden(t *testing.T)
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 	})
 }
 
@@ -1061,6 +1068,7 @@ func TestUpdateInstanceReturnsErrorWhenStateIsPublished(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 	})
 }
 
