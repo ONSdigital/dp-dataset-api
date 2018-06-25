@@ -24,10 +24,14 @@ var closeNoErr = func() error {
 }
 
 func TestNeo4j_AddVersionDetailsToInstanceSuccess(t *testing.T) {
-	Convey("AddVersionDetailsToInstanceSuccess completes successfully", t, func() {
+	Convey("AddVersionDetailsToInstance completes successfully", t, func() {
 		res := &mocks.BoltResultMock{
-			RowsAffectedFunc: func() (int64, error) {
-				return 1, nil
+			MetadataFunc: func() map[string]interface{} {
+				return map[string]interface{}{
+					"stats": map[string]interface{}{
+						"properties-set": int64(3),
+					},
+				}
 			},
 		}
 		stmt := &mocks.BoltStmtMock{
@@ -66,7 +70,7 @@ func TestNeo4j_AddVersionDetailsToInstanceSuccess(t *testing.T) {
 		})
 		So(len(stmt.CloseCalls()), ShouldEqual, 1)
 
-		So(len(res.RowsAffectedCalls()), ShouldEqual, 1)
+		So(len(res.MetadataCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -145,10 +149,12 @@ func TestNeo4j_AddVersionDetailsToInstanceError(t *testing.T) {
 		})
 	})
 
-	Convey("given result.RowsAffected() returns an error", t, func() {
+	Convey("given result.Metadata() stats are not as expected", t, func() {
 		res := &mocks.BoltResultMock{
-			RowsAffectedFunc: func() (int64, error) {
-				return 0, errTest
+			MetadataFunc: func() map[string]interface{} {
+				return map[string]interface{}{
+					"stats": "invalid stats",
+				}
 			},
 		}
 		stmt := &mocks.BoltStmtMock{
@@ -174,20 +180,22 @@ func TestNeo4j_AddVersionDetailsToInstanceError(t *testing.T) {
 		err := store.AddVersionDetailsToInstance(context.Background(), testInstanceID, testDatasetId, testEdition, testVersion)
 
 		Convey("then the expected error is returned", func() {
-			So(err, ShouldResemble, errors.WithMessage(errTest, "neoClient AddVersionDetailsToInstance: error getting update result data"))
+			So(err.Error(), ShouldEqual, "neoClient AddVersionDetailsToInstance: error getting query result stats")
 			So(len(mockPool.OpenPoolCalls()), ShouldEqual, 1)
 			So(len(conn.PrepareNeoCalls()), ShouldEqual, 1)
 			So(len(conn.CloseCalls()), ShouldEqual, 1)
 			So(len(stmt.ExecNeoCalls()), ShouldEqual, 1)
 			So(len(stmt.CloseCalls()), ShouldEqual, 1)
-			So(len(res.RowsAffectedCalls()), ShouldEqual, 1)
+			So(len(res.MetadataCalls()), ShouldEqual, 1)
 		})
 	})
 
-	Convey("given result.RowsAffected() returns more than 1", t, func() {
+	Convey("given result stats do not contain 'properties-set'", t, func() {
 		res := &mocks.BoltResultMock{
-			RowsAffectedFunc: func() (int64, error) {
-				return 666, nil
+			MetadataFunc: func() map[string]interface{} {
+				return map[string]interface{}{
+					"stats": map[string]interface{}{},
+				}
 			},
 		}
 		stmt := &mocks.BoltStmtMock{
@@ -213,13 +221,99 @@ func TestNeo4j_AddVersionDetailsToInstanceError(t *testing.T) {
 		err := store.AddVersionDetailsToInstance(context.Background(), testInstanceID, testDatasetId, testEdition, testVersion)
 
 		Convey("then the expected error is returned", func() {
-			So(err.Error(), ShouldResemble, "neoClient AddVersionDetailsToInstance: unexpected rows affected expected 1 but was 666")
+			So(err.Error(), ShouldEqual, "neoClient AddVersionDetailsToInstance: error verifying query results")
 			So(len(mockPool.OpenPoolCalls()), ShouldEqual, 1)
 			So(len(conn.PrepareNeoCalls()), ShouldEqual, 1)
 			So(len(conn.CloseCalls()), ShouldEqual, 1)
 			So(len(stmt.ExecNeoCalls()), ShouldEqual, 1)
 			So(len(stmt.CloseCalls()), ShouldEqual, 1)
-			So(len(res.RowsAffectedCalls()), ShouldEqual, 1)
+			So(len(res.MetadataCalls()), ShouldEqual, 1)
+		})
+	})
+
+	Convey("given result stats properties-set is not the expected format", t, func() {
+		res := &mocks.BoltResultMock{
+			MetadataFunc: func() map[string]interface{} {
+				return map[string]interface{}{
+					"stats": map[string]interface{}{
+						"properties-set": "3",
+					},
+				}
+			},
+		}
+		stmt := &mocks.BoltStmtMock{
+			ExecNeoFunc: func(params map[string]interface{}) (golangNeo4jBoltDriver.Result, error) {
+				return res, nil
+			},
+			CloseFunc: closeNoErr,
+		}
+		conn := &mocks.BoltConnMock{
+			PrepareNeoFunc: func(query string) (golangNeo4jBoltDriver.Stmt, error) {
+				return stmt, nil
+			},
+			CloseFunc: closeNoErr,
+		}
+		mockPool := &mocks.DBPoolMock{
+			OpenPoolFunc: func() (golangNeo4jBoltDriver.Conn, error) {
+				return conn, nil
+			},
+		}
+
+		store := Neo4j{Pool: mockPool}
+
+		err := store.AddVersionDetailsToInstance(context.Background(), testInstanceID, testDatasetId, testEdition, testVersion)
+
+		Convey("then the expected error is returned", func() {
+			So(err.Error(), ShouldEqual, "neoClient AddVersionDetailsToInstance: error verifying query results")
+			So(len(mockPool.OpenPoolCalls()), ShouldEqual, 1)
+			So(len(conn.PrepareNeoCalls()), ShouldEqual, 1)
+			So(len(conn.CloseCalls()), ShouldEqual, 1)
+			So(len(stmt.ExecNeoCalls()), ShouldEqual, 1)
+			So(len(stmt.CloseCalls()), ShouldEqual, 1)
+			So(len(res.MetadataCalls()), ShouldEqual, 1)
+		})
+	})
+
+	Convey("given result stats properties-set is not the expected value", t, func() {
+		res := &mocks.BoltResultMock{
+			MetadataFunc: func() map[string]interface{} {
+				return map[string]interface{}{
+					"stats": map[string]interface{}{
+						"properties-set": int64(666),
+					},
+				}
+			},
+		}
+		stmt := &mocks.BoltStmtMock{
+			ExecNeoFunc: func(params map[string]interface{}) (golangNeo4jBoltDriver.Result, error) {
+				return res, nil
+			},
+			CloseFunc: closeNoErr,
+		}
+		conn := &mocks.BoltConnMock{
+			PrepareNeoFunc: func(query string) (golangNeo4jBoltDriver.Stmt, error) {
+				return stmt, nil
+			},
+			CloseFunc: closeNoErr,
+		}
+		mockPool := &mocks.DBPoolMock{
+			OpenPoolFunc: func() (golangNeo4jBoltDriver.Conn, error) {
+				return conn, nil
+			},
+		}
+
+		store := Neo4j{Pool: mockPool}
+
+		err := store.AddVersionDetailsToInstance(context.Background(), testInstanceID, testDatasetId, testEdition, testVersion)
+
+		Convey("then the expected error is returned", func() {
+			So(err.Error(), ShouldEqual, "neoClient AddVersionDetailsToInstance: unexpected rows affected expected 3 but was 666")
+			So(len(mockPool.OpenPoolCalls()), ShouldEqual, 1)
+			So(len(conn.PrepareNeoCalls()), ShouldEqual, 1)
+			So(len(conn.CloseCalls()), ShouldEqual, 1)
+			So(len(stmt.ExecNeoCalls()), ShouldEqual, 1)
+			So(len(stmt.CloseCalls()), ShouldEqual, 1)
+			So(len(res.MetadataCalls()), ShouldEqual, 1)
 		})
 	})
 }

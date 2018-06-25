@@ -36,8 +36,6 @@ func (c *Neo4j) AddVersionDetailsToInstance(ctx context.Context, instanceID stri
 		"version":     version,
 	}
 
-	// TODO do we need to do a defensive check first?
-
 	conn, err := c.Pool.OpenPool()
 	if err != nil {
 		return errors.WithMessage(err, "neoClient AddVersionDetailsToInstance: error opening neo4j connection")
@@ -53,23 +51,35 @@ func (c *Neo4j) AddVersionDetailsToInstance(ctx context.Context, instanceID stri
 
 	defer stmt.Close()
 
-	result, err := stmt.ExecNeo(map[string]interface{}{
+	params := map[string]interface{}{
 		"dataset_id": datasetID,
 		"edition":    edition,
 		"version":    version,
-	})
+	}
+	expectedResult := int64(len(params))
+	result, err := stmt.ExecNeo(params)
 
 	if err != nil {
 		return errors.WithMessage(err, "neoClient AddVersionDetailsToInstance: error executing neo4j update statement")
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return errors.WithMessage(err, "neoClient AddVersionDetailsToInstance: error getting update result data")
+	stats, ok := result.Metadata()["stats"].(map[string]interface{})
+	if !ok {
+		return errors.Errorf("neoClient AddVersionDetailsToInstance: error getting query result stats")
 	}
 
-	if rowsAffected != 1 {
-		return errors.Errorf("neoClient AddVersionDetailsToInstance: unexpected rows affected expected 1 but was %d", rowsAffected)
+	propertiesSet, ok := stats["properties-set"]
+	if !ok {
+		return errors.Errorf("neoClient AddVersionDetailsToInstance: error verifying query results")
+	}
+
+	val, ok := propertiesSet.(int64)
+	if !ok {
+		return errors.Errorf("neoClient AddVersionDetailsToInstance: error verifying query results")
+	}
+
+	if val != expectedResult {
+		return errors.Errorf("neoClient AddVersionDetailsToInstance: unexpected rows affected expected %d but was %d", expectedResult, val)
 	}
 
 	log.InfoCtx(ctx, "neoClient AddVersionDetailsToInstance: update successful", data)

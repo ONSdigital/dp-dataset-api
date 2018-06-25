@@ -325,13 +325,10 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			instance.Links = links
 		}
 
-		// moving into edition confirmed for the first time.
-		if currentInstance.State != models.EditionConfirmedState {
-			if err := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); err != nil {
-				log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: datastore.AddVersionDetailsToInstance returned an error"), data)
-				handleInstanceErr(ctx, err, w, data)
-				return
-			}
+		if err := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: datastore.AddVersionDetailsToInstance returned an error"), data)
+			handleInstanceErr(ctx, err, w, data)
+			return
 		}
 	}
 

@@ -29,8 +29,10 @@ import (
 	bolt "github.com/johnnadratowski/golang-neo4j-bolt-driver"
 )
 
-var _ store.Storer = DatsetAPIStore{}
+// check that DatsetAPIStore satifies the the store.Storer interface
+var _ store.Storer = (*DatsetAPIStore)(nil)
 
+//DatsetAPIStore is a wrapper which embeds Neo4j Mongo stucts which between them satisfy the store.Storer interface.
 type DatsetAPIStore struct {
 	*mongo.Mongo
 	*neo4j.Neo4j

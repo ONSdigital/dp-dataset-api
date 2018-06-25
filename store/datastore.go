@@ -4,19 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/ONSdigital/dp-dataset-api/mongo"
-	"github.com/ONSdigital/dp-dataset-api/neo4j"
 	"github.com/gedge/mgo/bson"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 )
-
-var _ Storer = DatasetStore{}
-
-type DatasetStore struct {
-	*mongo.Mongo
-	*neo4j.Neo4j
-}
 
 // DataStore provides a datastore.Storer interface used to store, retrieve, remove or update datasets
 type DataStore struct {
