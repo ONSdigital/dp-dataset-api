@@ -255,7 +255,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If update was to add downloads do not try to publish/associate version
-	if vars["has_downloads"] != "true" {
+	if vars[hasDownloads] != trueStringified {
 		if versionDoc.State == models.PublishedState {
 			if err := api.publishVersion(ctx, currentDataset, currentVersion, versionDoc, versionDetails); err != nil {
 				handleVersionAPIErr(ctx, err, w, data)

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -51,7 +52,11 @@ const (
 
 	auditError     = "error while attempting to record audit event, failing request"
 	auditActionErr = "failed to audit action"
+
+	hasDownloads = "has_downloads"
 )
+
+var trueStringified = strconv.FormatBool(true)
 
 // PublishCheck Checks if an version has been published
 type PublishCheck struct {
@@ -285,7 +290,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 
 							// Set variable `has_downloads` to true to prevent request
 							// triggering version from being republished
-							vars["has_downloads"] = "true"
+							vars[hasDownloads] = trueStringified
 							r.Body = ioutil.NopCloser(bytes.NewBuffer(b))
 							handle(w, r)
 							return
