@@ -254,17 +254,20 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if versionDoc.State == models.PublishedState {
-		if err := api.publishVersion(ctx, currentDataset, currentVersion, versionDoc, versionDetails); err != nil {
-			handleVersionAPIErr(ctx, err, w, data)
-			return
+	// If update was to add downloads do not try to publish/associate version
+	if vars["has_downloads"] != "true" {
+		if versionDoc.State == models.PublishedState {
+			if err := api.publishVersion(ctx, currentDataset, currentVersion, versionDoc, versionDetails); err != nil {
+				handleVersionAPIErr(ctx, err, w, data)
+				return
+			}
 		}
-	}
 
-	if versionDoc.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
-		if err := api.associateVersion(ctx, currentVersion, versionDoc, versionDetails); err != nil {
-			handleVersionAPIErr(ctx, err, w, data)
-			return
+		if versionDoc.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
+			if err := api.associateVersion(ctx, currentVersion, versionDoc, versionDetails); err != nil {
+				handleVersionAPIErr(ctx, err, w, data)
+				return
+			}
 		}
 	}
 
@@ -276,11 +279,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, versionDetails VersionDetails) (*models.DatasetUpdate, *models.Version, *models.Version, error) {
 	ap := versionDetails.baseAuditParams()
 	data := audit.ToLogData(ap)
-
-	if auditErr := api.auditor.Record(ctx, updateVersionAction, audit.Attempted, ap); auditErr != nil {
-		audit.LogActionFailure(ctx, updateVersionAction, audit.Attempted, auditErr, data)
-		return nil, nil, nil, auditErr
-	}
 
 	// attempt to update the version
 	currentDataset, currentVersion, versionUpdate, err := func() (*models.DatasetUpdate, *models.Version, *models.Version, error) {

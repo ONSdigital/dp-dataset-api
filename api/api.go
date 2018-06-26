@@ -29,10 +29,6 @@ import (
 var httpServer *server.Server
 
 const (
-	datasetDocType         = "dataset"
-	editionDocType         = "edition"
-	versionDocType         = "version"
-	observationDocType     = "observation"
 	downloadServiceToken   = "X-Download-Service-Token"
 	dimensionDocType       = "dimension"
 	dimensionOptionDocType = "dimension-option"
@@ -91,10 +87,6 @@ type DatasetAPI struct {
 	healthCheckTimeout   time.Duration
 	serviceAuthToken     string
 	auditor              Auditor
-}
-
-func setJSONContentType(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json")
 }
 
 // CreateDatasetAPI manages all the routes configured to API
@@ -157,11 +149,11 @@ func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 
 		log.Debug("private endpoints have been enabled", nil)
 
-		versionPublishChecker := PublishCheck{Datastore: dataStore.Backend}
+		versionPublishChecker := PublishCheck{Auditor: auditor, Datastore: dataStore.Backend}
 		api.Router.HandleFunc("/datasets/{id}", identity.Check(api.addDataset)).Methods("POST")
 		api.Router.HandleFunc("/datasets/{id}", identity.Check(api.putDataset)).Methods("PUT")
 		api.Router.HandleFunc("/datasets/{id}", identity.Check(api.deleteDataset)).Methods("DELETE")
-		api.Router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", identity.Check(versionPublishChecker.Check(api.putVersion))).Methods("PUT")
+		api.Router.HandleFunc("/datasets/{id}/editions/{edition}/versions/{version}", identity.Check(versionPublishChecker.Check(api.putVersion, updateVersionAction))).Methods("PUT")
 
 		instanceAPI := instance.Store{Host: api.host, Storer: api.dataStore.Backend, Auditor: auditor}
 		instancePublishChecker := instance.PublishCheck{Auditor: auditor, Datastore: dataStore.Backend}
@@ -186,17 +178,30 @@ func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 }
 
 // Check wraps a HTTP handle. Checks that the state is not published
-func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), action string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
+		ctx := r.Context()
 		vars := mux.Vars(r)
 		id := vars["id"]
 		edition := vars["edition"]
 		version := vars["version"]
+		data := log.Data{"dataset_id": id, "edition": edition, "version": version}
+		auditParams := common.Params{"dataset_id": id, "edition": edition, "version": version}
+
+		if auditErr := d.Auditor.Record(ctx, action, audit.Attempted, auditParams); auditErr != nil {
+			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		currentVersion, err := d.Datastore.GetVersion(id, edition, version, "")
 		if err != nil {
 			if err != errs.ErrVersionNotFound {
+				log.ErrorCtx(ctx, errors.WithMessage(err, "errored whilst retrieving version resource"), data)
+
+				if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
+					err = errs.ErrInternalServer
+				}
+
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -208,22 +213,32 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 		if currentVersion != nil {
 			if currentVersion.State == models.PublishedState {
 				defer func() {
-					if err := r.Body.Close(); err != nil {
-						log.ErrorC("could not close response body", err, nil)
+					if bodyCloseErr := r.Body.Close(); bodyCloseErr != nil {
+						log.ErrorCtx(ctx, errors.Wrap(bodyCloseErr, "could not close response body"), data)
 					}
 				}()
 
-				versionDoc, err := models.CreateVersion(r.Body)
-				if err != nil {
-					log.ErrorC("failed to model version resource based on request", err, log.Data{"dataset_id": id, "edition": edition, "version": version})
-					http.Error(w, err.Error(), http.StatusBadRequest)
-					return
-				}
+				// We can allow public download links to be modified by the exporter
+				// services when a version is published. Note that a new version will be
+				// created which contain only the download information to prevent any
+				// forbidden fields from being set on the published version
 
-				// We can allow public download links to be modified by the exporters when a version is published.
-				// Note that a new version will be created which contain only the download information to prevent
-				// any forbidden fields from being set on the published version
-				if r.Method == "PUT" {
+				// TODO Logic here might require it's own endpoint,
+				// possibly /datasets/.../versions/<version>/downloads
+				if action == updateVersionAction {
+					versionDoc, err := models.CreateVersion(r.Body)
+					if err != nil {
+						log.ErrorCtx(ctx, errors.WithMessage(err, "failed to model version resource based on request"), data)
+
+						if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
+							http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+							return
+						}
+
+						http.Error(w, err.Error(), http.StatusBadRequest)
+						return
+					}
+
 					if versionDoc.Downloads != nil {
 						newVersion := new(models.Version)
 						if versionDoc.Downloads.CSV != nil && versionDoc.Downloads.CSV.Public != "" {
@@ -237,6 +252,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 								},
 							}
 						}
+
 						if versionDoc.Downloads.XLS != nil && versionDoc.Downloads.XLS.Public != "" {
 							newVersion = &models.Version{
 								Downloads: &models.DownloadList{
@@ -252,13 +268,24 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 							var b []byte
 							b, err = json.Marshal(newVersion)
 							if err != nil {
+								log.ErrorCtx(ctx, errors.WithMessage(err, "failed to marshal new version resource based on request"), data)
+
+								if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
+									http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+									return
+								}
+
 								http.Error(w, err.Error(), http.StatusForbidden)
 								return
 							}
 
 							if err = r.Body.Close(); err != nil {
-								log.ErrorC("could not close response body", err, nil)
+								log.ErrorCtx(ctx, errors.WithMessage(err, "could not close response body"), data)
 							}
+
+							// Set variable `has_downloads` to true to prevent request
+							// triggering version from being republished
+							vars["has_downloads"] = "true"
 							r.Body = ioutil.NopCloser(bytes.NewBuffer(b))
 							handle(w, r)
 							return
@@ -267,7 +294,13 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 				}
 
 				err = errors.New("unable to update version as it has been published")
-				log.Error(err, log.Data{"version": currentVersion})
+				data["version"] = currentVersion
+				log.ErrorCtx(ctx, err, data)
+				if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
+					http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+					return
+				}
+
 				http.Error(w, err.Error(), http.StatusForbidden)
 				return
 			}
@@ -275,6 +308,10 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 
 		handle(w, r)
 	})
+}
+
+func setJSONContentType(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
 }
 
 func (api *DatasetAPI) authenticate(r *http.Request, logData map[string]interface{}) (bool, map[string]interface{}) {
@@ -303,50 +340,6 @@ func (api *DatasetAPI) authenticate(r *http.Request, logData map[string]interfac
 		return authorised, logData
 	}
 	return authorised, logData
-}
-
-func handleAuditingFailure(w http.ResponseWriter, err error, logData log.Data) {
-	log.ErrorC(auditError, err, logData)
-	http.Error(w, "internal server error", http.StatusInternalServerError)
-}
-
-func auditActionFailure(ctx context.Context, auditedAction string, auditedResult string, err error, logData log.Data) {
-	if logData == nil {
-		logData = log.Data{}
-	}
-
-	logData["auditAction"] = auditedAction
-	logData["auditResult"] = auditedResult
-
-	logError(ctx, errors.WithMessage(err, auditActionErr), logData)
-}
-
-func logError(ctx context.Context, err error, data log.Data) {
-	if data == nil {
-		data = log.Data{}
-	}
-	reqID := common.GetRequestId(ctx)
-	if user := common.User(ctx); user != "" {
-		data["user"] = user
-	}
-	if caller := common.Caller(ctx); caller != "" {
-		data["caller"] = caller
-	}
-	log.ErrorC(reqID, err, data)
-}
-
-func logInfo(ctx context.Context, message string, data log.Data) {
-	if data == nil {
-		data = log.Data{}
-	}
-	reqID := common.GetRequestId(ctx)
-	if user := common.User(ctx); user != "" {
-		data["user"] = user
-	}
-	if caller := common.Caller(ctx); caller != "" {
-		data["caller"] = caller
-	}
-	log.InfoC(reqID, message, data)
 }
 
 // Close represents the graceful shutting down of the http server

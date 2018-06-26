@@ -230,7 +230,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
-				So(w.Code, ShouldEqual, http.StatusNotFound)
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
 
@@ -280,7 +280,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
-				So(w.Code, ShouldEqual, http.StatusNotFound)
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
 				auditor.AssertRecordCalls(
