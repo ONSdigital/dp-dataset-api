@@ -53,4 +53,5 @@ type Storer interface {
 	Ping(ctx context.Context) (time.Time, error)
 	DeleteDataset(ID string) error
 	AddVersionDetailsToInstance(ctx context.Context, instanceID string, datasetID string, edition string, version int) error
+	SetInstanceIsPublished(ctx context.Context, instanceID string) error
 }
