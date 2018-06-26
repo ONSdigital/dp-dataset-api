@@ -30,8 +30,8 @@ const (
 	PutNodeIDAction      = "putNodeID"
 )
 
-// GetNodesHandler list from a specified instance
-func (s *Store) GetNodesHandler(w http.ResponseWriter, r *http.Request) {
+// GetDimensionsAndOptionsHandler returns a list of all dimensions and their options for an instance resource
+func (s *Store) GetDimensionsAndOptionsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["id"]
@@ -53,7 +53,7 @@ func (s *Store) GetNodesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	results, err := s.GetDimensionNodesFromInstance(instanceID)
+	results, err := s.GetDimensionsAndOptionsFromInstance(instanceID)
 	if err != nil {
 		log.ErrorCtx(ctx, errors.Wrap(err, "failed to get dimension nodes from instance"), logData)
 		handleDimensionErr(ctx, w, err, logData)
@@ -71,8 +71,8 @@ func (s *Store) GetNodesHandler(w http.ResponseWriter, r *http.Request) {
 	log.InfoCtx(ctx, "get dimension nodes", logData)
 }
 
-// GetUniqueHandler dimension values from a specified dimension
-func (s *Store) GetUniqueHandler(w http.ResponseWriter, r *http.Request) {
+// GetUniqueDimensionAndOptionsHandler returns a list of dimension options for a dimension of an instance
+func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["id"]
@@ -95,7 +95,7 @@ func (s *Store) GetUniqueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	values, err := s.GetUniqueDimensionValues(instanceID, dimension)
+	values, err := s.GetUniqueDimensionAndOptions(instanceID, dimension)
 	if err != nil {
 		log.ErrorCtx(ctx, errors.Wrap(err, "failed to get unique dimension values for instance"), logData)
 		handleDimensionErr(ctx, w, err, logData)

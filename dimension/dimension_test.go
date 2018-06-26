@@ -785,7 +785,7 @@ func TestGetDimensionNodesReturnsOk(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{State: models.CreatedState}, nil
 			},
-			GetDimensionNodesFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
+			GetDimensionsAndOptionsFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
 				return &models.DimensionNodeResults{}, nil
 			},
 		}
@@ -797,7 +797,7 @@ func TestGetDimensionNodesReturnsOk(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDimensionNodesFromInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDimensionsAndOptionsFromInstanceCalls()), ShouldEqual, 1)
 
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 0)
@@ -816,7 +816,7 @@ func TestGetDimensionNodesReturnsNotFound(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{State: models.CreatedState}, nil
 			},
-			GetDimensionNodesFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
+			GetDimensionsAndOptionsFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
 				return nil, errs.ErrDimensionNodeNotFound
 			},
 		}
@@ -829,7 +829,7 @@ func TestGetDimensionNodesReturnsNotFound(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDimensionNodeNotFound.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDimensionNodesFromInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDimensionsAndOptionsFromInstanceCalls()), ShouldEqual, 1)
 
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 0)
@@ -848,7 +848,7 @@ func TestGetDimensionNodesReturnsInternalError(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return nil, errs.ErrInternalServer
 			},
-			GetDimensionNodesFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
+			GetDimensionsAndOptionsFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
 				return &models.DimensionNodeResults{}, nil
 			},
 		}
@@ -861,7 +861,7 @@ func TestGetDimensionNodesReturnsInternalError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDimensionNodesFromInstanceCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetDimensionsAndOptionsFromInstanceCalls()), ShouldEqual, 0)
 
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 0)
@@ -877,7 +877,7 @@ func TestGetDimensionNodesReturnsInternalError(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{State: "gobbly gook"}, nil
 			},
-			GetDimensionNodesFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
+			GetDimensionsAndOptionsFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
 				return &models.DimensionNodeResults{}, nil
 			},
 		}
@@ -890,14 +890,14 @@ func TestGetDimensionNodesReturnsInternalError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDimensionNodesFromInstanceCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetDimensionsAndOptionsFromInstanceCalls()), ShouldEqual, 0)
 
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 0)
 	})
 }
 
-func TestGetUniqueDimensionValuesReturnsOk(t *testing.T) {
+func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("Get all unique dimensions returns ok", t, func() {
 		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
@@ -909,7 +909,7 @@ func TestGetUniqueDimensionValuesReturnsOk(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{State: models.CreatedState}, nil
 			},
-			GetUniqueDimensionValuesFunc: func(id, dimension string) (*models.DimensionValues, error) {
+			GetUniqueDimensionAndOptionsFunc: func(id, dimension string) (*models.DimensionValues, error) {
 				return &models.DimensionValues{}, nil
 			},
 		}
@@ -921,14 +921,14 @@ func TestGetUniqueDimensionValuesReturnsOk(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetUniqueDimensionValuesCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetUniqueDimensionAndOptionsCalls()), ShouldEqual, 1)
 
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 0)
 	})
 }
 
-func TestGetUniqueDimensionValuesReturnsNotFound(t *testing.T) {
+func TestGetUniqueDimensionAndOptionsReturnsNotFound(t *testing.T) {
 	t.Parallel()
 	Convey("Get all unique dimensions returns not found", t, func() {
 		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
@@ -939,7 +939,7 @@ func TestGetUniqueDimensionValuesReturnsNotFound(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{State: models.CreatedState}, nil
 			},
-			GetUniqueDimensionValuesFunc: func(id, dimension string) (*models.DimensionValues, error) {
+			GetUniqueDimensionAndOptionsFunc: func(id, dimension string) (*models.DimensionValues, error) {
 				return nil, errs.ErrInstanceNotFound
 			},
 		}
@@ -952,14 +952,14 @@ func TestGetUniqueDimensionValuesReturnsNotFound(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetUniqueDimensionValuesCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetUniqueDimensionAndOptionsCalls()), ShouldEqual, 1)
 
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 0)
 	})
 }
 
-func TestGetUniqueDimensionValuesReturnsInternalError(t *testing.T) {
+func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
 		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
@@ -970,7 +970,7 @@ func TestGetUniqueDimensionValuesReturnsInternalError(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return nil, errs.ErrInternalServer
 			},
-			GetDimensionNodesFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
+			GetDimensionsAndOptionsFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
 				return &models.DimensionNodeResults{}, nil
 			},
 		}
@@ -983,7 +983,7 @@ func TestGetUniqueDimensionValuesReturnsInternalError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetUniqueDimensionValuesCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetUniqueDimensionAndOptionsCalls()), ShouldEqual, 0)
 
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 0)
@@ -998,7 +998,7 @@ func TestGetUniqueDimensionValuesReturnsInternalError(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{State: "gobbly gook"}, nil
 			},
-			GetDimensionNodesFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
+			GetDimensionsAndOptionsFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
 				return &models.DimensionNodeResults{}, nil
 			},
 		}
@@ -1011,7 +1011,7 @@ func TestGetUniqueDimensionValuesReturnsInternalError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetUniqueDimensionValuesCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetUniqueDimensionAndOptionsCalls()), ShouldEqual, 0)
 
 		calls := auditorMock.RecordCalls()
 		So(len(calls), ShouldEqual, 0)
