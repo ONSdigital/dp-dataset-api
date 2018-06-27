@@ -13,6 +13,7 @@ var (
 	lockStorerMockAddDimensionToInstance            sync.RWMutex
 	lockStorerMockAddEventToInstance                sync.RWMutex
 	lockStorerMockAddInstance                       sync.RWMutex
+	lockStorerMockAddVersionDetailsToInstance       sync.RWMutex
 	lockStorerMockCheckDatasetExists                sync.RWMutex
 	lockStorerMockCheckEditionExists                sync.RWMutex
 	lockStorerMockDeleteDataset                     sync.RWMutex
@@ -59,6 +60,9 @@ var (
 //             },
 //             AddInstanceFunc: func(instance *models.Instance) (*models.Instance, error) {
 // 	               panic("TODO: mock out the AddInstance method")
+//             },
+//             AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
+// 	               panic("TODO: mock out the AddVersionDetailsToInstance method")
 //             },
 //             CheckDatasetExistsFunc: func(ID string, state string) error {
 // 	               panic("TODO: mock out the CheckDatasetExists method")
@@ -165,6 +169,9 @@ type StorerMock struct {
 
 	// AddInstanceFunc mocks the AddInstance method.
 	AddInstanceFunc func(instance *models.Instance) (*models.Instance, error)
+
+	// AddVersionDetailsToInstanceFunc mocks the AddVersionDetailsToInstance method.
+	AddVersionDetailsToInstanceFunc func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error
 
 	// CheckDatasetExistsFunc mocks the CheckDatasetExists method.
 	CheckDatasetExistsFunc func(ID string, state string) error
@@ -274,6 +281,19 @@ type StorerMock struct {
 		AddInstance []struct {
 			// Instance is the instance argument value.
 			Instance *models.Instance
+		}
+		// AddVersionDetailsToInstance holds details about calls to the AddVersionDetailsToInstance method.
+		AddVersionDetailsToInstance []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// InstanceID is the instanceID argument value.
+			InstanceID string
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// Edition is the edition argument value.
+			Edition string
+			// Version is the version argument value.
+			Version int
 		}
 		// CheckDatasetExists holds details about calls to the CheckDatasetExists method.
 		CheckDatasetExists []struct {
@@ -588,6 +608,53 @@ func (mock *StorerMock) AddInstanceCalls() []struct {
 	lockStorerMockAddInstance.RLock()
 	calls = mock.calls.AddInstance
 	lockStorerMockAddInstance.RUnlock()
+	return calls
+}
+
+// AddVersionDetailsToInstance calls AddVersionDetailsToInstanceFunc.
+func (mock *StorerMock) AddVersionDetailsToInstance(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
+	if mock.AddVersionDetailsToInstanceFunc == nil {
+		panic("moq: StorerMock.AddVersionDetailsToInstanceFunc is nil but Storer.AddVersionDetailsToInstance was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		InstanceID string
+		DatasetID  string
+		Edition    string
+		Version    int
+	}{
+		Ctx:        ctx,
+		InstanceID: instanceID,
+		DatasetID:  datasetID,
+		Edition:    edition,
+		Version:    version,
+	}
+	lockStorerMockAddVersionDetailsToInstance.Lock()
+	mock.calls.AddVersionDetailsToInstance = append(mock.calls.AddVersionDetailsToInstance, callInfo)
+	lockStorerMockAddVersionDetailsToInstance.Unlock()
+	return mock.AddVersionDetailsToInstanceFunc(ctx, instanceID, datasetID, edition, version)
+}
+
+// AddVersionDetailsToInstanceCalls gets all the calls that were made to AddVersionDetailsToInstance.
+// Check the length with:
+//     len(mockedStorer.AddVersionDetailsToInstanceCalls())
+func (mock *StorerMock) AddVersionDetailsToInstanceCalls() []struct {
+	Ctx        context.Context
+	InstanceID string
+	DatasetID  string
+	Edition    string
+	Version    int
+} {
+	var calls []struct {
+		Ctx        context.Context
+		InstanceID string
+		DatasetID  string
+		Edition    string
+		Version    int
+	}
+	lockStorerMockAddVersionDetailsToInstance.RLock()
+	calls = mock.calls.AddVersionDetailsToInstance
+	lockStorerMockAddVersionDetailsToInstance.RUnlock()
 	return calls
 }
 
