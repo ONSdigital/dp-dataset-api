@@ -11,8 +11,8 @@ import (
 
 const dimensionOptions = "dimension.options"
 
-// GetDimensionsAndOptionsFromInstance returns a list of dimensions and their options for an instance resource
-func (m *Mongo) GetDimensionsAndOptionsFromInstance(id string) (*models.DimensionNodeResults, error) {
+// GetDimensionsFromInstance returns a list of dimensions and their options for an instance resource
+func (m *Mongo) GetDimensionsFromInstance(id string) (*models.DimensionNodeResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 

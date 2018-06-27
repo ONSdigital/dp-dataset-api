@@ -22,7 +22,7 @@ type Storer interface {
 	CheckEditionExists(ID, editionID, state string) error
 	GetDataset(ID string) (*models.DatasetUpdate, error)
 	GetDatasets() ([]models.DatasetUpdate, error)
-	GetDimensionsAndOptionsFromInstance(ID string) (*models.DimensionNodeResults, error)
+	GetDimensionsFromInstance(ID string) (*models.DimensionNodeResults, error)
 	GetDimensions(datasetID, versionID string) ([]bson.M, error)
 	GetDimensionOptions(version *models.Version, dimension string) (*models.DimensionOptionResults, error)
 	GetEdition(ID, editionID, state string) (*models.EditionUpdate, error)

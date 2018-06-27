@@ -11,39 +11,39 @@ import (
 )
 
 var (
-	lockStorerMockAddDimensionToInstance              sync.RWMutex
-	lockStorerMockAddEventToInstance                  sync.RWMutex
-	lockStorerMockAddInstance                         sync.RWMutex
-	lockStorerMockCheckDatasetExists                  sync.RWMutex
-	lockStorerMockCheckEditionExists                  sync.RWMutex
-	lockStorerMockDeleteDataset                       sync.RWMutex
-	lockStorerMockGetDataset                          sync.RWMutex
-	lockStorerMockGetDatasets                         sync.RWMutex
-	lockStorerMockGetDimensionOptions                 sync.RWMutex
-	lockStorerMockGetDimensions                       sync.RWMutex
-	lockStorerMockGetDimensionsAndOptionsFromInstance sync.RWMutex
-	lockStorerMockGetEdition                          sync.RWMutex
-	lockStorerMockGetEditions                         sync.RWMutex
-	lockStorerMockGetInstance                         sync.RWMutex
-	lockStorerMockGetInstances                        sync.RWMutex
-	lockStorerMockGetNextVersion                      sync.RWMutex
-	lockStorerMockGetUniqueDimensionAndOptions        sync.RWMutex
-	lockStorerMockGetVersion                          sync.RWMutex
-	lockStorerMockGetVersions                         sync.RWMutex
-	lockStorerMockUpdateBuildHierarchyTaskState       sync.RWMutex
-	lockStorerMockUpdateBuildSearchTaskState          sync.RWMutex
-	lockStorerMockUpdateDataset                       sync.RWMutex
-	lockStorerMockUpdateDatasetWithAssociation        sync.RWMutex
-	lockStorerMockUpdateDimensionNodeID               sync.RWMutex
-	lockStorerMockUpdateEdition                       sync.RWMutex
-	lockStorerMockUpdateImportObservationsTaskState   sync.RWMutex
-	lockStorerMockUpdateInstance                      sync.RWMutex
-	lockStorerMockUpdateObservationInserted           sync.RWMutex
-	lockStorerMockUpdateVersion                       sync.RWMutex
-	lockStorerMockUpsertContact                       sync.RWMutex
-	lockStorerMockUpsertDataset                       sync.RWMutex
-	lockStorerMockUpsertEdition                       sync.RWMutex
-	lockStorerMockUpsertVersion                       sync.RWMutex
+	lockStorerMockAddDimensionToInstance            sync.RWMutex
+	lockStorerMockAddEventToInstance                sync.RWMutex
+	lockStorerMockAddInstance                       sync.RWMutex
+	lockStorerMockCheckDatasetExists                sync.RWMutex
+	lockStorerMockCheckEditionExists                sync.RWMutex
+	lockStorerMockDeleteDataset                     sync.RWMutex
+	lockStorerMockGetDataset                        sync.RWMutex
+	lockStorerMockGetDatasets                       sync.RWMutex
+	lockStorerMockGetDimensionOptions               sync.RWMutex
+	lockStorerMockGetDimensions                     sync.RWMutex
+	lockStorerMockGetDimensionsFromInstance         sync.RWMutex
+	lockStorerMockGetEdition                        sync.RWMutex
+	lockStorerMockGetEditions                       sync.RWMutex
+	lockStorerMockGetInstance                       sync.RWMutex
+	lockStorerMockGetInstances                      sync.RWMutex
+	lockStorerMockGetNextVersion                    sync.RWMutex
+	lockStorerMockGetUniqueDimensionAndOptions      sync.RWMutex
+	lockStorerMockGetVersion                        sync.RWMutex
+	lockStorerMockGetVersions                       sync.RWMutex
+	lockStorerMockUpdateBuildHierarchyTaskState     sync.RWMutex
+	lockStorerMockUpdateBuildSearchTaskState        sync.RWMutex
+	lockStorerMockUpdateDataset                     sync.RWMutex
+	lockStorerMockUpdateDatasetWithAssociation      sync.RWMutex
+	lockStorerMockUpdateDimensionNodeID             sync.RWMutex
+	lockStorerMockUpdateEdition                     sync.RWMutex
+	lockStorerMockUpdateImportObservationsTaskState sync.RWMutex
+	lockStorerMockUpdateInstance                    sync.RWMutex
+	lockStorerMockUpdateObservationInserted         sync.RWMutex
+	lockStorerMockUpdateVersion                     sync.RWMutex
+	lockStorerMockUpsertContact                     sync.RWMutex
+	lockStorerMockUpsertDataset                     sync.RWMutex
+	lockStorerMockUpsertEdition                     sync.RWMutex
+	lockStorerMockUpsertVersion                     sync.RWMutex
 )
 
 // StorerMock is a mock implementation of Storer.
@@ -82,8 +82,8 @@ var (
 //             GetDimensionsFunc: func(datasetID string, versionID string) ([]bson.M, error) {
 // 	               panic("TODO: mock out the GetDimensions method")
 //             },
-//             GetDimensionsAndOptionsFromInstanceFunc: func(ID string) (*models.DimensionNodeResults, error) {
-// 	               panic("TODO: mock out the GetDimensionsAndOptionsFromInstance method")
+//             GetDimensionsFromInstanceFunc: func(ID string) (*models.DimensionNodeResults, error) {
+// 	               panic("TODO: mock out the GetDimensionsFromInstance method")
 //             },
 //             GetEditionFunc: func(ID string, editionID string, state string) (*models.EditionUpdate, error) {
 // 	               panic("TODO: mock out the GetEdition method")
@@ -188,8 +188,8 @@ type StorerMock struct {
 	// GetDimensionsFunc mocks the GetDimensions method.
 	GetDimensionsFunc func(datasetID string, versionID string) ([]bson.M, error)
 
-	// GetDimensionsAndOptionsFromInstanceFunc mocks the GetDimensionsAndOptionsFromInstance method.
-	GetDimensionsAndOptionsFromInstanceFunc func(ID string) (*models.DimensionNodeResults, error)
+	// GetDimensionsFromInstanceFunc mocks the GetDimensionsFromInstance method.
+	GetDimensionsFromInstanceFunc func(ID string) (*models.DimensionNodeResults, error)
 
 	// GetEditionFunc mocks the GetEdition method.
 	GetEditionFunc func(ID string, editionID string, state string) (*models.EditionUpdate, error)
@@ -319,8 +319,8 @@ type StorerMock struct {
 			// VersionID is the versionID argument value.
 			VersionID string
 		}
-		// GetDimensionsAndOptionsFromInstance holds details about calls to the GetDimensionsAndOptionsFromInstance method.
-		GetDimensionsAndOptionsFromInstance []struct {
+		// GetDimensionsFromInstance holds details about calls to the GetDimensionsFromInstance method.
+		GetDimensionsFromInstance []struct {
 			// ID is the ID argument value.
 			ID string
 		}
@@ -824,34 +824,34 @@ func (mock *StorerMock) GetDimensionsCalls() []struct {
 	return calls
 }
 
-// GetDimensionsAndOptionsFromInstance calls GetDimensionsAndOptionsFromInstanceFunc.
-func (mock *StorerMock) GetDimensionsAndOptionsFromInstance(ID string) (*models.DimensionNodeResults, error) {
-	if mock.GetDimensionsAndOptionsFromInstanceFunc == nil {
-		panic("moq: StorerMock.GetDimensionsAndOptionsFromInstanceFunc is nil but Storer.GetDimensionsAndOptionsFromInstance was just called")
+// GetDimensionsFromInstance calls GetDimensionsFromInstanceFunc.
+func (mock *StorerMock) GetDimensionsFromInstance(ID string) (*models.DimensionNodeResults, error) {
+	if mock.GetDimensionsFromInstanceFunc == nil {
+		panic("moq: StorerMock.GetDimensionsFromInstanceFunc is nil but Storer.GetDimensionsFromInstance was just called")
 	}
 	callInfo := struct {
 		ID string
 	}{
 		ID: ID,
 	}
-	lockStorerMockGetDimensionsAndOptionsFromInstance.Lock()
-	mock.calls.GetDimensionsAndOptionsFromInstance = append(mock.calls.GetDimensionsAndOptionsFromInstance, callInfo)
-	lockStorerMockGetDimensionsAndOptionsFromInstance.Unlock()
-	return mock.GetDimensionsAndOptionsFromInstanceFunc(ID)
+	lockStorerMockGetDimensionsFromInstance.Lock()
+	mock.calls.GetDimensionsFromInstance = append(mock.calls.GetDimensionsFromInstance, callInfo)
+	lockStorerMockGetDimensionsFromInstance.Unlock()
+	return mock.GetDimensionsFromInstanceFunc(ID)
 }
 
-// GetDimensionsAndOptionsFromInstanceCalls gets all the calls that were made to GetDimensionsAndOptionsFromInstance.
+// GetDimensionsFromInstanceCalls gets all the calls that were made to GetDimensionsFromInstance.
 // Check the length with:
-//     len(mockedStorer.GetDimensionsAndOptionsFromInstanceCalls())
-func (mock *StorerMock) GetDimensionsAndOptionsFromInstanceCalls() []struct {
+//     len(mockedStorer.GetDimensionsFromInstanceCalls())
+func (mock *StorerMock) GetDimensionsFromInstanceCalls() []struct {
 	ID string
 } {
 	var calls []struct {
 		ID string
 	}
-	lockStorerMockGetDimensionsAndOptionsFromInstance.RLock()
-	calls = mock.calls.GetDimensionsAndOptionsFromInstance
-	lockStorerMockGetDimensionsAndOptionsFromInstance.RUnlock()
+	lockStorerMockGetDimensionsFromInstance.RLock()
+	calls = mock.calls.GetDimensionsFromInstance
+	lockStorerMockGetDimensionsFromInstance.RUnlock()
 	return calls
 }
 
