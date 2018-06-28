@@ -55,21 +55,23 @@ const (
 func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	data := log.Data{}
-	var stateFilterQuery string
-	var ap common.Params = nil
+	stateFilterQuery := r.URL.Query().Get("state")
+	var ap common.Params
+	var stateFilterList []string
 
-	if err := s.Auditor.Record(ctx, GetInstancesAction, audit.Attempted, nil); err != nil {
+	if stateFilterQuery != "" {
+		data["query"] = stateFilterQuery
+		ap = common.Params{"query": stateFilterQuery}
+		stateFilterList = strings.Split(stateFilterQuery, ",")
+	}
+
+	if err := s.Auditor.Record(ctx, GetInstancesAction, audit.Attempted, ap); err != nil {
 		handleInstanceErr(ctx, err, w, nil)
 		return
 	}
 
 	b, err := func() ([]byte, error) {
-		stateFilterQuery = r.URL.Query().Get("state")
-		var stateFilterList []string
-		if stateFilterQuery != "" {
-			data["query"] = stateFilterQuery
-			ap = common.Params{"query": stateFilterQuery}
-			stateFilterList = strings.Split(stateFilterQuery, ",")
+		if len(stateFilterList) > 0 {
 			if err := models.ValidateStateFilter(stateFilterList); err != nil {
 				log.ErrorCtx(ctx, errors.WithMessage(err, "get instances: filter state invalid"), data)
 				return nil, taskError{error: err, status: http.StatusBadRequest}

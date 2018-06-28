@@ -78,9 +78,10 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 		So(result, ShouldResemble, []string{models.CompletedState})
+		expectedParams := common.Params{"query": "completed"}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
-			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"query": "completed"}),
+			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, expectedParams),
+			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Successful, expectedParams),
 		)
 	})
 
@@ -103,9 +104,10 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 		So(result, ShouldResemble, []string{models.CompletedState, models.EditionConfirmedState})
+		expectedParams := common.Params{"query": "completed,edition-confirmed"}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
-			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"query": "completed,edition-confirmed"}),
+			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, expectedParams),
+			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Successful, expectedParams),
 		)
 	})
 }
@@ -146,9 +148,10 @@ func TestGetInstancesReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 0)
+		expectedParams := common.Params{"query": "foo"}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
-			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, common.Params{"query": "foo"}),
+			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, expectedParams),
+			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, expectedParams),
 		)
 	})
 }
