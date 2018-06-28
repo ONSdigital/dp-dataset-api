@@ -51,8 +51,8 @@ func TestGetInstancesReturnsOK(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil},
-			audit_mock.Expected{instance.GetInstancesAction, audit.Successful, nil},
+			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Successful, nil),
 		)
 	})
 }
@@ -79,8 +79,8 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 		So(result, ShouldResemble, []string{models.CompletedState})
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil},
-			audit_mock.Expected{instance.GetInstancesAction, audit.Successful, common.Params{"query": "completed"}},
+			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"query": "completed"}),
 		)
 	})
 
@@ -104,8 +104,8 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 		So(result, ShouldResemble, []string{models.CompletedState, models.EditionConfirmedState})
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil},
-			audit_mock.Expected{instance.GetInstancesAction, audit.Successful, common.Params{"query": "completed,edition-confirmed"}},
+			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"query": "completed,edition-confirmed"}),
 		)
 	})
 }
@@ -129,8 +129,8 @@ func TestGetInstancesReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil},
-			audit_mock.Expected{instance.GetInstancesAction, audit.Unsuccessful, nil},
+			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, nil),
 		)
 	})
 
@@ -147,8 +147,8 @@ func TestGetInstancesReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 0)
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil},
-			audit_mock.Expected{instance.GetInstancesAction, audit.Unsuccessful, common.Params{"query": "foo"}},
+			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+			audit_mock.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, common.Params{"query": "foo"}),
 		)
 	})
 }
@@ -171,7 +171,7 @@ func TestGetInstancesAuditErrors(t *testing.T) {
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 0)
-				auditor.AssertRecordCalls(audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil})
+				auditor.AssertRecordCalls(audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil))
 			})
 		})
 	})
@@ -196,8 +196,8 @@ func TestGetInstancesAuditErrors(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil},
-					audit_mock.Expected{instance.GetInstancesAction, audit.Unsuccessful, nil},
+					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, nil),
 				)
 			})
 		})
@@ -223,8 +223,8 @@ func TestGetInstancesAuditErrors(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.GetInstancesAction, audit.Attempted, nil},
-					audit_mock.Expected{instance.GetInstancesAction, audit.Successful, nil},
+					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Successful, nil),
 				)
 			})
 		})
@@ -744,8 +744,8 @@ func TestStore_UpdateImportTask_UpdateImportObservations(t *testing.T) {
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string. )
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Successful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Successful, ap),
 		)
 	})
 }
@@ -778,8 +778,8 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 
@@ -807,8 +807,8 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 
@@ -837,8 +837,8 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 		// router so no URL params are available in the test - hence empty string.
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 }
@@ -871,8 +871,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 
@@ -901,8 +901,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 
@@ -931,8 +931,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 
@@ -961,8 +961,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 
@@ -991,8 +991,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 
@@ -1021,8 +1021,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 
@@ -1051,8 +1051,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 
@@ -1081,8 +1081,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 }
@@ -1113,8 +1113,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask(t *testing.T) {
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Successful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Successful, ap),
 		)
 	})
 }
@@ -1144,8 +1144,8 @@ func TestStore_UpdateImportTask_ReturnsInternalError(t *testing.T) {
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 }
@@ -1377,8 +1377,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 
@@ -1407,8 +1407,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 
@@ -1437,8 +1437,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 
@@ -1490,8 +1490,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 
@@ -1520,8 +1520,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 
@@ -1550,8 +1550,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 
@@ -1580,8 +1580,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 		)
 	})
 }
@@ -1613,8 +1613,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask(t *testing.T) {
 		ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 		// router so no URL params are available in the test - hence empty string.
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-			audit_mock.Expected{updateImportTaskAction, audit.Successful, ap},
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(updateImportTaskAction, audit.Successful, ap),
 		)
 	})
 }
@@ -1641,7 +1641,7 @@ func TestStore_UpdateImportTask_AuditAttemptedError(t *testing.T) {
 
 				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 				// router so no URL params are available in the test - hence empty string.
-				auditor.AssertRecordCalls(audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap})
+				auditor.AssertRecordCalls(audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap))
 			})
 		})
 	})
@@ -1669,8 +1669,8 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 				// router so no URL params are available in the test - hence empty string.
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-					audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+					audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+					audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 				)
 			})
 		})
@@ -1699,8 +1699,8 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 				// router so no URL params are available in the test - hence empty string.
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-					audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+					audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+					audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 				)
 			})
 		})
@@ -1730,8 +1730,8 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 				// router so no URL params are available in the test - hence empty string.
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-					audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+					audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+					audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 				)
 			})
 		})
@@ -1759,8 +1759,8 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 				// router so no URL params are available in the test - hence empty string.
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-					audit_mock.Expected{updateImportTaskAction, audit.Unsuccessful, ap},
+					audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+					audit_mock.NewExpectation(updateImportTaskAction, audit.Unsuccessful, ap),
 				)
 			})
 		})
@@ -1794,8 +1794,8 @@ func TestStore_UpdateImportTask_AuditSuccessfulError(t *testing.T) {
 				ap := common.Params{"ID": ""} //NOTE: ID comes from mux router url params but the test is not invoked via the
 				// router so no URL params are available in the test - hence empty string.
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{updateImportTaskAction, audit.Attempted, ap},
-					audit_mock.Expected{updateImportTaskAction, audit.Successful, ap},
+					audit_mock.NewExpectation(updateImportTaskAction, audit.Attempted, ap),
+					audit_mock.NewExpectation(updateImportTaskAction, audit.Successful, ap),
 				)
 			})
 		})

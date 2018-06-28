@@ -30,12 +30,12 @@ type Store struct {
 	Auditor audit.AuditorService
 }
 
-type taskErr struct {
+type taskError struct {
 	error  error
 	status int
 }
 
-func (e taskErr) Error() string {
+func (e taskError) Error() string {
 	if e.error != nil {
 		return e.error.Error()
 	}
@@ -72,7 +72,7 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 			stateFilterList = strings.Split(stateFilterQuery, ",")
 			if err := models.ValidateStateFilter(stateFilterList); err != nil {
 				log.ErrorCtx(ctx, errors.WithMessage(err, "get instances: filter state invalid"), data)
-				return nil, taskErr{error: err, status: http.StatusBadRequest}
+				return nil, taskError{error: err, status: http.StatusBadRequest}
 			}
 		}
 
@@ -551,11 +551,11 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updateErr := func() *taskErr {
+	updateErr := func() *taskError {
 		tasks, err := unmarshalImportTasks(r.Body)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to unmarshal request body to UpdateImportTasks model"), data)
-			return &taskErr{err, http.StatusBadRequest}
+			return &taskError{err, http.StatusBadRequest}
 		}
 
 		validationErrs := make([]error, 0)
@@ -569,7 +569,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 				} else {
 					if err := s.UpdateImportObservationsTaskState(id, tasks.ImportObservations.State); err != nil {
 						log.ErrorCtx(ctx, errors.WithMessage(err, "Failed to update import observations task state"), data)
-						return &taskErr{err, http.StatusInternalServerError}
+						return &taskError{err, http.StatusInternalServerError}
 					}
 				}
 			} else {
@@ -589,10 +589,10 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 						if err.Error() == "not found" {
 							notFoundErr := task.DimensionName + " hierarchy import task does not exist"
 							log.ErrorCtx(ctx, errors.WithMessage(err, notFoundErr), data)
-							return &taskErr{errors.New(notFoundErr), http.StatusNotFound}
+							return &taskError{errors.New(notFoundErr), http.StatusNotFound}
 						}
 						log.ErrorCtx(ctx, errors.WithMessage(err, "failed to update build hierarchy task state"), data)
-						return &taskErr{err, http.StatusInternalServerError}
+						return &taskError{err, http.StatusInternalServerError}
 					}
 				}
 			}
@@ -613,10 +613,10 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 						if err.Error() == "not found" {
 							notFoundErr := task.DimensionName + " search index import task does not exist"
 							log.ErrorCtx(ctx, errors.WithMessage(err, notFoundErr), data)
-							return &taskErr{errors.New(notFoundErr), http.StatusNotFound}
+							return &taskError{errors.New(notFoundErr), http.StatusNotFound}
 						}
 						log.ErrorCtx(ctx, errors.WithMessage(err, "failed to update build hierarchy task state"), data)
-						return &taskErr{err, http.StatusInternalServerError}
+						return &taskError{err, http.StatusInternalServerError}
 					}
 				}
 			}
@@ -634,14 +634,14 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 				log.ErrorCtx(ctx, errors.WithMessage(err, "validation error"), data)
 			}
 			// todo: add all validation errors to the response
-			return &taskErr{validationErrs[0], http.StatusBadRequest}
+			return &taskError{validationErrs[0], http.StatusBadRequest}
 		}
 		return nil
 	}()
 
 	if updateErr != nil {
 		if auditErr := s.Auditor.Record(ctx, updateImportTaskAction, audit.Unsuccessful, ap); auditErr != nil {
-			updateErr = &taskErr{errs.ErrInternalServer, http.StatusInternalServerError}
+			updateErr = &taskError{errs.ErrInternalServer, http.StatusInternalServerError}
 		}
 		log.ErrorCtx(ctx, errors.WithMessage(updateErr, "updateImportTask endpoint: request unsuccessful"), data)
 		http.Error(w, updateErr.Error(), updateErr.status)
@@ -778,7 +778,7 @@ func handleInstanceErr(ctx context.Context, err error, w http.ResponseWriter, da
 		data = log.Data{}
 	}
 
-	taskErr, isTaskErr := err.(taskErr)
+	taskErr, isTaskErr := err.(taskError)
 
 	var status int
 	response := err
