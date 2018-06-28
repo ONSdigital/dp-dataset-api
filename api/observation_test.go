@@ -113,8 +113,8 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 
 			ap := common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"}
 			auditor.AssertRecordCalls(
-				audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
-				audit_mock.Expected{getObservationsAction, audit.Successful, ap},
+				audit_mock.Expected{Action: getObservationsAction, Result: audit.Attempted, Params: ap},
+				audit_mock.Expected{Action: getObservationsAction, Result: audit.Successful, Params: ap},
 			)
 		})
 
@@ -134,8 +134,8 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 
 			ap := common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"}
 			auditor.AssertRecordCalls(
-				audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
-				audit_mock.Expected{getObservationsAction, audit.Successful, ap},
+				audit_mock.Expected{Action: getObservationsAction, Result: audit.Attempted, Params: ap},
+				audit_mock.Expected{Action: getObservationsAction, Result: audit.Successful, Params: ap},
 			)
 		})
 	})
@@ -823,7 +823,7 @@ func TestGetObservationAuditAttemptedError(t *testing.T) {
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getObservationsAction, audit.Attempted, common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"}},
+					audit_mock.Expected{Action: getObservationsAction, Result: audit.Attempted, Params: common.Params{"dataset_id": "cpih012", "edition": "2017", "version": "1"}},
 				)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -857,8 +857,8 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
-					audit_mock.Expected{getObservationsAction, audit.Unsuccessful, ap},
+					audit_mock.Expected{Action: getObservationsAction, Result: audit.Attempted, Params: ap},
+					audit_mock.Expected{Action: getObservationsAction, Result: audit.Unsuccessful, Params: ap},
 				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -890,8 +890,8 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
-					audit_mock.Expected{getObservationsAction, audit.Unsuccessful, ap},
+					audit_mock.Expected{Action: getObservationsAction, Result: audit.Attempted, Params: ap},
+					audit_mock.Expected{Action: getObservationsAction, Result: audit.Unsuccessful, Params: ap},
 				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -926,8 +926,8 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
-					audit_mock.Expected{getObservationsAction, audit.Unsuccessful, ap},
+					audit_mock.Expected{Action: getObservationsAction, Result: audit.Attempted, Params: ap},
+					audit_mock.Expected{Action: getObservationsAction, Result: audit.Unsuccessful, Params: ap},
 				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -962,8 +962,8 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
-					audit_mock.Expected{getObservationsAction, audit.Unsuccessful, ap},
+					audit_mock.Expected{Action: getObservationsAction, Result: audit.Attempted, Params: ap},
+					audit_mock.Expected{Action: getObservationsAction, Result: audit.Unsuccessful, Params: ap},
 				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -1053,8 +1053,8 @@ func TestGetObservationAuditSuccessfulError(t *testing.T) {
 
 				assertInternalServerErr(w)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getObservationsAction, audit.Attempted, ap},
-					audit_mock.Expected{getObservationsAction, audit.Successful, ap},
+					audit_mock.Expected{Action: getObservationsAction, Result: audit.Attempted, Params: ap},
+					audit_mock.Expected{Action: getObservationsAction, Result: audit.Successful, Params: ap},
 				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)

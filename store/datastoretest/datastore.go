@@ -8,7 +8,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/gedge/mgo/bson"
 	"sync"
-	"time"
 )
 
 var (
@@ -32,7 +31,6 @@ var (
 	lockStorerMockGetUniqueDimensionValues          sync.RWMutex
 	lockStorerMockGetVersion                        sync.RWMutex
 	lockStorerMockGetVersions                       sync.RWMutex
-	lockStorerMockPing                              sync.RWMutex
 	lockStorerMockSetInstanceIsPublished            sync.RWMutex
 	lockStorerMockUpdateBuildHierarchyTaskState     sync.RWMutex
 	lockStorerMockUpdateBuildSearchTaskState        sync.RWMutex
@@ -115,9 +113,6 @@ var (
 //             },
 //             GetVersionsFunc: func(datasetID string, editionID string, state string) (*models.VersionResults, error) {
 // 	               panic("TODO: mock out the GetVersions method")
-//             },
-//             PingFunc: func(ctx context.Context) (time.Time, error) {
-// 	               panic("TODO: mock out the Ping method")
 //             },
 //             SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
 // 	               panic("TODO: mock out the SetInstanceIsPublished method")
@@ -230,9 +225,6 @@ type StorerMock struct {
 
 	// GetVersionsFunc mocks the GetVersions method.
 	GetVersionsFunc func(datasetID string, editionID string, state string) (*models.VersionResults, error)
-
-	// PingFunc mocks the Ping method.
-	PingFunc func(ctx context.Context) (time.Time, error)
 
 	// SetInstanceIsPublishedFunc mocks the SetInstanceIsPublished method.
 	SetInstanceIsPublishedFunc func(ctx context.Context, instanceID string) error
@@ -418,11 +410,6 @@ type StorerMock struct {
 			EditionID string
 			// State is the state argument value.
 			State string
-		}
-		// Ping holds details about calls to the Ping method.
-		Ping []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
 		}
 		// SetInstanceIsPublished holds details about calls to the SetInstanceIsPublished method.
 		SetInstanceIsPublished []struct {
@@ -1234,37 +1221,6 @@ func (mock *StorerMock) GetVersionsCalls() []struct {
 	lockStorerMockGetVersions.RLock()
 	calls = mock.calls.GetVersions
 	lockStorerMockGetVersions.RUnlock()
-	return calls
-}
-
-// Ping calls PingFunc.
-func (mock *StorerMock) Ping(ctx context.Context) (time.Time, error) {
-	if mock.PingFunc == nil {
-		panic("StorerMock.PingFunc: method is nil but Storer.Ping was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-	}{
-		Ctx: ctx,
-	}
-	lockStorerMockPing.Lock()
-	mock.calls.Ping = append(mock.calls.Ping, callInfo)
-	lockStorerMockPing.Unlock()
-	return mock.PingFunc(ctx)
-}
-
-// PingCalls gets all the calls that were made to Ping.
-// Check the length with:
-//     len(mockedStorer.PingCalls())
-func (mock *StorerMock) PingCalls() []struct {
-	Ctx context.Context
-} {
-	var calls []struct {
-		Ctx context.Context
-	}
-	lockStorerMockPing.RLock()
-	calls = mock.calls.Ping
-	lockStorerMockPing.RUnlock()
 	return calls
 }
 

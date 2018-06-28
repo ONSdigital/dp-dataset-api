@@ -44,8 +44,8 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 			"version":    "1",
 		}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
-			audit_mock.Expected{getDimensionsAction, audit.Successful, ap},
+			audit_mock.Expected{Action: getDimensionsAction, Result: audit.Attempted, Params: ap},
+			audit_mock.Expected{Action: getDimensionsAction, Result: audit.Successful, Params: ap},
 		)
 	})
 }
@@ -77,8 +77,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
-			audit_mock.Expected{getDimensionsAction, audit.Unsuccessful, ap},
+			audit_mock.Expected{Action: getDimensionsAction, Result: audit.Attempted, Params: ap},
+			audit_mock.Expected{Action: getDimensionsAction, Result: audit.Unsuccessful, Params: ap},
 		)
 	})
 
@@ -101,8 +101,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
-			audit_mock.Expected{getDimensionsAction, audit.Unsuccessful, ap},
+			audit_mock.Expected{Action: getDimensionsAction, Result: audit.Attempted, Params: ap},
+			audit_mock.Expected{Action: getDimensionsAction, Result: audit.Unsuccessful, Params: ap},
 		)
 	})
 
@@ -128,8 +128,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
-			audit_mock.Expected{getDimensionsAction, audit.Unsuccessful, ap},
+			audit_mock.Expected{Action: getDimensionsAction, Result: audit.Attempted, Params: ap},
+			audit_mock.Expected{Action: getDimensionsAction, Result: audit.Unsuccessful, Params: ap},
 		)
 	})
 
@@ -152,8 +152,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
-			audit_mock.Expected{getDimensionsAction, audit.Unsuccessful, ap},
+			audit_mock.Expected{Action: getDimensionsAction, Result: audit.Attempted, Params: ap},
+			audit_mock.Expected{Action: getDimensionsAction, Result: audit.Unsuccessful, Params: ap},
 		)
 	})
 }
@@ -178,7 +178,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
+					audit_mock.Expected{Action: getDimensionsAction, Result: audit.Attempted, Params: ap},
 				)
 			})
 		})
@@ -207,8 +207,8 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
-					audit_mock.Expected{getDimensionsAction, audit.Successful, ap},
+					audit_mock.Expected{Action: getDimensionsAction, Result: audit.Attempted, Params: ap},
+					audit_mock.Expected{Action: getDimensionsAction, Result: audit.Successful, Params: ap},
 				)
 			})
 		})
@@ -230,13 +230,13 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
-				So(w.Code, ShouldEqual, http.StatusNotFound)
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
-					audit_mock.Expected{getDimensionsAction, audit.Unsuccessful, ap},
+					audit_mock.Expected{Action: getDimensionsAction, Result: audit.Attempted, Params: ap},
+					audit_mock.Expected{Action: getDimensionsAction, Result: audit.Unsuccessful, Params: ap},
 				)
 			})
 		})
@@ -258,8 +258,8 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
-					audit_mock.Expected{getDimensionsAction, audit.Unsuccessful, ap},
+					audit_mock.Expected{Action: getDimensionsAction, Result: audit.Attempted, Params: ap},
+					audit_mock.Expected{Action: getDimensionsAction, Result: audit.Unsuccessful, Params: ap},
 				)
 			})
 		})
@@ -280,12 +280,12 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
-				So(w.Code, ShouldEqual, http.StatusNotFound)
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getDimensionsAction, audit.Attempted, ap},
-					audit_mock.Expected{getDimensionsAction, audit.Unsuccessful, ap},
+					audit_mock.Expected{Action: getDimensionsAction, Result: audit.Attempted, Params: ap},
+					audit_mock.Expected{Action: getDimensionsAction, Result: audit.Unsuccessful, Params: ap},
 				)
 			})
 		})

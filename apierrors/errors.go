@@ -35,14 +35,13 @@ var (
 
 	NotFoundMap = map[error]bool{
 		ErrDatasetNotFound:         true,
+		ErrDimensionNotFound:       true,
+		ErrDimensionsNotFound:      true,
 		ErrDimensionNodeNotFound:   true,
 		ErrDimensionOptionNotFound: true,
 		ErrEditionNotFound:         true,
 		ErrInstanceNotFound:        true,
 		ErrVersionNotFound:         true,
-
-		ErrDimensionNodeNotFound: true,
-		ErrDimensionNotFound:     true,
 	}
 
 	BadRequestMap = map[error]bool{
