@@ -23,7 +23,7 @@ type Storer interface {
 	CheckEditionExists(ID, editionID, state string) error
 	GetDataset(ID string) (*models.DatasetUpdate, error)
 	GetDatasets() ([]models.DatasetUpdate, error)
-	GetDimensionNodesFromInstance(ID string) (*models.DimensionNodeResults, error)
+	GetDimensionsFromInstance(ID string) (*models.DimensionNodeResults, error)
 	GetDimensions(datasetID, versionID string) ([]bson.M, error)
 	GetDimensionOptions(version *models.Version, dimension string) (*models.DimensionOptionResults, error)
 	GetEdition(ID, editionID, state string) (*models.EditionUpdate, error)
@@ -31,7 +31,7 @@ type Storer interface {
 	GetInstances(filters []string) (*models.InstanceResults, error)
 	GetInstance(ID string) (*models.Instance, error)
 	GetNextVersion(datasetID, editionID string) (int, error)
-	GetUniqueDimensionValues(ID, dimension string) (*models.DimensionValues, error)
+	GetUniqueDimensionAndOptions(ID, dimension string) (*models.DimensionValues, error)
 	GetVersion(datasetID, editionID, version, state string) (*models.Version, error)
 	GetVersions(datasetID, editionID, state string) (*models.VersionResults, error)
 	UpdateDataset(ID string, dataset *models.Dataset, currentState string) error
