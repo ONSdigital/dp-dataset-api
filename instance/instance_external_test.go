@@ -8,11 +8,17 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/ONSdigital/dp-dataset-api/api"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/instance"
+	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/audit/audit_mock"
 	"github.com/ONSdigital/go-ns/common"
@@ -20,22 +26,24 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-const secretKey = "coffee"
 const host = "http://localhost:8080"
 
 var errAudit = errors.New("auditing error")
 var updateImportTaskAction = "updateImportTask"
 
-func createRequestWithToken(method, url string, body io.Reader) *http.Request {
-	r := httptest.NewRequest(method, url, body)
-	r.Header.Add("internal-token", secretKey)
-	return r
+func createRequestWithToken(method, url string, body io.Reader) (*http.Request, error) {
+	r, err := http.NewRequest(method, url, body)
+	ctx := r.Context()
+	ctx = common.SetCaller(ctx, "someone@ons.gov.uk")
+	r = r.WithContext(ctx)
+	return r, err
 }
 
 func TestGetInstancesReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("Get instances returns a ok status code", t, func() {
-		r := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
+		r, err := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -60,7 +68,8 @@ func TestGetInstancesReturnsOK(t *testing.T) {
 func TestGetInstancesFiltersOnState(t *testing.T) {
 	t.Parallel()
 	Convey("Get instances filtered by a single state value returns only instances with that value", t, func() {
-		r := createRequestWithToken("GET", "http://localhost:21800/instances?state=completed", nil)
+		r, err := createRequestWithToken("GET", "http://localhost:21800/instances?state=completed", nil)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		var result []string
 
@@ -85,7 +94,8 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 	})
 
 	Convey("Get instances filtered by multiple state values returns only instances with those values", t, func() {
-		r := createRequestWithToken("GET", "http://localhost:21800/instances?state=completed,edition-confirmed", nil)
+		r, err := createRequestWithToken("GET", "http://localhost:21800/instances?state=completed,edition-confirmed", nil)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		var result []string
 
@@ -113,7 +123,8 @@ func TestGetInstancesFiltersOnState(t *testing.T) {
 func TestGetInstancesReturnsError(t *testing.T) {
 	t.Parallel()
 	Convey("Get instances returns an internal error", t, func() {
-		r := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
+		r, err := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -135,7 +146,8 @@ func TestGetInstancesReturnsError(t *testing.T) {
 	})
 
 	Convey("Get instances returns bad request error", t, func() {
-		r := createRequestWithToken("GET", "http://localhost:21800/instances?state=foo", nil)
+		r, err := createRequestWithToken("GET", "http://localhost:21800/instances?state=foo", nil)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{}
@@ -160,7 +172,8 @@ func TestGetInstancesAuditErrors(t *testing.T) {
 		auditor := audit_mock.NewErroring(instance.GetInstancesAction, audit.Attempted)
 
 		Convey("when get instances is called", func() {
-			r := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
+			r, err := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{}
@@ -180,7 +193,8 @@ func TestGetInstancesAuditErrors(t *testing.T) {
 		auditor := audit_mock.NewErroring(instance.GetInstancesAction, audit.Unsuccessful)
 
 		Convey("when get instances return an error", func() {
-			r := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
+			r, err := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
@@ -207,7 +221,8 @@ func TestGetInstancesAuditErrors(t *testing.T) {
 		auditor := audit_mock.NewErroring(instance.GetInstancesAction, audit.Successful)
 
 		Convey("when get instances is called", func() {
-			r := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
+			r, err := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
@@ -234,7 +249,8 @@ func TestGetInstancesAuditErrors(t *testing.T) {
 func TestGetInstanceReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("Get instance returns a ok status code", t, func() {
-		r := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -243,18 +259,27 @@ func TestGetInstanceReturnsOK(t *testing.T) {
 			},
 		}
 
-		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
-		instanceAPI.Get(w, r)
+		auditor := audit_mock.New()
+		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+
+		auditParams := common.Params{"instance_id": "123"}
+		So(len(auditor.RecordCalls()), ShouldEqual, 2)
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+			audit_mock.Expected{instance.GetInstanceAction, audit.Successful, auditParams},
+		)
 	})
 }
 
 func TestGetInstanceReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
-		r := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -263,17 +288,26 @@ func TestGetInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
-		instanceAPI.Get(w, r)
+		auditor := audit_mock.New()
+		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldResemble, "internal error\n")
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(len(auditor.RecordCalls()), ShouldEqual, 2)
+
+		auditParams := common.Params{"instance_id": "123"}
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+			audit_mock.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
+		)
 	})
 
 	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
-		r := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -282,12 +316,121 @@ func TestGetInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		instanceAPI := &instance.Store{Host: host, Storer: mockedDataStore}
-		instanceAPI.Get(w, r)
+		auditor := audit_mock.New()
+		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldResemble, "Incorrect resource state\n")
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(len(auditor.RecordCalls()), ShouldEqual, 2)
+
+		auditParams := common.Params{"instance_id": "123"}
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+			audit_mock.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
+		)
+	})
+}
+
+func TestGetInstanceAuditErrors(t *testing.T) {
+	t.Parallel()
+	Convey("Given audit action 'attempted' fails", t, func() {
+
+		auditor := audit_mock.NewErroring(instance.GetInstanceAction, audit.Attempted)
+
+		Convey("When a GET request is made to get an instance resource", func() {
+			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				GetInstanceFunc: func(ID string) (*models.Instance, error) {
+					return nil, errs.ErrInternalServer
+				},
+			}
+
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then response returns internal server error (500)", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
+				So(len(auditor.RecordCalls()), ShouldEqual, 1)
+
+				auditParams := common.Params{"instance_id": "123"}
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+				)
+			})
+		})
+	})
+
+	Convey("Given audit action 'unsuccessful' fails", t, func() {
+
+		auditor := audit_mock.NewErroring(instance.GetInstanceAction, audit.Unsuccessful)
+
+		Convey("When a GET request is made to get an instance resource", func() {
+			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				GetInstanceFunc: func(ID string) (*models.Instance, error) {
+					return nil, errs.ErrInternalServer
+				},
+			}
+
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then response returns internal server error (500)", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(auditor.RecordCalls()), ShouldEqual, 2)
+
+				auditParams := common.Params{"instance_id": "123"}
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+					audit_mock.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
+				)
+			})
+		})
+	})
+
+	Convey("Given audit action 'successful' fails", t, func() {
+
+		auditor := audit_mock.NewErroring(instance.GetInstanceAction, audit.Successful)
+
+		Convey("When a GET request is made to get an instance resource", func() {
+			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				GetInstanceFunc: func(ID string) (*models.Instance, error) {
+					return &models.Instance{State: models.CreatedState}, nil
+				},
+			}
+
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then response returns internal server error (500)", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(auditor.RecordCalls()), ShouldEqual, 2)
+
+				auditParams := common.Params{"instance_id": "123"}
+				auditor.AssertRecordCalls(
+					audit_mock.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+					audit_mock.Expected{instance.GetInstanceAction, audit.Successful, auditParams},
+				)
+			})
+		})
 	})
 }
 
@@ -295,7 +438,8 @@ func TestAddInstancesReturnsCreated(t *testing.T) {
 	t.Parallel()
 	Convey("Add instance returns a created code", t, func() {
 		body := strings.NewReader(`{"links": { "job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } } }`)
-		r := createRequestWithToken("POST", "http://localhost:21800/instances", body)
+		r, err := createRequestWithToken("POST", "http://localhost:21800/instances", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -316,7 +460,8 @@ func TestAddInstancesReturnsBadRequest(t *testing.T) {
 	t.Parallel()
 	Convey("Add instance returns a bad request with invalid json", t, func() {
 		body := strings.NewReader(`{`)
-		r := createRequestWithToken("POST", "http://localhost:21800/instances", body)
+		r, err := createRequestWithToken("POST", "http://localhost:21800/instances", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -333,7 +478,8 @@ func TestAddInstancesReturnsBadRequest(t *testing.T) {
 
 	Convey("Add instance returns a bad request with a empty json", t, func() {
 		body := strings.NewReader(`{}`)
-		r := createRequestWithToken("POST", "http://localhost:21800/instances", body)
+		r, err := createRequestWithToken("POST", "http://localhost:21800/instances", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -353,7 +499,8 @@ func TestAddInstancesReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("Add instance returns an internal error", t, func() {
 		body := strings.NewReader(`{"links": {"job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } } }`)
-		r := createRequestWithToken("POST", "http://localhost:21800/instances", body)
+		r, err := createRequestWithToken("POST", "http://localhost:21800/instances", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			AddInstanceFunc: func(*models.Instance) (*models.Instance, error) {
@@ -373,7 +520,8 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("when an instance has a state of created", t, func() {
 		body := strings.NewReader(`{"state":"created"}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -396,7 +544,8 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 
 	Convey("when an instance changes its state to edition-confirmed", t, func() {
 		body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		currentInstanceTestData := &models.Instance{
@@ -455,7 +604,8 @@ func TestUpdateInstanceReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
 		body := strings.NewReader(`{"state":"created"}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -476,7 +626,8 @@ func TestUpdateInstanceReturnsInternalError(t *testing.T) {
 	})
 
 	Convey("Given the current instance state is invalid, then response returns an internal error", t, func() {
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", strings.NewReader(`{"state":"completed", "edition": "2017"}`))
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", strings.NewReader(`{"state":"completed", "edition": "2017"}`))
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetInstanceFunc: func(id string) (*models.Instance, error) {
@@ -500,7 +651,8 @@ func TestUpdateInstanceFailure(t *testing.T) {
 	t.Parallel()
 	Convey("when the json body is in the incorrect structure return a bad request error", t, func() {
 		body := strings.NewReader(`{"state":`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
 
@@ -514,7 +666,8 @@ func TestUpdateInstanceFailure(t *testing.T) {
 
 	Convey("when the instance does not exist return status not found", t, func() {
 		body := strings.NewReader(`{"edition": "2017"}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetInstanceFunc: func(id string) (*models.Instance, error) {
@@ -532,7 +685,8 @@ func TestUpdateInstanceFailure(t *testing.T) {
 	})
 	Convey("when store.AddVersionDetailsToInstance return an error", t, func() {
 		body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		currentInstanceTestData := &models.Instance{
@@ -591,7 +745,8 @@ func TestUpdatePublishedInstanceToCompletedReturnsForbidden(t *testing.T) {
 	t.Parallel()
 	Convey("Given a 'published' instance, when we update to 'completed' then we get a bad-request error", t, func() {
 		body := strings.NewReader(`{"state":"completed"}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/1235", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/1235", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		currentInstanceTestData := &models.Instance{
@@ -627,7 +782,8 @@ func TestUpdateEditionConfirmedInstanceToCompletedReturnsForbidden(t *testing.T)
 	t.Parallel()
 	Convey("update to an instance returns an internal error", t, func() {
 		body := strings.NewReader(`{"state":"completed"}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		currentInstanceTestData := &models.Instance{
@@ -662,7 +818,8 @@ func TestUpdateEditionConfirmedInstanceToCompletedReturnsForbidden(t *testing.T)
 func TestInsertedObservationsReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("Updateding the inserted observations returns ok", t, func() {
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -684,7 +841,8 @@ func TestInsertedObservationsReturnsOk(t *testing.T) {
 func TestInsertedObservationsReturnsBadRequest(t *testing.T) {
 	t.Parallel()
 	Convey("Updateding the inserted observations returns bad request", t, func() {
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/aa12a", nil)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/aa12a", nil)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
 
@@ -698,7 +856,8 @@ func TestInsertedObservationsReturnsBadRequest(t *testing.T) {
 func TestInsertedObservationsReturnsNotFound(t *testing.T) {
 	t.Parallel()
 	Convey("Updating the inserted observations returns not found", t, func() {
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -723,7 +882,8 @@ func TestStore_UpdateImportTask_UpdateImportObservations(t *testing.T) {
 	t.Parallel()
 	Convey("update to an import task returns http 200 response if no errors occur", t, func() {
 		body := strings.NewReader(`{"import_observations":{"state":"completed"}}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -755,7 +915,8 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 	t.Parallel()
 	Convey("update to an import task with invalid json returns http 400 response", t, func() {
 		body := strings.NewReader(`{`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -785,7 +946,8 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 
 	Convey("update to an import task but missing mandatory field, 'state' returns http 400 response", t, func() {
 		body := strings.NewReader(`{"import_observations":{}}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -814,7 +976,8 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 
 	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
 		body := strings.NewReader(`{"import_observations":{"state":"notvalid"}}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -848,7 +1011,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 	t.Parallel()
 	Convey("update to an import task with invalid json returns http 400 response", t, func() {
 		body := strings.NewReader(`{`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -878,7 +1042,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 
 	Convey("update to an import task with an empty request body returns http 400 response", t, func() {
 		body := strings.NewReader(`{}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -908,7 +1073,9 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 
 	Convey("update to an import task without specifying a task returns http 400 response", t, func() {
 		body := strings.NewReader(`{"build_hierarchies":[]}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -938,7 +1105,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 
 	Convey("update to an import task without a 'dimension_name' returns http 400 response", t, func() {
 		body := strings.NewReader(`{"build_hierarchies":[{"state":"completed"}]}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -968,7 +1136,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 
 	Convey("update to an import task without a 'dimension_name' returns http 400 response", t, func() {
 		body := strings.NewReader(`{"build_hierarchies":[{"dimension_name":"geography"}]}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -998,7 +1167,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 
 	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
 		body := strings.NewReader(`{"build_hierarchies":[{"state":"notvalid", "dimension_name": "geography"}]}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1028,7 +1198,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 
 	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
 		body := strings.NewReader(`{"build_hierarchies":[{"state":"completed", "dimension_name": "geography"}]}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1058,7 +1229,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 
 	Convey("update to an import task but lose connection to datastore when updating resource", t, func() {
 		body := strings.NewReader(`{"build_hierarchies":[{"state":"completed", "dimension_name": "geography"}]}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1092,7 +1264,8 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask(t *testing.T) {
 	t.Parallel()
 	Convey("update to an import task returns http 200 response if no errors occur", t, func() {
 		body := strings.NewReader(`{"build_hierarchies":[{"state":"completed", "dimension_name":"geography"}]}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1124,7 +1297,8 @@ func TestStore_UpdateImportTask_ReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("update to an import task returns an internal error", t, func() {
 		body := strings.NewReader(`{"import_observations":{"state":"completed"}}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1154,7 +1328,8 @@ func TestUpdateInstanceReturnsErrorWhenStateIsPublished(t *testing.T) {
 	t.Parallel()
 	Convey("when an instance has a state of published, then put request to change to it to completed ", t, func() {
 		body := strings.NewReader(`{"state":"completed"}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1179,7 +1354,8 @@ func TestUpdateDimensionReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
 		body := strings.NewReader(`{"label":"ages"}`)
-		r := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1201,7 +1377,8 @@ func TestUpdateDimensionReturnsInternalError(t *testing.T) {
 
 	Convey("Given the instance state is invalid, then response returns an internal error", t, func() {
 		body := strings.NewReader(`{"label":"ages"}`)
-		r := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1225,7 +1402,8 @@ func TestUpdateDimensionReturnsInternalError(t *testing.T) {
 func TestUpdateDimensionReturnsNotFound(t *testing.T) {
 	t.Parallel()
 	Convey("When update dimension return status not found", t, func() {
-		r := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", nil)
+		r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", nil)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1246,7 +1424,8 @@ func TestUpdateDimensionReturnsNotFound(t *testing.T) {
 func TestUpdateDimensionReturnsForbidden(t *testing.T) {
 	t.Parallel()
 	Convey("When update dimension returns forbidden (for already published) ", t, func() {
-		r := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", nil)
+		r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", nil)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		currentInstanceTestData := &models.Instance{
@@ -1272,7 +1451,8 @@ func TestUpdateDimensionReturnsBadRequest(t *testing.T) {
 	t.Parallel()
 	Convey("When update dimension returns bad request", t, func() {
 		body := strings.NewReader("{")
-		r := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1292,7 +1472,8 @@ func TestUpdateDimensionReturnsNotFoundWithWrongName(t *testing.T) {
 	t.Parallel()
 	Convey("When update dimension fails to update an instance", t, func() {
 		body := strings.NewReader(`{"label":"notages"}`)
-		r := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/notage", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/notage", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1323,7 +1504,8 @@ func TestUpdateDimensionReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("When update dimension fails to update an instance", t, func() {
 		body := strings.NewReader(`{"label":"ages"}`)
-		r := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1354,7 +1536,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 	t.Parallel()
 	Convey("update to an import task with invalid json returns http 400 response", t, func() {
 		body := strings.NewReader(`{`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1384,7 +1567,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 
 	Convey("update to an import task with an empty request body returns http 400 response", t, func() {
 		body := strings.NewReader(`{}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1414,7 +1598,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 
 	Convey("update to an import task without specifying a task returns http 400 response", t, func() {
 		body := strings.NewReader(`{"build_search_indexes":[]}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1444,7 +1629,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 
 	Convey("update to an import task without a 'dimension_name' returns http 400 response", t, func() {
 		body := strings.NewReader(`{"build_search_indexes":[{"state":"completed"}]}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1467,7 +1653,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 
 	Convey("update to an import task without a 'dimension_name' returns http 400 response", t, func() {
 		body := strings.NewReader(`{"build_search_indexes":[{"dimension_name":"geography"}]}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1497,7 +1684,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 
 	Convey("update to an import task with an invalid state returns http 400 response", t, func() {
 		body := strings.NewReader(`{"build_search_indexes":[{"state":"notvalid", "dimension_name": "geography"}]}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1527,7 +1715,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 
 	Convey("update to an import task with a dimension that does not exist returns http 404 response", t, func() {
 		body := strings.NewReader(`{"build_search_indexes":[{"state":"completed", "dimension_name": "geography"}]}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1557,7 +1746,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 
 	Convey("update to an import task but lose connection to datastore when updating resource", t, func() {
 		body := strings.NewReader(`{"build_search_indexes":[{"state":"completed", "dimension_name": "geography"}]}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1591,7 +1781,8 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask(t *testing.T) {
 	t.Parallel()
 	Convey("update to an import task returns http 200 response if no errors occur", t, func() {
 		body := strings.NewReader(`{"build_search_indexes":[{"state":"completed", "dimension_name": "geography"}]}`)
-		r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1626,7 +1817,8 @@ func TestStore_UpdateImportTask_AuditAttemptedError(t *testing.T) {
 
 		Convey("when update import task is called", func() {
 			body := strings.NewReader(`{"build_search_indexes":[{"state":"completed"}]}`)
-			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{}
@@ -1653,7 +1845,8 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 		Convey("when the request body fails to marshal into the updateImportTask model", func() {
 			auditor := audit_mock.NewErroring(updateImportTaskAction, audit.Unsuccessful)
 			body := strings.NewReader(`THIS IS NOT JSON`)
-			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{}
@@ -1678,7 +1871,8 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 		Convey("when UpdateImportObservationsTaskState returns an error", func() {
 			auditor := audit_mock.NewErroring(updateImportTaskAction, audit.Unsuccessful)
 			body := strings.NewReader(`{"import_observations":{"state":"completed"}}`)
-			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
@@ -1708,7 +1902,8 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 		Convey("when UpdateBuildHierarchyTaskState returns an error", func() {
 			auditor := audit_mock.NewErroring(updateImportTaskAction, audit.Unsuccessful)
 			body := strings.NewReader(`{"build_hierarchies":[{"dimension_name": "geography", "state":"completed"}]}`)
-			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
@@ -1739,7 +1934,8 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 		Convey("when UpdateBuildSearchTaskState returns an error", func() {
 			auditor := audit_mock.NewErroring(updateImportTaskAction, audit.Unsuccessful)
 			body := strings.NewReader(`{"build_search_indexes":[{"dimension_name": "geography", "state":"completed"}]}`)
-			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
@@ -1774,7 +1970,8 @@ func TestStore_UpdateImportTask_AuditSuccessfulError(t *testing.T) {
 
 		Convey("when update import task is called", func() {
 			body := strings.NewReader(`{"import_observations":{"state":"completed"}}`)
-			r := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
@@ -1800,4 +1997,17 @@ func TestStore_UpdateImportTask_AuditSuccessfulError(t *testing.T) {
 			})
 		})
 	})
+}
+
+var urlBuilder = url.NewBuilder("localhost:20000")
+
+func getAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, mockAuditor api.Auditor, mockedObservationStore api.ObservationStore) *api.DatasetAPI {
+	cfg, err := config.Get()
+	So(err, ShouldBeNil)
+	cfg.ServiceAuthToken = "dataset"
+	cfg.DatasetAPIURL = "http://localhost:22000"
+	cfg.EnablePrivateEnpoints = true
+	cfg.HealthCheckTimeout = 2 * time.Second
+
+	return api.Routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockAuditor, mockedObservationStore)
 }
