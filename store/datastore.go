@@ -2,11 +2,9 @@ package store
 
 import (
 	"context"
-	"time"
-
-	"github.com/gedge/mgo/bson"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/gedge/mgo/bson"
 )
 
 // DataStore provides a datastore.Storer interface used to store, retrieve, remove or update datasets
@@ -25,7 +23,7 @@ type Storer interface {
 	CheckEditionExists(ID, editionID, state string) error
 	GetDataset(ID string) (*models.DatasetUpdate, error)
 	GetDatasets() ([]models.DatasetUpdate, error)
-	GetDimensionNodesFromInstance(ID string) (*models.DimensionNodeResults, error)
+	GetDimensionsFromInstance(ID string) (*models.DimensionNodeResults, error)
 	GetDimensions(datasetID, versionID string) ([]bson.M, error)
 	GetDimensionOptions(version *models.Version, dimension string) (*models.DimensionOptionResults, error)
 	GetEdition(ID, editionID, state string) (*models.EditionUpdate, error)
@@ -33,7 +31,7 @@ type Storer interface {
 	GetInstances(filters []string) (*models.InstanceResults, error)
 	GetInstance(ID string) (*models.Instance, error)
 	GetNextVersion(datasetID, editionID string) (int, error)
-	GetUniqueDimensionValues(ID, dimension string) (*models.DimensionValues, error)
+	GetUniqueDimensionAndOptions(ID, dimension string) (*models.DimensionValues, error)
 	GetVersion(datasetID, editionID, version, state string) (*models.Version, error)
 	GetVersions(datasetID, editionID, state string) (*models.VersionResults, error)
 	UpdateDataset(ID string, dataset *models.Dataset, currentState string) error
@@ -50,6 +48,6 @@ type Storer interface {
 	UpsertDataset(ID string, datasetDoc *models.DatasetUpdate) error
 	UpsertEdition(datasetID, edition string, editionDoc *models.EditionUpdate) error
 	UpsertVersion(ID string, versionDoc *models.Version) error
-	Ping(ctx context.Context) (time.Time, error)
 	DeleteDataset(ID string) error
+	AddVersionDetailsToInstance(ctx context.Context, instanceID string, datasetID string, edition string, version int) error
 }
