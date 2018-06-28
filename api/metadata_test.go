@@ -51,8 +51,8 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 
 		ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{getMetadataAction, audit.Attempted, ap},
-			audit_mock.Expected{getMetadataAction, audit.Successful, ap},
+			audit_mock.Expected{Action: getMetadataAction, Result: audit.Attempted, Params: ap},
+			audit_mock.Expected{Action: getMetadataAction, Result: audit.Successful, Params: ap},
 		)
 
 		bytes, err := ioutil.ReadAll(w.Body)
@@ -114,8 +114,8 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 
 		ap := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{getMetadataAction, audit.Attempted, ap},
-			audit_mock.Expected{getMetadataAction, audit.Successful, ap},
+			audit_mock.Expected{Action: getMetadataAction, Result: audit.Attempted, Params: ap},
+			audit_mock.Expected{Action: getMetadataAction, Result: audit.Successful, Params: ap},
 		)
 
 		bytes, err := ioutil.ReadAll(w.Body)
@@ -318,7 +318,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
-				auditor.AssertRecordCalls(audit_mock.Expected{getMetadataAction, audit.Attempted, ap})
+				auditor.AssertRecordCalls(audit_mock.Expected{Action: getMetadataAction, Result: audit.Attempted, Params: ap})
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -346,8 +346,8 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getMetadataAction, audit.Attempted, ap},
-					audit_mock.Expected{getMetadataAction, audit.Unsuccessful, ap},
+					audit_mock.Expected{Action: getMetadataAction, Result: audit.Attempted, Params: ap},
+					audit_mock.Expected{Action: getMetadataAction, Result: audit.Unsuccessful, Params: ap},
 				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -372,8 +372,8 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getMetadataAction, audit.Attempted, ap},
-					audit_mock.Expected{getMetadataAction, audit.Unsuccessful, ap},
+					audit_mock.Expected{Action: getMetadataAction, Result: audit.Attempted, Params: ap},
+					audit_mock.Expected{Action: getMetadataAction, Result: audit.Unsuccessful, Params: ap},
 				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -401,8 +401,8 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getMetadataAction, audit.Attempted, ap},
-					audit_mock.Expected{getMetadataAction, audit.Unsuccessful, ap},
+					audit_mock.Expected{Action: getMetadataAction, Result: audit.Attempted, Params: ap},
+					audit_mock.Expected{Action: getMetadataAction, Result: audit.Unsuccessful, Params: ap},
 				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -433,8 +433,8 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getMetadataAction, audit.Attempted, ap},
-					audit_mock.Expected{getMetadataAction, audit.Unsuccessful, ap},
+					audit_mock.Expected{Action: getMetadataAction, Result: audit.Attempted, Params: ap},
+					audit_mock.Expected{Action: getMetadataAction, Result: audit.Unsuccessful, Params: ap},
 				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -467,8 +467,8 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getMetadataAction, audit.Attempted, ap},
-					audit_mock.Expected{getMetadataAction, audit.Unsuccessful, ap},
+					audit_mock.Expected{Action: getMetadataAction, Result: audit.Attempted, Params: ap},
+					audit_mock.Expected{Action: getMetadataAction, Result: audit.Unsuccessful, Params: ap},
 				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -504,8 +504,8 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{getMetadataAction, audit.Attempted, ap},
-					audit_mock.Expected{getMetadataAction, audit.Successful, ap},
+					audit_mock.Expected{Action: getMetadataAction, Result: audit.Attempted, Params: ap},
+					audit_mock.Expected{Action: getMetadataAction, Result: audit.Successful, Params: ap},
 				)
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
