@@ -30,8 +30,7 @@ const (
 )
 
 func dimensionError(err error, message, action string) error {
-	newMessage := fmt.Sprintf("%v endpoint: "+message, action)
-	return errors.WithMessage(err, newMessage)
+	return errors.WithMessage(err, fmt.Sprintf("%v endpoint: %v", action, message))
 }
 
 // GetDimensionsHandler returns a list of all dimensions and their options for an instance resource
@@ -67,7 +66,6 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Store) getDimensions(ctx context.Context, instanceID string, logData log.Data) ([]byte, error) {
-	// Get instance
 	instance, err := s.GetInstance(instanceID)
 	if err != nil {
 		log.ErrorCtx(ctx, dimensionError(err, "failed to get instance", GetDimensions), logData)
@@ -130,7 +128,6 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 }
 
 func (s *Store) getUniqueDimensionAndOptions(ctx context.Context, instanceID, dimension string, logData log.Data) ([]byte, error) {
-	// Get instance
 	instance, err := s.GetInstance(instanceID)
 	if err != nil {
 		log.ErrorCtx(ctx, dimensionError(err, "failed to get instance", GetUniqueDimensionAndOptions), logData)
