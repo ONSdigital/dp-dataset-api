@@ -165,12 +165,12 @@ func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 		api.Router.HandleFunc("/instances", identity.Check(instanceAPI.GetList)).Methods("GET")
 		api.Router.HandleFunc("/instances", identity.Check(instanceAPI.Add)).Methods("POST")
 		api.Router.HandleFunc("/instances/{id}", identity.Check(instanceAPI.Get)).Methods("GET")
-		api.Router.HandleFunc("/instances/{id}", identity.Check(instancePublishChecker.Check(instanceAPI.Update, instance.PutInstanceAction))).Methods("PUT")
-		api.Router.HandleFunc("/instances/{id}/dimensions/{dimension}", identity.Check(instancePublishChecker.Check(instanceAPI.UpdateDimension, instance.PutDimensionAction))).Methods("PUT")
+		api.Router.HandleFunc("/instances/{id}", identity.Check(instancePublishChecker.Check(instanceAPI.Update, instance.UpdateInstanceAction))).Methods("PUT")
+		api.Router.HandleFunc("/instances/{id}/dimensions/{dimension}", identity.Check(instancePublishChecker.Check(instanceAPI.UpdateDimension, instance.UpdateDimensionAction))).Methods("PUT")
 		api.Router.HandleFunc("/instances/{id}/events", identity.Check(instanceAPI.AddEvent)).Methods("POST")
 		api.Router.HandleFunc("/instances/{id}/inserted_observations/{inserted_observations}",
-			identity.Check(instancePublishChecker.Check(instanceAPI.UpdateObservations, instance.PutInsertedObservations))).Methods("PUT")
-		api.Router.HandleFunc("/instances/{id}/import_tasks", identity.Check(instancePublishChecker.Check(instanceAPI.UpdateImportTask, instance.PutImportTasks))).Methods("PUT")
+			identity.Check(instancePublishChecker.Check(instanceAPI.UpdateObservations, instance.UpdateInsertedObservationsAction))).Methods("PUT")
+		api.Router.HandleFunc("/instances/{id}/import_tasks", identity.Check(instancePublishChecker.Check(instanceAPI.UpdateImportTask, instance.UpdateImportTasksAction))).Methods("PUT")
 
 		dimensionAPI := dimension.Store{Auditor: auditor, Storer: api.dataStore.Backend}
 		api.Router.HandleFunc("/instances/{id}/dimensions", identity.Check(dimensionAPI.GetDimensionsHandler)).Methods("GET")

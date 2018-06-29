@@ -19,6 +19,7 @@ var (
 	ErrInstanceNotFound                  = errors.New("Instance not found")
 	ErrInternalServer                    = errors.New("internal error")
 	ErrMetadataVersionNotFound           = errors.New("Version not found")
+	ErrMissingJobProperties              = errors.New("missing job properties")
 	ErrMissingParameters                 = errors.New("missing properties in JSON")
 	ErrMissingVersionHeadersOrDimensions = errors.New("missing headers or dimensions or both from version doc")
 	ErrNoAuthHeader                      = errors.New("No authentication header provided")
