@@ -26,7 +26,7 @@ var (
 
 	// errors that map to a HTTP 400 response
 	badRequest = map[error]bool{
-		errs.ErrVersionBadRequest:                      true,
+		errs.ErrUnableToParseJSON:                      true,
 		models.ErrPublishedVersionCollectionIDInvalid:  true,
 		models.ErrAssociatedVersionCollectionIDInvalid: true,
 		models.ErrVersionStateInvalid:                  true,
@@ -286,7 +286,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		versionUpdate, err := models.CreateVersion(body)
 		if err != nil {
 			audit.LogError(ctx, errors.WithMessage(err, "putVersion endpoint: failed to model version resource based on request"), data)
-			return nil, nil, nil, errs.ErrVersionBadRequest
+			return nil, nil, nil, errs.ErrUnableToParseJSON
 		}
 
 		currentDataset, err := api.dataStore.Backend.GetDataset(versionDetails.datasetID)

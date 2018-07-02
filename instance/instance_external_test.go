@@ -466,7 +466,29 @@ func TestGetInstanceAuditErrors(t *testing.T) {
 	})
 }
 
-func TestAddInstancesReturnsCreated(t *testing.T) {
+type expectedPostInstanceAuditObject struct {
+	Action      string
+	ContainsKey string
+	Result      string
+}
+
+// function specifically used for POST instance as instance_id cannot be
+// determined due to the nature of the handler method creating it's value
+func checkAuditRecord(auditMock audit_mock.MockAuditor, expected []expectedPostInstanceAuditObject) {
+	So(len(auditMock.RecordCalls()), ShouldEqual, len(expected))
+	for i, _ := range expected {
+		// Instance_id is created with a new uuid every time the test is run and
+		// hence cannot use the AssertRecordCalls helper method
+		So(auditMock.RecordCalls()[i].Action, ShouldEqual, expected[i].Action)
+		So(auditMock.RecordCalls()[i].Result, ShouldEqual, expected[i].Result)
+		if expected[i].ContainsKey != "" {
+			So(auditMock.RecordCalls()[i].Params, ShouldNotBeNil)
+			So(auditMock.RecordCalls()[i].Params, ShouldContainKey, expected[i].ContainsKey)
+		}
+	}
+}
+
+func TestAddInstanceReturnsCreated(t *testing.T) {
 	t.Parallel()
 	Convey("Add instance returns a created code", t, func() {
 		body := strings.NewReader(`{"links": { "job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } } }`)
@@ -480,19 +502,25 @@ func TestAddInstancesReturnsCreated(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
-		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+		auditMock := audit_mock.New()
+		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusCreated)
 		So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 1)
-		So(len(auditor.RecordCalls()), ShouldEqual, 0)
 
-		auditor.AssertRecordCalls()
+		checkAuditRecord(*auditMock, []expectedPostInstanceAuditObject{
+			expectedPostInstanceAuditObject{
+				Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "instance_id",
+			},
+			expectedPostInstanceAuditObject{
+				Action: instance.AddInstanceAction, Result: audit.Successful, ContainsKey: "instance_id",
+			},
+		})
 	})
 }
 
-func TestAddInstancesReturnsBadRequest(t *testing.T) {
+func TestAddInstanceReturnsBadRequest(t *testing.T) {
 	t.Parallel()
 	Convey("Add instance returns a bad request with invalid json", t, func() {
 		body := strings.NewReader(`{`)
@@ -512,9 +540,16 @@ func TestAddInstancesReturnsBadRequest(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
-		So(len(auditor.RecordCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 0)
 
-		auditor.AssertRecordCalls()
+		checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
+			expectedPostInstanceAuditObject{
+				Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "",
+			},
+			expectedPostInstanceAuditObject{
+				Action: instance.AddInstanceAction, Result: audit.Unsuccessful, ContainsKey: "",
+			},
+		})
 	})
 
 	Convey("Add instance returns a bad request with a empty json", t, func() {
@@ -535,13 +570,20 @@ func TestAddInstancesReturnsBadRequest(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrMissingJobProperties.Error())
-		So(len(auditor.RecordCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 0)
 
-		auditor.AssertRecordCalls()
+		checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
+			expectedPostInstanceAuditObject{
+				Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "",
+			},
+			expectedPostInstanceAuditObject{
+				Action: instance.AddInstanceAction, Result: audit.Unsuccessful, ContainsKey: "",
+			},
+		})
 	})
 }
 
-func TestAddInstancesReturnsInternalError(t *testing.T) {
+func TestAddInstanceReturnsInternalError(t *testing.T) {
 	t.Parallel()
 	Convey("Add instance returns an internal error", t, func() {
 		body := strings.NewReader(`{"links": {"job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } } }`)
@@ -560,11 +602,116 @@ func TestAddInstancesReturnsInternalError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-
 		So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 1)
-		So(len(auditor.RecordCalls()), ShouldEqual, 0)
 
-		auditor.AssertRecordCalls()
+		checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
+			expectedPostInstanceAuditObject{
+				Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "instance_id",
+			},
+			expectedPostInstanceAuditObject{
+				Action: instance.AddInstanceAction, Result: audit.Unsuccessful, ContainsKey: "instance_id",
+			},
+		})
+	})
+}
+
+func TestAddInstanceAuditErrors(t *testing.T) {
+	t.Parallel()
+	Convey("Given audit action 'attempted' fails", t, func() {
+
+		auditor := audit_mock.NewErroring(instance.AddInstanceAction, audit.Attempted)
+
+		Convey("When a POST request is made to create an instance resource", func() {
+			body := strings.NewReader(`{"links": { "job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } } }`)
+			r, err := createRequestWithToken("POST", "http://localhost:21800/instances", body)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			mockedDataStore := &storetest.StorerMock{}
+
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then response returns internal server error (500)", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
+
+				checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
+					expectedPostInstanceAuditObject{
+						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "",
+					},
+				})
+			})
+		})
+	})
+
+	Convey("Given audit action 'unsuccessful' fails", t, func() {
+
+		auditor := audit_mock.NewErroring(instance.AddInstanceAction, audit.Unsuccessful)
+
+		Convey("When a POST request is made to create an instance resource", func() {
+			body := strings.NewReader(`{"links": {"job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } } }`)
+			r, err := createRequestWithToken("POST", "http://localhost:21800/instances", body)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			mockedDataStore := &storetest.StorerMock{
+				AddInstanceFunc: func(*models.Instance) (*models.Instance, error) {
+					return nil, errs.ErrInternalServer
+				},
+			}
+
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then response returns internal server error (500)", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+				So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 1)
+
+				checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
+					expectedPostInstanceAuditObject{
+						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "instance_id",
+					},
+					expectedPostInstanceAuditObject{
+						Action: instance.AddInstanceAction, Result: audit.Unsuccessful, ContainsKey: "instance_id",
+					},
+				})
+			})
+		})
+	})
+
+	Convey("Given audit action 'successful' fails", t, func() {
+
+		auditor := audit_mock.NewErroring(instance.AddInstanceAction, audit.Successful)
+
+		Convey("When a POST request is made to create an instance resource", func() {
+			body := strings.NewReader(`{"links": {"job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } } }`)
+			r, err := createRequestWithToken("POST", "http://localhost:21800/instances", body)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			mockedDataStore := &storetest.StorerMock{
+				AddInstanceFunc: func(*models.Instance) (*models.Instance, error) {
+					return &models.Instance{}, nil
+				},
+			}
+
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then response returns status created (201)", func() {
+				So(w.Code, ShouldEqual, http.StatusCreated)
+				So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 1)
+
+				checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
+					expectedPostInstanceAuditObject{
+						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "instance_id",
+					},
+					expectedPostInstanceAuditObject{
+						Action: instance.AddInstanceAction, Result: audit.Successful, ContainsKey: "instance_id",
+					},
+				})
+			})
+		})
 	})
 }
 

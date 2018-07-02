@@ -42,6 +42,7 @@ func (e taskError) Error() string {
 
 // List of audit actions for instances
 const (
+	AddInstanceAction                = "addInstance"
 	GetInstanceAction                = "getInstance"
 	GetInstancesAction               = "getInstances"
 	UpdateInstanceAction             = "updateInstance"
@@ -164,38 +165,56 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	ctx := r.Context()
-	instance, err := unmarshalInstance(r.Body, true)
-	if err != nil {
-		log.ErrorCtx(ctx, errors.WithMessage(err, "instance add: failed to unmarshal json to model"), nil)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	data := log.Data{}
+	ap := common.Params{}
+
+	if err := s.Auditor.Record(ctx, AddInstanceAction, audit.Attempted, ap); err != nil {
+		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
-	instance.InstanceID = uuid.NewV4().String()
-	data := log.Data{"instance_id": instance.InstanceID}
+	b, err := func() ([]byte, error) {
+		instance, err := unmarshalInstance(ctx, r.Body, true)
+		if err != nil {
+			return nil, err
+		}
 
-	instance.Links.Self = &models.IDLink{
-		HRef: fmt.Sprintf("%s/instances/%s", s.Host, instance.InstanceID),
-	}
+		data["instance_id"] = instance.InstanceID
+		ap["instance_id"] = instance.InstanceID
 
-	instance, err = s.AddInstance(instance)
+		instance.Links.Self = &models.IDLink{
+			HRef: fmt.Sprintf("%s/instances/%s", s.Host, instance.InstanceID),
+		}
+
+		instance, err = s.AddInstance(instance)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "add instance: store.AddInstance returned an error"), data)
+			return nil, err
+		}
+
+		b, err := json.Marshal(instance)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "add instance: failed to marshal instance to json"), data)
+			return nil, err
+		}
+
+		return b, nil
+	}()
 	if err != nil {
-		log.ErrorCtx(ctx, errors.WithMessage(err, "instance add: store.AddInstance returned an error"), data)
-		internalError(ctx, w, err)
+		if auditErr := s.Auditor.Record(ctx, AddInstanceAction, audit.Unsuccessful, ap); auditErr != nil {
+			err = auditErr
+		}
+		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
-	b, err := json.Marshal(instance)
-	if err != nil {
-		log.ErrorCtx(ctx, errors.WithMessage(err, "instance add: failed to marshal instance to json"), data)
-		internalError(ctx, w, err)
-		return
-	}
+	s.Auditor.Record(ctx, AddInstanceAction, audit.Successful, ap)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	writeBody(ctx, w, b)
-	log.InfoCtx(ctx, "instance add: request successful", data)
+
+	log.InfoCtx(ctx, "add instance: request successful", data)
 }
 
 // UpdateDimension updates label and/or description for a specific dimension within an instance
@@ -288,7 +307,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	data := log.Data{"instance_id": id}
 	defer r.Body.Close()
 
-	instance, err := unmarshalInstance(r.Body, false)
+	instance, err := unmarshalInstance(ctx, r.Body, false)
 	if err != nil {
 		log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: failed unmarshalling json to model"), data)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -674,28 +693,28 @@ func unmarshalImportTasks(reader io.Reader) (*models.InstanceImportTasks, error)
 
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return nil, errors.New("failed to read message body")
+		return nil, errs.ErrUnableToReadMessage
 	}
 
 	var tasks models.InstanceImportTasks
 	err = json.Unmarshal(b, &tasks)
 	if err != nil {
-		return nil, errors.New("failed to parse json body: " + err.Error())
+		return nil, errs.ErrUnableToParseJSON
 	}
 
 	return &tasks, nil
 }
 
-func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
+func unmarshalInstance(ctx context.Context, reader io.Reader, post bool) (*models.Instance, error) {
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return nil, errors.New("failed to read message body")
+		return nil, errs.ErrUnableToReadMessage
 	}
 
 	var instance models.Instance
 	err = json.Unmarshal(b, &instance)
 	if err != nil {
-		return nil, errors.New("failed to parse json body: " + err.Error())
+		return nil, errs.ErrUnableToParseJSON
 	}
 
 	if instance.State != "" {
@@ -705,7 +724,8 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 	}
 
 	if post {
-		log.Debug("post request on an instance", log.Data{"instance_id": instance.InstanceID})
+		instance.InstanceID = uuid.NewV4().String()
+		log.InfoCtx(ctx, "post request on an instance", log.Data{"instance_id": instance.InstanceID})
 		if instance.Links == nil || instance.Links.Job == nil {
 			return nil, errs.ErrMissingJobProperties
 		}
@@ -792,6 +812,7 @@ func handleInstanceErr(ctx context.Context, err error, w http.ResponseWriter, da
 	if data == nil {
 		data = log.Data{}
 	}
+	log.ErrorC("fyi", err, nil)
 
 	taskErr, isTaskErr := err.(taskError)
 

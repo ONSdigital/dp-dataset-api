@@ -30,7 +30,6 @@ var (
 	ErrUnableToParseJSON                 = errors.New("failed to parse json body")
 	ErrUnableToReadMessage               = errors.New("failed to read message body")
 	ErrUnauthorised                      = errors.New("unauthorised access to API")
-	ErrVersionBadRequest                 = errors.New("failed to parse json body")
 	ErrVersionMissingState               = errors.New("missing state from version")
 	ErrVersionNotFound                   = errors.New("version not found")
 
@@ -46,8 +45,9 @@ var (
 	}
 
 	BadRequestMap = map[error]bool{
-		ErrMissingParameters:   true,
-		ErrUnableToParseJSON:   true,
-		ErrUnableToReadMessage: true,
+		ErrMissingJobProperties: true,
+		ErrMissingParameters:    true,
+		ErrUnableToParseJSON:    true,
+		ErrUnableToReadMessage:  true,
 	}
 )
