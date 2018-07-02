@@ -55,19 +55,19 @@ func (e observationQueryError) Error() string {
 
 func errorIncorrectQueryParameters(params []string) error {
 	return observationQueryError{
-		message: fmt.Sprintf("Incorrect selection of query parameters: %v, these dimensions do not exist for this version of the dataset", params),
+		message: fmt.Sprintf("incorrect selection of query parameters: %v, these dimensions do not exist for this version of the dataset", params),
 	}
 }
 
 func errorMissingQueryParameters(params []string) error {
 	return observationQueryError{
-		message: fmt.Sprintf("Missing query parameters for the following dimensions: %v", params),
+		message: fmt.Sprintf("missing query parameters for the following dimensions: %v", params),
 	}
 }
 
 func errorMultivaluedQueryParameters(params []string) error {
 	return observationQueryError{
-		message: fmt.Sprintf("Multi-valued query parameters for the following dimensions: %v", params),
+		message: fmt.Sprintf("multi-valued query parameters for the following dimensions: %v", params),
 	}
 }
 

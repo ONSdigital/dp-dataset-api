@@ -21,8 +21,6 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-var updateImportTaskAction = "updateImportTask"
-
 //Store provides a backend for instances
 type Store struct {
 	store.Storer
@@ -44,11 +42,12 @@ func (e taskError) Error() string {
 
 // List of audit actions for instances
 const (
-	GetInstancesAction      = "getInstances"
-	PutInstanceAction       = "putInstance"
-	PutDimensionAction      = "putDimension"
-	PutInsertedObservations = "putInsertedObservations"
-	PutImportTasks          = "putImportTasks"
+	GetInstanceAction                = "getInstance"
+	GetInstancesAction               = "getInstances"
+	UpdateInstanceAction             = "updateInstance"
+	UpdateDimensionAction            = "updateDimension"
+	UpdateInsertedObservationsAction = "updateInsertedObservations"
+	UpdateImportTasksAction          = "updateImportTasks"
 )
 
 //GetList a list of all instances
@@ -115,26 +114,45 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	data := log.Data{"instance_id": id}
+	ap := common.Params{"instance_id": id}
 
-	instance, err := s.GetInstance(id)
+	if err := s.Auditor.Record(ctx, GetInstanceAction, audit.Attempted, ap); err != nil {
+		handleInstanceErr(ctx, err, w, nil)
+		return
+	}
+
+	b, err := func() ([]byte, error) {
+		instance, err := s.GetInstance(id)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "get instance: failed to retrieve instance"), data)
+			return nil, err
+		}
+
+		// Early return if instance state is invalid
+		if err = models.CheckState("instance", instance.State); err != nil {
+			data["state"] = instance.State
+			log.ErrorCtx(ctx, errors.WithMessage(err, "get instance: instance has an invalid state"), data)
+			return nil, err
+		}
+
+		b, err := json.Marshal(instance)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "get instance: failed to marshal instance to json"), data)
+			return nil, err
+		}
+
+		return b, nil
+	}()
 	if err != nil {
-		log.ErrorCtx(ctx, err, data)
+		if auditErr := s.Auditor.Record(ctx, GetInstanceAction, audit.Unsuccessful, ap); auditErr != nil {
+			err = auditErr
+		}
 		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
-	// Early return if instance state is invalid
-	if err = models.CheckState("instance", instance.State); err != nil {
-		data["state"] = instance.State
-		log.ErrorCtx(ctx, errors.WithMessage(err, "instance get: instance has an invalid state"), data)
-		internalError(ctx, w, err)
-		return
-	}
-
-	b, err := json.Marshal(instance)
-	if err != nil {
-		log.ErrorCtx(ctx, errors.WithMessage(err, "failed to marshal instance to json"), data)
-		internalError(ctx, w, err)
+	if auditErr := s.Auditor.Record(ctx, GetInstanceAction, audit.Successful, ap); auditErr != nil {
+		handleInstanceErr(ctx, auditErr, w, data)
 		return
 	}
 
@@ -543,15 +561,10 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	id := vars["id"]
-	ap := common.Params{"ID": id}
+	instanceID := vars["id"]
+	ap := common.Params{"instance_id": instanceID}
 	data := audit.ToLogData(ap)
 	defer r.Body.Close()
-
-	if auditErr := s.Auditor.Record(ctx, updateImportTaskAction, audit.Attempted, ap); auditErr != nil {
-		http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
-		return
-	}
 
 	updateErr := func() *taskError {
 		tasks, err := unmarshalImportTasks(r.Body)
@@ -569,7 +582,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 				if tasks.ImportObservations.State != models.CompletedState {
 					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value for import observations: %v", tasks.ImportObservations.State))
 				} else {
-					if err := s.UpdateImportObservationsTaskState(id, tasks.ImportObservations.State); err != nil {
+					if err := s.UpdateImportObservationsTaskState(instanceID, tasks.ImportObservations.State); err != nil {
 						log.ErrorCtx(ctx, errors.WithMessage(err, "Failed to update import observations task state"), data)
 						return &taskError{err, http.StatusInternalServerError}
 					}
@@ -587,7 +600,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 				if err := models.ValidateImportTask(task.GenericTaskDetails); err != nil {
 					validationErrs = append(validationErrs, err)
 				} else {
-					if err := s.UpdateBuildHierarchyTaskState(id, task.DimensionName, task.State); err != nil {
+					if err := s.UpdateBuildHierarchyTaskState(instanceID, task.DimensionName, task.State); err != nil {
 						if err.Error() == "not found" {
 							notFoundErr := task.DimensionName + " hierarchy import task does not exist"
 							log.ErrorCtx(ctx, errors.WithMessage(err, notFoundErr), data)
@@ -611,7 +624,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 				if err := models.ValidateImportTask(task.GenericTaskDetails); err != nil {
 					validationErrs = append(validationErrs, err)
 				} else {
-					if err := s.UpdateBuildSearchTaskState(id, task.DimensionName, task.State); err != nil {
+					if err := s.UpdateBuildSearchTaskState(instanceID, task.DimensionName, task.State); err != nil {
 						if err.Error() == "not found" {
 							notFoundErr := task.DimensionName + " search index import task does not exist"
 							log.ErrorCtx(ctx, errors.WithMessage(err, notFoundErr), data)
@@ -642,7 +655,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if updateErr != nil {
-		if auditErr := s.Auditor.Record(ctx, updateImportTaskAction, audit.Unsuccessful, ap); auditErr != nil {
+		if auditErr := s.Auditor.Record(ctx, UpdateImportTasksAction, audit.Unsuccessful, ap); auditErr != nil {
 			updateErr = &taskError{errs.ErrInternalServer, http.StatusInternalServerError}
 		}
 		log.ErrorCtx(ctx, errors.WithMessage(updateErr, "updateImportTask endpoint: request unsuccessful"), data)
@@ -650,7 +663,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if auditErr := s.Auditor.Record(ctx, updateImportTaskAction, audit.Successful, ap); auditErr != nil {
+	if auditErr := s.Auditor.Record(ctx, UpdateImportTasksAction, audit.Successful, ap); auditErr != nil {
 		return
 	}
 
@@ -676,13 +689,13 @@ func unmarshalImportTasks(reader io.Reader) (*models.InstanceImportTasks, error)
 func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return nil, errors.New("Failed to read message body")
+		return nil, errors.New("failed to read message body")
 	}
 
 	var instance models.Instance
 	err = json.Unmarshal(b, &instance)
 	if err != nil {
-		return nil, errors.New("Failed to parse json body: " + err.Error())
+		return nil, errors.New("failed to parse json body: " + err.Error())
 	}
 
 	if instance.State != "" {
@@ -694,12 +707,12 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 	if post {
 		log.Debug("post request on an instance", log.Data{"instance_id": instance.InstanceID})
 		if instance.Links == nil || instance.Links.Job == nil {
-			return nil, errors.New("Missing job properties")
+			return nil, errs.ErrMissingJobProperties
 		}
 
 		// Need both href and id for job link
 		if instance.Links.Job.HRef == "" || instance.Links.Job.ID == "" {
-			return nil, errors.New("Missing job properties")
+			return nil, errs.ErrMissingJobProperties
 		}
 
 		// TODO May want to check the id and href make sense; or change spec to allow

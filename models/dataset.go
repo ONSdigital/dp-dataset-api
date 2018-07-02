@@ -15,9 +15,9 @@ import (
 
 // List of error variables
 var (
-	ErrPublishedVersionCollectionIDInvalid  = errors.New("Unexpected collection_id in published version")
-	ErrAssociatedVersionCollectionIDInvalid = errors.New("Missing collection_id for association between version and a collection")
-	ErrVersionStateInvalid                  = errors.New("Incorrect state, can be one of the following: edition-confirmed, associated or published")
+	ErrPublishedVersionCollectionIDInvalid  = errors.New("unexpected collection_id in published version")
+	ErrAssociatedVersionCollectionIDInvalid = errors.New("missing collection_id for association between version and a collection")
+	ErrVersionStateInvalid                  = errors.New("incorrect state, can be one of the following: edition-confirmed, associated or published")
 )
 
 // DatasetResults represents a structure for a list of datasets
@@ -250,14 +250,14 @@ func CheckState(docType, state string) error {
 func CreateDataset(reader io.Reader) (*Dataset, error) {
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return nil, errors.New("Failed to read message body")
+		return nil, errors.New("failed to read message body")
 	}
 
 	var dataset Dataset
 
 	err = json.Unmarshal(b, &dataset)
 	if err != nil {
-		return nil, errors.New("Failed to parse json body")
+		return nil, errors.New("failed to parse json body")
 	}
 	return &dataset, nil
 }
@@ -266,7 +266,7 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 func CreateVersion(reader io.Reader) (*Version, error) {
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return nil, errors.New("Failed to read message body")
+		return nil, errors.New("failed to read message body")
 	}
 
 	var version Version
@@ -275,7 +275,7 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 
 	err = json.Unmarshal(b, &version)
 	if err != nil {
-		return nil, errors.New("Failed to parse json body")
+		return nil, errors.New("failed to parse json body")
 	}
 
 	return &version, nil
@@ -300,12 +300,12 @@ func CreateDownloadList(reader io.Reader) (*DownloadList, error) {
 func CreateContact(reader io.Reader) (*Contact, error) {
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return nil, errors.New("Failed to read message body")
+		return nil, errors.New("failed to read message body")
 	}
 	var contact Contact
 	err = json.Unmarshal(b, &contact)
 	if err != nil {
-		return nil, errors.New("Failed to parse json body")
+		return nil, errors.New("failed to parse json body")
 	}
 
 	// Create unique id
