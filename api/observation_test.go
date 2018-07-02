@@ -542,7 +542,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(w.Body.String(), ShouldResemble, "Incorrect selection of query parameters: [geography], these dimensions do not exist for this version of the dataset\n")
+		So(w.Body.String(), ShouldResemble, "incorrect selection of query parameters: [geography], these dimensions do not exist for this version of the dataset\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -580,7 +580,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(w.Body.String(), ShouldResemble, "Missing query parameters for the following dimensions: [age]\n")
+		So(w.Body.String(), ShouldResemble, "missing query parameters for the following dimensions: [age]\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -727,7 +727,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(w.Body.String(), ShouldResemble, "Multi-valued query parameters for the following dimensions: [geography]\n")
+		So(w.Body.String(), ShouldResemble, "multi-valued query parameters for the following dimensions: [geography]\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
