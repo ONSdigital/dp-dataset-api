@@ -2263,7 +2263,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(w.Body.String(), ShouldEqual, "Missing collection_id for association between version and a collection\n")
+		So(w.Body.String(), ShouldEqual, "missing collection_id for association between version and a collection\n")
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
