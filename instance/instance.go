@@ -803,6 +803,8 @@ func handleInstanceErr(ctx context.Context, err error, w http.ResponseWriter, da
 		status = taskErr.status
 	case errs.NotFoundMap[err]:
 		status = http.StatusNotFound
+	case errs.BadRequestMap[err]:
+		status = http.StatusBadRequest
 	case err == errs.ErrResourcePublished:
 		status = http.StatusForbidden
 	default:

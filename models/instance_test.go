@@ -97,7 +97,7 @@ func TestValidateEvent(t *testing.T) {
 			}
 			err := event.Validate()
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "missing properties")
+			So(err.Error(), ShouldEqual, "missing properties in JSON")
 		})
 	})
 
@@ -110,7 +110,7 @@ func TestValidateEvent(t *testing.T) {
 			}
 			err := event.Validate()
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "missing properties")
+			So(err.Error(), ShouldEqual, "missing properties in JSON")
 		})
 	})
 
@@ -123,7 +123,7 @@ func TestValidateEvent(t *testing.T) {
 			}
 			err := event.Validate()
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "missing properties")
+			So(err.Error(), ShouldEqual, "missing properties in JSON")
 		})
 	})
 
@@ -136,7 +136,7 @@ func TestValidateEvent(t *testing.T) {
 			}
 			err := event.Validate()
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "missing properties")
+			So(err.Error(), ShouldEqual, "missing properties in JSON")
 		})
 	})
 }
