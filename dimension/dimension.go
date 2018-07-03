@@ -23,10 +23,10 @@ type Store struct {
 
 // List of audit actions for dimensions
 const (
-	GetDimensions                = "getInstanceDimensions"
-	GetUniqueDimensionAndOptions = "getInstanceUniqueDimensionAndOptions"
-	PostDimensionsAction         = "postDimensions"
-	PutNodeIDAction              = "putNodeID"
+	GetDimensions                      = "getInstanceDimensions"
+	GetUniqueDimensionAndOptionsAction = "getInstanceUniqueDimensionAndOptions"
+	AddDimensionAction                 = "addDimension"
+	UpdateNodeIDAction                 = "updateDimensionOptionWithNodeID"
 )
 
 func dimensionError(err error, message, action string) error {
@@ -103,14 +103,14 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	logData := log.Data{"instance_id": instanceID, "dimension": dimension}
 	auditParams := common.Params{"instance_id": instanceID, "dimension": dimension}
 
-	if auditErr := s.Auditor.Record(ctx, GetUniqueDimensionAndOptions, audit.Attempted, auditParams); auditErr != nil {
+	if auditErr := s.Auditor.Record(ctx, GetUniqueDimensionAndOptionsAction, audit.Attempted, auditParams); auditErr != nil {
 		handleDimensionErr(ctx, w, auditErr, logData)
 		return
 	}
 
 	b, err := s.getUniqueDimensionAndOptions(ctx, instanceID, dimension, logData)
 	if err != nil {
-		if auditErr := s.Auditor.Record(ctx, GetUniqueDimensionAndOptions, audit.Unsuccessful, auditParams); auditErr != nil {
+		if auditErr := s.Auditor.Record(ctx, GetUniqueDimensionAndOptionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			err = auditErr
 		}
 
@@ -118,38 +118,38 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	if auditErr := s.Auditor.Record(ctx, GetUniqueDimensionAndOptions, audit.Successful, auditParams); auditErr != nil {
+	if auditErr := s.Auditor.Record(ctx, GetUniqueDimensionAndOptionsAction, audit.Successful, auditParams); auditErr != nil {
 		handleDimensionErr(ctx, w, auditErr, logData)
 		return
 	}
 
-	writeBody(ctx, w, b, GetUniqueDimensionAndOptions, logData)
-	log.InfoCtx(ctx, fmt.Sprintf("%v endpoint: successfully get unique dimension options for an instance resource", GetUniqueDimensionAndOptions), logData)
+	writeBody(ctx, w, b, GetUniqueDimensionAndOptionsAction, logData)
+	log.InfoCtx(ctx, fmt.Sprintf("%v endpoint: successfully get unique dimension options for an instance resource", GetUniqueDimensionAndOptionsAction), logData)
 }
 
 func (s *Store) getUniqueDimensionAndOptions(ctx context.Context, instanceID, dimension string, logData log.Data) ([]byte, error) {
 	instance, err := s.GetInstance(instanceID)
 	if err != nil {
-		log.ErrorCtx(ctx, dimensionError(err, "failed to get instance", GetUniqueDimensionAndOptions), logData)
+		log.ErrorCtx(ctx, dimensionError(err, "failed to get instance", GetUniqueDimensionAndOptionsAction), logData)
 		return nil, err
 	}
 
 	// Early return if instance state is invalid
 	if err = models.CheckState("instance", instance.State); err != nil {
 		logData["state"] = instance.State
-		log.ErrorCtx(ctx, dimensionError(err, "current instance has an invalid state", GetUniqueDimensionAndOptions), logData)
+		log.ErrorCtx(ctx, dimensionError(err, "current instance has an invalid state", GetUniqueDimensionAndOptionsAction), logData)
 		return nil, err
 	}
 
 	values, err := s.GetUniqueDimensionAndOptions(instanceID, dimension)
 	if err != nil {
-		log.ErrorCtx(ctx, dimensionError(err, "failed to get unique dimension values for instance", GetUniqueDimensionAndOptions), logData)
+		log.ErrorCtx(ctx, dimensionError(err, "failed to get unique dimension values for instance", GetUniqueDimensionAndOptionsAction), logData)
 		return nil, err
 	}
 
 	b, err := json.Marshal(values)
 	if err != nil {
-		log.ErrorCtx(ctx, dimensionError(err, "failed to marshal dimension values to json", GetUniqueDimensionAndOptions), logData)
+		log.ErrorCtx(ctx, dimensionError(err, "failed to marshal dimension values to json", GetUniqueDimensionAndOptionsAction), logData)
 		return nil, err
 	}
 
@@ -167,9 +167,9 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 
 	option, err := unmarshalDimensionCache(r.Body)
 	if err != nil {
-		log.ErrorCtx(ctx, dimensionError(err, "failed to unmarshal dimension cache", PostDimensionsAction), logData)
+		log.ErrorCtx(ctx, dimensionError(err, "failed to unmarshal dimension cache", AddDimensionAction), logData)
 
-		if auditErr := s.Auditor.Record(ctx, PostDimensionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
+		if auditErr := s.Auditor.Record(ctx, AddDimensionAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			err = auditErr
 		}
 
@@ -178,7 +178,7 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.add(ctx, instanceID, option, logData); err != nil {
-		if auditErr := s.Auditor.Record(ctx, PostDimensionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
+		if auditErr := s.Auditor.Record(ctx, AddDimensionAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			err = auditErr
 		}
 
@@ -186,7 +186,7 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.Auditor.Record(ctx, PostDimensionsAction, audit.Successful, auditParams)
+	s.Auditor.Record(ctx, AddDimensionAction, audit.Successful, auditParams)
 
 	log.InfoCtx(ctx, "added dimension to instance resource", logData)
 }
@@ -195,20 +195,20 @@ func (s *Store) add(ctx context.Context, instanceID string, option *models.Cache
 	// Get instance
 	instance, err := s.GetInstance(instanceID)
 	if err != nil {
-		log.ErrorCtx(ctx, dimensionError(err, "failed to get instance", PostDimensionsAction), logData)
+		log.ErrorCtx(ctx, dimensionError(err, "failed to get instance", AddDimensionAction), logData)
 		return err
 	}
 
 	// Early return if instance state is invalid
 	if err = models.CheckState("instance", instance.State); err != nil {
 		logData["state"] = instance.State
-		log.ErrorCtx(ctx, dimensionError(err, "current instance has an invalid state", PostDimensionsAction), logData)
+		log.ErrorCtx(ctx, dimensionError(err, "current instance has an invalid state", AddDimensionAction), logData)
 		return err
 	}
 
 	option.InstanceID = instanceID
 	if err := s.AddDimensionToInstance(option); err != nil {
-		log.ErrorCtx(ctx, dimensionError(err, "failed to upsert dimension for an instance", PostDimensionsAction), logData)
+		log.ErrorCtx(ctx, dimensionError(err, "failed to upsert dimension for an instance", AddDimensionAction), logData)
 		return err
 	}
 
@@ -229,12 +229,12 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 	dim := models.DimensionOption{Name: dimensionName, Option: value, NodeID: nodeID, InstanceID: instanceID}
 
 	if err := s.addNodeID(ctx, dim, logData); err != nil {
-		s.Auditor.Record(ctx, PutNodeIDAction, audit.Unsuccessful, auditParams)
+		s.Auditor.Record(ctx, UpdateNodeIDAction, audit.Unsuccessful, auditParams)
 		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
 
-	s.Auditor.Record(ctx, PutNodeIDAction, audit.Successful, auditParams)
+	s.Auditor.Record(ctx, UpdateNodeIDAction, audit.Successful, auditParams)
 
 	log.InfoCtx(ctx, "added node id to dimension of an instance resource", logData)
 }
@@ -243,19 +243,19 @@ func (s *Store) addNodeID(ctx context.Context, dim models.DimensionOption, logDa
 	// Get instance
 	instance, err := s.GetInstance(dim.InstanceID)
 	if err != nil {
-		log.ErrorCtx(ctx, dimensionError(err, "failed to get instance", PutNodeIDAction), logData)
+		log.ErrorCtx(ctx, dimensionError(err, "failed to get instance", UpdateNodeIDAction), logData)
 		return err
 	}
 
 	// Early return if instance state is invalid
 	if err = models.CheckState("instance", instance.State); err != nil {
 		logData["state"] = instance.State
-		log.ErrorCtx(ctx, dimensionError(err, "current instance has an invalid state", PutNodeIDAction), logData)
+		log.ErrorCtx(ctx, dimensionError(err, "current instance has an invalid state", UpdateNodeIDAction), logData)
 		return err
 	}
 
 	if err := s.UpdateDimensionNodeID(&dim); err != nil {
-		log.ErrorCtx(ctx, dimensionError(err, "failed to update a dimension of that instance", PutNodeIDAction), logData)
+		log.ErrorCtx(ctx, dimensionError(err, "failed to update a dimension of that instance", UpdateNodeIDAction), logData)
 		return err
 	}
 

@@ -175,10 +175,10 @@ func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 
 		dimensionAPI := dimension.Store{Auditor: auditor, Storer: api.dataStore.Backend}
 		api.Router.HandleFunc("/instances/{id}/dimensions", identity.Check(dimensionAPI.GetDimensionsHandler)).Methods("GET")
-		api.Router.HandleFunc("/instances/{id}/dimensions", identity.Check(instancePublishChecker.Check(dimensionAPI.AddHandler, dimension.PostDimensionsAction))).Methods("POST")
+		api.Router.HandleFunc("/instances/{id}/dimensions", identity.Check(instancePublishChecker.Check(dimensionAPI.AddHandler, dimension.AddDimensionAction))).Methods("POST")
 		api.Router.HandleFunc("/instances/{id}/dimensions/{dimension}/options", identity.Check(dimensionAPI.GetUniqueDimensionAndOptionsHandler)).Methods("GET")
 		api.Router.HandleFunc("/instances/{id}/dimensions/{dimension}/options/{value}/node_id/{node_id}",
-			identity.Check(instancePublishChecker.Check(dimensionAPI.AddNodeIDHandler, dimension.PutNodeIDAction))).Methods("PUT")
+			identity.Check(instancePublishChecker.Check(dimensionAPI.AddNodeIDHandler, dimension.UpdateNodeIDAction))).Methods("PUT")
 	}
 	return &api
 }

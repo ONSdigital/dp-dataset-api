@@ -68,12 +68,12 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.PutNodeIDAction,
+				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Attempted,
 				Params: common.Params{"instance_id": "123"},
 			},
 			audit_mock.Expected{
-				Action: dimension.PutNodeIDAction,
+				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Successful,
 				Params: common.Params{"dimension_name": "age", "instance_id": "123", "node_id": "11", "option": "55"},
 			},
@@ -111,12 +111,12 @@ func TestAddNodeIDToDimensionReturnsBadRequest(t *testing.T) {
 
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.PutNodeIDAction,
+				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Attempted,
 				Params: common.Params{"instance_id": "123"},
 			},
 			audit_mock.Expected{
-				Action: dimension.PutNodeIDAction,
+				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Unsuccessful,
 				Params: common.Params{"dimension_name": "age", "instance_id": "123", "node_id": "11", "option": "55"},
 			},
@@ -150,12 +150,12 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 		p := common.Params{"instance_id": "123"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.PutNodeIDAction,
+				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
 			audit_mock.Expected{
-				Action: dimension.PutNodeIDAction,
+				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Unsuccessful,
 				Params: p,
 			},
@@ -187,12 +187,12 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.PutNodeIDAction,
+				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Attempted,
 				Params: common.Params{"instance_id": "123"},
 			},
 			audit_mock.Expected{
-				Action: dimension.PutNodeIDAction,
+				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Unsuccessful,
 				Params: common.Params{"dimension_name": "age", "instance_id": "123", "node_id": "11", "option": "55"},
 			},
@@ -229,12 +229,12 @@ func TestAddNodeIDToDimensionReturnsForbidden(t *testing.T) {
 		p := common.Params{"instance_id": "123"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.PutNodeIDAction,
+				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
 			audit_mock.Expected{
-				Action: dimension.PutNodeIDAction,
+				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Unsuccessful,
 				Params: p,
 			},
@@ -295,7 +295,7 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.PutNodeIDAction,
+				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Attempted,
 				Params: common.Params{"instance_id": "123"},
 			})
@@ -331,12 +331,12 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 		p := common.Params{"instance_id": "123"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.PutNodeIDAction,
+				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
 			audit_mock.Expected{
-				Action: dimension.PutNodeIDAction,
+				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Unsuccessful,
 				Params: p,
 			},
@@ -378,12 +378,12 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.PutNodeIDAction,
+				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Attempted,
 				Params: common.Params{"instance_id": "123"},
 			},
 			audit_mock.Expected{
-				Action: dimension.PutNodeIDAction,
+				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Successful,
 				Params: common.Params{"dimension_name": "age", "instance_id": "123", "node_id": "11", "option": "55"},
 			},
@@ -425,12 +425,12 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 		p := common.Params{"instance_id": "123"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.PostDimensionsAction,
+				Action: dimension.AddDimensionAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
 			audit_mock.Expected{
-				Action: dimension.PostDimensionsAction,
+				Action: dimension.AddDimensionAction,
 				Result: audit.Successful,
 				Params: p,
 			},
@@ -471,12 +471,12 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 		p := common.Params{"instance_id": "123"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.PostDimensionsAction,
+				Action: dimension.AddDimensionAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
 			audit_mock.Expected{
-				Action: dimension.PostDimensionsAction,
+				Action: dimension.AddDimensionAction,
 				Result: audit.Unsuccessful,
 				Params: p,
 			},
@@ -515,12 +515,12 @@ func TestAddDimensionToInstanceReturnsForbidden(t *testing.T) {
 		p := common.Params{"instance_id": "123"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.PostDimensionsAction,
+				Action: dimension.AddDimensionAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
 			audit_mock.Expected{
-				Action: dimension.PostDimensionsAction,
+				Action: dimension.AddDimensionAction,
 				Result: audit.Unsuccessful,
 				Params: p,
 			},
@@ -589,12 +589,12 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		p := common.Params{"instance_id": "123"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.PostDimensionsAction,
+				Action: dimension.AddDimensionAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
 			audit_mock.Expected{
-				Action: dimension.PostDimensionsAction,
+				Action: dimension.AddDimensionAction,
 				Result: audit.Unsuccessful,
 				Params: p,
 			},
@@ -632,12 +632,12 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		p := common.Params{"instance_id": "123"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.PostDimensionsAction,
+				Action: dimension.AddDimensionAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
 			audit_mock.Expected{
-				Action: dimension.PostDimensionsAction,
+				Action: dimension.AddDimensionAction,
 				Result: audit.Unsuccessful,
 				Params: p,
 			},
@@ -673,7 +673,7 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 
 		p := common.Params{"instance_id": "123"}
 		auditorMock.AssertRecordCalls(audit_mock.Expected{
-			Action: dimension.PostDimensionsAction,
+			Action: dimension.AddDimensionAction,
 			Result: audit.Attempted,
 			Params: p,
 		})
@@ -711,12 +711,12 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 		p := common.Params{"instance_id": "123"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.PostDimensionsAction,
+				Action: dimension.AddDimensionAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
 			audit_mock.Expected{
-				Action: dimension.PostDimensionsAction,
+				Action: dimension.AddDimensionAction,
 				Result: audit.Unsuccessful,
 				Params: p,
 			},
@@ -760,12 +760,12 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 		p := common.Params{"instance_id": "123"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.PostDimensionsAction,
+				Action: dimension.AddDimensionAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
 			audit_mock.Expected{
-				Action: dimension.PostDimensionsAction,
+				Action: dimension.AddDimensionAction,
 				Result: audit.Successful,
 				Params: p,
 			},
@@ -1105,12 +1105,12 @@ func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 		p := common.Params{"instance_id": "123", "dimension": "age"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.GetUniqueDimensionAndOptions,
+				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
 			audit_mock.Expected{
-				Action: dimension.GetUniqueDimensionAndOptions,
+				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Successful,
 				Params: p,
 			},
@@ -1150,12 +1150,12 @@ func TestGetUniqueDimensionAndOptionsReturnsNotFound(t *testing.T) {
 		p := common.Params{"instance_id": "123", "dimension": "age"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.GetUniqueDimensionAndOptions,
+				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
 			audit_mock.Expected{
-				Action: dimension.GetUniqueDimensionAndOptions,
+				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Unsuccessful,
 				Params: p,
 			},
@@ -1195,12 +1195,12 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 		p := common.Params{"instance_id": "123", "dimension": "age"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.GetUniqueDimensionAndOptions,
+				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
 			audit_mock.Expected{
-				Action: dimension.GetUniqueDimensionAndOptions,
+				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Unsuccessful,
 				Params: p,
 			},
@@ -1237,12 +1237,12 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 		p := common.Params{"instance_id": "123", "dimension": "age"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.GetUniqueDimensionAndOptions,
+				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
 			audit_mock.Expected{
-				Action: dimension.GetUniqueDimensionAndOptions,
+				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Unsuccessful,
 				Params: p,
 			},
@@ -1272,7 +1272,7 @@ func TestGetUniqueDimensionAndOptionsAuditFailure(t *testing.T) {
 
 		p := common.Params{"instance_id": "123", "dimension": "age"}
 		auditorMock.AssertRecordCalls(audit_mock.Expected{
-			Action: dimension.GetUniqueDimensionAndOptions,
+			Action: dimension.GetUniqueDimensionAndOptionsAction,
 			Result: audit.Attempted,
 			Params: p,
 		})
@@ -1309,12 +1309,12 @@ func TestGetUniqueDimensionAndOptionsAuditFailure(t *testing.T) {
 		p := common.Params{"instance_id": "123", "dimension": "age"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.GetUniqueDimensionAndOptions,
+				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
 			audit_mock.Expected{
-				Action: dimension.GetUniqueDimensionAndOptions,
+				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Unsuccessful,
 				Params: p,
 			},
@@ -1357,12 +1357,12 @@ func TestGetUniqueDimensionAndOptionsAuditFailure(t *testing.T) {
 		p := common.Params{"instance_id": "123", "dimension": "age"}
 		auditorMock.AssertRecordCalls(
 			audit_mock.Expected{
-				Action: dimension.GetUniqueDimensionAndOptions,
+				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
 			audit_mock.Expected{
-				Action: dimension.GetUniqueDimensionAndOptions,
+				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Successful,
 				Params: p,
 			},
