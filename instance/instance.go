@@ -344,7 +344,6 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), status)
 			return
 		}
-
 	}
 
 	if instance.State == models.EditionConfirmedState {
@@ -821,7 +820,6 @@ func handleInstanceErr(ctx context.Context, err error, w http.ResponseWriter, da
 	if data == nil {
 		data = log.Data{}
 	}
-	log.ErrorC("fyi", err, nil)
 
 	taskErr, isTaskErr := err.(taskError)
 
