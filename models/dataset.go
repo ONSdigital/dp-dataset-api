@@ -237,10 +237,8 @@ func CheckState(docType, state string) error {
 		states = validStates
 	}
 
-	for key := range states {
-		if state == key {
-			return nil
-		}
+	if states[state] == 1 {
+		return nil
 	}
 
 	return errs.ErrResourceState
