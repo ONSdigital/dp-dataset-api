@@ -742,7 +742,7 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 1)
 
-		auditParams := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 		auditor.AssertRecordCalls(
 			audit_mock.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
 		)
@@ -806,7 +806,7 @@ func TestUpdateInstanceReturnsOk(t *testing.T) {
 		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 1)
 		So(len(auditor.RecordCalls()), ShouldEqual, 1)
 
-		auditParams := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.CompletedState}
 		auditor.AssertRecordCalls(
 			audit_mock.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
 		)
@@ -852,7 +852,7 @@ func TestUpdateInstanceReturnsInternalError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetInstanceFunc: func(id string) (*models.Instance, error) {
-				return &models.Instance{State: "gobbly gook"}, nil
+				return &models.Instance{State: "gobbledygook"}, nil
 			},
 		}
 
@@ -868,7 +868,7 @@ func TestUpdateInstanceReturnsInternalError(t *testing.T) {
 		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 1)
 
-		auditParams := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": "gobbledygook"}
 		auditor.AssertRecordCalls(
 			audit_mock.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
 		)
@@ -899,7 +899,7 @@ func TestUpdateInstanceFailure(t *testing.T) {
 		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 1)
 
-		auditParams := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.CompletedState}
 		auditor.AssertRecordCalls(
 			audit_mock.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
 		)
@@ -995,7 +995,7 @@ func TestUpdateInstanceFailure(t *testing.T) {
 		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 1)
 
-		auditParams := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.CompletedState}
 		auditor.AssertRecordCalls(
 			audit_mock.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
 		)
@@ -1041,7 +1041,7 @@ func TestUpdatePublishedInstanceToCompletedReturnsForbidden(t *testing.T) {
 		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		auditParams := common.Params{"instance_id": "1235"}
+		auditParams := common.Params{"instance_id": "1235", "instance_state": models.PublishedState}
 		auditor.AssertRecordCalls(
 			audit_mock.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
 			audit_mock.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
@@ -1088,7 +1088,7 @@ func TestUpdateEditionConfirmedInstanceToCompletedReturnsForbidden(t *testing.T)
 		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 1)
 
-		auditParams := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
 			audit_mock.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
 		)
@@ -1120,7 +1120,7 @@ func TestInsertedObservationsReturnsOk(t *testing.T) {
 		So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
 		So(len(auditor.RecordCalls()), ShouldEqual, 1)
 
-		auditParams := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
 			audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, auditParams},
 		)
@@ -1150,7 +1150,7 @@ func TestInsertedObservationsReturnsBadRequest(t *testing.T) {
 		So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 1)
 
-		auditParams := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
 			audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, auditParams},
 		)
@@ -1184,7 +1184,7 @@ func TestInsertedObservationsReturnsNotFound(t *testing.T) {
 		So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
 		So(len(auditor.RecordCalls()), ShouldEqual, 1)
 
-		auditParams := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
 			audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, auditParams},
 		)
@@ -1219,10 +1219,10 @@ func TestStore_UpdateImportTask_UpdateImportObservations(t *testing.T) {
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, common.Params{"instance_id": "123"}),
 		)
 	})
 }
@@ -1258,10 +1258,10 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 
@@ -1292,10 +1292,10 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 
@@ -1326,10 +1326,10 @@ func TestStore_UpdateImportTask_UpdateImportObservations_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 }
@@ -1365,10 +1365,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 
@@ -1400,10 +1400,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 
@@ -1436,10 +1436,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 
@@ -1471,10 +1471,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 
@@ -1506,10 +1506,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 
@@ -1541,10 +1541,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 
@@ -1576,10 +1576,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 
@@ -1611,10 +1611,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask_Failure(t *testing.T) {
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 }
@@ -1647,10 +1647,10 @@ func TestStore_UpdateImportTask_UpdateBuildHierarchyTask(t *testing.T) {
 		So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, common.Params{"instance_id": "123"}),
 		)
 	})
 }
@@ -1684,10 +1684,10 @@ func TestStore_UpdateImportTask_ReturnsInternalError(t *testing.T) {
 		So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 }
@@ -1720,251 +1720,365 @@ func TestUpdateInstanceReturnsErrorWhenStateIsPublished(t *testing.T) {
 		So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.PublishedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateInstanceAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateInstanceAction, audit.Unsuccessful, ap),
-		)
-	})
-}
-
-func TestUpdateDimensionReturnsInternalError(t *testing.T) {
-	t.Parallel()
-	Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
-		body := strings.NewReader(`{"label":"ages"}`)
-		r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
-		So(err, ShouldBeNil)
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(id string) (*models.Instance, error) {
-				return nil, errs.ErrInternalServer
-			},
-			UpdateInstanceFunc: func(id string, i *models.Instance) error {
-				return nil
-			},
-		}
-
-		auditor := audit_mock.New()
-		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
-		datasetAPI.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-		So(len(auditor.RecordCalls()), ShouldEqual, 2)
-
-		ap := common.Params{"instance_id": "123"}
-		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, ap),
-		)
-	})
-
-	Convey("Given the instance state is invalid, then response returns an internal error", t, func() {
-		body := strings.NewReader(`{"label":"ages"}`)
-		r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
-		So(err, ShouldBeNil)
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(id string) (*models.Instance, error) {
-				return &models.Instance{State: "gobbly gook"}, nil
-			},
-			UpdateInstanceFunc: func(id string, i *models.Instance) error {
-				return nil
-			},
-		}
-
-		auditor := audit_mock.New()
-		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
-		datasetAPI.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-		So(len(auditor.RecordCalls()), ShouldEqual, 1)
-
-		ap := common.Params{"instance_id": "123"}
-		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, ap),
-		)
-	})
-}
-
-func TestUpdateDimensionReturnsNotFound(t *testing.T) {
-	t.Parallel()
-	Convey("When update dimension return status not found", t, func() {
-		r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", nil)
-		So(err, ShouldBeNil)
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(id string) (*models.Instance, error) {
-				return nil, errs.ErrInstanceNotFound
-			},
-		}
-
-		auditor := audit_mock.New()
-		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
-		datasetAPI.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
-
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-		So(len(auditor.RecordCalls()), ShouldEqual, 2)
-
-		ap := common.Params{"instance_id": "123"}
-		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, ap),
-		)
-	})
-}
-
-func TestUpdateDimensionReturnsForbidden(t *testing.T) {
-	t.Parallel()
-	Convey("When update dimension returns forbidden (for already published) ", t, func() {
-		r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", nil)
-		So(err, ShouldBeNil)
-		w := httptest.NewRecorder()
-
-		currentInstanceTestData := &models.Instance{
-			State: models.PublishedState,
-		}
-
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(id string) (*models.Instance, error) {
-				return currentInstanceTestData, nil
-			},
-		}
-
-		auditor := audit_mock.New()
-		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
-		datasetAPI.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusForbidden)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrResourcePublished.Error())
-
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-		So(len(auditor.RecordCalls()), ShouldEqual, 2)
-
-		ap := common.Params{"instance_id": "123"}
-		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, ap),
-		)
-	})
-}
-
-func TestUpdateDimensionReturnsBadRequest(t *testing.T) {
-	t.Parallel()
-	Convey("When update dimension returns bad request", t, func() {
-		body := strings.NewReader("{")
-		r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
-		So(err, ShouldBeNil)
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(id string) (*models.Instance, error) {
-				return &models.Instance{State: models.CompletedState}, nil
-			},
-		}
-
-		auditor := audit_mock.New()
-		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
-		datasetAPI.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(w.Body.String(), ShouldContainSubstring, "unexpected end of JSON input")
-
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-		So(len(auditor.RecordCalls()), ShouldEqual, 1)
-
-		ap := common.Params{"instance_id": "123"}
-		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, ap),
-		)
-	})
-}
-
-func TestUpdateDimensionReturnsNotFoundWithWrongName(t *testing.T) {
-	t.Parallel()
-	Convey("When update dimension fails to update an instance", t, func() {
-		body := strings.NewReader(`{"label":"notages"}`)
-		r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/notage", body)
-		So(err, ShouldBeNil)
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(id string) (*models.Instance, error) {
-				return &models.Instance{State: models.EditionConfirmedState,
-					InstanceID: "123",
-					Dimensions: []models.CodeList{{Name: "age", ID: "age"}}}, nil
-			},
-			UpdateInstanceFunc: func(id string, i *models.Instance) error {
-				return nil
-			},
-		}
-
-		auditor := audit_mock.New()
-		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
-		datasetAPI.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrDimensionNotFound.Error())
-
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-		So(len(auditor.RecordCalls()), ShouldEqual, 1)
-
-		ap := common.Params{"instance_id": "123"}
-		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, ap),
+			audit_mock.NewExpectation(instance.UpdateInstanceAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateInstanceAction, audit.Unsuccessful, auditParams),
 		)
 	})
 }
 
 func TestUpdateDimensionReturnsOk(t *testing.T) {
 	t.Parallel()
-	Convey("When update dimension fails to update an instance", t, func() {
-		body := strings.NewReader(`{"label":"ages"}`)
-		r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
-		So(err, ShouldBeNil)
-		w := httptest.NewRecorder()
+	Convey("Given a PUT request to update a dimension on an instance resource", t, func() {
+		Convey("When a valid request body is provided", func() {
+			Convey("Then return status ok (200)", func() {
+				body := strings.NewReader(`{"label":"ages", "description": "A range of ages between 18 and 60"}`)
+				r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
 
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(id string) (*models.Instance, error) {
-				return &models.Instance{State: models.EditionConfirmedState,
-					InstanceID: "123",
-					Dimensions: []models.CodeList{{Name: "age", ID: "age"}}}, nil
-			},
-			UpdateInstanceFunc: func(id string, i *models.Instance) error {
-				return nil
-			},
-		}
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(id string) (*models.Instance, error) {
+						return &models.Instance{State: models.EditionConfirmedState,
+							InstanceID: "123",
+							Dimensions: []models.CodeList{{Name: "age", ID: "age"}}}, nil
+					},
+					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+						return nil
+					},
+				}
 
-		auditor := audit_mock.New()
-		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
-		datasetAPI.Router.ServeHTTP(w, r)
+				auditor := audit_mock.New()
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
-		So(len(auditor.RecordCalls()), ShouldEqual, 1)
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
 
-		ap := common.Params{"instance_id": "123"}
-		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, ap),
-		)
+				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": "edition-confirmed"}
+				auditor.AssertRecordCalls(
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Successful, auditParams),
+				)
+			})
+		})
+	})
+}
+
+func TestUpdateDimensionReturnsInternalError(t *testing.T) {
+	t.Parallel()
+	Convey("Given a PUT request to update a dimension on an instance resource", t, func() {
+		Convey("When service is unable to connect to datastore", func() {
+			Convey("Then return status internal error (500)", func() {
+				body := strings.NewReader(`{"label":"ages"}`)
+				r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(id string) (*models.Instance, error) {
+						return nil, errs.ErrInternalServer
+					},
+					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+						return nil
+					},
+				}
+
+				auditor := audit_mock.New()
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+
+				auditParams := common.Params{"instance_id": "123", "dimension": "age"}
+				auditor.AssertRecordCalls(
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+				)
+			})
+		})
+
+		Convey("When the current instance state is invalid", func() {
+			Convey("Then return status internal error (500)", func() {
+				body := strings.NewReader(`{"label":"ages"}`)
+				r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(id string) (*models.Instance, error) {
+						return &models.Instance{State: "gobbly gook"}, nil
+					},
+					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+						return nil
+					},
+				}
+
+				auditor := audit_mock.New()
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+
+				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": "gobbly gook"}
+				auditor.AssertRecordCalls(
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+				)
+			})
+		})
+	})
+}
+
+func TestUpdateDimensionReturnsForbidden(t *testing.T) {
+	t.Parallel()
+	Convey("Given a PUT request to update a dimension on an instance resource", t, func() {
+		Convey("When the resource has a state of published", func() {
+			Convey("Then return status forbidden (403)", func() {
+				r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", nil)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(id string) (*models.Instance, error) {
+						return &models.Instance{State: models.PublishedState}, nil
+					},
+				}
+
+				auditor := audit_mock.New()
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusForbidden)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrResourcePublished.Error())
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+
+				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.PublishedState}
+				auditor.AssertRecordCalls(
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+				)
+			})
+		})
+	})
+}
+
+func TestUpdateDimensionReturnsNotFound(t *testing.T) {
+	t.Parallel()
+	Convey("Given a PUT request to update a dimension on an instance resource", t, func() {
+		Convey("When the instance does not exist", func() {
+			Convey("Then return status not found (404) with message 'instance not found'", func() {
+				r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", nil)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(id string) (*models.Instance, error) {
+						return nil, errs.ErrInstanceNotFound
+					},
+				}
+
+				auditor := audit_mock.New()
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusNotFound)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+
+				auditParams := common.Params{"instance_id": "123", "dimension": "age"}
+				auditor.AssertRecordCalls(
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+				)
+			})
+		})
+
+		Convey("When the dimension does not exist against instance", func() {
+			Convey("Then return status not found (404) with message 'dimension not found'", func() {
+				body := strings.NewReader(`{"label":"notages"}`)
+				r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/notage", body)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(id string) (*models.Instance, error) {
+						return &models.Instance{State: models.EditionConfirmedState,
+							InstanceID: "123",
+							Dimensions: []models.CodeList{{Name: "age", ID: "age"}}}, nil
+					},
+					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+						return nil
+					},
+				}
+
+				auditor := audit_mock.New()
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusNotFound)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrDimensionNotFound.Error())
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+
+				auditParams := common.Params{"instance_id": "123", "dimension": "notage", "instance_state": models.EditionConfirmedState}
+				auditor.AssertRecordCalls(
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+				)
+			})
+		})
+	})
+}
+
+func TestUpdateDimensionReturnsBadRequest(t *testing.T) {
+	t.Parallel()
+	Convey("Given a PUT request to update a dimension on an instance resource", t, func() {
+		Convey("When the request body is invalid json", func() {
+			Convey("Then return status bad request (400)", func() {
+				body := strings.NewReader("{")
+				r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(id string) (*models.Instance, error) {
+						return &models.Instance{State: models.CompletedState}, nil
+					},
+				}
+
+				auditor := audit_mock.New()
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusBadRequest)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+
+				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.CompletedState}
+				auditor.AssertRecordCalls(
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+				)
+			})
+		})
+	})
+}
+
+func TestUpdateDimensionAuditErrors(t *testing.T) {
+	t.Parallel()
+	Convey("Given audit action 'attempted' fails", t, func() {
+		auditor := audit_mock.NewErroring(instance.UpdateDimensionAction, audit.Attempted)
+
+		Convey("When a PUT request is made to update dimension on an instance resource", func() {
+			body := strings.NewReader(`{"label":"ages", "description": "A range of ages between 18 and 60"}`)
+			r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{}
+
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then response returns internal server error (500)", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
+
+				auditParams := common.Params{"instance_id": "123", "dimension": "age"}
+				auditor.AssertRecordCalls(
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
+				)
+			})
+		})
+	})
+
+	Convey("Given audit action 'unsuccessful' fails", t, func() {
+		auditor := audit_mock.NewErroring(instance.UpdateDimensionAction, audit.Unsuccessful)
+
+		Convey("When a PUT request is made to update dimension on an instance resource", func() {
+			body := strings.NewReader("{")
+			r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				GetInstanceFunc: func(id string) (*models.Instance, error) {
+					return &models.Instance{State: models.CreatedState}, nil
+				},
+			}
+
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then response returns internal server error (500)", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+
+				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.CreatedState}
+				auditor.AssertRecordCalls(
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+				)
+			})
+		})
+	})
+
+	Convey("Given audit action 'successful' fails", t, func() {
+		auditor := audit_mock.NewErroring(instance.AddInstanceAction, audit.Successful)
+
+		Convey("When a PUT request is made to update dimension on an instance resource", func() {
+			body := strings.NewReader(`{"label":"ages", "description": "A range of ages between 18 and 60"}`)
+			r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				GetInstanceFunc: func(id string) (*models.Instance, error) {
+					return &models.Instance{State: models.EditionConfirmedState,
+						InstanceID: "123",
+						Dimensions: []models.CodeList{{Name: "age", ID: "age"}}}, nil
+				},
+				UpdateInstanceFunc: func(id string, i *models.Instance) error {
+					return nil
+				},
+			}
+
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then response returns status ok (200)", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
+
+				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": "edition-confirmed"}
+				auditor.AssertRecordCalls(
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
+					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Successful, auditParams),
+				)
+			})
+		})
 	})
 }
 
@@ -1999,10 +2113,10 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 
@@ -2034,10 +2148,10 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 
@@ -2069,10 +2183,10 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 
@@ -2104,10 +2218,10 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 
@@ -2139,10 +2253,10 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 
@@ -2174,10 +2288,10 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 
@@ -2209,10 +2323,10 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 
@@ -2244,10 +2358,10 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T)
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 		)
 	})
 }
@@ -2281,10 +2395,10 @@ func TestStore_UpdateImportTask_UpdateBuildSearchIndexTask(t *testing.T) {
 		So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
 		So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-		ap := common.Params{"instance_id": "123"}
+		auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 		auditor.AssertRecordCalls(
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, ap),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+			audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, common.Params{"instance_id": "123"}),
 		)
 	})
 }
@@ -2315,9 +2429,9 @@ func TestStore_UpdateImportTask_AuditAttemptedError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 				So(len(auditor.RecordCalls()), ShouldEqual, 1)
 
-				ap := common.Params{"instance_id": "123"}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
+					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
 				)
 			})
 		})
@@ -2353,10 +2467,10 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-				ap := common.Params{"instance_id": "123"}
+				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})
@@ -2390,10 +2504,10 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-				ap := common.Params{"instance_id": "123"}
+				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})
@@ -2427,10 +2541,10 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-				ap := common.Params{"instance_id": "123"}
+				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})
@@ -2464,10 +2578,10 @@ func TestStore_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
 				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-				ap := common.Params{"instance_id": "123"}
+				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, ap),
+					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})
@@ -2504,11 +2618,10 @@ func TestStore_UpdateImportTask_AuditSuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 
-				ap := common.Params{"instance_id": "123"}
-
+				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, ap),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, ap),
+					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})

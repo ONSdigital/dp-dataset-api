@@ -56,16 +56,16 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	data := log.Data{}
 	stateFilterQuery := r.URL.Query().Get("state")
-	var ap common.Params
+	var auditParams common.Params
 	var stateFilterList []string
 
 	if stateFilterQuery != "" {
 		data["query"] = stateFilterQuery
-		ap = common.Params{"query": stateFilterQuery}
+		auditParams = common.Params{"query": stateFilterQuery}
 		stateFilterList = strings.Split(stateFilterQuery, ",")
 	}
 
-	if err := s.Auditor.Record(ctx, GetInstancesAction, audit.Attempted, ap); err != nil {
+	if err := s.Auditor.Record(ctx, GetInstancesAction, audit.Attempted, auditParams); err != nil {
 		handleInstanceErr(ctx, err, w, nil)
 		return
 	}
@@ -93,14 +93,14 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		if auditErr := s.Auditor.Record(ctx, GetInstancesAction, audit.Unsuccessful, ap); auditErr != nil {
+		if auditErr := s.Auditor.Record(ctx, GetInstancesAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			err = auditErr
 		}
 		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
-	if auditErr := s.Auditor.Record(ctx, GetInstancesAction, audit.Successful, ap); auditErr != nil {
+	if auditErr := s.Auditor.Record(ctx, GetInstancesAction, audit.Successful, auditParams); auditErr != nil {
 		handleInstanceErr(ctx, auditErr, w, data)
 		return
 	}
@@ -115,9 +115,9 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	data := log.Data{"instance_id": id}
-	ap := common.Params{"instance_id": id}
+	auditParams := common.Params{"instance_id": id}
 
-	if err := s.Auditor.Record(ctx, GetInstanceAction, audit.Attempted, ap); err != nil {
+	if err := s.Auditor.Record(ctx, GetInstanceAction, audit.Attempted, auditParams); err != nil {
 		handleInstanceErr(ctx, err, w, nil)
 		return
 	}
@@ -145,14 +145,14 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		return b, nil
 	}()
 	if err != nil {
-		if auditErr := s.Auditor.Record(ctx, GetInstanceAction, audit.Unsuccessful, ap); auditErr != nil {
+		if auditErr := s.Auditor.Record(ctx, GetInstanceAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			err = auditErr
 		}
 		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
-	if auditErr := s.Auditor.Record(ctx, GetInstanceAction, audit.Successful, ap); auditErr != nil {
+	if auditErr := s.Auditor.Record(ctx, GetInstanceAction, audit.Successful, auditParams); auditErr != nil {
 		handleInstanceErr(ctx, auditErr, w, data)
 		return
 	}
@@ -166,9 +166,9 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	ctx := r.Context()
 	data := log.Data{}
-	ap := common.Params{}
+	auditParams := common.Params{}
 
-	if err := s.Auditor.Record(ctx, AddInstanceAction, audit.Attempted, ap); err != nil {
+	if err := s.Auditor.Record(ctx, AddInstanceAction, audit.Attempted, auditParams); err != nil {
 		handleInstanceErr(ctx, err, w, data)
 		return
 	}
@@ -180,7 +180,7 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 		}
 
 		data["instance_id"] = instance.InstanceID
-		ap["instance_id"] = instance.InstanceID
+		auditParams["instance_id"] = instance.InstanceID
 
 		instance.Links.Self = &models.IDLink{
 			HRef: fmt.Sprintf("%s/instances/%s", s.Host, instance.InstanceID),
@@ -201,14 +201,14 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 		return b, nil
 	}()
 	if err != nil {
-		if auditErr := s.Auditor.Record(ctx, AddInstanceAction, audit.Unsuccessful, ap); auditErr != nil {
+		if auditErr := s.Auditor.Record(ctx, AddInstanceAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			err = auditErr
 		}
 		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
-	s.Auditor.Record(ctx, AddInstanceAction, audit.Successful, ap)
+	s.Auditor.Record(ctx, AddInstanceAction, audit.Successful, auditParams)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -217,86 +217,88 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	log.InfoCtx(ctx, "add instance: request successful", data)
 }
 
-// UpdateDimension updates label and/or description for a specific dimension within an instance
+// UpdateDimension updates label and/or description
+// for a specific dimension within an instance
 func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	id := vars["id"]
+	instanceID := vars["id"]
 	dimension := vars["dimension"]
-	data := log.Data{"instance_id": id, "dimension": dimension}
+	data := log.Data{"instance_id": instanceID, "dimension": dimension}
+	auditParams := common.Params{"instance_id": instanceID, "dimension": dimension}
 
-	// Get instance
-	instance, err := s.GetInstance(id)
-	if err != nil {
-		log.ErrorCtx(ctx, errors.WithMessage(err, "instance update dimension: Failed to GET instance"), data)
-		handleInstanceErr(ctx, err, w, data)
-		return
-	}
-
-	// Early return if instance state is invalid
-	if err = models.CheckState("instance", instance.State); err != nil {
-		data["state"] = instance.State
-		log.ErrorCtx(ctx, errors.WithMessage(err, "instance update dimension: current instance has an invalid state"), data)
-		handleInstanceErr(ctx, err, w, data)
-		return
-	}
-
-	// Early return if instance is already published
-	if instance.State == models.PublishedState {
-		log.InfoCtx(ctx, "instance update dimension: unable to update instance/version, already published", data)
-		w.WriteHeader(http.StatusForbidden)
-		return
-	}
-
-	// Read and unmarshal request body
-	b, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.ErrorCtx(ctx, errors.WithMessage(err, "instance update dimension: error reading request.body"), data)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	var dim *models.CodeList
-
-	err = json.Unmarshal(b, &dim)
-	if err != nil {
-		log.ErrorCtx(ctx, errors.WithMessage(err, "instance update dimension: failing to model models.Codelist resource based on request"), data)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Update instance-dimension
-	notFound := true
-	for i := range instance.Dimensions {
-
-		// For the chosen dimension
-		if instance.Dimensions[i].Name == dimension {
-			notFound = false
-			// Assign update info, conditionals to allow updating of both or either without blanking other
-			if dim.Label != "" {
-				instance.Dimensions[i].Label = dim.Label
-			}
-			if dim.Description != "" {
-				instance.Dimensions[i].Description = dim.Description
-			}
-			break
+	if err := func() error {
+		instance, err := s.GetInstance(instanceID)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "update instance dimension: Failed to GET instance"), data)
+			return err
 		}
-	}
+		auditParams["instance_state"] = instance.State
 
-	if notFound {
-		log.ErrorCtx(ctx, errors.WithMessage(errs.ErrDimensionNotFound, "instance update dimension: dimension not found"), data)
-		handleInstanceErr(ctx, errs.ErrDimensionNotFound, w, data)
-		return
-	}
+		// Early return if instance state is invalid
+		if err = models.CheckState("instance", instance.State); err != nil {
+			data["state"] = instance.State
+			log.ErrorCtx(ctx, errors.WithMessage(err, "update instance dimension: current instance has an invalid state"), data)
+			return err
+		}
 
-	// Update instance
-	if err = s.UpdateInstance(id, instance); err != nil {
-		log.ErrorCtx(ctx, errors.WithMessage(err, "instance update dimension: failed to update instance with new dimension label/description"), data)
+		// Read and unmarshal request body
+		b, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "update instance dimension: error reading request.body"), data)
+			return errs.ErrUnableToReadMessage
+		}
+
+		var dim *models.CodeList
+
+		err = json.Unmarshal(b, &dim)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "update instance dimension: failing to model models.Codelist resource based on request"), data)
+			return errs.ErrUnableToParseJSON
+		}
+
+		// Update instance-dimension
+		notFound := true
+		for i := range instance.Dimensions {
+
+			// For the chosen dimension
+			if instance.Dimensions[i].Name == dimension {
+				notFound = false
+				// Assign update info, conditionals to allow updating
+				// of both or either without blanking other
+				if dim.Label != "" {
+					instance.Dimensions[i].Label = dim.Label
+				}
+				if dim.Description != "" {
+					instance.Dimensions[i].Description = dim.Description
+				}
+				break
+			}
+		}
+
+		if notFound {
+			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrDimensionNotFound, "update instance dimension: dimension not found"), data)
+			return errs.ErrDimensionNotFound
+		}
+
+		// Update instance
+		if err = s.UpdateInstance(instanceID, instance); err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "update instance dimension: failed to update instance with new dimension label/description"), data)
+			return err
+		}
+
+		return nil
+	}(); err != nil {
+		if auditErr := s.Auditor.Record(ctx, UpdateDimensionAction, audit.Unsuccessful, auditParams); auditErr != nil {
+			err = auditErr
+		}
 		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
-	log.InfoCtx(ctx, "instance updated dimension: request successful", data)
+	s.Auditor.Record(ctx, UpdateDimensionAction, audit.Successful, auditParams)
+
+	log.InfoCtx(ctx, "updated instance dimension: request successful", data)
 }
 
 //Update a specific instance
@@ -581,8 +583,8 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["id"]
-	ap := common.Params{"instance_id": instanceID}
-	data := audit.ToLogData(ap)
+	auditParams := common.Params{"instance_id": instanceID}
+	data := audit.ToLogData(auditParams)
 	defer r.Body.Close()
 
 	updateErr := func() *taskError {
@@ -674,7 +676,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if updateErr != nil {
-		if auditErr := s.Auditor.Record(ctx, UpdateImportTasksAction, audit.Unsuccessful, ap); auditErr != nil {
+		if auditErr := s.Auditor.Record(ctx, UpdateImportTasksAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			updateErr = &taskError{errs.ErrInternalServer, http.StatusInternalServerError}
 		}
 		log.ErrorCtx(ctx, errors.WithMessage(updateErr, "updateImportTask endpoint: request unsuccessful"), data)
@@ -682,7 +684,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if auditErr := s.Auditor.Record(ctx, UpdateImportTasksAction, audit.Successful, ap); auditErr != nil {
+	if auditErr := s.Auditor.Record(ctx, UpdateImportTasksAction, audit.Successful, auditParams); auditErr != nil {
 		return
 	}
 
@@ -775,12 +777,16 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 		logData := log.Data{"instance_id": instanceID}
 		auditParams := common.Params{"instance_id": instanceID}
 
+		if vars["dimension"] != "" {
+			auditParams["dimension"] = vars["dimension"]
+		}
+
 		if err := d.Auditor.Record(ctx, action, audit.Attempted, auditParams); err != nil {
 			handleInstanceErr(ctx, errs.ErrAuditActionAttemptedFailure, w, logData)
 			return
 		}
 
-		if err := d.checkState(instanceID); err != nil {
+		if err := d.checkState(instanceID, logData, auditParams); err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "errored whilst checking instance state"), logData)
 			if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
 				handleInstanceErr(ctx, errs.ErrAuditActionAttemptedFailure, w, logData)
@@ -795,11 +801,14 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 	})
 }
 
-func (d *PublishCheck) checkState(instanceID string) error {
+func (d *PublishCheck) checkState(instanceID string, data log.Data, auditParams common.Params) error {
 	instance, err := d.Datastore.GetInstance(instanceID)
 	if err != nil {
 		return err
 	}
+
+	data["instance_state"] = instance.State
+	auditParams["instance_state"] = instance.State
 
 	if instance.State == models.PublishedState {
 		return errs.ErrResourcePublished
