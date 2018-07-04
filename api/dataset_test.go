@@ -79,7 +79,6 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 		auditMock.AssertRecordCalls(
 			audit_mock.Expected{Action: getDatasetsAction, Result: audit.Attempted, Params: nil},
 			audit_mock.Expected{Action: getDatasetsAction, Result: audit.Successful, Params: nil},
@@ -109,7 +108,6 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 0)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 1)
 		auditMock.AssertRecordCalls(
 			audit_mock.Expected{
 				Action: getDatasetsAction,
@@ -142,7 +140,6 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 		auditMock.AssertRecordCalls(
 			audit_mock.Expected{Action: getDatasetsAction, Result: audit.Attempted, Params: nil},
 			audit_mock.Expected{Action: getDatasetsAction, Result: audit.Unsuccessful, Params: nil},
@@ -168,7 +165,6 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 		auditMock.AssertRecordCalls(
 			audit_mock.Expected{Action: getDatasetsAction, Result: audit.Attempted, Params: nil},
 			audit_mock.Expected{Action: getDatasetsAction, Result: audit.Unsuccessful, Params: nil},
@@ -194,7 +190,6 @@ func TestGetDatasetsAuditSuccessfulError(t *testing.T) {
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 		auditMock.AssertRecordCalls(
 			audit_mock.Expected{Action: getDatasetsAction, Result: audit.Attempted, Params: nil},
 			audit_mock.Expected{Action: getDatasetsAction, Result: audit.Successful, Params: nil},
@@ -220,7 +215,6 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 		auditMock.AssertRecordCalls(
 			audit_mock.Expected{Action: getDatasetAction, Result: audit.Attempted, Params: genericAuditParams},
 			audit_mock.Expected{Action: getDatasetAction, Result: audit.Successful, Params: genericAuditParams},
@@ -245,7 +239,6 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 		auditMock.AssertRecordCalls(
 			audit_mock.Expected{Action: getDatasetAction, Result: audit.Attempted, Params: genericAuditParams},
 			audit_mock.Expected{Action: getDatasetAction, Result: audit.Successful, Params: genericAuditParams},
@@ -271,7 +264,6 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 		auditMock.AssertRecordCalls(
 			audit_mock.Expected{Action: getDatasetAction, Result: audit.Attempted, Params: genericAuditParams},
 			audit_mock.Expected{Action: getDatasetAction, Result: audit.Unsuccessful, Params: genericAuditParams},
@@ -294,7 +286,6 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 		auditMock.AssertRecordCalls(
 			audit_mock.Expected{Action: getDatasetAction, Result: audit.Attempted, Params: genericAuditParams},
 			audit_mock.Expected{Action: getDatasetAction, Result: audit.Unsuccessful, Params: genericAuditParams},
@@ -319,7 +310,6 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 		auditMock.AssertRecordCalls(
 			audit_mock.Expected{Action: getDatasetAction, Result: audit.Attempted, Params: genericAuditParams},
 			audit_mock.Expected{Action: getDatasetAction, Result: audit.Unsuccessful, Params: genericAuditParams},
@@ -347,7 +337,6 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 				assertInternalServerErr(w)
 				So(len(mockDatastore.GetDatasetCalls()), ShouldEqual, 0)
 
-				So(len(auditMock.RecordCalls()), ShouldEqual, 1)
 				auditMock.AssertRecordCalls(
 					audit_mock.Expected{
 						Action: getDatasetAction,
@@ -385,7 +374,6 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 				So(len(mockDatastore.GetDatasetCalls()), ShouldEqual, 1)
 				assertInternalServerErr(w)
 
-				So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 				auditMock.AssertRecordCalls(
 					audit_mock.Expected{Action: getDatasetAction, Result: audit.Attempted, Params: genericAuditParams},
 					audit_mock.Expected{Action: getDatasetAction, Result: audit.Successful, Params: genericAuditParams},
@@ -420,7 +408,6 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 				assertInternalServerErr(w)
 				So(len(mockDatastore.GetDatasetCalls()), ShouldEqual, 1)
 
-				So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 				auditMock.AssertRecordCalls(
 					audit_mock.Expected{Action: getDatasetAction, Result: audit.Attempted, Params: genericAuditParams},
 					audit_mock.Expected{Action: getDatasetAction, Result: audit.Unsuccessful, Params: genericAuditParams},
@@ -457,11 +444,10 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
 
-		p := common.Params{"dataset_id": "123"}
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
+		auditParams := common.Params{"dataset_id": "123"}
 		auditMock.AssertRecordCalls(
-			audit_mock.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: p},
-			audit_mock.Expected{Action: addDatasetAction, Result: audit.Successful, Params: p},
+			audit_mock.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: auditParams},
+			audit_mock.Expected{Action: addDatasetAction, Result: audit.Successful, Params: auditParams},
 		)
 	})
 }
@@ -493,11 +479,10 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
-		p := common.Params{"dataset_id": "123"}
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
+		auditParams := common.Params{"dataset_id": "123"}
 		auditMock.AssertRecordCalls(
-			audit_mock.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: p},
-			audit_mock.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: p},
+			audit_mock.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: auditParams},
+			audit_mock.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -525,11 +510,10 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
-		p := common.Params{"dataset_id": "123"}
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
+		auditParams := common.Params{"dataset_id": "123"}
 		auditMock.AssertRecordCalls(
-			audit_mock.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: p},
-			audit_mock.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: p},
+			audit_mock.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: auditParams},
+			audit_mock.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -556,7 +540,6 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 0)
 		auditMock.AssertRecordCalls()
 	})
 
@@ -589,17 +572,16 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
-		p := common.Params{"dataset_id": "123"}
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
+		auditParams := common.Params{"dataset_id": "123"}
 		auditMock.AssertRecordCalls(
-			audit_mock.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: p},
-			audit_mock.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: p},
+			audit_mock.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: auditParams},
+			audit_mock.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 }
 
 func TestPostDatasetAuditErrors(t *testing.T) {
-	ap := common.Params{"dataset_id": "123"}
+	auditParams := common.Params{"dataset_id": "123"}
 
 	Convey("given audit action attempted returns an error", t, func() {
 		auditMock := audit_mock.NewErroring(addDatasetAction, audit.Attempted)
@@ -618,12 +600,11 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
-				So(len(auditMock.RecordCalls()), ShouldEqual, 1)
 				auditMock.AssertRecordCalls(
 					audit_mock.Expected{
 						Action: addDatasetAction,
 						Result: audit.Attempted,
-						Params: ap,
+						Params: auditParams,
 					},
 				)
 			})
@@ -651,10 +632,9 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
-				So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 				auditMock.AssertRecordCalls(
-					audit_mock.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: ap},
-					audit_mock.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: ap},
+					audit_mock.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: auditParams},
+					audit_mock.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -678,10 +658,9 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
-				So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 				auditMock.AssertRecordCalls(
-					audit_mock.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: ap},
-					audit_mock.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: ap},
+					audit_mock.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: auditParams},
+					audit_mock.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -707,10 +686,9 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 
-				So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 				auditMock.AssertRecordCalls(
-					audit_mock.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: ap},
-					audit_mock.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: ap},
+					audit_mock.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: auditParams},
+					audit_mock.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -740,10 +718,9 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 
-				So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 				auditMock.AssertRecordCalls(
-					audit_mock.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: ap},
-					audit_mock.Expected{Action: addDatasetAction, Result: audit.Successful, Params: ap},
+					audit_mock.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: auditParams},
+					audit_mock.Expected{Action: addDatasetAction, Result: audit.Successful, Params: auditParams},
 				)
 			})
 		})
@@ -781,7 +758,6 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 		auditMock.AssertRecordCalls(
 			audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: common.Params{"dataset_id": "123"}},
 			audit_mock.Expected{Action: putDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123"}},
@@ -791,7 +767,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 
 func TestPutDatasetReturnsError(t *testing.T) {
 	t.Parallel()
-	ap := common.Params{"dataset_id": "123"}
+	auditParams := common.Params{"dataset_id": "123"}
 	Convey("When the request contain malformed json a bad request status is returned", t, func() {
 		var b string
 		b = "{"
@@ -818,10 +794,9 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 		auditMock.AssertRecordCalls(
-			audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: ap},
-			audit_mock.Expected{Action: putDatasetAction, Result: audit.Unsuccessful, Params: ap},
+			audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: auditParams},
+			audit_mock.Expected{Action: putDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -856,10 +831,9 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 		auditMock.AssertRecordCalls(
-			audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: ap},
-			audit_mock.Expected{Action: putDatasetAction, Result: audit.Unsuccessful, Params: ap},
+			audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: auditParams},
+			audit_mock.Expected{Action: putDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -890,10 +864,9 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 		auditMock.AssertRecordCalls(
-			audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: ap},
-			audit_mock.Expected{Action: putDatasetAction, Result: audit.Unsuccessful, Params: ap},
+			audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: auditParams},
+			audit_mock.Expected{Action: putDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -922,15 +895,13 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
-		So(len(auditMock.RecordCalls()), ShouldEqual, 0)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 0)
 		auditMock.AssertRecordCalls()
 	})
 }
 
 func TestPutDatasetAuditErrors(t *testing.T) {
-	ap := common.Params{"dataset_id": "123"}
+	auditParams := common.Params{"dataset_id": "123"}
 
 	t.Parallel()
 	Convey("given audit action attempted returns an error", t, func() {
@@ -958,12 +929,11 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 
-				So(len(auditMock.RecordCalls()), ShouldEqual, 1)
 				auditMock.AssertRecordCalls(
 					audit_mock.Expected{
 						Action: putDatasetAction,
 						Result: audit.Attempted,
-						Params: ap,
+						Params: auditParams,
 					},
 				)
 			})
@@ -995,10 +965,9 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 1)
 
-				So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 				auditMock.AssertRecordCalls(
-					audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: ap},
-					audit_mock.Expected{Action: putDatasetAction, Result: audit.Successful, Params: ap},
+					audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: auditParams},
+					audit_mock.Expected{Action: putDatasetAction, Result: audit.Successful, Params: auditParams},
 				)
 			})
 		})
@@ -1029,10 +998,9 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 
-				So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 				auditMock.AssertRecordCalls(
-					audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: ap},
-					audit_mock.Expected{Action: putDatasetAction, Result: audit.Unsuccessful, Params: ap},
+					audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: auditParams},
+					audit_mock.Expected{Action: putDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -1056,10 +1024,9 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 
-				So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 				auditMock.AssertRecordCalls(
-					audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: ap},
-					audit_mock.Expected{Action: putDatasetAction, Result: audit.Unsuccessful, Params: ap},
+					audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: auditParams},
+					audit_mock.Expected{Action: putDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -1092,10 +1059,9 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 
-				So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 				auditMock.AssertRecordCalls(
-					audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: ap},
-					audit_mock.Expected{Action: putDatasetAction, Result: audit.Unsuccessful, Params: ap},
+					audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: auditParams},
+					audit_mock.Expected{Action: putDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -1122,10 +1088,9 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 1)
 
-				So(len(auditMock.RecordCalls()), ShouldEqual, 2)
 				auditMock.AssertRecordCalls(
-					audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: ap},
-					audit_mock.Expected{Action: putDatasetAction, Result: audit.Unsuccessful, Params: ap},
+					audit_mock.Expected{Action: putDatasetAction, Result: audit.Attempted, Params: auditParams},
+					audit_mock.Expected{Action: putDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -1156,11 +1121,10 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 
-		ap := common.Params{"dataset_id": "123"}
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
+		auditParams := common.Params{"dataset_id": "123"}
 		auditMock.AssertRecordCalls(
-			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: ap},
-			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: ap},
+			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: auditParams},
+			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: auditParams},
 		)
 	})
 }
@@ -1189,11 +1153,10 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 
-		ap := common.Params{"dataset_id": "123"}
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
+		auditParams := common.Params{"dataset_id": "123"}
 		auditMock.AssertRecordCalls(
-			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: ap},
-			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: ap},
+			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: auditParams},
+			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -1220,11 +1183,10 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 
-		ap := common.Params{"dataset_id": "123"}
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
+		auditParams := common.Params{"dataset_id": "123"}
 		auditMock.AssertRecordCalls(
-			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: ap},
-			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: ap},
+			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: auditParams},
+			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -1251,11 +1213,10 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 
-		ap := common.Params{"dataset_id": "123"}
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
+		auditParams := common.Params{"dataset_id": "123"}
 		auditMock.AssertRecordCalls(
-			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: ap},
-			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: ap},
+			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: auditParams},
+			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -1282,11 +1243,10 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 
-		ap := common.Params{"dataset_id": "123"}
-		So(len(auditMock.RecordCalls()), ShouldEqual, 2)
+		auditParams := common.Params{"dataset_id": "123"}
 		auditMock.AssertRecordCalls(
-			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: ap},
-			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: ap},
+			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: auditParams},
+			audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -1306,9 +1266,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldResemble, "unauthenticated request\n")
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
-		So(len(auditMock.RecordCalls()), ShouldEqual, 0)
 
-		So(len(auditMock.RecordCalls()), ShouldEqual, 0)
 		auditMock.AssertRecordCalls()
 	})
 }
@@ -1332,13 +1290,12 @@ func TestDeleteDatasetAuditActionAttemptedError(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 
-				ap := common.Params{"dataset_id": "123"}
-				So(len(auditMock.RecordCalls()), ShouldEqual, 1)
+				auditParams := common.Params{"dataset_id": "123"}
 				auditMock.AssertRecordCalls(
 					audit_mock.Expected{
 						Action: deleteDatasetAction,
 						Result: audit.Attempted,
-						Params: ap,
+						Params: auditParams,
 					},
 				)
 			})
@@ -1369,11 +1326,10 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 
-				ap := common.Params{"dataset_id": "123"}
-				So(len(auditMock.RecordCalls()), ShouldEqual, 2)
+				auditParams := common.Params{"dataset_id": "123"}
 				auditMock.AssertRecordCalls(
-					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: ap},
-					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: ap},
+					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: auditParams},
+					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -1398,11 +1354,10 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 
-				ap := common.Params{"dataset_id": "123"}
-				So(len(auditMock.RecordCalls()), ShouldEqual, 2)
+				auditParams := common.Params{"dataset_id": "123"}
 				auditMock.AssertRecordCalls(
-					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: ap},
-					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: ap},
+					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: auditParams},
+					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -1427,11 +1382,10 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 
-				ap := common.Params{"dataset_id": "123"}
-				So(len(auditMock.RecordCalls()), ShouldEqual, 2)
+				auditParams := common.Params{"dataset_id": "123"}
 				auditMock.AssertRecordCalls(
-					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: ap},
-					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: ap},
+					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: auditParams},
+					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -1459,11 +1413,10 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 
-				ap := common.Params{"dataset_id": "123"}
-				So(len(auditMock.RecordCalls()), ShouldEqual, 2)
+				auditParams := common.Params{"dataset_id": "123"}
 				auditMock.AssertRecordCalls(
-					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: ap},
-					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: ap},
+					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: auditParams},
+					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -1496,11 +1449,10 @@ func TestDeleteDatasetAuditActionSuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 
-				ap := common.Params{"dataset_id": "123"}
-				So(len(auditMock.RecordCalls()), ShouldEqual, 2)
+				auditParams := common.Params{"dataset_id": "123"}
 				auditMock.AssertRecordCalls(
-					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: ap},
-					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: ap},
+					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: auditParams},
+					audit_mock.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: auditParams},
 				)
 			})
 		})
