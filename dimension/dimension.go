@@ -38,8 +38,8 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["id"]
-	logData := log.Data{"instance_id": instanceID}
 	auditParams := common.Params{"instance_id": instanceID}
+	logData := audit.ToLogData(auditParams)
 
 	if auditErr := s.Auditor.Record(ctx, GetDimensions, audit.Attempted, auditParams); auditErr != nil {
 		handleDimensionErr(ctx, w, auditErr, logData)
@@ -100,8 +100,8 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	vars := mux.Vars(r)
 	instanceID := vars["id"]
 	dimension := vars["dimension"]
-	logData := log.Data{"instance_id": instanceID, "dimension": dimension}
 	auditParams := common.Params{"instance_id": instanceID, "dimension": dimension}
+	logData := audit.ToLogData(auditParams)
 
 	if auditErr := s.Auditor.Record(ctx, GetUniqueDimensionAndOptionsAction, audit.Attempted, auditParams); auditErr != nil {
 		handleDimensionErr(ctx, w, auditErr, logData)
@@ -162,8 +162,8 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	instanceID := vars["id"]
-	logData := log.Data{"instance_id": instanceID}
 	auditParams := common.Params{"instance_id": instanceID}
+	logData := audit.ToLogData(auditParams)
 
 	option, err := unmarshalDimensionCache(r.Body)
 	if err != nil {
@@ -223,8 +223,8 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 	dimensionName := vars["dimension"]
 	value := vars["value"]
 	nodeID := vars["node_id"]
-	logData := log.Data{"instance_id": instanceID, "dimension_name": dimensionName, "option": value, "node_id": nodeID}
-	auditParams := common.Params{"instance_id": instanceID, "dimension_name": dimensionName, "option": value, "node_id": nodeID}
+	auditParams := common.Params{"instance_id": instanceID, "dimension": dimensionName, "option": value, "node_id": nodeID}
+	logData := audit.ToLogData(auditParams)
 
 	dim := models.DimensionOption{Name: dimensionName, Option: value, NodeID: nodeID, InstanceID: instanceID}
 
