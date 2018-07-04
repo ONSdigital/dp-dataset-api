@@ -1118,9 +1118,9 @@ func Test_InsertedObservationsReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, auditParams},
+					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}},
+					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Successful, common.Params{"instance_id": "123", "number_of_observations_inserted": "200"}},
 				)
 			})
 		})
@@ -1185,9 +1185,9 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, auditParams},
+					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}},
+					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Unsuccessful, common.Params{"instance_id": "123", "number_of_observations_inserted": "200"}},
 				)
 			})
 		})
@@ -1208,14 +1208,106 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
-				So(w.Body.String(), ShouldContainSubstring, "invalid syntax")
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInsertedObservationsInvalidSyntax.Error())
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.SubmittedState}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, auditParams},
+					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123", "instance_state": models.SubmittedState}},
+					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Unsuccessful, common.Params{"instance_id": "123", "number_of_observations_inserted": "aa12a"}},
+				)
+			})
+		})
+	})
+}
+
+func Test_InsertedObservations_AuditFailure(t *testing.T) {
+	t.Parallel()
+	Convey("Given a request to update instance resource with inserted observations is made", t, func() {
+		Convey(`When the subsequent audit action 'attempted' fails`, func() {
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{}
+
+			auditor := audit_mock.NewErroring(instance.UpdateInsertedObservationsAction, audit.Attempted)
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then a 500 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
+
+				auditParams := common.Params{"instance_id": "123"}
+				auditor.AssertRecordCalls(
+					audit_mock.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Attempted, auditParams),
+				)
+			})
+		})
+
+		Convey(`When the request parameter 'inserted_observations' is not an integer
+			 and the subsequent audit action 'unsuccessful' fails`, func() {
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/1.5", nil)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				GetInstanceFunc: func(id string) (*models.Instance, error) {
+					return &models.Instance{State: models.CreatedState}, nil
+				},
+			}
+
+			auditor := audit_mock.NewErroring(instance.UpdateInsertedObservationsAction, audit.Unsuccessful)
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then a 500 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 0)
+
+				auditor.AssertRecordCalls(
+					audit_mock.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123", "instance_state": models.CreatedState}),
+					audit_mock.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Unsuccessful, common.Params{"instance_id": "123", "number_of_observations_inserted": "1.5"}),
+				)
+			})
+		})
+
+		Convey(`When the request successfully updates instance resource but
+			the subsequent audit action 'successful' fails`, func() {
+
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+
+			mockedDataStore := &storetest.StorerMock{
+				GetInstanceFunc: func(id string) (*models.Instance, error) {
+					return &models.Instance{State: models.CreatedState}, nil
+				},
+				UpdateObservationInsertedFunc: func(id string, observations int64) error {
+					return nil
+				},
+			}
+
+			auditor := audit_mock.NewErroring(instance.UpdateInsertedObservationsAction, audit.Unsuccessful)
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then a 200 status is returned", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
+
+				auditor.AssertRecordCalls(
+					audit_mock.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123", "instance_state": models.CreatedState}),
+					audit_mock.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Successful, common.Params{"instance_id": "123", "number_of_observations_inserted": "200"}),
 				)
 			})
 		})

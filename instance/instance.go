@@ -561,20 +561,35 @@ func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *model
 func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	id := vars["id"]
+	instanceID := vars["id"]
 	insert := vars["inserted_observations"]
+	auditParams := common.Params{"instance_id": instanceID, "number_of_observations_inserted": insert}
+	data := audit.ToLogData(auditParams)
 
-	observations, err := strconv.ParseInt(insert, 10, 64)
-	if err != nil {
-		log.ErrorCtx(ctx, errors.WithMessage(err, "update observations: failed to parse inserted_observations string to int"), log.Data{"stringValue": insert})
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if err := func() error {
+		observations, err := strconv.ParseInt(insert, 10, 64)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "update imported observations: failed to parse inserted_observations string to int"), data)
+			return errs.ErrInsertedObservationsInvalidSyntax
+		}
+
+		if err = s.UpdateObservationInserted(instanceID, observations); err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "update imported observations: store.UpdateObservationInserted returned an error"), data)
+			return err
+		}
+
+		return nil
+	}(); err != nil {
+		if auditErr := s.Auditor.Record(ctx, UpdateInsertedObservationsAction, audit.Unsuccessful, auditParams); auditErr != nil {
+			err = auditErr
+		}
+		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
-	if err = s.UpdateObservationInserted(id, observations); err != nil {
-		log.ErrorCtx(ctx, errors.WithMessage(err, "update observations: store.UpdateObservationInserted returned an error"), log.Data{"id": id})
-		handleInstanceErr(ctx, err, w, nil)
-	}
+	s.Auditor.Record(ctx, UpdateInsertedObservationsAction, audit.Successful, auditParams)
+
+	log.InfoCtx(ctx, "update imported observations: request successful", data)
 }
 
 // UpdateImportTask updates any task in the request body against an instance

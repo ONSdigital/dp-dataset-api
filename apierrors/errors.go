@@ -18,6 +18,7 @@ var (
 	ErrIndexOutOfRange                   = errors.New("index out of range")
 	ErrInstanceNotFound                  = errors.New("instance not found")
 	ErrInternalServer                    = errors.New("internal error")
+	ErrInsertedObservationsInvalidSyntax = errors.New("inserted observation request parameter not a integer")
 	ErrMetadataVersionNotFound           = errors.New("version not found")
 	ErrMissingJobProperties              = errors.New("missing job properties")
 	ErrMissingParameters                 = errors.New("missing properties in JSON")
@@ -45,9 +46,10 @@ var (
 	}
 
 	BadRequestMap = map[error]bool{
-		ErrMissingJobProperties: true,
-		ErrMissingParameters:    true,
-		ErrUnableToParseJSON:    true,
-		ErrUnableToReadMessage:  true,
+		ErrInsertedObservationsInvalidSyntax: true,
+		ErrMissingJobProperties:              true,
+		ErrMissingParameters:                 true,
+		ErrUnableToParseJSON:                 true,
+		ErrUnableToReadMessage:               true,
 	}
 )
