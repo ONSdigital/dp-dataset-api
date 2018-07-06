@@ -116,10 +116,15 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	data := log.Data{"instance_id": id}
 	ap := common.Params{"instance_id": id}
 
+	data["req_path"] = r.URL.Path
+	log.InfoCtx(ctx, "instance get: handler called, auditing attempt", data)
+
 	if err := s.Auditor.Record(ctx, GetInstanceAction, audit.Attempted, ap); err != nil {
 		handleInstanceErr(ctx, err, w, nil)
 		return
 	}
+
+	log.InfoCtx(ctx, "instance get: getting instance", data)
 
 	b, err := func() ([]byte, error) {
 		instance, err := s.GetInstance(id)
@@ -128,6 +133,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
+		log.InfoCtx(ctx, "instance get: checking instance state", data)
 		// Early return if instance state is invalid
 		if err = models.CheckState("instance", instance.State); err != nil {
 			data["state"] = instance.State
@@ -135,6 +141,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
+		log.InfoCtx(ctx, "instance get: marshalling instance json", data)
 		b, err := json.Marshal(instance)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "get instance: failed to marshal instance to json"), data)
@@ -143,6 +150,8 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 
 		return b, nil
 	}()
+
+	log.InfoCtx(ctx, "instance get: auditing outcome", data)
 	if err != nil {
 		if auditErr := s.Auditor.Record(ctx, GetInstanceAction, audit.Unsuccessful, ap); auditErr != nil {
 			err = auditErr

@@ -86,6 +86,9 @@ func New(producer OutboundProducer, namespace string) *Auditor {
 // provided context an error will be returned.
 func (a *Auditor) Record(ctx context.Context, attemptedAction string, actionResult string, params common.Params) (err error) {
 	var e Event
+
+	log.InfoCtx(ctx, "audit.record", nil)
+	
 	defer func() {
 		if err != nil {
 			LogActionFailure(ctx, attemptedAction, actionResult, err, ToLogData(params))
@@ -94,10 +97,13 @@ func (a *Auditor) Record(ctx context.Context, attemptedAction string, actionResu
 		}
 	}()
 
+	log.InfoCtx(ctx, "audit.record: reading user and caller data from context", nil)
 	//NOTE: for now we are only auditing user actions - this may be subject to change
 	user := common.User(ctx)
 	service := common.Caller(ctx)
 
+
+	log.InfoCtx(ctx, "audit.record: validating inputs", nil)
 	if user == "" && service == "" {
 		err = NewAuditError("expected user or caller identity but none found", attemptedAction, actionResult, params)
 		return
@@ -117,6 +123,7 @@ func (a *Auditor) Record(ctx context.Context, attemptedAction string, actionResu
 		return
 	}
 
+	log.InfoCtx(ctx, "audit.record: creating event", nil)
 	e = Event{
 		Service:         a.service,
 		User:            user,
@@ -126,15 +133,21 @@ func (a *Auditor) Record(ctx context.Context, attemptedAction string, actionResu
 		Params:          params,
 	}
 
+	log.InfoCtx(ctx, "audit.record: setting request id", nil)
 	e.RequestID = common.GetRequestId(ctx)
 
+
+	log.InfoCtx(ctx, "audit.record: marshalling event", nil)
 	avroBytes, err := a.marshalToAvro(e)
 	if err != nil {
 		err = NewAuditError("error marshalling event to avro", attemptedAction, actionResult, params)
 		return
 	}
-
+	
+	log.InfoCtx(ctx, "audit.record: sending event to output producer", nil)
 	a.producer.Output() <- avroBytes
+
+	log.InfoCtx(ctx, "audit.record: done", nil)
 	return
 }
 
