@@ -1,8 +1,8 @@
 package instance
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,134 +13,227 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/go-ns/audit"
+	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 )
 
 //Store provides a backend for instances
 type Store struct {
-	Host string
 	store.Storer
+	Host    string
+	Auditor audit.AuditorService
 }
+
+type taskError struct {
+	error  error
+	status int
+}
+
+func (e taskError) Error() string {
+	if e.error != nil {
+		return e.error.Error()
+	}
+	return ""
+}
+
+// List of audit actions for instances
+const (
+	GetInstanceAction                = "getInstance"
+	GetInstancesAction               = "getInstances"
+	UpdateInstanceAction             = "updateInstance"
+	UpdateDimensionAction            = "updateDimension"
+	UpdateInsertedObservationsAction = "updateInsertedObservations"
+	UpdateImportTasksAction          = "updateImportTasks"
+)
 
 //GetList a list of all instances
 func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	data := log.Data{}
 	stateFilterQuery := r.URL.Query().Get("state")
+	var ap common.Params
 	var stateFilterList []string
+
 	if stateFilterQuery != "" {
+		data["query"] = stateFilterQuery
+		ap = common.Params{"query": stateFilterQuery}
 		stateFilterList = strings.Split(stateFilterQuery, ",")
-		if err := models.ValidateStateFilter(stateFilterList); err != nil {
-			log.Error(err, nil)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+	}
+
+	if err := s.Auditor.Record(ctx, GetInstancesAction, audit.Attempted, ap); err != nil {
+		handleInstanceErr(ctx, err, w, nil)
+		return
+	}
+
+	b, err := func() ([]byte, error) {
+		if len(stateFilterList) > 0 {
+			if err := models.ValidateStateFilter(stateFilterList); err != nil {
+				log.ErrorCtx(ctx, errors.WithMessage(err, "get instances: filter state invalid"), data)
+				return nil, taskError{error: err, status: http.StatusBadRequest}
+			}
 		}
-	}
 
-	results, err := s.GetInstances(stateFilterList)
+		results, err := s.GetInstances(stateFilterList)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "get instances: store.GetInstances returned and error"), nil)
+			return nil, err
+		}
+
+		b, err := json.Marshal(results)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "get instances: failed to marshal results to json"), nil)
+			return nil, err
+		}
+		return b, nil
+	}()
+
 	if err != nil {
-		log.Error(err, nil)
-		handleErrorType(err, w)
+		if auditErr := s.Auditor.Record(ctx, GetInstancesAction, audit.Unsuccessful, ap); auditErr != nil {
+			err = auditErr
+		}
+		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
-	b, err := json.Marshal(results)
-	if err != nil {
-		internalError(w, err)
+	if auditErr := s.Auditor.Record(ctx, GetInstancesAction, audit.Successful, ap); auditErr != nil {
+		handleInstanceErr(ctx, auditErr, w, data)
 		return
 	}
 
-	writeBody(w, b)
-	log.Debug("get all instances", log.Data{"query": stateFilterQuery})
+	writeBody(ctx, w, b)
+	log.InfoCtx(ctx, "get instances: request successful", data)
 }
 
 //Get a single instance by id
 func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	id := vars["id"]
-	instance, err := s.GetInstance(id)
+	data := log.Data{"instance_id": id}
+	ap := common.Params{"instance_id": id}
+
+	data["req_path"] = r.URL.Path
+	log.InfoCtx(ctx, "instance get: handler called, auditing attempt", data)
+
+	if err := s.Auditor.Record(ctx, GetInstanceAction, audit.Attempted, ap); err != nil {
+		handleInstanceErr(ctx, err, w, nil)
+		return
+	}
+
+	log.InfoCtx(ctx, "instance get: getting instance", data)
+
+	b, err := func() ([]byte, error) {
+		instance, err := s.GetInstance(id)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "get instance: failed to retrieve instance"), data)
+			return nil, err
+		}
+
+		log.InfoCtx(ctx, "instance get: checking instance state", data)
+		// Early return if instance state is invalid
+		if err = models.CheckState("instance", instance.State); err != nil {
+			data["state"] = instance.State
+			log.ErrorCtx(ctx, errors.WithMessage(err, "get instance: instance has an invalid state"), data)
+			return nil, err
+		}
+
+		log.InfoCtx(ctx, "instance get: marshalling instance json", data)
+		b, err := json.Marshal(instance)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "get instance: failed to marshal instance to json"), data)
+			return nil, err
+		}
+
+		return b, nil
+	}()
+
+	log.InfoCtx(ctx, "instance get: auditing outcome", data)
 	if err != nil {
-		log.Error(err, nil)
-		handleErrorType(err, w)
+		if auditErr := s.Auditor.Record(ctx, GetInstanceAction, audit.Unsuccessful, ap); auditErr != nil {
+			err = auditErr
+		}
+		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
-	// Early return if instance state is invalid
-	if err = models.CheckState("instance", instance.State); err != nil {
-		log.ErrorC("instance has an invalid state", err, log.Data{"state": instance.State})
-		internalError(w, err)
+	if auditErr := s.Auditor.Record(ctx, GetInstanceAction, audit.Successful, ap); auditErr != nil {
+		handleInstanceErr(ctx, auditErr, w, data)
 		return
 	}
 
-	b, err := json.Marshal(instance)
-	if err != nil {
-		internalError(w, err)
-		return
-	}
-
-	writeBody(w, b)
-	log.Debug("get instance", log.Data{"instance_id": id})
+	writeBody(ctx, w, b)
+	log.InfoCtx(ctx, "instance get: request successful", data)
 }
 
 //Add an instance
 func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+	ctx := r.Context()
 	instance, err := unmarshalInstance(r.Body, true)
 	if err != nil {
-		log.Error(err, nil)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "instance add: failed to unmarshal json to model"), nil)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	instance.InstanceID = uuid.NewV4().String()
+	data := log.Data{"instance_id": instance.InstanceID}
+
 	instance.Links.Self = &models.IDLink{
 		HRef: fmt.Sprintf("%s/instances/%s", s.Host, instance.InstanceID),
 	}
 
 	instance, err = s.AddInstance(instance)
 	if err != nil {
-		internalError(w, err)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "instance add: store.AddInstance returned an error"), data)
+		internalError(ctx, w, err)
 		return
 	}
 
 	b, err := json.Marshal(instance)
 	if err != nil {
-		internalError(w, err)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "instance add: failed to marshal instance to json"), data)
+		internalError(ctx, w, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-
 	w.WriteHeader(http.StatusCreated)
-	writeBody(w, b)
-	log.Debug("add instance", log.Data{"instance": instance})
+	writeBody(ctx, w, b)
+	log.InfoCtx(ctx, "instance add: request successful", data)
 }
 
 // UpdateDimension updates label and/or description for a specific dimension within an instance
 func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
-
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	id := vars["id"]
 	dimension := vars["dimension"]
+	data := log.Data{"instance_id": id, "dimension": dimension}
 
 	// Get instance
 	instance, err := s.GetInstance(id)
 	if err != nil {
-		log.ErrorC("Failed to GET instance when attempting to update a dimension of that instance.", err, log.Data{"instance": id})
-		handleErrorType(err, w)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "instance update dimension: Failed to GET instance"), data)
+		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
 	// Early return if instance state is invalid
 	if err = models.CheckState("instance", instance.State); err != nil {
-		log.ErrorC("current instance has an invalid state", err, log.Data{"state": instance.State})
-		handleErrorType(errs.ErrInternalServer, w)
+		data["state"] = instance.State
+		log.ErrorCtx(ctx, errors.WithMessage(err, "instance update dimension: current instance has an invalid state"), data)
+		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
 	// Early return if instance is already published
 	if instance.State == models.PublishedState {
-		log.Debug("unable to update instance/version, already published", nil)
+		log.InfoCtx(ctx, "instance update dimension: unable to update instance/version, already published", data)
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
@@ -148,7 +241,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	// Read and unmarshal request body
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.ErrorC("Error reading response.body.", err, nil)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "instance update dimension: error reading request.body"), data)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -157,7 +250,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(b, &dim)
 	if err != nil {
-		log.ErrorC("Failing to model models.Codelist resource based on request", err, log.Data{"instance": id, "dimension": dimension})
+		log.ErrorCtx(ctx, errors.WithMessage(err, "instance update dimension: failing to model models.Codelist resource based on request"), data)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -178,35 +271,35 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 			}
 			break
 		}
-
 	}
 
 	if notFound {
-		log.ErrorC("dimension not found", errs.ErrDimensionNotFound, log.Data{"instance": id, "dimension": dimension})
-		handleErrorType(errs.ErrDimensionNotFound, w)
+		log.ErrorCtx(ctx, errors.WithMessage(errs.ErrDimensionNotFound, "instance update dimension: dimension not found"), data)
+		handleInstanceErr(ctx, errs.ErrDimensionNotFound, w, data)
 		return
 	}
 
 	// Update instance
 	if err = s.UpdateInstance(id, instance); err != nil {
-		log.ErrorC("Failed to update instance with new dimension label/description.", err, log.Data{"instance": id, "dimension": dimension})
-		handleErrorType(err, w)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "instance update dimension: failed to update instance with new dimension label/description"), data)
+		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
-	log.Debug("updated dimension", log.Data{"instance": id, "dimension": dimension})
-
+	log.InfoCtx(ctx, "instance updated dimension: request successful", data)
 }
 
 //Update a specific instance
 func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	id := vars["id"]
+	data := log.Data{"instance_id": id}
 	defer r.Body.Close()
 
 	instance, err := unmarshalInstance(r.Body, false)
 	if err != nil {
-		log.Error(err, nil)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: failed unmarshalling json to model"), data)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -214,15 +307,16 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	// Get the current document
 	currentInstance, err := s.GetInstance(id)
 	if err != nil {
-		log.Error(err, nil)
-		handleErrorType(err, w)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.GetInstance returned error"), data)
+		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
 	// Early return if instance state is invalid
 	if err = models.CheckState("instance", currentInstance.State); err != nil {
-		log.ErrorC("current instance has an invalid state", err, log.Data{"state": currentInstance.State})
-		handleErrorType(errs.ErrInternalServer, w)
+		data["state"] = currentInstance.State
+		log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: current instance has an invalid state"), data)
+		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
@@ -230,37 +324,15 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	instance.Links = updateLinks(instance, currentInstance)
 
 	logData := log.Data{"instance_id": id, "current_state": currentInstance.State, "requested_state": instance.State}
-	if instance.State != currentInstance.State {
-		switch instance.State {
-		case models.CompletedState:
-			if err = validateInstanceUpdate(models.SubmittedState, currentInstance, instance); err != nil {
-				log.Error(err, logData)
-				http.Error(w, err.Error(), http.StatusForbidden)
-				return
-			}
-		case models.EditionConfirmedState:
-			if err = validateInstanceUpdate(models.CompletedState, currentInstance, instance); err != nil {
-				log.Error(err, logData)
-				http.Error(w, err.Error(), http.StatusForbidden)
-				return
-			}
-		case models.AssociatedState:
-			if err = validateInstanceUpdate(models.EditionConfirmedState, currentInstance, instance); err != nil {
-				log.Error(err, logData)
-				http.Error(w, err.Error(), http.StatusForbidden)
-				return
-			}
+	if instance.State != "" && instance.State != currentInstance.State {
 
-			// TODO Update dataset.next state to associated and add collection id
-		case models.PublishedState:
-			if err = validateInstanceUpdate(models.AssociatedState, currentInstance, instance); err != nil {
-				log.Error(err, logData)
-				http.Error(w, err.Error(), http.StatusForbidden)
-				return
-			}
-
-			// TODO Update both edition and dataset states to published
+		status, err := validateInstanceStateUpdate(instance, currentInstance)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.Errorf("instance update: instance state invalid"), logData)
+			http.Error(w, err.Error(), status)
+			return
 		}
+
 	}
 
 	if instance.State == models.EditionConfirmedState {
@@ -273,22 +345,23 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		edition := instance.Edition
 
 		// Only create edition if it doesn't already exist
-		editionDoc, err := s.getEdition(datasetID, edition, id)
+		editionDoc, err := s.getEdition(ctx, datasetID, edition, id)
 		if err != nil {
-			log.ErrorR(r, err, nil)
-			handleErrorType(err, w)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.getEdition returned an error"), data)
+			handleInstanceErr(ctx, err, w, data)
 			return
 		}
 
 		// Update with any edition.next changes
 		editionDoc.Next.State = instance.State
 		if err = s.UpsertEdition(datasetID, edition, editionDoc); err != nil {
-			log.ErrorR(r, err, nil)
-			handleErrorType(err, w)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.UpsertEdition returned an error"), data)
+			handleInstanceErr(ctx, err, w, data)
 			return
 		}
 
-		log.Debug("created edition", log.Data{"instance": id, "edition": edition})
+		data["edition"] = edition
+		log.InfoCtx(ctx, "instance update: created edition", data)
 
 		// Check whether instance has a version
 		if currentInstance.Version < 1 {
@@ -296,8 +369,8 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			// instance and append by 1 to set the version of this instance document
 			version, err := s.GetNextVersion(datasetID, edition)
 			if err != nil {
-				log.ErrorR(r, err, nil)
-				handleErrorType(err, w)
+				log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.GetNextVersion returned an error"), data)
+				handleInstanceErr(ctx, err, w, data)
 				return
 			}
 
@@ -306,15 +379,59 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			links := s.defineInstanceLinks(instance, editionDoc)
 			instance.Links = links
 		}
+
+		if err := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: datastore.AddVersionDetailsToInstance returned an error"), data)
+			handleInstanceErr(ctx, err, w, data)
+			return
+		}
 	}
 
 	if err = s.UpdateInstance(id, instance); err != nil {
-		log.Error(err, nil)
-		handleErrorType(err, w)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.UpdateInstance returned an error"), data)
+		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
-	log.Debug("updated instance", log.Data{"instance": id})
+	log.InfoCtx(ctx, "instance update: request successful", data)
+}
+
+func validateInstanceStateUpdate(instance, currentInstance *models.Instance) (state int, err error) {
+	if instance.State != "" && instance.State != currentInstance.State {
+		switch instance.State {
+		case models.SubmittedState:
+			if currentInstance.State != models.CreatedState {
+				return http.StatusForbidden, errors.New("Unable to update resource, expected resource to have a state of " + models.CreatedState)
+			}
+			break
+		case models.CompletedState:
+			if currentInstance.State != models.SubmittedState {
+				return http.StatusForbidden, errors.New("Unable to update resource, expected resource to have a state of " + models.SubmittedState)
+			}
+			break
+		case models.EditionConfirmedState:
+			if currentInstance.State != models.CompletedState {
+				return http.StatusForbidden, errors.New("Unable to update resource, expected resource to have a state of " + models.CompletedState)
+			}
+			break
+		case models.AssociatedState:
+			if currentInstance.State != models.EditionConfirmedState {
+				return http.StatusForbidden, errors.New("Unable to update resource, expected resource to have a state of " + models.EditionConfirmedState)
+			}
+			break
+		case models.PublishedState:
+			if currentInstance.State != models.AssociatedState {
+				return http.StatusForbidden, errors.New("Unable to update resource, expected resource to have a state of " + models.AssociatedState)
+			}
+			break
+		default:
+			err = errors.New("instance resource has an invalid state")
+			return http.StatusInternalServerError, err
+		}
+
+	}
+
+	return http.StatusOK, nil
 }
 
 func updateLinks(instance, currentInstance *models.Instance) *models.InstanceLinks {
@@ -337,12 +454,12 @@ func updateLinks(instance, currentInstance *models.Instance) *models.InstanceLin
 	return links
 }
 
-func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.EditionUpdate, error) {
-
+func (s *Store) getEdition(ctx context.Context, datasetID, edition, instanceID string) (*models.EditionUpdate, error) {
+	data := log.Data{"dataset_id": datasetID, "instance_id": instanceID, "edition": edition}
 	editionDoc, err := s.GetEdition(datasetID, edition, "")
 	if err != nil {
 		if err != errs.ErrEditionNotFound {
-			log.Error(err, nil)
+			log.ErrorCtx(ctx, err, data)
 			return nil, err
 		}
 		// create unique id for edition
@@ -376,7 +493,8 @@ func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.Editi
 		// Update the latest version for the dataset edition
 		version, err := strconv.Atoi(editionDoc.Next.Links.LatestVersion.ID)
 		if err != nil {
-			log.ErrorC("unable to retrieve latest version", err, log.Data{"instance": instanceID, "edition": edition, "version": editionDoc.Next.Links.LatestVersion.ID})
+			data["version"] = editionDoc.Next.Links.LatestVersion.ID
+			log.ErrorCtx(ctx, errors.WithMessage(err, "unable to retrieve latest version"), data)
 			return nil, err
 		}
 
@@ -387,19 +505,6 @@ func (s *Store) getEdition(datasetID, edition, instanceID string) (*models.Editi
 	}
 
 	return editionDoc, nil
-}
-
-func validateInstanceUpdate(expectedState string, currentInstance, instance *models.Instance) error {
-	var err error
-	if currentInstance.State == models.PublishedState {
-		err = fmt.Errorf("Unable to update resource state, as the version has been published")
-	} else if currentInstance.State != expectedState {
-		err = fmt.Errorf("Unable to update resource, expected resource to have a state of %s", expectedState)
-	} else if instance.State == models.EditionConfirmedState && currentInstance.Edition == "" && instance.Edition == "" {
-		err = errors.New("Unable to update resource, missing a value for the edition")
-	}
-
-	return err
 }
 
 func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *models.EditionUpdate) *models.InstanceLinks {
@@ -443,88 +548,135 @@ func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *model
 // UpdateObservations increments the count of inserted_observations against
 // an instance
 func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	id := vars["id"]
 	insert := vars["inserted_observations"]
 
 	observations, err := strconv.ParseInt(insert, 10, 64)
 	if err != nil {
-		log.Error(err, nil)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "update observations: failed to parse inserted_observations string to int"), log.Data{"stringValue": insert})
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if err = s.UpdateObservationInserted(id, observations); err != nil {
-		log.Error(err, nil)
-		handleErrorType(err, w)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "update observations: store.UpdateObservationInserted returned an error"), log.Data{"id": id})
+		handleInstanceErr(ctx, err, w, nil)
 	}
 }
 
+// UpdateImportTask updates any task in the request body against an instance
 func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
-
+	ctx := r.Context()
 	vars := mux.Vars(r)
-	id := vars["id"]
-
+	instanceID := vars["id"]
+	ap := common.Params{"instance_id": instanceID}
+	data := audit.ToLogData(ap)
 	defer r.Body.Close()
 
-	tasks, err := unmarshalImportTasks(r.Body)
-	if err != nil {
-		log.Error(err, nil)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	updateErr := func() *taskError {
+		tasks, err := unmarshalImportTasks(r.Body)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to unmarshal request body to UpdateImportTasks model"), data)
+			return &taskError{err, http.StatusBadRequest}
+		}
+
+		validationErrs := make([]error, 0)
+		var hasImportTasks bool
+
+		if tasks.ImportObservations != nil {
+			hasImportTasks = true
+			if tasks.ImportObservations.State != "" {
+				if tasks.ImportObservations.State != models.CompletedState {
+					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value for import observations: %v", tasks.ImportObservations.State))
+				} else {
+					if err := s.UpdateImportObservationsTaskState(instanceID, tasks.ImportObservations.State); err != nil {
+						log.ErrorCtx(ctx, errors.WithMessage(err, "Failed to update import observations task state"), data)
+						return &taskError{err, http.StatusInternalServerError}
+					}
+				}
+			} else {
+				validationErrs = append(validationErrs, errors.New("bad request - invalid import observation task, must include state"))
+			}
+		}
+
+		if tasks.BuildHierarchyTasks != nil {
+			hasImportTasks = true
+			var hasHierarchyImportTask bool
+			for _, task := range tasks.BuildHierarchyTasks {
+				hasHierarchyImportTask = true
+				if err := models.ValidateImportTask(task.GenericTaskDetails); err != nil {
+					validationErrs = append(validationErrs, err)
+				} else {
+					if err := s.UpdateBuildHierarchyTaskState(instanceID, task.DimensionName, task.State); err != nil {
+						if err.Error() == "not found" {
+							notFoundErr := task.DimensionName + " hierarchy import task does not exist"
+							log.ErrorCtx(ctx, errors.WithMessage(err, notFoundErr), data)
+							return &taskError{errors.New(notFoundErr), http.StatusNotFound}
+						}
+						log.ErrorCtx(ctx, errors.WithMessage(err, "failed to update build hierarchy task state"), data)
+						return &taskError{err, http.StatusInternalServerError}
+					}
+				}
+			}
+			if !hasHierarchyImportTask {
+				validationErrs = append(validationErrs, errors.New("bad request - missing hierarchy task"))
+			}
+		}
+
+		if tasks.BuildSearchIndexTasks != nil {
+			hasImportTasks = true
+			var hasSearchIndexImportTask bool
+			for _, task := range tasks.BuildSearchIndexTasks {
+				hasSearchIndexImportTask = true
+				if err := models.ValidateImportTask(task.GenericTaskDetails); err != nil {
+					validationErrs = append(validationErrs, err)
+				} else {
+					if err := s.UpdateBuildSearchTaskState(instanceID, task.DimensionName, task.State); err != nil {
+						if err.Error() == "not found" {
+							notFoundErr := task.DimensionName + " search index import task does not exist"
+							log.ErrorCtx(ctx, errors.WithMessage(err, notFoundErr), data)
+							return &taskError{errors.New(notFoundErr), http.StatusNotFound}
+						}
+						log.ErrorCtx(ctx, errors.WithMessage(err, "failed to update build hierarchy task state"), data)
+						return &taskError{err, http.StatusInternalServerError}
+					}
+				}
+			}
+			if !hasSearchIndexImportTask {
+				validationErrs = append(validationErrs, errors.New("bad request - missing search index task"))
+			}
+		}
+
+		if !hasImportTasks {
+			validationErrs = append(validationErrs, errors.New("bad request - request body does not contain any import tasks"))
+		}
+
+		if len(validationErrs) > 0 {
+			for _, err := range validationErrs {
+				log.ErrorCtx(ctx, errors.WithMessage(err, "validation error"), data)
+			}
+			// todo: add all validation errors to the response
+			return &taskError{validationErrs[0], http.StatusBadRequest}
+		}
+		return nil
+	}()
+
+	if updateErr != nil {
+		if auditErr := s.Auditor.Record(ctx, UpdateImportTasksAction, audit.Unsuccessful, ap); auditErr != nil {
+			updateErr = &taskError{errs.ErrInternalServer, http.StatusInternalServerError}
+		}
+		log.ErrorCtx(ctx, errors.WithMessage(updateErr, "updateImportTask endpoint: request unsuccessful"), data)
+		http.Error(w, updateErr.Error(), updateErr.status)
 		return
 	}
 
-	validationErrs := make([]error, 0)
-
-	if tasks.ImportObservations != nil {
-		if tasks.ImportObservations.State != "" {
-			if tasks.ImportObservations.State != models.CompletedState {
-				validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value for import observations: %v", tasks.ImportObservations.State))
-			} else if err := s.UpdateImportObservationsTaskState(id, tasks.ImportObservations.State); err != nil {
-				log.Error(err, nil)
-				http.Error(w, "Failed to update import observations task state", http.StatusInternalServerError)
-				return
-			}
-		}
-	}
-
-	if tasks.BuildHierarchyTasks != nil {
-		for _, task := range tasks.BuildHierarchyTasks {
-			if task.State != "" {
-				if task.State != models.CompletedState {
-					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
-				} else if err := s.UpdateBuildHierarchyTaskState(id, task.DimensionName, task.State); err != nil {
-					log.Error(err, nil)
-					http.Error(w, "Failed to update build hierarchy task state", http.StatusInternalServerError)
-					return
-				}
-			}
-		}
-	}
-
-	if tasks.BuildSearchIndexTasks != nil {
-		for _, task := range tasks.BuildSearchIndexTasks {
-			if task.State != "" {
-				if task.State != models.CompletedState {
-					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value: %v", task.State))
-				} else if err := s.UpdateBuildSearchTaskState(id, task.DimensionName, task.State); err != nil {
-					log.Error(err, nil)
-					http.Error(w, "Failed to update build search index task state", http.StatusInternalServerError)
-					return
-				}
-			}
-		}
-	}
-
-	if len(validationErrs) > 0 {
-		for _, err := range validationErrs {
-			log.Error(err, nil)
-		}
-		// todo: add all validation errors to the response
-		http.Error(w, validationErrs[0].Error(), http.StatusBadRequest)
+	if auditErr := s.Auditor.Record(ctx, UpdateImportTasksAction, audit.Successful, ap); auditErr != nil {
 		return
 	}
 
+	log.InfoCtx(ctx, "updateImportTask endpoint: request successful", data)
 }
 
 func unmarshalImportTasks(reader io.Reader) (*models.InstanceImportTasks, error) {
@@ -546,13 +698,13 @@ func unmarshalImportTasks(reader io.Reader) (*models.InstanceImportTasks, error)
 func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return nil, errors.New("Failed to read message body")
+		return nil, errors.New("failed to read message body")
 	}
 
 	var instance models.Instance
 	err = json.Unmarshal(b, &instance)
 	if err != nil {
-		return nil, errors.New("Failed to parse json body: " + err.Error())
+		return nil, errors.New("failed to parse json body: " + err.Error())
 	}
 
 	if instance.State != "" {
@@ -564,12 +716,12 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 	if post {
 		log.Debug("post request on an instance", log.Data{"instance_id": instance.InstanceID})
 		if instance.Links == nil || instance.Links.Job == nil {
-			return nil, errors.New("Missing job properties")
+			return nil, errs.ErrMissingJobProperties
 		}
 
 		// Need both href and id for job link
 		if instance.Links.Job.HRef == "" || instance.Links.Job.ID == "" {
-			return nil, errors.New("Missing job properties")
+			return nil, errs.ErrMissingJobProperties
 		}
 
 		// TODO May want to check the id and href make sense; or change spec to allow
@@ -584,25 +736,15 @@ func unmarshalInstance(reader io.Reader, post bool) (*models.Instance, error) {
 	return &instance, nil
 }
 
-func handleErrorType(err error, w http.ResponseWriter) {
-	status := http.StatusInternalServerError
-
-	if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound || err == errs.ErrDimensionNotFound || err == errs.ErrDimensionNodeNotFound || err == errs.ErrInstanceNotFound {
-		status = http.StatusNotFound
-	}
-
-	http.Error(w, err.Error(), status)
-}
-
-func internalError(w http.ResponseWriter, err error) {
-	log.Error(err, nil)
+func internalError(ctx context.Context, w http.ResponseWriter, err error) {
+	log.ErrorCtx(ctx, err, nil)
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
-func writeBody(w http.ResponseWriter, b []byte) {
+func writeBody(ctx context.Context, w http.ResponseWriter, b []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(b); err != nil {
-		log.Error(err, nil)
+		log.ErrorCtx(ctx, err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -610,28 +752,74 @@ func writeBody(w http.ResponseWriter, b []byte) {
 // PublishCheck Checks if an instance has been published
 type PublishCheck struct {
 	Datastore store.Storer
+	Auditor   audit.AuditorService
 }
 
 // Check wraps a HTTP handle. Checks that the state is not published
-func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), action string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
+		ctx := r.Context()
 		vars := mux.Vars(r)
-		id := vars["id"]
-		instance, err := d.Datastore.GetInstance(id)
-		if err != nil {
-			log.Error(err, nil)
-			handleErrorType(err, w)
+		instanceID := vars["id"]
+		logData := log.Data{"instance_id": instanceID}
+		auditParams := common.Params{"instance_id": instanceID}
+
+		if err := d.Auditor.Record(ctx, action, audit.Attempted, auditParams); err != nil {
+			handleInstanceErr(ctx, errs.ErrAuditActionAttemptedFailure, w, logData)
 			return
 		}
 
-		if instance.State == models.PublishedState {
-			err = errors.New("unable to update instance as it has been published")
-			log.Error(err, log.Data{"instance": instance})
-			http.Error(w, err.Error(), http.StatusForbidden)
+		if err := d.checkState(instanceID); err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "errored whilst checking instance state"), logData)
+			if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
+				handleInstanceErr(ctx, errs.ErrAuditActionAttemptedFailure, w, logData)
+				return
+			}
+
+			handleInstanceErr(ctx, err, w, logData)
 			return
 		}
 
 		handle(w, r)
 	})
+}
+
+func (d *PublishCheck) checkState(instanceID string) error {
+	instance, err := d.Datastore.GetInstance(instanceID)
+	if err != nil {
+		return err
+	}
+
+	if instance.State == models.PublishedState {
+		return errs.ErrResourcePublished
+	}
+
+	return nil
+}
+
+func handleInstanceErr(ctx context.Context, err error, w http.ResponseWriter, data log.Data) {
+	if data == nil {
+		data = log.Data{}
+	}
+
+	taskErr, isTaskErr := err.(taskError)
+
+	var status int
+	response := err
+
+	switch {
+	case isTaskErr:
+		status = taskErr.status
+	case errs.NotFoundMap[err]:
+		status = http.StatusNotFound
+	case err == errs.ErrResourcePublished:
+		status = http.StatusForbidden
+	default:
+		status = http.StatusInternalServerError
+		response = errs.ErrInternalServer
+	}
+
+	data["responseStatus"] = status
+	log.ErrorCtx(ctx, errors.WithMessage(err, "request unsuccessful"), data)
+	http.Error(w, response.Error(), status)
 }

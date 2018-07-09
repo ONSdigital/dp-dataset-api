@@ -7,16 +7,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/ONSdigital/go-ns/log"
+	"github.com/gedge/mgo"
+	"github.com/gedge/mgo/bson"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/go-ns/log"
 )
-
-var _ store.Storer = &Mongo{}
 
 // Mongo represents a simplistic MongoDB configuration.
 type Mongo struct {

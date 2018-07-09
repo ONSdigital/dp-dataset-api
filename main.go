@@ -11,6 +11,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
+	"github.com/ONSdigital/dp-dataset-api/neo4j"
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-filter/observation"
@@ -25,8 +26,17 @@ import (
 	mongolib "github.com/ONSdigital/go-ns/mongo"
 	"github.com/pkg/errors"
 
-	bolt "github.com/ONSdigital/golang-neo4j-bolt-driver"
+	bolt "github.com/johnnadratowski/golang-neo4j-bolt-driver"
 )
+
+// check that DatsetAPIStore satifies the the store.Storer interface
+var _ store.Storer = (*DatsetAPIStore)(nil)
+
+//DatsetAPIStore is a wrapper which embeds Neo4j Mongo stucts which between them satisfy the store.Storer interface.
+type DatsetAPIStore struct {
+	*mongo.Mongo
+	*neo4j.Neo4j
+}
 
 func main() {
 	log.Namespace = "dp-dataset-api"
@@ -66,7 +76,7 @@ func main() {
 		auditor = &audit.NopAuditor{}
 	}
 
-	mongo := &mongo.Mongo{
+	mongodb := &mongo.Mongo{
 		CodeListURL: cfg.CodeListAPIURL,
 		Collection:  cfg.MongoConfig.Collection,
 		Database:    cfg.MongoConfig.Database,
@@ -74,25 +84,27 @@ func main() {
 		URI:         cfg.MongoConfig.BindAddr,
 	}
 
-	session, err := mongo.Init()
+	session, err := mongodb.Init()
 	if err != nil {
 		log.ErrorC("failed to initialise mongo", err, nil)
 		os.Exit(1)
 	}
 
-	mongo.Session = session
+	mongodb.Session = session
 
 	log.Debug("listening...", log.Data{
 		"bind_address": cfg.BindAddr,
 	})
-
-	store := store.DataStore{Backend: mongo}
 
 	neo4jConnPool, err := bolt.NewClosableDriverPool(cfg.Neo4jBindAddress, cfg.Neo4jPoolSize)
 	if err != nil {
 		log.ErrorC("failed to connect to neo4j connection pool", err, nil)
 		os.Exit(1)
 	}
+
+	neoDB := &neo4j.Neo4j{neo4jConnPool}
+
+	store := store.DataStore{Backend: DatsetAPIStore{Mongo: mongodb, Neo4j: neoDB}}
 
 	observationStore := observation.NewStore(neo4jConnPool)
 
@@ -104,7 +116,7 @@ func main() {
 	healthTicker := healthcheck.NewTicker(
 		cfg.HealthCheckInterval,
 		neo4jhealth.NewHealthCheckClient(neo4jConnPool),
-		mongolib.NewHealthCheckClient(mongo.Session),
+		mongolib.NewHealthCheckClient(mongodb.Session),
 	)
 
 	apiErrors := make(chan error, 1)

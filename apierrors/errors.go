@@ -2,30 +2,52 @@ package apierrors
 
 import "errors"
 
-// Error messages for Dataset API
+// A list of error messages for Dataset API
 var (
-	ErrDatasetNotFound                   = errors.New("Dataset not found")
 	ErrAddDatasetAlreadyExists           = errors.New("forbidden - dataset already exists")
-	ErrAddUpdateDatasetBadRequest        = errors.New("Failed to parse json body")
-	ErrEditionNotFound                   = errors.New("Edition not found")
-	ErrVersionNotFound                   = errors.New("Version not found")
-	ErrDimensionNodeNotFound             = errors.New("Dimension node not found")
-	ErrDimensionNotFound                 = errors.New("Dimension not found")
-	ErrDimensionsNotFound                = errors.New("Dimensions not found")
-	ErrInstanceNotFound                  = errors.New("Instance not found")
-	ErrUnauthorised                      = errors.New("Unauthorised access to API")
-	ErrNoAuthHeader                      = errors.New("No authentication header provided")
-	ErrResourceState                     = errors.New("Incorrect resource state")
-	ErrVersionMissingState               = errors.New("Missing state from version")
-	ErrInternalServer                    = errors.New("internal error")
-	ErrObservationsNotFound              = errors.New("No observations found")
-	ErrIndexOutOfRange                   = errors.New("index out of range")
-	ErrMissingVersionHeadersOrDimensions = errors.New("missing headers or dimensions or both from version doc")
-	ErrTooManyWildcards                  = errors.New("only one wildcard (*) is allowed as a value in selected query parameters")
-	ErrDeletePublishedDatasetForbidden   = errors.New("a published dataset cannot be deleted")
-	ErrDeleteDatasetNotFound             = errors.New("dataset not found")
+	ErrAddUpdateDatasetBadRequest        = errors.New("failed to parse json body")
 	ErrAuditActionAttemptedFailure       = errors.New("internal server error")
+	ErrDatasetNotFound                   = errors.New("dataset not found")
+	ErrDeleteDatasetNotFound             = errors.New("dataset not found")
+	ErrDeletePublishedDatasetForbidden   = errors.New("a published dataset cannot be deleted")
+	ErrDimensionNodeNotFound             = errors.New("dimension node not found")
+	ErrDimensionNotFound                 = errors.New("dimension not found")
+	ErrDimensionOptionNotFound           = errors.New("dimension option not found")
+	ErrDimensionsNotFound                = errors.New("dimensions not found")
+	ErrEditionNotFound                   = errors.New("edition not found")
+	ErrIndexOutOfRange                   = errors.New("index out of range")
+	ErrInstanceNotFound                  = errors.New("instance not found")
+	ErrInternalServer                    = errors.New("internal error")
+	ErrMetadataVersionNotFound           = errors.New("version not found")
+	ErrMissingJobProperties              = errors.New("missing job properties")
+	ErrMissingParameters                 = errors.New("missing properties in JSON")
+	ErrMissingVersionHeadersOrDimensions = errors.New("missing headers or dimensions or both from version doc")
+	ErrNoAuthHeader                      = errors.New("no authentication header provided")
+	ErrObservationsNotFound              = errors.New("no observations found")
+	ErrResourcePublished                 = errors.New("unable to update resource as it has been published")
+	ErrResourceState                     = errors.New("incorrect resource state")
+	ErrTooManyWildcards                  = errors.New("only one wildcard (*) is allowed as a value in selected query parameters")
+	ErrUnableToReadMessage               = errors.New("failed to read message body")
+	ErrUnableToParseJSON                 = errors.New("failed to parse json body")
+	ErrUnauthorised                      = errors.New("unauthorised access to API")
+	ErrVersionBadRequest                 = errors.New("failed to parse json body")
+	ErrVersionMissingState               = errors.New("missing state from version")
+	ErrVersionNotFound                   = errors.New("version not found")
 
-	// metadata endpoint errors
-	ErrMetadataVersionNotFound = errors.New("Version not found")
+	NotFoundMap = map[error]bool{
+		ErrDatasetNotFound:         true,
+		ErrDimensionNotFound:       true,
+		ErrDimensionsNotFound:      true,
+		ErrDimensionNodeNotFound:   true,
+		ErrDimensionOptionNotFound: true,
+		ErrEditionNotFound:         true,
+		ErrInstanceNotFound:        true,
+		ErrVersionNotFound:         true,
+	}
+
+	BadRequestMap = map[error]bool{
+		ErrMissingParameters:   true,
+		ErrUnableToParseJSON:   true,
+		ErrUnableToReadMessage: true,
+	}
 )

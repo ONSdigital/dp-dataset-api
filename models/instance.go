@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/gedge/mgo/bson"
 )
 
 // Instance which presents a single dataset being imported
@@ -24,6 +26,7 @@ type Instance struct {
 	TotalObservations *int                 `bson:"total_observations,omitempty"          json:"total_observations,omitempty"`
 	Version           int                  `bson:"version,omitempty"                     json:"version,omitempty"`
 	LastUpdated       time.Time            `bson:"last_updated,omitempty"                json:"last_updated,omitempty"`
+	UniqueTimestamp   bson.MongoTimestamp  `bson:"unique_timestamp"                      json:"-"`
 	ImportTasks       *InstanceImportTasks `bson:"import_tasks,omitempty"                json:"import_tasks"`
 }
 
@@ -42,15 +45,18 @@ type ImportObservationsTask struct {
 
 // BuildHierarchyTask represents a task of importing a single hierarchy.
 type BuildHierarchyTask struct {
-	State         string `bson:"state,omitempty"          json:"state,omitempty"`
+	CodeListID         string `bson:"code_list_id,omitempty"   json:"code_list_id,omitempty"`
+	GenericTaskDetails `bson:",inline"`
+}
+
+type GenericTaskDetails struct {
 	DimensionName string `bson:"dimension_name,omitempty" json:"dimension_name,omitempty"`
-	CodeListID    string `bson:"code_list_id,omitempty"   json:"code_list_id,omitempty"`
+	State         string `bson:"state,omitempty"          json:"state,omitempty"`
 }
 
 // BuildSearchIndexTask represents a task of importing a single search index into search.
 type BuildSearchIndexTask struct {
-	State         string `bson:"state,omitempty"          json:"state,omitempty"`
-	DimensionName string `bson:"dimension_name,omitempty" json:"dimension_name,omitempty"`
+	GenericTaskDetails `bson:",inline"`
 }
 
 // CodeList for a dimension within an instance
@@ -138,6 +144,29 @@ func ValidateInstanceState(state string) error {
 	if invalidInstantStateValues != nil {
 		err := fmt.Errorf("bad request - invalid filter state values: %v", invalidInstantStateValues)
 		return err
+	}
+
+	return nil
+}
+
+// ValidateImportTask checks the task contains mandatory fields
+func ValidateImportTask(task GenericTaskDetails) error {
+	var missingFields []string
+
+	if task.DimensionName == "" {
+		missingFields = append(missingFields, "dimension_name")
+	}
+
+	if task.State == "" {
+		missingFields = append(missingFields, "state")
+	}
+
+	if len(missingFields) > 0 {
+		return fmt.Errorf("bad request - missing mandatory fields: %v", missingFields)
+	}
+
+	if task.State != CompletedState {
+		return fmt.Errorf("bad request - invalid task state value: %v", task.State)
 	}
 
 	return nil

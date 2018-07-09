@@ -6,13 +6,13 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"gopkg.in/mgo.v2/bson"
+	"github.com/gedge/mgo/bson"
 )
 
 const dimensionOptions = "dimension.options"
 
-// GetDimensionNodesFromInstance which are stored in a mongodb collection
-func (m *Mongo) GetDimensionNodesFromInstance(id string) (*models.DimensionNodeResults, error) {
+// GetDimensionsFromInstance returns a list of dimensions and their options for an instance resource
+func (m *Mongo) GetDimensionsFromInstance(id string) (*models.DimensionNodeResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -27,8 +27,8 @@ func (m *Mongo) GetDimensionNodesFromInstance(id string) (*models.DimensionNodeR
 	return &models.DimensionNodeResults{Items: dimensions}, nil
 }
 
-// GetUniqueDimensionValues which are stored in mongodb collection
-func (m *Mongo) GetUniqueDimensionValues(id, dimension string) (*models.DimensionValues, error) {
+// GetUniqueDimensionAndOptions returns a list of dimension options for an instance resource
+func (m *Mongo) GetUniqueDimensionAndOptions(id, dimension string) (*models.DimensionValues, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
