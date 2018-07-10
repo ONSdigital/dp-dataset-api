@@ -17,7 +17,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/audit/audit_mock"
+	"github.com/ONSdigital/go-ns/audit/auditortest"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
@@ -48,7 +48,7 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -59,8 +59,8 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 
 		auditParams := common.Params{"dataset_id": "123-456", "edition": "678"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Successful, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Successful, Params: auditParams},
 		)
 	})
 }
@@ -78,7 +78,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -88,8 +88,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -102,7 +102,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -114,8 +114,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -131,7 +131,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -143,8 +143,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -164,7 +164,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -176,8 +176,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -196,7 +196,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -208,8 +208,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -231,7 +231,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -243,8 +243,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 }
@@ -259,7 +259,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			return err
 		}
@@ -273,7 +273,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
 		)
 	})
 
@@ -286,7 +286,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if action == getVersionsAction && result == audit.Unsuccessful {
 				return errors.New("error")
@@ -303,8 +303,8 @@ func TestGetVersionsAuditError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -320,7 +320,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if action == getVersionsAction && result == audit.Unsuccessful {
 				return errors.New("error")
@@ -337,8 +337,8 @@ func TestGetVersionsAuditError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -357,7 +357,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.NewErroring(getVersionAction, audit.Unsuccessful)
+		auditor := auditortest.NewErroring(getVersionAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -367,8 +367,8 @@ func TestGetVersionsAuditError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -389,7 +389,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if action == getVersionsAction && result == audit.Unsuccessful {
 				return errors.New("error")
@@ -406,8 +406,8 @@ func TestGetVersionsAuditError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -426,7 +426,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if action == getVersionsAction && result == audit.Successful {
 				return errors.New("error")
@@ -444,8 +444,8 @@ func TestGetVersionsAuditError(t *testing.T) {
 
 		auditParams := common.Params{"dataset_id": "123-456", "edition": "678"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionsAction, Result: audit.Successful, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionsAction, Result: audit.Successful, Params: auditParams},
 		)
 	})
 }
@@ -476,7 +476,7 @@ func TestGetVersionReturnsOK(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -487,8 +487,8 @@ func TestGetVersionReturnsOK(t *testing.T) {
 
 		auditParams := common.Params{"dataset_id": "123-456", "edition": "678", "version": "1"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Successful, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Successful, Params: auditParams},
 		)
 	})
 }
@@ -505,7 +505,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -513,8 +513,8 @@ func TestGetVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -528,7 +528,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -540,8 +540,8 @@ func TestGetVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -558,7 +558,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -570,8 +570,8 @@ func TestGetVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -591,7 +591,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -603,8 +603,8 @@ func TestGetVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -623,7 +623,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -635,8 +635,8 @@ func TestGetVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -665,7 +665,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -677,8 +677,8 @@ func TestGetVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 }
@@ -695,7 +695,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if action == getVersionAction && result == audit.Attempted {
 				return errors.New("error")
@@ -710,7 +710,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
 		)
 	})
 
@@ -724,7 +724,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.NewErroring(getVersionAction, audit.Unsuccessful)
+		auditor := auditortest.NewErroring(getVersionAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -734,8 +734,8 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -752,7 +752,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.NewErroring(getVersionAction, audit.Unsuccessful)
+		auditor := auditortest.NewErroring(getVersionAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -762,8 +762,8 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -783,7 +783,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.NewErroring(getVersionAction, audit.Unsuccessful)
+		auditor := auditortest.NewErroring(getVersionAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -793,8 +793,8 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -820,7 +820,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.NewErroring(getVersionAction, audit.Unsuccessful)
+		auditor := auditortest.NewErroring(getVersionAction, audit.Unsuccessful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -830,8 +830,8 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -859,7 +859,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.NewErroring(getVersionAction, audit.Successful)
+		auditor := auditortest.NewErroring(getVersionAction, audit.Successful)
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -869,8 +869,8 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: getVersionAction, Result: audit.Successful, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: getVersionAction, Result: audit.Successful, Params: auditParams},
 		)
 	})
 }
@@ -927,7 +927,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -942,8 +942,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 		)
 	})
 
@@ -981,7 +981,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -996,8 +996,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 		)
 	})
 
@@ -1038,7 +1038,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -1062,10 +1062,10 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
-			audit_mock.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: associateVersionAction, Result: audit.Successful, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
+			auditortest.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: associateVersionAction, Result: audit.Successful, Params: auditParams},
 		)
 	})
 
@@ -1147,7 +1147,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -1162,10 +1162,10 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
-			audit_mock.Expected{Action: publishVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: publishVersionAction, Result: audit.Successful, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
+			auditortest.Expected{Action: publishVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: publishVersionAction, Result: audit.Successful, Params: auditParams},
 		)
 	})
 
@@ -1257,7 +1257,7 @@ func updateVersionDownloadTest(r *http.Request, auditParams common.Params) {
 		},
 	}
 
-	auditor := audit_mock.New()
+	auditor := auditortest.New()
 	api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 	api.Router.ServeHTTP(w, r)
 
@@ -1273,8 +1273,8 @@ func updateVersionDownloadTest(r *http.Request, auditParams common.Params) {
 	So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 	auditor.AssertRecordCalls(
-		audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-		audit_mock.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
+		auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+		auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 	)
 }
 
@@ -1319,7 +1319,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 			So(err, ShouldBeNil)
 			cfg.EnablePrivateEnpoints = true
 
-			auditor := audit_mock.New()
+			auditor := auditortest.New()
 			api := Routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockDownloadGenerator, auditor, genericMockedObservationStore)
 			api.Router.ServeHTTP(w, r)
 
@@ -1349,10 +1349,10 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 				So(genCalls[0].Version, ShouldEqual, "1")
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-					audit_mock.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
-					audit_mock.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
-					audit_mock.Expected{Action: associateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
+					auditortest.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: associateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -1388,7 +1388,7 @@ func TestPutEmptyVersion(t *testing.T) {
 
 			w := httptest.NewRecorder()
 
-			auditor := audit_mock.New()
+			auditor := auditortest.New()
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 			api.Router.ServeHTTP(w, r)
 
@@ -1402,8 +1402,8 @@ func TestPutEmptyVersion(t *testing.T) {
 				So(mockedDataStore.UpdateVersionCalls()[0].Version.Downloads, ShouldBeNil)
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-					audit_mock.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 				)
 			})
 		})
@@ -1433,7 +1433,7 @@ func TestPutEmptyVersion(t *testing.T) {
 			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 
-			auditor := audit_mock.New()
+			auditor := auditortest.New()
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
 			api.Router.ServeHTTP(w, r)
 
@@ -1466,8 +1466,8 @@ func TestPutEmptyVersion(t *testing.T) {
 				So(len(mockDownloadGenerator.GenerateCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-					audit_mock.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 				)
 			})
 		})
@@ -1479,7 +1479,7 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 
 	t.Parallel()
 	Convey("given audit action attempted returns an error", t, func() {
-		auditor := audit_mock.NewErroring(updateVersionAction, audit.Attempted)
+		auditor := auditortest.NewErroring(updateVersionAction, audit.Attempted)
 
 		Convey("when updateVersion is called with a valid request", func() {
 			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionPayload))
@@ -1502,7 +1502,7 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 				So(len(store.UpdateVersionCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
 				)
 			})
 		})
@@ -1531,7 +1531,7 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 	}
 
 	Convey("given audit action successful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(updateVersionAction, audit.Successful)
+		auditor := auditortest.NewErroring(updateVersionAction, audit.Successful)
 
 		Convey("when updateVersion is called with a valid request", func() {
 
@@ -1575,15 +1575,15 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 				So(len(store.UpdateVersionCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-					audit_mock.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 				)
 			})
 		})
 	})
 
 	Convey("given audit action unsuccessful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(updateVersionAction, audit.Unsuccessful)
+		auditor := auditortest.NewErroring(updateVersionAction, audit.Unsuccessful)
 
 		Convey("when update version is unsuccessful", func() {
 			store := &storetest.StorerMock{
@@ -1611,8 +1611,8 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 				So(len(store.UpdateVersionCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-					audit_mock.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -1628,7 +1628,7 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 	}
 
 	Convey("given audit action attempted returns an error", t, func() {
-		auditor := audit_mock.NewErroring(publishVersionAction, audit.Attempted)
+		auditor := auditortest.NewErroring(publishVersionAction, audit.Attempted)
 
 		Convey("when publish version is called", func() {
 			store := &storetest.StorerMock{}
@@ -1640,14 +1640,14 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 			Convey("then the expected audit events are recorded and an error is returned", func() {
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{Action: publishVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: publishVersionAction, Result: audit.Attempted, Params: auditParams},
 				)
 			})
 		})
 	})
 
 	Convey("given audit action unsuccessful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(publishVersionAction, audit.Unsuccessful)
+		auditor := auditortest.NewErroring(publishVersionAction, audit.Unsuccessful)
 
 		Convey("when publish version returns an error", func() {
 			store := &storetest.StorerMock{
@@ -1664,15 +1664,15 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 				So(len(store.GetEditionCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{Action: publishVersionAction, Result: audit.Attempted, Params: auditParams},
-					audit_mock.Expected{Action: publishVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+					auditortest.Expected{Action: publishVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: publishVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
 	})
 
 	Convey("given audit action successful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(publishVersionAction, audit.Successful)
+		auditor := auditortest.NewErroring(publishVersionAction, audit.Successful)
 
 		Convey("when publish version returns an error", func() {
 			store := &storetest.StorerMock{
@@ -1738,8 +1738,8 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 				So(len(store.GetEditionCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{Action: publishVersionAction, Result: audit.Attempted, Params: auditParams},
-					audit_mock.Expected{Action: publishVersionAction, Result: audit.Successful, Params: auditParams},
+					auditortest.Expected{Action: publishVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: publishVersionAction, Result: audit.Successful, Params: auditParams},
 				)
 			})
 		})
@@ -1785,7 +1785,7 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 	expectedErr := errors.New("err")
 
 	Convey("given audit action attempted returns an error", t, func() {
-		auditor := audit_mock.NewErroring(associateVersionAction, audit.Attempted)
+		auditor := auditortest.NewErroring(associateVersionAction, audit.Attempted)
 
 		Convey("when associate version is called", func() {
 
@@ -1794,21 +1794,21 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 			api := GetAPIWithMockedDatastore(store, gen, auditor, genericMockedObservationStore)
 
 			err := api.associateVersion(context.Background(), currentVersion, &versionDoc, versionDetails)
-			So(err, ShouldEqual, audit_mock.ErrAudit)
+			So(err, ShouldEqual, auditortest.ErrAudit)
 
 			Convey("then the expected audit event is captured and the expected error is returned", func() {
 				So(len(store.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 				So(len(gen.GenerateCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
 				)
 			})
 		})
 	})
 
 	Convey("given audit action unsuccessful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(associateVersionAction, audit.Unsuccessful)
+		auditor := auditortest.NewErroring(associateVersionAction, audit.Unsuccessful)
 
 		Convey("when datastore.UpdateDatasetWithAssociation returns an error", func() {
 			store := &storetest.StorerMock{
@@ -1827,8 +1827,8 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 				So(len(gen.GenerateCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
-					audit_mock.Expected{Action: associateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+					auditortest.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: associateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -1854,15 +1854,15 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 				So(len(gen.GenerateCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
-					audit_mock.Expected{Action: associateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+					auditortest.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: associateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
 	})
 
 	Convey("given audit action successful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(associateVersionAction, audit.Successful)
+		auditor := auditortest.NewErroring(associateVersionAction, audit.Successful)
 
 		Convey("when associateVersion is called", func() {
 			store := &storetest.StorerMock{
@@ -1885,8 +1885,8 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 				So(len(gen.GenerateCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
-					audit_mock.Expected{Action: associateVersionAction, Result: audit.Successful, Params: auditParams},
+					auditortest.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: associateVersionAction, Result: audit.Successful, Params: auditParams},
 				)
 			})
 		})
@@ -1918,7 +1918,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -1930,8 +1930,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -1957,7 +1957,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -1969,8 +1969,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -1999,7 +1999,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -2012,8 +2012,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -2042,7 +2042,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -2055,8 +2055,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -2088,7 +2088,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -2102,8 +2102,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -2127,7 +2127,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -2163,7 +2163,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -2174,8 +2174,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 
@@ -2207,7 +2207,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 		api.Router.ServeHTTP(w, r)
 
@@ -2221,8 +2221,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-			audit_mock.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 }

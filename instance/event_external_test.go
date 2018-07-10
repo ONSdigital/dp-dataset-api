@@ -12,7 +12,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/audit/audit_mock"
+	"github.com/ONSdigital/go-ns/audit/auditortest"
 	"github.com/ONSdigital/go-ns/common"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -34,7 +34,7 @@ func TestAddEventReturnsOk(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -44,8 +44,8 @@ func TestAddEventReturnsOk(t *testing.T) {
 				expectedParams := common.Params{"instance_id": "123"}
 				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, expectedParams),
-					audit_mock.NewExpectation(instance.AddInstanceEventAction, audit.Successful, expectedParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, expectedParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Successful, expectedParams),
 				)
 			})
 		})
@@ -63,7 +63,7 @@ func TestAddEventToInstanceReturnsBadRequest(t *testing.T) {
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -74,8 +74,8 @@ func TestAddEventToInstanceReturnsBadRequest(t *testing.T) {
 				expectedParams := common.Params{"instance_id": "123"}
 				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, expectedParams),
-					audit_mock.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, expectedParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, expectedParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, expectedParams),
 				)
 			})
 		})
@@ -90,7 +90,7 @@ func TestAddEventToInstanceReturnsBadRequest(t *testing.T) {
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -101,8 +101,8 @@ func TestAddEventToInstanceReturnsBadRequest(t *testing.T) {
 				expectedParams := common.Params{"instance_id": "123"}
 				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, expectedParams),
-					audit_mock.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, expectedParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, expectedParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, expectedParams),
 				)
 			})
 		})
@@ -125,7 +125,7 @@ func TestAddEventToInstanceReturnsNotFound(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -136,8 +136,8 @@ func TestAddEventToInstanceReturnsNotFound(t *testing.T) {
 				expectedParams := common.Params{"instance_id": "123"}
 				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, expectedParams),
-					audit_mock.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, expectedParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, expectedParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, expectedParams),
 				)
 			})
 		})
@@ -160,7 +160,7 @@ func TestAddEventToInstanceReturnsInternalError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -171,8 +171,8 @@ func TestAddEventToInstanceReturnsInternalError(t *testing.T) {
 				expectedParams := common.Params{"instance_id": "123"}
 				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, expectedParams),
-					audit_mock.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, expectedParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, expectedParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, expectedParams),
 				)
 			})
 		})
@@ -183,7 +183,7 @@ func TestAddInstanceEventAuditErrors(t *testing.T) {
 	t.Parallel()
 	Convey("Given audit action attempted returns an error", t, func() {
 
-		auditor := audit_mock.NewErroring(instance.AddInstanceEventAction, audit.Attempted)
+		auditor := auditortest.NewErroring(instance.AddInstanceEventAction, audit.Attempted)
 
 		Convey("When add instance event is called", func() {
 			body := strings.NewReader(`{"message": "321", "type": "error", "message_offset":"00", "time":"2017-08-25T15:09:11.829+01:00" }`)
@@ -204,14 +204,14 @@ func TestAddInstanceEventAuditErrors(t *testing.T) {
 				auditParams := common.Params{"instance_id": "123"}
 				So(len(auditor.RecordCalls()), ShouldEqual, 1)
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, auditParams),
 				)
 			})
 		})
 	})
 
 	Convey("Given audit action unsuccessful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(instance.AddInstanceEventAction, audit.Unsuccessful)
+		auditor := auditortest.NewErroring(instance.AddInstanceEventAction, audit.Unsuccessful)
 
 		Convey("When add instance event returns an error", func() {
 			r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", strings.NewReader(`{}`))
@@ -231,15 +231,15 @@ func TestAddInstanceEventAuditErrors(t *testing.T) {
 				auditParams := common.Params{"instance_id": "123"}
 				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
 	})
 
 	Convey("given audit action successful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(instance.AddInstanceEventAction, audit.Successful)
+		auditor := auditortest.NewErroring(instance.AddInstanceEventAction, audit.Successful)
 
 		Convey("when get instances is called", func() {
 			body := strings.NewReader(`{"message": "321", "type": "error", "message_offset":"00", "time":"2017-08-25T15:09:11.829+01:00" }`)
@@ -264,8 +264,8 @@ func TestAddInstanceEventAuditErrors(t *testing.T) {
 				auditParams := common.Params{"instance_id": "123"}
 				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.AddInstanceEventAction, audit.Successful, auditParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Successful, auditParams),
 				)
 			})
 		})

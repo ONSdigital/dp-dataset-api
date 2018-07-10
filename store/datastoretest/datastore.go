@@ -5,11 +5,9 @@ package storetest
 
 import (
 	"context"
-
-	"sync"
-
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/gedge/mgo/bson"
+	"sync"
 )
 
 var (

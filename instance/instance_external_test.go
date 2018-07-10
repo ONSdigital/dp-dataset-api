@@ -20,7 +20,7 @@ import (
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/audit/audit_mock"
+	"github.com/ONSdigital/go-ns/audit/auditortest"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
@@ -53,7 +53,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -61,8 +61,8 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
-					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Successful, nil),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, nil),
 				)
 			})
 		})
@@ -81,7 +81,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -91,8 +91,8 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 
 				expectedParams := common.Params{"query": "completed"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, expectedParams),
-					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Successful, expectedParams),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, expectedParams),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, expectedParams),
 				)
 			})
 		})
@@ -111,7 +111,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -121,8 +121,8 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 
 				expectedParams := common.Params{"query": "completed,edition-confirmed"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, expectedParams),
-					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Successful, expectedParams),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, expectedParams),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, expectedParams),
 				)
 			})
 		})
@@ -144,7 +144,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -153,8 +153,8 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
-					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, nil),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, nil),
 				)
 			})
 		})
@@ -167,7 +167,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 
 				mockedDataStore := &storetest.StorerMock{}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -176,8 +176,8 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 
 				expectedParams := common.Params{"query": "foo"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, expectedParams),
-					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, expectedParams),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, expectedParams),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, expectedParams),
 				)
 			})
 		})
@@ -187,7 +187,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 func Test_GetInstancesAuditErrors(t *testing.T) {
 	t.Parallel()
 	Convey("Given audit action attempted returns an error", t, func() {
-		auditor := audit_mock.NewErroring(instance.GetInstancesAction, audit.Attempted)
+		auditor := auditortest.NewErroring(instance.GetInstancesAction, audit.Attempted)
 
 		Convey("When get instances is called", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
@@ -206,14 +206,14 @@ func Test_GetInstancesAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
 				)
 			})
 		})
 	})
 
 	Convey("Given audit action unsuccessful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(instance.GetInstancesAction, audit.Unsuccessful)
+		auditor := auditortest.NewErroring(instance.GetInstancesAction, audit.Unsuccessful)
 
 		Convey("When get instances return an error", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
@@ -236,15 +236,15 @@ func Test_GetInstancesAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
-					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, nil),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, nil),
 				)
 			})
 		})
 	})
 
 	Convey("Given audit action successful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(instance.GetInstancesAction, audit.Successful)
+		auditor := auditortest.NewErroring(instance.GetInstancesAction, audit.Successful)
 
 		Convey("When get instances is called", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances", nil)
@@ -267,8 +267,8 @@ func Test_GetInstancesAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
-					audit_mock.NewExpectation(instance.GetInstancesAction, audit.Successful, nil),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, nil),
 				)
 			})
 		})
@@ -290,7 +290,7 @@ func Test_GetInstanceReturnsOK(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -299,8 +299,8 @@ func Test_GetInstanceReturnsOK(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
-					audit_mock.Expected{instance.GetInstanceAction, audit.Successful, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Successful, auditParams},
 				)
 			})
 		})
@@ -322,7 +322,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -333,8 +333,8 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
-					audit_mock.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
 		})
@@ -351,7 +351,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -362,8 +362,8 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
-					audit_mock.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
 		})
@@ -380,7 +380,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -391,8 +391,8 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
-					audit_mock.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
 		})
@@ -402,7 +402,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 func Test_GetInstanceAuditErrors(t *testing.T) {
 	t.Parallel()
 	Convey("Given audit action 'attempted' fails", t, func() {
-		auditor := audit_mock.NewErroring(instance.GetInstanceAction, audit.Attempted)
+		auditor := auditortest.NewErroring(instance.GetInstanceAction, audit.Attempted)
 
 		Convey("When a GET request is made to get an instance resource", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
@@ -426,14 +426,14 @@ func Test_GetInstanceAuditErrors(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
 				)
 			})
 		})
 	})
 
 	Convey("Given audit action 'unsuccessful' fails", t, func() {
-		auditor := audit_mock.NewErroring(instance.GetInstanceAction, audit.Unsuccessful)
+		auditor := auditortest.NewErroring(instance.GetInstanceAction, audit.Unsuccessful)
 
 		Convey("When a GET request is made to get an instance resource", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
@@ -457,15 +457,15 @@ func Test_GetInstanceAuditErrors(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
-					audit_mock.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
 		})
 	})
 
 	Convey("Given audit action 'successful' fails", t, func() {
-		auditor := audit_mock.NewErroring(instance.GetInstanceAction, audit.Successful)
+		auditor := auditortest.NewErroring(instance.GetInstanceAction, audit.Successful)
 
 		Convey("When a GET request is made to get an instance resource", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
@@ -489,8 +489,8 @@ func Test_GetInstanceAuditErrors(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
-					audit_mock.Expected{instance.GetInstanceAction, audit.Successful, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Successful, auditParams},
 				)
 			})
 		})
@@ -505,7 +505,7 @@ type expectedPostInstanceAuditObject struct {
 
 // function specifically used for POST instance as instance_id cannot be
 // determined due to the nature of the handler method creating it's value
-func checkAuditRecord(auditor audit_mock.MockAuditor, expected []expectedPostInstanceAuditObject) {
+func checkAuditRecord(auditor auditortest.MockAuditor, expected []expectedPostInstanceAuditObject) {
 	So(len(auditor.RecordCalls()), ShouldEqual, len(expected))
 	for i, _ := range expected {
 		// Instance_id is created with a new uuid every time the Test_ is run and
@@ -535,7 +535,7 @@ func Test_AddInstanceReturnsCreated(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -544,10 +544,10 @@ func Test_AddInstanceReturnsCreated(t *testing.T) {
 
 				checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
 					expectedPostInstanceAuditObject{
-						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "instance_id",
+						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "",
 					},
 					expectedPostInstanceAuditObject{
-						Action: instance.AddInstanceAction, Result: audit.Successful, ContainsKey: "instance_id",
+						Action: instance.AddInstanceAction, Result: audit.Successful, ContainsKey: "",
 					},
 				})
 			})
@@ -570,7 +570,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -580,10 +580,10 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 
 				checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
 					expectedPostInstanceAuditObject{
-						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "instance_id",
+						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "",
 					},
 					expectedPostInstanceAuditObject{
-						Action: instance.AddInstanceAction, Result: audit.Unsuccessful, ContainsKey: "instance_id",
+						Action: instance.AddInstanceAction, Result: audit.Unsuccessful, ContainsKey: "",
 					},
 				})
 			})
@@ -602,7 +602,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -634,7 +634,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -658,7 +658,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 func Test_AddInstanceAuditErrors(t *testing.T) {
 	t.Parallel()
 	Convey("Given audit action 'attempted' fails", t, func() {
-		auditor := audit_mock.NewErroring(instance.AddInstanceAction, audit.Attempted)
+		auditor := auditortest.NewErroring(instance.AddInstanceAction, audit.Attempted)
 
 		Convey("When a POST request is made to create an instance resource", func() {
 			body := strings.NewReader(`{"links": { "job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } } }`)
@@ -685,7 +685,7 @@ func Test_AddInstanceAuditErrors(t *testing.T) {
 	})
 
 	Convey("Given audit action 'unsuccessful' fails", t, func() {
-		auditor := audit_mock.NewErroring(instance.AddInstanceAction, audit.Unsuccessful)
+		auditor := auditortest.NewErroring(instance.AddInstanceAction, audit.Unsuccessful)
 
 		Convey("When a POST request is made to create an instance resource", func() {
 			body := strings.NewReader(`{"links": {"job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } } }`)
@@ -708,10 +708,10 @@ func Test_AddInstanceAuditErrors(t *testing.T) {
 
 				checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
 					expectedPostInstanceAuditObject{
-						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "instance_id",
+						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "",
 					},
 					expectedPostInstanceAuditObject{
-						Action: instance.AddInstanceAction, Result: audit.Unsuccessful, ContainsKey: "instance_id",
+						Action: instance.AddInstanceAction, Result: audit.Unsuccessful, ContainsKey: "",
 					},
 				})
 			})
@@ -719,7 +719,7 @@ func Test_AddInstanceAuditErrors(t *testing.T) {
 	})
 
 	Convey("Given audit action 'successful' fails", t, func() {
-		auditor := audit_mock.NewErroring(instance.AddInstanceAction, audit.Successful)
+		auditor := auditortest.NewErroring(instance.AddInstanceAction, audit.Successful)
 
 		Convey("When a POST request is made to create an instance resource", func() {
 			body := strings.NewReader(`{"links": {"job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } } }`)
@@ -741,10 +741,10 @@ func Test_AddInstanceAuditErrors(t *testing.T) {
 
 				checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
 					expectedPostInstanceAuditObject{
-						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "instance_id",
+						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "",
 					},
 					expectedPostInstanceAuditObject{
-						Action: instance.AddInstanceAction, Result: audit.Successful, ContainsKey: "instance_id",
+						Action: instance.AddInstanceAction, Result: audit.Successful, ContainsKey: "",
 					},
 				})
 			})
@@ -771,7 +771,7 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -780,9 +780,9 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Successful, common.Params{"instance_id": "123"}},
 				)
 			})
 		})
@@ -833,7 +833,7 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -845,9 +845,11 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CompletedState}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.CreateEditionAction, audit.Attempted, common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}},
+					auditortest.Expected{instance.CreateEditionAction, audit.Successful, common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Successful, common.Params{"instance_id": "123"}},
 				)
 			})
 		})
@@ -870,7 +872,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -883,8 +885,8 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
-					audit_mock.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
 		})
@@ -900,20 +902,20 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": "gobbledygook"}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "123", "instance_state": "gobbledygook"}},
 				)
 			})
 		})
@@ -930,7 +932,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -940,9 +942,9 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CompletedState}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "123"}},
 				)
 			})
 		})
@@ -959,7 +961,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -972,14 +974,14 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
-					audit_mock.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
 		})
 
 		Convey(`When request updates state to 'edition-confirmed'
-				but fails to update instance with version details`, func() {
+						but fails to update instance with version details`, func() {
 			Convey("Then return status internal server error (500)", func() {
 				body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
 				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
@@ -1025,7 +1027,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1039,9 +1041,12 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CompletedState}
+				auditParams := common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.CreateEditionAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.CreateEditionAction, audit.Successful, auditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "123"}},
 				)
 			})
 		})
@@ -1072,20 +1077,380 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusForbidden)
-				So(w.Body.String(), ShouldContainSubstring, "Unable to update resource, expected resource to have a state of submitted")
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrExpectedResourceStateOfSubmitted.Error())
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "1235", "instance_state": models.EditionConfirmedState}
+				auditParams := common.Params{"instance_id": "1235"}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
+				)
+			})
+		})
+	})
+}
+
+func Test_UpdateInstance_AuditFailure(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given a PUT request to update state of an instance resource is made", t, func() {
+		Convey(`When the auditor attempts to audit request attempt fails`, func() {
+			Convey("Then return status internal server error (500)", func() {
+				body := strings.NewReader(`{"state":"completed"}`)
+				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/1235", body)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(id string) (*models.Instance, error) {
+						return nil, nil
+					},
+				}
+
+				auditor := auditortest.NewErroring(instance.UpdateInstanceAction, audit.Attempted)
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
+
+				auditor.AssertRecordCalls(
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "1235"}},
+				)
+			})
+		})
+
+		Convey(`When the instance resource is already published and hence request is
+	 forbidden and so auditor attempts to audit unsuccessful request but it fails to do so`, func() {
+			Convey("Then return status internal server error (500)", func() {
+				body := strings.NewReader(`{"state":"completed"}`)
+				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/1235", body)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+
+				currentInstanceTest_Data := &models.Instance{
+					Edition: "2017",
+					Links: &models.InstanceLinks{
+						Dataset: &models.IDLink{
+							ID: "4567",
+						},
+					},
+					State: models.PublishedState,
+				}
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(id string) (*models.Instance, error) {
+						return currentInstanceTest_Data, nil
+					},
+					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+						return nil
+					},
+				}
+
+				auditor := auditortest.NewErroring(instance.UpdateInstanceAction, audit.Unsuccessful)
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
+
+				auditor.AssertRecordCalls(
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "1235"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "1235", "instance_state": models.PublishedState}},
+				)
+			})
+		})
+
+		Convey(`When the request state change is invalid and the attempt to audit unsuccessful fails`, func() {
+			Convey("Then return status internal server error (500)", func() {
+				body := strings.NewReader(`{"state":"completed"}`)
+				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/1235", body)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+
+				currentInstanceTest_Data := &models.Instance{
+					Edition: "2017",
+					Links: &models.InstanceLinks{
+						Dataset: &models.IDLink{
+							ID: "4567",
+						},
+					},
+					State: models.AssociatedState,
+				}
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(id string) (*models.Instance, error) {
+						return currentInstanceTest_Data, nil
+					},
+					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+						return nil
+					},
+				}
+
+				auditor := auditortest.NewErroring(instance.UpdateInstanceAction, audit.Unsuccessful)
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
+
+				auditor.AssertRecordCalls(
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "1235"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "1235"}},
+				)
+			})
+		})
+
+		Convey(`When the requested state change is to 'edition-confirmed' and attempt to audit request to create edition fails`, func() {
+			Convey("Then return status internal server error (500)", func() {
+				body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
+				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+
+				currentInstanceTest_Data := &models.Instance{
+					Edition: "2017",
+					Links: &models.InstanceLinks{
+						Job: &models.IDLink{
+							ID:   "7654",
+							HRef: "job-link",
+						},
+						Dataset: &models.IDLink{
+							ID:   "4567",
+							HRef: "dataset-link",
+						},
+						Self: &models.IDLink{
+							HRef: "self-link",
+						},
+					},
+					State: models.CompletedState,
+				}
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(id string) (*models.Instance, error) {
+						return currentInstanceTest_Data, nil
+					},
+					GetEditionFunc: func(datasetID string, edition string, state string) (*models.EditionUpdate, error) {
+						return nil, errs.ErrEditionNotFound
+					},
+				}
+
+				auditor := auditortest.NewErroring(instance.CreateEditionAction, audit.Attempted)
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.GetNextVersionCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
+
+				auditor.AssertRecordCalls(
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.CreateEditionAction, audit.Attempted, common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}},
+					auditortest.Expected{instance.CreateEditionAction, audit.Unsuccessful, common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "123"}},
+				)
+			})
+		})
+
+		Convey(`When the requested state changes to 'associated' and the edition is updated
+			but unable to update instance and then the auditor attempts an unsuccessful message and fails`, func() {
+			Convey("Then return status internal server error (500)", func() {
+				body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
+				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+
+				currentInstanceTest_Data := &models.Instance{
+					Edition: "2017",
+					Links: &models.InstanceLinks{
+						Job: &models.IDLink{
+							ID:   "7654",
+							HRef: "job-link",
+						},
+						Dataset: &models.IDLink{
+							ID:   "4567",
+							HRef: "dataset-link",
+						},
+						Self: &models.IDLink{
+							HRef: "self-link",
+						},
+					},
+					State: models.CompletedState,
+				}
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(id string) (*models.Instance, error) {
+						return currentInstanceTest_Data, nil
+					},
+					GetEditionFunc: func(datasetID string, edition string, state string) (*models.EditionUpdate, error) {
+						return &models.EditionUpdate{
+							Current: &models.Edition{
+								State: models.PublishedState,
+							},
+							Next: &models.Edition{
+								Links: &models.EditionUpdateLinks{
+									Dataset: &models.LinkObject{
+										HRef: "/dataset/test/href",
+										ID:   "cpih01",
+									},
+									LatestVersion: &models.LinkObject{
+										ID: "2",
+									},
+									Self: &models.LinkObject{
+										HRef: "/edition/test/href",
+									},
+								},
+								State: models.EditionConfirmedState,
+							},
+						}, nil
+					},
+					UpsertEditionFunc: func(datasetID, edition string, editionDoc *models.EditionUpdate) error {
+						return nil
+					},
+					GetNextVersionFunc: func(string, string) (int, error) {
+						return 1, nil
+					},
+					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+						return errs.ErrInternalServer
+					},
+					AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
+						return nil
+					},
+				}
+
+				auditor := auditortest.NewErroring(instance.UpdateInstanceAction, audit.Unsuccessful)
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetNextVersionCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 1)
+
+				auditor.AssertRecordCalls(
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateEditionAction, audit.Attempted, common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}},
+					auditortest.Expected{instance.UpdateEditionAction, audit.Successful, common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "123"}},
+				)
+			})
+		})
+
+		Convey(`When the requested state changes to 'associated' and the edition
+			 is updated, yet the auditor fails is unsuccessful in writing success message`, func() {
+			Convey("Then return status internal server error (500)", func() {
+				body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
+				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+
+				currentInstanceTest_Data := &models.Instance{
+					Edition: "2017",
+					Links: &models.InstanceLinks{
+						Job: &models.IDLink{
+							ID:   "7654",
+							HRef: "job-link",
+						},
+						Dataset: &models.IDLink{
+							ID:   "4567",
+							HRef: "dataset-link",
+						},
+						Self: &models.IDLink{
+							HRef: "self-link",
+						},
+					},
+					State: models.CompletedState,
+				}
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(id string) (*models.Instance, error) {
+						return currentInstanceTest_Data, nil
+					},
+					GetEditionFunc: func(datasetID string, edition string, state string) (*models.EditionUpdate, error) {
+						return &models.EditionUpdate{
+							Current: &models.Edition{
+								State: models.PublishedState,
+							},
+							Next: &models.Edition{
+								Links: &models.EditionUpdateLinks{
+									Dataset: &models.LinkObject{
+										HRef: "/dataset/test/href",
+										ID:   "cpih01",
+									},
+									LatestVersion: &models.LinkObject{
+										ID: "2",
+									},
+									Self: &models.LinkObject{
+										HRef: "/edition/test/href",
+									},
+								},
+								State: models.EditionConfirmedState,
+							},
+						}, nil
+					},
+					UpsertEditionFunc: func(datasetID, edition string, editionDoc *models.EditionUpdate) error {
+						return nil
+					},
+					GetNextVersionFunc: func(string, string) (int, error) {
+						return 1, nil
+					},
+					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+						return nil
+					},
+					AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
+						return nil
+					},
+				}
+
+				auditor := auditortest.NewErroring(instance.UpdateInstanceAction, audit.Unsuccessful)
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusOK)
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetNextVersionCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 1)
+
+				auditor.AssertRecordCalls(
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateEditionAction, audit.Attempted, common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}},
+					auditortest.Expected{instance.UpdateEditionAction, audit.Successful, common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Successful, common.Params{"instance_id": "123"}},
 				)
 			})
 		})
@@ -1110,7 +1475,7 @@ func Test_InsertedObservationsReturnsOk(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1119,8 +1484,8 @@ func Test_InsertedObservationsReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}},
-					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Successful, common.Params{"instance_id": "123", "number_of_observations_inserted": "200"}},
+					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Successful, common.Params{"instance_id": "123", "number_of_observations_inserted": "200"}},
 				)
 			})
 		})
@@ -1142,7 +1507,7 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1154,8 +1519,8 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, auditParams},
-					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Unsuccessful, auditParams},
 				)
 			})
 		})
@@ -1175,7 +1540,7 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1186,8 +1551,8 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}},
-					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Unsuccessful, common.Params{"instance_id": "123", "number_of_observations_inserted": "200"}},
+					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Unsuccessful, common.Params{"instance_id": "123", "number_of_observations_inserted": "200"}},
 				)
 			})
 		})
@@ -1203,7 +1568,7 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1214,8 +1579,8 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123", "instance_state": models.SubmittedState}},
-					audit_mock.Expected{instance.UpdateInsertedObservationsAction, audit.Unsuccessful, common.Params{"instance_id": "123", "number_of_observations_inserted": "aa12a"}},
+					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Unsuccessful, common.Params{"instance_id": "123", "number_of_observations_inserted": "aa12a"}},
 				)
 			})
 		})
@@ -1232,7 +1597,7 @@ func Test_InsertedObservations_AuditFailure(t *testing.T) {
 
 			mockedDataStore := &storetest.StorerMock{}
 
-			auditor := audit_mock.NewErroring(instance.UpdateInsertedObservationsAction, audit.Attempted)
+			auditor := auditortest.NewErroring(instance.UpdateInsertedObservationsAction, audit.Attempted)
 			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 			datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1244,7 +1609,7 @@ func Test_InsertedObservations_AuditFailure(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Attempted, auditParams),
 				)
 			})
 		})
@@ -1261,7 +1626,7 @@ func Test_InsertedObservations_AuditFailure(t *testing.T) {
 				},
 			}
 
-			auditor := audit_mock.NewErroring(instance.UpdateInsertedObservationsAction, audit.Unsuccessful)
+			auditor := auditortest.NewErroring(instance.UpdateInsertedObservationsAction, audit.Unsuccessful)
 			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 			datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1273,8 +1638,8 @@ func Test_InsertedObservations_AuditFailure(t *testing.T) {
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123", "instance_state": models.CreatedState}),
-					audit_mock.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Unsuccessful, common.Params{"instance_id": "123", "number_of_observations_inserted": "1.5"}),
+					auditortest.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Unsuccessful, common.Params{"instance_id": "123", "number_of_observations_inserted": "1.5"}),
 				)
 			})
 		})
@@ -1295,7 +1660,7 @@ func Test_InsertedObservations_AuditFailure(t *testing.T) {
 				},
 			}
 
-			auditor := audit_mock.NewErroring(instance.UpdateInsertedObservationsAction, audit.Unsuccessful)
+			auditor := auditortest.NewErroring(instance.UpdateInsertedObservationsAction, audit.Unsuccessful)
 			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 			datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1306,8 +1671,8 @@ func Test_InsertedObservations_AuditFailure(t *testing.T) {
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123", "instance_state": models.CreatedState}),
-					audit_mock.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Successful, common.Params{"instance_id": "123", "number_of_observations_inserted": "200"}),
+					auditortest.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Successful, common.Params{"instance_id": "123", "number_of_observations_inserted": "200"}),
 				)
 			})
 		})
@@ -1333,7 +1698,7 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1342,10 +1707,10 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, auditParams),
 				)
 			})
 		})
@@ -1368,7 +1733,7 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1382,8 +1747,8 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -1401,7 +1766,7 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1415,8 +1780,8 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -1437,7 +1802,7 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1449,8 +1814,8 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123", "instance_state": models.PublishedState}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateInstanceAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateInstanceAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateInstanceAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -1476,7 +1841,7 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1488,10 +1853,10 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -1512,7 +1877,7 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1523,10 +1888,10 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -1547,7 +1912,7 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1558,10 +1923,10 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -1582,7 +1947,7 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1592,10 +1957,10 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -1622,7 +1987,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1634,10 +1999,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -1658,7 +2023,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1670,10 +2035,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -1695,7 +2060,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1707,10 +2072,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -1731,7 +2096,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1743,10 +2108,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -1767,7 +2132,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1779,10 +2144,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -1803,7 +2168,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1815,10 +2180,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -1839,7 +2204,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1851,10 +2216,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -1875,7 +2240,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1887,10 +2252,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -1917,7 +2282,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsOk(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1926,10 +2291,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.EditionConfirmedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, auditParams),
 				)
 			})
 		})
@@ -1956,7 +2321,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -1968,10 +2333,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -1992,7 +2357,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -2004,10 +2369,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -2028,7 +2393,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -2040,10 +2405,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -2064,7 +2429,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -2076,10 +2441,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -2100,7 +2465,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -2112,10 +2477,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -2136,7 +2501,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -2148,10 +2513,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -2172,7 +2537,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -2184,10 +2549,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -2208,7 +2573,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -2220,10 +2585,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -2250,7 +2615,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexReturnsOk(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -2260,10 +2625,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, auditParams),
 				)
 			})
 		})
@@ -2273,7 +2638,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexReturnsOk(t *testing.T) {
 func Test_UpdateImportTask_AuditAttemptFailure(t *testing.T) {
 	t.Parallel()
 	Convey("Given audit action attempted returns an error", t, func() {
-		auditor := audit_mock.NewErroring(instance.UpdateImportTasksAction, audit.Attempted)
+		auditor := auditortest.NewErroring(instance.UpdateImportTasksAction, audit.Attempted)
 
 		Convey("When update import task is called", func() {
 			body := strings.NewReader(`{"build_search_indexes":[{"state":"completed"}]}`)
@@ -2297,7 +2662,7 @@ func Test_UpdateImportTask_AuditAttemptFailure(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
 				)
 			})
 		})
@@ -2308,7 +2673,7 @@ func Test_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 	t.Parallel()
 	Convey("Given audit action unsuccessful returns an error", t, func() {
 		Convey("When the request body fails to marshal into the updateImportTask model", func() {
-			auditor := audit_mock.NewErroring(instance.UpdateImportTasksAction, audit.Unsuccessful)
+			auditor := auditortest.NewErroring(instance.UpdateImportTasksAction, audit.Unsuccessful)
 			body := strings.NewReader(`THIS IS NOT JSON`)
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			So(err, ShouldBeNil)
@@ -2332,16 +2697,16 @@ func Test_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
 
 		Convey("When UpdateImportObservationsTaskState returns an error", func() {
-			auditor := audit_mock.NewErroring(instance.UpdateImportTasksAction, audit.Unsuccessful)
+			auditor := auditortest.NewErroring(instance.UpdateImportTasksAction, audit.Unsuccessful)
 			body := strings.NewReader(`{"import_observations":{"state":"completed"}}`)
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			So(err, ShouldBeNil)
@@ -2368,16 +2733,16 @@ func Test_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
 
 		Convey("When UpdateBuildHierarchyTaskState returns an error", func() {
-			auditor := audit_mock.NewErroring(instance.UpdateImportTasksAction, audit.Unsuccessful)
+			auditor := auditortest.NewErroring(instance.UpdateImportTasksAction, audit.Unsuccessful)
 			body := strings.NewReader(`{"build_hierarchies":[{"dimension_name": "geography", "state":"completed"}]}`)
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			So(err, ShouldBeNil)
@@ -2404,16 +2769,16 @@ func Test_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
 
 		Convey("When UpdateBuildSearchTaskState returns an error", func() {
-			auditor := audit_mock.NewErroring(instance.UpdateImportTasksAction, audit.Unsuccessful)
+			auditor := auditortest.NewErroring(instance.UpdateImportTasksAction, audit.Unsuccessful)
 			body := strings.NewReader(`{"build_search_indexes":[{"dimension_name": "geography", "state":"completed"}]}`)
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			So(err, ShouldBeNil)
@@ -2440,10 +2805,10 @@ func Test_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -2453,7 +2818,7 @@ func Test_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 func Test_UpdateImportTask_AuditSuccessfulError(t *testing.T) {
 	t.Parallel()
 	Convey("Given audit action successful returns an error", t, func() {
-		auditor := audit_mock.NewErroring(instance.UpdateImportTasksAction, audit.Successful)
+		auditor := auditortest.NewErroring(instance.UpdateImportTasksAction, audit.Successful)
 
 		Convey("When update import task is called", func() {
 			body := strings.NewReader(`{"import_observations":{"state":"completed"}}`)
@@ -2479,10 +2844,10 @@ func Test_UpdateImportTask_AuditSuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.CreatedState}
+				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, common.Params{"instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, auditParams),
 				)
 			})
 		})
@@ -2510,7 +2875,7 @@ func Test_UpdateDimensionReturnsOk(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -2520,8 +2885,8 @@ func Test_UpdateDimensionReturnsOk(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": "edition-confirmed"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Successful, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"instance_id": "123", "dimension": "age"}),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Successful, auditParams),
 				)
 			})
 		})
@@ -2547,7 +2912,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -2559,8 +2924,8 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123", "dimension": "age"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -2581,20 +2946,20 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 
 				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": "gobbly gook"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"instance_id": "123", "dimension": "age"}),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -2611,7 +2976,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -2623,8 +2988,8 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.PublishedState}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"instance_id": "123", "dimension": "age"}),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -2641,7 +3006,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -2653,8 +3018,8 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123", "dimension": "age"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -2677,7 +3042,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -2689,8 +3054,8 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123", "dimension": "notage", "instance_state": models.EditionConfirmedState}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"instance_id": "123", "dimension": "notage"}),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -2708,7 +3073,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 					},
 				}
 
-				auditor := audit_mock.New()
+				auditor := auditortest.New()
 				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
@@ -2720,8 +3085,8 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.CompletedState}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"instance_id": "123", "dimension": "age"}),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
@@ -2731,7 +3096,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 func Test_UpdateDimensionAuditErrors(t *testing.T) {
 	t.Parallel()
 	Convey("Given audit action 'attempted' fails", t, func() {
-		auditor := audit_mock.NewErroring(instance.UpdateDimensionAction, audit.Attempted)
+		auditor := auditortest.NewErroring(instance.UpdateDimensionAction, audit.Attempted)
 
 		Convey("When a PUT request is made to update dimension on an instance resource", func() {
 			body := strings.NewReader(`{"label":"ages", "description": "A range of ages between 18 and 60"}`)
@@ -2751,14 +3116,14 @@ func Test_UpdateDimensionAuditErrors(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123", "dimension": "age"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
 				)
 			})
 		})
 	})
 
 	Convey("Given audit action 'unsuccessful' fails", t, func() {
-		auditor := audit_mock.NewErroring(instance.UpdateDimensionAction, audit.Unsuccessful)
+		auditor := auditortest.NewErroring(instance.UpdateDimensionAction, audit.Unsuccessful)
 
 		Convey("When a PUT request is made to update dimension on an instance resource", func() {
 			body := strings.NewReader("{")
@@ -2783,15 +3148,15 @@ func Test_UpdateDimensionAuditErrors(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.CreatedState}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"instance_id": "123", "dimension": "age"}),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
 				)
 			})
 		})
 	})
 
 	Convey("Given audit action 'successful' fails", t, func() {
-		auditor := audit_mock.NewErroring(instance.AddInstanceAction, audit.Successful)
+		auditor := auditortest.NewErroring(instance.AddInstanceAction, audit.Successful)
 
 		Convey("When a PUT request is made to update dimension on an instance resource", func() {
 			body := strings.NewReader(`{"label":"ages", "description": "A range of ages between 18 and 60"}`)
@@ -2820,8 +3185,8 @@ func Test_UpdateDimensionAuditErrors(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": "edition-confirmed"}
 				auditor.AssertRecordCalls(
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
-					audit_mock.NewExpectation(instance.UpdateDimensionAction, audit.Successful, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"instance_id": "123", "dimension": "age"}),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Successful, auditParams),
 				)
 			})
 		})

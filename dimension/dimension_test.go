@@ -20,7 +20,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/audit/audit_mock"
+	"github.com/ONSdigital/go-ns/audit/auditortest"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
@@ -55,7 +55,7 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -67,12 +67,12 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Attempted,
-				Params: common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.CreatedState},
+				Params: common.Params{"instance_id": "123", "dimension": "age"},
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Successful,
 				Params: common.Params{"instance_id": "123", "dimension": "age", "node_id": "11", "option": "55"},
@@ -98,7 +98,7 @@ func TestAddNodeIDToDimensionReturnsBadRequest(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -110,12 +110,12 @@ func TestAddNodeIDToDimensionReturnsBadRequest(t *testing.T) {
 		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Attempted,
-				Params: common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.CreatedState},
+				Params: common.Params{"instance_id": "123", "dimension": "age"},
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Unsuccessful,
 				Params: common.Params{"instance_id": "123", "dimension": "age", "node_id": "11", "option": "55"},
@@ -138,7 +138,7 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -149,12 +149,12 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 
 		p := common.Params{"instance_id": "123", "dimension": "age"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Attempted,
 				Params: p,
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Unsuccessful,
 				Params: p,
@@ -174,7 +174,7 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -182,19 +182,19 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Attempted,
-				Params: common.Params{"instance_id": "123", "dimension": "age", "instance_state": "gobbledygook"},
+				Params: common.Params{"instance_id": "123", "dimension": "age"},
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Unsuccessful,
-				Params: common.Params{"instance_id": "123", "dimension": "age", "node_id": "11", "option": "55"},
+				Params: common.Params{"instance_id": "123", "dimension": "age", "instance_state": "gobbledygook"},
 			},
 		)
 	})
@@ -214,7 +214,7 @@ func TestAddNodeIDToDimensionReturnsForbidden(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -228,12 +228,12 @@ func TestAddNodeIDToDimensionReturnsForbidden(t *testing.T) {
 
 		p := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.PublishedState}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Attempted,
-				Params: p,
+				Params: common.Params{"instance_id": "123", "dimension": "age"},
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Unsuccessful,
 				Params: p,
@@ -256,7 +256,7 @@ func TestAddNodeIDToDimensionReturnsUnauthorized(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -282,7 +282,7 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			return errors.New("unable to send message to kafka audit topic")
 		}
@@ -294,7 +294,7 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Attempted,
 				Params: common.Params{"instance_id": "123", "dimension": "age"},
@@ -313,7 +313,7 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 		}
 
 		count := 1
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if count == 1 {
 				count++
@@ -331,12 +331,12 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 
 		auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.PublishedState}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Attempted,
-				Params: auditParams,
+				Params: common.Params{"instance_id": "123", "dimension": "age"},
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Unsuccessful,
 				Params: auditParams,
@@ -359,7 +359,7 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 		}
 
 		count := 1
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if count <= 2 {
 				count++
@@ -378,12 +378,12 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Attempted,
-				Params: common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.CreatedState},
+				Params: common.Params{"instance_id": "123", "dimension": "age"},
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.UpdateNodeIDAction,
 				Result: audit.Successful,
 				Params: common.Params{"instance_id": "123", "dimension": "age", "node_id": "11", "option": "55"},
@@ -409,7 +409,7 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -424,12 +424,12 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 		So(len(calls), ShouldEqual, 2)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.AddDimensionAction,
 				Result: audit.Attempted,
-				Params: common.Params{"instance_id": "123", "instance_state": models.CreatedState},
+				Params: common.Params{"instance_id": "123"},
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.AddDimensionAction,
 				Result: audit.Successful,
 				Params: common.Params{"instance_id": "123"},
@@ -456,7 +456,7 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -469,12 +469,12 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.AddDimensionAction,
 				Result: audit.Attempted,
-				Params: common.Params{"instance_id": "123", "instance_state": models.CreatedState},
+				Params: common.Params{"instance_id": "123"},
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.AddDimensionAction,
 				Result: audit.Unsuccessful,
 				Params: common.Params{"instance_id": "123"},
@@ -501,7 +501,7 @@ func TestAddDimensionToInstanceReturnsForbidden(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -513,12 +513,12 @@ func TestAddDimensionToInstanceReturnsForbidden(t *testing.T) {
 
 		auditParams := common.Params{"instance_id": "123", "instance_state": models.PublishedState}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.AddDimensionAction,
 				Result: audit.Attempted,
-				Params: auditParams,
+				Params: common.Params{"instance_id": "123"},
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.AddDimensionAction,
 				Result: audit.Unsuccessful,
 				Params: auditParams,
@@ -542,7 +542,7 @@ func TestAddDimensionToInstanceReturnsUnauthorized(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -574,7 +574,7 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -587,12 +587,12 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 
 		auditParams := common.Params{"instance_id": "123"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.AddDimensionAction,
 				Result: audit.Attempted,
 				Params: auditParams,
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.AddDimensionAction,
 				Result: audit.Unsuccessful,
 				Params: auditParams,
@@ -616,7 +616,7 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -625,19 +625,19 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.AddDimensionAction,
 				Result: audit.Attempted,
-				Params: common.Params{"instance_id": "123", "instance_state": "gobbledygook"},
+				Params: common.Params{"instance_id": "123"},
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.AddDimensionAction,
 				Result: audit.Unsuccessful,
-				Params: common.Params{"instance_id": "123"},
+				Params: common.Params{"instance_id": "123", "instance_state": "gobbledygook"},
 			},
 		)
 	})
@@ -657,7 +657,7 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			return errors.New("unable to send message to kafka audit topic")
 		}
@@ -669,7 +669,7 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
 
-		auditor.AssertRecordCalls(audit_mock.Expected{
+		auditor.AssertRecordCalls(auditortest.Expected{
 			Action: dimension.AddDimensionAction,
 			Result: audit.Attempted,
 			Params: common.Params{"instance_id": "123"},
@@ -689,7 +689,7 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 		}
 
 		count := 1
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if count == 1 {
 				count++
@@ -707,12 +707,12 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 
 		auditParams := common.Params{"instance_id": "123", "instance_state": models.PublishedState}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.AddDimensionAction,
 				Result: audit.Attempted,
-				Params: auditParams,
+				Params: common.Params{"instance_id": "123"},
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.AddDimensionAction,
 				Result: audit.Unsuccessful,
 				Params: auditParams,
@@ -736,7 +736,7 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 		}
 
 		count := 1
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if count <= 2 {
 				count++
@@ -755,12 +755,12 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.AddDimensionAction,
 				Result: audit.Attempted,
-				Params: common.Params{"instance_id": "123", "instance_state": models.CreatedState},
+				Params: common.Params{"instance_id": "123"},
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.AddDimensionAction,
 				Result: audit.Successful,
 				Params: common.Params{"instance_id": "123"},
@@ -786,7 +786,7 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -800,12 +800,12 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 
 		auditParams := common.Params{"instance_id": "123"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetDimensions,
 				Result: audit.Attempted,
 				Params: auditParams,
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetDimensions,
 				Result: audit.Successful,
 				Params: auditParams,
@@ -831,7 +831,7 @@ func TestGetDimensionsReturnsNotFound(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -846,12 +846,12 @@ func TestGetDimensionsReturnsNotFound(t *testing.T) {
 
 		auditParams := common.Params{"instance_id": "123"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetDimensions,
 				Result: audit.Attempted,
 				Params: auditParams,
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetDimensions,
 				Result: audit.Unsuccessful,
 				Params: auditParams,
@@ -877,7 +877,7 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -892,12 +892,12 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 
 		auditParams := common.Params{"instance_id": "123"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetDimensions,
 				Result: audit.Attempted,
 				Params: auditParams,
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetDimensions,
 				Result: audit.Unsuccessful,
 				Params: auditParams,
@@ -920,7 +920,7 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -935,12 +935,12 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 
 		auditParams := common.Params{"instance_id": "123"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetDimensions,
 				Result: audit.Attempted,
 				Params: auditParams,
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetDimensions,
 				Result: audit.Unsuccessful,
 				Params: auditParams,
@@ -958,7 +958,7 @@ func TestGetDimensionsAndOptionsAuditFailure(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			return errors.New("unable to send message to kafka audit topic")
 		}
@@ -969,7 +969,7 @@ func TestGetDimensionsAndOptionsAuditFailure(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-		auditor.AssertRecordCalls(audit_mock.Expected{
+		auditor.AssertRecordCalls(auditortest.Expected{
 			Action: dimension.GetDimensions,
 			Result: audit.Attempted,
 			Params: common.Params{"instance_id": "123"},
@@ -988,7 +988,7 @@ func TestGetDimensionsAndOptionsAuditFailure(t *testing.T) {
 		}
 
 		count := 1
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if count == 1 {
 				count++
@@ -1006,12 +1006,12 @@ func TestGetDimensionsAndOptionsAuditFailure(t *testing.T) {
 
 		auditParams := common.Params{"instance_id": "123"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetDimensions,
 				Result: audit.Attempted,
 				Params: auditParams,
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetDimensions,
 				Result: audit.Unsuccessful,
 				Params: auditParams,
@@ -1034,7 +1034,7 @@ func TestGetDimensionsAndOptionsAuditFailure(t *testing.T) {
 		}
 
 		count := 1
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if count == 1 {
 				count++
@@ -1054,12 +1054,12 @@ func TestGetDimensionsAndOptionsAuditFailure(t *testing.T) {
 
 		auditParams := common.Params{"instance_id": "123"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetDimensions,
 				Result: audit.Attempted,
 				Params: auditParams,
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetDimensions,
 				Result: audit.Successful,
 				Params: auditParams,
@@ -1085,7 +1085,7 @@ func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -1099,12 +1099,12 @@ func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 
 		auditParams := common.Params{"instance_id": "123", "dimension": "age"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Attempted,
 				Params: auditParams,
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Successful,
 				Params: auditParams,
@@ -1129,7 +1129,7 @@ func TestGetUniqueDimensionAndOptionsReturnsNotFound(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -1144,12 +1144,12 @@ func TestGetUniqueDimensionAndOptionsReturnsNotFound(t *testing.T) {
 
 		auditParams := common.Params{"instance_id": "123", "dimension": "age"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Attempted,
 				Params: auditParams,
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Unsuccessful,
 				Params: auditParams,
@@ -1174,7 +1174,7 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -1189,12 +1189,12 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 
 		auditParams := common.Params{"instance_id": "123", "dimension": "age"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Attempted,
 				Params: auditParams,
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Unsuccessful,
 				Params: auditParams,
@@ -1216,7 +1216,7 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 
 		datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
@@ -1231,12 +1231,12 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 
 		auditParams := common.Params{"instance_id": "123", "dimension": "age"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Attempted,
 				Params: auditParams,
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Unsuccessful,
 				Params: auditParams,
@@ -1254,7 +1254,7 @@ func TestGetUniqueDimensionAndOptionsAuditFailure(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			return errors.New("unable to send message to kafka audit topic")
 		}
@@ -1265,7 +1265,7 @@ func TestGetUniqueDimensionAndOptionsAuditFailure(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-		auditor.AssertRecordCalls(audit_mock.Expected{
+		auditor.AssertRecordCalls(auditortest.Expected{
 			Action: dimension.GetUniqueDimensionAndOptionsAction,
 			Result: audit.Attempted,
 			Params: common.Params{"instance_id": "123", "dimension": "age"},
@@ -1284,7 +1284,7 @@ func TestGetUniqueDimensionAndOptionsAuditFailure(t *testing.T) {
 		}
 
 		count := 1
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if count == 1 {
 				count++
@@ -1302,12 +1302,12 @@ func TestGetUniqueDimensionAndOptionsAuditFailure(t *testing.T) {
 
 		auditParams := common.Params{"instance_id": "123", "dimension": "age"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Attempted,
 				Params: auditParams,
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Unsuccessful,
 				Params: auditParams,
@@ -1330,7 +1330,7 @@ func TestGetUniqueDimensionAndOptionsAuditFailure(t *testing.T) {
 		}
 
 		count := 1
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if count == 1 {
 				count++
@@ -1350,12 +1350,12 @@ func TestGetUniqueDimensionAndOptionsAuditFailure(t *testing.T) {
 
 		auditParams := common.Params{"instance_id": "123", "dimension": "age"}
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Attempted,
 				Params: auditParams,
 			},
-			audit_mock.Expected{
+			auditortest.Expected{
 				Action: dimension.GetUniqueDimensionAndOptionsAction,
 				Result: audit.Successful,
 				Params: auditParams,

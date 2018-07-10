@@ -121,7 +121,6 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		var b []byte
 		var datasetResponse interface{}
 
-		//		var marshallErr error
 		if !authorised {
 			// User is not authenticated and hence has only access to current sub document
 			if dataset.Current == nil {
