@@ -51,7 +51,7 @@ func handleDimensionErr(ctx context.Context, w http.ResponseWriter, err error, d
 		resource = errs.ErrInternalServer
 	}
 
-	data["responseStatus"] = status
+	data["response_status"] = status
 	audit.LogError(ctx, errors.WithMessage(err, "request unsuccessful"), data)
 	http.Error(w, resource.Error(), status)
 }

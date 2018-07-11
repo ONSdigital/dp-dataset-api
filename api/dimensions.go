@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -71,7 +72,6 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 		}
 		return b, nil
 	}()
-
 	if err != nil {
 		if auditErr := api.auditor.Record(ctx, getDimensionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			err = auditErr
@@ -150,43 +150,63 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	dimension := vars["dimension"]
 
 	logData := log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension}
+	auditParams := common.Params{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension}
+
+	if err := api.auditor.Record(ctx, getDimensionOptionsAction, audit.Attempted, auditParams); err != nil {
+		handleDimensionsErr(ctx, w, err, logData)
+		return
+	}
 
 	authorised, logData := api.authenticate(r, logData)
+	auditParams["authorised"] = strconv.FormatBool(authorised)
 
 	var state string
 	if !authorised {
 		state = models.PublishedState
 	}
 
-	version, err := api.dataStore.Backend.GetVersion(datasetID, editionID, versionID, state)
+	b, err := func() ([]byte, error) {
+		version, err := api.dataStore.Backend.GetVersion(datasetID, editionID, versionID, state)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to get version"), logData)
+			return nil, err
+		}
+
+		if err = models.CheckState("version", version.State); err != nil {
+			logData["version_state"] = version.State
+			log.ErrorCtx(ctx, errors.WithMessage(err, "unpublished version has an invalid state"), logData)
+			return nil, err
+		}
+
+		results, err := api.dataStore.Backend.GetDimensionOptions(version, dimension)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to get a list of dimension options"), logData)
+			return nil, err
+		}
+
+		for i := range results.Items {
+			results.Items[i].Links.Version.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s",
+				api.host, datasetID, editionID, versionID)
+		}
+
+		b, err := json.Marshal(results)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to marshal list of dimension option resources into bytes"), logData)
+			return nil, err
+		}
+
+		return b, nil
+	}()
 	if err != nil {
-		log.ErrorC("failed to get version", err, logData)
+		if auditErr := api.auditor.Record(ctx, getDimensionOptionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
+			err = auditErr
+		}
 		handleDimensionsErr(ctx, w, err, logData)
 		return
 	}
 
-	if err = models.CheckState("version", version.State); err != nil {
-		log.ErrorC("unpublished version has an invalid state", err, log.Data{"state": version.State})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	results, err := api.dataStore.Backend.GetDimensionOptions(version, dimension)
-	if err != nil {
-		log.ErrorC("failed to get a list of dimension options", err, logData)
-		handleDimensionsErr(ctx, w, err, logData)
-		return
-	}
-
-	for i := range results.Items {
-		results.Items[i].Links.Version.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s",
-			api.host, datasetID, editionID, versionID)
-	}
-
-	b, err := json.Marshal(results)
-	if err != nil {
-		log.ErrorC("failed to marshal list of dimension option resources into bytes", err, logData)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if auditErr := api.auditor.Record(ctx, getDimensionOptionsAction, audit.Successful, auditParams); auditErr != nil {
+		handleDimensionsErr(ctx, w, auditErr, logData)
 		return
 	}
 
@@ -205,15 +225,17 @@ func handleDimensionsErr(ctx context.Context, w http.ResponseWriter, err error, 
 		data = log.Data{}
 	}
 
-	var responseStatus int
+	var status int
+	response := err
 	switch {
 	case errs.NotFoundMap[err]:
-		responseStatus = http.StatusNotFound
+		status = http.StatusNotFound
 	default:
-		responseStatus = http.StatusInternalServerError
+		status = http.StatusInternalServerError
+		response = errs.ErrInternalServer
 	}
 
-	data["responseStatus"] = responseStatus
+	data["response_status"] = status
 	log.ErrorCtx(ctx, errors.WithMessage(err, "request unsuccessful"), data)
-	http.Error(w, err.Error(), responseStatus)
+	http.Error(w, response.Error(), status)
 }
