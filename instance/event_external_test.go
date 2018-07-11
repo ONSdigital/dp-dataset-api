@@ -41,11 +41,9 @@ func TestAddEventReturnsOk(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusOK)
 				So(len(mockedDataStore.AddEventToInstanceCalls()), ShouldEqual, 1)
 
-				expectedParams := common.Params{"instance_id": "123"}
-				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, expectedParams),
-					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Successful, expectedParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Successful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})
@@ -71,11 +69,9 @@ func TestAddEventToInstanceReturnsBadRequest(t *testing.T) {
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
 				So(len(mockedDataStore.AddEventToInstanceCalls()), ShouldEqual, 0)
 
-				expectedParams := common.Params{"instance_id": "123"}
-				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, expectedParams),
-					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, expectedParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})
@@ -98,11 +94,9 @@ func TestAddEventToInstanceReturnsBadRequest(t *testing.T) {
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrMissingParameters.Error())
 				So(len(mockedDataStore.AddEventToInstanceCalls()), ShouldEqual, 0)
 
-				expectedParams := common.Params{"instance_id": "123"}
-				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, expectedParams),
-					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, expectedParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})
@@ -133,11 +127,9 @@ func TestAddEventToInstanceReturnsNotFound(t *testing.T) {
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
 				So(len(mockedDataStore.AddEventToInstanceCalls()), ShouldEqual, 1)
 
-				expectedParams := common.Params{"instance_id": "123"}
-				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, expectedParams),
-					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, expectedParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})
@@ -168,11 +160,9 @@ func TestAddEventToInstanceReturnsInternalError(t *testing.T) {
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 				So(len(mockedDataStore.AddEventToInstanceCalls()), ShouldEqual, 1)
 
-				expectedParams := common.Params{"instance_id": "123"}
-				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, expectedParams),
-					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, expectedParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})
@@ -201,8 +191,7 @@ func TestAddInstanceEventAuditErrors(t *testing.T) {
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 				So(len(mockedDataStore.AddEventToInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
-				So(len(auditor.RecordCalls()), ShouldEqual, 1)
+				auditParams := common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}
 				auditor.AssertRecordCalls(
 					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, auditParams),
 				)
@@ -228,11 +217,9 @@ func TestAddInstanceEventAuditErrors(t *testing.T) {
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 				So(len(mockedDataStore.AddEventToInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
-				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, auditParams),
-					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})
@@ -261,11 +248,9 @@ func TestAddInstanceEventAuditErrors(t *testing.T) {
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 				So(len(mockedDataStore.AddEventToInstanceCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123"}
-				So(len(auditor.RecordCalls()), ShouldEqual, 2)
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, auditParams),
-					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Successful, auditParams),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}),
+					auditortest.NewExpectation(instance.AddInstanceEventAction, audit.Successful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})

@@ -877,6 +877,8 @@ func TestGetVersionAuditErrors(t *testing.T) {
 
 func TestPutVersionReturnsSuccessfully(t *testing.T) {
 	auditParams := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123", "edition": "2017", "version": "1"}
+
 	t.Parallel()
 	Convey("When state is unchanged", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
@@ -942,7 +944,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 		)
 	})
@@ -996,7 +998,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 		)
 	})
@@ -1062,7 +1064,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 			auditortest.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
 			auditortest.Expected{Action: associateVersionAction, Result: audit.Successful, Params: auditParams},
@@ -1162,7 +1164,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
-			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 			auditortest.Expected{Action: publishVersionAction, Result: audit.Attempted, Params: auditParams},
 			auditortest.Expected{Action: publishVersionAction, Result: audit.Successful, Params: auditParams},
@@ -1176,7 +1178,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 			So(err, ShouldBeNil)
 
-			updateVersionDownloadTest(r, auditParams)
+			updateVersionDownloadTest(r, auditParamsWithCallerIdentity, auditParams)
 		})
 
 		Convey("And downloads object contains only a xls object", func() {
@@ -1185,12 +1187,12 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 			So(err, ShouldBeNil)
 
-			updateVersionDownloadTest(r, auditParams)
+			updateVersionDownloadTest(r, auditParamsWithCallerIdentity, auditParams)
 		})
 	})
 }
 
-func updateVersionDownloadTest(r *http.Request, auditParams common.Params) {
+func updateVersionDownloadTest(r *http.Request, firstAuditParams, secondAuditParams common.Params) {
 	w := httptest.NewRecorder()
 
 	generatorMock := &mocks.DownloadsGeneratorMock{
@@ -1273,14 +1275,16 @@ func updateVersionDownloadTest(r *http.Request, auditParams common.Params) {
 	So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 	auditor.AssertRecordCalls(
-		auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
-		auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
+		auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: firstAuditParams},
+		auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: secondAuditParams},
 	)
 }
 
 func TestPutVersionGenerateDownloadsError(t *testing.T) {
 	Convey("given download generator returns an error", t, func() {
 		auditParams := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
+		auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123", "edition": "2017", "version": "1"}
+
 		mockedErr := errors.New("spectacular explosion")
 		var v models.Version
 		json.Unmarshal([]byte(versionAssociatedPayload), &v)
@@ -1349,7 +1353,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 				So(genCalls[0].Version, ShouldEqual, "1")
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 					auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 					auditortest.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
 					auditortest.Expected{Action: associateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
@@ -1361,6 +1365,8 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 
 func TestPutEmptyVersion(t *testing.T) {
 	auditParams := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123", "edition": "2017", "version": "1"}
+
 	var v models.Version
 	json.Unmarshal([]byte(versionAssociatedPayload), &v)
 	v.State = models.AssociatedState
@@ -1402,7 +1408,7 @@ func TestPutEmptyVersion(t *testing.T) {
 				So(mockedDataStore.UpdateVersionCalls()[0].Version.Downloads, ShouldBeNil)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 					auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 				)
 			})
@@ -1466,7 +1472,7 @@ func TestPutEmptyVersion(t *testing.T) {
 				So(len(mockDownloadGenerator.GenerateCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 					auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 				)
 			})
@@ -1476,6 +1482,7 @@ func TestPutEmptyVersion(t *testing.T) {
 
 func TestUpdateVersionAuditErrors(t *testing.T) {
 	auditParams := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123", "edition": "2017", "version": "1"}
 
 	t.Parallel()
 	Convey("given audit action attempted returns an error", t, func() {
@@ -1502,7 +1509,7 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 				So(len(store.UpdateVersionCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 				)
 			})
 		})
@@ -1575,7 +1582,7 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 				So(len(store.UpdateVersionCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 					auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 				)
 			})
@@ -1611,7 +1618,7 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 				So(len(store.UpdateVersionCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 					auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
@@ -1895,6 +1902,7 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 
 func TestPutVersionReturnsError(t *testing.T) {
 	auditParams := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123", "edition": "2017", "version": "1"}
 	t.Parallel()
 	Convey("When the request contain malformed json a bad request status is returned", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
@@ -1930,7 +1938,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
@@ -1969,7 +1977,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
@@ -2012,7 +2020,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
@@ -2055,7 +2063,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
@@ -2102,7 +2110,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
@@ -2136,7 +2144,10 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
-		auditor.AssertRecordCalls()
+		auditor.AssertRecordCalls(
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+		)
 	})
 
 	Convey("When the version document has already been published return status forbidden", t, func() {
@@ -2174,7 +2185,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
@@ -2221,7 +2232,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})

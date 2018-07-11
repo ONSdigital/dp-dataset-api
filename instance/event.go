@@ -41,11 +41,6 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 	data := log.Data{"instance_id": instanceID}
 	ap := common.Params{"instance_id": instanceID}
 
-	if err := s.Auditor.Record(ctx, AddInstanceEventAction, audit.Attempted, ap); err != nil {
-		handleInstanceErr(ctx, err, w, data)
-		return
-	}
-
 	if err := func() error {
 		event, err := unmarshalEvent(r.Body)
 		if err != nil {

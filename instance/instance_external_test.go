@@ -61,7 +61,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
 					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, nil),
 				)
 			})
@@ -89,10 +89,9 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				So(result, ShouldResemble, []string{models.CompletedState})
 				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 
-				expectedParams := common.Params{"query": "completed"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, expectedParams),
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, expectedParams),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"query": "completed"}),
 				)
 			})
 		})
@@ -119,10 +118,9 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				So(result, ShouldResemble, []string{models.CompletedState, models.EditionConfirmedState})
 				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 
-				expectedParams := common.Params{"query": "completed,edition-confirmed"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, expectedParams),
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, expectedParams),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"query": "completed,edition-confirmed"}),
 				)
 			})
 		})
@@ -153,7 +151,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
 					auditortest.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, nil),
 				)
 			})
@@ -174,10 +172,9 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "bad request - invalid filter state values: [foo]")
 
-				expectedParams := common.Params{"query": "foo"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, expectedParams),
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, expectedParams),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, common.Params{"query": "foo"}),
 				)
 			})
 		})
@@ -206,7 +203,7 @@ func Test_GetInstancesAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
 				)
 			})
 		})
@@ -236,7 +233,7 @@ func Test_GetInstancesAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
 					auditortest.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, nil),
 				)
 			})
@@ -267,7 +264,7 @@ func Test_GetInstancesAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, nil),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
 					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, nil),
 				)
 			})
@@ -297,10 +294,9 @@ func Test_GetInstanceReturnsOK(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusOK)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
-					auditortest.Expected{instance.GetInstanceAction, audit.Successful, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}},
+					auditortest.Expected{instance.GetInstanceAction, audit.Successful, common.Params{"instance_id": "123"}},
 				)
 			})
 		})
@@ -308,6 +304,9 @@ func Test_GetInstanceReturnsOK(t *testing.T) {
 }
 
 func Test_GetInstanceReturnsError(t *testing.T) {
+	auditParams := common.Params{"instance_id": "123"}
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}
+
 	t.Parallel()
 	Convey("Given a GET request to retrieve an instance resource is made", t, func() {
 		Convey("When the service is unable to connect to the datastore", func() {
@@ -328,12 +327,10 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
 					auditortest.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
@@ -357,12 +354,10 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
 					auditortest.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
@@ -386,12 +381,10 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 
 				So(w.Code, ShouldEqual, http.StatusNotFound)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
-
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
 					auditortest.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
@@ -400,6 +393,9 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 }
 
 func Test_GetInstanceAuditErrors(t *testing.T) {
+	auditParams := common.Params{"instance_id": "123"}
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}
+
 	t.Parallel()
 	Convey("Given audit action 'attempted' fails", t, func() {
 		auditor := auditortest.NewErroring(instance.GetInstanceAction, audit.Attempted)
@@ -421,12 +417,10 @@ func Test_GetInstanceAuditErrors(t *testing.T) {
 			Convey("Then response returns internal server error (500)", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
 				)
 			})
 		})
@@ -452,12 +446,10 @@ func Test_GetInstanceAuditErrors(t *testing.T) {
 			Convey("Then response returns internal server error (500)", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
 					auditortest.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
@@ -484,12 +476,10 @@ func Test_GetInstanceAuditErrors(t *testing.T) {
 			Convey("Then response returns internal server error (500)", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
 					auditortest.Expected{instance.GetInstanceAction, audit.Successful, auditParams},
 				)
 			})
@@ -544,7 +534,7 @@ func Test_AddInstanceReturnsCreated(t *testing.T) {
 
 				checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
 					expectedPostInstanceAuditObject{
-						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "",
+						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "caller_identity",
 					},
 					expectedPostInstanceAuditObject{
 						Action: instance.AddInstanceAction, Result: audit.Successful, ContainsKey: "",
@@ -580,7 +570,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 
 				checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
 					expectedPostInstanceAuditObject{
-						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "",
+						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "caller_identity",
 					},
 					expectedPostInstanceAuditObject{
 						Action: instance.AddInstanceAction, Result: audit.Unsuccessful, ContainsKey: "",
@@ -612,7 +602,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 
 				checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
 					expectedPostInstanceAuditObject{
-						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "",
+						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "caller_identity",
 					},
 					expectedPostInstanceAuditObject{
 						Action: instance.AddInstanceAction, Result: audit.Unsuccessful, ContainsKey: "",
@@ -644,7 +634,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 
 				checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
 					expectedPostInstanceAuditObject{
-						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "",
+						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "caller_identity",
 					},
 					expectedPostInstanceAuditObject{
 						Action: instance.AddInstanceAction, Result: audit.Unsuccessful, ContainsKey: "",
@@ -677,7 +667,7 @@ func Test_AddInstanceAuditErrors(t *testing.T) {
 
 				checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
 					expectedPostInstanceAuditObject{
-						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "",
+						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "caller_identity",
 					},
 				})
 			})
@@ -708,7 +698,7 @@ func Test_AddInstanceAuditErrors(t *testing.T) {
 
 				checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
 					expectedPostInstanceAuditObject{
-						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "",
+						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "caller_identity",
 					},
 					expectedPostInstanceAuditObject{
 						Action: instance.AddInstanceAction, Result: audit.Unsuccessful, ContainsKey: "",
@@ -741,7 +731,7 @@ func Test_AddInstanceAuditErrors(t *testing.T) {
 
 				checkAuditRecord(*auditor, []expectedPostInstanceAuditObject{
 					expectedPostInstanceAuditObject{
-						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "",
+						Action: instance.AddInstanceAction, Result: audit.Attempted, ContainsKey: "caller_identity",
 					},
 					expectedPostInstanceAuditObject{
 						Action: instance.AddInstanceAction, Result: audit.Successful, ContainsKey: "",
@@ -753,6 +743,9 @@ func Test_AddInstanceAuditErrors(t *testing.T) {
 }
 
 func Test_UpdateInstanceReturnsOk(t *testing.T) {
+	auditParams := common.Params{"instance_id": "123"}
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}
+
 	t.Parallel()
 	Convey("Given a PUT request to update state of an instance resource is made", t, func() {
 		Convey("When the requested state change is to 'submitted'", func() {
@@ -781,8 +774,8 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Successful, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Successful, auditParams},
 				)
 			})
 		})
@@ -846,10 +839,10 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
 					auditortest.Expected{instance.CreateEditionAction, audit.Attempted, common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}},
 					auditortest.Expected{instance.CreateEditionAction, audit.Successful, common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Successful, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Successful, auditParams},
 				)
 			})
 		})
@@ -857,6 +850,10 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 }
 
 func Test_UpdateInstanceReturnsError(t *testing.T) {
+	auditParams := common.Params{"instance_id": "123"}
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}
+	editionAuditParams := common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}
+
 	t.Parallel()
 	Convey("Given a PUT request to update state of an instance resource is made", t, func() {
 		Convey("When the service is unable to connect to the datastore", func() {
@@ -883,9 +880,8 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
 					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
@@ -914,7 +910,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
 					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "123", "instance_state": "gobbledygook"}},
 				)
 			})
@@ -943,8 +939,8 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
 		})
@@ -972,9 +968,8 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
 					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
@@ -1041,12 +1036,11 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}},
-					auditortest.Expected{instance.CreateEditionAction, audit.Attempted, auditParams},
-					auditortest.Expected{instance.CreateEditionAction, audit.Successful, auditParams},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
+					auditortest.Expected{instance.CreateEditionAction, audit.Attempted, editionAuditParams},
+					auditortest.Expected{instance.CreateEditionAction, audit.Successful, editionAuditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
 		})
@@ -1054,7 +1048,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 		Convey(`When request updates instance from a state 'edition-confirmed' to 'completed'`, func() {
 			Convey("Then return status forbidden (403)", func() {
 				body := strings.NewReader(`{"state":"completed"}`)
-				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/1235", body)
+				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
@@ -1088,9 +1082,8 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "1235"}
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
 					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
@@ -1099,13 +1092,16 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 }
 
 func Test_UpdateInstance_AuditFailure(t *testing.T) {
-	t.Parallel()
+	auditParams := common.Params{"instance_id": "123"}
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}
+	editionAuditParams := common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}
 
+	t.Parallel()
 	Convey("Given a PUT request to update state of an instance resource is made", t, func() {
 		Convey(`When the auditor attempts to audit request attempt fails`, func() {
 			Convey("Then return status internal server error (500)", func() {
 				body := strings.NewReader(`{"state":"completed"}`)
-				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/1235", body)
+				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
@@ -1127,7 +1123,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "1235"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
 				)
 			})
 		})
@@ -1136,7 +1132,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 	 forbidden and so auditor attempts to audit unsuccessful request but it fails to do so`, func() {
 			Convey("Then return status internal server error (500)", func() {
 				body := strings.NewReader(`{"state":"completed"}`)
-				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/1235", body)
+				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
@@ -1171,8 +1167,8 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "1235"}},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "1235", "instance_state": models.PublishedState}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "123", "instance_state": models.PublishedState}},
 				)
 			})
 		})
@@ -1180,7 +1176,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 		Convey(`When the request state change is invalid and the attempt to audit unsuccessful fails`, func() {
 			Convey("Then return status internal server error (500)", func() {
 				body := strings.NewReader(`{"state":"completed"}`)
-				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/1235", body)
+				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
@@ -1215,8 +1211,8 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "1235"}},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "1235"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
 		})
@@ -1270,10 +1266,10 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}},
-					auditortest.Expected{instance.CreateEditionAction, audit.Attempted, common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}},
-					auditortest.Expected{instance.CreateEditionAction, audit.Unsuccessful, common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
+					auditortest.Expected{instance.CreateEditionAction, audit.Attempted, editionAuditParams},
+					auditortest.Expected{instance.CreateEditionAction, audit.Unsuccessful, editionAuditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
 		})
@@ -1359,10 +1355,10 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}},
-					auditortest.Expected{instance.UpdateEditionAction, audit.Attempted, common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}},
-					auditortest.Expected{instance.UpdateEditionAction, audit.Successful, common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
+					auditortest.Expected{instance.UpdateEditionAction, audit.Attempted, editionAuditParams},
+					auditortest.Expected{instance.UpdateEditionAction, audit.Successful, editionAuditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
 				)
 			})
 		})
@@ -1447,10 +1443,10 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}},
-					auditortest.Expected{instance.UpdateEditionAction, audit.Attempted, common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}},
-					auditortest.Expected{instance.UpdateEditionAction, audit.Successful, common.Params{"instance_id": "123", "dataset_id": "4567", "edition": "2017"}},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Successful, common.Params{"instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
+					auditortest.Expected{instance.UpdateEditionAction, audit.Attempted, editionAuditParams},
+					auditortest.Expected{instance.UpdateEditionAction, audit.Successful, editionAuditParams},
+					auditortest.Expected{instance.UpdateInstanceAction, audit.Successful, auditParams},
 				)
 			})
 		})
@@ -1484,8 +1480,8 @@ func Test_InsertedObservationsReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123"}},
-					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Successful, common.Params{"instance_id": "123", "number_of_observations_inserted": "200"}},
+					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "inserted_observations": "200", "instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Successful, common.Params{"instance_id": "123", "inserted_observations": "200"}},
 				)
 			})
 		})
@@ -1517,10 +1513,9 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, auditParams},
-					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "inserted_observations": "200", "instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Unsuccessful, common.Params{"instance_id": "123"}},
 				)
 			})
 		})
@@ -1551,8 +1546,8 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123"}},
-					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Unsuccessful, common.Params{"instance_id": "123", "number_of_observations_inserted": "200"}},
+					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "inserted_observations": "200", "instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Unsuccessful, common.Params{"instance_id": "123", "inserted_observations": "200"}},
 				)
 			})
 		})
@@ -1579,8 +1574,8 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123"}},
-					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Unsuccessful, common.Params{"instance_id": "123", "number_of_observations_inserted": "aa12a"}},
+					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "inserted_observations": "aa12a", "instance_id": "123"}},
+					auditortest.Expected{instance.UpdateInsertedObservationsAction, audit.Unsuccessful, common.Params{"instance_id": "123", "inserted_observations": "aa12a"}},
 				)
 			})
 		})
@@ -1607,7 +1602,7 @@ func Test_InsertedObservations_AuditFailure(t *testing.T) {
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
+				auditParams := common.Params{"caller_identity": "someone@ons.gov.uk", "inserted_observations": "200", "instance_id": "123"}
 				auditor.AssertRecordCalls(
 					auditortest.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Attempted, auditParams),
 				)
@@ -1638,8 +1633,8 @@ func Test_InsertedObservations_AuditFailure(t *testing.T) {
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123"}),
-					auditortest.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Unsuccessful, common.Params{"instance_id": "123", "number_of_observations_inserted": "1.5"}),
+					auditortest.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "inserted_observations": "1.5", "instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Unsuccessful, common.Params{"instance_id": "123", "inserted_observations": "1.5"}),
 				)
 			})
 		})
@@ -1671,8 +1666,8 @@ func Test_InsertedObservations_AuditFailure(t *testing.T) {
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"instance_id": "123"}),
-					auditortest.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Successful, common.Params{"instance_id": "123", "number_of_observations_inserted": "200"}),
+					auditortest.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "inserted_observations": "200", "instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateInsertedObservationsAction, audit.Successful, common.Params{"instance_id": "123", "inserted_observations": "200"}),
 				)
 			})
 		})
@@ -1707,10 +1702,9 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})
@@ -1745,10 +1739,9 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})
@@ -1778,10 +1771,9 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})
@@ -1812,10 +1804,9 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "instance_state": models.PublishedState}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateInstanceAction, audit.Attempted, common.Params{"instance_id": "123"}),
-					auditortest.NewExpectation(instance.UpdateInstanceAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateInstanceAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "123", "instance_state": models.PublishedState}),
 				)
 			})
 		})
@@ -1823,6 +1814,9 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 }
 
 func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}
+	auditParams := common.Params{"instance_id": "123"}
+
 	t.Parallel()
 	Convey("Given a PUT request to update an instance resource with import observations", t, func() {
 		Convey("When the request body contains invalid json", func() {
@@ -1853,9 +1847,8 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -1888,9 +1881,8 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -1923,9 +1915,8 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -1957,9 +1948,8 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -1968,6 +1958,8 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 }
 
 func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}
+	auditParams := common.Params{"instance_id": "123"}
 
 	t.Parallel()
 	Convey("Given a PUT request to update an instance resource with import task 'build hierarchies'", t, func() {
@@ -1999,9 +1991,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2035,9 +2026,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2072,9 +2062,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2108,9 +2097,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2144,9 +2132,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2180,9 +2167,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2216,9 +2202,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2252,9 +2237,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2291,10 +2275,9 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})
@@ -2302,6 +2285,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsOk(t *testing.T) {
 }
 
 func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
+	auditParams := common.Params{"instance_id": "123"}
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}
 
 	t.Parallel()
 	Convey("Given a PUT request to update an instance resource with import task 'build search indexes'", t, func() {
@@ -2333,9 +2318,8 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2369,9 +2353,8 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2405,9 +2388,8 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2441,9 +2423,8 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2477,9 +2458,8 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2513,9 +2493,8 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2549,9 +2528,8 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2585,9 +2563,8 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2625,10 +2602,9 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})
@@ -2660,7 +2636,7 @@ func Test_UpdateImportTask_AuditAttemptFailure(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
+				auditParams := common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}
 				auditor.AssertRecordCalls(
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
 				)
@@ -2670,6 +2646,9 @@ func Test_UpdateImportTask_AuditAttemptFailure(t *testing.T) {
 }
 
 func Test_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
+	auditParams := common.Params{"instance_id": "123"}
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}
+
 	t.Parallel()
 	Convey("Given audit action unsuccessful returns an error", t, func() {
 		Convey("When the request body fails to marshal into the updateImportTask model", func() {
@@ -2699,7 +2678,7 @@ func Test_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2733,9 +2712,8 @@ func Test_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2769,9 +2747,8 @@ func Test_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2805,9 +2782,8 @@ func Test_UpdateImportTask_AuditUnsuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2844,10 +2820,9 @@ func Test_UpdateImportTask_AuditSuccessfulError(t *testing.T) {
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, auditParams),
-					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, auditParams),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}),
+					auditortest.NewExpectation(instance.UpdateImportTasksAction, audit.Successful, common.Params{"instance_id": "123"}),
 				)
 			})
 		})
@@ -2885,7 +2860,7 @@ func Test_UpdateDimensionReturnsOk(t *testing.T) {
 
 				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": "edition-confirmed"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"instance_id": "123", "dimension": "age"}),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123", "dimension": "age"}),
 					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Successful, auditParams),
 				)
 			})
@@ -2894,6 +2869,9 @@ func Test_UpdateDimensionReturnsOk(t *testing.T) {
 }
 
 func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
+	auditParams := common.Params{"instance_id": "123", "dimension": "age"}
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123", "dimension": "age"}
+
 	t.Parallel()
 	Convey("Given a PUT request to update a dimension on an instance resource", t, func() {
 		Convey("When service is unable to connect to datastore", func() {
@@ -2922,9 +2900,8 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "dimension": "age"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -2956,10 +2933,10 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": "gobbly gook"}
+				auditParamsWithState := common.Params{"instance_id": "123", "dimension": "age", "instance_state": "gobbly gook"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"instance_id": "123", "dimension": "age"}),
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParamsWithCallerIdentity),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParamsWithState),
 				)
 			})
 		})
@@ -2986,10 +2963,10 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.PublishedState}
+				auditParamsWithState := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.PublishedState}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"instance_id": "123", "dimension": "age"}),
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParamsWithCallerIdentity),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParamsWithState),
 				)
 			})
 		})
@@ -3016,9 +2993,8 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "dimension": "age"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParamsWithCallerIdentity),
 					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
 				)
 			})
@@ -3052,10 +3028,10 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "dimension": "notage", "instance_state": models.EditionConfirmedState}
+				auditParamsWithState := common.Params{"instance_id": "123", "dimension": "notage", "instance_state": models.EditionConfirmedState}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"instance_id": "123", "dimension": "notage"}),
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123", "dimension": "notage"}),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParamsWithState),
 				)
 			})
 		})
@@ -3083,10 +3059,10 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.CompletedState}
+				auditParamsWithState := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.CompletedState}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"instance_id": "123", "dimension": "age"}),
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParamsWithCallerIdentity),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParamsWithState),
 				)
 			})
 		})
@@ -3094,6 +3070,8 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 }
 
 func Test_UpdateDimensionAuditErrors(t *testing.T) {
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123", "dimension": "age"}
+
 	t.Parallel()
 	Convey("Given audit action 'attempted' fails", t, func() {
 		auditor := auditortest.NewErroring(instance.UpdateDimensionAction, audit.Attempted)
@@ -3114,9 +3092,8 @@ func Test_UpdateDimensionAuditErrors(t *testing.T) {
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "dimension": "age"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParamsWithCallerIdentity),
 				)
 			})
 		})
@@ -3146,10 +3123,10 @@ func Test_UpdateDimensionAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 
-				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.CreatedState}
+				auditParamsWithState := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.CreatedState}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"instance_id": "123", "dimension": "age"}),
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParamsWithCallerIdentity),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParamsWithState),
 				)
 			})
 		})
@@ -3183,10 +3160,10 @@ func Test_UpdateDimensionAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
 
-				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": "edition-confirmed"}
+				auditParamsWithState := common.Params{"instance_id": "123", "dimension": "age", "instance_state": "edition-confirmed"}
 				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"instance_id": "123", "dimension": "age"}),
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Successful, auditParams),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParamsWithCallerIdentity),
+					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Successful, auditParamsWithState),
 				)
 			})
 		})

@@ -67,11 +67,6 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 		stateFilterList = strings.Split(stateFilterQuery, ",")
 	}
 
-	if err := s.Auditor.Record(ctx, GetInstancesAction, audit.Attempted, auditParams); err != nil {
-		handleInstanceErr(ctx, err, w, nil)
-		return
-	}
-
 	b, err := func() ([]byte, error) {
 		if len(stateFilterList) > 0 {
 			if err := models.ValidateStateFilter(stateFilterList); err != nil {
@@ -119,11 +114,6 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	auditParams := common.Params{"instance_id": id}
 	logData := audit.ToLogData(auditParams)
 
-	if err := s.Auditor.Record(ctx, GetInstanceAction, audit.Attempted, auditParams); err != nil {
-		handleInstanceErr(ctx, err, w, nil)
-		return
-	}
-
 	b, err := func() ([]byte, error) {
 		instance, err := s.GetInstance(id)
 		if err != nil {
@@ -169,11 +159,6 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logData := log.Data{}
 	auditParams := common.Params{}
-
-	if err := s.Auditor.Record(ctx, AddInstanceAction, audit.Attempted, auditParams); err != nil {
-		handleInstanceErr(ctx, err, w, logData)
-		return
-	}
 
 	b, err := func() ([]byte, error) {
 		instance, err := unmarshalInstance(ctx, r.Body, true)
@@ -606,7 +591,7 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	instanceID := vars["id"]
 	insert := vars["inserted_observations"]
-	auditParams := common.Params{"instance_id": instanceID, "number_of_observations_inserted": insert}
+	auditParams := common.Params{"instance_id": instanceID, "inserted_observations": insert}
 	logData := audit.ToLogData(auditParams)
 
 	if err := func() error {
@@ -836,11 +821,6 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 
 		if vars["dimension"] != "" {
 			auditParams["dimension"] = vars["dimension"]
-		}
-
-		if err := d.Auditor.Record(ctx, action, audit.Attempted, auditParams); err != nil {
-			handleInstanceErr(ctx, errs.ErrAuditActionAttemptedFailure, w, logData)
-			return
 		}
 
 		if err := d.checkState(instanceID, logData, auditParams); err != nil {

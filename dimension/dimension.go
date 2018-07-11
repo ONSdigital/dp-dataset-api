@@ -41,11 +41,6 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request) {
 	auditParams := common.Params{"instance_id": instanceID}
 	logData := audit.ToLogData(auditParams)
 
-	if auditErr := s.Auditor.Record(ctx, GetDimensions, audit.Attempted, auditParams); auditErr != nil {
-		handleDimensionErr(ctx, w, auditErr, logData)
-		return
-	}
-
 	b, err := s.getDimensions(ctx, instanceID, logData)
 	if err != nil {
 		if auditErr := s.Auditor.Record(ctx, GetDimensions, audit.Unsuccessful, auditParams); auditErr != nil {
@@ -102,11 +97,6 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	dimension := vars["dimension"]
 	auditParams := common.Params{"instance_id": instanceID, "dimension": dimension}
 	logData := audit.ToLogData(auditParams)
-
-	if auditErr := s.Auditor.Record(ctx, GetUniqueDimensionAndOptionsAction, audit.Attempted, auditParams); auditErr != nil {
-		handleDimensionErr(ctx, w, auditErr, logData)
-		return
-	}
 
 	b, err := s.getUniqueDimensionAndOptions(ctx, instanceID, dimension, logData)
 	if err != nil {
