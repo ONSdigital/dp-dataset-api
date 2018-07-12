@@ -37,7 +37,7 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	vars := mux.Vars(r)
-	instanceID := vars["id"]
+	instanceID := vars["instance_id"]
 	data := log.Data{"instance_id": instanceID}
 	ap := common.Params{"instance_id": instanceID}
 

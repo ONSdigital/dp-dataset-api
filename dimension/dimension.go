@@ -37,7 +37,7 @@ func dimensionError(err error, message, action string) error {
 func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	instanceID := vars["id"]
+	instanceID := vars["instance_id"]
 	auditParams := common.Params{"instance_id": instanceID}
 	logData := audit.ToLogData(auditParams)
 
@@ -93,7 +93,7 @@ func (s *Store) getDimensions(ctx context.Context, instanceID string, logData lo
 func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	instanceID := vars["id"]
+	instanceID := vars["instance_id"]
 	dimension := vars["dimension"]
 	auditParams := common.Params{"instance_id": instanceID, "dimension": dimension}
 	logData := audit.ToLogData(auditParams)
@@ -131,15 +131,15 @@ func (s *Store) getUniqueDimensionAndOptions(ctx context.Context, instanceID, di
 		return nil, err
 	}
 
-	values, err := s.GetUniqueDimensionAndOptions(instanceID, dimension)
+	options, err := s.GetUniqueDimensionAndOptions(instanceID, dimension)
 	if err != nil {
-		log.ErrorCtx(ctx, dimensionError(err, "failed to get unique dimension values for instance", GetUniqueDimensionAndOptionsAction), logData)
+		log.ErrorCtx(ctx, dimensionError(err, "failed to get unique dimension options for instance", GetUniqueDimensionAndOptionsAction), logData)
 		return nil, err
 	}
 
-	b, err := json.Marshal(values)
+	b, err := json.Marshal(options)
 	if err != nil {
-		log.ErrorCtx(ctx, dimensionError(err, "failed to marshal dimension values to json", GetUniqueDimensionAndOptionsAction), logData)
+		log.ErrorCtx(ctx, dimensionError(err, "failed to marshal dimension options to json", GetUniqueDimensionAndOptionsAction), logData)
 		return nil, err
 	}
 
@@ -151,7 +151,7 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	vars := mux.Vars(r)
-	instanceID := vars["id"]
+	instanceID := vars["instance_id"]
 	auditParams := common.Params{"instance_id": instanceID}
 	logData := audit.ToLogData(auditParams)
 
@@ -205,18 +205,18 @@ func (s *Store) add(ctx context.Context, instanceID string, option *models.Cache
 	return nil
 }
 
-// AddNodeIDHandler against a specific value for dimension
+// AddNodeIDHandler against a specific option for dimension
 func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	instanceID := vars["id"]
+	instanceID := vars["instance_id"]
 	dimensionName := vars["dimension"]
-	value := vars["value"]
+	option := vars["option"]
 	nodeID := vars["node_id"]
-	auditParams := common.Params{"instance_id": instanceID, "dimension": dimensionName, "option": value, "node_id": nodeID}
+	auditParams := common.Params{"instance_id": instanceID, "dimension": dimensionName, "option": option, "node_id": nodeID}
 	logData := audit.ToLogData(auditParams)
 
-	dim := models.DimensionOption{Name: dimensionName, Option: value, NodeID: nodeID, InstanceID: instanceID}
+	dim := models.DimensionOption{Name: dimensionName, Option: option, NodeID: nodeID, InstanceID: instanceID}
 
 	if err := s.addNodeID(ctx, dim, logData); err != nil {
 		s.Auditor.Record(ctx, UpdateNodeIDAction, audit.Unsuccessful, auditParams)

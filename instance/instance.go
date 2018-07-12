@@ -110,12 +110,12 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	id := vars["id"]
-	auditParams := common.Params{"instance_id": id}
+	instanceID := vars["instance_id"]
+	auditParams := common.Params{"instance_id": instanceID}
 	logData := audit.ToLogData(auditParams)
 
 	b, err := func() ([]byte, error) {
-		instance, err := s.GetInstance(id)
+		instance, err := s.GetInstance(instanceID)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "get instance: failed to retrieve instance"), logData)
 			return nil, err
@@ -209,7 +209,7 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	instanceID := vars["id"]
+	instanceID := vars["instance_id"]
 	dimension := vars["dimension"]
 	auditParams := common.Params{"instance_id": instanceID, "dimension": dimension}
 	logData := audit.ToLogData(auditParams)
@@ -292,7 +292,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	instanceID := vars["id"]
+	instanceID := vars["instance_id"]
 	auditParams := common.Params{"instance_id": instanceID}
 	logData := audit.ToLogData(auditParams)
 	defer r.Body.Close()
@@ -589,7 +589,7 @@ func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *model
 func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	instanceID := vars["id"]
+	instanceID := vars["instance_id"]
 	insert := vars["inserted_observations"]
 	auditParams := common.Params{"instance_id": instanceID, "inserted_observations": insert}
 	logData := audit.ToLogData(auditParams)
@@ -624,7 +624,7 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	instanceID := vars["id"]
+	instanceID := vars["instance_id"]
 	auditParams := common.Params{"instance_id": instanceID}
 	logData := audit.ToLogData(auditParams)
 	defer r.Body.Close()
@@ -815,7 +815,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
-		instanceID := vars["id"]
+		instanceID := vars["instance_id"]
 		logData := log.Data{"instance_id": instanceID}
 		auditParams := common.Params{"instance_id": instanceID}
 

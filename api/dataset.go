@@ -100,9 +100,9 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	id := vars["id"]
-	logData := log.Data{"dataset_id": id}
-	auditParams := common.Params{"dataset_id": id}
+	datasetID := vars["dataset_id"]
+	logData := log.Data{"dataset_id": datasetID}
+	auditParams := common.Params{"dataset_id": datasetID}
 
 	if auditErr := api.auditor.Record(ctx, getDatasetAction, audit.Attempted, auditParams); auditErr != nil {
 		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, logData)
@@ -110,7 +110,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, err := func() ([]byte, error) {
-		dataset, err := api.dataStore.Backend.GetDataset(id)
+		dataset, err := api.dataStore.Backend.GetDataset(datasetID)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "getDataset endpoint: dataStore.Backend.GetDataset returned an error"), logData)
 			return nil, err
@@ -175,7 +175,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	datasetID := vars["id"]
+	datasetID := vars["dataset_id"]
 
 	logData := log.Data{"dataset_id": datasetID}
 	auditParams := common.Params{"dataset_id": datasetID}
@@ -256,7 +256,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	datasetID := vars["id"]
+	datasetID := vars["dataset_id"]
 	data := log.Data{"dataset_id": datasetID}
 	auditParams := common.Params{"dataset_id": datasetID}
 
@@ -336,7 +336,7 @@ func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *model
 func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	datasetID := vars["id"]
+	datasetID := vars["dataset_id"]
 	logData := log.Data{"dataset_id": datasetID}
 	auditParams := common.Params{"dataset_id": datasetID}
 

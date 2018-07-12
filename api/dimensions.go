@@ -20,7 +20,7 @@ import (
 func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	datasetID := vars["id"]
+	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	version := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
@@ -144,13 +144,13 @@ func convertBSONToDimensionOption(data interface{}) (*models.DimensionOption, er
 func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	datasetID := vars["id"]
-	editionID := vars["edition"]
+	datasetID := vars["dataset_id"]
+	edition := vars["edition"]
 	versionID := vars["version"]
 	dimension := vars["dimension"]
 
-	logData := log.Data{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension}
-	auditParams := common.Params{"dataset_id": datasetID, "edition": editionID, "version": versionID, "dimension": dimension}
+	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension}
+	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension}
 
 	if err := api.auditor.Record(ctx, getDimensionOptionsAction, audit.Attempted, auditParams); err != nil {
 		handleDimensionsErr(ctx, w, err, logData)
@@ -166,7 +166,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	}
 
 	b, err := func() ([]byte, error) {
-		version, err := api.dataStore.Backend.GetVersion(datasetID, editionID, versionID, state)
+		version, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionID, state)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to get version"), logData)
 			return nil, err
@@ -186,7 +186,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 
 		for i := range results.Items {
 			results.Items[i].Links.Version.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s",
-				api.host, datasetID, editionID, versionID)
+				api.host, datasetID, edition, versionID)
 		}
 
 		b, err := json.Marshal(results)

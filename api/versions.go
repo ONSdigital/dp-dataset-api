@@ -52,9 +52,9 @@ func (v VersionDetails) baseAuditParams() common.Params {
 func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	id := vars["id"]
-	editionID := vars["edition"]
-	auditParams := common.Params{"dataset_id": id, "edition": editionID}
+	datasetID := vars["dataset_id"]
+	edition := vars["edition"]
+	auditParams := common.Params{"dataset_id": datasetID, "edition": edition}
 	logData := audit.ToLogData(auditParams)
 
 	if auditErr := api.auditor.Record(ctx, getVersionsAction, audit.Attempted, auditParams); auditErr != nil {
@@ -70,17 +70,17 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 			state = models.PublishedState
 		}
 
-		if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
+		if err := api.dataStore.Backend.CheckDatasetExists(datasetID, state); err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to find dataset for list of versions"), logData)
 			return nil, err
 		}
 
-		if err := api.dataStore.Backend.CheckEditionExists(id, editionID, state); err != nil {
+		if err := api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to find edition for list of versions"), logData)
 			return nil, err
 		}
 
-		results, err := api.dataStore.Backend.GetVersions(id, editionID, state)
+		results, err := api.dataStore.Backend.GetVersions(datasetID, edition, state)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to find any versions for dataset edition"), logData)
 			return nil, err
@@ -146,10 +146,10 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	id := vars["id"]
-	editionID := vars["edition"]
+	datasetID := vars["dataset_id"]
+	edition := vars["edition"]
 	version := vars["version"]
-	auditParams := common.Params{"dataset_id": id, "edition": editionID, "version": version}
+	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": version}
 	logData := audit.ToLogData(auditParams)
 
 	if auditErr := api.auditor.Record(ctx, getVersionAction, audit.Attempted, auditParams); auditErr != nil {
@@ -165,18 +165,18 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 			state = models.PublishedState
 		}
 
-		if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
+		if err := api.dataStore.Backend.CheckDatasetExists(datasetID, state); err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to find dataset"), logData)
 			return nil, err
 		}
 
-		if err := api.dataStore.Backend.CheckEditionExists(id, editionID, state); err != nil {
+		if err := api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
 			checkEditionErr := errors.WithMessage(err, "failed to find edition for dataset")
 			log.ErrorCtx(ctx, checkEditionErr, logData)
 			return nil, err
 		}
 
-		results, err := api.dataStore.Backend.GetVersion(id, editionID, version, state)
+		results, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to find version for dataset edition"), logData)
 			return nil, err
@@ -238,12 +238,12 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	versionDetails := VersionDetails{
-		datasetID: vars["id"],
+		datasetID: vars["dataset_id"],
 		edition:   vars["edition"],
 		version:   vars["version"],
 	}
 	data := log.Data{
-		"datasetID": vars["id"],
+		"datasetID": vars["dataset_id"],
 		"edition":   vars["edition"],
 		"version":   vars["version"],
 	}

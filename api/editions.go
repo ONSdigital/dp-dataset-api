@@ -16,9 +16,9 @@ import (
 func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	id := vars["id"]
-	logData := log.Data{"dataset_id": id}
-	auditParams := common.Params{"dataset_id": id}
+	datasetID := vars["dataset_id"]
+	logData := log.Data{"dataset_id": datasetID}
+	auditParams := common.Params{"dataset_id": datasetID}
 
 	if auditErr := api.auditor.Record(r.Context(), getEditionsAction, audit.Attempted, auditParams); auditErr != nil {
 		http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
@@ -35,12 +35,12 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 
 		logData["state"] = state
 
-		if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
+		if err := api.dataStore.Backend.CheckDatasetExists(datasetID, state); err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "getEditions endpoint: unable to find dataset"), logData)
 			return nil, err
 		}
 
-		results, err := api.dataStore.Backend.GetEditions(id, state)
+		results, err := api.dataStore.Backend.GetEditions(datasetID, state)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "getEditions endpoint: unable to find editions for dataset"), logData)
 			return nil, err
@@ -105,9 +105,9 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	id := vars["id"]
-	editionID := vars["edition"]
-	auditParams := common.Params{"dataset_id": id, "edition": editionID}
+	datasetID := vars["dataset_id"]
+	edition := vars["edition"]
+	auditParams := common.Params{"dataset_id": datasetID, "edition": edition}
 	logData := audit.ToLogData(auditParams)
 
 	if auditErr := api.auditor.Record(r.Context(), getEditionAction, audit.Attempted, auditParams); auditErr != nil {
@@ -123,12 +123,12 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 			state = models.PublishedState
 		}
 
-		if err := api.dataStore.Backend.CheckDatasetExists(id, state); err != nil {
+		if err := api.dataStore.Backend.CheckDatasetExists(datasetID, state); err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "getEdition endpoint: unable to find dataset"), logData)
 			return nil, err
 		}
 
-		edition, err := api.dataStore.Backend.GetEdition(id, editionID, state)
+		edition, err := api.dataStore.Backend.GetEdition(datasetID, edition, state)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "getEdition endpoint: unable to find edition"), logData)
 			return nil, err
