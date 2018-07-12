@@ -67,6 +67,8 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 		stateFilterList = strings.Split(stateFilterQuery, ",")
 	}
 
+	log.InfoCtx(ctx, "get list of instances", logData)
+
 	b, err := func() ([]byte, error) {
 		if len(stateFilterList) > 0 {
 			if err := models.ValidateStateFilter(stateFilterList); err != nil {
@@ -114,7 +116,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	auditParams := common.Params{"instance_id": instanceID}
 	logData := audit.ToLogData(auditParams)
 
-	log.InfoCtx(ctx, "instance get: getting instance", data)
+	log.InfoCtx(ctx, "get instance", logData)
 
 	b, err := func() ([]byte, error) {
 		instance, err := s.GetInstance(instanceID)
@@ -123,7 +125,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		log.InfoCtx(ctx, "instance get: checking instance state", data)
+		log.InfoCtx(ctx, "instance get: checking instance state", logData)
 		// Early return if instance state is invalid
 		if err = models.CheckState("instance", instance.State); err != nil {
 			logData["state"] = instance.State
@@ -131,7 +133,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		log.InfoCtx(ctx, "instance get: marshalling instance json", data)
+		log.InfoCtx(ctx, "instance get: marshalling instance json", logData)
 		b, err := json.Marshal(instance)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "get instance: failed to marshal instance to json"), logData)
@@ -141,7 +143,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		return b, nil
 	}()
 
-	log.InfoCtx(ctx, "instance get: auditing outcome", data)
+	log.InfoCtx(ctx, "instance get: auditing outcome", logData)
 	if err != nil {
 		if auditErr := s.Auditor.Record(ctx, GetInstanceAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			err = auditErr
@@ -165,6 +167,8 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logData := log.Data{}
 	auditParams := common.Params{}
+
+	log.InfoCtx(ctx, "update instance dimension", logData)
 
 	b, err := func() ([]byte, error) {
 		instance, err := unmarshalInstance(ctx, r.Body, true)
@@ -219,6 +223,8 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	dimension := vars["dimension"]
 	auditParams := common.Params{"instance_id": instanceID, "dimension": dimension}
 	logData := audit.ToLogData(auditParams)
+
+	log.InfoCtx(ctx, "update instance dimension", logData)
 
 	if err := func() error {
 		instance, err := s.GetInstance(instanceID)

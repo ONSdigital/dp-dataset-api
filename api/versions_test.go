@@ -2334,7 +2334,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		mockedDataStore.GetDataset("123")
 		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 
-		auditor := audit_mock.New()
+		auditor := auditortest.New()
 		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
 
 		api.Router.ServeHTTP(w, r)
@@ -2351,10 +2351,10 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
-			audit_mock.Expected{updateVersionAction, audit.Attempted, ap},
-			audit_mock.Expected{updateVersionAction, audit.Successful, ap},
-			audit_mock.Expected{publishVersionAction, audit.Attempted, ap},
-			audit_mock.Expected{publishVersionAction, audit.Unsuccessful, ap},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+			auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
+			auditortest.Expected{Action: publishVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: publishVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
 	})
 }
