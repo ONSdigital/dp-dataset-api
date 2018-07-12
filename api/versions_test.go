@@ -939,6 +939,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -994,6 +995,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
@@ -1060,6 +1062,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 
@@ -1147,6 +1150,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			UpsertEditionFunc: func(string, string, *models.EditionUpdate) error {
 				return nil
 			},
+			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
+				return nil
+			},
 		}
 
 		auditor := auditortest.New()
@@ -1160,6 +1166,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 
@@ -1698,6 +1705,9 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 				UpsertDatasetFunc: func(ID string, datasetDoc *models.DatasetUpdate) error {
 					return nil
 				},
+				SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
+					return nil
+				},
 			}
 
 			currentDataset := &models.DatasetUpdate{
@@ -2234,6 +2244,117 @@ func TestPutVersionReturnsError(t *testing.T) {
 		auditor.AssertRecordCalls(
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+		)
+	})
+
+	Convey("When setting the instance node to published fails", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(string, string, string, string) error {
+				return nil
+			},
+		}
+
+		var b string
+		b = versionPublishedPayload
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsFunc: func(string, string, string) error {
+				return nil
+			},
+			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					ID: "789",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+						Dimensions: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017",
+							ID:   "2017",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/instances/765",
+						},
+						Version: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+						},
+					},
+					ReleaseDate: "2017-12-12",
+					Downloads: &models.DownloadList{
+						CSV: &models.DownloadObject{
+							Private: "s3://csv-exported/myfile.csv",
+							HRef:    "http://localhost:23600/datasets/123/editions/2017/versions/1.csv",
+							Size:    "1234",
+						},
+					},
+					State: models.EditionConfirmedState,
+				}, nil
+			},
+			UpdateVersionFunc: func(string, *models.Version) error {
+				return nil
+			},
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID:      "123",
+					Next:    &models.Dataset{Links: &models.DatasetLinks{}},
+					Current: &models.Dataset{Links: &models.DatasetLinks{}},
+				}, nil
+			},
+			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
+				return nil
+			},
+			GetEditionFunc: func(string, string, string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{
+					ID: "123",
+					Next: &models.Edition{
+						State: models.PublishedState,
+					},
+					Current: &models.Edition{},
+				}, nil
+			},
+			UpsertEditionFunc: func(string, string, *models.EditionUpdate) error {
+				return nil
+			},
+			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
+				return errors.New("failed to set is_published on the instance node")
+			},
+		}
+
+		mockedDataStore.GetVersion("789", "2017", "1", "")
+		mockedDataStore.GetEdition("123", "2017", "")
+		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
+		mockedDataStore.GetDataset("123")
+		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
+
+		auditor := audit_mock.New()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 3)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		auditor.AssertRecordCalls(
+			audit_mock.Expected{updateVersionAction, audit.Attempted, ap},
+			audit_mock.Expected{updateVersionAction, audit.Successful, ap},
+			audit_mock.Expected{publishVersionAction, audit.Attempted, ap},
+			audit_mock.Expected{publishVersionAction, audit.Unsuccessful, ap},
 		)
 	})
 }
