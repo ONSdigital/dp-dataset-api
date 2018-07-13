@@ -337,29 +337,27 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 		if instance.State == models.EditionConfirmedState {
 			datasetID := currentInstance.Links.Dataset.ID
-			logData["dataset_id"] = datasetID
-			auditParams["dataset_id"] = datasetID
 
 			// If instance has no edition, get the current edition
 			if instance.Edition == "" {
 				instance.Edition = currentInstance.Edition
 			}
 			edition := instance.Edition
-			logData["edition"] = edition
-			auditParams["edition"] = edition
+			editionAuditParams := common.Params{"instance_id": instanceID, "dataset_id": datasetID, "edition": edition}
+			editionLogData := audit.ToLogData(editionAuditParams)
 
 			editionDoc, auditAction, err := func() (*models.EditionUpdate, string, error) {
 				// Only create edition if it doesn't already exist
 				editionDoc, action, err := s.getEdition(ctx, datasetID, edition, instanceID)
 				if err != nil {
-					log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.getEdition returned an error"), logData)
+					log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.getEdition returned an error"), editionLogData)
 					return nil, action, err
 				}
 
 				// Update with any edition.next changes
 				editionDoc.Next.State = instance.State
 				if err = s.UpsertEdition(datasetID, edition, editionDoc); err != nil {
-					log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.UpsertEdition returned an error"), logData)
+					log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.UpsertEdition returned an error"), editionLogData)
 					return nil, action, err
 				}
 
@@ -371,21 +369,16 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 					return err
 				}
 
-				if auditErr := s.Auditor.Record(ctx, auditAction, audit.Unsuccessful, auditParams); auditErr != nil {
+				if auditErr := s.Auditor.Record(ctx, auditAction, audit.Unsuccessful, editionAuditParams); auditErr != nil {
 					err = auditErr
 				}
 
 				return err
 			}
 
-			s.Auditor.Record(ctx, auditAction, audit.Successful, auditParams)
+			s.Auditor.Record(ctx, auditAction, audit.Successful, editionAuditParams)
 
-			log.InfoCtx(ctx, "instance update: created edition", logData)
-
-			delete(logData, "dataset_id")
-			delete(logData, "edition")
-			delete(auditParams, "dataset_id")
-			delete(auditParams, "edition")
+			log.InfoCtx(ctx, "instance update: created edition", editionLogData)
 
 			// Check whether instance has a version
 			if currentInstance.Version < 1 {
@@ -416,11 +409,6 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 		return nil
 	}(); err != nil {
-		delete(logData, "dataset_id")
-		delete(logData, "edition")
-		delete(auditParams, "dataset_id")
-		delete(auditParams, "edition")
-
 		if auditErr := s.Auditor.Record(ctx, UpdateInstanceAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			err = auditErr
 		}

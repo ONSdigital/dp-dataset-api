@@ -191,13 +191,13 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
-		datasetiD := vars["dataset_id"]
+		datasetID := vars["dataset_id"]
 		edition := vars["edition"]
 		version := vars["version"]
-		data := log.Data{"dataset_id": datasetiD, "edition": edition, "version": version}
-		auditParams := common.Params{"dataset_id": datasetiD, "edition": edition, "version": version}
+		data := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
+		auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": version}
 
-		currentVersion, err := d.Datastore.GetVersion(datasetiD, edition, version, "")
+		currentVersion, err := d.Datastore.GetVersion(datasetID, edition, version, "")
 		if err != nil {
 			if err != errs.ErrVersionNotFound {
 				log.ErrorCtx(ctx, errors.WithMessage(err, "errored whilst retrieving version resource"), data)

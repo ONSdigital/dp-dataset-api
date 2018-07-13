@@ -248,14 +248,14 @@ func CheckState(docType, state string) error {
 func CreateDataset(reader io.Reader) (*Dataset, error) {
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return nil, errors.New("failed to read message body")
+		return nil, errs.ErrUnableToReadMessage
 	}
 
 	var dataset Dataset
 
 	err = json.Unmarshal(b, &dataset)
 	if err != nil {
-		return nil, errors.New("failed to parse json body")
+		return nil, errs.ErrUnableToParseJSON
 	}
 	return &dataset, nil
 }
@@ -264,7 +264,7 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 func CreateVersion(reader io.Reader) (*Version, error) {
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return nil, errors.New("failed to read message body")
+		return nil, errs.ErrUnableToReadMessage
 	}
 
 	var version Version
@@ -273,7 +273,7 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 
 	err = json.Unmarshal(b, &version)
 	if err != nil {
-		return nil, errors.New("failed to parse json body")
+		return nil, errs.ErrUnableToParseJSON
 	}
 
 	return &version, nil
@@ -298,12 +298,12 @@ func CreateDownloadList(reader io.Reader) (*DownloadList, error) {
 func CreateContact(reader io.Reader) (*Contact, error) {
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return nil, errors.New("failed to read message body")
+		return nil, errs.ErrUnableToReadMessage
 	}
 	var contact Contact
 	err = json.Unmarshal(b, &contact)
 	if err != nil {
-		return nil, errors.New("failed to parse json body")
+		return nil, errs.ErrUnableToReadMessage
 	}
 
 	// Create unique id
