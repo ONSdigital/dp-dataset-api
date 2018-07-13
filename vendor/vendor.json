@@ -81,10 +81,10 @@
 			"revisionTime": "2018-06-05T08:47:20Z"
 		},
 		{
-			"checksumSHA1": "DCXeIpFKcAMDgRMCQlrQ3qwM4Hg=",
+			"checksumSHA1": "ACpnYmqNJhkkLg4jDqQnX4N2+AE=",
 			"path": "github.com/ONSdigital/go-ns/rchttp",
-			"revision": "e89bb271c005948b66da47ec485f1fb786753612",
-			"revisionTime": "2018-06-07T08:14:26Z"
+			"revision": "eaa06db76f9dcf5459f2915b9e69a639e1a9a1eb",
+			"revisionTime": "2018-07-13T09:18:56Z"
 		},
 		{
 			"checksumSHA1": "GQdzMpAMb42KQQ/GsJFSRU5dj1Y=",
@@ -135,34 +135,34 @@
 			"revisionTime": "2017-11-28T09:28:02Z"
 		},
 		{
-			"checksumSHA1": "Tsc4M+xTb2NgaCq3y8dbIcgBJ0A=",
-			"path": "github.com/gedge/mgo",
-			"revision": "a170908eafcff6f64b9ad83db3943fe6332d52a1",
-			"revisionTime": "2018-05-23T09:46:01Z"
+			"checksumSHA1": "C0PrqJwZS9A+Izfrk+YlZQJFsvg=",
+			"path": "github.com/globalsign/mgo",
+			"revision": "0d9d58e415022cd6841752cfea1e0f8175584425",
+			"revisionTime": "2018-05-22T09:37:14Z"
 		},
 		{
-			"checksumSHA1": "SAegSFbBQ3lKgxV3opxcqTPwz+o=",
-			"path": "github.com/gedge/mgo/bson",
-			"revision": "a170908eafcff6f64b9ad83db3943fe6332d52a1",
-			"revisionTime": "2018-05-23T09:46:01Z"
+			"checksumSHA1": "6070Ot/n8eAtJPtejV9SovspdJU=",
+			"path": "github.com/globalsign/mgo/bson",
+			"revision": "0d9d58e415022cd6841752cfea1e0f8175584425",
+			"revisionTime": "2018-05-22T09:37:14Z"
 		},
 		{
-			"checksumSHA1": "+soDoin5Apt/Dyk73uC1trzHx5M=",
-			"path": "github.com/gedge/mgo/internal/json",
-			"revision": "a170908eafcff6f64b9ad83db3943fe6332d52a1",
-			"revisionTime": "2018-05-23T09:46:01Z"
+			"checksumSHA1": "//bXQG4HblBwxHJDIW/PklXAxu0=",
+			"path": "github.com/globalsign/mgo/internal/json",
+			"revision": "0d9d58e415022cd6841752cfea1e0f8175584425",
+			"revisionTime": "2018-05-22T09:37:14Z"
 		},
 		{
-			"checksumSHA1": "PZU+CtYXLjDXogLC2nNePsLBlkU=",
-			"path": "github.com/gedge/mgo/internal/sasl",
-			"revision": "a170908eafcff6f64b9ad83db3943fe6332d52a1",
-			"revisionTime": "2018-05-23T09:46:01Z"
+			"checksumSHA1": "loubUcDO2QAStKIlVd7DqSeoEaw=",
+			"path": "github.com/globalsign/mgo/internal/sasl",
+			"revision": "0d9d58e415022cd6841752cfea1e0f8175584425",
+			"revisionTime": "2018-05-22T09:37:14Z"
 		},
 		{
-			"checksumSHA1": "Uoi1jh9qrlyApl2Q5JgW7OW9wy4=",
-			"path": "github.com/gedge/mgo/internal/scram",
-			"revision": "a170908eafcff6f64b9ad83db3943fe6332d52a1",
-			"revisionTime": "2018-05-23T09:46:01Z"
+			"checksumSHA1": "xjfEsfN7ho6dDOVeUQJhW4KzD2I=",
+			"path": "github.com/globalsign/mgo/internal/scram",
+			"revision": "0d9d58e415022cd6841752cfea1e0f8175584425",
+			"revisionTime": "2018-05-22T09:37:14Z"
 		},
 		{
 			"checksumSHA1": "I6MnUzkLJt+sh73CodD0NKswFrs=",
