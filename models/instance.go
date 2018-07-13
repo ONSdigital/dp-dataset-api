@@ -1,10 +1,10 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/gedge/mgo/bson"
 )
 
@@ -101,7 +101,7 @@ type InstanceResults struct {
 // Validate the event structure
 func (e *Event) Validate() error {
 	if e.Message == "" || e.MessageOffset == "" || e.Time == nil || e.Type == "" {
-		return errors.New("missing properties")
+		return errs.ErrMissingParameters
 	}
 	return nil
 }

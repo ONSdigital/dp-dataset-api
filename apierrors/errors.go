@@ -1,6 +1,8 @@
 package apierrors
 
-import "errors"
+import (
+	"errors"
+)
 
 // A list of error messages for Dataset API
 var (
@@ -18,6 +20,7 @@ var (
 	ErrIndexOutOfRange                   = errors.New("index out of range")
 	ErrInstanceNotFound                  = errors.New("instance not found")
 	ErrInternalServer                    = errors.New("internal error")
+	ErrInsertedObservationsInvalidSyntax = errors.New("inserted observation request parameter not an integer")
 	ErrMetadataVersionNotFound           = errors.New("version not found")
 	ErrMissingJobProperties              = errors.New("missing job properties")
 	ErrMissingParameters                 = errors.New("missing properties in JSON")
@@ -27,12 +30,17 @@ var (
 	ErrResourcePublished                 = errors.New("unable to update resource as it has been published")
 	ErrResourceState                     = errors.New("incorrect resource state")
 	ErrTooManyWildcards                  = errors.New("only one wildcard (*) is allowed as a value in selected query parameters")
-	ErrUnableToReadMessage               = errors.New("failed to read message body")
 	ErrUnableToParseJSON                 = errors.New("failed to parse json body")
+	ErrUnableToReadMessage               = errors.New("failed to read message body")
 	ErrUnauthorised                      = errors.New("unauthorised access to API")
-	ErrVersionBadRequest                 = errors.New("failed to parse json body")
 	ErrVersionMissingState               = errors.New("missing state from version")
 	ErrVersionNotFound                   = errors.New("version not found")
+
+	ErrExpectedResourceStateOfCreated          = errors.New("unable to update resource, expected resource to have a state of created")
+	ErrExpectedResourceStateOfSubmitted        = errors.New("unable to update resource, expected resource to have a state of submitted")
+	ErrExpectedResourceStateOfCompleted        = errors.New("unable to update resource, expected resource to have a state of completed")
+	ErrExpectedResourceStateOfEditionConfirmed = errors.New("unable to update resource, expected resource to have a state of edition-confirmed")
+	ErrExpectedResourceStateOfAssociated       = errors.New("unable to update resource, expected resource to have a state of associated")
 
 	NotFoundMap = map[error]bool{
 		ErrDatasetNotFound:         true,
@@ -46,8 +54,20 @@ var (
 	}
 
 	BadRequestMap = map[error]bool{
-		ErrMissingParameters:   true,
-		ErrUnableToParseJSON:   true,
-		ErrUnableToReadMessage: true,
+		ErrInsertedObservationsInvalidSyntax: true,
+		ErrMissingJobProperties:              true,
+		ErrMissingParameters:                 true,
+		ErrUnableToParseJSON:                 true,
+		ErrUnableToReadMessage:               true,
+	}
+
+	ForbiddenMap = map[error]bool{
+		ErrExpectedResourceStateOfCreated:          true,
+		ErrExpectedResourceStateOfSubmitted:        true,
+		ErrExpectedResourceStateOfCompleted:        true,
+		ErrExpectedResourceStateOfEditionConfirmed: true,
+		ErrExpectedResourceStateOfAssociated:       true,
+
+		ErrResourcePublished: true,
 	}
 )

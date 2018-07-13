@@ -79,7 +79,7 @@ type ObservationStore interface {
 func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	datasetID := vars["id"]
+	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	version := vars["version"]
 

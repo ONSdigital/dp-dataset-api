@@ -100,9 +100,9 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	id := vars["id"]
-	logData := log.Data{"dataset_id": id}
-	auditParams := common.Params{"dataset_id": id}
+	datasetID := vars["dataset_id"]
+	logData := log.Data{"dataset_id": datasetID}
+	auditParams := common.Params{"dataset_id": datasetID}
 
 	if auditErr := api.auditor.Record(ctx, getDatasetAction, audit.Attempted, auditParams); auditErr != nil {
 		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, logData)
@@ -110,7 +110,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, err := func() ([]byte, error) {
-		dataset, err := api.dataStore.Backend.GetDataset(id)
+		dataset, err := api.dataStore.Backend.GetDataset(datasetID)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "getDataset endpoint: dataStore.Backend.GetDataset returned an error"), logData)
 			return nil, err
@@ -121,7 +121,6 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		var b []byte
 		var datasetResponse interface{}
 
-		//		var marshallErr error
 		if !authorised {
 			// User is not authenticated and hence has only access to current sub document
 			if dataset.Current == nil {
@@ -176,15 +175,10 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	datasetID := vars["id"]
+	datasetID := vars["dataset_id"]
 
 	logData := log.Data{"dataset_id": datasetID}
 	auditParams := common.Params{"dataset_id": datasetID}
-
-	if auditErr := api.auditor.Record(ctx, addDatasetAction, audit.Attempted, auditParams); auditErr != nil {
-		handleDatasetAPIErr(ctx, auditErr, w, logData)
-		return
-	}
 
 	// TODO Could just do an insert, if dataset already existed we would get a duplicate key error instead of reading then writing doc
 	b, err := func() ([]byte, error) {
@@ -262,14 +256,9 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	datasetID := vars["id"]
+	datasetID := vars["dataset_id"]
 	data := log.Data{"dataset_id": datasetID}
 	auditParams := common.Params{"dataset_id": datasetID}
-
-	if auditErr := api.auditor.Record(ctx, putDatasetAction, audit.Attempted, auditParams); auditErr != nil {
-		handleDatasetAPIErr(ctx, auditErr, w, data)
-		return
-	}
 
 	err := func() error {
 		defer r.Body.Close()
@@ -301,12 +290,12 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		api.auditor.Record(ctx, putDatasetAction, audit.Unsuccessful, auditParams)
+		api.auditor.Record(ctx, updateDatasetAction, audit.Unsuccessful, auditParams)
 		handleDatasetAPIErr(ctx, err, w, data)
 		return
 	}
 
-	api.auditor.Record(ctx, putDatasetAction, audit.Successful, auditParams)
+	api.auditor.Record(ctx, updateDatasetAction, audit.Successful, auditParams)
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
@@ -347,14 +336,9 @@ func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *model
 func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	datasetID := vars["id"]
+	datasetID := vars["dataset_id"]
 	logData := log.Data{"dataset_id": datasetID}
 	auditParams := common.Params{"dataset_id": datasetID}
-
-	if auditErr := api.auditor.Record(ctx, deleteDatasetAction, audit.Attempted, auditParams); auditErr != nil {
-		handleDatasetAPIErr(ctx, auditErr, w, logData)
-		return
-	}
 
 	// attempt to delete the dataset.
 	err := func() error {
