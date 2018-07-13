@@ -69,10 +69,10 @@
 			"revisionTime": "2018-07-12T08:51:53Z"
 		},
 		{
-			"checksumSHA1": "/I1BHzejhYoOtk9JrLHAqmt5HTs=",
+			"checksumSHA1": "b2JBGNgtxl/ClV8+ofaOeI69Pvc=",
 			"path": "github.com/ONSdigital/go-ns/mongo",
-			"revision": "491470a66fbb2471ff3fd02f8159b7158d9281ab",
-			"revisionTime": "2018-06-07T13:26:14Z"
+			"revision": "7e321b536cf0ce8706090bf16c75f16a489bc5af",
+			"revisionTime": "2018-07-12T13:38:54Z"
 		},
 		{
 			"checksumSHA1": "ZXfEqZ/3ekHfv7QKSUO+av7SEWA=",

@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gedge/mgo"
-	"github.com/gedge/mgo/bson"
+	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"

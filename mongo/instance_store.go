@@ -6,8 +6,9 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/go-ns/log"
-	"github.com/gedge/mgo"
-	"github.com/gedge/mgo/bson"
+	"github.com/ONSdigital/go-ns/mongo"
+	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 )
 
 const instanceCollection = "instances"
@@ -81,7 +82,13 @@ func (m *Mongo) UpdateInstance(id string, instance *models.Instance) error {
 	instance.InstanceID = id
 	instance.LastUpdated = time.Now().UTC()
 
-	info, err := s.DB(m.Database).C(instanceCollection).Upsert(bson.M{"id": id}, bson.M{"$set": &instance})
+	update := bson.M{"$set": &instance}
+	updateWithTimestamps, err := mongo.WithUpdates(update)
+	if err != nil {
+		return err
+	}
+
+	info, err := s.DB(m.Database).C(instanceCollection).Upsert(bson.M{"id": id, mongo.UniqueTimestampKey: instance.UniqueTimestamp}, updateWithTimestamps)
 	if err != nil {
 		return err
 	}
