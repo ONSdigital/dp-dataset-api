@@ -15,8 +15,8 @@ import (
 
 // List of error variables
 var (
-	ErrPublishedVersionCollectionIDInvalid  = errors.New("unexpected collection_id in published version")
 	ErrAssociatedVersionCollectionIDInvalid = errors.New("missing collection_id for association between version and a collection")
+	ErrPublishedVersionCollectionIDInvalid  = errors.New("unexpected collection_id in published version")
 	ErrVersionStateInvalid                  = errors.New("incorrect state, can be one of the following: edition-confirmed, associated or published")
 )
 
@@ -61,6 +61,7 @@ type Dataset struct {
 	Description       string           `bson:"description,omitempty"            json:"description,omitempty"`
 	Keywords          []string         `bson:"keywords,omitempty"               json:"keywords,omitempty"`
 	ID                string           `bson:"_id,omitempty"                    json:"id,omitempty"`
+	LastUpdated       time.Time        `bson:"last_updated,omitempty"           json:"-"`
 	License           string           `bson:"license,omitempty"                json:"license,omitempty"`
 	Links             *DatasetLinks    `bson:"links,omitempty"                  json:"links,omitempty"`
 	Methodologies     []GeneralDetails `bson:"methodologies,omitempty"          json:"methodologies,omitempty"`
@@ -76,7 +77,6 @@ type Dataset struct {
 	Title             string           `bson:"title,omitempty"                  json:"title,omitempty"`
 	UnitOfMeasure     string           `bson:"unit_of_measure,omitempty"        json:"unit_of_measure,omitempty"`
 	URI               string           `bson:"uri,omitempty"                    json:"uri,omitempty"`
-	LastUpdated       time.Time        `bson:"last_updated,omitempty"           json:"-"`
 }
 
 // DatasetLinks represents a list of specific links related to the dataset resource
@@ -90,8 +90,8 @@ type DatasetLinks struct {
 
 // LinkObject represents a generic structure for all links
 type LinkObject struct {
-	ID   string `bson:"id,omitempty"    json:"id,omitempty"`
 	HRef string `bson:"href,omitempty"  json:"href,omitempty"`
+	ID   string `bson:"id,omitempty"    json:"id,omitempty"`
 }
 
 // GeneralDetails represents generic fields stored against an object (reused)
@@ -103,8 +103,8 @@ type GeneralDetails struct {
 
 // Contact represents information of individual contact details
 type Contact struct {
-	ID          string    `bson:"_id,omitempty"            json:"id,omitempty"`
 	Email       string    `bson:"email,omitempty"          json:"email,omitempty"`
+	ID          string    `bson:"_id,omitempty"            json:"id,omitempty"`
 	LastUpdated time.Time `bson:"last_updated,omitempty"   json:"-"`
 	Name        string    `bson:"name,omitempty"           json:"name,omitempty"`
 	Telephone   string    `bson:"telephone,omitempty"      json:"telephone,omitempty"`
@@ -127,25 +127,25 @@ type EditionUpdate struct {
 // EditionUpdateLinks represents those links common the both the current and next edition
 type EditionUpdateLinks struct {
 	Dataset       *LinkObject `bson:"dataset,omitempty"        json:"dataset,omitempty"`
+	LatestVersion *LinkObject `bson:"latest_version,omitempty" json:"latest_version,omitempty"`
 	Self          *LinkObject `bson:"self,omitempty"           json:"self,omitempty"`
 	Versions      *LinkObject `bson:"versions,omitempty"       json:"versions,omitempty"`
-	LatestVersion *LinkObject `bson:"latest_version,omitempty" json:"latest_version,omitempty"`
 }
 
 // Edition represents information related to a single edition for a dataset
 type Edition struct {
 	Edition     string              `bson:"edition,omitempty"     json:"edition,omitempty"`
 	ID          string              `bson:"id,omitempty"          json:"id,omitempty"`
+	LastUpdated time.Time           `bson:"last_updated,omitempty" json:"-"`
 	Links       *EditionUpdateLinks `bson:"links,omitempty"       json:"links,omitempty"`
 	State       string              `bson:"state,omitempty"        json:"state,omitempty"`
-	LastUpdated time.Time           `bson:"last_updated,omitempty" json:"-"`
 }
 
 // Publisher represents an object containing information of the publisher
 type Publisher struct {
+	HRef string `bson:"href,omitempty" json:"href,omitempty"`
 	Name string `bson:"name,omitempty" json:"name,omitempty"`
 	Type string `bson:"type,omitempty" json:"type,omitempty"`
-	HRef string `bson:"href,omitempty" json:"href,omitempty"`
 }
 
 // Version represents information related to a single version for an edition of a dataset
@@ -157,14 +157,14 @@ type Version struct {
 	Edition       string               `bson:"edition,omitempty"        json:"edition,omitempty"`
 	Headers       []string             `bson:"headers,omitempty"        json:"-"`
 	ID            string               `bson:"id,omitempty"             json:"id,omitempty"`
+	LastUpdated   time.Time            `bson:"last_updated,omitempty"   json:"-"`
 	LatestChanges *[]LatestChange      `bson:"latest_changes,omitempty" json:"latest_changes,omitempty"`
 	Links         *VersionLinks        `bson:"links,omitempty"          json:"links,omitempty"`
 	ReleaseDate   string               `bson:"release_date,omitempty"   json:"release_date,omitempty"`
 	State         string               `bson:"state,omitempty"          json:"state,omitempty"`
 	Temporal      *[]TemporalFrequency `bson:"temporal,omitempty"       json:"temporal,omitempty"`
-	LastUpdated   time.Time            `bson:"last_updated,omitempty"   json:"-"`
-	Version       int                  `bson:"version,omitempty"        json:"version,omitempty"`
 	UsageNotes    *[]UsageNote         `bson:"usage_notes,omitempty"    json:"usage_notes,omitempty"`
+	Version       int                  `bson:"version,omitempty"        json:"version,omitempty"`
 }
 
 // Alert represents an object containing information on an alert
@@ -182,12 +182,12 @@ type DownloadList struct {
 
 // DownloadObject represents information on the downloadable file
 type DownloadObject struct {
-	HRef string `bson:"href,omitempty"  json:"href,omitempty"`
+	HRef    string `bson:"href,omitempty"  json:"href,omitempty"`
+	Private string `bson:"private,omitempty" json:"private,omitempty"`
+	Public  string `bson:"public,omitempty" json:"public,omitempty"`
 	// TODO size is in bytes and probably should be an int64 instead of a string this
 	// will have to change for several services (filter API, exporter services and web)
-	Size    string `bson:"size,omitempty" json:"size,omitempty"`
-	Public  string `bson:"public,omitempty" json:"public,omitempty"`
-	Private string `bson:"private,omitempty" json:"private,omitempty"`
+	Size string `bson:"size,omitempty" json:"size,omitempty"`
 }
 
 // LatestChange represents an object contining
@@ -207,8 +207,8 @@ type TemporalFrequency struct {
 
 // UsageNote represents a note containing extra information associated to the resource
 type UsageNote struct {
-	Title string `bson:"title,omitempty"    json:"title,omitempty"`
 	Note  string `bson:"note,omitempty"     json:"note,omitempty"`
+	Title string `bson:"title,omitempty"    json:"title,omitempty"`
 }
 
 // VersionLinks represents a list of specific links related to the version resource for an edition of a dataset

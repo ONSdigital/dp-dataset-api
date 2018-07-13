@@ -16,10 +16,10 @@ type DimensionOptionResults struct {
 // which provides metadata about the dimension and all possible values.
 type Dimension struct {
 	Description string        `bson:"description,omitempty"   json:"description,omitempty"`
+	Label       string        `bson:"label,omitempty"         json:"label,omitempty"`
+	LastUpdated time.Time     `bson:"last_updated,omitempty"  json:"-"`
 	Links       DimensionLink `bson:"links,omitempty"         json:"links,omitempty"`
 	Name        string        `bson:"name,omitempty"          json:"dimension,omitempty"`
-	LastUpdated time.Time     `bson:"last_updated,omitempty"  json:"-"`
-	Label       string        `bson:"label,omitempty"         json:"label,omitempty"`
 }
 
 // DimensionLink contains all links needed for a dimension
@@ -53,17 +53,17 @@ type DimensionOption struct {
 
 // PublicDimensionOption hides values which are only used by interval services
 type PublicDimensionOption struct {
-	Name   string               `bson:"name,omitempty"           json:"dimension"`
 	Label  string               `bson:"label,omitempty"          json:"label"`
 	Links  DimensionOptionLinks `bson:"links,omitempty"          json:"links"`
+	Name   string               `bson:"name,omitempty"           json:"dimension"`
 	Option string               `bson:"option,omitempty"         json:"option"`
 }
 
 // DimensionOptionLinks represents a list of link objects related to dimension options
 type DimensionOptionLinks struct {
 	Code     LinkObject `bson:"code,omitempty"              json:"code"`
-	Version  LinkObject `bson:"version,omitempty"           json:"version"`
 	CodeList LinkObject `bson:"code_list,omitempty"         json:"code_list"`
+	Version  LinkObject `bson:"version,omitempty"           json:"version"`
 }
 
 // DimensionNodeResults wraps dimension node objects for pagination
