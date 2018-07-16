@@ -16,6 +16,7 @@ import (
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/go-ns/request"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
@@ -163,7 +164,9 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 
 //Add an instance
 func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+
+	defer request.DrainBody(r)
+
 	ctx := r.Context()
 	logData := log.Data{}
 	auditParams := common.Params{}
@@ -217,6 +220,9 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 // UpdateDimension updates label and/or description
 // for a specific dimension within an instance
 func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
+
+	defer request.DrainBody(r)
+
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
@@ -302,12 +308,14 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 //Update a specific instance
 func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
+
+	defer request.DrainBody(r)
+
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
 	auditParams := common.Params{"instance_id": instanceID}
 	logData := audit.ToLogData(auditParams)
-	defer r.Body.Close()
 
 	if err := func() error {
 		instance, err := unmarshalInstance(ctx, r.Body, false)
@@ -587,6 +595,7 @@ func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *model
 // UpdateObservations increments the count of inserted_observations against
 // an instance
 func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
+
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
@@ -622,6 +631,9 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 
 // UpdateImportTask updates any task in the request body against an instance
 func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
+
+	defer request.DrainBody(r)
+
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]

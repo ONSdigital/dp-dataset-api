@@ -11,6 +11,7 @@ import (
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/go-ns/request"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -148,6 +149,9 @@ func (s *Store) getUniqueDimensionAndOptions(ctx context.Context, instanceID, di
 
 // AddHandler represents adding a dimension to a specific instance
 func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
+
+	defer request.DrainBody(r)
+
 	ctx := r.Context()
 
 	vars := mux.Vars(r)
@@ -207,6 +211,7 @@ func (s *Store) add(ctx context.Context, instanceID string, option *models.Cache
 
 // AddNodeIDHandler against a specific option for dimension
 func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
+
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]

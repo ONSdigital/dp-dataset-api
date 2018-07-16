@@ -23,6 +23,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
+	"io"
 )
 
 const (
@@ -948,6 +949,11 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When state is set to associated", t, func() {
@@ -1003,6 +1009,11 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When state is set to edition-confirmed", t, func() {
@@ -1072,6 +1083,11 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			auditortest.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
 			auditortest.Expected{Action: associateVersionAction, Result: audit.Successful, Params: auditParams},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When state is set to published", t, func() {
@@ -1176,6 +1192,11 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			auditortest.Expected{Action: publishVersionAction, Result: audit.Attempted, Params: auditParams},
 			auditortest.Expected{Action: publishVersionAction, Result: audit.Successful, Params: auditParams},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When version is already published and update includes downloads object only", t, func() {
@@ -1186,6 +1207,11 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			updateVersionDownloadTest(r, auditParamsWithCallerIdentity, auditParams)
+
+			Convey("then the request body has been drained", func() {
+				_, err = r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
 		})
 
 		Convey("And downloads object contains only a xls object", func() {
@@ -1195,6 +1221,11 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			updateVersionDownloadTest(r, auditParamsWithCallerIdentity, auditParams)
+
+			Convey("then the request body has been drained", func() {
+				_, err = r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
 		})
 	})
 }
@@ -1366,6 +1397,11 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 					auditortest.Expected{Action: associateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
+
+			Convey("then the request body has been drained", func() {
+				_, err = r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
 		})
 	})
 }
@@ -1519,6 +1555,11 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 				)
 			})
+
+			Convey("then the request body has been drained", func() {
+				_, err = r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
 		})
 	})
 
@@ -1592,6 +1633,11 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 					auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 					auditortest.Expected{Action: updateVersionAction, Result: audit.Successful, Params: auditParams},
 				)
+			})
+
+			Convey("then the request body has been drained", func() {
+				_, err = r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
 			})
 		})
 	})
@@ -1951,6 +1997,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
@@ -1990,6 +2041,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When the dataset document cannot be found for version return status not found", t, func() {
@@ -2033,6 +2089,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When the edition document cannot be found for version return status not found", t, func() {
@@ -2076,6 +2137,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When the version document cannot be found return status not found", t, func() {
@@ -2123,6 +2189,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When the request is not authorised to update version then response returns status not found", t, func() {
@@ -2158,6 +2229,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParams},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When the version document has already been published return status forbidden", t, func() {
@@ -2198,6 +2274,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When the request body is invalid return status bad request", t, func() {
@@ -2245,6 +2326,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When setting the instance node to published fails", t, func() {
@@ -2356,6 +2442,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 			auditortest.Expected{Action: publishVersionAction, Result: audit.Attempted, Params: auditParams},
 			auditortest.Expected{Action: publishVersionAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 }
 
