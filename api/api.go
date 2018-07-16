@@ -21,6 +21,7 @@ import (
 	"github.com/ONSdigital/go-ns/healthcheck"
 	"github.com/ONSdigital/go-ns/identity"
 	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/go-ns/request"
 	"github.com/ONSdigital/go-ns/server"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
@@ -189,6 +190,9 @@ func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 // Check wraps a HTTP handle. Checks that the state is not published
 func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), action string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		defer request.DrainBody(r)
+
 		ctx := r.Context()
 		vars := mux.Vars(r)
 		datasetID := vars["dataset_id"]
@@ -216,11 +220,6 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 
 		if currentVersion != nil {
 			if currentVersion.State == models.PublishedState {
-				defer func() {
-					if bodyCloseErr := r.Body.Close(); bodyCloseErr != nil {
-						log.ErrorCtx(ctx, errors.Wrap(bodyCloseErr, "could not close response body"), data)
-					}
-				}()
 
 				// We can allow public download links to be modified by the exporter
 				// services when a version is published. Note that a new version will be

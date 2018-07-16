@@ -12,6 +12,7 @@ import (
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/go-ns/request"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -235,6 +236,9 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
+
+	defer request.DrainBody(r)
+
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	versionDetails := VersionDetails{

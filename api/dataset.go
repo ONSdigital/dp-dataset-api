@@ -12,6 +12,7 @@ import (
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/go-ns/request"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -173,6 +174,9 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
+
+	defer request.DrainBody(r)
+
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
@@ -193,7 +197,6 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, errs.ErrAddDatasetAlreadyExists
 		}
 
-		defer r.Body.Close()
 		dataset, err := models.CreateDataset(r.Body)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "addDataset endpoint: failed to model dataset resource based on request"), logData)
@@ -254,6 +257,9 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
+
+	defer request.DrainBody(r)
+
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
@@ -261,7 +267,6 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	auditParams := common.Params{"dataset_id": datasetID}
 
 	err := func() error {
-		defer r.Body.Close()
 
 		dataset, err := models.CreateDataset(r.Body)
 		if err != nil {

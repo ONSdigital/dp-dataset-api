@@ -455,6 +455,11 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			auditortest.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
 			auditortest.Expected{Action: addDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123"}},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 }
 
@@ -489,6 +494,11 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			auditortest.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
 			auditortest.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
@@ -519,6 +529,11 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			auditortest.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
 			auditortest.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When the request does not contain a valid internal token returns 401", t, func() {
@@ -549,6 +564,11 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			auditortest.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: auditParams},
 			auditortest.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: auditParams},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err := r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When the dataset already exists and a request is sent to create the same dataset return status forbidden", t, func() {
@@ -584,6 +604,11 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			auditortest.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
 			auditortest.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 }
 
@@ -612,6 +637,11 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 						Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"},
 					},
 				)
+			})
+
+			Convey("then the request body has been drained", func() {
+				_, err = r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
 			})
 		})
 	})
@@ -642,6 +672,11 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 					auditortest.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
 				)
 			})
+
+			Convey("then the request body has been drained", func() {
+				_, err = r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
 		})
 
 		Convey("when datastore getdataset returns an existing dataset", func() {
@@ -667,6 +702,11 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 					auditortest.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
 					auditortest.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
 				)
+			})
+
+			Convey("then the request body has been drained", func() {
+				_, err = r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
 			})
 		})
 
@@ -695,6 +735,11 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 					auditortest.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
 					auditortest.Expected{Action: addDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
 				)
+			})
+
+			Convey("then the request body has been drained", func() {
+				_, err = r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
 			})
 		})
 	})
@@ -727,6 +772,11 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 					auditortest.Expected{Action: addDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
 					auditortest.Expected{Action: addDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123"}},
 				)
+			})
+
+			Convey("then the request body has been drained", func() {
+				_, err = r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
 			})
 		})
 	})
@@ -767,6 +817,11 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 			auditortest.Expected{Action: updateDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
 			auditortest.Expected{Action: updateDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123"}},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 }
 
@@ -803,6 +858,11 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			auditortest.Expected{Action: updateDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
 			auditortest.Expected{Action: updateDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
@@ -840,6 +900,11 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			auditortest.Expected{Action: updateDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
 			auditortest.Expected{Action: updateDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When the dataset document cannot be found return status not found ", t, func() {
@@ -873,6 +938,11 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			auditortest.Expected{Action: updateDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
 			auditortest.Expected{Action: updateDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 
 	Convey("When the request is not authorised to update dataset return status unauthorised", t, func() {
@@ -905,6 +975,11 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			auditortest.Expected{Action: updateDatasetAction, Result: audit.Attempted, Params: common.Params{"dataset_id": "123"}},
 			auditortest.Expected{Action: updateDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
 		)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
 	})
 }
 
@@ -944,6 +1019,11 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 					},
 				)
 			})
+
+			Convey("then the request body has been drained", func() {
+				_, err = r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
 		})
 	})
 
@@ -976,6 +1056,11 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 					auditortest.Expected{Action: updateDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
 					auditortest.Expected{Action: updateDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123"}},
 				)
+			})
+
+			Convey("then the request body has been drained", func() {
+				_, err = r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
 			})
 		})
 	})
@@ -1010,6 +1095,11 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 					auditortest.Expected{Action: updateDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
 				)
 			})
+
+			Convey("then the request body has been drained", func() {
+				_, err = r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
 		})
 
 		Convey("when datastore.getDataset returns an error", func() {
@@ -1035,6 +1125,11 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 					auditortest.Expected{Action: updateDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
 					auditortest.Expected{Action: updateDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
 				)
+			})
+
+			Convey("then the request body has been drained", func() {
+				_, err = r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
 			})
 		})
 
@@ -1071,6 +1166,11 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 					auditortest.Expected{Action: updateDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
 				)
 			})
+
+			Convey("then the request body has been drained", func() {
+				_, err = r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
 		})
 
 		Convey("when datastore.UpdateDataset returns an error", func() {
@@ -1099,6 +1199,11 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 					auditortest.Expected{Action: updateDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
 					auditortest.Expected{Action: updateDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
 				)
+			})
+
+			Convey("then the request body has been drained", func() {
+				_, err = r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
 			})
 		})
 	})
