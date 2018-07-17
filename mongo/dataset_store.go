@@ -443,26 +443,6 @@ func (m *Mongo) UpdateDatasetWithAssociation(id, state string, version *models.V
 	return
 }
 
-// UpdateEdition updates an existing edition document
-func (m *Mongo) UpdateEdition(datasetID, edition string, version *models.Version) (err error) {
-	s := m.Session.Copy()
-	defer s.Close()
-
-	update := bson.M{
-		"$set": bson.M{
-			"next.state":                     version.State,
-			"next.links.latest_version.href": version.Links.Version.HRef,
-			"next.links.latest_version.id":   version.Links.Version.ID,
-		},
-		"$setOnInsert": bson.M{
-			"next.last_updated": time.Now(),
-		},
-	}
-
-	err = s.DB(m.Database).C(editionsCollection).Update(bson.M{"next.links.dataset.id": datasetID, "next.edition": edition}, update)
-	return
-}
-
 // UpdateVersion updates an existing version document
 func (m *Mongo) UpdateVersion(id string, version *models.Version) (err error) {
 	s := m.Session.Copy()
