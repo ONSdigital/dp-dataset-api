@@ -9,6 +9,7 @@ var (
 	ErrAddDatasetAlreadyExists           = errors.New("forbidden - dataset already exists")
 	ErrAddUpdateDatasetBadRequest        = errors.New("failed to parse json body")
 	ErrAuditActionAttemptedFailure       = errors.New("internal server error")
+	ErrConflictUpdatingInstance          = errors.New("conflict updating instance resource")
 	ErrDatasetNotFound                   = errors.New("dataset not found")
 	ErrDeleteDatasetNotFound             = errors.New("dataset not found")
 	ErrDeletePublishedDatasetForbidden   = errors.New("a published dataset cannot be deleted")
@@ -59,6 +60,10 @@ var (
 		ErrMissingParameters:                 true,
 		ErrUnableToParseJSON:                 true,
 		ErrUnableToReadMessage:               true,
+	}
+
+	ConflictRequestMap = map[error]bool{
+		ErrConflictUpdatingInstance: true,
 	}
 
 	ForbiddenMap = map[error]bool{

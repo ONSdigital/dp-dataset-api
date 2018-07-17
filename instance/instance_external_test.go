@@ -759,7 +759,7 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 					GetInstanceFunc: func(id string) (*models.Instance, error) {
 						return &models.Instance{State: models.CreatedState}, nil
 					},
-					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 						return nil
 					},
 				}
@@ -818,7 +818,7 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 					GetNextVersionFunc: func(string, string) (int, error) {
 						return 1, nil
 					},
-					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 						return nil
 					},
 					AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
@@ -1014,7 +1014,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 					GetNextVersionFunc: func(string, string) (int, error) {
 						return 1, nil
 					},
-					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 						return nil
 					},
 					AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
@@ -1066,7 +1066,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 					GetInstanceFunc: func(id string) (*models.Instance, error) {
 						return currentInstanceTest_Data, nil
 					},
-					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 						return nil
 					},
 				}
@@ -1150,7 +1150,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 					GetInstanceFunc: func(id string) (*models.Instance, error) {
 						return currentInstanceTest_Data, nil
 					},
-					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 						return nil
 					},
 				}
@@ -1194,7 +1194,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 					GetInstanceFunc: func(id string) (*models.Instance, error) {
 						return currentInstanceTest_Data, nil
 					},
-					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 						return nil
 					},
 				}
@@ -1332,7 +1332,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 					GetNextVersionFunc: func(string, string) (int, error) {
 						return 1, nil
 					},
-					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 						return errs.ErrInternalServer
 					},
 					AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
@@ -1421,7 +1421,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 					GetNextVersionFunc: func(string, string) (int, error) {
 						return 1, nil
 					},
-					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 						return nil
 					},
 					AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
@@ -1789,7 +1789,7 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 					GetInstanceFunc: func(id string) (*models.Instance, error) {
 						return &models.Instance{State: models.PublishedState}, nil
 					},
-					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 						return nil
 					},
 				}
@@ -2845,7 +2845,7 @@ func Test_UpdateDimensionReturnsOk(t *testing.T) {
 							InstanceID: "123",
 							Dimensions: []models.CodeList{{Name: "age", ID: "age"}}}, nil
 					},
-					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 						return nil
 					},
 				}
@@ -2885,7 +2885,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 					GetInstanceFunc: func(id string) (*models.Instance, error) {
 						return nil, errs.ErrInternalServer
 					},
-					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 						return nil
 					},
 				}
@@ -2918,7 +2918,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 					GetInstanceFunc: func(id string) (*models.Instance, error) {
 						return &models.Instance{State: "gobbly gook"}, nil
 					},
-					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 						return nil
 					},
 				}
@@ -3013,7 +3013,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 							InstanceID: "123",
 							Dimensions: []models.CodeList{{Name: "age", ID: "age"}}}, nil
 					},
-					UpdateInstanceFunc: func(id string, i *models.Instance) error {
+					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 						return nil
 					},
 				}
@@ -3147,7 +3147,7 @@ func Test_UpdateDimensionAuditErrors(t *testing.T) {
 						InstanceID: "123",
 						Dimensions: []models.CodeList{{Name: "age", ID: "age"}}}, nil
 				},
-				UpdateInstanceFunc: func(id string, i *models.Instance) error {
+				UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 					return nil
 				},
 			}

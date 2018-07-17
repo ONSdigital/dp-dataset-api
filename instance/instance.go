@@ -280,8 +280,14 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrDimensionNotFound
 		}
 
+		// Only update dimensions of an instance
+		instanceUpdate := &models.Instance{
+			Dimensions:      instance.Dimensions,
+			UniqueTimestamp: instance.UniqueTimestamp,
+		}
+
 		// Update instance
-		if err = s.UpdateInstance(instanceID, instance); err != nil {
+		if err = s.UpdateInstance(ctx, instanceID, instanceUpdate); err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "update instance dimension: failed to update instance with new dimension label/description"), logData)
 			return err
 		}
@@ -402,7 +408,9 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		if err = s.UpdateInstance(instanceID, instance); err != nil {
+		// Set the current mongo timestamp on instance document
+		instance.UniqueTimestamp = currentInstance.UniqueTimestamp
+		if err = s.UpdateInstance(ctx, instanceID, instance); err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.UpdateInstance returned an error"), logData)
 			return err
 		}
@@ -875,6 +883,8 @@ func handleInstanceErr(ctx context.Context, err error, w http.ResponseWriter, lo
 		status = http.StatusBadRequest
 	case errs.ForbiddenMap[err]:
 		status = http.StatusForbidden
+	case errs.ConflictRequestMap[err]:
+		status = http.StatusConflict
 	default:
 		status = http.StatusInternalServerError
 		response = errs.ErrInternalServer
