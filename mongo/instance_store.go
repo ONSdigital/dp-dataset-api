@@ -103,7 +103,9 @@ func (m *Mongo) UpdateInstance(ctx context.Context, instanceID string, instance 
 func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance *models.Instance) bson.M {
 	updates := make(bson.M)
 
-	log.InfoCtx(ctx, "building update query for instance resource", log.Data{"instance_id": instanceID, "updates": instance})
+	logData := log.Data{"instance_id": instanceID, "instance": instance}
+
+	log.InfoCtx(ctx, "building update query for instance resource", logData)
 
 	if instance.Alerts != nil {
 		updates["alerts"] = instance.Alerts
@@ -221,7 +223,8 @@ func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance 
 		updates["version"] = instance.Version
 	}
 
-	log.InfoCtx(ctx, "built update query for instance resource", log.Data{"instance_id": instanceID, "updates": updates})
+	logData["updates"] = updates
+	log.InfoCtx(ctx, "built update query for instance resource", logData)
 
 	return updates
 }
