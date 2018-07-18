@@ -322,15 +322,16 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			return taskError{error: err, status: 400}
 		}
 
+		if err = validateInstanceUpdate(instance); err != nil {
+			return taskError{error: err, status: 400}
+		}
+
 		// Get the current document
 		currentInstance, err := s.GetInstance(instanceID)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.GetInstance returned error"), logData)
 			return err
 		}
-
-		// Combine existing links and spatial link
-		instance.Links = updateLinks(instance, currentInstance)
 
 		logData["current_state"] = currentInstance.State
 		logData["requested_state"] = instance.State
@@ -398,8 +399,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 				instance.Version = version
 
-				links := s.defineInstanceLinks(instance, editionDoc)
-				instance.Links = links
+				instance = s.addInstanceLinks(ctx, instance, editionDoc)
 			}
 
 			if err := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); err != nil {
@@ -428,6 +428,43 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	s.Auditor.Record(ctx, UpdateInstanceAction, audit.Successful, auditParams)
 
 	log.InfoCtx(ctx, "instance update: request successful", logData)
+}
+
+func validateInstanceUpdate(instance *models.Instance) error {
+	var fieldsUnableToUpdate []string
+	if instance.Links != nil {
+		if instance.Links.Dataset != nil {
+			fieldsUnableToUpdate = append(fieldsUnableToUpdate, "instance.Links.Dataset")
+		}
+
+		if instance.Links.Dimensions != nil {
+			fieldsUnableToUpdate = append(fieldsUnableToUpdate, "instance.Links.Dimensions")
+		}
+
+		if instance.Links.Edition != nil {
+			fieldsUnableToUpdate = append(fieldsUnableToUpdate, "instance.Links.Edition")
+		}
+
+		if instance.Links.Version != nil {
+			fieldsUnableToUpdate = append(fieldsUnableToUpdate, "instance.Links.Version")
+		}
+
+		if instance.Links.Self != nil {
+			fieldsUnableToUpdate = append(fieldsUnableToUpdate, "instance.Links.Self")
+		}
+	}
+
+	// Should use events endpoint to update this field
+	if instance.Events != nil {
+		fieldsUnableToUpdate = append(fieldsUnableToUpdate, "instance.Events")
+	}
+
+	if len(fieldsUnableToUpdate) > 0 {
+		err := fmt.Errorf("unable to update instance contains invalid fields: %s", fieldsUnableToUpdate)
+		return err
+	}
+
+	return nil
 }
 
 func validateInstanceStateUpdate(instance, currentInstance *models.Instance) (err error) {
@@ -465,26 +502,6 @@ func validateInstanceStateUpdate(instance, currentInstance *models.Instance) (er
 	}
 
 	return nil
-}
-
-func updateLinks(instance, currentInstance *models.Instance) *models.InstanceLinks {
-	var spatial string
-	if instance.Links != nil {
-		if instance.Links.Spatial != nil {
-			if instance.Links.Spatial.HRef != "" {
-				spatial = instance.Links.Spatial.HRef
-			}
-		}
-	}
-
-	links := currentInstance.Links
-	if spatial != "" {
-		links.Spatial = &models.IDLink{
-			HRef: spatial,
-		}
-	}
-
-	return links
 }
 
 func (s *Store) getEdition(ctx context.Context, datasetID, edition, instanceID string) (*models.EditionUpdate, string, error) {
@@ -554,42 +571,35 @@ func (s *Store) getEdition(ctx context.Context, datasetID, edition, instanceID s
 	return editionDoc, action, nil
 }
 
-func (s *Store) defineInstanceLinks(instance *models.Instance, editionDoc *models.EditionUpdate) *models.InstanceLinks {
+func (s *Store) addInstanceLinks(ctx context.Context, instance *models.Instance, editionDoc *models.EditionUpdate) *models.Instance {
 	stringifiedVersion := strconv.Itoa(instance.Version)
 
-	log.Debug("defining instance links", log.Data{"editionDoc": editionDoc.Next, "instance": instance})
+	log.InfoCtx(ctx, "adding instance links", log.Data{"editionDoc": editionDoc.Next, "instance": instance})
 
-	links := &models.InstanceLinks{
-		Dataset: &models.IDLink{
-			HRef: editionDoc.Next.Links.Dataset.HRef,
-			ID:   editionDoc.Next.Links.Dataset.ID,
-		},
-		Dimensions: &models.IDLink{
-			HRef: fmt.Sprintf("%s/versions/%s/dimensions", editionDoc.Next.Links.Self.HRef, stringifiedVersion),
-		},
-		Edition: &models.IDLink{
-			HRef: editionDoc.Next.Links.Self.HRef,
-			ID:   editionDoc.Next.Edition,
-		},
-		Job: &models.IDLink{
-			HRef: instance.Links.Job.HRef,
-			ID:   instance.Links.Job.ID,
-		},
-		Self: &models.IDLink{
-			HRef: instance.Links.Self.HRef,
-		},
-		Version: &models.IDLink{
-			HRef: fmt.Sprintf("%s/versions/%s", editionDoc.Next.Links.Self.HRef, stringifiedVersion),
-			ID:   stringifiedVersion,
-		},
+	if instance.Links == nil {
+		instance.Links = &models.InstanceLinks{}
 	}
 
-	// Check for spatial link as it is an optional field
-	if instance.Links.Spatial != nil {
-		links.Spatial = instance.Links.Spatial
+	instance.Links.Dataset = &models.IDLink{
+		HRef: editionDoc.Next.Links.Dataset.HRef,
+		ID:   editionDoc.Next.Links.Dataset.ID,
 	}
 
-	return links
+	instance.Links.Dimensions = &models.IDLink{
+		HRef: fmt.Sprintf("%s/versions/%s/dimensions", editionDoc.Next.Links.Self.HRef, stringifiedVersion),
+	}
+
+	instance.Links.Edition = &models.IDLink{
+		HRef: editionDoc.Next.Links.Self.HRef,
+		ID:   editionDoc.Next.Edition,
+	}
+
+	instance.Links.Version = &models.IDLink{
+		HRef: fmt.Sprintf("%s/versions/%s", editionDoc.Next.Links.Self.HRef, stringifiedVersion),
+		ID:   stringifiedVersion,
+	}
+
+	return instance
 }
 
 // UpdateObservations increments the count of inserted_observations against
