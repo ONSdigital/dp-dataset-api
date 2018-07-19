@@ -16,7 +16,7 @@ import (
 func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	datasetID := vars["id"]
+	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	version := vars["version"]
 	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": version}
