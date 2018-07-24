@@ -42,7 +42,7 @@ func (m *Mongo) GetUniqueDimensionAndOptions(id, dimension string) (*models.Dime
 		return nil, errs.ErrDimensionNodeNotFound
 	}
 
-	return &models.DimensionValues{Name: dimension, Values: values}, nil
+	return &models.DimensionValues{Name: dimension, Options: values}, nil
 }
 
 // AddDimensionToInstance to the dimension collection

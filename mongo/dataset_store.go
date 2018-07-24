@@ -341,6 +341,12 @@ func createDatasetUpdateQuery(id string, dataset *models.Dataset, currentState s
 				updates["next.links.access_rights.href"] = dataset.Links.AccessRights.HRef
 			}
 		}
+
+		if dataset.Links.Taxonomy != nil {
+			if dataset.Links.Taxonomy.HRef != "" {
+				updates["next.links.taxonomy.href"] = dataset.Links.Taxonomy.HRef
+			}
+		}
 	}
 
 	if dataset.Methodologies != nil {
@@ -465,12 +471,12 @@ func createVersionUpdateQuery(version *models.Version) bson.M {
 		setUpdates["collection_id"] = version.CollectionID
 	}
 
-	if version.LatestChanges != nil {
-		setUpdates["latest_changes"] = version.LatestChanges
+	if version.Downloads != nil {
+		setUpdates["downloads"] = version.Downloads
 	}
 
-	if version.ReleaseDate != "" {
-		setUpdates["release_date"] = version.ReleaseDate
+	if version.LatestChanges != nil {
+		setUpdates["latest_changes"] = version.LatestChanges
 	}
 
 	if version.Links != nil {
@@ -481,16 +487,16 @@ func createVersionUpdateQuery(version *models.Version) bson.M {
 		}
 	}
 
+	if version.ReleaseDate != "" {
+		setUpdates["release_date"] = version.ReleaseDate
+	}
+
 	if version.State != "" {
 		setUpdates["state"] = version.State
 	}
 
 	if version.Temporal != nil {
 		setUpdates["temporal"] = version.Temporal
-	}
-
-	if version.Downloads != nil {
-		setUpdates["downloads"] = version.Downloads
 	}
 
 	if version.UsageNotes != nil {

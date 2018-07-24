@@ -73,6 +73,6 @@ type DimensionNodeResults struct {
 
 // DimensionValues holds all unique values for a dimension
 type DimensionValues struct {
-	Name   string   `json:"dimension"`
-	Values []string `json:"values"`
+	Name    string   `json:"dimension"`
+	Options []string `json:"options"`
 }

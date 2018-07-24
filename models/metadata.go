@@ -102,6 +102,18 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 
 	metaDataDoc.Distribution = getDistribution(metaDataDoc.Downloads)
 
+	// Remove Public and Private download links
+	if metaDataDoc.Downloads != nil {
+		if metaDataDoc.Downloads.CSV != nil {
+			metaDataDoc.Downloads.CSV.Private = ""
+			metaDataDoc.Downloads.CSV.Public = ""
+		}
+		if metaDataDoc.Downloads.XLS != nil {
+			metaDataDoc.Downloads.XLS.Private = ""
+			metaDataDoc.Downloads.XLS.Public = ""
+		}
+	}
+
 	return metaDataDoc
 }
 
