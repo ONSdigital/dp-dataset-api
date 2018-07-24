@@ -1,13 +1,15 @@
 package mongo
 
 import (
+	"context"
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/go-ns/log"
-	"github.com/gedge/mgo"
-	"github.com/gedge/mgo/bson"
+	"github.com/ONSdigital/go-ns/mongo"
+	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 )
 
 const instanceCollection = "instances"
@@ -74,23 +76,157 @@ func (m *Mongo) AddInstance(instance *models.Instance) (*models.Instance, error)
 }
 
 // UpdateInstance with new properties
-func (m *Mongo) UpdateInstance(id string, instance *models.Instance) error {
+func (m *Mongo) UpdateInstance(ctx context.Context, instanceID string, instance *models.Instance) error {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	instance.InstanceID = id
 	instance.LastUpdated = time.Now().UTC()
 
-	info, err := s.DB(m.Database).C(instanceCollection).Upsert(bson.M{"id": id}, bson.M{"$set": &instance})
+	updates := createInstanceUpdateQuery(ctx, instanceID, instance)
+	update := bson.M{"$set": updates}
+	updateWithTimestamps, err := mongo.WithUpdates(update)
 	if err != nil {
 		return err
 	}
 
-	if info.Updated == 0 {
-		return errs.ErrInstanceNotFound
+	if err = s.DB(m.Database).C(instanceCollection).Update(bson.M{"id": instanceID, mongo.UniqueTimestampKey: instance.UniqueTimestamp}, updateWithTimestamps); err != nil {
+		if err != mgo.ErrNotFound {
+			return err
+		}
+
+		return errs.ErrConflictUpdatingInstance
 	}
 
 	return nil
+}
+
+func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance *models.Instance) bson.M {
+	updates := make(bson.M)
+
+	logData := log.Data{"instance_id": instanceID, "instance": instance}
+
+	log.InfoCtx(ctx, "building update query for instance resource", logData)
+
+	if instance.Alerts != nil {
+		updates["alerts"] = instance.Alerts
+	}
+
+	if instance.InstanceID != "" {
+		updates["id"] = instance.InstanceID
+	}
+
+	if instance.CollectionID != "" {
+		updates["collection_id"] = instance.CollectionID
+	}
+
+	if instance.Dimensions != nil {
+		updates["dimensions"] = instance.Dimensions
+	}
+
+	if instance.Downloads != nil {
+		if instance.Downloads.CSV != nil {
+			if instance.Downloads.CSV.HRef != "" {
+				updates["downloads.csv.href"] = instance.Downloads.CSV.HRef
+			}
+			if instance.Downloads.CSV.Private != "" {
+				updates["downloads.csv.private"] = instance.Downloads.CSV.Private
+			}
+			if instance.Downloads.CSV.Public != "" {
+				updates["downloads.csv.public"] = instance.Downloads.CSV.Public
+			}
+			if instance.Downloads.CSV.Size != "" {
+				updates["downloads.csv.size"] = instance.Downloads.CSV.Size
+			}
+		}
+
+		if instance.Downloads.XLS != nil {
+			if instance.Downloads.XLS.HRef != "" {
+				updates["downloads.xls.href"] = instance.Downloads.XLS.HRef
+			}
+			if instance.Downloads.XLS.Private != "" {
+				updates["downloads.xls.private"] = instance.Downloads.XLS.Private
+			}
+			if instance.Downloads.XLS.Public != "" {
+				updates["downloads.xls.public"] = instance.Downloads.XLS.Public
+			}
+			if instance.Downloads.XLS.Size != "" {
+				updates["downloads.xls.size"] = instance.Downloads.XLS.Size
+			}
+		}
+	}
+
+	if instance.Edition != "" {
+		updates["edition"] = instance.Edition
+	}
+
+	if instance.Headers != nil && instance.Headers != &[]string{""} {
+		updates["headers"] = instance.Headers
+	}
+
+	if instance.ImportTasks != nil {
+		if instance.ImportTasks.BuildHierarchyTasks != nil {
+			updates["import_tasks.build_hierarchies"] = instance.ImportTasks.BuildHierarchyTasks
+		}
+		if instance.ImportTasks.BuildSearchIndexTasks != nil {
+			updates["import_tasks.build_search_indexes"] = instance.ImportTasks.BuildSearchIndexTasks
+		}
+		if instance.ImportTasks.ImportObservations != nil {
+			updates["import_tasks.import_observations"] = instance.ImportTasks.ImportObservations
+		}
+	}
+
+	if instance.LatestChanges != nil {
+		updates["latest_changes"] = instance.LatestChanges
+	}
+
+	if instance.Links != nil {
+		if instance.Links.Dataset != nil {
+			updates["links.dataset"] = instance.Links.Dataset
+		}
+		if instance.Links.Dimensions != nil {
+			updates["links.dimensions"] = instance.Links.Dimensions
+		}
+		if instance.Links.Edition != nil {
+			updates["links.edition"] = instance.Links.Edition
+		}
+		if instance.Links.Job != nil {
+			updates["links.job"] = instance.Links.Job
+		}
+		if instance.Links.Self != nil {
+			updates["links.self"] = instance.Links.Self
+		}
+		if instance.Links.Spatial != nil {
+			updates["links.spatial"] = instance.Links.Spatial
+		}
+		if instance.Links.Version != nil {
+			updates["links.version"] = instance.Links.Version
+		}
+	}
+
+	if instance.ReleaseDate != "" {
+		updates["release_date"] = instance.ReleaseDate
+	}
+
+	if instance.State != "" {
+		updates["state"] = instance.State
+	}
+
+	if instance.Temporal != nil {
+		updates["temporal"] = instance.Temporal
+	}
+
+	if instance.TotalObservations != nil {
+		updates["total_observations"] = instance.TotalObservations
+	}
+
+	if instance.Version != 0 {
+		updates["version"] = instance.Version
+	}
+
+	logData["updates"] = updates
+	log.InfoCtx(ctx, "built update query for instance resource", logData)
+
+	return updates
 }
 
 // AddEventToInstance to the instance collection

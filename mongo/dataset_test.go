@@ -3,7 +3,7 @@ package mongo
 import (
 	"testing"
 
-	"github.com/gedge/mgo/bson"
+	"github.com/globalsign/mgo/bson"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	. "github.com/smartystreets/goconvey/convey"

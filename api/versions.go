@@ -547,6 +547,8 @@ func populateNewVersionDoc(currentVersion *models.Version, version *models.Versi
 		}
 	}
 
+	// TODO - Data Integrity - Updating downloads should be locked down to services
+	// with permissions to do so, currently a user could update these fields
 	if version.Downloads == nil {
 		version.Downloads = currentVersion.Downloads
 	} else {
@@ -561,6 +563,10 @@ func populateNewVersionDoc(currentVersion *models.Version, version *models.Versi
 				version.Downloads.CSV = currentVersion.Downloads.CSV
 			}
 		}
+	}
+
+	if version.UsageNotes == nil {
+		version.UsageNotes = currentVersion.UsageNotes
 	}
 
 	return version

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/ONSdigital/go-ns/audit/auditortest"
-	"github.com/gedge/mgo/bson"
+	"github.com/globalsign/mgo/bson"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"

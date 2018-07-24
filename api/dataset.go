@@ -218,6 +218,9 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			HRef: fmt.Sprintf("%s/datasets/%s", api.host, datasetID),
 		}
 
+		// Remove latest version from new dataset resource, this cannot be added at this point
+		dataset.Links.LatestVersion = nil
+
 		dataset.LastUpdated = time.Now()
 
 		datasetDoc := &models.DatasetUpdate{
