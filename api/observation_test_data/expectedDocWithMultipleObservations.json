@@ -2,14 +2,14 @@
 	"dimensions": {
 		"geography": {
 			"option": {
-				"id": "K02000001",
-				"href": "http://localhost:8081/code-lists/uk-only/codes/K02000001"
+				"href": "http://localhost:8081/code-lists/uk-only/codes/K02000001",
+				"id": "K02000001"
 			}
 		},
 		"time": {
 			"option": {
-				"id": "16-Aug",
-				"href": "http://localhost:8081/code-lists/time/codes/16-Aug"
+				"href": "http://localhost:8081/code-lists/time/codes/16-Aug",
+				"id": "16-Aug"
 			}
 		}
 	},
@@ -22,8 +22,8 @@
 			"href": "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=*&geography=K02000001"
 		},
 		"version": {
-			"id": "1",
-			"href": "http://localhost:8080/datasets/cpih012/editions/2017/versions/1"
+			"href": "http://localhost:8080/datasets/cpih012/editions/2017/versions/1",
+			"id": "1"
 		}
 	},
 	"observations": [{
@@ -56,7 +56,7 @@
 	"offset": 0,
 	"total_observations": 2,
 	"usage_notes": [{
-		"title": "data_marking",
-		"note": "this marks the observation with a special character"
+		"note": "this marks the observation with a special character",
+		"title": "data_marking"
 	}]
 }

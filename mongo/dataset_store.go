@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gedge/mgo"
-	"github.com/gedge/mgo/bson"
+	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -341,6 +341,12 @@ func createDatasetUpdateQuery(id string, dataset *models.Dataset, currentState s
 				updates["next.links.access_rights.href"] = dataset.Links.AccessRights.HRef
 			}
 		}
+
+		if dataset.Links.Taxonomy != nil {
+			if dataset.Links.Taxonomy.HRef != "" {
+				updates["next.links.taxonomy.href"] = dataset.Links.Taxonomy.HRef
+			}
+		}
 	}
 
 	if dataset.Methodologies != nil {
@@ -443,26 +449,6 @@ func (m *Mongo) UpdateDatasetWithAssociation(id, state string, version *models.V
 	return
 }
 
-// UpdateEdition updates an existing edition document
-func (m *Mongo) UpdateEdition(datasetID, edition string, version *models.Version) (err error) {
-	s := m.Session.Copy()
-	defer s.Close()
-
-	update := bson.M{
-		"$set": bson.M{
-			"next.state":                     version.State,
-			"next.links.latest_version.href": version.Links.Version.HRef,
-			"next.links.latest_version.id":   version.Links.Version.ID,
-		},
-		"$setOnInsert": bson.M{
-			"next.last_updated": time.Now(),
-		},
-	}
-
-	err = s.DB(m.Database).C(editionsCollection).Update(bson.M{"next.links.dataset.id": datasetID, "next.edition": edition}, update)
-	return
-}
-
 // UpdateVersion updates an existing version document
 func (m *Mongo) UpdateVersion(id string, version *models.Version) (err error) {
 	s := m.Session.Copy()
@@ -485,12 +471,12 @@ func createVersionUpdateQuery(version *models.Version) bson.M {
 		setUpdates["collection_id"] = version.CollectionID
 	}
 
-	if version.LatestChanges != nil {
-		setUpdates["latest_changes"] = version.LatestChanges
+	if version.Downloads != nil {
+		setUpdates["downloads"] = version.Downloads
 	}
 
-	if version.ReleaseDate != "" {
-		setUpdates["release_date"] = version.ReleaseDate
+	if version.LatestChanges != nil {
+		setUpdates["latest_changes"] = version.LatestChanges
 	}
 
 	if version.Links != nil {
@@ -501,16 +487,16 @@ func createVersionUpdateQuery(version *models.Version) bson.M {
 		}
 	}
 
+	if version.ReleaseDate != "" {
+		setUpdates["release_date"] = version.ReleaseDate
+	}
+
 	if version.State != "" {
 		setUpdates["state"] = version.State
 	}
 
 	if version.Temporal != nil {
 		setUpdates["temporal"] = version.Temporal
-	}
-
-	if version.Downloads != nil {
-		setUpdates["downloads"] = version.Downloads
 	}
 
 	if version.UsageNotes != nil {

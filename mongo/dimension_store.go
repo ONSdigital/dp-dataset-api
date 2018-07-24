@@ -6,7 +6,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/gedge/mgo/bson"
+	"github.com/globalsign/mgo/bson"
 )
 
 const dimensionOptions = "dimension.options"
@@ -42,7 +42,7 @@ func (m *Mongo) GetUniqueDimensionAndOptions(id, dimension string) (*models.Dime
 		return nil, errs.ErrDimensionNodeNotFound
 	}
 
-	return &models.DimensionValues{Name: dimension, Values: values}, nil
+	return &models.DimensionValues{Name: dimension, Options: values}, nil
 }
 
 // AddDimensionToInstance to the dimension collection

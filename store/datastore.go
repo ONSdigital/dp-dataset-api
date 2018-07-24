@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/gedge/mgo/bson"
+	"github.com/globalsign/mgo/bson"
 )
 
 // DataStore provides a datastore.Storer interface used to store, retrieve, remove or update datasets
@@ -37,8 +37,7 @@ type Storer interface {
 	UpdateDataset(ID string, dataset *models.Dataset, currentState string) error
 	UpdateDatasetWithAssociation(ID, state string, version *models.Version) error
 	UpdateDimensionNodeID(dimension *models.DimensionOption) error
-	UpdateEdition(datasetID, edition string, latestVersion *models.Version) error
-	UpdateInstance(ID string, instance *models.Instance) error
+	UpdateInstance(ctx context.Context, ID string, instance *models.Instance) error
 	UpdateObservationInserted(ID string, observationInserted int64) error
 	UpdateImportObservationsTaskState(id, state string) error
 	UpdateBuildHierarchyTaskState(id, dimension, state string) error
@@ -50,4 +49,5 @@ type Storer interface {
 	UpsertVersion(ID string, versionDoc *models.Version) error
 	DeleteDataset(ID string) error
 	AddVersionDetailsToInstance(ctx context.Context, instanceID string, datasetID string, edition string, version int) error
+	SetInstanceIsPublished(ctx context.Context, instanceID string) error
 }

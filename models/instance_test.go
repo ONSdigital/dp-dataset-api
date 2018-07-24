@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -97,7 +98,7 @@ func TestValidateEvent(t *testing.T) {
 			}
 			err := event.Validate()
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "missing properties")
+			So(err, ShouldEqual, errs.ErrMissingParameters)
 		})
 	})
 
@@ -110,7 +111,7 @@ func TestValidateEvent(t *testing.T) {
 			}
 			err := event.Validate()
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "missing properties")
+			So(err, ShouldEqual, errs.ErrMissingParameters)
 		})
 	})
 
@@ -123,7 +124,7 @@ func TestValidateEvent(t *testing.T) {
 			}
 			err := event.Validate()
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "missing properties")
+			So(err, ShouldEqual, errs.ErrMissingParameters)
 		})
 	})
 
@@ -136,7 +137,7 @@ func TestValidateEvent(t *testing.T) {
 			}
 			err := event.Validate()
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "missing properties")
+			So(err, ShouldEqual, errs.ErrMissingParameters)
 		})
 	})
 }

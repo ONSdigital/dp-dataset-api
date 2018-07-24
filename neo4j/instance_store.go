@@ -11,6 +11,7 @@ import (
 )
 
 const addVersionDetailsToInstance = "MATCH (i:`_%s_Instance`) SET i.dataset_id = {dataset_id}, i.edition = {edition}, i.version = {version} RETURN i"
+const setInstanceIsPublished = "MATCH (i:`_%s_Instance`) SET i.is_published = true"
 
 //go:generate moq -out ./mocks/bolt.go -pkg mocks . DBPool BoltConn BoltStmt BoltResult
 
@@ -83,5 +84,56 @@ func (c *Neo4j) AddVersionDetailsToInstance(ctx context.Context, instanceID stri
 	}
 
 	log.InfoCtx(ctx, "neoClient AddVersionDetailsToInstance: update successful", data)
+	return nil
+}
+
+func (c *Neo4j) SetInstanceIsPublished(ctx context.Context, instanceID string) error {
+	data := log.Data{
+		"instance_id": instanceID,
+	}
+
+	log.InfoCtx(ctx, "neoClient SetInstanceIsPublished: attempting to set is_published property on instance node", data)
+
+	conn, err := c.Pool.OpenPool()
+	if err != nil {
+		return errors.WithMessage(err, "neoClient SetInstanceIsPublished: error opening neo4j connection")
+	}
+
+	defer conn.Close()
+
+	query := fmt.Sprintf(setInstanceIsPublished, instanceID)
+	stmt, err := conn.PrepareNeo(query)
+	if err != nil {
+		return errors.WithMessage(err, "neoClient SetInstanceIsPublished: error preparing neo update statement")
+	}
+
+	defer stmt.Close()
+
+	result, err := stmt.ExecNeo(nil)
+
+	if err != nil {
+		return errors.WithMessage(err, "neoClient SetInstanceIsPublished: error executing neo4j update statement")
+	}
+
+	stats, ok := result.Metadata()["stats"].(map[string]interface{})
+	if !ok {
+		return errors.Errorf("neoClient SetInstanceIsPublished: error getting query result stats")
+	}
+
+	propertiesSet, ok := stats["properties-set"]
+	if !ok {
+		return errors.Errorf("neoClient SetInstanceIsPublished: error verifying query results")
+	}
+
+	val, ok := propertiesSet.(int64)
+	if !ok {
+		return errors.Errorf("neoClient SetInstanceIsPublished: error verifying query results")
+	}
+
+	if val != 1 {
+		return errors.Errorf("neoClient SetInstanceIsPublished: unexpected rows affected expected %d but was %d", 1, val)
+	}
+
+	log.InfoCtx(ctx, "neoClient SetInstanceIsPublished: update successful", data)
 	return nil
 }

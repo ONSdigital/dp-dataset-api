@@ -5,11 +5,9 @@ package storetest
 
 import (
 	"context"
-
-	"sync"
-
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/gedge/mgo/bson"
+	"github.com/globalsign/mgo/bson"
+	"sync"
 )
 
 var (
@@ -33,6 +31,7 @@ var (
 	lockStorerMockGetUniqueDimensionAndOptions      sync.RWMutex
 	lockStorerMockGetVersion                        sync.RWMutex
 	lockStorerMockGetVersions                       sync.RWMutex
+	lockStorerMockSetInstanceIsPublished            sync.RWMutex
 	lockStorerMockUpdateBuildHierarchyTaskState     sync.RWMutex
 	lockStorerMockUpdateBuildSearchTaskState        sync.RWMutex
 	lockStorerMockUpdateDataset                     sync.RWMutex
@@ -115,6 +114,9 @@ var (
 //             GetVersionsFunc: func(datasetID string, editionID string, state string) (*models.VersionResults, error) {
 // 	               panic("TODO: mock out the GetVersions method")
 //             },
+//             SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
+// 	               panic("TODO: mock out the SetInstanceIsPublished method")
+//             },
 //             UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
 // 	               panic("TODO: mock out the UpdateBuildHierarchyTaskState method")
 //             },
@@ -136,7 +138,7 @@ var (
 //             UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
 // 	               panic("TODO: mock out the UpdateImportObservationsTaskState method")
 //             },
-//             UpdateInstanceFunc: func(ID string, instance *models.Instance) error {
+//             UpdateInstanceFunc: func(ctx context.Context, ID string, instance *models.Instance) error {
 // 	               panic("TODO: mock out the UpdateInstance method")
 //             },
 //             UpdateObservationInsertedFunc: func(ID string, observationInserted int64) error {
@@ -224,6 +226,9 @@ type StorerMock struct {
 	// GetVersionsFunc mocks the GetVersions method.
 	GetVersionsFunc func(datasetID string, editionID string, state string) (*models.VersionResults, error)
 
+	// SetInstanceIsPublishedFunc mocks the SetInstanceIsPublished method.
+	SetInstanceIsPublishedFunc func(ctx context.Context, instanceID string) error
+
 	// UpdateBuildHierarchyTaskStateFunc mocks the UpdateBuildHierarchyTaskState method.
 	UpdateBuildHierarchyTaskStateFunc func(id string, dimension string, state string) error
 
@@ -246,7 +251,7 @@ type StorerMock struct {
 	UpdateImportObservationsTaskStateFunc func(id string, state string) error
 
 	// UpdateInstanceFunc mocks the UpdateInstance method.
-	UpdateInstanceFunc func(ID string, instance *models.Instance) error
+	UpdateInstanceFunc func(ctx context.Context, ID string, instance *models.Instance) error
 
 	// UpdateObservationInsertedFunc mocks the UpdateObservationInserted method.
 	UpdateObservationInsertedFunc func(ID string, observationInserted int64) error
@@ -406,6 +411,13 @@ type StorerMock struct {
 			// State is the state argument value.
 			State string
 		}
+		// SetInstanceIsPublished holds details about calls to the SetInstanceIsPublished method.
+		SetInstanceIsPublished []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// InstanceID is the instanceID argument value.
+			InstanceID string
+		}
 		// UpdateBuildHierarchyTaskState holds details about calls to the UpdateBuildHierarchyTaskState method.
 		UpdateBuildHierarchyTaskState []struct {
 			// ID is the id argument value.
@@ -465,6 +477,8 @@ type StorerMock struct {
 		}
 		// UpdateInstance holds details about calls to the UpdateInstance method.
 		UpdateInstance []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// ID is the ID argument value.
 			ID string
 			// Instance is the instance argument value.
@@ -1212,6 +1226,41 @@ func (mock *StorerMock) GetVersionsCalls() []struct {
 	return calls
 }
 
+// SetInstanceIsPublished calls SetInstanceIsPublishedFunc.
+func (mock *StorerMock) SetInstanceIsPublished(ctx context.Context, instanceID string) error {
+	if mock.SetInstanceIsPublishedFunc == nil {
+		panic("moq: StorerMock.SetInstanceIsPublishedFunc is nil but Storer.SetInstanceIsPublished was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		InstanceID string
+	}{
+		Ctx:        ctx,
+		InstanceID: instanceID,
+	}
+	lockStorerMockSetInstanceIsPublished.Lock()
+	mock.calls.SetInstanceIsPublished = append(mock.calls.SetInstanceIsPublished, callInfo)
+	lockStorerMockSetInstanceIsPublished.Unlock()
+	return mock.SetInstanceIsPublishedFunc(ctx, instanceID)
+}
+
+// SetInstanceIsPublishedCalls gets all the calls that were made to SetInstanceIsPublished.
+// Check the length with:
+//     len(mockedStorer.SetInstanceIsPublishedCalls())
+func (mock *StorerMock) SetInstanceIsPublishedCalls() []struct {
+	Ctx        context.Context
+	InstanceID string
+} {
+	var calls []struct {
+		Ctx        context.Context
+		InstanceID string
+	}
+	lockStorerMockSetInstanceIsPublished.RLock()
+	calls = mock.calls.SetInstanceIsPublished
+	lockStorerMockSetInstanceIsPublished.RUnlock()
+	return calls
+}
+
 // UpdateBuildHierarchyTaskState calls UpdateBuildHierarchyTaskStateFunc.
 func (mock *StorerMock) UpdateBuildHierarchyTaskState(id string, dimension string, state string) error {
 	if mock.UpdateBuildHierarchyTaskStateFunc == nil {
@@ -1474,31 +1523,35 @@ func (mock *StorerMock) UpdateImportObservationsTaskStateCalls() []struct {
 }
 
 // UpdateInstance calls UpdateInstanceFunc.
-func (mock *StorerMock) UpdateInstance(ID string, instance *models.Instance) error {
+func (mock *StorerMock) UpdateInstance(ctx context.Context, ID string, instance *models.Instance) error {
 	if mock.UpdateInstanceFunc == nil {
 		panic("moq: StorerMock.UpdateInstanceFunc is nil but Storer.UpdateInstance was just called")
 	}
 	callInfo := struct {
+		Ctx      context.Context
 		ID       string
 		Instance *models.Instance
 	}{
+		Ctx:      ctx,
 		ID:       ID,
 		Instance: instance,
 	}
 	lockStorerMockUpdateInstance.Lock()
 	mock.calls.UpdateInstance = append(mock.calls.UpdateInstance, callInfo)
 	lockStorerMockUpdateInstance.Unlock()
-	return mock.UpdateInstanceFunc(ID, instance)
+	return mock.UpdateInstanceFunc(ctx, ID, instance)
 }
 
 // UpdateInstanceCalls gets all the calls that were made to UpdateInstance.
 // Check the length with:
 //     len(mockedStorer.UpdateInstanceCalls())
 func (mock *StorerMock) UpdateInstanceCalls() []struct {
+	Ctx      context.Context
 	ID       string
 	Instance *models.Instance
 } {
 	var calls []struct {
+		Ctx      context.Context
 		ID       string
 		Instance *models.Instance
 	}
