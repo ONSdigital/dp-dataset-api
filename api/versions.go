@@ -294,8 +294,6 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 
 	// attempt to update the version
 	currentDataset, currentVersion, versionUpdate, err := func() (*models.DatasetUpdate, *models.Version, *models.Version, error) {
-		defer body.Close()
-
 		versionUpdate, err := models.CreateVersion(body)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "putVersion endpoint: failed to model version resource based on request"), data)

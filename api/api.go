@@ -191,8 +191,6 @@ func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), action string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		defer request.DrainBody(r)
-
 		ctx := r.Context()
 		vars := mux.Vars(r)
 		datasetID := vars["dataset_id"]
@@ -210,6 +208,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 					err = errs.ErrInternalServer
 				}
 
+				request.DrainBody(r)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -234,10 +233,12 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 						log.ErrorCtx(ctx, errors.WithMessage(err, "failed to model version resource based on request"), data)
 
 						if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
+							request.DrainBody(r)
 							http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 							return
 						}
 
+						request.DrainBody(r)
 						http.Error(w, err.Error(), http.StatusBadRequest)
 						return
 					}
@@ -275,10 +276,12 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 								log.ErrorCtx(ctx, errors.WithMessage(err, "failed to marshal new version resource based on request"), data)
 
 								if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
+									request.DrainBody(r)
 									http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 									return
 								}
 
+								request.DrainBody(r)
 								http.Error(w, err.Error(), http.StatusForbidden)
 								return
 							}
@@ -301,10 +304,12 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 				data["version"] = currentVersion
 				log.ErrorCtx(ctx, err, data)
 				if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
+					request.DrainBody(r)
 					http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 					return
 				}
 
+				request.DrainBody(r)
 				http.Error(w, err.Error(), http.StatusForbidden)
 				return
 			}
