@@ -27,12 +27,6 @@
 			"revisionTime": "2018-06-07T08:14:26Z"
 		},
 		{
-			"checksumSHA1": "6IIvZfPt8XWggzU4n/YK56ooAGY=",
-			"path": "github.com/ONSdigital/go-ns/clients/dataset",
-			"revision": "314051615561cc850037d17ded11edf2fae8853b",
-			"revisionTime": "2018-07-19T09:17:54Z"
-		},
-		{
 			"checksumSHA1": "+0u/sLRc5sJWxxTA4kaMlvEXrrc=",
 			"path": "github.com/ONSdigital/go-ns/clients/identity",
 			"revision": "b9e0d3becece650f6f72b3dd1b1a1f65ea03bff7",
