@@ -108,6 +108,10 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 			metaDataDoc.Downloads.CSV.Private = ""
 			metaDataDoc.Downloads.CSV.Public = ""
 		}
+		if metaDataDoc.Downloads.CSVW != nil {
+			metaDataDoc.Downloads.CSVW.Private = ""
+			metaDataDoc.Downloads.CSVW.Public = ""
+		}
 		if metaDataDoc.Downloads.XLS != nil {
 			metaDataDoc.Downloads.XLS.Private = ""
 			metaDataDoc.Downloads.XLS.Public = ""
@@ -123,6 +127,10 @@ func getDistribution(downloads *DownloadList) []string {
 	if downloads != nil {
 		if downloads.CSV != nil && downloads.CSV.HRef != "" {
 			distribution = append(distribution, "csv")
+		}
+
+		if downloads.CSVW != nil && downloads.CSVW.HRef != "" {
+			distribution = append(distribution, "csvw")
 		}
 
 		if downloads.XLS != nil && downloads.XLS.HRef != "" {

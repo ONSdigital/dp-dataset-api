@@ -106,6 +106,10 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 						item.Downloads.XLS.Private = ""
 						item.Downloads.XLS.Public = ""
 					}
+					if item.Downloads.CSVW != nil {
+						item.Downloads.CSVW.Private = ""
+						item.Downloads.CSVW.Public = ""
+					}
 				}
 			}
 		}
@@ -201,6 +205,10 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 				if results.Downloads.XLS != nil {
 					results.Downloads.XLS.Private = ""
 					results.Downloads.XLS.Public = ""
+				}
+				if results.Downloads.CSVW != nil {
+					results.Downloads.CSVW.Private = ""
+					results.Downloads.CSVW.Public = ""
 				}
 			}
 		}
@@ -560,6 +568,12 @@ func populateNewVersionDoc(currentVersion *models.Version, version *models.Versi
 		if version.Downloads.CSV == nil {
 			if currentVersion.Downloads != nil && currentVersion.Downloads.CSV != nil {
 				version.Downloads.CSV = currentVersion.Downloads.CSV
+			}
+		}
+
+		if version.Downloads.CSVW == nil {
+			if currentVersion.Downloads != nil && currentVersion.Downloads.CSVW != nil {
+				version.Downloads.CSVW = currentVersion.Downloads.CSVW
 			}
 		}
 	}
