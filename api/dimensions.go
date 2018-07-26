@@ -12,7 +12,7 @@ import (
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
-	"github.com/gedge/mgo/bson"
+	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -187,6 +187,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		for i := range results.Items {
 			results.Items[i].Links.Version.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s",
 				api.host, datasetID, edition, versionID)
+			results.Items[i].Links.Version.ID = versionID
 		}
 
 		b, err := json.Marshal(results)

@@ -101,8 +101,7 @@ func main() {
 		log.ErrorC("failed to connect to neo4j connection pool", err, nil)
 		os.Exit(1)
 	}
-
-	neoDB := &neo4j.Neo4j{neo4jConnPool}
+	neoDB := &neo4j.Neo4j{Pool: neo4jConnPool}
 
 	store := store.DataStore{Backend: DatsetAPIStore{Mongo: mongodb, Neo4j: neoDB}}
 

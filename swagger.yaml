@@ -29,12 +29,6 @@ parameters:
     in: query
     required: true
     type: string
-  dimension_option:
-    name: dimension_option
-    description: "A dimension option from an instance"
-    in: body
-    schema:
-      $ref: '#/definitions/DimensionNode'
   edition:
     name: edition
     description: "An edition of a dataset"
@@ -53,6 +47,12 @@ parameters:
     in: path
     required: true
     type: string
+  import_tasks:
+    name: import_tasks
+    description: "A request body to update the state of an import task"
+    in: body
+    schema:
+      $ref: '#/definitions/ImportTasks'
   inserted_observations:
     name: inserted_observations
     description: "A value to increment the inserted_observations within an instance"
@@ -106,29 +106,43 @@ parameters:
     required: true
     schema:
       $ref: '#/definitions/NewInstance'
-  state:
-    name: "state"
-    description: "A comma separated list of state values to filter on (e.g. ‘completed,edition-confirmed’)"
-    in: query
-    type: string
   option:
    name: option
    description: "A option to set within a type"
    in: path
    required: true
    type: string
+  state:
+    name: "state"
+    description: "A comma separated list of state values to filter on (e.g. ‘completed,edition-confirmed’)"
+    in: query
+    type: string
+  update_dimension:
+    name: dimension
+    description: "A dimension object to update for a given instance"
+    in: body
+    required: true
+    schema:
+      $ref: '#/definitions/UpdateInstanceDimension'
+  update_dimension_option_request:
+    name: dimension_option
+    description: "A dimension option from an instance"
+    in: body
+    schema:
+      $ref: '#/definitions/UpdateDimensionOptionRequest'
   version:
     name: version
     description: "A version of a dataset"
     in: path
     required: true
     type: string
-  import_tasks:
-    name: import_tasks
-    description: "A request body to update the state of an import task"
+  version_update:
+    name: version_update
+    description: "Update to a version for an edition of a dataset"
     in: body
+    required: true
     schema:
-      $ref: '#/definitions/ImportTasks'
+      $ref: '#/definitions/UpdateVersion'
 securityDefinitions:
   FlorenceAPIKey:
     name: florence-token
@@ -310,6 +324,7 @@ paths:
       - $ref: '#/parameters/id'
       - $ref: '#/parameters/edition'
       - $ref: '#/parameters/version'
+      - $ref: '#/parameters/version_update'
       responses:
         201:
           description: "A json object containing a version"
@@ -418,7 +433,7 @@ paths:
         200:
           description: "Json object containing all metadata for a version"
           schema:
-            $ref: '#/definitions/MetaData'
+            $ref: '#/definitions/Metadata'
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -498,8 +513,8 @@ paths:
       security:
       - InternalAPIKey: []
       responses:
-        200:
-          description: "Create an instance then returned it"
+        201:
+          description: "Successfully created instance"
           schema:
             $ref: '#/definitions/NewInstance'
         400:
@@ -556,6 +571,8 @@ paths:
           $ref: '#/responses/ForbiddenError'
         404:
           $ref: '#/responses/InstanceNotFound'
+        409:
+          $ref: '#/responses/ConflictError'
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}/dimensions:
@@ -576,7 +593,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/definitions/DimensionNode'
+              $ref: '#/definitions/DimensionOption'
         400:
           $ref: '#/responses/InvalidRequestError'
         401:
@@ -594,7 +611,7 @@ paths:
       description: "Create a new dimension which is related to an instance"
       parameters:
       - $ref: '#/parameters/instance_id'
-      - $ref: '#/parameters/dimension_option'
+      - $ref: '#/parameters/update_dimension_option_request'
       security:
       - InternalAPIKey: []
       responses:
@@ -615,7 +632,7 @@ paths:
       parameters:
       - $ref: '#/parameters/instance_id'
       - $ref: '#/parameters/dimension'
-      - $ref: '#/parameters/instance'
+      - $ref: '#/parameters/update_dimension'
       security:
       - InternalAPIKey: []
       responses:
@@ -629,6 +646,8 @@ paths:
           $ref: '#/responses/ForbiddenError'
         404:
           $ref: '#/responses/InstanceNotFound'
+        409:
+          $ref: '#/responses/ConflictError'
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}/dimensions/{dimension}/options:
@@ -795,26 +814,63 @@ paths:
         500:
           $ref: '#/responses/InternalError'
 responses:
-  InvalidRequestError:
-    description: "Failed to process the request due to invalid request"
-  InternalError:
-    description: "Failed to process the request due to an internal error"
+  ConflictError:
+    description: "Failed to process the request due to a conflict"
   ForbiddenError:
     description: "The request is forbidden"
-  UnauthorisedError:
-    description: "The token provided is unauthorised to carry out this operation"
   InstanceNotFound:
     description: "The instance was not found"
+  InternalError:
+    description: "Failed to process the request due to an internal error"
+  InvalidRequestError:
+    description: "Failed to process the request due to invalid request"
+  UnauthorisedError:
+    description: "The token provided is unauthorised to carry out this operation"
 definitions:
   AccessRightsLink:
     type: object
     properties:
       href:
-        type: string
         description: "A url to the standard Government access right text for the dataset"
+        type: string
+  Alert:
+    # TODO Update description, so it is useful to an API customer
+    description: "A single alert, &#x2603;"
+    type: object
+    properties:
+      date:
+        # TODO Update description, so it is useful to an API customer
+        description: "The date and time of when an alert took place,  &#x2603; for a version"
+        type: string
+      description:
+        # TODO Update description, so it is useful to an API customer
+        description: "A description of the alert, &#x2603;"
+        type: string
+      type:
+        description: "The type of alert"
+        example: "correction"
+        type: string
+  Codelist:
+    type: object
+    properties:
+      href:
+        description: "A link to the codelist corresponding to this dimension"
+        type: string
+      id:
+        description: "The codelist id corresponding to this dimension"
+        type: string
+      name:
+        description: "The dimension name"
+        type: string
+      description:
+        description: "The dimension description"
+        type: string
+      label:
+        description: "A human readable label for dimension"
+        type: string
   CollectionID:
-    type: string
     description: "The id of the unpublished collection (of datasets) that this dataset is associated with"
+    type: string
   Contact:
     description: "A list of objects containing contact information for this dataset"
     type: object
@@ -856,10 +912,10 @@ definitions:
     - type: object
       properties:
         id:
-          readOnly: true
-          type: string
           description: "An unique id for a dataset"
           example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
+          readOnly: true
+          type: string
     - $ref: "#/definitions/Dataset"
   Dataset:
     description: "The dataset"
@@ -868,16 +924,16 @@ definitions:
       collection_id:
         $ref: '#/definitions/CollectionID'
       contacts:
-        type: array
         description: "A list containing contact details of staticians for a dataset"
+        type: array
         items:
           $ref: '#/definitions/Contact'
       description:
-        type: string
         description: "A description for a dataset"
+        type: string
       keywords:
-        type: array
         description: "A list of keywords for a dataset"
+        type: array
         items:
           type: "string"
       license:
@@ -886,41 +942,41 @@ definitions:
       links:
         $ref: '#/definitions/DatasetLinks'
       methodologies:
-        type: array
         description: "A list of methodologies for a dataset"
-        items:
-          type: object
-          properties:
-            description:
-              type: string
-              description: "The description of a methodology"
-            href:
-              type: string
-              description: "The url to a methodology"
-            title:
-              type: string
-              description: "The title of a methodology"
-      national_statistic:
-        type: boolean
-        description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
-      next_release:
-        type: string
-        description: "The next release date for a dataset"
-      publications:
         type: array
-        description: "A list of publications for a dataset"
         items:
           type: object
           properties:
             description:
+              description: "The description of a methodology"
               type: string
-              description: "The description of a publication"
             href:
+              description: "The url to a methodology"
               type: string
-              description: "The url to a publication"
             title:
+              description: "The title of a methodology"
               type: string
+      national_statistic:
+        description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
+        type: boolean
+      next_release:
+        description: "The next release date for a dataset"
+        type: string
+      publications:
+        description: "A list of publications for a dataset"
+        type: array
+        items:
+          type: object
+          properties:
+            description:
+              description: "The description of a publication"
+              type: string
+            href:
+              description: "The url to a publication"
+              type: string
+            title:
               description: "The title of a publication"
+              type: string
       publisher:
         $ref: '#/definitions/Publisher'
       qmi:
@@ -928,675 +984,56 @@ definitions:
         type: object
         properties:
           description:
-            type: string
             description: "The description of a quality and methodology index"
+            type: string
           href:
-            type: string
             description: "The url to a quality and methodology index"
-          title:
             type: string
+          title:
             description: "The title of a quality and methodology index"
+            type: string
       related_datasets:
-        type: array
         description: "A list of objects containing information of datasets related to a dataset"
+        type: array
         items:
           type: object
           properties:
             href:
-              type: string
               description: "The url to a related dataset"
-            title:
               type: string
+            title:
               description: "The title of a related dataset"
+              type: string
       release_frequency:
-        type: string
         description: "The release frequency of a dataset"
+        type: string
       state:
         $ref: '#/definitions/State'
       theme:
-        type: string
         description: "The theme for a dataset"
-      title:
         type: string
+      title:
         description: "The title of the dataset"
         example: "CPI"
+        type: string
       unit_of_measure:
-        type: string
         description: "The unit of measure for the dataset observations"
+        type: string
       uri:
-        type: string
         description: "The uri to the location of this resource on the web"
-  DatasetLinks:
-    description: "A list of links related to this resource"
-    type: object
-    properties:
-      access_rights:
-        $ref: '#/definitions/AccessRightsLink'
-      editions:
-        readOnly: true
-        type: object
-        properties:
-          href:
-            description: "A URL to all editions for this dataset"
-            example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions"
-            type: string
-      latest_version:
-        $ref: '#/definitions/LatestVersionLink'
-      self:
-        $ref: '#/definitions/SelfLink'
-  LatestVersionLink:
-    type: object
-    readOnly: true
-    properties:
-      id:
-        description: "The unique id for the latest version of a dataset"
-        type: "string"
-      href:
-        description: "A link to the latest version and edition of the dataset"
-        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2"
-        type: string
-  Edition:
-    type: object
-    properties:
-      edition:
-        description: "The edition of the dataset"
-        example: "2017"
-        readOnly: true
-        type: string
-      id:
-        description: "An unique id for a dataset edition"
-        readOnly: true
-        type: string
-      links:
-        $ref: '#/definitions/EditionLinks'
-      state:
-        $ref: '#/definitions/State'
-  Editions:
-    type: object
-    properties:
-      count:
-        description: "The number of editions returned for a dataset"
-        readOnly: true
-        type: integer
-      items:
-        type: array
-        items:
-          $ref: '#/definitions/Edition'
-      limit:
-        description: "The number of editions requested for a dataset"
-        type: integer
-      offset:
-        description: "The first row of editions for a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
-        type: integer
-      total_count:
-        description: "The total number of editions against a dataset"
-        readOnly: true
-        type: integer
-  EditionLinks:
-    description: "A list of links related to this resource"
-    readOnly: true
-    type: object
-    properties:
-      dataset:
-        $ref: '#/definitions/DatasetLink'
-      latest_version:
-        $ref: '#/definitions/LatestVersionLink'
-      self:
-        $ref: '#/definitions/SelfLink'
-      versions:
-        type: object
-        properties:
-          href:
-            description: "A URL to all versions dor an edition of a dataset"
-            example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/edition/2017/versions"
-            type: string
-  Event:
-    type: object
-    properties:
-      type:
-        type: string
-        description: |
-          The type of event, this can be;
-          * Info - for an information event
-          * Error - for an error event
-      service:
-        type: string
-        description: "The name of the service which triggered the event"
-      time:
-        type: string
-        description: "The time of the event in ISO 8601 format"
-      message:
-        type: string
-        description: "A description of the event"
-      message_offset:
-        type: string
-        description: "The kafka message offset (Used to locate the kafka message)"
-  Instance:
-    type: object
-    properties:
-      id:
-        type: string
-        readOnly: true
-        description: "A unique id for an instance"
-      collection_id:
-        $ref: '#/definitions/CollectionID'
-      dimensions:
-        type: array
-        description: "A list of codelists for each dimension of this instance"
-        items:
-          $ref: '#/definitions/Codelist'
-      downloads:
-        type: object
-        description: "A selection of download objects containing information of downloadable files."
-        properties:
-          csv:
-            $ref: '#/definitions/DownloadFile'
-          xls:
-            $ref: '#/definitions/DownloadFile'
-      edition:
-        type: string
-        description: "The edition of the dataset version"
-      events:
-        type: array
-        description: "A list of events took place for this job"
-        readOnly: true
-        items:
-          $ref: '#/definitions/Event'
-      headers:
-        type: array
-        description: "The header information from a V4 file"
-        items:
-          type: string
-      import_tasks:
-        $ref: '#/definitions/ImportTasks'
-      links:
-        readOnly: true
-        type: object
-        properties:
-          dataset:
-            description: "An object describing the ID and URL for a dataset which is associated with this instance"
-            type: object
-            readOnly: true
-            properties:
-              id:
-                type: string
-                description: "The ID of the dataset associated with this instance"
-                example: "95c4669b-3ae9-4ba7-b690-87e890a1c67c"
-              href:
-                type: string
-                description: "The URL for the dataset associated with this instance"
-                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
-          dimensions:
-            description: "An object describing the URL for the dimensions which are associated with this instance"
-            type: object
-            readOnly: true
-            properties:
-              href:
-                type: string
-                description: "The URL for a list of dimensions associated with this instance"
-                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017/versions/1/dimensions"
-          edition:
-            description: "An object describing the ID and URL for the dataset edition that is associated with this instance"
-            type: object
-            readOnly: true
-            properties:
-              id:
-                type: string
-                description: "The ID for the dataset edition associated with this instance"
-              href:
-                type: string
-                description: "The URL for the dataset edition associated with this instance"
-                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017"
-          job:
-            description: "An object describing the ID and URL of the job containing this instance"
-            type: object
-            readOnly: true
-            required: ["id", "href"]
-            properties:
-              id:
-                type: string
-                description: "The ID of the job containing this instance"
-                example: 042e216a-7822-4fa0-a3d6-e3f5248ffc35
-              href:
-                type: string
-                description: "The URL for the job containing this instance"
-                example: "http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35"
-          spatial:
-            type: object
-            properties:
-              href:
-                type: string
-                description: "A url to a list of geography ranges for the version of the dataset"
-          version:
-            description: "An object describing the ID and URL of the dataset version associated with this instance"
-            type: object
-            readOnly: true
-            properties:
-              id:
-                type: string
-                description: "The ID of the dataset version associated with this instance"
-                example: "042e216a-7822-4fa0-a3d6-e3f5248ffc35"
-              href:
-                type: string
-                description: "The URL for the dataset version associated with this instance"
-                example: 'http://localhost:21800/dataset/042e216a-7822-4fa0-a3d6-e3f5248ffc35/edition/2017/version/1'
-          self:
-            description: "An object describing the ID and URL for a dataset which is associated with this instance"
-            type: object
-            readOnly: true
-            properties:
-              href:
-                type: string
-                description: "The URL for this resource"
-                example: "http://localhost:22000/instances/45c4669b-3ae9-4ba7-b690-87e890a1c67f"
-      release_date:
-        description: "The release date of this version of the dataset"
-        type: string
-      state:
-        $ref: '#/definitions/State'
-      temporal:
-        $ref: '#/definitions/Temporal'
-      total_observations:
-        type: integer
-        description: "The number of observations in this instance"
-      version:
-        type: integer
-        description: "The dataset version number that this instance is associated with, this will only be set once the state has been updated to `edition-confirmed`"
-      last_updated:
-        type: string
-        readOnly: true
-        description: "The last time an event happened"
-  ImportTasks:
-    type: object
-    properties:
-      import_observations:
-        type: object
-        properties:
-          total_inserted_observations:
-            type: integer
-            description: "The number of inserted observations in this instance"
-          state:
-            type: string
-            description: "The state of the import observations task"
-      build_hierarchies:
-        type: array
-        items:
-          type: object
-          properties:
-            state:
-              type: string
-              description: "The state of the import observations task"
-            dimension_name:
-              type: string
-              description: "The name of the dimension the hierarchy represents"
-            code_list_id:
-              type: string
-              description: "The ID of the codelist that this hierarchy represents"
-      build_search_indexes:
-        type: array
-        items:
-          type: object
-          properties:
-            state:
-              type: string
-              description: "The state of the import observations task"
-            dimension_name:
-              type: string
-              description: "The name of the dimension the search index represents"
-  Codelist:
-    type: object
-    properties:
-      id:
-        type: string
-        description: "The codelist id corresponding to this dimension"
-      href:
-        type: string
-        description: "A link to the codelist corresponding to this dimension"
-      name:
-        type: string
-        description: "The dimension name"
-      description:
-        type: string
-        description: "The dimension description"
-      label:
-        type: string
-        description: "A human readable label for dimension"
-  Instances:
-    type: object
-    properties:
-      count:
-        description: "The number of instances returned"
-        type: integer
-      items:
-        type: array
-        items:
-          $ref: '#/definitions/Instance'
-      limit:
-        description: "The number of instances requested"
-        type: integer
-      offset:
-        description: "The first row of instances to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
-        type: integer
-      total_count:
-        description: "The total number of instances"
-        type: integer
-  NewDatasetResponse:
-    description: "A model for the response body when creating a new dataset"
-    type: object
-    properties:
-      id:
-        type: string
-        description: "An unique id for a dataset"
-        example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
-      current:
-        allOf:
-        - type: object
-          properties:
-            collection_id:
-              $ref: '#/definitions/CollectionID'
-        - $ref: "#/definitions/Dataset"
-      next:
-        allOf:
-        - type: object
-          properties:
-            collection_id:
-              $ref: '#/definitions/CollectionID'
-        - $ref: "#/definitions/Dataset"
-  NewVersionResponse:
-    description: "A model for the response body when creating a new version for an edition of a dataset"
-    allOf:
-      - type: object
-        properties:
-          id:
-            type: string
-            description: "An unique id for a dataset"
-            example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91CD"
-          collection_id:
-            $ref: '#/definitions/CollectionID'
-      - $ref: "#/definitions/Version"
-  NewInstance:
-    description: "A model for the request and response body for creating a new instance"
-    type: object
-    properties:
-      id:
-        type: string
-        readOnly: true
-        description: "A unique id for an instance"
-      dimensions:
-        type: array
-        description: "A list of codelists for each dimension of this instance"
-        items:
-          $ref: '#/definitions/Codelist'
-      links:
-        type: object
-        properties:
-          dataset:
-            description: "An object describing the ID and URL for a dataset which is associated with this instance"
-            type: object
-            properties:
-              id:
-                type: string
-                description: "The ID of the dataset associated with this instance"
-                example: "95c4669b-3ae9-4ba7-b690-87e890a1c67c"
-              href:
-                type: string
-                description: "The URL for the dataset associated with this instance"
-                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
-          job:
-            description: "An object describing the ID and URL of the job containing this instance"
-            type: object
-            required: ["id", "href"]
-            properties:
-              id:
-                type: string
-                description: "The ID of the job containing this instance"
-                example: 042e216a-7822-4fa0-a3d6-e3f5248ffc35
-              href:
-                type: string
-                description: "The URL for the job containing this instance"
-                example: "http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35"
-          self:
-            description: "An object describing the ID and URL for a dataset which is associated with this instance"
-            type: object
-            readOnly: true
-            properties:
-              href:
-                type: string
-                description: "The URL for this resource"
-                example: "http://localhost:22000/instances/45c4669b-3ae9-4ba7-b690-87e890a1c67f"
-      state:
-        description: "The state of the resource, this can only have a value of `created`"
-        type: string
-        readOnly: true
-  Publisher:
-    description: "The publisher of the dataset"
-    type: object
-    properties:
-      name:
-        description: "The name of the publisher"
-        type: string
-      type:
-        description: "The type of publisher"
-        type: string
-      href:
-        description: "A link to the publishers homepage"
-        type: string
-  SelfLink:
-    description: "A link to this resource"
-    readOnly: true
-    type: object
-    properties:
-      href:
-        type: string
-  State:
-    description: |
-      The state of the resource, can only be one of the following:
-        * created
-        * completed (instances only)
-        * failed (instances only)
-        * edition-confirmed (instances and versions only)
-        * associated (not editions)
-        * published
-    type: string
-  Temporal:
-    type: array
-    description: "A list of frequencies the dataset covers for a particular period of time"
-    items:
-      type: object
-      properties:
-        start_date:
-          type: string
-          description: "The start date of the time period in which the version of the dataset covers this frequency"
-        end_date:
-          type: string
-          description: "The end date of the time period in which the version of the dataset covers this frequency"
-        frequency:
-          type: string
-          description: "The time frequency the version of the dataset covers for the period of time between start_date and end_date"
-  Versions:
-    type: object
-    properties:
-      count:
-        description: "The number of versions returned for an edition of a dataset"
-        readOnly: true
-        type: integer
-      items:
-        description: "An array of Datasets"
-        type: array
-        items:
-          $ref: '#/definitions/Version'
-      limit:
-        description: "The number of versions requested for an edition of a dataset"
-        type: integer
-      offset:
-        description: "The first row of versions for an edition of a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
-        type: integer
-      total_count:
-        description: "The total number of versions for an edition of a dataset"
-        readOnly: true
-        type: integer
-  Version:
-    description: "An object containing information about published datasets from the ONS"
-    type: object
-    required: [
-      release_date,
-    ]
-    properties:
-      alerts:
-        type: array
-        description: "A list of alerts, for example corrections after the resource has been published"
-        items:
-          $ref: '#/definitions/Alert'
-      collection_id:
-        $ref: '#/definitions/CollectionID'
-      dimensions:
-        type: array
-        description: "A list of codelists for each dimension of this version"
-        items:
-          $ref: '#/definitions/Codelist'
-      downloads:
-        type: object
-        description: "A selection of download objects containing information of downloadable files."
-        properties:
-          csv:
-            $ref: '#/definitions/DownloadFile'
-          xls:
-            $ref: '#/definitions/DownloadFile'
-      edition:
-        description: "The dataset edition for this version"
-        type: string
-        readOnly: true
-      instance_id:
-        description: "The instance identifier for this version of an edition for a dataset"
-        type: string
-      latest_changes:
-        type: array
-        description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
-        items:
-          $ref: '#/definitions/LatestChange'
-      links:
-        $ref: '#/definitions/VersionLinks'
-      release_date:
-        description: "The release date of this version of the dataset"
-        type: string
-      state:
-        $ref: '#/definitions/State'
-      temporal:
-        $ref: '#/definitions/Temporal'
-      version:
-        description: "A number identifying the version for an edition from a dataset"
-        example: 1
-        readOnly: true
-        type: integer
-      usage_notes:
-        description: "A list of usage notes relating to the dataset"
-        type: array
-        items:
-          $ref: '#/definitions/UsageNotes'
-  DownloadFile:
-    description: "Object containing information of a downloadable file"
-    type: object
-    properties:
-      href:
-        type: string
-        description: "The URL to the generated file"
-      size:
-        type: string
-        description: "The size of the file in bytes"
-      public:
-        type: string
-        description: "The URL to a public-accessible download"
-      private:
-        type: string
-        description: "The URL to a non public-accessible download"
-  Alert:
-    # TODO Update description, so it is useful to an API customer
-    description: "A single alert, &#x2603;"
-    type: object
-    properties:
-      date:
-        # TODO Update description, so it is useful to an API customer
-        description: "The date and time of when an alert took place,  &#x2603; for a version"
-        type: string
-      description:
-        # TODO Update description, so it is useful to an API customer
-        description: "A description of the alert, &#x2603;"
-        type: string
-      type:
-        description: "The type of alert"
-        type: string
-        example: "correction"
-  LatestChange:
-    description: "A single change between this version and the previous version of an edition for a dataset"
-    type: object
-    properties:
-      description:
-        description: "A description of what has changed between versions"
-        type: string
-      name:
-        description: "The name of the change that has occurred between versions"
-        type: string
-        example: "changes in classification"
-      type:
-        description: "The type of change"
-        type: string
-        example: "summary of changes"
-  SpatialLink:
-    type: object
-    properties:
-      href:
-        type: string
-        description: "A url to a list of geography ranges for the version of the dataset"
-  VersionLinks:
-    description: "A list of links related to this resource"
-    readOnly: true
-    type: object
-    properties:
-      dataset:
-        $ref: '#/definitions/DatasetLink'
-      dimensions:
-        type: object
-        properties:
-          href:
-            description: "A URL to list dimensions for this version"
-            example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2/dimensions"
-            type: string
-      edition:
-        $ref: '#/definitions/EditionLink'
-      self:
-        $ref: '#/definitions/SelfLink'
-      spatial:
-        $ref: '#/definitions/SpatialLink'
-  DatasetLink:
-    description: "An object containing the dataset id and link"
-    readOnly: true
-    type: object
-    properties:
-      id:
-        description: "The unique id for the dataset of this version"
-        type: string
-      href:
-        description: "A URL to the parent dataset for this resource"
-        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
-        type: string
-  EditionLink:
-    description: "An object containing the edition and link"
-    readOnly: true
-    type: object
-    properties:
-      id:
-        description: "The unique id for the dataset edition for a version"
-        type: string
-      href:
-        description: "A URL to the dataset edition for a version"
-        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017"
         type: string
   Dimension:
     description: "A single dimension within a dataset"
     type: object
     properties:
+      description:
+        description: ""
+        type: string
       dimension:
         description: "The name of the dimension"
+        type: string
+      label:
+        description: ""
         type: string
       links:
         type: object
@@ -1605,12 +1042,14 @@ definitions:
             description: "The code list related to this dimension"
             type: object
             properties:
-              id:
-                description: "The unique id for the code list"
-                type: string
               href:
                 description: "A URL to the code list"
                 type: string
+              id:
+                description: "The unique id for the code list"
+                type: string
+          options:
+            $ref: '#/definitions/OptionsLink'
           version:
             $ref: '#/definitions/VersionLink'
   Dimensions:
@@ -1663,138 +1102,418 @@ definitions:
       dimension:
         description: "The name of the dimension"
         type: string
+      instance_id:
+        description: "The unique identifier for the instance in which this dimension option is associated to"
+        type: string
       label:
         description: "A label given to a dimension option"
-        type: string
-      option:
-        description: "An option for a dimension"
         type: string
       links:
         description: "A object with all resources related to a dimension option"
         type: object
         properties:
           code:
-            description: "A link to the code of the option"
+            description: "A link to the code of the dimension for this option"
             type: object
             properties:
-              id:
-                type: string
-                description: "The id of the code that refers to this dimension"
               href:
+                description: "The url of the code that refers to the dimension for this option"
                 type: string
-                description: "The url of the code that refers to this dimension"
+              id:
+                description: "The id of the code that refers to the dimension for this option"
+                type: string
           code_list:
-            description: "A link to the code list the options belongs too"
+            description: "A link to the code list the dimension for this option belongs to"
             type: object
             properties:
-              id:
-                type: string
-                description: "The id of the code list that this dimension code belongs"
               href:
+                description: "The url of the code list that the dimension for this option belongs to"
                 type: string
-                description: "The url of the code list that this dimension code belongs"
-  DimensionNode:
-    type: object
-    description: "A cached dimension. (Only used by the Private API)"
-    properties:
-      dimension:
-        description: "The name of the dimension"
-        type: string
-      option:
-        description: "The option of the dimension"
-        type: string
-      label:
-        description: "The label for a option"
-        type: string
+              id:
+                description: "The id of the code list that the dimension for this option belongs to"
+                type: string
+          version:
+            description: "A link to the version of the dataset the option belongs to"
+            readOnly: true
+            type: object
+            properties:
+              href:
+                description: "The href of the version that this option belongs to"
+                type: string
+              id:
+                description: "The id of the version that this option belongs to"
+                type: string
       node_id:
         description: "The id of the node"
         type: string
-  MetaData:
+      option:
+        description: "An option for a dimension"
+        type: string
+  DownloadObject:
+    description: "Object containing information of a downloadable file"
     type: object
-    description: "An object containing all metadata information against a version"
+    properties:
+      href:
+        description: "The URL to the generated file"
+        type: string
+      size:
+        description: "The size of the file in bytes"
+        type: string
+  Edition:
+    type: object
+    properties:
+      edition:
+        description: "The edition of the dataset"
+        example: "2017"
+        readOnly: true
+        type: string
+      id:
+        description: "An unique id for a dataset edition"
+        readOnly: true
+        type: string
+      links:
+        $ref: '#/definitions/EditionLinks'
+      state:
+        $ref: '#/definitions/State'
+  Editions:
+    type: object
+    properties:
+      count:
+        description: "The number of editions returned for a dataset"
+        readOnly: true
+        type: integer
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Edition'
+      limit:
+        description: "The number of editions requested for a dataset"
+        type: integer
+      offset:
+        description: "The first row of editions for a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
+        type: integer
+      total_count:
+        description: "The total number of editions against a dataset"
+        readOnly: true
+        type: integer
+  Event:
+    type: object
+    properties:
+      message:
+        description: "A description of the event"
+        type: string
+      message_offset:
+        description: "The kafka message offset (Used to locate the kafka message)"
+        type: string
+      time:
+        description: "The time of the event in ISO 8601 format"
+        type: string
+      type:
+        description: |
+          The type of event, this can be;
+          * Info - for an information event
+          * Error - for an error event
+        type: string
+  ImportTasks:
+    type: object
+    properties:
+      build_hierarchies:
+        type: array
+        items:
+          type: object
+          properties:
+            code_list_id:
+              description: "The ID of the codelist that this hierarchy represents"
+              type: string
+            dimension_name:
+              description: "The name of the dimension the hierarchy represents"
+              type: string
+            state:
+              description: "The state of the import observations task"
+              type: string
+      build_search_indexes:
+        type: array
+        items:
+          type: object
+          properties:
+            dimension_name:
+              description: "The name of the dimension the search index represents"
+              type: string
+            state:
+              description: "The state of the import observations task"
+              type: string
+      import_observations:
+        type: object
+        properties:
+          state:
+            description: "The state of the import observations task"
+            type: string
+          total_inserted_observations:
+            description: "The number of inserted observations in this instance"
+            type: integer
+  Instance:
+    type: object
     properties:
       alerts:
+        description: "A list of alerts against an instance"
+        readOnly: true
         type: array
-        description: "A list of alerts, for example corrections after the resource has been published"
         items:
           $ref: '#/definitions/Alert'
-      contacts:
-        type: array
-        description: "A list containing contact details of staticians for a dataset"
-        items:
-          $ref: '#/definitions/Contact'
-      description:
+      id:
+        description: "A unique id for an instance"
+        readOnly: true
         type: string
-        description: "A description for a dataset"
-      distribution:
-        type: array
-        description: "A list of media types that the version data of an edition of a dataset can be accessed"
-        items:
-          type: string
+      collection_id:
+        $ref: '#/definitions/CollectionID'
       dimensions:
+        description: "A list of codelists for each dimension of this instance"
         type: array
-        description: "A list of codelists for each dimension of this version"
         items:
           $ref: '#/definitions/Codelist'
       downloads:
-        type: object
         description: "A selection of download objects containing information of downloadable files."
+        type: object
         properties:
           csv:
-            $ref: '#/definitions/DownloadFile'
+            $ref: '#/definitions/DownloadObject'
           xls:
-            $ref: '#/definitions/DownloadFile'
-      keywords:
+            $ref: '#/definitions/DownloadObject'
+      edition:
+        description: "The edition of the dataset version"
+        type: string
+      events:
+        description: "A list of events took place for this job"
+        readOnly: true
         type: array
+        items:
+          $ref: '#/definitions/Event'
+      headers:
+        description: "The header information from a V4 file"
+        type: array
+        items:
+          type: string
+      import_tasks:
+        $ref: '#/definitions/ImportTasks'
+      last_updated:
+        description: "The last time an event happened"
+        readOnly: true
+        type: string
+      links:
+        type: object
+        properties:
+          dataset:
+            description: "An object describing the ID and URL for a dataset which is associated with this instance"
+            readOnly: true
+            type: object
+            properties:
+              href:
+                description: "The URL for the dataset associated with this instance"
+                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+                type: string
+              id:
+                description: "The ID of the dataset associated with this instance"
+                example: "95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+                type: string
+          dimensions:
+            description: "An object describing the URL for the dimensions which are associated with this instance"
+            readOnly: true
+            type: object
+            properties:
+              href:
+                description: "The URL for a list of dimensions associated with this instance"
+                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017/versions/1/dimensions"
+                type: string
+          edition:
+            description: "An object describing the ID and URL for the dataset edition that is associated with this instance"
+            readOnly: true
+            type: object
+            properties:
+              href:
+                description: "The URL for the dataset edition associated with this instance"
+                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017"
+                type: string
+              id:
+                description: "The ID for the dataset edition associated with this instance"
+                type: string
+          job:
+            description: "An object describing the ID and URL of the job containing this instance"
+            readOnly: true
+            required: ["id", "href"]
+            type: object
+            properties:
+              href:
+                description: "The URL for the job containing this instance"
+                example: "http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35"
+                type: string
+              id:
+                description: "The ID of the job containing this instance"
+                example: 042e216a-7822-4fa0-a3d6-e3f5248ffc35
+                type: string
+          self:
+            description: "An object describing the ID and URL for a dataset which is associated with this instance"
+            readOnly: true
+            type: object
+            properties:
+              href:
+                description: "The URL for this resource"
+                example: "http://localhost:22000/instances/45c4669b-3ae9-4ba7-b690-87e890a1c67f"
+                type: string
+          spatial:
+            description: "A link object describing the url to a list of geography ranges for the version of the dataset"
+            type: object
+            properties:
+              href:
+                description: "A url to a list of geography ranges for the version of the dataset"
+                type: string
+          version:
+            description: "An object describing the ID and URL of the dataset version associated with this instance"
+            readOnly: true
+            type: object
+            properties:
+              href:
+                description: "The URL for the dataset version associated with this instance"
+                example: 'http://localhost:21800/dataset/042e216a-7822-4fa0-a3d6-e3f5248ffc35/edition/2017/version/1'
+                type: string
+              id:
+                description: "The ID of the dataset version associated with this instance"
+                example: "042e216a-7822-4fa0-a3d6-e3f5248ffc35"
+                type: string
+      release_date:
+        description: "The release date of this version of the dataset"
+        type: string
+      state:
+        $ref: '#/definitions/State'
+      temporal:
+        $ref: '#/definitions/Temporal'
+      total_observations:
+        description: "The number of observations in this instance"
+        type: integer
+      version:
+        description: "The dataset version number that this instance is associated with, this will only be set once the state has been updated to `edition-confirmed`"
+        readOnly: true
+        type: integer
+  Instances:
+    description: "A list of instance resources, if query parameter state is set return all instances with that state"
+    type: object
+    properties:
+      count:
+        description: "The number of instances returned"
+        type: integer
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Instance'
+      limit:
+        description: "The number of instances requested"
+        type: integer
+      offset:
+        description: "The first row of instances to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
+        type: integer
+      total_count:
+        description: "The total number of instances"
+        type: integer
+  LatestChange:
+    description: "A single change between this version and the previous version of an edition for a dataset"
+    type: object
+    properties:
+      description:
+        description: "A description of what has changed between versions"
+        type: string
+      name:
+        description: "The name of the change that has occurred between versions"
+        type: string
+        example: "changes in classification"
+      type:
+        description: "The type of change"
+        type: string
+        example: "summary of changes"
+  Metadata:
+    description: "An object containing all metadata information against a version"
+    type: object
+    properties:
+      alerts:
+        description: "A list of alerts, for example corrections after the resource has been published"
+        type: array
+        items:
+          $ref: '#/definitions/Alert'
+      contacts:
+        description: "A list containing contact details of staticians for a dataset"
+        type: array
+        items:
+          $ref: '#/definitions/Contact'
+      description:
+        description: "A description for a dataset"
+        type: string
+      dimensions:
+        description: "A list of codelists for each dimension of this version"
+        type: array
+        items:
+          $ref: '#/definitions/Codelist'
+      distribution:
+        description: "A list of media types that the version data of an edition of a dataset can be accessed"
+        type: array
+        items:
+          type: string
+      downloads:
+        description: "A selection of download objects containing information of downloadable files."
+        type: object
+        properties:
+          csv:
+            $ref: '#/definitions/DownloadObject'
+          xls:
+            $ref: '#/definitions/DownloadObject'
+      keywords:
         description: "A list of keywords for a dataset"
+        type: array
         items:
           type: "string"
       latest_changes:
-        type: array
         description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
+        type: array
         items:
           $ref: '#/definitions/LatestChange'
       license:
         description: "The standard Government license right text for the dataset"
         type: string
       links:
-        $ref: '#/definitions/MetaDataLinks'
+        $ref: '#/definitions/MetadataLinks'
       methodologies:
-        type: array
         description: "A list of methodologies for a dataset"
-        items:
-          type: object
-          properties:
-            description:
-              type: string
-              description: "The description of a methodology"
-            href:
-              type: string
-              description: "The url to a methodology"
-            title:
-              type: string
-              description: "The title of a methodology"
-      national_statistic:
-        type: boolean
-        description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
-      next_release:
-        type: string
-        description: "The next release date for a dataset"
-      publications:
         type: array
-        description: "A list of publications for a dataset"
         items:
           type: object
           properties:
             description:
+              description: "The description of a methodology"
               type: string
-              description: "The description of a publication"
             href:
+              description: "The url to a methodology"
               type: string
-              description: "The url to a publication"
             title:
+              description: "The title of a methodology"
               type: string
+      national_statistic:
+        description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
+        type: boolean
+      next_release:
+        description: "The next release date for a dataset"
+        type: string
+      publications:
+        description: "A list of publications for a dataset"
+        type: array
+        items:
+          type: object
+          properties:
+            description:
+              description: "The description of a publication"
+              type: string
+            href:
+              description: "The url to a publication"
+              type: string
+            title:
               description: "The title of a publication"
+              type: string
       publisher:
         $ref: '#/definitions/Publisher'
       qmi:
@@ -1802,69 +1521,139 @@ definitions:
         type: object
         properties:
           description:
-            type: string
             description: "The description of a quality and methodology index"
+            type: string
           href:
-            type: string
             description: "The url to a quality and methodology index"
-          title:
             type: string
+          title:
             description: "The title of a quality and methodology index"
+            type: string
       related_datasets:
-        type: array
         description: "A list of objects containing information of datasets related to a dataset"
+        type: array
         items:
           type: object
           properties:
             href:
-              type: string
               description: "The url to a related dataset"
-            title:
               type: string
+            title:
               description: "The title of a related dataset"
+              type: string
       release_date:
         description: "The release date of this version of the dataset"
         type: string
       release_frequency:
-        type: string
         description: "The release frequency of a dataset"
+        type: string
       temporal:
         $ref: '#/definitions/Temporal'
       theme:
-        type: string
         description: "The theme for a dataset"
-      title:
         type: string
+      title:
         description: "The title of the dataset"
         example: "CPI"
+        type: string
       unit_of_measure:
-        type: string
         description: "The unit of measure for the dataset observations"
-      uri:
         type: string
+      uri:
         description: "The uri to the location of the dataset on the web"
-  MetaDataLinks:
-    type: object
-    description: "A list of links related to this resource"
-    properties:
-      access_right:
-        $ref: '#/definitions/AccessRightsLink'
-      self:
-        $ref: '#/definitions/SelfLink'
-      spatial:
-        $ref: '#/definitions/SpatialLink'
-      version:
-        $ref: '#/definitions/VersionLink'
-  VersionLink:
-    description: "The dataset version this resource belongs to"
+        type: string
+      usage_notes:
+        $ref: '#/definitions/UsageNotes'
+  NewDatasetResponse:
+    description: "A model for the response body when creating a new dataset"
     type: object
     properties:
       id:
-        description: "The version number this resource relates to"
+        description: "An unique id for a dataset"
+        example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
         type: string
-      href:
-        description: "A URL to the version this resource relates to"
+      current:
+        allOf:
+        - type: object
+          properties:
+            collection_id:
+              $ref: '#/definitions/CollectionID'
+        - $ref: "#/definitions/Dataset"
+      next:
+        allOf:
+        - type: object
+          properties:
+            collection_id:
+              $ref: '#/definitions/CollectionID'
+        - $ref: "#/definitions/Dataset"
+  NewInstance:
+    description: "A model for the request and response body for creating a new instance"
+    type: object
+    properties:
+      dimensions:
+        description: "A list of codelists for each dimension of this instance"
+        type: array
+        items:
+          $ref: '#/definitions/Codelist'
+      id:
+        description: "A unique id for an instance"
+        readOnly: true
         type: string
+      import_tasks:
+        $ref: '#/definitions/ImportTasks'
+      links:
+        type: object
+        properties:
+          dataset:
+            description: "An object describing the ID and URL for a dataset which is associated with this instance"
+            type: object
+            properties:
+              href:
+                description: "The URL for the dataset associated with this instance"
+                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+                type: string
+              id:
+                description: "The ID of the dataset associated with this instance"
+                example: "95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+                type: string
+          job:
+            description: "An object describing the ID and URL of the job containing this instance"
+            required: ["id", "href"]
+            type: object
+            properties:
+              href:
+                description: "The URL for the job containing this instance"
+                example: "http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35"
+                type: string
+              id:
+                description: "The ID of the job containing this instance"
+                example: 042e216a-7822-4fa0-a3d6-e3f5248ffc35
+                type: string
+          self:
+            description: "An object describing the ID and URL for a dataset which is associated with this instance"
+            readOnly: true
+            type: object
+            properties:
+              href:
+                description: "The URL for this resource"
+                example: "http://localhost:22000/instances/45c4669b-3ae9-4ba7-b690-87e890a1c67f"
+                type: string
+      state:
+        description: "The state of the resource, this can only have a value of `created`"
+        type: string
+        readOnly: true
+  NewVersionResponse:
+    description: "A model for the response body when creating a new version for an edition of a dataset"
+    allOf:
+      - type: object
+        properties:
+          collection_id:
+            $ref: '#/definitions/CollectionID'
+          id:
+            type: string
+            description: "An unique id for a dataset"
+            example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91CD"
+      - $ref: "#/definitions/Version"
   ObservationsEndpoint:
     description: "An object containing information on a list of observations for a given version of a dataset"
     type: object
@@ -1874,8 +1663,8 @@ definitions:
         type: object
         properties:
           <dimension name>:
-            type: object
             description: "Each field is a dimension (<dimension name>) and will represent a query parameter in the request unless the query parameter is equal to a wildcard value (*)"
+            type: object
             properties:
               option:
                 description: "A list of links to the corresponding dimension codes for the given `dimension_options`"
@@ -1903,8 +1692,8 @@ definitions:
               type: object
               properties:
                 <dimension name>:
-                  type: object
                   description: "Each field is a dimension (<dimension name>) and will represent a query parameter in the request as long as the query parameter is equal to a wildcard value (*)"
+                  type: object
                   properties:
                     href:
                       description: "A link to the corresponding dimension code for the given `dimension_option`"
@@ -1943,23 +1732,135 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/UsageNotes'
-  ObservationLinks:
+  Publisher:
+    description: "The publisher of the dataset"
     type: object
-    description: "A list of links related to this resource"
     properties:
-      dataset_metadata:
-        $ref: '#/definitions/MetadataLink'
-      self:
-        $ref: '#/definitions/SelfLink'
-      version:
-        $ref: '#/definitions/VersionLink'
-  MetadataLink:
-    description: "The version metadata that is associated with this resource"
+      name:
+        description: "The name of the publisher"
+        type: string
+      type:
+        description: "The type of publisher"
+        type: string
+      href:
+        description: "A link to the publishers homepage"
+        type: string
+  State:
+    description: |
+      The state of the resource, can only be one of the following:
+        * created
+        * completed (instances only)
+        * failed (instances only)
+        * edition-confirmed (instances and versions only)
+        * associated (not editions)
+        * published
+    type: string
+  Temporal:
+    description: "A list of frequencies the dataset covers for a particular period of time"
+    type: array
+    items:
+      type: object
+      properties:
+        start_date:
+          description: "The start date of the time period in which the version of the dataset covers this frequency"
+          type: string
+        end_date:
+          description: "The end date of the time period in which the version of the dataset covers this frequency"
+          type: string
+        frequency:
+          description: "The time frequency the version of the dataset covers for the period of time between start_date and end_date"
+          type: string
+  UpdateDimensionOptionRequest:
+    description: "A cached dimension. (Only used by the Private API)"
+    type: object
+    properties:
+      code:
+        description: ""
+        type: string
+      codelist:
+        description: ""
+        type: string
+      dimension:
+        description: "The name of the dimension"
+        type: string
+      instance_id:
+        description: "The unique identifier for the instance in which this dimension option is associated to"
+        type: string
+      label:
+        description: "The label for a option"
+        type: string
+      option:
+        description: "The option of the dimension"
+        type: string
+  UpdateDownloadObject:
+    description: "Object containing information of a downloadable file"
     type: object
     properties:
       href:
-        description: "A URL for the version metadata this resource relates to"
+        description: "The URL to the generated file"
         type: string
+      size:
+        description: "The size of the file in bytes"
+        type: string
+      public:
+        description: "The URL to a public-accessible download"
+        type: string
+      private:
+        description: "The URL to a non public-accessible download"
+        type: string
+  UpdateInstanceDimension:
+    description: "Possible fields to be updated against a dimension for an instance resource"
+    type: object
+    properties:
+      description:
+        description: "The dimension description"
+        type: string
+      label:
+        description: "A human readable label for dimension"
+        type: string
+  UpdateVersion:
+    description: "An object containing information to be updated on a version resource"
+    type: object
+    properties:
+      alerts:
+        description: "A list of alerts, for example corrections after the resource has been published"
+        type: array
+        items:
+          $ref: '#/definitions/Alert'
+      collection_id:
+        $ref: '#/definitions/CollectionID'
+      downloads:
+        description: "A selection of download objects containing information of downloadable files. These can only be updated via an authorised caller."
+        type: object
+        properties:
+          csv:
+            $ref: '#/definitions/DownloadObject'
+          xls:
+            $ref: '#/definitions/DownloadObject'
+      latest_changes:
+        description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
+        type: array
+        items:
+          $ref: '#/definitions/LatestChange'
+      links:
+        $ref: '#/definitions/VersionLinks'
+      release_date:
+        description: "The release date of this version of the dataset"
+        type: string
+      state:
+        $ref: '#/definitions/State'
+      temporal:
+        $ref: '#/definitions/Temporal'
+      version:
+        description: "A number identifying the version for an edition from a dataset"
+        example: 1
+        readOnly: true
+        type: integer
+      usage_notes:
+        description: "A list of usage notes relating to the dataset"
+        type: array
+        items:
+          $ref: '#/definitions/UsageNotes'
   UsageNotes:
     description: "A note relating to the dataset. This will appear in downloaded datasets"
     type: object
@@ -1969,4 +1870,255 @@ definitions:
         type: string
       note:
         description: "The content of the note"
+        type: string
+  Versions:
+    type: object
+    properties:
+      count:
+        description: "The number of versions returned for an edition of a dataset"
+        readOnly: true
+        type: integer
+      items:
+        description: "An array of Datasets"
+        type: array
+        items:
+          $ref: '#/definitions/Version'
+      limit:
+        description: "The number of versions requested for an edition of a dataset"
+        type: integer
+      offset:
+        description: "The first row of versions for an edition of a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
+        type: integer
+      total_count:
+        description: "The total number of versions for an edition of a dataset"
+        readOnly: true
+        type: integer
+  Version:
+    description: "An object containing information about published datasets from the ONS"
+    required: [
+      release_date,
+    ]
+    type: object
+    properties:
+      alerts:
+        description: "A list of alerts, for example corrections after the resource has been published"
+        type: array
+        items:
+          $ref: '#/definitions/Alert'
+      collection_id:
+        $ref: '#/definitions/CollectionID'
+      dimensions:
+        description: "A list of codelists for each dimension of this version"
+        type: array
+        items:
+          $ref: '#/definitions/Codelist'
+      downloads:
+        description: "A selection of download objects containing information of downloadable files."
+        type: object
+        properties:
+          csv:
+            $ref: '#/definitions/DownloadObject'
+          xls:
+            $ref: '#/definitions/DownloadObject'
+      edition:
+        description: "The dataset edition for this version"
+        readOnly: true
+        type: string
+      id:
+        description: "The identifier for this version of an edition for a dataset"
+        type: string
+      latest_changes:
+        description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
+        type: array
+        items:
+          $ref: '#/definitions/LatestChange'
+      links:
+        $ref: '#/definitions/VersionLinks'
+      release_date:
+        description: "The release date of this version of the dataset"
+        type: string
+      state:
+        $ref: '#/definitions/State'
+      temporal:
+        $ref: '#/definitions/Temporal'
+      version:
+        description: "A number identifying the version for an edition from a dataset"
+        example: 1
+        readOnly: true
+        type: integer
+      usage_notes:
+        description: "A list of usage notes relating to the dataset"
+        type: array
+        items:
+          $ref: '#/definitions/UsageNotes'
+  # Link objects
+  DatasetLinks:
+    description: "A list of links related to this resource"
+    type: object
+    properties:
+      access_rights:
+        $ref: '#/definitions/AccessRightsLink'
+      editions:
+        readOnly: true
+        type: object
+        properties:
+          href:
+            description: "A URL to all editions for this dataset"
+            example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions"
+            type: string
+      latest_version:
+        $ref: '#/definitions/LatestVersionLink'
+      self:
+        $ref: '#/definitions/SelfLink'
+      taxonomy:
+        $ref: '#/definitions/TaxonomyLink'
+  EditionLinks:
+    description: "A list of links related to this resource"
+    readOnly: true
+    type: object
+    properties:
+      dataset:
+        $ref: '#/definitions/DatasetLink'
+      latest_version:
+        $ref: '#/definitions/LatestVersionLink'
+      self:
+        $ref: '#/definitions/SelfLink'
+      versions:
+        type: object
+        properties:
+          href:
+            description: "A URL to all versions dor an edition of a dataset"
+            example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/edition/2017/versions"
+            type: string
+  MetadataLinks:
+    description: "A list of links related to this resource"
+    readOnly: true
+    type: object
+    properties:
+      access_right:
+        $ref: '#/definitions/AccessRightsLink'
+      self:
+        $ref: '#/definitions/SelfLink'
+      spatial:
+        $ref: '#/definitions/SpatialLink'
+      version:
+        $ref: '#/definitions/VersionLink'
+      website_version:
+        description: "A link to the location of this version of the dataset on the web"
+        type: object
+        properties:
+          href:
+            description: "The uri to the location of this version of the dataset on the web"
+            type: string
+  ObservationLinks:
+    description: "A list of links related to this resource"
+    readOnly: true
+    type: object
+    properties:
+      dataset_metadata:
+        $ref: '#/definitions/MetadataLink'
+      self:
+        $ref: '#/definitions/SelfLink'
+      version:
+        $ref: '#/definitions/VersionLink'
+  VersionLinks:
+    description: "A list of links related to this resource"
+    type: object
+    properties:
+      dataset:
+        $ref: '#/definitions/DatasetLink'
+      dimensions:
+        readOnly: true
+        type: object
+        properties:
+          href:
+            description: "A URL to list dimensions for this version"
+            example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2/dimensions"
+            type: string
+      edition:
+        $ref: '#/definitions/EditionLink'
+      self:
+        $ref: '#/definitions/SelfLink'
+      spatial:
+        $ref: '#/definitions/SpatialLink'
+  DatasetLink:
+    description: "An object containing the dataset id and link"
+    readOnly: true
+    type: object
+    properties:
+      href:
+        description: "A URL to the parent dataset for this resource"
+        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
+        type: string
+      id:
+        description: "The unique id for the dataset of this version"
+        type: string
+  EditionLink:
+    description: "An object containing the edition and link"
+    readOnly: true
+    type: object
+    properties:
+      href:
+        description: "A URL to the dataset edition for a version"
+        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017"
+        type: string
+      id:
+        description: "The unique id for the dataset edition for a version"
+        type: string
+  LatestVersionLink:
+    description: "An object containing the latest version id and link"
+    type: object
+    readOnly: true
+    properties:
+      href:
+        description: "A link to the latest version and edition of the dataset"
+        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2"
+        type: string
+      id:
+        description: "The unique id for the latest version of a dataset"
+        type: "string"
+  MetadataLink:
+    description: "The version metadata that is associated with this resource"
+    type: object
+    properties:
+      href:
+        description: "A URL for the version metadata this resource relates to"
+        type: string
+  OptionsLink:
+    description: "A list of links related to this dimension"
+    type: object
+    properties:
+      href:
+        description: "A URL to a list of options for this dimension"
+        type: string
+  SelfLink:
+    description: "A link to this resource"
+    readOnly: true
+    type: object
+    properties:
+      href:
+        description: "A URL to this resource"
+        type: string
+  SpatialLink:
+    type: object
+    properties:
+      href:
+        description: "A url to a list of geography ranges for the version of the dataset"
+        type: string
+  TaxonomyLink:
+    description: "A link to the taxonomy of the dataset"
+    type: object
+    properties:
+      href:
+        description: "A url to the taxonomy of the dataset"
+        type: string
+  VersionLink:
+    description: "The dataset version this resource belongs to"
+    type: object
+    properties:
+      href:
+        description: "A URL to the version this resource relates to"
+        type: string
+      id:
+        description: "The version number this resource relates to"
         type: string
