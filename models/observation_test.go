@@ -84,18 +84,18 @@ func setUpTestVersionDoc() *Version {
 
 	usageNotes := []UsageNote{confidenceIntervalUsageNote, dataMarkingUsageNote}
 
-	geographyCode := CodeList{
+	geographyCode := Dimension{
 		Name: "geography",
 		HRef: "http://localhost:8080/codelists/123",
 	}
 
-	ageCode := CodeList{
+	ageCode := Dimension{
 		Name: "age",
 		HRef: "http://localhost:8080/codelists/456",
 	}
 
 	versionDoc := &Version{
-		Dimensions: []CodeList{geographyCode, ageCode},
+		Dimensions: []Dimension{geographyCode, ageCode},
 		Headers:    []string{"geography, age"},
 		Links: &VersionLinks{
 			Version: &LinkObject{

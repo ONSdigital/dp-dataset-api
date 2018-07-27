@@ -152,7 +152,7 @@ type Publisher struct {
 type Version struct {
 	Alerts        *[]Alert             `bson:"alerts,omitempty"         json:"alerts,omitempty"`
 	CollectionID  string               `bson:"collection_id,omitempty"  json:"collection_id,omitempty"`
-	Dimensions    []CodeList           `bson:"dimensions,omitempty"     json:"dimensions,omitempty"`
+	Dimensions    []Dimension          `bson:"dimensions,omitempty"     json:"dimensions,omitempty"`
 	Downloads     *DownloadList        `bson:"downloads,omitempty"      json:"downloads,omitempty"`
 	Edition       string               `bson:"edition,omitempty"        json:"edition,omitempty"`
 	Headers       []string             `bson:"headers,omitempty"        json:"-"`

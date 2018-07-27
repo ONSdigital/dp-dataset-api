@@ -12,7 +12,7 @@ import (
 type Instance struct {
 	Alerts            *[]Alert             `bson:"alerts,omitempty"                      json:"alerts,omitempty"`
 	CollectionID      string               `bson:"collection_id,omitempty"               json:"collection_id,omitempty"`
-	Dimensions        []CodeList           `bson:"dimensions,omitempty"                  json:"dimensions,omitempty"`
+	Dimensions        []Dimension          `bson:"dimensions,omitempty"                  json:"dimensions,omitempty"`
 	Downloads         *DownloadList        `bson:"downloads,omitempty"                   json:"downloads,omitempty"`
 	Edition           string               `bson:"edition,omitempty"                     json:"edition,omitempty"`
 	Events            *[]Event             `bson:"events,omitempty"                      json:"events,omitempty"`
@@ -45,7 +45,7 @@ type ImportObservationsTask struct {
 
 // BuildHierarchyTask represents a task of importing a single hierarchy.
 type BuildHierarchyTask struct {
-	CodeListID         string `bson:"code_list_id,omitempty"   json:"code_list_id,omitempty"`
+	DimensionID        string `bson:"code_list_id,omitempty"   json:"code_list_id,omitempty"`
 	GenericTaskDetails `bson:",inline"`
 }
 
@@ -59,14 +59,14 @@ type BuildSearchIndexTask struct {
 	GenericTaskDetails `bson:",inline"`
 }
 
-// CodeList for a dimension within an instance
-type CodeList struct {
-	Description string `json:"description"`
-	HRef        string `json:"href"`
-	ID          string `json:"id"`
-	Label       string `json:"label"`
-	Name        string `json:"name"`
-}
+// // Dimension for a dimension within an instance
+// type Dimension struct {
+// 	Description string `json:"description"`
+// 	HRef        string `json:"href"`
+// 	ID          string `json:"id"`
+// 	Label       string `json:"label"`
+// 	Name        string `json:"name"`
+// }
 
 // InstanceLinks holds all links for an instance
 type InstanceLinks struct {

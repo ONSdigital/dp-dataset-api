@@ -107,7 +107,7 @@ func TestCreateVersion(t *testing.T) {
 			version, err := CreateVersion(r)
 			So(err, ShouldBeNil)
 			So(version.CollectionID, ShouldEqual, collectionID)
-			So(version.Dimensions, ShouldResemble, []CodeList{dimension})
+			So(version.Dimensions, ShouldResemble, []Dimension{dimension})
 			So(version.Downloads, ShouldResemble, &downloads)
 			So(version.Edition, ShouldEqual, "2017")
 			So(version.ID, ShouldNotBeNil)

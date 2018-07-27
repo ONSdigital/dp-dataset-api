@@ -216,7 +216,7 @@ func getDimensionOffsetInHeaderRow(headerRow []string) (int, error) {
 	return dimensionOffset, nil
 }
 
-func getListOfValidDimensionNames(dimensions []models.CodeList) []string {
+func getListOfValidDimensionNames(dimensions []models.Dimension) []string {
 
 	var dimensionNames []string
 	for _, dimension := range dimensions {
