@@ -23,26 +23,26 @@ import (
 )
 
 var (
-	dimension1 = models.CodeList{Name: "aggregate"}
-	dimension2 = models.CodeList{Name: "geography"}
-	dimension3 = models.CodeList{Name: "time"}
-	dimension4 = models.CodeList{Name: "age"}
+	dimension1 = models.Dimension{Name: "aggregate"}
+	dimension2 = models.Dimension{Name: "geography"}
+	dimension3 = models.Dimension{Name: "time"}
+	dimension4 = models.Dimension{Name: "age"}
 )
 
 func TestGetObservationsReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("Given a request to get a single observation for a version of a dataset returns 200 OK response", t, func() {
 
-		dimensions := []models.CodeList{
-			models.CodeList{
+		dimensions := []models.Dimension{
+			models.Dimension{
 				Name: "aggregate",
 				HRef: "http://localhost:8081/code-lists/cpih1dim1aggid",
 			},
-			models.CodeList{
+			models.Dimension{
 				Name: "geography",
 				HRef: "http://localhost:8081/code-lists/uk-only",
 			},
-			models.CodeList{
+			models.Dimension{
 				Name: "time",
 				HRef: "http://localhost:8081/code-lists/time",
 			},
@@ -144,16 +144,16 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=*&geography=K02000001", nil)
 		w := httptest.NewRecorder()
 
-		dimensions := []models.CodeList{
-			models.CodeList{
+		dimensions := []models.Dimension{
+			models.Dimension{
 				Name: "aggregate",
 				HRef: "http://localhost:8081/code-lists/cpih1dim1aggid",
 			},
-			models.CodeList{
+			models.Dimension{
 				Name: "geography",
 				HRef: "http://localhost:8081/code-lists/uk-only",
 			},
-			models.CodeList{
+			models.Dimension{
 				Name: "time",
 				HRef: "http://localhost:8081/code-lists/time",
 			},
@@ -413,7 +413,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
 				return &models.Version{
-					Dimensions: []models.CodeList{dimension1, dimension2, dimension3},
+					Dimensions: []models.Dimension{dimension1, dimension2, dimension3},
 					State:      models.PublishedState,
 				}, nil
 			},
@@ -483,7 +483,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
 				return &models.Version{
-					Dimensions: []models.CodeList{dimension1, dimension2, dimension3},
+					Dimensions: []models.Dimension{dimension1, dimension2, dimension3},
 					Headers:    []string{"v4"},
 					State:      models.PublishedState,
 				}, nil
@@ -518,7 +518,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
 				return &models.Version{
-					Dimensions: []models.CodeList{dimension1, dimension3},
+					Dimensions: []models.Dimension{dimension1, dimension3},
 					Headers:    []string{"v4_0", "time_code", "time", "aggregate_code", "aggregate"},
 					State:      models.PublishedState,
 				}, nil
@@ -555,7 +555,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
 				return &models.Version{
-					Dimensions: []models.CodeList{dimension1, dimension2, dimension3, dimension4},
+					Dimensions: []models.Dimension{dimension1, dimension2, dimension3, dimension4},
 					Headers:    []string{"v4_0", "time_code", "time", "aggregate_code", "aggregate", "geography_code", "geography", "age_code", "age"},
 					State:      models.PublishedState,
 				}, nil
@@ -592,7 +592,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
 				return &models.Version{
-					Dimensions: []models.CodeList{dimension1, dimension2, dimension3},
+					Dimensions: []models.Dimension{dimension1, dimension2, dimension3},
 					Headers:    []string{"v4_0", "time_code", "time", "aggregate_code", "aggregate", "geography_code", "geography"},
 					State:      models.PublishedState,
 				}, nil
@@ -629,7 +629,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
 				return &models.Version{
-						Dimensions: []models.CodeList{dimension1, dimension2, dimension3},
+						Dimensions: []models.Dimension{dimension1, dimension2, dimension3},
 						Headers:    []string{"v4_0", "time_code", "time", "aggregate_code", "aggregate", "geography_code", "geography"},
 						State:      models.PublishedState,
 					},
@@ -666,16 +666,16 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001&geography=K02000002", nil)
 		w := httptest.NewRecorder()
 
-		dimensions := []models.CodeList{
-			models.CodeList{
+		dimensions := []models.Dimension{
+			models.Dimension{
 				Name: "aggregate",
 				HRef: "http://localhost:8081/code-lists/cpih1dim1aggid",
 			},
-			models.CodeList{
+			models.Dimension{
 				Name: "geography",
 				HRef: "http://localhost:8081/code-lists/uk-only",
 			},
-			models.CodeList{
+			models.Dimension{
 				Name: "time",
 				HRef: "http://localhost:8081/code-lists/time",
 			},
@@ -730,20 +730,20 @@ func TestGetListOfValidDimensionNames(t *testing.T) {
 	t.Parallel()
 	Convey("Given a list of valid dimension codelist objects", t, func() {
 		Convey("When getListOfValidDimensionNames is called", func() {
-			dimension1 := models.CodeList{
+			dimension1 := models.Dimension{
 				Name: "time",
 			}
 
-			dimension2 := models.CodeList{
+			dimension2 := models.Dimension{
 				Name: "aggregate",
 			}
 
-			dimension3 := models.CodeList{
+			dimension3 := models.Dimension{
 				Name: "geography",
 			}
 
 			version := &models.Version{
-				Dimensions: []models.CodeList{dimension1, dimension2, dimension3},
+				Dimensions: []models.Dimension{dimension1, dimension2, dimension3},
 			}
 
 			Convey("Then func returns the correct number of dimensions", func() {
@@ -1101,16 +1101,16 @@ func TestGetObservationAuditSuccessfulError(t *testing.T) {
 
 		Convey("when get observations is called with a valid request", func() {
 
-			dimensions := []models.CodeList{
-				models.CodeList{
+			dimensions := []models.Dimension{
+				models.Dimension{
 					Name: "aggregate",
 					HRef: "http://localhost:8081/code-lists/cpih1dim1aggid",
 				},
-				models.CodeList{
+				models.Dimension{
 					Name: "geography",
 					HRef: "http://localhost:8081/code-lists/uk-only",
 				},
-				models.CodeList{
+				models.Dimension{
 					Name: "time",
 					HRef: "http://localhost:8081/code-lists/time",
 				},

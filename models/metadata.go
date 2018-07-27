@@ -11,7 +11,7 @@ type Metadata struct {
 	Alerts            *[]Alert             `json:"alerts,omitempty"`
 	Contacts          []ContactDetails     `json:"contacts,omitempty"`
 	Description       string               `json:"description,omitempty"`
-	Dimensions        []CodeList           `json:"dimensions,omitempty"`
+	Dimensions        []Dimension          `json:"dimensions,omitempty"`
 	Distribution      []string             `json:"distribution,omitempty"`
 	Downloads         *DownloadList        `json:"downloads,omitempty"`
 	Keywords          []string             `json:"keywords,omitempty"`

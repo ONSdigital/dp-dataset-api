@@ -115,7 +115,7 @@ func expectedDataset() Dataset {
 	}
 }
 
-var dimension = CodeList{
+var dimension = Dimension{
 	Description: "A list of ages between 18 and 75+",
 	HRef:        "http://localhost:22400/codelists/1245",
 	ID:          "1245",
@@ -170,7 +170,7 @@ var temporal = TemporalFrequency{
 }
 
 var editionConfirmedVersion = Version{
-	Dimensions:  []CodeList{dimension},
+	Dimensions:  []Dimension{dimension},
 	Downloads:   &downloads,
 	Edition:     "2017",
 	Links:       &links,
@@ -181,7 +181,7 @@ var editionConfirmedVersion = Version{
 
 var associatedVersion = Version{
 	CollectionID:  collectionID,
-	Dimensions:    []CodeList{dimension},
+	Dimensions:    []Dimension{dimension},
 	Downloads:     &downloads,
 	Edition:       "2017",
 	LatestChanges: &[]LatestChange{latestChange},
@@ -194,7 +194,7 @@ var associatedVersion = Version{
 
 var publishedVersion = Version{
 	Alerts:        &[]Alert{alert},
-	Dimensions:    []CodeList{dimension},
+	Dimensions:    []Dimension{dimension},
 	Downloads:     &downloads,
 	Edition:       "2017",
 	LatestChanges: &[]LatestChange{latestChange},
@@ -216,7 +216,7 @@ func expectedMetadataDoc() Metadata {
 		Alerts:        &[]Alert{alert},
 		Contacts:      []ContactDetails{contacts},
 		Description:   "census",
-		Dimensions:    []CodeList{dimension},
+		Dimensions:    []Dimension{dimension},
 		Distribution:  []string{"json", "csv", "xls"},
 		Downloads:     &downloads,
 		Keywords:      []string{"test", "test2"},
