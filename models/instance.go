@@ -59,15 +59,6 @@ type BuildSearchIndexTask struct {
 	GenericTaskDetails `bson:",inline"`
 }
 
-// // Dimension for a dimension within an instance
-// type Dimension struct {
-// 	Description string `json:"description"`
-// 	HRef        string `json:"href"`
-// 	ID          string `json:"id"`
-// 	Label       string `json:"label"`
-// 	Name        string `json:"name"`
-// }
-
 // InstanceLinks holds all links for an instance
 type InstanceLinks struct {
 	Dataset    *IDLink `bson:"dataset,omitempty"    json:"dataset,omitempty"`
