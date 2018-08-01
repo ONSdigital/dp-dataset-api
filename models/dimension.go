@@ -19,7 +19,9 @@ type Dimension struct {
 	Label       string        `bson:"label,omitempty"         json:"label,omitempty"`
 	LastUpdated time.Time     `bson:"last_updated,omitempty"  json:"-"`
 	Links       DimensionLink `bson:"links,omitempty"         json:"links,omitempty"`
-	Name        string        `bson:"name,omitempty"          json:"dimension,omitempty"`
+	HRef        string        `json:"href,omitempty"`
+	ID          string        `json:"id,omitempty"`
+	Name        string        `bson:"name,omitempty"          json:"name,omitempty"`
 }
 
 // DimensionLink contains all links needed for a dimension

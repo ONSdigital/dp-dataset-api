@@ -2876,7 +2876,7 @@ func Test_UpdateDimensionReturnsOk(t *testing.T) {
 					GetInstanceFunc: func(id string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState,
 							InstanceID: "123",
-							Dimensions: []models.CodeList{{Name: "age", ID: "age"}}}, nil
+							Dimensions: []models.Dimension{{Name: "age", ID: "age"}}}, nil
 					},
 					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 						return nil
@@ -3044,7 +3044,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 					GetInstanceFunc: func(id string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState,
 							InstanceID: "123",
-							Dimensions: []models.CodeList{{Name: "age", ID: "age"}}}, nil
+							Dimensions: []models.Dimension{{Name: "age", ID: "age"}}}, nil
 					},
 					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 						return nil
@@ -3178,7 +3178,7 @@ func Test_UpdateDimensionAuditErrors(t *testing.T) {
 				GetInstanceFunc: func(id string) (*models.Instance, error) {
 					return &models.Instance{State: models.EditionConfirmedState,
 						InstanceID: "123",
-						Dimensions: []models.CodeList{{Name: "age", ID: "age"}}}, nil
+						Dimensions: []models.Dimension{{Name: "age", ID: "age"}}}, nil
 				},
 				UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 					return nil

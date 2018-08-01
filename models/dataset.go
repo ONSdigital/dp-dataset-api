@@ -152,7 +152,7 @@ type Publisher struct {
 type Version struct {
 	Alerts        *[]Alert             `bson:"alerts,omitempty"         json:"alerts,omitempty"`
 	CollectionID  string               `bson:"collection_id,omitempty"  json:"collection_id,omitempty"`
-	Dimensions    []CodeList           `bson:"dimensions,omitempty"     json:"dimensions,omitempty"`
+	Dimensions    []Dimension          `bson:"dimensions,omitempty"     json:"dimensions,omitempty"`
 	Downloads     *DownloadList        `bson:"downloads,omitempty"      json:"downloads,omitempty"`
 	Edition       string               `bson:"edition,omitempty"        json:"edition,omitempty"`
 	Headers       []string             `bson:"headers,omitempty"        json:"-"`
@@ -176,8 +176,9 @@ type Alert struct {
 
 // DownloadList represents a list of objects of containing information on the downloadable files
 type DownloadList struct {
-	CSV *DownloadObject `bson:"csv,omitempty" json:"csv,omitempty"`
-	XLS *DownloadObject `bson:"xls,omitempty" json:"xls,omitempty"`
+	CSV  *DownloadObject `bson:"csv,omitempty" json:"csv,omitempty"`
+	CSVW *DownloadObject `bson:"csvw,omitempty" json:"csvw,omitempty"`
+	XLS  *DownloadObject `bson:"xls,omitempty" json:"xls,omitempty"`
 }
 
 // DownloadObject represents information on the downloadable file
@@ -360,6 +361,18 @@ func ValidateVersion(version *Version) error {
 			}
 			if _, err := strconv.Atoi(version.Downloads.CSV.Size); err != nil {
 				invalidFields = append(invalidFields, "Downloads.CSV.Size not a number")
+			}
+		}
+
+		if version.Downloads.CSVW != nil {
+			if version.Downloads.CSVW.HRef == "" {
+				missingFields = append(missingFields, "Downloads.CSVW.HRef")
+			}
+			if version.Downloads.CSVW.Size == "" {
+				missingFields = append(missingFields, "Downloads.CSVW.Size")
+			}
+			if _, err := strconv.Atoi(version.Downloads.CSVW.Size); err != nil {
+				invalidFields = append(invalidFields, "Downloads.CSVW.Size not a number")
 			}
 		}
 	}

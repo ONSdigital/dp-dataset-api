@@ -254,7 +254,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrUnableToReadMessage
 		}
 
-		var dim *models.CodeList
+		var dim *models.Dimension
 
 		err = json.Unmarshal(b, &dim)
 		if err != nil {

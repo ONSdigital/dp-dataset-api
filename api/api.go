@@ -244,30 +244,31 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 					}
 
 					if versionDoc.Downloads != nil {
-						newVersion := new(models.Version)
+						newVersion := &models.Version{Downloads: &models.DownloadList{}}
 						if versionDoc.Downloads.CSV != nil && versionDoc.Downloads.CSV.Public != "" {
-							newVersion = &models.Version{
-								Downloads: &models.DownloadList{
-									CSV: &models.DownloadObject{
-										Public: versionDoc.Downloads.CSV.Public,
-										Size:   versionDoc.Downloads.CSV.Size,
-										HRef:   versionDoc.Downloads.CSV.HRef,
-									},
-								},
+							newVersion.Downloads.CSV = &models.DownloadObject{
+								Public: versionDoc.Downloads.CSV.Public,
+								Size:   versionDoc.Downloads.CSV.Size,
+								HRef:   versionDoc.Downloads.CSV.HRef,
+							}
+						}
+
+						if versionDoc.Downloads.CSVW != nil && versionDoc.Downloads.CSVW.Public != "" {
+							newVersion.Downloads.CSVW = &models.DownloadObject{
+								Public: versionDoc.Downloads.CSVW.Public,
+								Size:   versionDoc.Downloads.CSVW.Size,
+								HRef:   versionDoc.Downloads.CSVW.HRef,
 							}
 						}
 
 						if versionDoc.Downloads.XLS != nil && versionDoc.Downloads.XLS.Public != "" {
-							newVersion = &models.Version{
-								Downloads: &models.DownloadList{
-									XLS: &models.DownloadObject{
-										Public: versionDoc.Downloads.XLS.Public,
-										Size:   versionDoc.Downloads.XLS.Size,
-										HRef:   versionDoc.Downloads.XLS.HRef,
-									},
-								},
+							newVersion.Downloads.XLS = &models.DownloadObject{
+								Public: versionDoc.Downloads.XLS.Public,
+								Size:   versionDoc.Downloads.XLS.Size,
+								HRef:   versionDoc.Downloads.XLS.HRef,
 							}
 						}
+
 						if newVersion != nil {
 							var b []byte
 							b, err = json.Marshal(newVersion)
