@@ -53,7 +53,9 @@ one of:
 
 ### Kafka scripts
 
-- https://github.com/ONSdigital/dp-data-tools
+Contains tools to update and debug Kafka
+
+* [dp-data-tools](https://github.com/ONSdigital/dp-data-tools)
 
 ### Configuration
 
