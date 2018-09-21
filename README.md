@@ -51,7 +51,7 @@ one of:
 - success (200, JSON "status": "OK")
 - failure (500, JSON "status": "error").
 
-### Helper scripts
+### Kafka scripts
 
 - https://github.com/ONSdigital/dp-data-tools
 
