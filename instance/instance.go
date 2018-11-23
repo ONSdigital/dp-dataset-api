@@ -59,13 +59,25 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logData := log.Data{}
 	stateFilterQuery := r.URL.Query().Get("state")
+	datasetFilterQuery := r.URL.Query().Get("dataset")
 	var auditParams common.Params
 	var stateFilterList []string
+	var datasetFilterList []string
+
+	if stateFilterQuery != "" || datasetFilterQuery != "" {
+		auditParams = make(common.Params)
+	}
 
 	if stateFilterQuery != "" {
-		logData["query"] = stateFilterQuery
-		auditParams = common.Params{"query": stateFilterQuery}
+		logData["state_query"] = stateFilterQuery
+		auditParams["state_query"] = stateFilterQuery
 		stateFilterList = strings.Split(stateFilterQuery, ",")
+	}
+
+	if datasetFilterQuery != "" {
+		logData["dataset_query"] = datasetFilterQuery
+		auditParams["dataset_query"] = datasetFilterQuery
+		datasetFilterList = strings.Split(datasetFilterQuery, ",")
 	}
 
 	log.InfoCtx(ctx, "get list of instances", logData)
@@ -78,7 +90,7 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		results, err := s.GetInstances(stateFilterList)
+		results, err := s.GetInstances(stateFilterList, datasetFilterList)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "get instances: store.GetInstances returned and error"), nil)
 			return nil, err

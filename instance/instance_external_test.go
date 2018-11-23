@@ -48,7 +48,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func([]string) (*models.InstanceResults, error) {
+					GetInstancesFunc: func([]string, []string) (*models.InstanceResults, error) {
 						return &models.InstanceResults{}, nil
 					},
 				}
@@ -75,8 +75,8 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				var result []string
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func(filterString []string) (*models.InstanceResults, error) {
-						result = filterString
+					GetInstancesFunc: func(state []string, dataset []string) (*models.InstanceResults, error) {
+						result = state
 						return &models.InstanceResults{}, nil
 					},
 				}
@@ -91,7 +91,36 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 
 				auditor.AssertRecordCalls(
 					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"query": "completed"}),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"state_query": "completed"}),
+				)
+			})
+		})
+
+		Convey("When the request includes a filter by dataset of 'test'", func() {
+			Convey("Then return status ok (200)", func() {
+				r, err := createRequestWithToken("GET", "http://localhost:21800/instances?dataset=test", nil)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+				var result []string
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstancesFunc: func(state []string, dataset []string) (*models.InstanceResults, error) {
+						result = dataset
+						return &models.InstanceResults{}, nil
+					},
+				}
+
+				auditor := auditortest.New()
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(result, ShouldResemble, []string{"test"})
+				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
+
+				auditor.AssertRecordCalls(
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"dataset_query": "test"}),
 				)
 			})
 		})
@@ -104,8 +133,8 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				var result []string
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func(filterString []string) (*models.InstanceResults, error) {
-						result = filterString
+					GetInstancesFunc: func(state []string, dataset []string) (*models.InstanceResults, error) {
+						result = state
 						return &models.InstanceResults{}, nil
 					},
 				}
@@ -120,7 +149,37 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 
 				auditor.AssertRecordCalls(
 					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"query": "completed,edition-confirmed"}),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"state_query": "completed,edition-confirmed"}),
+				)
+			})
+		})
+
+		Convey("When the request includes a filter by state of 'completed' and dataset 'test'", func() {
+			Convey("Then return status ok (200)", func() {
+				r, err := createRequestWithToken("GET", "http://localhost:21800/instances?state=completed&dataset=test", nil)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+				var result []string
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstancesFunc: func(state []string, dataset []string) (*models.InstanceResults, error) {
+						result = append(result, state...)
+						result = append(result, dataset...)
+						return &models.InstanceResults{}, nil
+					},
+				}
+
+				auditor := auditortest.New()
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(result, ShouldResemble, []string{models.CompletedState, "test"})
+				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
+
+				auditor.AssertRecordCalls(
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"state_query": "completed", "dataset_query": "test"}),
 				)
 			})
 		})
@@ -137,7 +196,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func([]string) (*models.InstanceResults, error) {
+					GetInstancesFunc: func([]string, []string) (*models.InstanceResults, error) {
 						return nil, errs.ErrInternalServer
 					},
 				}
@@ -174,7 +233,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 
 				auditor.AssertRecordCalls(
 					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, common.Params{"query": "foo"}),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, common.Params{"state_query": "foo"}),
 				)
 			})
 		})
@@ -218,7 +277,7 @@ func Test_GetInstancesAuditErrors(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
-				GetInstancesFunc: func([]string) (*models.InstanceResults, error) {
+				GetInstancesFunc: func([]string, []string) (*models.InstanceResults, error) {
 					return nil, errs.ErrInternalServer
 				},
 			}
@@ -249,7 +308,7 @@ func Test_GetInstancesAuditErrors(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
-				GetInstancesFunc: func([]string) (*models.InstanceResults, error) {
+				GetInstancesFunc: func([]string, []string) (*models.InstanceResults, error) {
 					return &models.InstanceResults{}, nil
 				},
 			}
