@@ -48,7 +48,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func([]string) (*models.InstanceResults, error) {
+					GetInstancesFunc: func([]string, []string) (*models.InstanceResults, error) {
 						return &models.InstanceResults{}, nil
 					},
 				}
@@ -75,8 +75,8 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				var result []string
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func(filterString []string) (*models.InstanceResults, error) {
-						result = filterString
+					GetInstancesFunc: func(state []string, dataset []string) (*models.InstanceResults, error) {
+						result = state
 						return &models.InstanceResults{}, nil
 					},
 				}
@@ -91,7 +91,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 
 				auditor.AssertRecordCalls(
 					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"query": "completed"}),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"state_query": "completed"}),
 				)
 			})
 		})
@@ -104,8 +104,8 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				var result []string
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func(filterString []string) (*models.InstanceResults, error) {
-						result = filterString
+					GetInstancesFunc: func(state []string, dataset []string) (*models.InstanceResults, error) {
+						result = state
 						return &models.InstanceResults{}, nil
 					},
 				}
@@ -120,7 +120,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 
 				auditor.AssertRecordCalls(
 					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"query": "completed,edition-confirmed"}),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"state_query": "completed,edition-confirmed"}),
 				)
 			})
 		})
@@ -137,7 +137,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func([]string) (*models.InstanceResults, error) {
+					GetInstancesFunc: func([]string, []string) (*models.InstanceResults, error) {
 						return nil, errs.ErrInternalServer
 					},
 				}
@@ -174,7 +174,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 
 				auditor.AssertRecordCalls(
 					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, common.Params{"query": "foo"}),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, common.Params{"state_query": "foo"}),
 				)
 			})
 		})
@@ -218,7 +218,7 @@ func Test_GetInstancesAuditErrors(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
-				GetInstancesFunc: func([]string) (*models.InstanceResults, error) {
+				GetInstancesFunc: func([]string, []string) (*models.InstanceResults, error) {
 					return nil, errs.ErrInternalServer
 				},
 			}
@@ -249,7 +249,7 @@ func Test_GetInstancesAuditErrors(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
-				GetInstancesFunc: func([]string) (*models.InstanceResults, error) {
+				GetInstancesFunc: func([]string, []string) (*models.InstanceResults, error) {
 					return &models.InstanceResults{}, nil
 				},
 			}
