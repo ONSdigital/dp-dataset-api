@@ -96,6 +96,35 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 			})
 		})
 
+		Convey("When the request includes a filter by dataset of 'test'", func() {
+			Convey("Then return status ok (200)", func() {
+				r, err := createRequestWithToken("GET", "http://localhost:21800/instances?dataset=test", nil)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+				var result []string
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstancesFunc: func(state []string, dataset []string) (*models.InstanceResults, error) {
+						result = dataset
+						return &models.InstanceResults{}, nil
+					},
+				}
+
+				auditor := auditortest.New()
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(result, ShouldResemble, []string{"test"})
+				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
+
+				auditor.AssertRecordCalls(
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"dataset_query": "test"}),
+				)
+			})
+		})
+
 		Convey("When the request includes a filter by state of multiple values 'completed,edition-confirmed'", func() {
 			Convey("Then return status ok (200)", func() {
 				r, err := createRequestWithToken("GET", "http://localhost:21800/instances?state=completed,edition-confirmed", nil)
@@ -121,6 +150,36 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				auditor.AssertRecordCalls(
 					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
 					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"state_query": "completed,edition-confirmed"}),
+				)
+			})
+		})
+
+		Convey("When the request includes a filter by state of 'completed' and dataset 'test'", func() {
+			Convey("Then return status ok (200)", func() {
+				r, err := createRequestWithToken("GET", "http://localhost:21800/instances?state=completed&dataset=test", nil)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+				var result []string
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstancesFunc: func(state []string, dataset []string) (*models.InstanceResults, error) {
+						result = append(result, state...)
+						result = append(result, dataset...)
+						return &models.InstanceResults{}, nil
+					},
+				}
+
+				auditor := auditortest.New()
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(result, ShouldResemble, []string{models.CompletedState, "test"})
+				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
+
+				auditor.AssertRecordCalls(
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Successful, common.Params{"state_query": "completed", "dataset_query": "test"}),
 				)
 			})
 		})

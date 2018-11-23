@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"io"
+
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
@@ -23,7 +25,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
-	"io"
 )
 
 const (
@@ -939,7 +940,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
@@ -1000,7 +1001,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -1072,7 +1073,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
@@ -1510,7 +1511,7 @@ func TestPutEmptyVersion(t *testing.T) {
 				So(mockedDataStore.GetVersionCalls()[0].Version, ShouldEqual, "1")
 				So(mockedDataStore.GetVersionCalls()[0].State, ShouldEqual, "")
 
-				So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 				So(len(mockDownloadGenerator.GenerateCalls()), ShouldEqual, 0)
 
