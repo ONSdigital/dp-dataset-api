@@ -1147,7 +1147,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				currentInstanceTest_Data := &models.Instance{
 					Edition: "2017",
 					Links: &models.InstanceLinks{
-						Dataset: &models.IDLink{
+						Dataset: &models.LinkObject{
 							ID: "4567",
 						},
 					},
@@ -1231,7 +1231,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 				currentInstanceTest_Data := &models.Instance{
 					Edition: "2017",
 					Links: &models.InstanceLinks{
-						Dataset: &models.IDLink{
+						Dataset: &models.LinkObject{
 							ID: "4567",
 						},
 					},

@@ -61,19 +61,13 @@ type BuildSearchIndexTask struct {
 
 // InstanceLinks holds all links for an instance
 type InstanceLinks struct {
-	Dataset    *IDLink `bson:"dataset,omitempty"    json:"dataset,omitempty"`
-	Dimensions *IDLink `bson:"dimensions,omitempty" json:"dimensions,omitempty"`
-	Edition    *IDLink `bson:"edition,omitempty"    json:"edition,omitempty"`
-	Job        *IDLink `bson:"job,omitempty"        json:"job"`
-	Self       *IDLink `bson:"self,omitempty"       json:"self,omitempty"`
-	Spatial    *IDLink `bson:"spatial,omitempty"    json:"spatial,omitempty"`
-	Version    *IDLink `bson:"version,omitempty"    json:"version,omitempty"`
-}
-
-// IDLink holds the id and a link to the resource
-type IDLink struct {
-	HRef string `bson:"href,omitempty" json:"href,omitempty"`
-	ID   string `bson:"id,omitempty"   json:"id,omitempty"`
+	Dataset    *LinkObject `bson:"dataset,omitempty"    json:"dataset,omitempty"`
+	Dimensions *LinkObject `bson:"dimensions,omitempty" json:"dimensions,omitempty"`
+	Edition    *LinkObject `bson:"edition,omitempty"    json:"edition,omitempty"`
+	Job        *LinkObject `bson:"job,omitempty"        json:"job"`
+	Self       *LinkObject `bson:"self,omitempty"       json:"self,omitempty"`
+	Spatial    *LinkObject `bson:"spatial,omitempty"    json:"spatial,omitempty"`
+	Version    *LinkObject `bson:"version,omitempty"    json:"version,omitempty"`
 }
 
 // Event which has happened to an instance

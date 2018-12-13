@@ -194,7 +194,7 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 		logData["instance_id"] = instance.InstanceID
 		auditParams["instance_id"] = instance.InstanceID
 
-		instance.Links.Self = &models.IDLink{
+		instance.Links.Self = &models.LinkObject{
 			HRef: fmt.Sprintf("%s/instances/%s", s.Host, instance.InstanceID),
 		}
 
