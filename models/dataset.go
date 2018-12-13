@@ -9,6 +9,7 @@ import (
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/go-ns/log"
 	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 )
@@ -311,6 +312,80 @@ func CreateContact(reader io.Reader) (*Contact, error) {
 	contact.ID = (uuid.NewV4()).String()
 
 	return &contact, nil
+}
+
+//UpdateLinks in the editions.next document, ensuring links can't regress once published to current
+func (ed *EditionUpdate) UpdateLinks(host, versionID string) error {
+	log.Debug("lets look at updating links", log.Data{"doc": ed, "versionID": versionID})
+	if ed.Next.Links == nil || ed.Next.Links.LatestVersion == nil {
+		return errors.New("editions links do not exist")
+	}
+
+	currentVersion := 0
+
+	if ed.Current != nil && ed.Current.Links != nil && ed.Current.Links.LatestVersion != nil {
+		var err error
+		currentVersion, err = strconv.Atoi(ed.Current.Links.LatestVersion.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	version, err := strconv.Atoi(versionID)
+	if err != nil {
+		return err
+	}
+
+	if currentVersion > version {
+		log.Debug("published edition links to a higher version than the requested change", log.Data{"doc": ed, "versionID": versionID})
+		return errors.New("published edition links to a higher version than the requested change")
+	}
+
+	version++
+	versionID = strconv.Itoa(version)
+
+	ed.Next.Links.LatestVersion = &LinkObject{
+		ID:   versionID,
+		HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", host, ed.Next.Links.Dataset.ID, ed.Next.Links.Self.ID, versionID),
+	}
+
+	log.Debug("links should be updated now", log.Data{"doc": ed.Next.Links.LatestVersion, "versionID": versionID})
+
+	return nil
+}
+
+//UpdateLinks in the editions.next document, ensuring links can't regress once published to current
+func (ed *EditionUpdate) PublishLinks(host string, versionLink *LinkObject) error {
+	log.Debug("lets look at updating links", log.Data{"doc": ed, "versionID": versionLink.ID})
+	if ed.Next == nil || ed.Next.Links == nil || ed.Next.Links.LatestVersion == nil {
+		return errors.New("editions links do not exist")
+	}
+
+	currentVersion := 0
+
+	if ed.Current != nil && ed.Current.Links != nil && ed.Current.Links.LatestVersion != nil {
+		var err error
+		currentVersion, err = strconv.Atoi(ed.Current.Links.LatestVersion.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	version, err := strconv.Atoi(versionLink.ID)
+	if err != nil {
+		return err
+	}
+
+	if currentVersion > version {
+		log.Debug("current latest version is higher, no edition update required", log.Data{"doc": ed, "currentVersionID": currentVersion, "versionID": versionLink.ID})
+		return nil
+	}
+
+	ed.Next.Links.LatestVersion = versionLink
+
+	log.Debug("links should be updated now", log.Data{"doc": ed.Next.Links.LatestVersion, "versionID": versionLink.ID})
+
+	return nil
 }
 
 // ValidateVersion checks the content of the version structure

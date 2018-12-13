@@ -1129,6 +1129,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 						},
 						Version: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+							ID:   "1",
 						},
 					},
 					ReleaseDate: "2017-12-12",
@@ -1160,6 +1161,15 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 					ID: "123",
 					Next: &models.Edition{
 						State: models.PublishedState,
+						Links: &models.EditionUpdateLinks{
+							Self: &models.LinkObject{
+								HRef: "http://localhost:22000/datasets/123/editions/2017",
+							},
+							LatestVersion: &models.LinkObject{
+								HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+								ID:   "1",
+							},
+						},
 					},
 					Current: &models.Edition{},
 				}, nil
@@ -1742,6 +1752,15 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 						ID: "123",
 						Next: &models.Edition{
 							State: models.PublishedState,
+							Links: &models.EditionUpdateLinks{
+								Self: &models.LinkObject{
+									HRef: "http://localhost:22000/datasets/123/editions/2017",
+								},
+								LatestVersion: &models.LinkObject{
+									HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+									ID:   "1",
+								},
+							},
 						},
 						Current: &models.Edition{},
 					}, nil
@@ -1782,6 +1801,7 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 					},
 					Version: &models.LinkObject{
 						HRef: "",
+						ID:   "1",
 					},
 				},
 				ReleaseDate: "2017-12-12",
@@ -2372,6 +2392,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 						},
 						Version: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+							ID:   "1",
 						},
 					},
 					ReleaseDate: "2017-12-12",
@@ -2403,6 +2424,16 @@ func TestPutVersionReturnsError(t *testing.T) {
 					ID: "123",
 					Next: &models.Edition{
 						State: models.PublishedState,
+						Links: &models.EditionUpdateLinks{
+							Self: &models.LinkObject{
+								HRef: "http://localhost:22000/datasets/123/editions/2017",
+								ID:   "2017",
+							},
+							LatestVersion: &models.LinkObject{
+								HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+								ID:   "1",
+							},
+						},
 					},
 					Current: &models.Edition{},
 				}, nil

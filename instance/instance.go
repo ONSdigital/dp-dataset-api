@@ -267,70 +267,39 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		if instance.State == models.EditionConfirmedState {
-			datasetID := currentInstance.Links.Dataset.ID
+		datasetID := currentInstance.Links.Dataset.ID
 
-			// If instance has no edition, get the current edition
+		//edition confirmation is a one time process - cannot be editted for an instance once done
+		if instance.State == models.EditionConfirmedState {
 			if instance.Edition == "" {
 				instance.Edition = currentInstance.Edition
 			}
+
 			edition := instance.Edition
-			editionAuditParams := common.Params{"instance_id": instanceID, "dataset_id": datasetID, "edition": edition}
-			editionLogData := audit.ToLogData(editionAuditParams)
+			editionLogData := log.Data{"instance_id": instanceID, "dataset_id": datasetID, "edition": edition}
 
-			editionDoc, auditAction, err := func() (*models.EditionUpdate, string, error) {
-				// Only create edition if it doesn't already exist
-				editionDoc, action, err := s.getEdition(ctx, datasetID, edition, instanceID)
-				if err != nil {
-					log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.getEdition returned an error"), editionLogData)
-					return nil, action, err
-				}
-
-				// Update with any edition.next changes
-				editionDoc.Next.State = instance.State
-				if err = s.UpsertEdition(datasetID, edition, editionDoc); err != nil {
-					log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.UpsertEdition returned an error"), editionLogData)
-					return nil, action, err
-				}
-
-				return editionDoc, action, nil
-			}()
-			if err != nil {
-				if auditAction == "" {
-					// No action to audit so return early
-					return err
-				}
-
-				if auditErr := s.Auditor.Record(ctx, auditAction, audit.Unsuccessful, editionAuditParams); auditErr != nil {
-					err = auditErr
-				}
-
-				return err
+			editionDoc, err2 := s.confirmEdition(ctx, datasetID, edition, instanceID)
+			if err2 != nil {
+				log.ErrorCtx(ctx, errors.WithMessage(err2, "instance update: store.getEdition returned an error"), editionLogData)
+				return err2
 			}
 
-			s.Auditor.Record(ctx, auditAction, audit.Successful, editionAuditParams)
-
-			log.InfoCtx(ctx, "instance update: created edition", editionLogData)
-
-			// Check whether instance has a version
-			if currentInstance.Version < 1 {
-				// Find the latest version for the dataset edition attached to this
-				// instance and append by 1 to set the version of this instance document
-				version, err := s.GetNextVersion(datasetID, edition)
-				if err != nil {
-					log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.GetNextVersion returned an error"), logData)
-					return err
-				}
-
-				instance.Version = version
-
-				instance = s.addInstanceLinks(ctx, instance, editionDoc)
+			//update instance with confirmed edition details
+			instance.Links = currentInstance.Links
+			instance.Links.Edition = editionDoc.Next.Links.Self
+			instance.Links.Version = editionDoc.Next.Links.LatestVersion
+			instance.Version, err2 = strconv.Atoi(editionDoc.Next.Links.LatestVersion.ID)
+			if err2 != nil {
+				log.ErrorCtx(ctx, errors.WithMessage(err2, "instance update: failed to convert edition latestVersion id to instance.version int"), editionLogData)
+				return err2
 			}
 
-			if err := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); err != nil {
-				log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: datastore.AddVersionDetailsToInstance returned an error"), logData)
-				return err
+			if err3 := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); err3 != nil {
+				log.ErrorCtx(ctx, errors.WithMessage(err3, "instance update: datastore.AddVersionDetailsToInstance returned an error"), editionLogData)
+				return err3
 			}
+
+			log.InfoCtx(ctx, "instance update: added version details to instance", editionLogData)
 		}
 
 		// Set the current mongo timestamp on instance document
