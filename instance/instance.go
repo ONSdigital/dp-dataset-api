@@ -239,23 +239,25 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	instanceID := vars["instance_id"]
 	auditParams := common.Params{"instance_id": instanceID}
 	logData := audit.ToLogData(auditParams)
+	var b []byte
+	var err error
 
-	if err := func() error {
+	if b, err = func() ([]byte, error) {
 		instance, err := unmarshalInstance(ctx, r.Body, false)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: failed unmarshalling json to model"), logData)
-			return taskError{error: err, status: 400}
+			return nil, taskError{error: err, status: 400}
 		}
 
 		if err = validateInstanceUpdate(instance); err != nil {
-			return taskError{error: err, status: 400}
+			return nil, taskError{error: err, status: 400}
 		}
 
 		// Get the current document
 		currentInstance, err := s.GetInstance(instanceID)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.GetInstance returned error"), logData)
-			return err
+			return nil, err
 		}
 
 		logData["current_state"] = currentInstance.State
@@ -263,7 +265,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		if instance.State != "" && instance.State != currentInstance.State {
 			if err = validateInstanceStateUpdate(instance, currentInstance); err != nil {
 				log.ErrorCtx(ctx, errors.Errorf("instance update: instance state invalid"), logData)
-				return err
+				return nil, err
 			}
 		}
 
@@ -281,7 +283,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			editionDoc, err2 := s.confirmEdition(ctx, datasetID, edition, instanceID)
 			if err2 != nil {
 				log.ErrorCtx(ctx, errors.WithMessage(err2, "instance update: store.getEdition returned an error"), editionLogData)
-				return err2
+				return nil, err2
 			}
 
 			//update instance with confirmed edition details
@@ -291,12 +293,12 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			instance.Version, err2 = strconv.Atoi(editionDoc.Next.Links.LatestVersion.ID)
 			if err2 != nil {
 				log.ErrorCtx(ctx, errors.WithMessage(err2, "instance update: failed to convert edition latestVersion id to instance.version int"), editionLogData)
-				return err2
+				return nil, err2
 			}
 
 			if err3 := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); err3 != nil {
 				log.ErrorCtx(ctx, errors.WithMessage(err3, "instance update: datastore.AddVersionDetailsToInstance returned an error"), editionLogData)
-				return err3
+				return nil, err3
 			}
 
 			log.InfoCtx(ctx, "instance update: added version details to instance", editionLogData)
@@ -306,10 +308,21 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		instance.UniqueTimestamp = currentInstance.UniqueTimestamp
 		if err = s.UpdateInstance(ctx, instanceID, instance); err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.UpdateInstance returned an error"), logData)
-			return err
+			return nil, err
 		}
 
-		return nil
+		if instance, err = s.GetInstance(instanceID); err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "instance update: store.GetInstance for response returned an error"), logData)
+			return nil, err
+		}
+
+		b, err := json.Marshal(instance)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "add instance: failed to marshal instance to json"), logData)
+			return nil, err
+		}
+
+		return b, nil
 	}(); err != nil {
 		if auditErr := s.Auditor.Record(ctx, UpdateInstanceAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			err = auditErr
@@ -318,6 +331,10 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	writeBody(ctx, w, b)
 
 	s.Auditor.Record(ctx, UpdateInstanceAction, audit.Successful, auditParams)
 

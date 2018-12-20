@@ -840,7 +840,7 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 3)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 

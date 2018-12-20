@@ -75,7 +75,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 3)
 				So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
 				//	So(len(mockedDataStore.GetNextVersionCalls()), ShouldEqual, 1)
@@ -443,7 +443,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 
 				So(w.Code, ShouldEqual, http.StatusOK)
 
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 3)
 				So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
 				//			So(len(mockedDataStore.GetNextVersionCalls()), ShouldEqual, 1)
