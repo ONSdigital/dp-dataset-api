@@ -292,10 +292,15 @@ func CreateContact(reader io.Reader) (*Contact, error) {
 }
 
 //UpdateLinks in the editions.next document, ensuring links can't regress once published to current
-func (ed *EditionUpdate) UpdateLinks(host, versionID string) error {
-	log.Debug("lets look at updating links", log.Data{"doc": ed, "versionID": versionID})
-	if ed.Next.Links == nil || ed.Next.Links.LatestVersion == nil {
+func (ed *EditionUpdate) UpdateLinks(host string) error {
+	if ed.Next == nil || ed.Next.Links == nil || ed.Next.Links.LatestVersion == nil {
 		return errors.New("editions links do not exist")
+	}
+
+	versionID := ed.Next.Links.LatestVersion.ID
+	version, err := strconv.Atoi(ed.Next.Links.LatestVersion.ID)
+	if err != nil {
+		return err
 	}
 
 	currentVersion := 0
@@ -306,11 +311,6 @@ func (ed *EditionUpdate) UpdateLinks(host, versionID string) error {
 		if err != nil {
 			return err
 		}
-	}
-
-	version, err := strconv.Atoi(versionID)
-	if err != nil {
-		return err
 	}
 
 	if currentVersion > version {
@@ -323,17 +323,15 @@ func (ed *EditionUpdate) UpdateLinks(host, versionID string) error {
 
 	ed.Next.Links.LatestVersion = &LinkObject{
 		ID:   versionID,
-		HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", host, ed.Next.Links.Dataset.ID, ed.Next.Links.Self.ID, versionID),
+		HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", host, ed.Next.Links.Dataset.ID, ed.Next.Edition, versionID),
 	}
-
-	log.Debug("links should be updated now", log.Data{"doc": ed.Next.Links.LatestVersion, "versionID": versionID})
 
 	return nil
 }
 
-//UpdateLinks in the editions.next document, ensuring links can't regress once published to current
+//PublishLinks applies the provided versionLink object to the edition being published only
+//if that version is greater than the latest published version
 func (ed *EditionUpdate) PublishLinks(host string, versionLink *LinkObject) error {
-	log.Debug("lets look at updating links", log.Data{"doc": ed, "versionID": versionLink.ID})
 	if ed.Next == nil || ed.Next.Links == nil || ed.Next.Links.LatestVersion == nil {
 		return errors.New("editions links do not exist")
 	}
@@ -346,6 +344,10 @@ func (ed *EditionUpdate) PublishLinks(host string, versionLink *LinkObject) erro
 		if err != nil {
 			return err
 		}
+	}
+
+	if versionLink == nil {
+		return errors.New("invalid arguments to PublishLinks - versionLink empty")
 	}
 
 	version, err := strconv.Atoi(versionLink.ID)
