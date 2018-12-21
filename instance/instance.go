@@ -280,25 +280,25 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			edition := instance.Edition
 			editionLogData := log.Data{"instance_id": instanceID, "dataset_id": datasetID, "edition": edition}
 
-			editionDoc, err2 := s.confirmEdition(ctx, datasetID, edition, instanceID)
-			if err2 != nil {
-				log.ErrorCtx(ctx, errors.WithMessage(err2, "instance update: store.getEdition returned an error"), editionLogData)
-				return nil, err2
+			editionDoc, editionConfirmErr := s.confirmEdition(ctx, datasetID, edition, instanceID)
+			if editionConfirmErr != nil {
+				log.ErrorCtx(ctx, errors.WithMessage(editionConfirmErr, "instance update: store.getEdition returned an error"), editionLogData)
+				return nil, editionConfirmErr
 			}
 
 			//update instance with confirmed edition details
 			instance.Links = currentInstance.Links
 			instance.Links.Edition = editionDoc.Next.Links.Self
 			instance.Links.Version = editionDoc.Next.Links.LatestVersion
-			instance.Version, err2 = strconv.Atoi(editionDoc.Next.Links.LatestVersion.ID)
-			if err2 != nil {
-				log.ErrorCtx(ctx, errors.WithMessage(err2, "instance update: failed to convert edition latestVersion id to instance.version int"), editionLogData)
-				return nil, err2
+			instance.Version, editionConfirmErr = strconv.Atoi(editionDoc.Next.Links.LatestVersion.ID)
+			if editionConfirmErr != nil {
+				log.ErrorCtx(ctx, errors.WithMessage(editionConfirmErr, "instance update: failed to convert edition latestVersion id to instance.version int"), editionLogData)
+				return nil, editionConfirmErr
 			}
 
-			if err3 := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); err3 != nil {
-				log.ErrorCtx(ctx, errors.WithMessage(err3, "instance update: datastore.AddVersionDetailsToInstance returned an error"), editionLogData)
-				return nil, err3
+			if versionErr := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); versionErr != nil {
+				log.ErrorCtx(ctx, errors.WithMessage(versionErr, "instance update: datastore.AddVersionDetailsToInstance returned an error"), editionLogData)
+				return nil, versionErr
 			}
 
 			log.InfoCtx(ctx, "instance update: added version details to instance", editionLogData)
