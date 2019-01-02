@@ -19,6 +19,7 @@ var (
 	ErrAssociatedVersionCollectionIDInvalid = errors.New("missing collection_id for association between version and a collection")
 	ErrPublishedVersionCollectionIDInvalid  = errors.New("unexpected collection_id in published version")
 	ErrVersionStateInvalid                  = errors.New("incorrect state, can be one of the following: edition-confirmed, associated or published")
+	ErrEditionLinksInvalid                  = errors.New("editions links do not exist")
 )
 
 // DatasetResults represents a structure for a list of datasets
@@ -294,7 +295,7 @@ func CreateContact(reader io.Reader) (*Contact, error) {
 //UpdateLinks in the editions.next document, ensuring links can't regress once published to current
 func (ed *EditionUpdate) UpdateLinks(host string) error {
 	if ed.Next == nil || ed.Next.Links == nil || ed.Next.Links.LatestVersion == nil {
-		return errors.New("editions links do not exist")
+		return ErrEditionLinksInvalid
 	}
 
 	versionID := ed.Next.Links.LatestVersion.ID
@@ -361,9 +362,6 @@ func (ed *EditionUpdate) PublishLinks(host string, versionLink *LinkObject) erro
 	}
 
 	ed.Next.Links.LatestVersion = versionLink
-
-	log.Debug("links should be updated now", log.Data{"doc": ed.Next.Links.LatestVersion, "versionID": versionLink.ID})
-
 	return nil
 }
 

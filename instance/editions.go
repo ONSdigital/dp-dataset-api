@@ -47,8 +47,7 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 			}
 
 			if err = editionDoc.UpdateLinks(s.Host); err != nil {
-				logData["version"] = editionDoc.Next.Links.LatestVersion.ID
-				log.ErrorCtx(ctx, errors.WithMessage(err, "unable to retrieve latest version"), logData)
+				log.ErrorCtx(ctx, errors.WithMessage(err, "unable to update edition links"), logData)
 				return nil, action, err
 			}
 		}
