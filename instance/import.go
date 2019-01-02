@@ -101,7 +101,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 					validationErrs = append(validationErrs, err)
 				} else {
 					if err := s.UpdateBuildHierarchyTaskState(instanceID, task.DimensionName, task.State); err != nil {
-						if err.Error() == "not found" {
+						if err.Error() == errs.ErrNotFound.Error() {
 							notFoundErr := task.DimensionName + " hierarchy import task does not exist"
 							log.ErrorCtx(ctx, errors.WithMessage(err, notFoundErr), logData)
 							return &taskError{errors.New(notFoundErr), http.StatusNotFound}
@@ -178,9 +178,8 @@ func unmarshalImportTasks(reader io.Reader) (*models.InstanceImportTasks, error)
 	}
 
 	var tasks models.InstanceImportTasks
-	err = json.Unmarshal(b, &tasks)
-	if err != nil {
-		return nil, errs.ErrUnableToParseJSON
+	if err := json.Unmarshal(b, &tasks); err != nil {
+		return nil, err
 	}
 
 	return &tasks, nil

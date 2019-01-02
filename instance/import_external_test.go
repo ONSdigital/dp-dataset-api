@@ -406,7 +406,7 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
+				So(w.Body.String(), ShouldContainSubstring, "unexpected end of JSON input")
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
@@ -550,7 +550,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
+				So(w.Body.String(), ShouldContainSubstring, "unexpected end of JSON input")
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
@@ -877,7 +877,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
+				So(w.Body.String(), ShouldContainSubstring, "unexpected end of JSON input")
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)

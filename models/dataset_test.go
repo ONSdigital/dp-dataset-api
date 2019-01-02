@@ -372,7 +372,7 @@ func TestUpdateLinks(t *testing.T) {
 			err := edition.UpdateLinks(host)
 			Convey("then an error should be returned", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldResemble, "strconv.Atoi: parsing \"hi\": invalid syntax")
+				So(err.Error(), ShouldResemble, "failed to convert version id from edition.current document: strconv.Atoi: parsing \"hi\": invalid syntax")
 			})
 		})
 
@@ -381,7 +381,7 @@ func TestUpdateLinks(t *testing.T) {
 			err := edition.UpdateLinks(host)
 			Convey("then an error should be returned", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldResemble, "strconv.Atoi: parsing \"there\": invalid syntax")
+				So(err.Error(), ShouldResemble, "failed to convert version id from edition.next document: strconv.Atoi: parsing \"there\": invalid syntax")
 			})
 		})
 	})

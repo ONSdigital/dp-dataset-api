@@ -2,7 +2,6 @@ package instance
 
 import (
 	"context"
-	"fmt"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -10,7 +9,6 @@ import (
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/pkg/errors"
-	"github.com/satori/go.uuid"
 )
 
 func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instanceID string) (*models.EditionUpdate, error) {
@@ -37,7 +35,7 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 				return nil, action, auditErr
 			}
 
-			editionDoc = s.createEdition(datasetID, edition)
+			editionDoc = models.CreateEdition(s.Host, datasetID, edition)
 			log.Debug("created new edition", logData)
 		} else {
 			log.Debug("edition found, updating", logData)
@@ -70,30 +68,4 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 	s.Auditor.Record(ctx, action, audit.Successful, auditParams)
 	log.InfoCtx(ctx, "instance update: created/updated edition", logData)
 	return editionDoc, nil
-}
-
-func (s *Store) createEdition(datasetID, edition string) *models.EditionUpdate {
-	return &models.EditionUpdate{
-		ID: uuid.NewV4().String(),
-		Next: &models.Edition{
-			Edition: edition,
-			State:   models.EditionConfirmedState,
-			Links: &models.EditionUpdateLinks{
-				Dataset: &models.LinkObject{
-					ID:   datasetID,
-					HRef: fmt.Sprintf("%s/datasets/%s", s.Host, datasetID),
-				},
-				Self: &models.LinkObject{
-					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", s.Host, datasetID, edition),
-				},
-				Versions: &models.LinkObject{
-					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, edition),
-				},
-				LatestVersion: &models.LinkObject{
-					ID:   "1",
-					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/1", s.Host, datasetID, edition),
-				},
-			},
-		},
-	}
 }

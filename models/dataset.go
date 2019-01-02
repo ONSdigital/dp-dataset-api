@@ -292,6 +292,32 @@ func CreateContact(reader io.Reader) (*Contact, error) {
 	return &contact, nil
 }
 
+func CreateEdition(host, datasetID, edition string) *EditionUpdate {
+	return &EditionUpdate{
+		ID: uuid.NewV4().String(),
+		Next: &Edition{
+			Edition: edition,
+			State:   EditionConfirmedState,
+			Links: &EditionUpdateLinks{
+				Dataset: &LinkObject{
+					ID:   datasetID,
+					HRef: fmt.Sprintf("%s/datasets/%s", host, datasetID),
+				},
+				Self: &LinkObject{
+					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", host, datasetID, edition),
+				},
+				Versions: &LinkObject{
+					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", host, datasetID, edition),
+				},
+				LatestVersion: &LinkObject{
+					ID:   "1",
+					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/1", host, datasetID, edition),
+				},
+			},
+		},
+	}
+}
+
 //UpdateLinks in the editions.next document, ensuring links can't regress once published to current
 func (ed *EditionUpdate) UpdateLinks(host string) error {
 	if ed.Next == nil || ed.Next.Links == nil || ed.Next.Links.LatestVersion == nil {
@@ -301,7 +327,7 @@ func (ed *EditionUpdate) UpdateLinks(host string) error {
 	versionID := ed.Next.Links.LatestVersion.ID
 	version, err := strconv.Atoi(ed.Next.Links.LatestVersion.ID)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to convert version id from edition.next document")
 	}
 
 	currentVersion := 0
@@ -310,7 +336,7 @@ func (ed *EditionUpdate) UpdateLinks(host string) error {
 		var err error
 		currentVersion, err = strconv.Atoi(ed.Current.Links.LatestVersion.ID)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to convert version id from edition.current document")
 		}
 	}
 

@@ -19,7 +19,16 @@ func TestUnmarshalImportTaskWithInvalidJson(t *testing.T) {
 	Convey("Create an import observation task with invalid json", t, func() {
 		task, err := unmarshalImportTasks(strings.NewReader("{ "))
 		So(task, ShouldBeNil)
-		So(err.Error(), ShouldContainSubstring, "failed to parse json body")
+		So(err.Error(), ShouldContainSubstring, "unexpected end of JSON input")
+	})
+}
+
+func TestUnmarshalImportTaskWithInvalidData(t *testing.T) {
+	Convey("Create an import observation task with correctly named fields of the wrong type", t, func() {
+		task, err := unmarshalImportTasks(strings.NewReader(`{"build_hierarchies": "this should fail"}`))
+		So(task, ShouldBeNil)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "json: cannot unmarshal string into Go struct field InstanceImportTasks.build_hierarchies of type []*models.BuildHierarchyTask")
 	})
 }
 

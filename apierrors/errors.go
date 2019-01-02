@@ -36,6 +36,7 @@ var (
 	ErrUnauthorised                      = errors.New("unauthorised access to API")
 	ErrVersionMissingState               = errors.New("missing state from version")
 	ErrVersionNotFound                   = errors.New("version not found")
+	ErrNotFound                          = errors.New("not found")
 
 	ErrExpectedResourceStateOfCreated          = errors.New("unable to update resource, expected resource to have a state of created")
 	ErrExpectedResourceStateOfSubmitted        = errors.New("unable to update resource, expected resource to have a state of submitted")

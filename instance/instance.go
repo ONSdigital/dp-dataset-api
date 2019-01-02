@@ -288,7 +288,11 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 			//update instance with confirmed edition details
 			instance.Links = currentInstance.Links
-			instance.Links.Edition = editionDoc.Next.Links.Self
+			instance.Links.Edition = &models.LinkObject{
+				ID:   instance.Edition,
+				HRef: editionDoc.Next.Links.Self.HRef,
+			}
+
 			instance.Links.Version = editionDoc.Next.Links.LatestVersion
 			instance.Version, editionConfirmErr = strconv.Atoi(editionDoc.Next.Links.LatestVersion.ID)
 			if editionConfirmErr != nil {
