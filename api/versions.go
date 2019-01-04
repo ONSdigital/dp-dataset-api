@@ -369,6 +369,11 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 		}
 
 		editionDoc.Next.State = models.PublishedState
+		if err := editionDoc.PublishLinks(api.host, versionDoc.Links.Version); err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "putVersion endpoint: failed to update the edition links for the version we're trying to publish"), data)
+			return err
+		}
+
 		editionDoc.Current = editionDoc.Next
 
 		if err := api.dataStore.Backend.UpsertEdition(versionDetails.datasetID, versionDetails.edition, editionDoc); err != nil {

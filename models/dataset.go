@@ -9,6 +9,7 @@ import (
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/go-ns/log"
 	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 )
@@ -18,6 +19,7 @@ var (
 	ErrAssociatedVersionCollectionIDInvalid = errors.New("missing collection_id for association between version and a collection")
 	ErrPublishedVersionCollectionIDInvalid  = errors.New("unexpected collection_id in published version")
 	ErrVersionStateInvalid                  = errors.New("incorrect state, can be one of the following: edition-confirmed, associated or published")
+	ErrEditionLinksInvalid                  = errors.New("editions links do not exist")
 )
 
 // DatasetResults represents a structure for a list of datasets
@@ -222,29 +224,6 @@ type VersionLinks struct {
 	Version    *LinkObject `bson:"version,omitempty"     json:"-"`
 }
 
-var validVersionStates = map[string]int{
-	EditionConfirmedState: 1,
-	AssociatedState:       1,
-	PublishedState:        1,
-}
-
-// CheckState checks state against a whitelist of valid states
-func CheckState(docType, state string) error {
-	var states map[string]int
-	switch docType {
-	case "version":
-		states = validVersionStates
-	default:
-		states = validStates
-	}
-
-	if states[state] == 1 {
-		return nil
-	}
-
-	return errs.ErrResourceState
-}
-
 // CreateDataset manages the creation of a dataset from a reader
 func CreateDataset(reader io.Reader) (*Dataset, error) {
 	b, err := ioutil.ReadAll(reader)
@@ -311,6 +290,105 @@ func CreateContact(reader io.Reader) (*Contact, error) {
 	contact.ID = (uuid.NewV4()).String()
 
 	return &contact, nil
+}
+
+func CreateEdition(host, datasetID, edition string) *EditionUpdate {
+	return &EditionUpdate{
+		ID: uuid.NewV4().String(),
+		Next: &Edition{
+			Edition: edition,
+			State:   EditionConfirmedState,
+			Links: &EditionUpdateLinks{
+				Dataset: &LinkObject{
+					ID:   datasetID,
+					HRef: fmt.Sprintf("%s/datasets/%s", host, datasetID),
+				},
+				Self: &LinkObject{
+					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", host, datasetID, edition),
+				},
+				Versions: &LinkObject{
+					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", host, datasetID, edition),
+				},
+				LatestVersion: &LinkObject{
+					ID:   "1",
+					HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/1", host, datasetID, edition),
+				},
+			},
+		},
+	}
+}
+
+//UpdateLinks in the editions.next document, ensuring links can't regress once published to current
+func (ed *EditionUpdate) UpdateLinks(host string) error {
+	if ed.Next == nil || ed.Next.Links == nil || ed.Next.Links.LatestVersion == nil {
+		return ErrEditionLinksInvalid
+	}
+
+	versionID := ed.Next.Links.LatestVersion.ID
+	version, err := strconv.Atoi(ed.Next.Links.LatestVersion.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to convert version id from edition.next document")
+	}
+
+	currentVersion := 0
+
+	if ed.Current != nil && ed.Current.Links != nil && ed.Current.Links.LatestVersion != nil {
+		var err error
+		currentVersion, err = strconv.Atoi(ed.Current.Links.LatestVersion.ID)
+		if err != nil {
+			return errors.Wrap(err, "failed to convert version id from edition.current document")
+		}
+	}
+
+	if currentVersion > version {
+		log.Debug("published edition links to a higher version than the requested change", log.Data{"doc": ed, "versionID": versionID})
+		return errors.New("published edition links to a higher version than the requested change")
+	}
+
+	version++
+	versionID = strconv.Itoa(version)
+
+	ed.Next.Links.LatestVersion = &LinkObject{
+		ID:   versionID,
+		HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", host, ed.Next.Links.Dataset.ID, ed.Next.Edition, versionID),
+	}
+
+	return nil
+}
+
+//PublishLinks applies the provided versionLink object to the edition being published only
+//if that version is greater than the latest published version
+func (ed *EditionUpdate) PublishLinks(host string, versionLink *LinkObject) error {
+	if ed.Next == nil || ed.Next.Links == nil || ed.Next.Links.LatestVersion == nil {
+		return errors.New("editions links do not exist")
+	}
+
+	currentVersion := 0
+
+	if ed.Current != nil && ed.Current.Links != nil && ed.Current.Links.LatestVersion != nil {
+		var err error
+		currentVersion, err = strconv.Atoi(ed.Current.Links.LatestVersion.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	if versionLink == nil {
+		return errors.New("invalid arguments to PublishLinks - versionLink empty")
+	}
+
+	version, err := strconv.Atoi(versionLink.ID)
+	if err != nil {
+		return err
+	}
+
+	if currentVersion > version {
+		log.Debug("current latest version is higher, no edition update required", log.Data{"doc": ed, "currentVersionID": currentVersion, "versionID": versionLink.ID})
+		return nil
+	}
+
+	ed.Next.Links.LatestVersion = versionLink
+	return nil
 }
 
 // ValidateVersion checks the content of the version structure

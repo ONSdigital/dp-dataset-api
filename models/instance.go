@@ -61,19 +61,13 @@ type BuildSearchIndexTask struct {
 
 // InstanceLinks holds all links for an instance
 type InstanceLinks struct {
-	Dataset    *IDLink `bson:"dataset,omitempty"    json:"dataset,omitempty"`
-	Dimensions *IDLink `bson:"dimensions,omitempty" json:"dimensions,omitempty"`
-	Edition    *IDLink `bson:"edition,omitempty"    json:"edition,omitempty"`
-	Job        *IDLink `bson:"job,omitempty"        json:"job"`
-	Self       *IDLink `bson:"self,omitempty"       json:"self,omitempty"`
-	Spatial    *IDLink `bson:"spatial,omitempty"    json:"spatial,omitempty"`
-	Version    *IDLink `bson:"version,omitempty"    json:"version,omitempty"`
-}
-
-// IDLink holds the id and a link to the resource
-type IDLink struct {
-	HRef string `bson:"href,omitempty" json:"href,omitempty"`
-	ID   string `bson:"id,omitempty"   json:"id,omitempty"`
+	Dataset    *LinkObject `bson:"dataset,omitempty"    json:"dataset,omitempty"`
+	Dimensions *LinkObject `bson:"dimensions,omitempty" json:"dimensions,omitempty"`
+	Edition    *LinkObject `bson:"edition,omitempty"    json:"edition,omitempty"`
+	Job        *LinkObject `bson:"job,omitempty"        json:"job"`
+	Self       *LinkObject `bson:"self,omitempty"       json:"self,omitempty"`
+	Spatial    *LinkObject `bson:"spatial,omitempty"    json:"spatial,omitempty"`
+	Version    *LinkObject `bson:"version,omitempty"    json:"version,omitempty"`
 }
 
 // Event which has happened to an instance
@@ -94,49 +88,6 @@ func (e *Event) Validate() error {
 	if e.Message == "" || e.MessageOffset == "" || e.Time == nil || e.Type == "" {
 		return errs.ErrMissingParameters
 	}
-	return nil
-}
-
-var validStates = map[string]int{
-	CreatedState:          1,
-	SubmittedState:        1,
-	CompletedState:        1,
-	EditionConfirmedState: 1,
-	AssociatedState:       1,
-	PublishedState:        1,
-}
-
-// ValidateStateFilter checks the list of filter states from a whitelist
-func ValidateStateFilter(filterList []string) error {
-	var invalidFilterStateValues []string
-
-	for _, filter := range filterList {
-		if _, ok := validStates[filter]; !ok {
-			invalidFilterStateValues = append(invalidFilterStateValues, filter)
-		}
-	}
-
-	if invalidFilterStateValues != nil {
-		err := fmt.Errorf("bad request - invalid filter state values: %v", invalidFilterStateValues)
-		return err
-	}
-
-	return nil
-}
-
-// ValidateInstanceState checks the list of instance states from a whitelist
-func ValidateInstanceState(state string) error {
-	var invalidInstantStateValues []string
-
-	if _, ok := validStates[state]; !ok {
-		invalidInstantStateValues = append(invalidInstantStateValues, state)
-	}
-
-	if invalidInstantStateValues != nil {
-		err := fmt.Errorf("bad request - invalid filter state values: %v", invalidInstantStateValues)
-		return err
-	}
-
 	return nil
 }
 
