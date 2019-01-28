@@ -36,12 +36,12 @@ job "dp-dataset-api" {
       config {
         command = "${NOMAD_TASK_DIR}/start-task"
 
-        args = [“./dp-dataset-api”]
+        args = ["./dp-dataset-api"]
 
-        image = “{{ECR_URL}}:concourse-{{REVISION}}”
+        image = "{{ECR_URL}}:concourse-{{REVISION}}"
 
         port_map {
-          http = “${NOMAD_PORT_http}”
+          http = "${NOMAD_PORT_http}"
         }
       }
 
@@ -102,12 +102,12 @@ job "dp-dataset-api" {
       config {
         command = "${NOMAD_TASK_DIR}/start-task"
 
-        args = [“./dp-dataset-api”]
+        args = ["./dp-dataset-api"]
 
-        image = “{{ECR_URL}}:concourse-{{REVISION}}”
+        image = "{{ECR_URL}}:concourse-{{REVISION}}"
 
         port_map {
-          http = “${NOMAD_PORT_http}”
+          http = "${NOMAD_PORT_http}"
         }
 
       service {
