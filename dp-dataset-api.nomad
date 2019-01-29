@@ -109,6 +109,7 @@ job "dp-dataset-api" {
         port_map {
           http = "${NOMAD_PORT_http}"
         }
+      }
 
       service {
         name = "dp-dataset-api"
@@ -141,5 +142,4 @@ job "dp-dataset-api" {
       }
     }
   }
-
 }
