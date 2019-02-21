@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"io"
+
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
@@ -23,7 +25,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
-	"io"
 )
 
 const (
@@ -939,7 +940,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
@@ -1000,7 +1001,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -1072,7 +1073,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
@@ -1128,6 +1129,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 						},
 						Version: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+							ID:   "1",
 						},
 					},
 					ReleaseDate: "2017-12-12",
@@ -1159,6 +1161,15 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 					ID: "123",
 					Next: &models.Edition{
 						State: models.PublishedState,
+						Links: &models.EditionUpdateLinks{
+							Self: &models.LinkObject{
+								HRef: "http://localhost:22000/datasets/123/editions/2017",
+							},
+							LatestVersion: &models.LinkObject{
+								HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+								ID:   "1",
+							},
+						},
 					},
 					Current: &models.Edition{},
 				}, nil
@@ -1510,7 +1521,7 @@ func TestPutEmptyVersion(t *testing.T) {
 				So(mockedDataStore.GetVersionCalls()[0].Version, ShouldEqual, "1")
 				So(mockedDataStore.GetVersionCalls()[0].State, ShouldEqual, "")
 
-				So(len(mockedDataStore.UpdateEditionCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 				So(len(mockDownloadGenerator.GenerateCalls()), ShouldEqual, 0)
 
@@ -1741,6 +1752,15 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 						ID: "123",
 						Next: &models.Edition{
 							State: models.PublishedState,
+							Links: &models.EditionUpdateLinks{
+								Self: &models.LinkObject{
+									HRef: "http://localhost:22000/datasets/123/editions/2017",
+								},
+								LatestVersion: &models.LinkObject{
+									HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+									ID:   "1",
+								},
+							},
 						},
 						Current: &models.Edition{},
 					}, nil
@@ -1781,6 +1801,7 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 					},
 					Version: &models.LinkObject{
 						HRef: "",
+						ID:   "1",
 					},
 				},
 				ReleaseDate: "2017-12-12",
@@ -2371,6 +2392,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 						},
 						Version: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+							ID:   "1",
 						},
 					},
 					ReleaseDate: "2017-12-12",
@@ -2402,6 +2424,16 @@ func TestPutVersionReturnsError(t *testing.T) {
 					ID: "123",
 					Next: &models.Edition{
 						State: models.PublishedState,
+						Links: &models.EditionUpdateLinks{
+							Self: &models.LinkObject{
+								HRef: "http://localhost:22000/datasets/123/editions/2017",
+								ID:   "2017",
+							},
+							LatestVersion: &models.LinkObject{
+								HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+								ID:   "1",
+							},
+						},
 					},
 					Current: &models.Edition{},
 				}, nil

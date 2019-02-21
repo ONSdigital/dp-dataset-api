@@ -15,20 +15,24 @@ import (
 const instanceCollection = "instances"
 
 // GetInstances from a mongo collection
-func (m *Mongo) GetInstances(filters []string) (*models.InstanceResults, error) {
+func (m *Mongo) GetInstances(states []string, datasets []string) (*models.InstanceResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	var stateFilter bson.M
-	if len(filters) > 0 {
-		stateFilter = bson.M{"state": bson.M{"$in": filters}}
+	filter := bson.M{}
+	if len(states) > 0 {
+		filter["state"] = bson.M{"$in": states}
 	}
 
-	iter := s.DB(m.Database).C(instanceCollection).Find(stateFilter).Iter()
+	if len(datasets) > 0 {
+		filter["links.dataset.id"] = bson.M{"$in": datasets}
+	}
+
+	iter := s.DB(m.Database).C(instanceCollection).Find(filter).Iter()
 	defer func() {
 		err := iter.Close()
 		if err != nil {
-			log.ErrorC("error closing iterator", err, log.Data{"data": filters})
+			log.ErrorC("error closing iterator", err, log.Data{"state_query": states, "dataset_query": datasets})
 		}
 	}()
 

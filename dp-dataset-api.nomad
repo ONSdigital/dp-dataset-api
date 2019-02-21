@@ -27,11 +27,7 @@ job "dp-dataset-api" {
     }
 
     task "dp-dataset-api-web" {
-      driver = "exec"
-
-      artifact {
-        source = "s3::https://s3-eu-west-1.amazonaws.com/{{BUILD_BUCKET}}/dp-dataset-api/{{REVISION}}.tar.gz"
-      }
+      driver = "docker"
 
       artifact {
         source = "s3::https://s3-eu-west-1.amazonaws.com/{{DEPLOYMENT_BUCKET}}/dp-dataset-api/{{REVISION}}.tar.gz"
@@ -40,9 +36,13 @@ job "dp-dataset-api" {
       config {
         command = "${NOMAD_TASK_DIR}/start-task"
 
-        args    = [
-          "${NOMAD_TASK_DIR}/dp-dataset-api",
-        ]
+        args = ["./dp-dataset-api"]
+
+        image = "{{ECR_URL}}:concourse-{{REVISION}}"
+
+        port_map {
+          http = "${NOMAD_PORT_http}"
+        }
       }
 
       service {
@@ -93,11 +93,7 @@ job "dp-dataset-api" {
     }
 
     task "dp-dataset-api-publishing" {
-      driver = "exec"
-
-      artifact {
-        source = "s3::https://s3-eu-west-1.amazonaws.com/{{BUILD_BUCKET}}/dp-dataset-api/{{REVISION}}.tar.gz"
-      }
+      driver = "docker"
 
       artifact {
         source = "s3::https://s3-eu-west-1.amazonaws.com/{{DEPLOYMENT_BUCKET}}/dp-dataset-api/{{REVISION}}.tar.gz"
@@ -106,9 +102,13 @@ job "dp-dataset-api" {
       config {
         command = "${NOMAD_TASK_DIR}/start-task"
 
-        args    = [
-          "${NOMAD_TASK_DIR}/dp-dataset-api",
-        ]
+        args = ["./dp-dataset-api"]
+
+        image = "{{ECR_URL}}:concourse-{{REVISION}}"
+
+        port_map {
+          http = "${NOMAD_PORT_http}"
+        }
       }
 
       service {
@@ -142,5 +142,4 @@ job "dp-dataset-api" {
       }
     }
   }
-
 }

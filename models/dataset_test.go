@@ -255,92 +255,300 @@ func TestCreateDownloadList(t *testing.T) {
 
 }
 
-func TestCheckState(t *testing.T) {
-	Convey("Successfully return without any errors", t, func() {
-		Convey("when the version has state of edition-confirmed", func() {
+func TestUpdateLinks(t *testing.T) {
+	host := "example.com"
 
-			err := CheckState("version", EditionConfirmedState)
-			So(err, ShouldBeNil)
-		})
+	Convey("Given a new edition with no links", t, func() {
+		edition := &EditionUpdate{
+			ID: "test",
+			Next: &Edition{
+				ID:      "test",
+				Edition: "time-series",
+			},
+		}
 
-		Convey("when the version has state of associated", func() {
+		Convey("when UpdateLinks is called", func() {
+			err := edition.UpdateLinks(host)
 
-			err := CheckState("version", AssociatedState)
-			So(err, ShouldBeNil)
-		})
-
-		Convey("when the version has state of published", func() {
-
-			err := CheckState("version", PublishedState)
-			So(err, ShouldBeNil)
-		})
-
-		Convey("when a resource has state of created", func() {
-
-			err := CheckState("resource", CreatedState)
-			So(err, ShouldBeNil)
-		})
-
-		Convey("when a resource has state of completed", func() {
-
-			err := CheckState("resource", CompletedState)
-			So(err, ShouldBeNil)
-		})
-
-		Convey("when a resource has state of edition-confirmed", func() {
-
-			err := CheckState("resource", EditionConfirmedState)
-			So(err, ShouldBeNil)
-		})
-
-		Convey("when a resource has state of associated", func() {
-
-			err := CheckState("resource", AssociatedState)
-			So(err, ShouldBeNil)
-		})
-
-		Convey("when a resource has state of published", func() {
-
-			err := CheckState("resource", PublishedState)
-			So(err, ShouldBeNil)
+			Convey("then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldEqual, "editions links do not exist")
+			})
 		})
 	})
 
-	Convey("Return with errors", t, func() {
-		Convey("when the version has a missing state", func() {
+	Convey("Given an edition with only unpublished versions ", t, func() {
+		edition := &EditionUpdate{
+			ID: "test",
+			Next: &Edition{
+				ID:      "test",
+				Edition: "time-series",
+				Links: &EditionUpdateLinks{
+					LatestVersion: &LinkObject{
+						ID:   "1",
+						HRef: "example.com/datasets/1/editions/time-series/versions/1",
+					},
+					Dataset: &LinkObject{
+						ID:   "1",
+						HRef: "example.com/datasets/1",
+					},
+					Self: &LinkObject{
+						HRef: "example.com/datasets/1/editions/time-series",
+					},
+				},
+			},
+		}
 
-			err := CheckState("version", "")
-			So(err, ShouldEqual, errs.ErrResourceState)
-		})
+		Convey("when UpdateLinks is called", func() {
+			err := edition.UpdateLinks(host)
 
-		Convey("when the version has state of gobbly-gook", func() {
-
-			err := CheckState("version", "gobbly-gook")
-			So(err, ShouldEqual, errs.ErrResourceState)
-		})
-
-		Convey("when a version has state of created", func() {
-
-			err := CheckState("version", CreatedState)
-			So(err, ShouldEqual, errs.ErrResourceState)
-		})
-
-		Convey("when a version has state of completed", func() {
-
-			err := CheckState("version", CompletedState)
-			So(err, ShouldEqual, errs.ErrResourceState)
-		})
-
-		Convey("when the resource has a missing state", func() {
-
-			err := CheckState("resource", "")
-			So(err, ShouldEqual, errs.ErrResourceState)
-		})
-
-		Convey("when the resource has state of gobbly-gook", func() {
-
-			err := CheckState("resource", "gobbly-gook")
-			So(err, ShouldEqual, errs.ErrResourceState)
+			Convey("then links are correctly updated", func() {
+				So(err, ShouldBeNil)
+				So(edition.Next.Links.LatestVersion.ID, ShouldEqual, "2")
+				So(edition.Current, ShouldBeNil)
+			})
 		})
 	})
+
+	Convey("Given an edition with a published version ", t, func() {
+		edition := &EditionUpdate{
+			ID: "test",
+			Next: &Edition{
+				ID:      "test",
+				Edition: "time-series",
+				Links: &EditionUpdateLinks{
+					LatestVersion: &LinkObject{
+						ID:   "1",
+						HRef: "example.com/datasets/1/editions/time-series/versions/1",
+					},
+					Dataset: &LinkObject{
+						ID:   "1",
+						HRef: "example.com/datasets/1",
+					},
+					Self: &LinkObject{
+						HRef: "example.com/datasets/1/editions/time-series",
+					},
+				},
+			},
+			Current: &Edition{
+				ID:      "test",
+				Edition: "time-series",
+				Links: &EditionUpdateLinks{
+					LatestVersion: &LinkObject{
+						ID:   "1",
+						HRef: "example.com/datasets/1/editions/time-series/versions/1",
+					},
+					Dataset: &LinkObject{
+						ID:   "1",
+						HRef: "example.com/datasets/1",
+					},
+					Self: &LinkObject{
+						HRef: "example.com/datasets/1/editions/time-series",
+					},
+				},
+			},
+		}
+
+		Convey("when UpdateLinks is called", func() {
+			err := edition.UpdateLinks(host)
+			Convey("then links are correctly updated", func() {
+				So(err, ShouldBeNil)
+				So(edition.Next.Links.LatestVersion.ID, ShouldEqual, "2")
+				So(edition.Current.Links.LatestVersion.ID, ShouldEqual, "1")
+			})
+		})
+
+		Convey("when UpdateLinks is called with a version ID which is lower than the latest published version", func() {
+			edition.Current.Links.LatestVersion.ID = "3"
+			err := edition.UpdateLinks(host)
+			Convey("then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldResemble, "published edition links to a higher version than the requested change")
+			})
+		})
+
+		Convey("when UpdateLinks is called on an edition with an invalid current version ID", func() {
+			edition.Current.Links.LatestVersion.ID = "hi"
+			err := edition.UpdateLinks(host)
+			Convey("then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldResemble, "failed to convert version id from edition.current document: strconv.Atoi: parsing \"hi\": invalid syntax")
+			})
+		})
+
+		Convey("when UpdateLinks is called on an edition with an invalid next version ID", func() {
+			edition.Next.Links.LatestVersion.ID = "there"
+			err := edition.UpdateLinks(host)
+			Convey("then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldResemble, "failed to convert version id from edition.next document: strconv.Atoi: parsing \"there\": invalid syntax")
+			})
+		})
+	})
+}
+
+func TestPublishLinks(t *testing.T) {
+	host := "example.com"
+
+	Convey("Given a new edition with no links", t, func() {
+		edition := &EditionUpdate{
+			ID: "test",
+			Next: &Edition{
+				ID:      "test",
+				Edition: "time-series",
+			},
+		}
+
+		Convey("when PublishLinks is called", func() {
+			err := edition.PublishLinks(host, nil)
+
+			Convey("then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldEqual, "editions links do not exist")
+			})
+		})
+	})
+
+	Convey("Given an edition with an invalid current version ID", t, func() {
+		edition := &EditionUpdate{
+			ID: "test",
+			Next: &Edition{
+				ID:      "test",
+				Edition: "time-series",
+				Links: &EditionUpdateLinks{
+					LatestVersion: &LinkObject{
+						ID:   "hello",
+						HRef: "example.com/datasets/1/editions/time-series/versions/hello",
+					},
+				},
+			},
+			Current: &Edition{
+				ID:      "test",
+				Edition: "time-series",
+				Links: &EditionUpdateLinks{
+					LatestVersion: &LinkObject{
+						ID:   "hello",
+						HRef: "example.com/datasets/1/editions/time-series/versions/hello",
+					},
+				},
+			},
+		}
+
+		Convey("when PublishLinks is called", func() {
+			err := edition.PublishLinks(host, nil)
+
+			Convey("then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldResemble, "strconv.Atoi: parsing \"hello\": invalid syntax")
+			})
+		})
+	})
+
+	Convey("Given an edition with only unpublished versions ", t, func() {
+		version := &LinkObject{
+			ID:   "1",
+			HRef: "example.com/datasets/1/editions/time-series/versions/1",
+		}
+
+		edition := &EditionUpdate{
+			ID: "test",
+			Next: &Edition{
+				ID:      "test",
+				Edition: "time-series",
+				Links: &EditionUpdateLinks{
+					LatestVersion: version,
+				},
+			},
+		}
+
+		Convey("when PublishLinks is called with an invalid version link", func() {
+			err := edition.PublishLinks(host, nil)
+
+			Convey("then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldResemble, "invalid arguments to PublishLinks - versionLink empty")
+			})
+		})
+
+		Convey("when PublishLinks is called with an invalid version link ID", func() {
+			err := edition.PublishLinks(host, &LinkObject{
+				ID: "hello",
+			})
+
+			Convey("then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldResemble, "strconv.Atoi: parsing \"hello\": invalid syntax")
+			})
+		})
+
+		Convey("when PublishLinks is called with a version link", func() {
+			err := edition.PublishLinks(host, version)
+
+			Convey("then links are correctly updated", func() {
+				So(err, ShouldBeNil)
+				So(edition.Next.Links.LatestVersion, ShouldEqual, version)
+				So(edition.Current, ShouldBeNil)
+			})
+		})
+	})
+
+	Convey("Given an edition with a published version ", t, func() {
+		publishedVersion := &LinkObject{
+			ID:   "2",
+			HRef: "example.com/datasets/1/editions/time-series/versions/1",
+		}
+
+		storedNextVersion := &LinkObject{
+			ID:   "2",
+			HRef: "example.com/datasets/1/editions/time-series/versions/1",
+		}
+
+		edition := &EditionUpdate{
+			ID: "test",
+			Next: &Edition{
+				ID:      "test",
+				Edition: "time-series",
+				Links: &EditionUpdateLinks{
+					LatestVersion: storedNextVersion,
+				},
+			},
+			Current: &Edition{
+				ID:      "test",
+				Edition: "time-series",
+				Links: &EditionUpdateLinks{
+					LatestVersion: publishedVersion,
+				},
+			},
+		}
+
+		Convey("when PublishLinks is called", func() {
+			argLink := &LinkObject{
+				ID:   "3",
+				HRef: "example.com/datasets/1/editions/time-series/versions/3",
+			}
+
+			err := edition.PublishLinks(host, argLink)
+
+			Convey("then links are correctly updated", func() {
+				So(err, ShouldBeNil)
+				So(edition.Next.Links.LatestVersion, ShouldEqual, argLink)
+				So(edition.Current.Links.LatestVersion, ShouldEqual, publishedVersion)
+			})
+		})
+
+		Convey("when PublishLinks is called with a version ID which is lower than the latest published version", func() {
+			argLink := &LinkObject{
+				ID:   "1",
+				HRef: "example.com/datasets/1/editions/time-series/versions/1",
+			}
+			err := edition.PublishLinks(host, argLink)
+
+			Convey("then no changes should be made", func() {
+				So(err, ShouldBeNil)
+				So(edition.Next.Links.LatestVersion, ShouldEqual, storedNextVersion)
+				So(edition.Current.Links.LatestVersion, ShouldEqual, publishedVersion)
+			})
+		})
+	})
+
 }
