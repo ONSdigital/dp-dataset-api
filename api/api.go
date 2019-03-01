@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -94,7 +93,6 @@ type DatasetAPI struct {
 	Router               *mux.Router
 	urlBuilder           *url.Builder
 	downloadGenerator    DownloadsGenerator
-	healthCheckTimeout   time.Duration
 	serviceAuthToken     string
 	auditor              Auditor
 }
@@ -140,7 +138,6 @@ func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 		Router:               router,
 		urlBuilder:           urlBuilder,
 		downloadGenerator:    downloadGenerator,
-		healthCheckTimeout:   cfg.HealthCheckTimeout,
 		auditor:              auditor,
 	}
 

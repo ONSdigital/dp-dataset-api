@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/api"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -1150,7 +1149,6 @@ func getAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDown
 	cfg.ServiceAuthToken = "dataset"
 	cfg.DatasetAPIURL = "http://localhost:22000"
 	cfg.EnablePrivateEnpoints = true
-	cfg.HealthCheckTimeout = 2 * time.Second
 
 	return api.Routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockAuditor, mockedObservationStore)
 }
