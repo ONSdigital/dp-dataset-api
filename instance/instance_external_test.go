@@ -54,7 +54,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -82,7 +82,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -111,7 +111,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -140,7 +140,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -170,7 +170,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -202,7 +202,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -225,7 +225,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 				mockedDataStore := &storetest.StorerMock{}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -252,7 +252,7 @@ func Test_GetInstancesAuditErrors(t *testing.T) {
 
 			mockedDataStore := &storetest.StorerMock{}
 
-			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then a 500 status is returned", func() {
@@ -282,7 +282,7 @@ func Test_GetInstancesAuditErrors(t *testing.T) {
 				},
 			}
 
-			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then a 500 status is returned", func() {
@@ -313,7 +313,7 @@ func Test_GetInstancesAuditErrors(t *testing.T) {
 				},
 			}
 
-			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then a 500 status is returned", func() {
@@ -347,7 +347,7 @@ func Test_GetInstanceReturnsOK(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -381,7 +381,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -408,7 +408,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -435,7 +435,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -470,7 +470,7 @@ func Test_GetInstanceAuditErrors(t *testing.T) {
 				},
 			}
 
-			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then response returns internal server error (500)", func() {
@@ -499,7 +499,7 @@ func Test_GetInstanceAuditErrors(t *testing.T) {
 				},
 			}
 
-			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then response returns internal server error (500)", func() {
@@ -529,7 +529,7 @@ func Test_GetInstanceAuditErrors(t *testing.T) {
 				},
 			}
 
-			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then response returns internal server error (500)", func() {
@@ -585,7 +585,7 @@ func Test_AddInstanceReturnsCreated(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusCreated)
@@ -620,7 +620,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -652,7 +652,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -684,7 +684,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -716,7 +716,7 @@ func Test_AddInstanceAuditErrors(t *testing.T) {
 			w := httptest.NewRecorder()
 			mockedDataStore := &storetest.StorerMock{}
 
-			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then response returns internal server error (500)", func() {
@@ -747,7 +747,7 @@ func Test_AddInstanceAuditErrors(t *testing.T) {
 				},
 			}
 
-			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then response returns internal server error (500)", func() {
@@ -781,7 +781,7 @@ func Test_AddInstanceAuditErrors(t *testing.T) {
 				},
 			}
 
-			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+			datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then response returns status created (201)", func() {
@@ -836,7 +836,7 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -874,7 +874,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -903,7 +903,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -933,7 +933,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -965,7 +965,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -995,7 +995,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				}
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -1035,7 +1035,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 				}
 
 				auditor := auditortest.NewErroring(instance.UpdateInstanceAction, audit.Attempted)
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1079,7 +1079,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 				}
 
 				auditor := auditortest.NewErroring(instance.UpdateInstanceAction, audit.Unsuccessful)
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1123,7 +1123,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 				}
 
 				auditor := auditortest.NewErroring(instance.UpdateInstanceAction, audit.Unsuccessful)
-				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, &mocks.ObservationStoreMock{})
+				datasetAPI := getAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1144,7 +1144,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 
 var urlBuilder = url.NewBuilder("localhost:20000")
 
-func getAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, mockAuditor api.Auditor, mockedObservationStore api.ObservationStore) *api.DatasetAPI {
+func getAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, mockAuditor api.Auditor) *api.DatasetAPI {
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)
 	cfg.ServiceAuthToken = "dataset"
@@ -1152,5 +1152,5 @@ func getAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDown
 	cfg.EnablePrivateEnpoints = true
 	cfg.HealthCheckTimeout = 2 * time.Second
 
-	return api.Routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockAuditor, mockedObservationStore)
+	return api.Routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockAuditor)
 }

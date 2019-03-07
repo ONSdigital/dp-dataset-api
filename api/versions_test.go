@@ -51,7 +51,7 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -81,7 +81,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -105,7 +105,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -134,7 +134,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -167,7 +167,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -199,7 +199,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -234,7 +234,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -266,7 +266,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 			return err
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -296,7 +296,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 			return nil
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -330,7 +330,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 			return nil
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -360,7 +360,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 		}
 
 		auditor := auditortest.NewErroring(getVersionAction, audit.Unsuccessful)
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -399,7 +399,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 			return nil
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -436,7 +436,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 			return nil
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -479,7 +479,7 @@ func TestGetVersionReturnsOK(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -508,7 +508,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -531,7 +531,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -561,7 +561,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -594,7 +594,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -626,7 +626,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -668,7 +668,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -705,7 +705,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 			return nil
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -727,7 +727,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		}
 
 		auditor := auditortest.NewErroring(getVersionAction, audit.Unsuccessful)
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -755,7 +755,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		}
 
 		auditor := auditortest.NewErroring(getVersionAction, audit.Unsuccessful)
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -786,7 +786,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		}
 
 		auditor := auditortest.NewErroring(getVersionAction, audit.Unsuccessful)
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -823,7 +823,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		}
 
 		auditor := auditortest.NewErroring(getVersionAction, audit.Unsuccessful)
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -862,7 +862,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		}
 
 		auditor := auditortest.NewErroring(getVersionAction, audit.Successful)
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -932,7 +932,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -992,7 +992,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -1055,7 +1055,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		select {
@@ -1183,7 +1183,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -1309,7 +1309,7 @@ func updateVersionDownloadTest(r *http.Request, firstAuditParams, secondAuditPar
 	}
 
 	auditor := auditortest.New()
-	api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+	api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 	api.Router.ServeHTTP(w, r)
 
 	So(w.Code, ShouldEqual, http.StatusOK)
@@ -1373,7 +1373,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 			cfg.EnablePrivateEnpoints = true
 
 			auditor := auditortest.New()
-			api := Routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockDownloadGenerator, auditor, genericMockedObservationStore)
+			api := Routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockDownloadGenerator, auditor)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then an internal server error response is returned", func() {
@@ -1449,7 +1449,7 @@ func TestPutEmptyVersion(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			auditor := auditortest.New()
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a http status ok is returned", func() {
@@ -1494,7 +1494,7 @@ func TestPutEmptyVersion(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			auditor := auditortest.New()
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a http status ok is returned", func() {
@@ -1549,7 +1549,7 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			store := &storetest.StorerMock{}
-			api := GetAPIWithMockedDatastore(store, nil, auditor, nil)
+			api := GetAPIWithMockedDatastore(store, nil, auditor)
 
 			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1629,7 +1629,7 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionPayload))
 			So(err, ShouldBeNil)
 
-			api := GetAPIWithMockedDatastore(store, nil, auditor, nil)
+			api := GetAPIWithMockedDatastore(store, nil, auditor)
 			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 
@@ -1670,7 +1670,7 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 
 			w := httptest.NewRecorder()
 
-			api := GetAPIWithMockedDatastore(store, nil, auditor, nil)
+			api := GetAPIWithMockedDatastore(store, nil, auditor)
 			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusNotFound)
 			So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
@@ -1703,7 +1703,7 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 
 		Convey("when publish version is called", func() {
 			store := &storetest.StorerMock{}
-			api := GetAPIWithMockedDatastore(store, nil, auditor, nil)
+			api := GetAPIWithMockedDatastore(store, nil, auditor)
 
 			err := api.publishVersion(context.Background(), nil, nil, nil, versionDetails)
 			So(err, ShouldNotBeNil)
@@ -1727,7 +1727,7 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(store, nil, auditor, nil)
+			api := GetAPIWithMockedDatastore(store, nil, auditor)
 			err := api.publishVersion(context.Background(), nil, nil, nil, versionDetails)
 			So(err, ShouldNotBeNil)
 
@@ -1813,7 +1813,7 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 			So(err, ShouldBeNil)
 			updateVersion.Links = currentVersion.Links
 
-			api := GetAPIWithMockedDatastore(store, nil, auditor, nil)
+			api := GetAPIWithMockedDatastore(store, nil, auditor)
 
 			err = api.publishVersion(context.Background(), currentDataset, currentVersion, &updateVersion, versionDetails)
 			So(err, ShouldBeNil)
@@ -1875,7 +1875,7 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 
 			store := &storetest.StorerMock{}
 			gen := &mocks.DownloadsGeneratorMock{}
-			api := GetAPIWithMockedDatastore(store, gen, auditor, genericMockedObservationStore)
+			api := GetAPIWithMockedDatastore(store, gen, auditor)
 
 			err := api.associateVersion(context.Background(), currentVersion, &versionDoc, versionDetails)
 			So(err, ShouldEqual, auditortest.ErrAudit)
@@ -1901,7 +1901,7 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 				},
 			}
 			gen := &mocks.DownloadsGeneratorMock{}
-			api := GetAPIWithMockedDatastore(store, gen, auditor, genericMockedObservationStore)
+			api := GetAPIWithMockedDatastore(store, gen, auditor)
 
 			err := api.associateVersion(context.Background(), currentVersion, &versionDoc, versionDetails)
 			So(err, ShouldEqual, expectedErr)
@@ -1928,7 +1928,7 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 					return expectedErr
 				},
 			}
-			api := GetAPIWithMockedDatastore(store, gen, auditor, genericMockedObservationStore)
+			api := GetAPIWithMockedDatastore(store, gen, auditor)
 
 			err := api.associateVersion(context.Background(), currentVersion, &versionDoc, versionDetails)
 
@@ -1960,7 +1960,7 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(store, gen, auditor, genericMockedObservationStore)
+			api := GetAPIWithMockedDatastore(store, gen, auditor)
 			err := api.associateVersion(context.Background(), currentVersion, &versionDoc, versionDetails)
 			So(err, ShouldBeNil)
 
@@ -2004,7 +2004,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -2048,7 +2048,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -2095,7 +2095,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -2143,7 +2143,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -2194,7 +2194,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -2238,7 +2238,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
@@ -2282,7 +2282,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -2331,7 +2331,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -2453,7 +2453,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 
 		api.Router.ServeHTTP(w, r)
 
