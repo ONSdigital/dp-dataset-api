@@ -60,8 +60,6 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | Environment variable        | Default                                | Description
 | --------------------------- | ---------------------------------------| -----------
 | BIND_ADDR                   | :22000                                 | The host and port to bind to
-| NEO4J_BIND_ADDRESS          | bolt://localhost:7687                  | The address of the neo4j database to retrieve dataset data from
-| NEO4J_POOL_SIZE             | 5                                      | The number of neo4j connections to pool
 | MONGODB_BIND_ADDR           | localhost:27017                        | The MongoDB bind address
 | MONGODB_DATABASE            | datasets                               | The MongoDB dataset database
 | MONGODB_COLLECTION          | datasets                               | MongoDB collection

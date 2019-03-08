@@ -23,8 +23,6 @@ type Configuration struct {
 	HealthCheckInterval      time.Duration `envconfig:"HEALTHCHECK_INTERVAL"`
 	HealthCheckTimeout       time.Duration `envconfig:"HEALTHCHECK_TIMEOUT"`
 	EnablePrivateEnpoints    bool          `envconfig:"ENABLE_PRIVATE_ENDPOINTS"`
-	Neo4jBindAddress         string        `envconfig:"NEO4J_BIND_ADDRESS" json:"-"`
-	Neo4jPoolSize            int           `envconfig:"NEO4J_POOL_SIZE"`
 	MongoConfig              MongoConfig
 }
 
@@ -58,8 +56,6 @@ func Get() (*Configuration, error) {
 		HealthCheckInterval:      30 * time.Second,
 		HealthCheckTimeout:       2 * time.Second,
 		EnablePrivateEnpoints:    false,
-		Neo4jBindAddress:         "bolt://localhost:7687",
-		Neo4jPoolSize:            5,
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",
