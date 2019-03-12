@@ -343,7 +343,6 @@ func GetWebAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedD
 	cfg.ServiceAuthToken = authToken
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEnpoints = false
-	cfg.HealthCheckTimeout = healthTimeout
 
 	return Routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockAuditor, mockedObservationStore)
 }

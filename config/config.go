@@ -21,7 +21,6 @@ type Configuration struct {
 	ServiceAuthToken         string        `envconfig:"SERVICE_AUTH_TOKEN"               json:"-"`
 	GracefulShutdownTimeout  time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 	HealthCheckInterval      time.Duration `envconfig:"HEALTHCHECK_INTERVAL"`
-	HealthCheckTimeout       time.Duration `envconfig:"HEALTHCHECK_TIMEOUT"`
 	EnablePrivateEnpoints    bool          `envconfig:"ENABLE_PRIVATE_ENDPOINTS"`
 	Neo4jBindAddress         string        `envconfig:"NEO4J_BIND_ADDRESS" json:"-"`
 	Neo4jPoolSize            int           `envconfig:"NEO4J_POOL_SIZE"`
@@ -56,7 +55,6 @@ func Get() (*Configuration, error) {
 		DownloadServiceSecretKey: "QB0108EZ-825D-412C-9B1D-41EF7747F462",
 		GracefulShutdownTimeout:  5 * time.Second,
 		HealthCheckInterval:      30 * time.Second,
-		HealthCheckTimeout:       2 * time.Second,
 		EnablePrivateEnpoints:    false,
 		Neo4jBindAddress:         "bolt://localhost:7687",
 		Neo4jPoolSize:            5,
