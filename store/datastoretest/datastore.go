@@ -6,6 +6,7 @@ package storetest
 import (
 	"context"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-graph/observation"
 	"github.com/globalsign/mgo/bson"
 	"sync"
 )
@@ -32,6 +33,7 @@ var (
 	lockStorerMockGetVersion                        sync.RWMutex
 	lockStorerMockGetVersions                       sync.RWMutex
 	lockStorerMockSetInstanceIsPublished            sync.RWMutex
+	lockStorerMockStreamCSVRows                     sync.RWMutex
 	lockStorerMockUpdateBuildHierarchyTaskState     sync.RWMutex
 	lockStorerMockUpdateBuildSearchTaskState        sync.RWMutex
 	lockStorerMockUpdateDataset                     sync.RWMutex
@@ -115,6 +117,9 @@ var (
 //             },
 //             SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
 // 	               panic("TODO: mock out the SetInstanceIsPublished method")
+//             },
+//             StreamCSVRowsFunc: func(ctx context.Context, filter *observation.Filter, limit *int) (observation.StreamRowReader, error) {
+// 	               panic("TODO: mock out the StreamCSVRows method")
 //             },
 //             UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
 // 	               panic("TODO: mock out the UpdateBuildHierarchyTaskState method")
@@ -224,6 +229,9 @@ type StorerMock struct {
 
 	// SetInstanceIsPublishedFunc mocks the SetInstanceIsPublished method.
 	SetInstanceIsPublishedFunc func(ctx context.Context, instanceID string) error
+
+	// StreamCSVRowsFunc mocks the StreamCSVRows method.
+	StreamCSVRowsFunc func(ctx context.Context, filter *observation.Filter, limit *int) (observation.StreamRowReader, error)
 
 	// UpdateBuildHierarchyTaskStateFunc mocks the UpdateBuildHierarchyTaskState method.
 	UpdateBuildHierarchyTaskStateFunc func(id string, dimension string, state string) error
@@ -412,6 +420,15 @@ type StorerMock struct {
 			Ctx context.Context
 			// InstanceID is the instanceID argument value.
 			InstanceID string
+		}
+		// StreamCSVRows holds details about calls to the StreamCSVRows method.
+		StreamCSVRows []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Filter is the filter argument value.
+			Filter *observation.Filter
+			// Limit is the limit argument value.
+			Limit *int
 		}
 		// UpdateBuildHierarchyTaskState holds details about calls to the UpdateBuildHierarchyTaskState method.
 		UpdateBuildHierarchyTaskState []struct {
@@ -1248,6 +1265,45 @@ func (mock *StorerMock) SetInstanceIsPublishedCalls() []struct {
 	lockStorerMockSetInstanceIsPublished.RLock()
 	calls = mock.calls.SetInstanceIsPublished
 	lockStorerMockSetInstanceIsPublished.RUnlock()
+	return calls
+}
+
+// StreamCSVRows calls StreamCSVRowsFunc.
+func (mock *StorerMock) StreamCSVRows(ctx context.Context, filter *observation.Filter, limit *int) (observation.StreamRowReader, error) {
+	if mock.StreamCSVRowsFunc == nil {
+		panic("StorerMock.StreamCSVRowsFunc: method is nil but Storer.StreamCSVRows was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Filter *observation.Filter
+		Limit  *int
+	}{
+		Ctx:    ctx,
+		Filter: filter,
+		Limit:  limit,
+	}
+	lockStorerMockStreamCSVRows.Lock()
+	mock.calls.StreamCSVRows = append(mock.calls.StreamCSVRows, callInfo)
+	lockStorerMockStreamCSVRows.Unlock()
+	return mock.StreamCSVRowsFunc(ctx, filter, limit)
+}
+
+// StreamCSVRowsCalls gets all the calls that were made to StreamCSVRows.
+// Check the length with:
+//     len(mockedStorer.StreamCSVRowsCalls())
+func (mock *StorerMock) StreamCSVRowsCalls() []struct {
+	Ctx    context.Context
+	Filter *observation.Filter
+	Limit  *int
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Filter *observation.Filter
+		Limit  *int
+	}
+	lockStorerMockStreamCSVRows.RLock()
+	calls = mock.calls.StreamCSVRows
+	lockStorerMockStreamCSVRows.RUnlock()
 	return calls
 }
 

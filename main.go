@@ -11,22 +11,18 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
-	"github.com/ONSdigital/dp-dataset-api/neo4j"
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/ONSdigital/dp-filter/observation"
+	"github.com/ONSdigital/dp-graph/graph"
 
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/healthcheck"
 	"github.com/ONSdigital/go-ns/kafka"
-	neo4jhealth "github.com/ONSdigital/go-ns/neo4j"
 
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/log"
 	mongolib "github.com/ONSdigital/go-ns/mongo"
 	"github.com/pkg/errors"
-
-	bolt "github.com/johnnadratowski/golang-neo4j-bolt-driver"
 )
 
 // check that DatsetAPIStore satifies the the store.Storer interface
@@ -35,7 +31,7 @@ var _ store.Storer = (*DatsetAPIStore)(nil)
 //DatsetAPIStore is a wrapper which embeds Neo4j Mongo stucts which between them satisfy the store.Storer interface.
 type DatsetAPIStore struct {
 	*mongo.Mongo
-	*neo4j.Neo4j
+	*graph.DB
 }
 
 func main() {
@@ -96,16 +92,13 @@ func main() {
 		"bind_address": cfg.BindAddr,
 	})
 
-	neo4jConnPool, err := bolt.NewClosableDriverPool(cfg.Neo4jBindAddress, cfg.Neo4jPoolSize)
+	graphDB, err := graph.New(context.Background(), graph.Subsets{Observation: true, Instance: true})
 	if err != nil {
-		log.ErrorC("failed to connect to neo4j connection pool", err, nil)
+		log.ErrorC("failed to connect to graph database", err, nil)
 		os.Exit(1)
 	}
-	neoDB := &neo4j.Neo4j{Pool: neo4jConnPool}
 
-	store := store.DataStore{Backend: DatsetAPIStore{Mongo: mongodb, Neo4j: neoDB}}
-
-	observationStore := observation.NewStore(neo4jConnPool)
+	store := store.DataStore{Backend: DatsetAPIStore{mongodb, graphDB}}
 
 	downloadGenerator := &download.Generator{
 		Producer:   generateDownloadsProducer,
@@ -114,7 +107,7 @@ func main() {
 
 	healthTicker := healthcheck.NewTicker(
 		cfg.HealthCheckInterval,
-		neo4jhealth.NewHealthCheckClient(neo4jConnPool),
+		graphDB,
 		mongolib.NewHealthCheckClient(mongodb.Session),
 	)
 
@@ -122,7 +115,7 @@ func main() {
 
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
-	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor, observationStore)
+	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {
@@ -138,7 +131,7 @@ func main() {
 			log.Error(err, nil)
 		}
 
-		if err = neo4jConnPool.Close(); err != nil {
+		if err = graphDB.Close(ctx); err != nil {
 			log.Error(err, nil)
 		}
 

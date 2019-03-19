@@ -31,7 +31,7 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -68,7 +68,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -92,7 +92,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -119,7 +119,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -143,7 +143,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -169,7 +169,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
 			w := httptest.NewRecorder()
 			mockedDataStore := &storetest.StorerMock{}
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -203,7 +203,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -231,7 +231,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -255,7 +255,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -282,7 +282,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -314,7 +314,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -341,7 +341,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -369,7 +369,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -394,7 +394,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -420,7 +420,7 @@ func TestGetDimensionOptionsAuditingErrors(t *testing.T) {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
 			w := httptest.NewRecorder()
 			mockedDataStore := &storetest.StorerMock{}
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -456,7 +456,7 @@ func TestGetDimensionOptionsAuditingErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -486,7 +486,7 @@ func TestGetDimensionOptionsAuditingErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -512,7 +512,7 @@ func TestGetDimensionOptionsAuditingErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -541,7 +541,7 @@ func TestGetDimensionOptionsAuditingErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, genericMockedObservationStore)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
