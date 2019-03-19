@@ -9,6 +9,7 @@ var (
 	ErrAddDatasetAlreadyExists           = errors.New("forbidden - dataset already exists")
 	ErrAddUpdateDatasetBadRequest        = errors.New("failed to parse json body")
 	ErrAuditActionAttemptedFailure       = errors.New("internal server error")
+	ErrIncorrectStateToDetach			 = errors.New("only versions with a state of edition-confirmed or associated can be detached.")
 	ErrConflictUpdatingInstance          = errors.New("conflict updating instance resource")
 	ErrDatasetNotFound                   = errors.New("dataset not found")
 	ErrDeleteDatasetNotFound             = errors.New("dataset not found")

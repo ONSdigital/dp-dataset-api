@@ -463,12 +463,22 @@ func (m *Mongo) UpdateVersion(id string, version *models.Version) (err error) {
 func createVersionUpdateQuery(version *models.Version) bson.M {
 	setUpdates := make(bson.M)
 
-	if version.Alerts != nil {
-		setUpdates["alerts"] = version.Alerts
+	/*
+	Where updating a version to detached state:
+	1.) explicitly set version number to 0
+	2.) remove collectionID
+	*/
+	if version.State == models.DetachedState {
+		setUpdates["collection_id"] = nil
+		setUpdates["version"] = nil
+	} else {
+		if version.CollectionID != "" {
+			setUpdates["collection_id"] = version.CollectionID
+		}
 	}
 
-	if version.CollectionID != "" {
-		setUpdates["collection_id"] = version.CollectionID
+	if version.Alerts != nil {
+		setUpdates["alerts"] = version.Alerts
 	}
 
 	if version.Downloads != nil {
