@@ -50,6 +50,7 @@ const (
 	updateVersionAction    = "updateVersion"
 	associateVersionAction = "associateVersionAction"
 	publishVersionAction   = "publishVersion"
+	detachVersionAction   = "detachVersion"
 
 	getDimensionsAction       = "getDimensions"
 	getDimensionOptionsAction = "getDimensionOptionsAction"
