@@ -5,7 +5,6 @@ const pingStmt = "MATCH (i) RETURN i LIMIT 1"
 
 // Healthcheck calls neo4j to check its health status.
 func (n *NeoDriver) Healthcheck() (string, error) {
-
 	conn, err := n.pool.OpenPool()
 	if err != nil {
 		return serviceName, err

@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/ONSdigital/dp-graph/observation"
+	"github.com/ONSdigital/dp-observation-importer/models"
 	"github.com/ONSdigital/go-ns/log"
+	"github.com/pkg/errors"
 )
 
 // StreamCSVRows returns a reader allowing individual CSV rows to be read.
@@ -72,4 +74,107 @@ func createOptionList(name string, opts []string) string {
 	}
 
 	return fmt.Sprintf("(%s)", strings.Join(q, " OR "))
+}
+
+// InsertObservationBatch creates a batch query based on a provided list of
+// observations and attempts to insert them by bulk to the database
+func (n *Neo4j) InsertObservationBatch(ctx context.Context, attempt int, instanceID string, observations []*models.Observation, dimensionIDs map[string]string) error {
+	query := buildInsertObservationQuery(instanceID, observations)
+	if len(query) == 0 {
+		return errors.New("failed to create query for batch")
+	}
+
+	queryParameters, err := createParams(observations, dimensionIDs)
+	if err != nil {
+		return errors.Wrap(err, "failed to create query parameters for batch query")
+	}
+
+	queryResult, err := n.Exec(query, queryParameters)
+	if err != nil {
+		if neoErr := n.checkAttempts(err, instanceID, attempt); neoErr != nil {
+			return errors.Wrap(err, "observation batch save failed")
+		}
+
+		log.Info("got an error when saving observations, attempting to retry", log.Data{
+			"instance_id":  instanceID,
+			"retry_number": attempt,
+			"max_attempts": n.maxRetries,
+		})
+
+		return n.InsertObservationBatch(ctx, attempt+1, instanceID, observations, dimensionIDs)
+	}
+
+	rowsAffected, err := queryResult.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "error attempting to get number of rows affected in query result")
+	}
+
+	log.Info("successfully saved observation batch", log.Data{"rows_affected": rowsAffected, "instance_id": instanceID})
+	return nil
+}
+
+// createParams creates parameters to inject into an insert query for each observation.
+func createParams(observations []*models.Observation, dimensionIDs map[string]string) (map[string]interface{}, error) {
+
+	rows := make([]interface{}, 0)
+
+	for _, observation := range observations {
+
+		row := map[string]interface{}{
+			"v": observation.Row,
+			"i": observation.RowIndex,
+		}
+
+		for _, option := range observation.DimensionOptions {
+
+			dimensionName := strings.ToLower(option.DimensionName)
+
+			dimensionLookUp := observation.InstanceID + "_" + dimensionName + "_" + option.Name
+
+			nodeID, ok := dimensionIDs[dimensionLookUp]
+			if !ok {
+				return nil, fmt.Errorf("No nodeId found for %s", dimensionLookUp)
+			}
+
+			row[dimensionName] = nodeID
+		}
+
+		rows = append(rows, row)
+	}
+
+	return map[string]interface{}{"rows": rows}, nil
+}
+
+// buildInsertObservationQuery creates an instance specific insert query.
+func buildInsertObservationQuery(instanceID string, observations []*models.Observation) string {
+	if len(instanceID) == 0 || len(observations) == 0 {
+		return ""
+	}
+
+	query := "UNWIND $rows AS row"
+
+	match := " MATCH "
+	where := " WHERE "
+	create := fmt.Sprintf(" CREATE (o:`_%s_observation` { value:row.v, rowIndex:row.i }), ", instanceID)
+
+	index := 0
+
+	for _, option := range observations[0].DimensionOptions {
+
+		if index != 0 {
+			match += ", "
+			where += " AND "
+			create += ", "
+		}
+		optionName := strings.ToLower(option.DimensionName)
+
+		match += fmt.Sprintf("(`%s`:`_%s_%s`)", optionName, instanceID, optionName)
+		where += fmt.Sprintf("id(`%s`) = toInt(row.`%s`)", optionName, optionName)
+		create += fmt.Sprintf("(o)-[:isValueOf]->(`%s`)", optionName)
+		index++
+	}
+
+	query += match + where + create
+
+	return query
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/ONSdigital/golang-neo4j-bolt-driver/structures/graph"
 )
 
+// Editions returns a dpbolt.ResultMapper mapper which converts dpbolt.Result to models.Editions
 func Editions(editions *models.Editions) ResultMapper {
 	return func(r *Result) error {
 		edition, err := edition(r)
@@ -17,6 +18,7 @@ func Editions(editions *models.Editions) ResultMapper {
 	}
 }
 
+// Edition returns a dpbolt.ResultMapper mapper which converts dpbolt.Result to models.Edition
 func Edition(editionModel *models.Edition) ResultMapper {
 	return func(r *Result) error {
 		ed, err := edition(r)

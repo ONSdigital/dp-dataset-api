@@ -51,28 +51,33 @@ func (r *Response) AddLinks(host, instanceID, dimensionName, codelistID string, 
 	r.Links["code"] = *GetLinkWithID(fmt.Sprintf(codelistFormat, CodelistURL, codelistID), r.ID, r.ID)
 
 	for _, child := range r.Children {
-		child.AddLinks(host, instanceID, dimensionName, codelistID)
+		child.AddLinks(host, instanceID, dimensionName, codelistID, true)
 	}
 
 	an := len(r.Breadcrumbs)
 	for i, crumb := range r.Breadcrumbs {
+
+		withID := true
 		if i == (an - 1) {
-			crumb.Links["self"] = *GetLink(fmt.Sprintf(rootFormat, host, instanceID, dimensionName), "")
-		} else {
-			crumb.Links["self"] = *GetLinkWithID(fmt.Sprintf(rootFormat, host, instanceID, dimensionName), crumb.ID, crumb.ID)
+			withID = false
 		}
 
-		crumb.Links["code"] = *GetLinkWithID(fmt.Sprintf(codelistFormat, CodelistURL, codelistID), crumb.ID, crumb.ID)
+		crumb.AddLinks(host, instanceID, dimensionName, codelistID, withID)
 	}
 }
 
 // AddLinks adds self and codelist links for Elements
-func (e *Element) AddLinks(host, instanceID, dimensionName, codelistID string) {
+func (e *Element) AddLinks(host, instanceID, dimensionName, codelistID string, withID bool) {
 	if e.Links == nil {
 		e.Links = make(map[string]Link)
 	}
 
-	e.Links["self"] = *GetLinkWithID(fmt.Sprintf(rootFormat, host, instanceID, dimensionName), e.ID, e.ID)
+	if !withID {
+		e.Links["self"] = *GetLink(fmt.Sprintf(rootFormat, host, instanceID, dimensionName), "")
+	} else {
+		e.Links["self"] = *GetLinkWithID(fmt.Sprintf(rootFormat, host, instanceID, dimensionName), e.ID, e.ID)
+	}
+
 	e.Links["code"] = *GetLinkWithID(fmt.Sprintf(codelistFormat, CodelistURL, codelistID), e.ID, e.ID)
 }
 

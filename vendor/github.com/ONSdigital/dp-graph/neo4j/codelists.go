@@ -32,6 +32,7 @@ func (n *Neo4j) GetCodeLists(ctx context.Context, filterBy string) (*models.Code
 	return codeListResults, nil
 }
 
+// GetCodeList returns the specified codelist
 func (n *Neo4j) GetCodeList(ctx context.Context, code string) (*models.CodeList, error) {
 	log.InfoCtx(ctx, "about to query neo4j for code list", log.Data{"code_list_id": code})
 
@@ -46,7 +47,7 @@ func (n *Neo4j) GetCodeList(ctx context.Context, code string) (*models.CodeList,
 	return codeListResult, nil
 }
 
-//GetEditions returns models.Editions from Neo4j with the specified codeListID if it exists.
+// GetEditions returns a list of editions for a specified code list
 func (n *Neo4j) GetEditions(ctx context.Context, codeListID string) (*models.Editions, error) {
 	log.InfoCtx(ctx, "about to query neo4j for code list editions", log.Data{"code_list_id": codeListID})
 
@@ -60,6 +61,7 @@ func (n *Neo4j) GetEditions(ctx context.Context, codeListID string) (*models.Edi
 	return editions, nil
 }
 
+// GetEdition returns the specified edition for a code list
 func (n *Neo4j) GetEdition(ctx context.Context, codeListID, editionID string) (*models.Edition, error) {
 	log.InfoCtx(ctx, "about to query neo4j for code list edition", log.Data{"code_list_id": codeListID, "edition": editionID})
 
@@ -73,6 +75,7 @@ func (n *Neo4j) GetEdition(ctx context.Context, codeListID, editionID string) (*
 	return edition, nil
 }
 
+// GetCodes returns a list of codes for a specified edition of a code list
 func (n *Neo4j) GetCodes(ctx context.Context, codeListID, editionID string) (*models.CodeResults, error) {
 	log.InfoCtx(ctx, "about to query neo4j for codes", log.Data{"code_list_id": codeListID, "edition": editionID})
 
@@ -90,6 +93,7 @@ func (n *Neo4j) GetCodes(ctx context.Context, codeListID, editionID string) (*mo
 	return codes, nil
 }
 
+// GetCode returns the specified code for an edition of a code list
 func (n *Neo4j) GetCode(ctx context.Context, codeListID, editionID string, codeID string) (*models.Code, error) {
 	log.InfoCtx(ctx, "about to query neo4j for specific code", log.Data{"code_list_id": codeListID, "edition": editionID, "code": codeID})
 
@@ -107,6 +111,7 @@ func (n *Neo4j) GetCode(ctx context.Context, codeListID, editionID string, codeI
 	return code, nil
 }
 
+// GetCodeDatasets returns a list of datasets where the code is used
 func (n *Neo4j) GetCodeDatasets(ctx context.Context, codeListID, edition string, code string) (*models.Datasets, error) {
 	log.InfoCtx(ctx, "about to query neo4j for datasets by code", log.Data{"code_list_id": codeListID, "edition": edition, "code": code})
 
