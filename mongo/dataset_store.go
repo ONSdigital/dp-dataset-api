@@ -464,9 +464,9 @@ func createVersionUpdateQuery(version *models.Version) bson.M {
 	setUpdates := make(bson.M)
 
 	/*
-	Where updating a version to detached state:
-	1.) explicitly set version number to 0
-	2.) remove collectionID
+		Where updating a version to detached state:
+		1.) explicitly set version number to 0
+		2.) remove collectionID
 	*/
 	if version.State == models.DetachedState {
 		setUpdates["collection_id"] = nil

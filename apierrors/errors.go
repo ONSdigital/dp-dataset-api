@@ -18,7 +18,7 @@ var (
 	ErrDimensionOptionNotFound           = errors.New("dimension option not found")
 	ErrDimensionsNotFound                = errors.New("dimensions not found")
 	ErrEditionNotFound                   = errors.New("edition not found")
-	ErrIncorrectStateToDetach			 = errors.New("only versions with a state of edition-confirmed or associated can be detached.")
+	ErrIncorrectStateToDetach            = errors.New("only versions with a state of edition-confirmed or associated can be detached.")
 	ErrIndexOutOfRange                   = errors.New("index out of range")
 	ErrInstanceNotFound                  = errors.New("instance not found")
 	ErrInternalServer                    = errors.New("internal error")
@@ -37,7 +37,7 @@ var (
 	ErrUnauthorised                      = errors.New("unauthorised access to API")
 	ErrVersionMissingState               = errors.New("missing state from version")
 	ErrVersionNotFound                   = errors.New("version not found")
-	ErrVersionAlreadyExists				 = errors.New("an unpublished version of this dataset already exists.")
+	ErrVersionAlreadyExists              = errors.New("an unpublished version of this dataset already exists.")
 	ErrNotFound                          = errors.New("not found")
 
 	ErrExpectedResourceStateOfCreated          = errors.New("unable to update resource, expected resource to have a state of created")

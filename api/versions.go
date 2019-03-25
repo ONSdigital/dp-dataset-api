@@ -309,14 +309,14 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 	authorised, logData := api.authenticate(r, logData)
 	if !authorised {
 		log.ErrorCtx(ctx, errors.WithMessage(errs.ErrUnauthorised, "detachVersion endpoint: User is not authorised to detach a dataset version"), logData)
-		handleVersionAPIErr(ctx, errs.ErrNotFound , w, logData) // 404 unauthenticated requests
+		handleVersionAPIErr(ctx, errs.ErrNotFound, w, logData) // 404 unauthenticated requests
 		return
 	}
 
 	editionDoc, err := api.dataStore.Backend.GetEdition(datasetID, edition, models.PublishedState)
 	if err != nil {
 		log.ErrorCtx(ctx, errors.WithMessage(errs.ErrEditionNotFound, "detachVersion endpoint: Cannot find the specified edition"), logData)
-		handleVersionAPIErr(ctx, errs.ErrEditionNotFound , w, logData)
+		handleVersionAPIErr(ctx, errs.ErrEditionNotFound, w, logData)
 		return
 	}
 
@@ -393,10 +393,10 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		// If the new version (as in version number) does not immediately follow the previous version, return an error
 		newVersionNumber, err := strconv.Atoi(versionDetails.version)
 		if err != nil {
-			log.InfoCtx(ctx, "putVersion endpoint: unable to convert the provided version number to an integer", log.Data{"version":versionDetails.version})
+			log.InfoCtx(ctx, "putVersion endpoint: unable to convert the provided version number to an integer", log.Data{"version": versionDetails.version})
 			return nil, nil, nil, err
-		} else if newVersionNumber != (currentVersion.Version+1) {
-			logVersions := log.Data{"old_version":currentVersion.Version, "new_version":newVersionNumber}
+		} else if newVersionNumber != (currentVersion.Version + 1) {
+			logVersions := log.Data{"old_version": currentVersion.Version, "new_version": newVersionNumber}
 			log.InfoCtx(ctx, "putVersion endpoint: there was an attempted skip of versioning sequence. Aborting operation.", logVersions)
 			return nil, nil, nil, errs.ErrVersionAlreadyExists
 		}
