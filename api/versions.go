@@ -399,8 +399,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 			logVersions := log.Data{"old_version":currentVersion.Version, "new_version":newVersionNumber}
 			log.InfoCtx(ctx, "putVersion endpoint: there was an attempted skip of versioning sequence. Aborting operation.", logVersions)
 			return nil, nil, nil, errs.ErrVersionAlreadyExists
-		},
-
+		}
 
 		// Combine update version document to existing version document
 		populateNewVersionDoc(currentVersion, versionUpdate)
