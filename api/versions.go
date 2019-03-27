@@ -405,7 +405,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 			return nil, nil, nil, err
 		}
 
-		// If the new version (as in version number) does not immediately follow the previous version, return an error
+		// If the version number of the versions we're attmepting to update does not immediately follow the previously published version, return an error
 		newVersionNumber, err := strconv.Atoi(versionDetails.version)
 		if err != nil {
 			log.InfoCtx(ctx, "putVersion endpoint: unable to convert the provided version number to an integer", log.Data{"version": versionDetails.version})
