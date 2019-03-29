@@ -4,19 +4,23 @@ import (
 	"github.com/ONSdigital/golang-neo4j-bolt-driver/structures/graph"
 )
 
-//Datasets map of datasetID to dataset
+// Datasets maps datasetIDs to dataset data
 type Datasets map[string]DatasetData
+
+// DatasetEditinos maps edition labels to lists of version IDs
 type DatasetEditions map[string]Versions
+
+// Versions contains a list of version IDs
 type Versions []int
 
-//type ItemsList []models.Dataset
-
+// DatasetData contains information specific to how this code is represented or
+// present in a particular dataset
 type DatasetData struct {
 	DimensionLabel string
 	Editions       DatasetEditions
 }
 
-//CodesDatasets returns a dpbolt.ResultMapper which converts dpbolt.Result to Datasets
+// CodesDatasets returns a dpbolt.ResultMapper which converts dpbolt.Result to Datasets
 func CodesDatasets(datasets Datasets) ResultMapper {
 	return func(r *Result) error {
 		var err error

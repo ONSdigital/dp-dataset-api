@@ -8,6 +8,7 @@ import (
 	"github.com/ONSdigital/go-ns/log"
 )
 
+// CreateInstanceHierarchyConstraints ensures constraints are in place so duplicate instance hierarchies are not created
 func (n *Neo4j) CreateInstanceHierarchyConstraints(ctx context.Context, attempt int, instanceID, dimensionName string) error {
 	q := fmt.Sprintf(
 		query.CreateHierarchyConstraint,
@@ -34,6 +35,7 @@ func (n *Neo4j) CreateInstanceHierarchyConstraints(ctx context.Context, attempt 
 	return nil
 }
 
+// CloneNodes copies nodes from a generic hierarchy and identifies them as instance specific hierarchy nodes
 func (n *Neo4j) CloneNodes(ctx context.Context, attempt int, instanceID, codeListID, dimensionName string) error {
 	q := fmt.Sprintf(
 		query.CloneHierarchyNodes,
@@ -62,6 +64,7 @@ func (n *Neo4j) CloneNodes(ctx context.Context, attempt int, instanceID, codeLis
 	return nil
 }
 
+// CountNodes returns the number of nodes existing in the specified instance hierarchy
 func (n *Neo4j) CountNodes(ctx context.Context, instanceID, dimensionName string) (count int64, err error) {
 	q := fmt.Sprintf(
 		query.CountHierarchyNodes,
@@ -80,6 +83,7 @@ func (n *Neo4j) CountNodes(ctx context.Context, instanceID, dimensionName string
 	return n.Count(q)
 }
 
+// CloneRelationships copies relationships from a generic hierarchy and uses them to join instance specific hierarchy nodes
 func (n *Neo4j) CloneRelationships(ctx context.Context, attempt int, instanceID, codeListID, dimensionName string) error {
 	q := fmt.Sprintf(
 		query.CloneHierarchyRelationships,
@@ -111,6 +115,8 @@ func (n *Neo4j) CloneRelationships(ctx context.Context, attempt int, instanceID,
 	return nil
 }
 
+// SetNumberOfChildren traverses the instance hierarchy, counts the number of nodes
+// with incoming hasParent relationships and sets that number on the node as a property
 func (n *Neo4j) SetNumberOfChildren(ctx context.Context, attempt int, instanceID, dimensionName string) error {
 	q := fmt.Sprintf(
 		query.SetNumberOfChildren,
@@ -139,6 +145,8 @@ func (n *Neo4j) SetNumberOfChildren(ctx context.Context, attempt int, instanceID
 	return nil
 }
 
+// SetHasData checks whether there are observations relating to that node in the
+// specified instance and set a flag if true
 func (n *Neo4j) SetHasData(ctx context.Context, attempt int, instanceID, dimensionName string) error {
 	q := fmt.Sprintf(
 		query.SetHasData,
@@ -167,6 +175,8 @@ func (n *Neo4j) SetHasData(ctx context.Context, attempt int, instanceID, dimensi
 	return nil
 }
 
+// MarkNodesToRemain traverses the instance hierarchy to identify nodes which
+// contain data or have children which contain data
 func (n *Neo4j) MarkNodesToRemain(ctx context.Context, attempt int, instanceID, dimensionName string) error {
 	q := fmt.Sprintf(query.MarkNodesToRemain,
 		instanceID,
@@ -194,6 +204,8 @@ func (n *Neo4j) MarkNodesToRemain(ctx context.Context, attempt int, instanceID, 
 	return nil
 }
 
+// RemoveNodesNotMarkedToRemain removes all nodes which were not marked as having
+// data or having children which have data
 func (n *Neo4j) RemoveNodesNotMarkedToRemain(ctx context.Context, attempt int, instanceID, dimensionName string) error {
 	q := fmt.Sprintf(query.RemoveNodesNotMarkedToRemain,
 		instanceID,
@@ -219,6 +231,7 @@ func (n *Neo4j) RemoveNodesNotMarkedToRemain(ctx context.Context, attempt int, i
 	return nil
 }
 
+// RemoveRemainMarker unsets the remain marker from all remaining nodes in the instance hierarchy
 func (n *Neo4j) RemoveRemainMarker(ctx context.Context, attempt int, instanceID, dimensionName string) error {
 	q := fmt.Sprintf(query.RemoveRemainMarker,
 		instanceID,

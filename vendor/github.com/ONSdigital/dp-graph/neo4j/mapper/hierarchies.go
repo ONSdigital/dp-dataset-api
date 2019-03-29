@@ -5,16 +5,15 @@ import (
 
 	"github.com/ONSdigital/dp-hierarchy-api/models"
 	"github.com/ONSdigital/golang-neo4j-bolt-driver/structures/graph"
-	"github.com/davecgh/go-spew/spew"
 )
 
-//HierarchyElements encases a list so a pointer to the list can more easily
-//be passed into the mapper functions
+// HierarchyElements encases a list so a pointer to the list can more easily
+// be passed into the mapper functions
 type HierarchyElements struct {
 	List []*models.Element
 }
 
-//HierarchyCodelist returns a dpbolt.ResultMapper which converts a dpbolt.Result to CodelistID string
+// HierarchyCodelist returns a dpbolt.ResultMapper which converts a dpbolt.Result to CodelistID string
 func HierarchyCodelist(codelistID *string) ResultMapper {
 	return func(r *Result) error {
 		var node graph.Node
@@ -35,6 +34,7 @@ func HierarchyCodelist(codelistID *string) ResultMapper {
 	}
 }
 
+// Hierarchy returns a dpbolt.ResultMapper mapper which converts dpbolt.Result to models.Response
 func Hierarchy(res *models.Response) ResultMapper {
 	return func(r *Result) error {
 		var node graph.Node
@@ -59,6 +59,7 @@ func Hierarchy(res *models.Response) ResultMapper {
 	}
 }
 
+// HierarchyElement returns a dpbolt.ResultMapper mapper which converts dpbolt.Result to HierarchyElements
 func HierarchyElement(list *HierarchyElements) ResultMapper {
 	return func(r *Result) error {
 		var node graph.Node
@@ -80,7 +81,6 @@ func HierarchyElement(list *HierarchyElements) ResultMapper {
 }
 
 func createElement(node graph.Node) (*models.Element, error) {
-	spew.Dump(node)
 	id, err := getStringProperty("code", node.Properties)
 	if err != nil {
 		return nil, errors.New("code property not found")

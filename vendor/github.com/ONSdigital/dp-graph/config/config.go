@@ -9,6 +9,8 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
+// Configuration allows environment variables to be read and sent to the
+// relevant driver for further setup
 type Configuration struct {
 	DriverChoice    string `envconfig:"GRAPH_DRIVER_TYPE"`
 	DatabaseAddress string `envconfig:"GRAPH_ADDR"`
@@ -21,7 +23,7 @@ type Configuration struct {
 
 var cfg *Configuration
 
-// Get configures the application and returns the configuration
+// Get reads config and returns the configured instantiated driver
 func Get() (*Configuration, error) {
 	if cfg != nil {
 		return cfg, nil

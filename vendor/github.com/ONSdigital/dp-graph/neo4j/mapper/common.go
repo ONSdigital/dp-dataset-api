@@ -2,22 +2,26 @@ package mapper
 
 import (
 	"reflect"
+	"strconv"
 
 	"github.com/ONSdigital/golang-neo4j-bolt-driver/structures/graph"
 	"github.com/pkg/errors"
 )
 
+// ResultMapper defines the function signature all mappers will need to satisfy
 type ResultMapper func(r *Result) error
 
+// Result contains data and metadata relating to a neo4j query response
 type Result struct {
 	Data  []interface{}
 	Meta  map[string]interface{}
 	Index int
 }
 
+// ErrInputNil is used when a result was expected but was nil
 var ErrInputNil = errors.New("expected input value but was nil")
 
-//getNode return val as graph.Node if cast successful, otherwise return a detailed error.
+// getNode return val as graph.Node if cast successful, otherwise return a detailed error.
 func getNode(val interface{}) (graph.Node, error) {
 	var graphNode graph.Node
 	var ok bool
@@ -33,7 +37,7 @@ func getNode(val interface{}) (graph.Node, error) {
 	return graphNode, nil
 }
 
-//getNode return val as graph.Relationship if cast successful, otherwise return a detailed error.
+// getNode return val as graph.Relationship if cast successful, otherwise return a detailed error.
 func getRelationship(val interface{}) (graph.Relationship, error) {
 	var r graph.Relationship
 	var ok bool
@@ -49,7 +53,7 @@ func getRelationship(val interface{}) (graph.Relationship, error) {
 	return r, nil
 }
 
-//getStringProperty return requested key value from map as a string. If key not found returns empty string and nil,
+// getStringProperty return requested key value from map as a string. If key not found returns empty string and nil,
 // returns casting error if val cannot be cast to string.
 func getStringProperty(key string, props map[string]interface{}) (string, error) {
 	var strVal string
@@ -71,7 +75,7 @@ func getStringProperty(key string, props map[string]interface{}) (string, error)
 	return strVal, nil
 }
 
-//getBoolProperty return requested key value from map as a string. If key not found returns empty string and nil,
+// getBoolProperty return requested key value from map as a string. If key not found returns empty string and nil,
 // returns casting error if val cannot be cast to string.
 func getBoolProperty(key string, props map[string]interface{}) (bool, error) {
 	var boolVal bool
@@ -93,7 +97,7 @@ func getBoolProperty(key string, props map[string]interface{}) (bool, error) {
 	return boolVal, nil
 }
 
-//getint64Property return requested key value from map as a int64. If key not found returns empty 0 and nil,
+// getint64Property return requested key value from map as a int64. If key not found returns empty 0 and nil,
 // returns casting error if val cannot be cast to int64.
 func getint64Property(key string, props map[string]interface{}) (int64, error) {
 	val, ok := props[key]
@@ -127,6 +131,18 @@ func GetCount() (*int64, ResultMapper) {
 		if !ok {
 			return castingError(int64(0), r.Data[0])
 		}
+		return nil
+	}
+}
+
+// GetNodeID returns dpbolt.ResultMapper for extracting a node id from a dpbolt.Result
+func GetNodeID(id *string) ResultMapper {
+	return func(r *Result) error {
+		nodeID, ok := r.Data[0].(int64)
+		if !ok {
+			return errors.New("unexpected error while casting node id to int64")
+		}
+		*id = strconv.FormatInt(nodeID, 10)
 		return nil
 	}
 }
