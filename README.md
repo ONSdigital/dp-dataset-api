@@ -60,8 +60,6 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | Environment variable        | Default                                | Description
 | --------------------------- | ---------------------------------------| -----------
 | BIND_ADDR                   | :22000                                 | The host and port to bind to
-| NEO4J_BIND_ADDRESS          | bolt://localhost:7687                  | The address of the neo4j database to retrieve dataset data from
-| NEO4J_POOL_SIZE             | 5                                      | The number of neo4j connections to pool
 | MONGODB_BIND_ADDR           | localhost:27017                        | The MongoDB bind address
 | MONGODB_DATABASE            | datasets                               | The MongoDB dataset database
 | MONGODB_COLLECTION          | datasets                               | MongoDB collection
@@ -73,7 +71,6 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | KAFKA_ADDR                  | localhost:9092                         | The list of kafka hosts
 | GENERATE_DOWNLOADS_TOPIC    | filter-job-submitted                   | The topic to send generate full dataset version downloads to
 | HEALTHCHECK_INTERVAL       | 30s                                       | Time between self-healthchecks (`time.Duration` format)
-| HEALTHCHECK_TIMEOUT         | 2s                                     | The timeout that the healthcheck allows for checked subsystems
 | ENABLE_PRIVATE_ENDPOINTS    | false                                  | Enable private endpoints for the API
 | DOWNLOAD_SERVICE_SECRET_KEY | QB0108EZ-825D-412C-9B1D-41EF7747F462   | A key specific for the download service to access public/private links
 | ZEBEDEE_URL                 | http://localhost:8082                  | The host name for Zebedee
