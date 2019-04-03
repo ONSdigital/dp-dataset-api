@@ -216,7 +216,7 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(dataset, edition, state string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
-					ID:   "test",
+					ID: "test",
 				}, nil
 			},
 		}

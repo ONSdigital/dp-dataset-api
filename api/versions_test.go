@@ -2598,7 +2598,6 @@ func TestCreateNewVersionDoc(t *testing.T) {
 	})
 }
 
-
 func TestDetachVersionReturnsError(t *testing.T) {
 	auditParams := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
 	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123", "edition": "2017", "version": "1"}
