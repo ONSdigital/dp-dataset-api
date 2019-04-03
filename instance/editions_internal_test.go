@@ -75,26 +75,15 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 				return &models.EditionUpdate{
 					ID: "test",
 					Next: &models.Edition{
-						ID:      "test",
 						Edition: "unpublished-only",
 						Links: &models.EditionUpdateLinks{
 							LatestVersion: &models.LinkObject{
-								ID:   "1",
-								HRef: "example.com/datasets/1/editions/unpublished-only/versions/1",
-							},
-							Dataset: &models.LinkObject{
-								ID:   "1",
-								HRef: "example.com/datasets/1",
-							},
-							Self: &models.LinkObject{
-								HRef: "example.com/datasets/1/editions/unpublished-only",
-							},
-						},
-					},
+								ID: "1"}}},
 				}, nil
 			},
+
 			UpsertEditionFunc: func(dataset, edition string, doc *models.EditionUpdate) error {
-				return nil
+				return errs.ErrInternalServer
 			},
 		}
 
@@ -105,21 +94,15 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 			Auditor: auditortest.New(),
 		}
 
-		Convey("when confirmEdition is called", func() {
+		Convey("when confirmEdition is called again", func() {
 			datasetID := "1234"
 			editionName := "unpublished-only"
 			instanceID := "new-instance-1234"
 
-			edition, err := s.confirmEdition(ctx, datasetID, editionName, instanceID)
+			_, err := s.confirmEdition(ctx, datasetID, editionName, instanceID)
 
-			Convey("then the edition is updated and the version ID is 2", func() {
-				So(err, ShouldBeNil)
-				So(edition, ShouldNotBeNil)
-				So(edition.Current, ShouldBeNil)
-				So(edition.Next, ShouldNotBeNil)
-				So(edition.Next.Links, ShouldNotBeNil)
-				So(edition.Next.Links.LatestVersion, ShouldNotBeNil)
-				So(edition.Next.Links.LatestVersion.ID, ShouldEqual, "2")
+			Convey("then an internal server error is returned.", func() {
+				So(err, ShouldEqual, errs.ErrVersionAlreadyExists)
 			})
 		})
 	})
