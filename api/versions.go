@@ -320,7 +320,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 		editionDoc, err := api.dataStore.Backend.GetEdition(datasetID, edition, models.PublishedState)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrEditionNotFound, "detachVersion endpoint: Cannot find the specified edition"), logData)
-			return errs.ErrEditionNotFound
+			return err
 		}
 
 		// Only permit detachment of the latest version.
