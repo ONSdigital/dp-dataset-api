@@ -165,7 +165,7 @@ func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 		api.Router.HandleFunc("/datasets/{dataset_id}", identity.Check(auditor, updateDatasetAction, api.putDataset)).Methods("PUT")
 		api.Router.HandleFunc("/datasets/{dataset_id}", identity.Check(auditor, deleteDatasetAction, api.deleteDataset)).Methods("DELETE")
 		api.Router.HandleFunc("/datasets/{dataset_id}/editions/{edition}/versions/{version}", identity.Check(auditor, updateVersionAction, versionPublishChecker.Check(api.putVersion, updateVersionAction))).Methods("PUT")
-		api.Router.HandleFunc("/datasets/{dataset_id}/editions/{edition}/versions/{version}", identity.Check(auditor, updateVersionAction, versionPublishChecker.Check(api.detachVersion, updateVersionAction))).Methods("DELETE")
+		api.Router.HandleFunc("/datasets/{dataset_id}/editions/{edition}/versions/{version}", identity.Check(auditor, detachVersionAction, api.detachVersion)).Methods("DELETE")
 
 		instanceAPI := instance.Store{Host: api.host, Storer: api.dataStore.Backend, Auditor: auditor}
 		instancePublishChecker := instance.PublishCheck{Auditor: auditor, Datastore: dataStore.Backend}

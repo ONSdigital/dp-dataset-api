@@ -15,7 +15,6 @@ import (
 	"github.com/ONSdigital/go-ns/request"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"strconv"
 )
 
 var (
@@ -296,6 +295,8 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
+	log.InfoCtx(ctx, "detachVersion endpoint: endpoint called.", nil)
+
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	version := vars["version"]
@@ -403,17 +404,6 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "putVersion endpoint: datastore.GetVersion returned an error"), data)
 			return nil, nil, nil, err
-		}
-
-		// If the version number of the versions we're attmepting to update does not immediately follow the previously published version, return an error
-		newVersionNumber, err := strconv.Atoi(versionDetails.version)
-		if err != nil {
-			log.InfoCtx(ctx, "putVersion endpoint: unable to convert the provided version number to an integer", log.Data{"version": versionDetails.version})
-			return nil, nil, nil, err
-		} else if newVersionNumber != (currentVersion.Version + 1) {
-			logVersions := log.Data{"old_version": currentVersion.Version, "new_version": newVersionNumber}
-			log.InfoCtx(ctx, "putVersion endpoint: there was an attempted skip of versioning sequence. Aborting operation.", logVersions)
-			return nil, nil, nil, errs.ErrVersionAlreadyExists
 		}
 
 		// Combine update version document to existing version document
