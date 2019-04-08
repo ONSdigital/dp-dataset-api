@@ -25,8 +25,8 @@ import (
 //Store provides a backend for instances
 type Store struct {
 	store.Storer
-	Host                 string
-	Auditor              audit.AuditorService
+	Host                string
+	Auditor             audit.AuditorService
 	EnableDetachDataset bool
 }
 

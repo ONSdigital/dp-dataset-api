@@ -2,6 +2,8 @@ package instance
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"testing"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -9,8 +11,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/go-ns/audit/auditortest"
 	. "github.com/smartystreets/goconvey/convey"
-	"os"
-	"strconv"
 )
 
 func Test_ConfirmEditionReturnsOK(t *testing.T) {
@@ -73,7 +73,7 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 	})
 
 	// TODO conditional test for feature flagged functionality. Will need tidying up eventually.
-	featureEnvString := os.Getenv("FEATURE_DETACH_DATASET")
+	featureEnvString := os.Getenv("ENABLE_DETACH_DATASET")
 	featureOn, _ := strconv.ParseBool(featureEnvString)
 	if featureOn {
 		Convey("given an edition exists with 1 unpublished version", t, func() {

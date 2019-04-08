@@ -55,7 +55,7 @@ func Get() (*Configuration, error) {
 		GracefulShutdownTimeout:  5 * time.Second,
 		HealthCheckInterval:      30 * time.Second,
 		EnablePrivateEnpoints:    false,
-		EnableDetachDataset:	  false,
+		EnableDetachDataset:      false,
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",
