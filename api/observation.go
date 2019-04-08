@@ -13,15 +13,13 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-filter/observation"
+	"github.com/ONSdigital/dp-graph/observation"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
-
-//go:generate moq -out ../mocks/observation_store.go -pkg mocks . ObservationStore
 
 // Upper limit, if this is not big enough, we may need to consider increasing value
 // and then if this has a performance hit then consider paging
@@ -69,11 +67,6 @@ func errorMultivaluedQueryParameters(params []string) error {
 	return observationQueryError{
 		message: fmt.Sprintf("multi-valued query parameters for the following dimensions: %v", params),
 	}
-}
-
-// ObservationStore provides filtered observation data in CSV rows.
-type ObservationStore interface {
-	GetCSVRows(filter *observation.Filter, limit *int) (observation.CSVRowReader, error)
 }
 
 func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
@@ -308,7 +301,7 @@ func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParam
 
 	log.Info("query object built to retrieve observations from neo4j", logData)
 
-	csvRowReader, err := api.observationStore.GetCSVRows(&queryObject, &limit)
+	csvRowReader, err := api.dataStore.Backend.StreamCSVRows(context.Background(), &queryObject, &limit)
 	if err != nil {
 		return nil, err
 	}
@@ -317,7 +310,7 @@ func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParam
 	if err != nil {
 		return nil, err
 	}
-	defer csvRowReader.Close()
+	defer csvRowReader.Close(context.Background())
 
 	headerRowReader := csv.NewReader(strings.NewReader(headerRow))
 	headerRowArray, err := headerRowReader.Read()

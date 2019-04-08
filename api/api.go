@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -86,7 +85,6 @@ type Auditor audit.AuditorService
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
 	dataStore            store.DataStore
-	observationStore     ObservationStore
 	host                 string
 	zebedeeURL           string
 	internalToken        string
@@ -95,15 +93,14 @@ type DatasetAPI struct {
 	Router               *mux.Router
 	urlBuilder           *url.Builder
 	downloadGenerator    DownloadsGenerator
-	healthCheckTimeout   time.Duration
 	serviceAuthToken     string
 	auditor              Auditor
 }
 
 // CreateDatasetAPI manages all the routes configured to API
-func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadsGenerator DownloadsGenerator, auditor Auditor, observationStore ObservationStore) {
+func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadsGenerator DownloadsGenerator, auditor Auditor) {
 	router := mux.NewRouter()
-	Routes(cfg, router, dataStore, urlBuilder, downloadsGenerator, auditor, observationStore)
+	Routes(cfg, router, dataStore, urlBuilder, downloadsGenerator, auditor)
 
 	healthcheckHandler := healthcheck.NewMiddleware(healthcheck.Do)
 	middleware := alice.New(healthcheckHandler)
@@ -128,11 +125,10 @@ func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBu
 }
 
 // Routes represents a list of endpoints that exist with this api
-func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, auditor Auditor, observationStore ObservationStore) *DatasetAPI {
+func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, auditor Auditor) *DatasetAPI {
 
 	api := DatasetAPI{
 		dataStore:            dataStore,
-		observationStore:     observationStore,
 		host:                 cfg.DatasetAPIURL,
 		zebedeeURL:           cfg.ZebedeeURL,
 		serviceAuthToken:     cfg.ServiceAuthToken,
@@ -141,7 +137,6 @@ func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 		Router:               router,
 		urlBuilder:           urlBuilder,
 		downloadGenerator:    downloadGenerator,
-		healthCheckTimeout:   cfg.HealthCheckTimeout,
 		auditor:              auditor,
 	}
 
