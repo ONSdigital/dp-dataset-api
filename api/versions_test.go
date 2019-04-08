@@ -2816,6 +2816,11 @@ func TestDetachVersionReturnsError(t *testing.T) {
 						State: models.EditionConfirmedState,
 						Links: &models.EditionUpdateLinks{LatestVersion: &models.LinkObject{ID: "1"}}}}, nil
 			},
+
+			GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
+			},
+
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
 				return &models.Version{}, nil
 			},
@@ -2865,6 +2870,11 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
 				return &models.Version{}, nil
 			},
+
+			GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
+			},
+
 			UpdateVersionFunc: func(ID string, version *models.Version) error {
 				return nil
 			},

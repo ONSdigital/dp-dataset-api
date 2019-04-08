@@ -295,7 +295,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
-	log.InfoCtx(ctx, "detachVersion endpoint: endpoint called.", nil)
+	log.InfoCtx(ctx, "detachVersion endpoint: endpoint called", nil)
 
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
