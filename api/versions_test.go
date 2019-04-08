@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 	"time"
-
+	"os"
 	"io"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -26,7 +26,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
-	"os"
 )
 
 const (
@@ -2631,7 +2630,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 
 		api.Router.ServeHTTP(w, r)
 
@@ -2667,7 +2666,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 
 		api.Router.ServeHTTP(w, r)
 
@@ -2706,7 +2705,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 
 		api.Router.ServeHTTP(w, r)
 
@@ -2748,7 +2747,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 
 		api.Router.ServeHTTP(w, r)
 
@@ -2790,7 +2789,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 
 		api.Router.ServeHTTP(w, r)
 
@@ -2840,7 +2839,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 
 		api.Router.ServeHTTP(w, r)
 
@@ -2894,7 +2893,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor, genericMockedObservationStore)
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
 
 		api.Router.ServeHTTP(w, r)
 
