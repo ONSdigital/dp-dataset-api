@@ -10,7 +10,6 @@ import (
 // Configuration structure which hold information for configuring the import API
 type Configuration struct {
 	BindAddr                 string        `envconfig:"BIND_ADDR"`
-	FeatureDetachDataset     bool          `envconfig:"FEATURE_DETACH_DATASET"`
 	KafkaAddr                []string      `envconfig:"KAFKA_ADDR"                       json:"-"`
 	AuditEventsTopic         string        `envconfig:"AUDIT_EVENTS_TOPIC"`
 	GenerateDownloadsTopic   string        `envconfig:"GENERATE_DOWNLOADS_TOPIC"`
@@ -23,6 +22,7 @@ type Configuration struct {
 	GracefulShutdownTimeout  time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 	HealthCheckInterval      time.Duration `envconfig:"HEALTHCHECK_INTERVAL"`
 	EnablePrivateEnpoints    bool          `envconfig:"ENABLE_PRIVATE_ENDPOINTS"`
+	EnableDetachDataset      bool          `envconfig:"ENABLE_DETACH_DATASET"`
 	MongoConfig              MongoConfig
 }
 
@@ -43,7 +43,6 @@ func Get() (*Configuration, error) {
 
 	cfg = &Configuration{
 		BindAddr:                 ":22000",
-		FeatureDetachDataset:     false,
 		KafkaAddr:                []string{"localhost:9092"},
 		AuditEventsTopic:         "audit-events",
 		GenerateDownloadsTopic:   "filter-job-submitted",
@@ -56,6 +55,7 @@ func Get() (*Configuration, error) {
 		GracefulShutdownTimeout:  5 * time.Second,
 		HealthCheckInterval:      30 * time.Second,
 		EnablePrivateEnpoints:    false,
+		EnableDetachDataset:	  false,
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",

@@ -2602,7 +2602,7 @@ func TestCreateNewVersionDoc(t *testing.T) {
 func TestDetachVersionReturnsError(t *testing.T) {
 
 	// TODO conditional test for feature flagged functionality. Will need tidying up eventually.
-	featureEnvString := os.Getenv("FEATURE_DETACH_DATASET")
+	featureEnvString := os.Getenv("ENABLE_DETACH_DATASET")
 	featureOn, _ := strconv.ParseBool(featureEnvString)
 	if !featureOn {
 		return

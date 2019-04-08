@@ -27,7 +27,7 @@ type Store struct {
 	store.Storer
 	Host                 string
 	Auditor              audit.AuditorService
-	FeatureDetachDataset bool
+	EnableDetachDataset bool
 }
 
 type taskError struct {
