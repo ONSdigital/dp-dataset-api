@@ -217,6 +217,18 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 			GetEditionFunc: func(dataset, edition, state string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
 					ID: "test",
+					Current: &models.Edition{
+						Links:&models.EditionUpdateLinks{
+							LatestVersion:&models.LinkObject{
+								ID:""},
+							},
+						},
+					Next: &models.Edition{
+						Links:&models.EditionUpdateLinks{
+							LatestVersion:&models.LinkObject{
+								ID:""},
+							},
+						},
 				}, nil
 			},
 		}

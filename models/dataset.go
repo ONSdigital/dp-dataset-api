@@ -320,7 +320,7 @@ func CreateEdition(host, datasetID, edition string) *EditionUpdate {
 
 //UpdateLinks in the editions.next document, ensuring links can't regress once published to current
 func (ed *EditionUpdate) UpdateLinks(host string) error {
-	if ed.Next == nil || ed.Next.Links == nil || ed.Next.Links.LatestVersion == nil {
+	if ed.Next == nil || ed.Next.Links == nil || ed.Next.Links.LatestVersion == nil || ed.Next.Links.LatestVersion.ID == "" {
 		return ErrEditionLinksInvalid
 	}
 
