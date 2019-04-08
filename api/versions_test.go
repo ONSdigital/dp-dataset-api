@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -25,6 +26,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
+	"os"
 )
 
 const (
@@ -2599,6 +2601,14 @@ func TestCreateNewVersionDoc(t *testing.T) {
 }
 
 func TestDetachVersionReturnsError(t *testing.T) {
+
+	// TODO conditional test for feature flagged functionality. Will need tidying up eventually.
+	featureEnvString := os.Getenv("FEATURE_DETACH_DATASET")
+	featureOn, _ := strconv.ParseBool(featureEnvString)
+	if !featureOn {
+		return
+	}
+
 	auditParams := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
 	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123", "edition": "2017", "version": "1"}
 	t.Parallel()

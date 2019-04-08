@@ -103,7 +103,9 @@ func main() {
 	}
 	neoDB := &neo4j.Neo4j{Pool: neo4jConnPool}
 
-	store := store.DataStore{Backend: DatsetAPIStore{Mongo: mongodb, Neo4j: neoDB}}
+	store := store.DataStore{
+		Backend: DatsetAPIStore{Mongo: mongodb, Neo4j: neoDB},
+	}
 
 	observationStore := observation.NewStore(neo4jConnPool)
 

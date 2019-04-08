@@ -41,10 +41,13 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 
 			action = UpdateEditionAction
 
-			// Abort if a new/next version is already in flight
-			if editionDoc.Current == nil || editionDoc.Current.Links.LatestVersion.ID != editionDoc.Next.Links.LatestVersion.ID {
-				log.InfoCtx(ctx, "there was an attempted skip of versioning sequence. Aborting edition update", logData)
-				return nil, action, errs.ErrVersionAlreadyExists
+			// TODO - feature flag. Will need removing eventually.
+			if s.FeatureDetachDataset {
+				// Abort if a new/next version is already in flight
+				if editionDoc.Current == nil || editionDoc.Current.Links.LatestVersion.ID != editionDoc.Next.Links.LatestVersion.ID {
+					log.InfoCtx(ctx, "there was an attempted skip of versioning sequence. Aborting edition update", logData)
+					return nil, action, errs.ErrVersionAlreadyExists
+				}
 			}
 
 			log.Debug("edition found, updating", logData)
