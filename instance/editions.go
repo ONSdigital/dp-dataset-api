@@ -41,14 +41,9 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 
 			action = UpdateEditionAction
 
-			if editionDoc.Current == nil && editionDoc.Next == nil {
-				log.InfoCtx(ctx, "edition update document has no links. Aborting edition update.", logData)
-				return nil, action, models.ErrEditionLinksInvalid
-			}
-
 			// Abort if a new/next version is already in flight
 			if editionDoc.Current == nil || editionDoc.Current.Links.LatestVersion.ID != editionDoc.Next.Links.LatestVersion.ID {
-				log.InfoCtx(ctx, "there was an attempted skip of versioning sequence. Aborting edition update.", logData)
+				log.InfoCtx(ctx, "there was an attempted skip of versioning sequence. Aborting edition update", logData)
 				return nil, action, errs.ErrVersionAlreadyExists
 			}
 

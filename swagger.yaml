@@ -388,6 +388,8 @@ paths:
             Invalid request, reasons can be one of the following:
               * dataset id was incorrect
               * edition was incorrect
+              * version state was incorrect
+              * not the most recent unpublished version
         404:
           description: "No version was found for an edition of a dataset using the id, edition and version provided"
         500:

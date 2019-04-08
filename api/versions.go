@@ -325,7 +325,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 
 		// Only permit detachment of the latest version.
 		if editionDoc.Next.Links.LatestVersion.ID != version {
-			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrVersionAlreadyExists, "detachVersion endpoint: Detach called againt a version other than latest, aborting."), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrVersionAlreadyExists, "detachVersion endpoint: Detach called againt a version other than latest, aborting"), logData)
 			return errs.ErrVersionAlreadyExists
 		}
 
@@ -338,8 +338,14 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 
 		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, editionDoc.Next.State)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrVersionNotFound, "detachVersion endpoint: Cannot find the specified edition"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrVersionNotFound, "detachVersion endpoint: Cannot find the specified version"), logData)
 			return errs.ErrVersionNotFound
+		}
+
+		datasetDoc, err := api.dataStore.Backend.GetDataset(datasetID)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "detachVersion endpoint: datastore.GetDatasets returned an error"), nil)
+			return err
 		}
 
 		// Detach the version
@@ -353,6 +359,13 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 		editionDoc.Next = editionDoc.Current
 		if err = api.dataStore.Backend.UpsertEdition(datasetID, edition, editionDoc); err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "detachVersion endpoint: failed to update edition document"), logData)
+			return err
+		}
+
+		// Rollback the dataset
+		datasetDoc.Next = datasetDoc.Current
+		if err = api.dataStore.Backend.UpsertDataset(datasetID, datasetDoc); err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "detachVersion endpoint: failed to update dataset document"), logData)
 			return err
 		}
 
