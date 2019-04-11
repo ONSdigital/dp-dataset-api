@@ -1218,6 +1218,9 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
+			GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+				return &models.EditionUpdateResults{}, nil
+			},
 			DeleteDatasetFunc: func(string) error {
 				return nil
 			},
@@ -1249,6 +1252,9 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
 			},
+			GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+				return &models.EditionUpdateResults{}, nil
+			},
 			DeleteDatasetFunc: func(string) error {
 				return nil
 			},
@@ -1277,6 +1283,9 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
+			},
+			GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+				return &models.EditionUpdateResults{}, nil
 			},
 			DeleteDatasetFunc: func(string) error {
 				return errs.ErrInternalServer
@@ -1307,6 +1316,9 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
+			GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+				return &models.EditionUpdateResults{}, nil
+			},
 			DeleteDatasetFunc: func(string) error {
 				return nil
 			},
@@ -1335,6 +1347,9 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return nil, errors.New("database is broken")
+			},
+			GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+				return &models.EditionUpdateResults{}, nil
 			},
 			DeleteDatasetFunc: func(string) error {
 				return nil
@@ -1377,6 +1392,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
 		)
 	})
+
 }
 
 func TestDeleteDatasetAuditActionAttemptedError(t *testing.T) {
@@ -1503,6 +1519,9 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 					return &models.DatasetUpdate{Next: &models.Dataset{State: models.CompletedState}}, nil
 				},
+				GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+					return &models.EditionUpdateResults{}, nil
+				},
 				DeleteDatasetFunc: func(ID string) error {
 					return errors.New("DeleteDatasetFunc error")
 				},
@@ -1535,6 +1554,9 @@ func TestDeleteDatasetAuditActionSuccessfulError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
+			},
+			GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+				return &models.EditionUpdateResults{}, nil
 			},
 			DeleteDatasetFunc: func(string) error {
 				return nil

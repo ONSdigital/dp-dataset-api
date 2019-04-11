@@ -24,12 +24,6 @@ var (
 		errs.ErrAddDatasetAlreadyExists:         true,
 	}
 
-	// errors that should return a 404 status
-	datasetsNotFound = map[error]bool{
-		errs.ErrDatasetNotFound: true,
-		errs.ErrEditionsNotFound: true,
-	}
-
 	// errors that should return a 204 status
 	datasetsNoContent = map[error]bool{
 		errs.ErrDeleteDatasetNotFound: true,
@@ -38,6 +32,12 @@ var (
 	// errors that should return a 400 status
 	datasetsBadRequest = map[error]bool{
 		errs.ErrAddUpdateDatasetBadRequest: true,
+	}
+
+	// errors that should return a 404 status
+	resourcesNotFound = map[error]bool{
+		errs.ErrDatasetNotFound: true,
+		errs.ErrEditionsNotFound: true,
 	}
 )
 
@@ -424,12 +424,12 @@ func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	switch {
 	case datasetsForbidden[err]:
 		status = http.StatusForbidden
-	case datasetsNotFound[err]:
-		status = http.StatusNotFound
 	case datasetsNoContent[err]:
 		status = http.StatusNoContent
 	case datasetsBadRequest[err]:
 		status = http.StatusBadRequest
+	case resourcesNotFound[err]:
+		status = http.StatusNotFound
 	default:
 		err = errs.ErrInternalServer
 		status = http.StatusInternalServerError
