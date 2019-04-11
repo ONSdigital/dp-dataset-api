@@ -317,7 +317,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrNotFound
 		}
 
-		editionDoc, err := api.dataStore.Backend.GetEdition(datasetID, edition, models.PublishedState)
+		editionDoc, err := api.dataStore.Backend.GetEdition(datasetID, edition, "")
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrEditionNotFound, "detachVersion endpoint: Cannot find the specified edition"), logData)
 			return err
@@ -355,18 +355,21 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		// Rollback the edition
-		editionDoc.Next = editionDoc.Current
-		if err = api.dataStore.Backend.UpsertEdition(datasetID, edition, editionDoc); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "detachVersion endpoint: failed to update edition document"), logData)
-			return err
-		}
+		// Only rollback dataset & edition if there's a "Current" sub-document to roll back to (i.e if a version has been published).
+		if datasetDoc.Current != nil {
+			// Rollback the edition
+			editionDoc.Next = editionDoc.Current
+			if err = api.dataStore.Backend.UpsertEdition(datasetID, edition, editionDoc); err != nil {
+				log.ErrorCtx(ctx, errors.WithMessage(err, "detachVersion endpoint: failed to update edition document"), logData)
+				return err
+			}
 
-		// Rollback the dataset
-		datasetDoc.Next = datasetDoc.Current
-		if err = api.dataStore.Backend.UpsertDataset(datasetID, datasetDoc); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "detachVersion endpoint: failed to update dataset document"), logData)
-			return err
+			// Rollback the dataset
+			datasetDoc.Next = datasetDoc.Current
+			if err = api.dataStore.Backend.UpsertDataset(datasetID, datasetDoc); err != nil {
+				log.ErrorCtx(ctx, errors.WithMessage(err, "detachVersion endpoint: failed to update dataset document"), logData)
+				return err
+			}
 		}
 
 		return nil

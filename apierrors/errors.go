@@ -18,6 +18,7 @@ var (
 	ErrDimensionOptionNotFound           = errors.New("dimension option not found")
 	ErrDimensionsNotFound                = errors.New("dimensions not found")
 	ErrEditionNotFound                   = errors.New("edition not found")
+	ErrEditionsNotFound                  = errors.New("no editions were found")
 	ErrIncorrectStateToDetach            = errors.New("only versions with a state of edition-confirmed or associated can be detached")
 	ErrIndexOutOfRange                   = errors.New("index out of range")
 	ErrInstanceNotFound                  = errors.New("instance not found")

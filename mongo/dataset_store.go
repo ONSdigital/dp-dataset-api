@@ -689,3 +689,18 @@ func (m *Mongo) DeleteDataset(id string) (err error) {
 
 	return nil
 }
+
+// DeleteEdition deletes an existing edition document
+func (m *Mongo) DeleteEdition(id string) (err error) {
+	s := m.Session.Copy()
+	defer s.Close()
+
+	if err = s.DB(m.Database).C("editions").Remove(bson.D{{Name: "id", Value: id}}); err != nil {
+		if err == mgo.ErrNotFound {
+			return errs.ErrEditionNotFound
+		}
+		return err
+	}
+
+	return nil
+}

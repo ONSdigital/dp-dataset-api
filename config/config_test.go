@@ -19,7 +19,6 @@ func TestSpec(t *testing.T) {
 
 			Convey("The values should be set to the expected defaults", func() {
 				So(cfg.BindAddr, ShouldEqual, ":22000")
-				So(cfg.EnableDetachDataset, ShouldEqual, false)
 				So(cfg.KafkaAddr, ShouldResemble, []string{"localhost:9092"})
 				So(cfg.AuditEventsTopic, ShouldEqual, "audit-events")
 				So(cfg.GenerateDownloadsTopic, ShouldEqual, "filter-job-submitted")
