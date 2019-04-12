@@ -1232,6 +1232,45 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNoContent)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
+
+		auditMock.AssertRecordCalls(
+			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
+			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123"}},
+		)
+	})
+
+	Convey("A successful request to delete dataset with editions returns 200 OK response", t, func() {
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
+			},
+			GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+				var items []*models.EditionUpdate
+				items = append(items, &models.EditionUpdate{})
+				return &models.EditionUpdateResults{Items:items}, nil
+			},
+			DeleteEditionFunc: func(ID string) error {
+				return nil
+			},
+			DeleteDatasetFunc: func(string) error {
+				return nil
+			},
+		}
+
+		auditMock := auditortest.New()
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNoContent)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
@@ -1266,6 +1305,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
@@ -1298,6 +1339,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
@@ -1330,6 +1373,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNoContent)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
@@ -1362,6 +1407,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
@@ -1385,6 +1431,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
 		So(w.Body.String(), ShouldResemble, "unauthenticated request\n")
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
@@ -1412,6 +1460,8 @@ func TestDeleteDatasetAuditActionAttemptedError(t *testing.T) {
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 
 				auditMock.AssertRecordCalls(
@@ -1447,6 +1497,8 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 			Convey("then a 204 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusNoContent)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 
 				auditMock.AssertRecordCalls(
@@ -1474,6 +1526,8 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 
 				auditMock.AssertRecordCalls(
@@ -1501,6 +1555,45 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 			Convey("then a 403 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusForbidden)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
+
+				auditMock.AssertRecordCalls(
+					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
+					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+				)
+			})
+		})
+
+		Convey("when dataStore.Backend.DeleteEdition returns an error", func() {
+			r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
+			So(err, ShouldBeNil)
+
+			w := httptest.NewRecorder()
+			mockedDataStore := &storetest.StorerMock{
+				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+					return &models.DatasetUpdate{Next: &models.Dataset{State: models.CompletedState}}, nil
+				},
+				GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+					var items []*models.EditionUpdate
+					items = append(items, &models.EditionUpdate{})
+					return &models.EditionUpdateResults{Items:items}, nil
+				},
+				DeleteEditionFunc: func(ID string) error {
+					return errors.New("DeleteEditionFunc error")
+				},
+			}
+
+			auditMock = auditortest.NewErroring(deleteDatasetAction, audit.Unsuccessful)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			api.Router.ServeHTTP(w, r)
+
+			Convey("then a 500 status is returned", func() {
+				assertInternalServerErr(w)
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 
 				auditMock.AssertRecordCalls(
@@ -1534,6 +1627,8 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 
 				auditMock.AssertRecordCalls(
@@ -1572,6 +1667,8 @@ func TestDeleteDatasetAuditActionSuccessfulError(t *testing.T) {
 			Convey("then a 204 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusNoContent)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 
 				auditMock.AssertRecordCalls(

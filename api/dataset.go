@@ -377,7 +377,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 		// Then delete them
 		for i := range editionDocs.Items {
-			if api.dataStore.Backend.DeleteEdition(editionDocs.Items[i].ID); err != nil {
+			if err := api.dataStore.Backend.DeleteEdition(editionDocs.Items[i].ID); err != nil {
 				log.ErrorCtx(ctx, errors.WithMessage(err, "delete dataset endpoint: failed to delete edition"), logData)
 				return err
 			}
