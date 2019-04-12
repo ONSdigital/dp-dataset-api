@@ -6,12 +6,12 @@ import (
 	"strconv"
 	"testing"
 
+	"context"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/go-ns/audit/auditortest"
 	. "github.com/smartystreets/goconvey/convey"
-	"context"
 )
 
 func Test_ConfirmEditionReturnsOK(t *testing.T) {
@@ -84,7 +84,7 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 						ID: "test",
 						Next: &models.Edition{
 							Edition: "unpublished-only",
-							State: models.EditionConfirmedState,
+							State:   models.EditionConfirmedState,
 							Links: &models.EditionUpdateLinks{
 								LatestVersion: &models.LinkObject{
 									ID: "1"}}},
@@ -99,9 +99,9 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 			host := "example.com"
 			s := Store{
 				EnableDetachDataset: true,
-				Storer:  mockedDataStore,
-				Host:    host,
-				Auditor: auditortest.New(),
+				Storer:              mockedDataStore,
+				Host:                host,
+				Auditor:             auditortest.New(),
 			}
 
 			Convey("when confirmEdition is called again", func() {

@@ -2626,14 +2626,14 @@ func TestDetachVersionReturnOK(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(datasetID, editionID, state string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
-					ID: "test",
+					ID:      "test",
 					Current: &models.Edition{},
 					Next: &models.Edition{
 						Edition: "yep",
-						State: models.EditionConfirmedState,
+						State:   models.EditionConfirmedState,
 						Links: &models.EditionUpdateLinks{
 							LatestVersion: &models.LinkObject{
-							ID: "1"}}}}, nil
+								ID: "1"}}}}, nil
 			},
 			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
 				return &models.Version{}, nil
@@ -2688,11 +2688,11 @@ func TestDetachVersionReturnOK(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(datasetID, editionID, state string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
-					ID: "test",
+					ID:      "test",
 					Current: &models.Edition{},
 					Next: &models.Edition{
 						Edition: "yep",
-						State: models.EditionConfirmedState,
+						State:   models.EditionConfirmedState,
 						Links: &models.EditionUpdateLinks{
 							LatestVersion: &models.LinkObject{
 								ID: "1"}}}}, nil
@@ -2736,7 +2736,6 @@ func TestDetachVersionReturnOK(t *testing.T) {
 		)
 	})
 }
-
 
 func TestDetachVersionReturnsError(t *testing.T) {
 
