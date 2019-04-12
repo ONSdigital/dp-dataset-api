@@ -84,7 +84,6 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 						ID: "test",
 						Next: &models.Edition{
 							Edition: "unpublished-only",
-							State:   models.EditionConfirmedState,
 							Links: &models.EditionUpdateLinks{
 								LatestVersion: &models.LinkObject{
 									ID: "1"}}},
