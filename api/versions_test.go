@@ -2599,6 +2599,145 @@ func TestCreateNewVersionDoc(t *testing.T) {
 	})
 }
 
+func TestDetachVersionReturnOK(t *testing.T) {
+
+	// TODO conditional test for feature flagged functionality. Will need tidying up eventually.
+	featureEnvString := os.Getenv("ENABLE_DETACH_DATASET")
+	featureOn, _ := strconv.ParseBool(featureEnvString)
+	if !featureOn {
+		return
+	}
+
+	auditParams := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123", "edition": "2017", "version": "1"}
+	t.Parallel()
+
+	Convey("A successful detach request against a version of a published dataset returns 200 OK response.", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetEditionFunc: func(datasetID, editionID, state string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{
+					ID: "test",
+					Current: &models.Edition{},
+					Next: &models.Edition{
+						Edition: "yep",
+						State: models.EditionConfirmedState,
+						Links: &models.EditionUpdateLinks{
+							LatestVersion: &models.LinkObject{
+							ID: "1"}}}}, nil
+			},
+			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+				return &models.Version{}, nil
+			},
+			GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Current: &models.Dataset{}}, nil
+			},
+			UpdateVersionFunc: func(ID string, version *models.Version) error {
+				return nil
+			},
+			UpsertEditionFunc: func(datasetID string, edition string, editionDoc *models.EditionUpdate) error {
+				return nil
+			},
+			UpsertDatasetFunc: func(ID string, datasetDoc *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		auditor := auditortest.New()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		auditor.AssertRecordCalls(
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Successful, Params: auditParams},
+		)
+	})
+
+	Convey("A successful detach request against a version of a unpublished dataset returns 200 OK response.", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetEditionFunc: func(datasetID, editionID, state string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{
+					ID: "test",
+					Current: &models.Edition{},
+					Next: &models.Edition{
+						Edition: "yep",
+						State: models.EditionConfirmedState,
+						Links: &models.EditionUpdateLinks{
+							LatestVersion: &models.LinkObject{
+								ID: "1"}}}}, nil
+			},
+			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+				return &models.Version{}, nil
+			},
+			GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
+			},
+			UpdateVersionFunc: func(ID string, version *models.Version) error {
+				return nil
+			},
+			UpsertEditionFunc: func(datasetID string, edition string, editionDoc *models.EditionUpdate) error {
+				return nil
+			},
+			UpsertDatasetFunc: func(ID string, datasetDoc *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		auditor := auditortest.New()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		auditor.AssertRecordCalls(
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Successful, Params: auditParams},
+		)
+	})
+}
+
+
 func TestDetachVersionReturnsError(t *testing.T) {
 
 	// TODO conditional test for feature flagged functionality. Will need tidying up eventually.
@@ -2881,7 +3020,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 
 			GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{}, nil
+				return &models.DatasetUpdate{Current: &models.Dataset{}}, nil
 			},
 
 			UpdateVersionFunc: func(ID string, version *models.Version) error {

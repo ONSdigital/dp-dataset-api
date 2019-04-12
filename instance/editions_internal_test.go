@@ -11,6 +11,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/go-ns/audit/auditortest"
 	. "github.com/smartystreets/goconvey/convey"
+	"context"
 )
 
 func Test_ConfirmEditionReturnsOK(t *testing.T) {
@@ -83,6 +84,7 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 						ID: "test",
 						Next: &models.Edition{
 							Edition: "unpublished-only",
+							State: models.EditionConfirmedState,
 							Links: &models.EditionUpdateLinks{
 								LatestVersion: &models.LinkObject{
 									ID: "1"}}},
@@ -96,6 +98,7 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 
 			host := "example.com"
 			s := Store{
+				EnableDetachDataset: true,
 				Storer:  mockedDataStore,
 				Host:    host,
 				Auditor: auditortest.New(),
@@ -106,7 +109,7 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 				editionName := "unpublished-only"
 				instanceID := "new-instance-1234"
 
-				_, err := s.confirmEdition(ctx, datasetID, editionName, instanceID)
+				_, err := s.confirmEdition(context.Background(), datasetID, editionName, instanceID)
 
 				Convey("then an internal server error is returned.", func() {
 					So(err, ShouldEqual, errs.ErrVersionAlreadyExists)
