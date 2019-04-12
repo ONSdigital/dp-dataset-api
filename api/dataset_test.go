@@ -1253,7 +1253,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
 				var items []*models.EditionUpdate
 				items = append(items, &models.EditionUpdate{})
-				return &models.EditionUpdateResults{Items:items}, nil
+				return &models.EditionUpdateResults{Items: items}, nil
 			},
 			DeleteEditionFunc: func(ID string) error {
 				return nil
@@ -1578,7 +1578,7 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 				GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
 					var items []*models.EditionUpdate
 					items = append(items, &models.EditionUpdate{})
-					return &models.EditionUpdateResults{Items:items}, nil
+					return &models.EditionUpdateResults{Items: items}, nil
 				},
 				DeleteEditionFunc: func(ID string) error {
 					return errors.New("DeleteEditionFunc error")

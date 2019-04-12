@@ -36,7 +36,7 @@ var (
 
 	// errors that should return a 404 status
 	resourcesNotFound = map[error]bool{
-		errs.ErrDatasetNotFound: true,
+		errs.ErrDatasetNotFound:  true,
 		errs.ErrEditionsNotFound: true,
 	}
 )
@@ -369,7 +369,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Find any editions associated with this dataset
-		editionDocs, err := api.dataStore.Backend.GetEditions(currentDataset.ID,"")
+		editionDocs, err := api.dataStore.Backend.GetEditions(currentDataset.ID, "")
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrEditionsNotFound, "delete dataset endpoint: unable to find the dataset editions"), logData)
 			return errs.ErrEditionsNotFound
