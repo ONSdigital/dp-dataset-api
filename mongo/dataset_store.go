@@ -380,17 +380,9 @@ func createDatasetUpdateQuery(id string, dataset *models.Dataset, currentState s
 	}
 
 	if dataset.QMI != nil {
-		if dataset.QMI.Description != "" {
-			updates["next.qmi.description"] = dataset.QMI.Description
-		}
-
-		if dataset.QMI.HRef != "" {
-			updates["next.qmi.href"] = dataset.QMI.HRef
-		}
-
-		if dataset.QMI.Title != "" {
-			updates["next.qmi.title"] = dataset.QMI.Title
-		}
+		updates["next.qmi.description"] = dataset.QMI.Description
+		updates["next.qmi.href"] = dataset.QMI.HRef
+		updates["next.qmi.title"] = dataset.QMI.Title
 	}
 
 	if dataset.RelatedDatasets != nil {
