@@ -8,32 +8,32 @@ import (
 )
 
 var (
-	lockPolicyMockCheckCaller sync.RWMutex
+	lockPermissionsMockCheck sync.RWMutex
 )
 
-// PolicyMock is a mock implementation of Policy.
+// PermissionsMock is a mock implementation of Permissions.
 //
-//     func TestSomethingThatUsesPolicy(t *testing.T) {
+//     func TestSomethingThatUsesPermissions(t *testing.T) {
 //
-//         // make and configure a mocked Policy
-//         mockedPolicy := &PolicyMock{
-//             CheckCallerFunc: func(serviceToken string, userToken string, collectionID string, datasetID string) (bool, error) {
-// 	               panic("TODO: mock out the CheckCaller method")
+//         // make and configure a mocked Permissions
+//         mockedPermissions := &PermissionsMock{
+//             CheckFunc: func(serviceToken string, userToken string, collectionID string, datasetID string) (bool, error) {
+// 	               panic("TODO: mock out the Check method")
 //             },
 //         }
 //
-//         // TODO: use mockedPolicy in code that requires Policy
+//         // TODO: use mockedPermissions in code that requires Permissions
 //         //       and then make assertions.
 //
 //     }
-type PolicyMock struct {
-	// CheckCallerFunc mocks the CheckCaller method.
-	CheckCallerFunc func(serviceToken string, userToken string, collectionID string, datasetID string) (bool, error)
+type PermissionsMock struct {
+	// CheckFunc mocks the Check method.
+	CheckFunc func(serviceToken string, userToken string, collectionID string, datasetID string) (bool, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// CheckCaller holds details about calls to the CheckCaller method.
-		CheckCaller []struct {
+		// Check holds details about calls to the Check method.
+		Check []struct {
 			// ServiceToken is the serviceToken argument value.
 			ServiceToken string
 			// UserToken is the userToken argument value.
@@ -46,10 +46,10 @@ type PolicyMock struct {
 	}
 }
 
-// CheckCaller calls CheckCallerFunc.
-func (mock *PolicyMock) CheckCaller(serviceToken string, userToken string, collectionID string, datasetID string) (bool, error) {
-	if mock.CheckCallerFunc == nil {
-		panic("moq: PolicyMock.CheckCallerFunc is nil but Policy.CheckCaller was just called")
+// Check calls CheckFunc.
+func (mock *PermissionsMock) Check(serviceToken string, userToken string, collectionID string, datasetID string) (bool, error) {
+	if mock.CheckFunc == nil {
+		panic("moq: PermissionsMock.CheckFunc is nil but Permissions.Check was just called")
 	}
 	callInfo := struct {
 		ServiceToken string
@@ -62,16 +62,16 @@ func (mock *PolicyMock) CheckCaller(serviceToken string, userToken string, colle
 		CollectionID: collectionID,
 		DatasetID:    datasetID,
 	}
-	lockPolicyMockCheckCaller.Lock()
-	mock.calls.CheckCaller = append(mock.calls.CheckCaller, callInfo)
-	lockPolicyMockCheckCaller.Unlock()
-	return mock.CheckCallerFunc(serviceToken, userToken, collectionID, datasetID)
+	lockPermissionsMockCheck.Lock()
+	mock.calls.Check = append(mock.calls.Check, callInfo)
+	lockPermissionsMockCheck.Unlock()
+	return mock.CheckFunc(serviceToken, userToken, collectionID, datasetID)
 }
 
-// CheckCallerCalls gets all the calls that were made to CheckCaller.
+// CheckCalls gets all the calls that were made to Check.
 // Check the length with:
-//     len(mockedPolicy.CheckCallerCalls())
-func (mock *PolicyMock) CheckCallerCalls() []struct {
+//     len(mockedPermissions.CheckCalls())
+func (mock *PermissionsMock) CheckCalls() []struct {
 	ServiceToken string
 	UserToken    string
 	CollectionID string
@@ -83,8 +83,8 @@ func (mock *PolicyMock) CheckCallerCalls() []struct {
 		CollectionID string
 		DatasetID    string
 	}
-	lockPolicyMockCheckCaller.RLock()
-	calls = mock.calls.CheckCaller
-	lockPolicyMockCheckCaller.RUnlock()
+	lockPermissionsMockCheck.RLock()
+	calls = mock.calls.Check
+	lockPermissionsMockCheck.RUnlock()
 	return calls
 }
