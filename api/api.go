@@ -13,6 +13,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/dimension"
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/permissions"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/audit"
@@ -140,8 +141,11 @@ func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 		auditor:              auditor,
 	}
 
+	read := permissions.NewPolicy(permissions.READ)
+	permissions.GetRequestVars = mux.Vars
+
 	api.Router.HandleFunc("/datasets", api.getDatasets).Methods("GET")
-	api.Router.HandleFunc("/datasets/{dataset_id}", api.getDataset).Methods("GET")
+	api.Router.HandleFunc("/datasets/{dataset_id}", permissions.Require(read, api.getDataset)).Methods("GET")
 	api.Router.HandleFunc("/datasets/{dataset_id}/editions", api.getEditions).Methods("GET")
 	api.Router.HandleFunc("/datasets/{dataset_id}/editions/{edition}", api.getEdition).Methods("GET")
 	api.Router.HandleFunc("/datasets/{dataset_id}/editions/{edition}/versions", api.getVersions).Methods("GET")
