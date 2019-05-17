@@ -24,6 +24,11 @@ type handlerCalls struct {
 	W http.ResponseWriter
 }
 
+// Scenario: Request from an authorized caller
+// given an authorized caller
+// when their request is received
+// then the authenticator confirms the caller holds the required permissions
+// and the request is allowed to continue
 func TestRequire_CallerAuthorized(t *testing.T) {
 	Convey("given an authorized caller", t, func() {
 		authenticatorMock := getAuthenticatorMoq(200, nil)
@@ -66,6 +71,12 @@ func TestRequire_CallerAuthorized(t *testing.T) {
 	})
 }
 
+// Scenario: Request from an unauthorized caller
+// given an unauthorized caller
+// when their request is received
+// then the permissions check confirms the caller is not authorized to perform the requested action
+// and a 401 response is returned
+// and the request does not continue
 func TestRequire_CallerNotAuthorized(t *testing.T) {
 	Convey("given an unauthorized caller", t, func() {
 		authenticatorMock := getAuthenticatorMoq(401, nil)
@@ -109,6 +120,12 @@ func TestRequire_CallerNotAuthorized(t *testing.T) {
 	})
 }
 
+// Scenario: checking caller permissions returns an error
+// given permissions check returns an error
+// when a request is received
+// then the permissions check is called with the expected parameters
+// and a 500 response is returned
+// and the request does not continue
 func TestRequire_CheckPermissionsError(t *testing.T) {
 	Convey("given permissions check returns an error", t, func() {
 		authenticatorMock := getAuthenticatorMoq(0, errors.New("wubba lubba dub dub"))
