@@ -8,18 +8,6 @@ type CRUD struct {
 	Delete bool
 }
 
-func (c CRUD) IsCreate() bool {
-	return c.Create
-}
-
-func (c CRUD) IsRead() bool {
-	return c.Read
-}
-
-func (c CRUD) IsUpdate() bool {
-	return c.Update
-}
-
-func (c CRUD) IsDelete() bool {
-	return c.Delete
+func (required *CRUD) Check(caller *CRUD) bool {
+	return false
 }

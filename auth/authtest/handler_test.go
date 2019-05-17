@@ -199,7 +199,7 @@ func getRequest(t *testing.T) *http.Request {
 
 func getAuthenticatorMoq(status int, err error) *PermissionAuthenticatorMock {
 	return &PermissionAuthenticatorMock{
-		CheckFunc: func(required auth.CRUD, serviceToken string, userToken string, collectionID string, datasetID string) (int, error) {
+		CheckFunc: func(required permissions.CRUD, serviceToken string, userToken string, collectionID string, datasetID string) (int, error) {
 			return status, err
 		},
 	}

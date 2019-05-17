@@ -4,7 +4,7 @@
 package authtest
 
 import (
-	"github.com/ONSdigital/dp-dataset-api/auth"
+	"github.com/ONSdigital/dp-dataset-api/permissions"
 	"sync"
 )
 
@@ -18,7 +18,7 @@ var (
 //
 //         // make and configure a mocked PermissionAuthenticator
 //         mockedPermissionAuthenticator := &PermissionAuthenticatorMock{
-//             CheckFunc: func(required auth.CRUD, serviceToken string, userToken string, collectionID string, datasetID string) (int, error) {
+//             CheckFunc: func(required permissions.CRUD, serviceToken string, userToken string, collectionID string, datasetID string) (int, error) {
 // 	               panic("TODO: mock out the Check method")
 //             },
 //         }
@@ -29,14 +29,14 @@ var (
 //     }
 type PermissionAuthenticatorMock struct {
 	// CheckFunc mocks the Check method.
-	CheckFunc func(required auth.CRUD, serviceToken string, userToken string, collectionID string, datasetID string) (int, error)
+	CheckFunc func(required permissions.CRUD, serviceToken string, userToken string, collectionID string, datasetID string) (int, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// Check holds details about calls to the Check method.
 		Check []struct {
 			// Required is the required argument value.
-			Required auth.CRUD
+			Required permissions.CRUD
 			// ServiceToken is the serviceToken argument value.
 			ServiceToken string
 			// UserToken is the userToken argument value.
@@ -50,12 +50,12 @@ type PermissionAuthenticatorMock struct {
 }
 
 // Check calls CheckFunc.
-func (mock *PermissionAuthenticatorMock) Check(required auth.CRUD, serviceToken string, userToken string, collectionID string, datasetID string) (int, error) {
+func (mock *PermissionAuthenticatorMock) Check(required permissions.CRUD, serviceToken string, userToken string, collectionID string, datasetID string) (int, error) {
 	if mock.CheckFunc == nil {
 		panic("moq: PermissionAuthenticatorMock.CheckFunc is nil but PermissionAuthenticator.Check was just called")
 	}
 	callInfo := struct {
-		Required     auth.CRUD
+		Required     permissions.CRUD
 		ServiceToken string
 		UserToken    string
 		CollectionID string
@@ -77,14 +77,14 @@ func (mock *PermissionAuthenticatorMock) Check(required auth.CRUD, serviceToken 
 // Check the length with:
 //     len(mockedPermissionAuthenticator.CheckCalls())
 func (mock *PermissionAuthenticatorMock) CheckCalls() []struct {
-	Required     auth.CRUD
+	Required     permissions.CRUD
 	ServiceToken string
 	UserToken    string
 	CollectionID string
 	DatasetID    string
 } {
 	var calls []struct {
-		Required     auth.CRUD
+		Required     permissions.CRUD
 		ServiceToken string
 		UserToken    string
 		CollectionID string

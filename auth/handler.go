@@ -3,6 +3,7 @@ package auth
 import (
 	"net/http"
 
+	"github.com/ONSdigital/dp-dataset-api/permissions"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/log.go/log"
 )
@@ -26,16 +27,8 @@ func Init(GetRequestVarsFunc func(r *http.Request) map[string]string, Permission
 	authenticator = PermissionsAuthenticator
 }
 
-// CRUD a representation of CRUD permissions required to access an endpoint.
-type CRUD interface {
-	IsCreate() bool
-	IsRead() bool
-	IsUpdate() bool
-	IsDelete() bool
-}
-
 type PermissionAuthenticator interface {
-	Check(required CRUD, serviceToken string, userToken string, collectionID string, datasetID string) (int, error)
+	Check(required permissions.CRUD, serviceToken string, userToken string, collectionID string, datasetID string) (int, error)
 }
 
 // Require is a http.HandlerFunc that verifies the caller holds the required permissions for the wrapped
@@ -43,7 +36,7 @@ type PermissionAuthenticator interface {
 // handlerFunc. If the caller does not have all the required permissions then the the request is rejected with the
 // appropriate http status and the wrapped handler is not invoked. If there is an error whilst attempting to check the
 // callers permissions then a 500 status is returned and the wrapped handler is not invoked.
-func Require(required CRUD, endpoint func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func Require(required permissions.CRUD, endpoint func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestedURI := r.URL.RequestURI()
 
