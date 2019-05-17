@@ -20,9 +20,9 @@ var (
 	authenticator  PermissionAuthenticator
 )
 
-// Init set up function for the auth pkg. Requires a function for getting request parameters and a
+// Configure set up function for the auth pkg. Requires a function for getting request parameters and a
 // PermissionsAuthenticator implementation
-func Init(GetRequestVarsFunc func(r *http.Request) map[string]string, PermissionsAuthenticator PermissionAuthenticator) {
+func Configure(GetRequestVarsFunc func(r *http.Request) map[string]string, PermissionsAuthenticator PermissionAuthenticator) {
 	getRequestVars = GetRequestVarsFunc
 	authenticator = PermissionsAuthenticator
 }
@@ -43,7 +43,7 @@ func Require(required permissions.CRUD, endpoint func(http.ResponseWriter, *http
 		serviceAuthToken := r.Header.Get(common.AuthHeaderKey)
 		userAuthToken := r.Header.Get(common.FlorenceHeaderKey)
 		collectionID := r.Header.Get(CollectionIDHeader)
-		datasetID := getDatasetID(r)
+		datasetID := getRequestVars(r)[DatasetIDParam]
 
 		authStatus, err := authenticator.Check(required, serviceAuthToken, userAuthToken, collectionID, datasetID)
 		if err != nil {
@@ -61,8 +61,4 @@ func Require(required permissions.CRUD, endpoint func(http.ResponseWriter, *http
 
 		endpoint(w, r)
 	})
-}
-
-func getDatasetID(r *http.Request) string {
-	return getRequestVars(r)[DatasetIDParam]
 }
