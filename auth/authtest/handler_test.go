@@ -33,7 +33,7 @@ func TestRequire_CallerAuthorized(t *testing.T) {
 	Convey("given an authorized caller", t, func() {
 		authenticatorMock := getAuthenticatorMoq(200, nil)
 
-		auth.Init(getRequestVarsMoq(), authenticatorMock)
+		auth.Configure(getRequestVarsMoq(), authenticatorMock)
 
 		requiredPermissions := permissions.CRUD{
 			Create: true,
@@ -81,7 +81,7 @@ func TestRequire_CallerNotAuthorized(t *testing.T) {
 	Convey("given an unauthorized caller", t, func() {
 		authenticatorMock := getAuthenticatorMoq(401, nil)
 
-		auth.Init(getRequestVarsMoq(), authenticatorMock)
+		auth.Configure(getRequestVarsMoq(), authenticatorMock)
 
 		handlerCalls := make([]handlerCalls, 0)
 		handler := getHandlerMoq(&handlerCalls)
@@ -130,7 +130,7 @@ func TestRequire_CheckPermissionsError(t *testing.T) {
 	Convey("given permissions check returns an error", t, func() {
 		authenticatorMock := getAuthenticatorMoq(0, errors.New("wubba lubba dub dub"))
 
-		auth.Init(getRequestVarsMoq(), authenticatorMock)
+		auth.Configure(getRequestVarsMoq(), authenticatorMock)
 
 		handlerCalls := make([]handlerCalls, 0)
 		handler := getHandlerMoq(&handlerCalls)
