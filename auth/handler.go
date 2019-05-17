@@ -19,6 +19,8 @@ var (
 	authenticator  PermissionAuthenticator
 )
 
+// Init set up function for the auth pkg. Requires a function for getting request parameters and a
+// PermissionsAuthenticator implementation
 func Init(GetRequestVarsFunc func(r *http.Request) map[string]string, PermissionsAuthenticator PermissionAuthenticator) {
 	getRequestVars = GetRequestVarsFunc
 	authenticator = PermissionsAuthenticator

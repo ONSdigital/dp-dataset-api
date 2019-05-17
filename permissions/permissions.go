@@ -1,6 +1,6 @@
 package permissions
 
-//CRUD is a representation of permissions required by an endpoint or held by a user/service.
+// CRUD is a representation of permissions required by an endpoint or held by a user/service.
 type CRUD struct {
 	Create bool
 	Read   bool
