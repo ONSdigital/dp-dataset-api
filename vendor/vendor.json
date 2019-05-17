@@ -219,6 +219,12 @@
 			"revisionTime": "2019-02-28T15:33:39Z"
 		},
 		{
+			"checksumSHA1": "r2PdGOPVGXt0WTdGQXN5aHfp0RM=",
+			"path": "github.com/ONSdigital/log.go/log",
+			"revision": "93cc21caa3b378645874496cca0d8204bdf0f891",
+			"revisionTime": "2019-02-14T09:59:51Z"
+		},
+		{
 			"checksumSHA1": "+Jp0tVXfQ1TM8T+oun82oJtME5U=",
 			"origin": "github.com/ONSdigital/go-ns/vendor/github.com/Shopify/sarama",
 			"path": "github.com/Shopify/sarama",
@@ -259,6 +265,12 @@
 			"path": "github.com/eapache/queue",
 			"revision": "6920413b753350672215a083e0f9d5c270a21075",
 			"revisionTime": "2017-11-28T09:28:02Z"
+		},
+		{
+			"checksumSHA1": "BxH9xJUqczhpL57gfKZe2/VlBHY=",
+			"path": "github.com/fatih/color",
+			"revision": "3f9d52f7176a6927daacff70a3e8d1dc2025c53e",
+			"revisionTime": "2018-10-10T23:13:11Z"
 		},
 		{
 			"checksumSHA1": "C0PrqJwZS9A+Izfrk+YlZQJFsvg=",
@@ -323,6 +335,12 @@
 			"revisionTime": "2017-07-03T15:07:09Z"
 		},
 		{
+			"checksumSHA1": "+HUsIuEnSLik8Jrrw9MDdxmhT5c=",
+			"path": "github.com/hokaccha/go-prettyjson",
+			"revision": "f579f869bbfea48a61fbea09207cadd1aaeceb83",
+			"revisionTime": "2018-09-20T04:03:06Z"
+		},
+		{
 			"checksumSHA1": "TsX+LuxHhV9GFmua8C1nxflFcTA=",
 			"path": "github.com/johnnadratowski/golang-neo4j-bolt-driver",
 			"revision": "1108d6e66ccf2c8e68ab26b5f64e6c0a2ad00899",
@@ -382,6 +400,20 @@
 			"path": "github.com/kelseyhightower/envconfig",
 			"revision": "dd1402a4d99de9ac2f396cd6fcb957bc2c695ec1",
 			"revisionTime": "2018-05-17T19:45:57Z"
+		},
+		{
+			"checksumSHA1": "XEV3BI3nHA/rNa/tIgB7fVCrDww=",
+			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-colorable",
+			"path": "github.com/mattn/go-colorable",
+			"revision": "3f9d52f7176a6927daacff70a3e8d1dc2025c53e",
+			"revisionTime": "2018-10-10T23:13:11Z"
+		},
+		{
+			"checksumSHA1": "y/A5iuvwjytQE2CqVuphQRXR2nI=",
+			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-isatty",
+			"path": "github.com/mattn/go-isatty",
+			"revision": "3f9d52f7176a6927daacff70a3e8d1dc2025c53e",
+			"revisionTime": "2018-10-10T23:13:11Z"
 		},
 		{
 			"checksumSHA1": "hBgLmZ/4mCxmnH88mqFKBkpJFUY=",
@@ -472,6 +504,13 @@
 			"path": "golang.org/x/net/context/ctxhttp",
 			"revision": "98b5dee4d793d5a0547b7bc7d18aceb353c88a54",
 			"revisionTime": "2018-03-18T14:57:33Z"
+		},
+		{
+			"checksumSHA1": "CNHEeGnucEUlTHJrLS2kHtfNbws=",
+			"origin": "github.com/fatih/color/vendor/golang.org/x/sys/unix",
+			"path": "golang.org/x/sys/unix",
+			"revision": "3f9d52f7176a6927daacff70a3e8d1dc2025c53e",
+			"revisionTime": "2018-10-10T23:13:11Z"
 		}
 	],
 	"rootPath": "github.com/ONSdigital/dp-dataset-api"
