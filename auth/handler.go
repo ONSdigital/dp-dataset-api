@@ -8,11 +8,11 @@ import (
 	"github.com/ONSdigital/log.go/log"
 )
 
-//go:generate moq -out auth_mocks.go -pkg auth . PermissionAuthenticator
+//go:generate moq -out authtest/auth_mocks.go -pkg authtest . PermissionAuthenticator
 
 const (
-	collectionIDHeader = "Collection-Id"
-	datasetIDParam     = "dataset_id"
+	CollectionIDHeader = "Collection-Id"
+	DatasetIDParam     = "dataset_id"
 )
 
 var (
@@ -29,13 +29,18 @@ type PermissionAuthenticator interface {
 	Check(required permissions.Permissions, serviceToken string, userToken string, collectionID string, datasetID string) (bool, error)
 }
 
+// Require is a http.HandlerFunc that verifies the caller holds the required permissions for the wrapped
+// http.HandlerFunc If the caller has all of the required permissions then the request will continue to the wrapped
+// handlerFunc. If the caller does not have all the required permissions then the the request is rejected with a 401
+// status and the wrapped handler is not invoked. If there is an error whilst attempting to check the callers
+// permissions then a 500 status is returned and the wrapped handler is not invoked.
 func Require(required permissions.Permissions, endpoint func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestedURI := r.URL.RequestURI()
 
 		serviceAuthToken := r.Header.Get(common.AuthHeaderKey)
 		userAuthToken := r.Header.Get(common.FlorenceHeaderKey)
-		collectionID := r.Header.Get(collectionIDHeader)
+		collectionID := r.Header.Get(CollectionIDHeader)
 		datasetID := getDatasetID(r)
 
 		authorized, err := authenticator.Check(required, serviceAuthToken, userAuthToken, collectionID, datasetID)
@@ -57,5 +62,5 @@ func Require(required permissions.Permissions, endpoint func(http.ResponseWriter
 }
 
 func getDatasetID(r *http.Request) string {
-	return getRequestVars(r)[datasetIDParam]
+	return getRequestVars(r)[DatasetIDParam]
 }

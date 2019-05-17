@@ -1,10 +1,11 @@
-package auth
+package authtest
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/ONSdigital/dp-dataset-api/auth"
 	"github.com/ONSdigital/dp-dataset-api/permissions"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/pkg/errors"
@@ -27,14 +28,14 @@ func TestRequire_CallerAuthorized(t *testing.T) {
 	Convey("given an authorized caller", t, func() {
 		authenticatorMock := getAuthenticatorMoq(true, nil)
 
-		Init(getRequestVarsMoq(), authenticatorMock)
+		auth.Init(getRequestVarsMoq(), authenticatorMock)
 
 		requiredPermissions := permissions.Required(true, true, true, true)
 
 		handlerCalls := make([]handlerCalls, 0)
 		handler := getHandlerMoq(&handlerCalls)
 
-		checkPermissions := Require(requiredPermissions, handler)
+		checkPermissions := auth.Require(requiredPermissions, handler)
 
 		req := getRequest(t)
 		w := httptest.NewRecorder()
@@ -64,13 +65,13 @@ func TestRequire_CallerNotAuthorized(t *testing.T) {
 	Convey("given an unauthorized caller", t, func() {
 		authenticatorMock := getAuthenticatorMoq(false, nil)
 
-		Init(getRequestVarsMoq(), authenticatorMock)
+		auth.Init(getRequestVarsMoq(), authenticatorMock)
 
 		handlerCalls := make([]handlerCalls, 0)
 		handler := getHandlerMoq(&handlerCalls)
 
 		requiredPermissions := permissions.Required(true, false, false, false)
-		checkPermissions := Require(requiredPermissions, handler)
+		checkPermissions := auth.Require(requiredPermissions, handler)
 
 		req := getRequest(t)
 		w := httptest.NewRecorder()
@@ -102,18 +103,18 @@ func TestRequire_CheckPermissionsError(t *testing.T) {
 	Convey("given permissions check returns an error", t, func() {
 		authenticatorMock := getAuthenticatorMoq(false, errors.New("wubba lubba dub dub"))
 
-		Init(getRequestVarsMoq(), authenticatorMock)
+		auth.Init(getRequestVarsMoq(), authenticatorMock)
 
 		handlerCalls := make([]handlerCalls, 0)
 		handler := getHandlerMoq(&handlerCalls)
 
 		requiredPermissions := permissions.Required(true, false, false, false)
-		checkPermissions := Require(requiredPermissions, handler)
+		checkPermissions := auth.Require(requiredPermissions, handler)
 
 		req, _ := http.NewRequest("GET", "/something", nil)
 		req.Header.Set(common.AuthHeaderKey, serviceAuthToken)
 		req.Header.Set(common.FlorenceHeaderKey, userAuthToken)
-		req.Header.Set(collectionIDHeader, collectionID)
+		req.Header.Set(auth.CollectionIDHeader, collectionID)
 
 		w := httptest.NewRecorder()
 
@@ -159,7 +160,7 @@ func getRequest(t *testing.T) *http.Request {
 	}
 	req.Header.Set(common.AuthHeaderKey, serviceAuthToken)
 	req.Header.Set(common.FlorenceHeaderKey, userAuthToken)
-	req.Header.Set(collectionIDHeader, collectionID)
+	req.Header.Set(auth.CollectionIDHeader, collectionID)
 	return req
 }
 

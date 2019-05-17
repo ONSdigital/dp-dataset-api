@@ -1,22 +1,25 @@
 package permissions
 
 const (
+	// Create permission
 	CREATE Permission = "CREATE"
-	READ   Permission = "READ"
+	// Read permission
+	READ Permission = "READ"
+	// Update permission
 	UPDATE Permission = "UPDATE"
+	// Delete permission
 	DELETE Permission = "DELETE"
 )
 
 type Permission string
 
+//Permissions is a representation of a CRUD permissions required by an endpoint or held by a user/service.
 type Permissions struct {
-	Required []Permission
+	Perms []Permission
 }
 
-type CallerPermissions struct {
-	Permissions []Permission
-}
-
+// Required is a convenience method for creating a Permissions object. Add permissions by supplying true or false for
+// each of the CRUD values.
 func Required(Create bool, read bool, update bool, delete bool) Permissions {
 	required := make([]Permission, 0)
 
@@ -33,5 +36,5 @@ func Required(Create bool, read bool, update bool, delete bool) Permissions {
 		required = append(required, DELETE)
 	}
 
-	return Permissions{Required: required}
+	return Permissions{Perms: required}
 }
