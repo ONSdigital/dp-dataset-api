@@ -26,11 +26,16 @@ type handlerCalls struct {
 
 func TestRequire_CallerAuthorized(t *testing.T) {
 	Convey("given an authorized caller", t, func() {
-		authenticatorMock := getAuthenticatorMoq(true, nil)
+		authenticatorMock := getAuthenticatorMoq(200, nil)
 
 		auth.Init(getRequestVarsMoq(), authenticatorMock)
 
-		requiredPermissions := permissions.Required(true, true, true, true)
+		requiredPermissions := permissions.CRUD{
+			Create: true,
+			Read:   true,
+			Update: true,
+			Delete: true,
+		}
 
 		handlerCalls := make([]handlerCalls, 0)
 		handler := getHandlerMoq(&handlerCalls)
@@ -63,14 +68,19 @@ func TestRequire_CallerAuthorized(t *testing.T) {
 
 func TestRequire_CallerNotAuthorized(t *testing.T) {
 	Convey("given an unauthorized caller", t, func() {
-		authenticatorMock := getAuthenticatorMoq(false, nil)
+		authenticatorMock := getAuthenticatorMoq(401, nil)
 
 		auth.Init(getRequestVarsMoq(), authenticatorMock)
 
 		handlerCalls := make([]handlerCalls, 0)
 		handler := getHandlerMoq(&handlerCalls)
 
-		requiredPermissions := permissions.Required(true, false, false, false)
+		requiredPermissions := permissions.CRUD{
+			Create: false,
+			Read:   true,
+			Update: false,
+			Delete: false,
+		}
 		checkPermissions := auth.Require(requiredPermissions, handler)
 
 		req := getRequest(t)
@@ -101,14 +111,20 @@ func TestRequire_CallerNotAuthorized(t *testing.T) {
 
 func TestRequire_CheckPermissionsError(t *testing.T) {
 	Convey("given permissions check returns an error", t, func() {
-		authenticatorMock := getAuthenticatorMoq(false, errors.New("wubba lubba dub dub"))
+		authenticatorMock := getAuthenticatorMoq(0, errors.New("wubba lubba dub dub"))
 
 		auth.Init(getRequestVarsMoq(), authenticatorMock)
 
 		handlerCalls := make([]handlerCalls, 0)
 		handler := getHandlerMoq(&handlerCalls)
 
-		requiredPermissions := permissions.Required(true, false, false, false)
+		requiredPermissions := permissions.CRUD{
+			Create: false,
+			Read:   true,
+			Update: false,
+			Delete: false,
+		}
+
 		checkPermissions := auth.Require(requiredPermissions, handler)
 
 		req, _ := http.NewRequest("GET", "/something", nil)
@@ -164,10 +180,10 @@ func getRequest(t *testing.T) *http.Request {
 	return req
 }
 
-func getAuthenticatorMoq(result bool, err error) *PermissionAuthenticatorMock {
+func getAuthenticatorMoq(status int, err error) *PermissionAuthenticatorMock {
 	return &PermissionAuthenticatorMock{
-		CheckFunc: func(required permissions.Permissions, serviceToken string, userToken string, collectionID string, datasetID string) (b bool, e error) {
-			return result, err
+		CheckFunc: func(required auth.CRUD, serviceToken string, userToken string, collectionID string, datasetID string) (int, error) {
+			return status, err
 		},
 	}
 }

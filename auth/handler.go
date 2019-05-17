@@ -3,7 +3,6 @@ package auth
 import (
 	"net/http"
 
-	"github.com/ONSdigital/dp-dataset-api/permissions"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/log.go/log"
 )
@@ -25,8 +24,15 @@ func Init(GetRequestVarsFunc func(r *http.Request) map[string]string, Permission
 	authenticator = PermissionsAuthenticator
 }
 
+type CRUD interface {
+	IsCreate() bool
+	IsRead() bool
+	IsUpdate() bool
+	IsDelete() bool
+}
+
 type PermissionAuthenticator interface {
-	Check(required permissions.Permissions, serviceToken string, userToken string, collectionID string, datasetID string) (bool, error)
+	Check(required CRUD, serviceToken string, userToken string, collectionID string, datasetID string) (int, error)
 }
 
 // Require is a http.HandlerFunc that verifies the caller holds the required permissions for the wrapped
@@ -34,7 +40,7 @@ type PermissionAuthenticator interface {
 // handlerFunc. If the caller does not have all the required permissions then the the request is rejected with a 401
 // status and the wrapped handler is not invoked. If there is an error whilst attempting to check the callers
 // permissions then a 500 status is returned and the wrapped handler is not invoked.
-func Require(required permissions.Permissions, endpoint func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func Require(required CRUD, endpoint func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestedURI := r.URL.RequestURI()
 
@@ -43,7 +49,7 @@ func Require(required permissions.Permissions, endpoint func(http.ResponseWriter
 		collectionID := r.Header.Get(CollectionIDHeader)
 		datasetID := getDatasetID(r)
 
-		authorized, err := authenticator.Check(required, serviceAuthToken, userAuthToken, collectionID, datasetID)
+		authStatus, err := authenticator.Check(required, serviceAuthToken, userAuthToken, collectionID, datasetID)
 		if err != nil {
 			log.Event(r.Context(), "error authenticating caller permissions", log.Error(err), log.Data{
 				"requested_uri": requestedURI,
@@ -52,8 +58,8 @@ func Require(required permissions.Permissions, endpoint func(http.ResponseWriter
 			return
 		}
 
-		if !authorized {
-			w.WriteHeader(401)
+		if authStatus != 200 {
+			w.WriteHeader(authStatus)
 			return
 		}
 
