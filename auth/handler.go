@@ -26,6 +26,7 @@ func Init(GetRequestVarsFunc func(r *http.Request) map[string]string, Permission
 	authenticator = PermissionsAuthenticator
 }
 
+// CRUD a representation of CRUD permissions required to access an endpoint.
 type CRUD interface {
 	IsCreate() bool
 	IsRead() bool
@@ -39,9 +40,9 @@ type PermissionAuthenticator interface {
 
 // Require is a http.HandlerFunc that verifies the caller holds the required permissions for the wrapped
 // http.HandlerFunc If the caller has all of the required permissions then the request will continue to the wrapped
-// handlerFunc. If the caller does not have all the required permissions then the the request is rejected with a 401
-// status and the wrapped handler is not invoked. If there is an error whilst attempting to check the callers
-// permissions then a 500 status is returned and the wrapped handler is not invoked.
+// handlerFunc. If the caller does not have all the required permissions then the the request is rejected with the
+// appropriate http status and the wrapped handler is not invoked. If there is an error whilst attempting to check the
+// callers permissions then a 500 status is returned and the wrapped handler is not invoked.
 func Require(required CRUD, endpoint func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestedURI := r.URL.RequestURI()
