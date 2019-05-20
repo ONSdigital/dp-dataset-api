@@ -17,6 +17,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
+	"github.com/ONSdigital/go-ns/handlers/collectionID"
 	"github.com/ONSdigital/go-ns/healthcheck"
 	"github.com/ONSdigital/go-ns/identity"
 	"github.com/ONSdigital/go-ns/log"
@@ -109,6 +110,8 @@ func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBu
 	if cfg.EnablePrivateEnpoints {
 		middleware = middleware.Append(identity.Handler(cfg.ZebedeeURL))
 	}
+
+	middleware = middleware.Append(collectionID.CheckHeader)
 
 	httpServer = server.New(cfg.BindAddr, middleware.Then(router))
 
