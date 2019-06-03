@@ -14,6 +14,7 @@ const (
 	EditionConfirmedState = "edition-confirmed"
 	AssociatedState       = "associated"
 	PublishedState        = "published"
+	DetachedState         = "detached"
 )
 
 var validVersionStates = map[string]int{

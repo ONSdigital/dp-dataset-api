@@ -2,16 +2,20 @@ package instance
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"testing"
 
+	"context"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/go-ns/audit/auditortest"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func Test_ConfirmEditionReturnsOK(t *testing.T) {
+
 	Convey("given no edition exists", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(dataset, edition, state string) (*models.EditionUpdate, error) {
@@ -69,60 +73,49 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 		})
 	})
 
-	Convey("given an edition exists with 1 unpublished version", t, func() {
-		mockedDataStore := &storetest.StorerMock{
-			GetEditionFunc: func(dataset, edition, state string) (*models.EditionUpdate, error) {
-				return &models.EditionUpdate{
-					ID: "test",
-					Next: &models.Edition{
-						ID:      "test",
-						Edition: "unpublished-only",
-						Links: &models.EditionUpdateLinks{
-							LatestVersion: &models.LinkObject{
-								ID:   "1",
-								HRef: "example.com/datasets/1/editions/unpublished-only/versions/1",
-							},
-							Dataset: &models.LinkObject{
-								ID:   "1",
-								HRef: "example.com/datasets/1",
-							},
-							Self: &models.LinkObject{
-								HRef: "example.com/datasets/1/editions/unpublished-only",
-							},
-						},
-					},
-				}, nil
-			},
-			UpsertEditionFunc: func(dataset, edition string, doc *models.EditionUpdate) error {
-				return nil
-			},
-		}
+	// TODO conditional test for feature flagged functionality. Will need tidying up eventually.
+	featureEnvString := os.Getenv("ENABLE_DETACH_DATASET")
+	featureOn, _ := strconv.ParseBool(featureEnvString)
+	if featureOn {
+		Convey("given an edition exists with 1 unpublished version", t, func() {
+			mockedDataStore := &storetest.StorerMock{
+				GetEditionFunc: func(dataset, edition, state string) (*models.EditionUpdate, error) {
+					return &models.EditionUpdate{
+						ID: "test",
+						Next: &models.Edition{
+							Edition: "unpublished-only",
+							Links: &models.EditionUpdateLinks{
+								LatestVersion: &models.LinkObject{
+									ID: "1"}}},
+					}, nil
+				},
 
-		host := "example.com"
-		s := Store{
-			Storer:  mockedDataStore,
-			Host:    host,
-			Auditor: auditortest.New(),
-		}
+				UpsertEditionFunc: func(dataset, edition string, doc *models.EditionUpdate) error {
+					return errs.ErrInternalServer
+				},
+			}
 
-		Convey("when confirmEdition is called", func() {
-			datasetID := "1234"
-			editionName := "unpublished-only"
-			instanceID := "new-instance-1234"
+			host := "example.com"
+			s := Store{
+				EnableDetachDataset: true,
+				Storer:              mockedDataStore,
+				Host:                host,
+				Auditor:             auditortest.New(),
+			}
 
-			edition, err := s.confirmEdition(ctx, datasetID, editionName, instanceID)
+			Convey("when confirmEdition is called again", func() {
+				datasetID := "1234"
+				editionName := "unpublished-only"
+				instanceID := "new-instance-1234"
 
-			Convey("then the edition is updated and the version ID is 2", func() {
-				So(err, ShouldBeNil)
-				So(edition, ShouldNotBeNil)
-				So(edition.Current, ShouldBeNil)
-				So(edition.Next, ShouldNotBeNil)
-				So(edition.Next.Links, ShouldNotBeNil)
-				So(edition.Next.Links.LatestVersion, ShouldNotBeNil)
-				So(edition.Next.Links.LatestVersion.ID, ShouldEqual, "2")
+				_, err := s.confirmEdition(context.Background(), datasetID, editionName, instanceID)
+
+				Convey("then an internal server error is returned.", func() {
+					So(err, ShouldEqual, errs.ErrVersionAlreadyExists)
+				})
 			})
 		})
-	})
+	}
 
 	Convey("given an edition exists with a published version 10", t, func() {
 		mockedDataStore := &storetest.StorerMock{
@@ -233,8 +226,19 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(dataset, edition, state string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
-					ID:   "test",
-					Next: &models.Edition{},
+					ID: "test",
+					Current: &models.Edition{
+						Links: &models.EditionUpdateLinks{
+							LatestVersion: &models.LinkObject{
+								ID: ""},
+						},
+					},
+					Next: &models.Edition{
+						Links: &models.EditionUpdateLinks{
+							LatestVersion: &models.LinkObject{
+								ID: ""},
+						},
+					},
 				}, nil
 			},
 		}
@@ -266,6 +270,23 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 				return &models.EditionUpdate{
 					ID: "test",
 					Next: &models.Edition{
+						ID:      "test",
+						Edition: "unpublished-only",
+						Links: &models.EditionUpdateLinks{
+							LatestVersion: &models.LinkObject{
+								ID:   "1",
+								HRef: "example.com/datasets/1/editions/unpublished-only/versions/1",
+							},
+							Dataset: &models.LinkObject{
+								ID:   "1",
+								HRef: "example.com/datasets/1",
+							},
+							Self: &models.LinkObject{
+								HRef: "example.com/datasets/1/editions/unpublished-only",
+							},
+						},
+					},
+					Current: &models.Edition{
 						ID:      "test",
 						Edition: "unpublished-only",
 						Links: &models.EditionUpdateLinks{

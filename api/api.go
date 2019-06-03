@@ -17,6 +17,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
+	"github.com/ONSdigital/go-ns/handlers/collectionID"
 	"github.com/ONSdigital/go-ns/healthcheck"
 	"github.com/ONSdigital/go-ns/identity"
 	"github.com/ONSdigital/go-ns/log"
@@ -49,6 +50,7 @@ const (
 	updateVersionAction    = "updateVersion"
 	associateVersionAction = "associateVersionAction"
 	publishVersionAction   = "publishVersion"
+	detachVersionAction    = "detachVersion"
 
 	getDimensionsAction       = "getDimensions"
 	getDimensionOptionsAction = "getDimensionOptionsAction"
@@ -109,6 +111,8 @@ func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBu
 		middleware = middleware.Append(identity.Handler(cfg.ZebedeeURL))
 	}
 
+	middleware = middleware.Append(collectionID.CheckHeader)
+
 	httpServer = server.New(cfg.BindAddr, middleware.Then(router))
 
 	// Disable this here to allow main to manage graceful shutdown of the entire app.
@@ -160,7 +164,11 @@ func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 		api.Router.HandleFunc("/datasets/{dataset_id}", identity.Check(auditor, deleteDatasetAction, api.deleteDataset)).Methods("DELETE")
 		api.Router.HandleFunc("/datasets/{dataset_id}/editions/{edition}/versions/{version}", identity.Check(auditor, updateVersionAction, versionPublishChecker.Check(api.putVersion, updateVersionAction))).Methods("PUT")
 
-		instanceAPI := instance.Store{Host: api.host, Storer: api.dataStore.Backend, Auditor: auditor}
+		if cfg.EnableDetachDataset {
+			api.Router.HandleFunc("/datasets/{dataset_id}/editions/{edition}/versions/{version}", identity.Check(auditor, detachVersionAction, api.detachVersion)).Methods("DELETE")
+		}
+
+		instanceAPI := instance.Store{Host: api.host, Storer: api.dataStore.Backend, Auditor: auditor, EnableDetachDataset: cfg.EnableDetachDataset}
 		instancePublishChecker := instance.PublishCheck{Auditor: auditor, Datastore: dataStore.Backend}
 		api.Router.HandleFunc("/instances", identity.Check(auditor, instance.GetInstancesAction, instanceAPI.GetList)).Methods("GET")
 		api.Router.HandleFunc("/instances", identity.Check(auditor, instance.AddInstanceAction, instanceAPI.Add)).Methods("POST")

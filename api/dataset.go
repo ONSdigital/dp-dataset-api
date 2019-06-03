@@ -24,11 +24,6 @@ var (
 		errs.ErrAddDatasetAlreadyExists:         true,
 	}
 
-	// errors that should return a 404 status
-	datasetsNotFound = map[error]bool{
-		errs.ErrDatasetNotFound: true,
-	}
-
 	// errors that should return a 204 status
 	datasetsNoContent = map[error]bool{
 		errs.ErrDeleteDatasetNotFound: true,
@@ -37,6 +32,12 @@ var (
 	// errors that should return a 400 status
 	datasetsBadRequest = map[error]bool{
 		errs.ErrAddUpdateDatasetBadRequest: true,
+	}
+
+	// errors that should return a 404 status
+	resourcesNotFound = map[error]bool{
+		errs.ErrDatasetNotFound:  true,
+		errs.ErrEditionsNotFound: true,
 	}
 )
 
@@ -353,25 +354,40 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 		currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
 
 		if err == errs.ErrDatasetNotFound {
-			log.InfoCtx(ctx, "cannot delete dataset, it does not exist", logData)
+			log.InfoCtx(ctx, "delete dataset endpoint: cannot delete dataset, it does not exist", logData)
 			return errs.ErrDeleteDatasetNotFound
 		}
 
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to run query for existing dataset"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "delete dataset endpoint: failed to run query for existing dataset"), logData)
 			return err
 		}
 
 		if currentDataset.Current != nil && currentDataset.Current.State == models.PublishedState {
-			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrDeletePublishedDatasetForbidden, "unable to delete a published dataset"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrDeletePublishedDatasetForbidden, "delete dataset endpoint: unable to delete a published dataset"), logData)
 			return errs.ErrDeletePublishedDatasetForbidden
 		}
 
+		// Find any editions associated with this dataset
+		editionDocs, err := api.dataStore.Backend.GetEditions(currentDataset.ID, "")
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrEditionsNotFound, "delete dataset endpoint: unable to find the dataset editions"), logData)
+			return errs.ErrEditionsNotFound
+		}
+
+		// Then delete them
+		for i := range editionDocs.Items {
+			if err := api.dataStore.Backend.DeleteEdition(editionDocs.Items[i].ID); err != nil {
+				log.ErrorCtx(ctx, errors.WithMessage(err, "delete dataset endpoint: failed to delete edition"), logData)
+				return err
+			}
+		}
+
 		if err := api.dataStore.Backend.DeleteDataset(datasetID); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to delete dataset"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "delete dataset endpoint: failed to delete dataset"), logData)
 			return err
 		}
-		log.InfoCtx(ctx, "dataset deleted successfully", logData)
+		log.InfoCtx(ctx, "delete dataset endpoint: dataset deleted successfully", logData)
 		return nil
 	}()
 
@@ -408,12 +424,12 @@ func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	switch {
 	case datasetsForbidden[err]:
 		status = http.StatusForbidden
-	case datasetsNotFound[err]:
-		status = http.StatusNotFound
 	case datasetsNoContent[err]:
 		status = http.StatusNoContent
 	case datasetsBadRequest[err]:
 		status = http.StatusBadRequest
+	case resourcesNotFound[err]:
+		status = http.StatusNotFound
 	default:
 		err = errs.ErrInternalServer
 		status = http.StatusInternalServerError

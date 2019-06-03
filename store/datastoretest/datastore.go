@@ -19,6 +19,7 @@ var (
 	lockStorerMockCheckDatasetExists                sync.RWMutex
 	lockStorerMockCheckEditionExists                sync.RWMutex
 	lockStorerMockDeleteDataset                     sync.RWMutex
+	lockStorerMockDeleteEdition                     sync.RWMutex
 	lockStorerMockGetDataset                        sync.RWMutex
 	lockStorerMockGetDatasets                       sync.RWMutex
 	lockStorerMockGetDimensionOptions               sync.RWMutex
@@ -75,6 +76,9 @@ var (
 //             },
 //             DeleteDatasetFunc: func(ID string) error {
 // 	               panic("TODO: mock out the DeleteDataset method")
+//             },
+//             DeleteEditionFunc: func(ID string) error {
+// 	               panic("TODO: mock out the DeleteEdition method")
 //             },
 //             GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
 // 	               panic("TODO: mock out the GetDataset method")
@@ -187,6 +191,9 @@ type StorerMock struct {
 
 	// DeleteDatasetFunc mocks the DeleteDataset method.
 	DeleteDatasetFunc func(ID string) error
+
+	// DeleteEditionFunc mocks the DeleteEdition method.
+	DeleteEditionFunc func(ID string) error
 
 	// GetDatasetFunc mocks the GetDataset method.
 	GetDatasetFunc func(ID string) (*models.DatasetUpdate, error)
@@ -322,6 +329,11 @@ type StorerMock struct {
 		}
 		// DeleteDataset holds details about calls to the DeleteDataset method.
 		DeleteDataset []struct {
+			// ID is the ID argument value.
+			ID string
+		}
+		// DeleteEdition holds details about calls to the DeleteEdition method.
+		DeleteEdition []struct {
 			// ID is the ID argument value.
 			ID string
 		}
@@ -780,6 +792,37 @@ func (mock *StorerMock) DeleteDatasetCalls() []struct {
 	lockStorerMockDeleteDataset.RLock()
 	calls = mock.calls.DeleteDataset
 	lockStorerMockDeleteDataset.RUnlock()
+	return calls
+}
+
+// DeleteEdition calls DeleteEditionFunc.
+func (mock *StorerMock) DeleteEdition(ID string) error {
+	if mock.DeleteEditionFunc == nil {
+		panic("StorerMock.DeleteEditionFunc: method is nil but Storer.DeleteEdition was just called")
+	}
+	callInfo := struct {
+		ID string
+	}{
+		ID: ID,
+	}
+	lockStorerMockDeleteEdition.Lock()
+	mock.calls.DeleteEdition = append(mock.calls.DeleteEdition, callInfo)
+	lockStorerMockDeleteEdition.Unlock()
+	return mock.DeleteEditionFunc(ID)
+}
+
+// DeleteEditionCalls gets all the calls that were made to DeleteEdition.
+// Check the length with:
+//     len(mockedStorer.DeleteEditionCalls())
+func (mock *StorerMock) DeleteEditionCalls() []struct {
+	ID string
+} {
+	var calls []struct {
+		ID string
+	}
+	lockStorerMockDeleteEdition.RLock()
+	calls = mock.calls.DeleteEdition
+	lockStorerMockDeleteEdition.RUnlock()
 	return calls
 }
 

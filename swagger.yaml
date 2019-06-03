@@ -367,6 +367,33 @@ paths:
           description: "No version was found for an edition of a dataset using the id, edition and version provided"
         500:
           $ref: '#/responses/InternalError'
+    delete:
+      tags:
+      - "Private"
+      summary: "Delete a version"
+      description: "detaches a version from a collection. Effectively a soft delete."
+      parameters:
+      - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/version'
+      security:
+            - InternalAPIKey: []
+      responses:
+        200:
+          description: "A json object containing the edition and version of a dataset"
+          schema:
+            $ref: '#/definitions/Version'
+        400:
+          description: |
+            Invalid request, reasons can be one of the following:
+              * dataset id was incorrect
+              * edition was incorrect
+              * version state was incorrect
+              * not the most recent unpublished version
+        404:
+          description: "No version was found for an edition of a dataset using the id, edition and version provided"
+        500:
+          $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions:
     get:
       tags:

@@ -117,10 +117,16 @@
 			"revisionTime": "2018-07-12T08:51:53Z"
 		},
 		{
-			"checksumSHA1": "WIzknz1rbQWUgVG7KwwElO7DajY=",
+			"checksumSHA1": "hlr8fdPLJMYY6YkPuiBkI8Jm9Mc=",
 			"path": "github.com/ONSdigital/go-ns/common",
-			"revision": "81b393bfc6e80674df603b7fde2f31a35e81b9dd",
-			"revisionTime": "2019-03-01T13:55:03Z"
+			"revision": "caee21dda39f1143056a5ec0b3031036e14c7c42",
+			"revisionTime": "2019-05-20T09:08:57Z"
+		},
+		{
+			"checksumSHA1": "vTOAgsj69LFRQVsg/Of0O8B/eaY=",
+			"path": "github.com/ONSdigital/go-ns/handlers/collectionID",
+			"revision": "caee21dda39f1143056a5ec0b3031036e14c7c42",
+			"revisionTime": "2019-05-20T09:08:57Z"
 		},
 		{
 			"checksumSHA1": "Vjyl/gfY0qx2lW9te3Ieb5HV3/s=",
@@ -365,10 +371,10 @@
 			"revisionTime": "2016-12-20T21:52:15Z"
 		},
 		{
-			"checksumSHA1": "Js/yx9fZ3+wH1wZpHNIxSTMIaCg=",
+			"checksumSHA1": "cIiyvAduLLFvu+tg1Qr5Jw3jeWo=",
 			"path": "github.com/jtolds/gls",
-			"revision": "77f18212c9c7edc9bd6a33d383a7b545ce62f064",
-			"revisionTime": "2017-05-03T22:40:06Z"
+			"revision": "b4936e06046bbecbb94cae9c18127ebe510a2cb9",
+			"revisionTime": "2018-11-10T20:28:10Z"
 		},
 		{
 			"checksumSHA1": "OBvAHqWjdI4NQVAqTkcQAdTuCFY=",

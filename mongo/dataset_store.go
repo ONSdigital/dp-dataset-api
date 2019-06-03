@@ -380,17 +380,9 @@ func createDatasetUpdateQuery(id string, dataset *models.Dataset, currentState s
 	}
 
 	if dataset.QMI != nil {
-		if dataset.QMI.Description != "" {
-			updates["next.qmi.description"] = dataset.QMI.Description
-		}
-
-		if dataset.QMI.HRef != "" {
-			updates["next.qmi.href"] = dataset.QMI.HRef
-		}
-
-		if dataset.QMI.Title != "" {
-			updates["next.qmi.title"] = dataset.QMI.Title
-		}
+		updates["next.qmi.description"] = dataset.QMI.Description
+		updates["next.qmi.href"] = dataset.QMI.HRef
+		updates["next.qmi.title"] = dataset.QMI.Title
 	}
 
 	if dataset.RelatedDatasets != nil {
@@ -463,12 +455,22 @@ func (m *Mongo) UpdateVersion(id string, version *models.Version) (err error) {
 func createVersionUpdateQuery(version *models.Version) bson.M {
 	setUpdates := make(bson.M)
 
-	if version.Alerts != nil {
-		setUpdates["alerts"] = version.Alerts
+	/*
+		Where updating a version to detached state:
+		1.) explicitly set version number to nil
+		2.) remove collectionID
+	*/
+	if version.State == models.DetachedState {
+		setUpdates["collection_id"] = nil
+		setUpdates["version"] = nil
+	} else {
+		if version.CollectionID != "" {
+			setUpdates["collection_id"] = version.CollectionID
+		}
 	}
 
-	if version.CollectionID != "" {
-		setUpdates["collection_id"] = version.CollectionID
+	if version.Alerts != nil {
+		setUpdates["alerts"] = version.Alerts
 	}
 
 	if version.Downloads != nil {
@@ -673,6 +675,21 @@ func (m *Mongo) DeleteDataset(id string) (err error) {
 	if err = s.DB(m.Database).C("datasets").RemoveId(id); err != nil {
 		if err == mgo.ErrNotFound {
 			return errs.ErrDatasetNotFound
+		}
+		return err
+	}
+
+	return nil
+}
+
+// DeleteEdition deletes an existing edition document
+func (m *Mongo) DeleteEdition(id string) (err error) {
+	s := m.Session.Copy()
+	defer s.Close()
+
+	if err = s.DB(m.Database).C("editions").Remove(bson.D{{Name: "id", Value: id}}); err != nil {
+		if err == mgo.ErrNotFound {
+			return errs.ErrEditionNotFound
 		}
 		return err
 	}
