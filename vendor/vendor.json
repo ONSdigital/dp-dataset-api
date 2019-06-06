@@ -3,6 +3,12 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "7AZoLXu2ObuHkPPPOTBYMdEVPZM=",
+			"path": "github.com/ONSdigital/dp-authorisation/authorisation",
+			"revision": "76d54af69af7e7c6675c52ba41c19c7ea264cfab",
+			"revisionTime": "2019-06-06T13:51:40Z"
+		},
+		{
 			"checksumSHA1": "QsDPQ6jy7ypJqNUHNTxMWWAA/tw=",
 			"path": "github.com/ONSdigital/dp-code-list-api/models",
 			"revision": "6565cb0ef559f51d351fe45df7c8667d4e5e4df9",
