@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
-
-	"io"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -2596,6 +2597,460 @@ func TestCreateNewVersionDoc(t *testing.T) {
 		So(version.Links, ShouldNotBeNil)
 		So(version.Links.Spatial, ShouldBeNil)
 	})
+}
+
+func TestDetachVersionReturnOK(t *testing.T) {
+
+	// TODO conditional test for feature flagged functionality. Will need tidying up eventually.
+	featureEnvString := os.Getenv("ENABLE_DETACH_DATASET")
+	featureOn, _ := strconv.ParseBool(featureEnvString)
+	if !featureOn {
+		return
+	}
+
+	auditParams := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123", "edition": "2017", "version": "1"}
+	t.Parallel()
+
+	Convey("A successful detach request against a version of a published dataset returns 200 OK response.", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetEditionFunc: func(datasetID, editionID, state string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{
+					ID:      "test",
+					Current: &models.Edition{},
+					Next: &models.Edition{
+						Edition: "yep",
+						State:   models.EditionConfirmedState,
+						Links: &models.EditionUpdateLinks{
+							LatestVersion: &models.LinkObject{
+								ID: "1"}}}}, nil
+			},
+			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+				return &models.Version{}, nil
+			},
+			GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Current: &models.Dataset{}}, nil
+			},
+			UpdateVersionFunc: func(ID string, version *models.Version) error {
+				return nil
+			},
+			UpsertEditionFunc: func(datasetID string, edition string, editionDoc *models.EditionUpdate) error {
+				return nil
+			},
+			UpsertDatasetFunc: func(ID string, datasetDoc *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		auditor := auditortest.New()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		auditor.AssertRecordCalls(
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Successful, Params: auditParams},
+		)
+	})
+
+	Convey("A successful detach request against a version of a unpublished dataset returns 200 OK response.", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetEditionFunc: func(datasetID, editionID, state string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{
+					ID:      "test",
+					Current: &models.Edition{},
+					Next: &models.Edition{
+						Edition: "yep",
+						State:   models.EditionConfirmedState,
+						Links: &models.EditionUpdateLinks{
+							LatestVersion: &models.LinkObject{
+								ID: "1"}}}}, nil
+			},
+			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+				return &models.Version{}, nil
+			},
+			GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
+			},
+			UpdateVersionFunc: func(ID string, version *models.Version) error {
+				return nil
+			},
+			UpsertEditionFunc: func(datasetID string, edition string, editionDoc *models.EditionUpdate) error {
+				return nil
+			},
+			UpsertDatasetFunc: func(ID string, datasetDoc *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		auditor := auditortest.New()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		auditor.AssertRecordCalls(
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Successful, Params: auditParams},
+		)
+	})
+}
+
+func TestDetachVersionReturnsError(t *testing.T) {
+
+	// TODO conditional test for feature flagged functionality. Will need tidying up eventually.
+	featureEnvString := os.Getenv("ENABLE_DETACH_DATASET")
+	featureOn, _ := strconv.ParseBool(featureEnvString)
+	if !featureOn {
+		return
+	}
+
+	auditParams := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
+	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123", "edition": "2017", "version": "1"}
+	t.Parallel()
+
+	Convey("When the api cannot connect to datastore return an internal server error.", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetEditionFunc: func(datasetID, editionID, state string) (*models.EditionUpdate, error) {
+				return nil, errs.ErrInternalServer
+			},
+		}
+
+		auditor := auditortest.New()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		auditor.AssertRecordCalls(
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+		)
+	})
+
+	Convey("When the provided edition cannot be found, return a 404 not found error.", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetEditionFunc: func(datasetID, editionID, state string) (*models.EditionUpdate, error) {
+				return nil, errs.ErrEditionNotFound
+			},
+		}
+
+		auditor := auditortest.New()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
+
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		auditor.AssertRecordCalls(
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+		)
+	})
+
+	Convey("When detached is called against a version other than latest, return an internal server error", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetEditionFunc: func(datasetID, editionID, state string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{
+					Next: &models.Edition{
+						State: models.EditionConfirmedState,
+						Links: &models.EditionUpdateLinks{LatestVersion: &models.LinkObject{ID: "2"}}}}, nil
+			},
+		}
+
+		auditor := auditortest.New()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		auditor.AssertRecordCalls(
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+		)
+	})
+
+	Convey("When state is neither edition-confirmed or associated, return an internal server error", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetEditionFunc: func(datasetID, editionID, state string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{
+					Next: &models.Edition{
+						State: models.PublishedState,
+						Links: &models.EditionUpdateLinks{LatestVersion: &models.LinkObject{ID: "1"}}}}, nil
+			},
+			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+				return &models.Version{}, nil
+			},
+		}
+
+		auditor := auditortest.New()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		auditor.AssertRecordCalls(
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+		)
+	})
+
+	Convey("When the requested version cannot be found, return a not found error", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetEditionFunc: func(datasetID, editionID, state string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{
+					Next: &models.Edition{
+						State: models.EditionConfirmedState,
+						Links: &models.EditionUpdateLinks{LatestVersion: &models.LinkObject{ID: "1"}}}}, nil
+			},
+			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+				return nil, errs.ErrVersionNotFound
+			},
+		}
+
+		auditor := auditortest.New()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
+
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		auditor.AssertRecordCalls(
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+		)
+	})
+
+	Convey("When updating the version fails, return an internal server error", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetEditionFunc: func(datasetID, editionID, state string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{
+					Next: &models.Edition{
+						State: models.EditionConfirmedState,
+						Links: &models.EditionUpdateLinks{LatestVersion: &models.LinkObject{ID: "1"}}}}, nil
+			},
+
+			GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
+			},
+
+			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+				return &models.Version{}, nil
+			},
+			UpdateVersionFunc: func(ID string, version *models.Version) error {
+				return errs.ErrInternalServer
+			},
+		}
+
+		auditor := auditortest.New()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		auditor.AssertRecordCalls(
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+		)
+	})
+
+	Convey("When edition update fails whilst rolling back the edition, return an internal server error", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetEditionFunc: func(datasetID, editionID, state string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{
+					Next: &models.Edition{
+						State: models.EditionConfirmedState,
+						Links: &models.EditionUpdateLinks{LatestVersion: &models.LinkObject{ID: "1"}}}}, nil
+			},
+			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+				return &models.Version{}, nil
+			},
+
+			GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Current: &models.Dataset{}}, nil
+			},
+
+			UpdateVersionFunc: func(ID string, version *models.Version) error {
+				return nil
+			},
+			UpsertEditionFunc: func(datasetID string, edition string, editionDoc *models.EditionUpdate) error {
+				return errs.ErrInternalServer
+			},
+		}
+
+		auditor := auditortest.New()
+		api := GetAPIWithMockedDatastore(mockedDataStore, generatorMock, auditor)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		auditor.AssertRecordCalls(
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Attempted, Params: auditParams},
+			auditortest.Expected{Action: detachVersionAction, Result: audit.Unsuccessful, Params: auditParams},
+		)
+	})
+
 }
 
 func assertInternalServerErr(w *httptest.ResponseRecorder) {

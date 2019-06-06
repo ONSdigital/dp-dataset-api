@@ -305,6 +305,19 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 					GetEditionFunc: func(datasetID string, edition string, state string) (*models.EditionUpdate, error) {
 						return &models.EditionUpdate{
 							Current: &models.Edition{
+								Links: &models.EditionUpdateLinks{
+									Dataset: &models.LinkObject{
+										HRef: "/dataset/test/href",
+										ID:   "cpih01",
+									},
+									LatestVersion: &models.LinkObject{
+										ID: "1",
+									},
+									Self: &models.LinkObject{
+										HRef: "/edition/test/href",
+										ID:   "test",
+									},
+								},
 								State: models.PublishedState,
 							},
 							Next: &models.Edition{
@@ -314,7 +327,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 										ID:   "cpih01",
 									},
 									LatestVersion: &models.LinkObject{
-										ID: "2",
+										ID: "1",
 									},
 									Self: &models.LinkObject{
 										HRef: "/edition/test/href",
@@ -329,7 +342,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 						return nil
 					},
 					GetNextVersionFunc: func(string, string) (int, error) {
-						return 1, nil
+						return 2, nil
 					},
 					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
 						return errs.ErrInternalServer
@@ -412,7 +425,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 										ID:   "cpih01",
 									},
 									LatestVersion: &models.LinkObject{
-										ID: "2",
+										ID: "1",
 									},
 									Self: &models.LinkObject{
 										HRef: "/edition/test/href",

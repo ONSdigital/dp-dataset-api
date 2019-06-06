@@ -22,6 +22,7 @@ type Configuration struct {
 	GracefulShutdownTimeout  time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 	HealthCheckInterval      time.Duration `envconfig:"HEALTHCHECK_INTERVAL"`
 	EnablePrivateEnpoints    bool          `envconfig:"ENABLE_PRIVATE_ENDPOINTS"`
+	EnableDetachDataset      bool          `envconfig:"ENABLE_DETACH_DATASET"`
 	MongoConfig              MongoConfig
 }
 
@@ -54,6 +55,7 @@ func Get() (*Configuration, error) {
 		GracefulShutdownTimeout:  5 * time.Second,
 		HealthCheckInterval:      30 * time.Second,
 		EnablePrivateEnpoints:    false,
+		EnableDetachDataset:      false,
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",

@@ -288,6 +288,111 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	log.InfoCtx(ctx, "putVersion endpoint: request successful", data)
 }
 
+func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
+
+	defer request.DrainBody(r)
+
+	ctx := r.Context()
+	vars := mux.Vars(r)
+
+	log.InfoCtx(ctx, "detachVersion endpoint: endpoint called", nil)
+
+	datasetID := vars["dataset_id"]
+	edition := vars["edition"]
+	version := vars["version"]
+
+	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": version}
+	logData := audit.ToLogData(auditParams)
+
+	if auditErr := api.auditor.Record(ctx, detachVersionAction, audit.Attempted, auditParams); auditErr != nil {
+		handleVersionAPIErr(ctx, auditErr, w, logData)
+		return
+	}
+
+	err := func() error {
+
+		authorised, logData := api.authenticate(r, logData)
+		if !authorised {
+			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrUnauthorised, "detachVersion endpoint: User is not authorised to detach a dataset version"), logData)
+			return errs.ErrNotFound
+		}
+
+		editionDoc, err := api.dataStore.Backend.GetEdition(datasetID, edition, "")
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrEditionNotFound, "detachVersion endpoint: Cannot find the specified edition"), logData)
+			return err
+		}
+
+		// Only permit detachment of the latest version.
+		if editionDoc.Next.Links.LatestVersion.ID != version {
+			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrVersionAlreadyExists, "detachVersion endpoint: Detach called againt a version other than latest, aborting"), logData)
+			return errs.ErrVersionAlreadyExists
+		}
+
+		// Only permit detachment where state is edition-confirmed or associated
+		state := editionDoc.Next.State
+		if state != models.AssociatedState && state != models.EditionConfirmedState {
+			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrIncorrectStateToDetach, "detachVersion endpoint: You can only detach a version with a state of edition-confirmed or associated"), logData)
+			return errs.ErrIncorrectStateToDetach
+		}
+
+		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, editionDoc.Next.State)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrVersionNotFound, "detachVersion endpoint: Cannot find the specified version"), logData)
+			return errs.ErrVersionNotFound
+		}
+
+		datasetDoc, err := api.dataStore.Backend.GetDataset(datasetID)
+		if err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "detachVersion endpoint: datastore.GetDatasets returned an error"), nil)
+			return err
+		}
+
+		// Detach the version
+		versionDoc.State = models.DetachedState
+		if err = api.dataStore.Backend.UpdateVersion(versionDoc.ID, versionDoc); err != nil {
+			log.ErrorCtx(ctx, errors.WithMessage(err, "detachVersion endpoint: failed to update version document"), logData)
+			return err
+		}
+
+		// Only rollback dataset & edition if there's a "Current" sub-document to roll back to (i.e if a version has been published).
+		if datasetDoc.Current != nil {
+			// Rollback the edition
+			editionDoc.Next = editionDoc.Current
+			if err = api.dataStore.Backend.UpsertEdition(datasetID, edition, editionDoc); err != nil {
+				log.ErrorCtx(ctx, errors.WithMessage(err, "detachVersion endpoint: failed to update edition document"), logData)
+				return err
+			}
+
+			// Rollback the dataset
+			datasetDoc.Next = datasetDoc.Current
+			if err = api.dataStore.Backend.UpsertDataset(datasetID, datasetDoc); err != nil {
+				log.ErrorCtx(ctx, errors.WithMessage(err, "detachVersion endpoint: failed to update dataset document"), logData)
+				return err
+			}
+		}
+
+		return nil
+	}()
+
+	if err != nil {
+
+		if auditErr := api.auditor.Record(ctx, detachVersionAction, audit.Unsuccessful, auditParams); auditErr != nil {
+			err = auditErr
+		}
+		handleVersionAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	if auditErr := api.auditor.Record(ctx, detachVersionAction, audit.Successful, auditParams); auditErr != nil {
+		handleVersionAPIErr(ctx, auditErr, w, logData)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	log.InfoCtx(ctx, "detachVersion endpoint: request successful", logData)
+}
+
 func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, versionDetails VersionDetails) (*models.DatasetUpdate, *models.Version, *models.Version, error) {
 	ap := versionDetails.baseAuditParams()
 	data := audit.ToLogData(ap)

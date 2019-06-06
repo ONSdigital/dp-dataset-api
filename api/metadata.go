@@ -28,6 +28,17 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, err := func() ([]byte, error) {
+
+		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, "")
+		if err != nil {
+			if err == errs.ErrVersionNotFound {
+				log.ErrorCtx(ctx, errors.WithMessage(err, "getMetadata endpoint: failed to find version for dataset edition"), logData)
+				return nil, errs.ErrMetadataVersionNotFound
+			}
+			log.ErrorCtx(ctx, errors.WithMessage(err, "getMetadata endpoint: get datastore.getVersion returned an error"), logData)
+			return nil, err
+		}
+
 		datasetDoc, err := api.dataStore.Backend.GetDataset(datasetID)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "getMetadata endpoint: get datastore.getDataset returned an error"), logData)
@@ -35,9 +46,15 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		}
 
 		authorised, logData := api.authenticate(r, logData)
-		var state string
+		state := versionDoc.State
 
-		// if request is authenticated then access resources of state other than published
+		// if the requested version is not yet published and the user is unauthorised, return a 404
+		if !authorised && versionDoc.State != models.PublishedState {
+			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrUnauthorised, "getMetadata endpoint: unauthorised user requested unpublished version, returning 404"), logData)
+			return nil, errs.ErrUnauthorised
+		}
+
+		// if request is not authenticated but the version is published, restrict dataset access to only published resources
 		if !authorised {
 			// Check for current sub document
 			if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
@@ -49,15 +66,9 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			state = datasetDoc.Current.State
 		}
 
-		if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
+		if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, ""); err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "getMetadata endpoint: failed to find edition for dataset"), logData)
 			return nil, err
-		}
-
-		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
-		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "getMetadata endpoint: failed to find version for dataset edition"), logData)
-			return nil, errs.ErrMetadataVersionNotFound
 		}
 
 		if err = models.CheckState("version", versionDoc.State); err != nil {
@@ -108,6 +119,8 @@ func handleMetadataErr(w http.ResponseWriter, err error) {
 	var responseStatus int
 
 	switch {
+	case err == errs.ErrUnauthorised:
+		responseStatus = http.StatusNotFound
 	case err == errs.ErrEditionNotFound:
 		responseStatus = http.StatusNotFound
 	case err == errs.ErrMetadataVersionNotFound:

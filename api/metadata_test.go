@@ -23,7 +23,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 	Convey("Successfully return metadata resource for a request without an authentication header", t, func() {
 
 		datasetDoc := createDatasetDoc()
-		versionDoc := createVersionDoc()
+		versionDoc := createPublishedVersionDoc()
 
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
 		w := httptest.NewRecorder()
@@ -84,7 +84,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 	Convey("Successfully return metadata resource for a request with an authentication header", t, func() {
 
 		datasetDoc := createDatasetDoc()
-		versionDoc := createVersionDoc()
+		versionDoc := createUnpublishedVersionDoc()
 
 		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
 		So(err, ShouldBeNil)
@@ -151,7 +151,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
 				return nil, errs.ErrInternalServer
 			},
 		}
@@ -163,8 +163,8 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 
 		auditParams := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
 		auditor.AssertRecordCalls(
@@ -173,7 +173,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		)
 	})
 
-	Convey("When the dataset document cannot be found for version return status not found", t, func() {
+	Convey("When the dataset document cannot be found return status not found", t, func() {
 
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
 		w := httptest.NewRecorder()
@@ -181,6 +181,9 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
+			},
+			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+				return nil, nil
 			},
 		}
 
@@ -204,6 +207,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 	Convey("When the dataset document has no current sub document return status not found", t, func() {
 
 		datasetDoc := createDatasetDoc()
+		versionDoc := createPublishedVersionDoc()
 		datasetDoc.Current = nil
 
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
@@ -215,6 +219,9 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 			CheckEditionExistsFunc: func(datasetId, edition, state string) error {
 				return nil
+			},
+			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+				return versionDoc, nil
 			},
 		}
 
@@ -238,6 +245,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 	Convey("When the edition document cannot be found for version return status not found", t, func() {
 
 		datasetDoc := createDatasetDoc()
+		versionDoc := createPublishedVersionDoc()
 
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
 		w := httptest.NewRecorder()
@@ -248,6 +256,9 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 			CheckEditionExistsFunc: func(datasetId, edition, state string) error {
 				return errs.ErrEditionNotFound
+			},
+			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+				return versionDoc, nil
 			},
 		}
 
@@ -260,7 +271,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 
 		auditParams := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
 		auditor.AssertRecordCalls(
@@ -295,9 +306,9 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 
 		auditParams := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
 		auditor.AssertRecordCalls(
@@ -310,7 +321,9 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 		datasetDoc := createDatasetDoc()
 
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+		So(err, ShouldBeNil)
+
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -344,6 +357,8 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 func TestGetMetadataAuditingErrors(t *testing.T) {
 	auditParams := common.Params{"dataset_id": "123", "edition": "2017", "version": "1"}
+
+	versionDoc := createPublishedVersionDoc()
 
 	Convey("given auditing action attempted returns an error", t, func() {
 		auditor := auditortest.NewErroring(getMetadataAction, audit.Attempted)
@@ -384,6 +399,9 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 				GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
 					return nil, errs.ErrDatasetNotFound
 				},
+				GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+					return versionDoc, nil
+				},
 			}
 
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
@@ -391,9 +409,9 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
-				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
 					auditortest.Expected{Action: getMetadataAction, Result: audit.Attempted, Params: auditParams},
@@ -410,6 +428,10 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 				GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
 					return &models.DatasetUpdate{}, nil
 				},
+				GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+					return versionDoc, nil
+				},
+
 			}
 
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
@@ -417,9 +439,9 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
-				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
 					auditortest.Expected{Action: getMetadataAction, Result: audit.Attempted, Params: auditParams},
@@ -439,6 +461,9 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 				CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
 					return errs.ErrEditionNotFound
 				},
+				GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+					return versionDoc, nil
+				},
 			}
 
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
@@ -446,9 +471,9 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
-				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
 					auditortest.Expected{Action: getMetadataAction, Result: audit.Attempted, Params: auditParams},
@@ -462,12 +487,6 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
-				GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
-					return createDatasetDoc(), nil
-				},
-				CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
-					return nil
-				},
 				GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
 					return nil, errs.ErrVersionNotFound
 				},
@@ -478,8 +497,6 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
-				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
@@ -492,8 +509,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 		Convey("when version not published", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
 			w := httptest.NewRecorder()
-			versionDoc := createVersionDoc()
-			versionDoc.State = "not published"
+			versionDoc := createUnpublishedVersionDoc()
 
 			mockedDataStore := &storetest.StorerMock{
 				GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
@@ -512,9 +528,9 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
-				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
 					auditortest.Expected{Action: getMetadataAction, Result: audit.Attempted, Params: auditParams},
@@ -539,7 +555,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 					return nil
 				},
 				GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
-					return createVersionDoc(), nil
+					return createPublishedVersionDoc(), nil
 				},
 			}
 
@@ -585,14 +601,29 @@ func createDatasetDoc() *models.DatasetUpdate {
 	return datasetDoc
 }
 
-func createVersionDoc() *models.Version {
+func createPublishedVersionDoc() *models.Version {
 	temporal := models.TemporalFrequency{
 		EndDate:   "2017-05-09",
 		Frequency: "Monthly",
 		StartDate: "2014-05-09",
 	}
 	versionDoc := &models.Version{
-		State:        models.EditionConfirmedState,
+		State:        models.PublishedState,
+		CollectionID: "3434",
+		Temporal:     &[]models.TemporalFrequency{temporal},
+	}
+
+	return versionDoc
+}
+
+func createUnpublishedVersionDoc() *models.Version {
+	temporal := models.TemporalFrequency{
+		EndDate:   "2017-05-09",
+		Frequency: "Monthly",
+		StartDate: "2014-05-09",
+	}
+	versionDoc := &models.Version{
+		State:        models.AssociatedState,
 		CollectionID: "3434",
 		Temporal:     &[]models.TemporalFrequency{temporal},
 	}

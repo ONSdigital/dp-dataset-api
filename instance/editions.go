@@ -38,8 +38,19 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 			editionDoc = models.CreateEdition(s.Host, datasetID, edition)
 			log.Debug("created new edition", logData)
 		} else {
-			log.Debug("edition found, updating", logData)
+
 			action = UpdateEditionAction
+
+			// TODO - feature flag. Will need removing eventually.
+			if s.EnableDetachDataset {
+				// Abort if a new/next version is already in flight
+				if editionDoc.Current == nil || editionDoc.Current.Links.LatestVersion.ID != editionDoc.Next.Links.LatestVersion.ID {
+					log.InfoCtx(ctx, "there was an attempted skip of versioning sequence. Aborting edition update", logData)
+					return nil, action, errs.ErrVersionAlreadyExists
+				}
+			}
+
+			log.Debug("edition found, updating", logData)
 			if auditErr := s.Auditor.Record(ctx, action, audit.Attempted, auditParams); auditErr != nil {
 				return nil, action, auditErr
 			}
