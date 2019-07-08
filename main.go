@@ -71,7 +71,7 @@ func main() {
 
 		auditProducer, err = kafka.NewProducer(cfg.KafkaAddr, cfg.AuditEventsTopic, 0)
 		if err != nil {
-			log.Error(errors.Wrap(err, "error creating kakfa audit producer, defaulting to NopAuditor"), nil)
+			log.Error(errors.Wrap(err, "error creating kakfa audit producer"), nil)
 			initialised.auditProducer = false
 		}
 
