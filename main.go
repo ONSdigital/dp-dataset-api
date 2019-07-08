@@ -36,13 +36,12 @@ type DatsetAPIStore struct {
 
 type initialisedStruct struct {
 	generateDownloadsProducer bool
-	auditProducer bool
-	mongo bool
-	healthTicker bool
+	auditProducer             bool
+	mongo                     bool
+	healthTicker              bool
 }
 
 var initialised = initialisedStruct{true, true, true, true}
-
 
 func main() {
 	log.Namespace = "dp-dataset-api"

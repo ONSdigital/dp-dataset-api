@@ -431,7 +431,6 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 				GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
 					return versionDoc, nil
 				},
-
 			}
 
 			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
