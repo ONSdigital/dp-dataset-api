@@ -34,6 +34,16 @@ type DatsetAPIStore struct {
 	*graph.DB
 }
 
+type initialisedStruct struct {
+	generateDownloadsProducer bool
+	auditProducer bool
+	mongo bool
+	healthTicker bool
+}
+
+var initialised = initialisedStruct{true, true, true, true}
+
+
 func main() {
 	log.Namespace = "dp-dataset-api"
 
@@ -51,7 +61,7 @@ func main() {
 	generateDownloadsProducer, err := kafka.NewProducer(cfg.KafkaAddr, cfg.GenerateDownloadsTopic, 0)
 	if err != nil {
 		log.Error(errors.Wrap(err, "error creating kakfa producer"), nil)
-		os.Exit(1)
+		initialised.generateDownloadsProducer = false
 	}
 
 	var auditor audit.AuditorService
@@ -62,8 +72,8 @@ func main() {
 
 		auditProducer, err = kafka.NewProducer(cfg.KafkaAddr, cfg.AuditEventsTopic, 0)
 		if err != nil {
-			log.Error(errors.Wrap(err, "error creating kakfa audit producer"), nil)
-			os.Exit(1)
+			log.Error(errors.Wrap(err, "error creating kakfa audit producer, defaulting to NopAuditor"), nil)
+			initialised.auditProducer = false
 		}
 
 		auditor = audit.New(auditProducer, "dp-dataset-api")
@@ -83,19 +93,17 @@ func main() {
 	session, err := mongodb.Init()
 	if err != nil {
 		log.ErrorC("failed to initialise mongo", err, nil)
-		os.Exit(1)
+		initialised.mongo = false
+	} else {
+		mongodb.Session = session
+		log.Debug("listening...", log.Data{
+			"bind_address": cfg.BindAddr,
+		})
 	}
-
-	mongodb.Session = session
-
-	log.Debug("listening...", log.Data{
-		"bind_address": cfg.BindAddr,
-	})
 
 	graphDB, err := graph.New(context.Background(), graph.Subsets{Observation: true, Instance: true})
 	if err != nil {
-		log.ErrorC("failed to connect to graph database", err, nil)
-		os.Exit(1)
+		log.ErrorC("failed to initialise graph driver", err, nil)
 	}
 
 	store := store.DataStore{Backend: DatsetAPIStore{mongodb, graphDB}}
@@ -105,11 +113,22 @@ func main() {
 		Marshaller: schema.GenerateDownloadsEvent,
 	}
 
-	healthTicker := healthcheck.NewTicker(
-		cfg.HealthCheckInterval,
-		graphDB,
-		mongolib.NewHealthCheckClient(mongodb.Session),
-	)
+	var healthyClients []healthcheck.Client
+	healthyClients = append(healthyClients, *graphDB)
+	if initialised.mongo {
+		healthyClients = append(healthyClients, mongolib.NewHealthCheckClient(mongodb.Session))
+	}
+
+	// Only apply a healthticker where the clients are healthy
+	var healthTicker *healthcheck.Ticker
+	if len(healthyClients) != 0 {
+		healthTicker = healthcheck.NewTicker(
+			cfg.HealthCheckInterval,
+			healthyClients...,
+		)
+	} else {
+		initialised.healthTicker = false
+	}
 
 	apiErrors := make(chan error, 1)
 
@@ -125,24 +144,32 @@ func main() {
 		// stop any incoming requests before closing any outbound connections
 		api.Close(ctx)
 
-		healthTicker.Close()
+		if initialised.healthTicker {
+			healthTicker.Close()
+		}
 
-		if err = mongolib.Close(ctx, session); err != nil {
-			log.Error(err, nil)
+		if initialised.mongo {
+			if err = mongolib.Close(ctx, session); err != nil {
+				log.Error(err, nil)
+			}
 		}
 
 		if err = graphDB.Close(ctx); err != nil {
 			log.Error(err, nil)
 		}
 
-		if err = generateDownloadsProducer.Close(ctx); err != nil {
-			log.Error(errors.Wrap(err, "error while attempting to shutdown kafka producer"), nil)
+		if initialised.generateDownloadsProducer {
+			if err = generateDownloadsProducer.Close(ctx); err != nil {
+				log.Error(errors.Wrap(err, "error while attempting to shutdown kafka producer"), nil)
+			}
 		}
 
 		if cfg.EnablePrivateEnpoints {
 			log.Debug("exiting audit producer", nil)
-			if err = auditProducer.Close(ctx); err != nil {
-				log.Error(err, nil)
+			if initialised.auditProducer {
+				if err = auditProducer.Close(ctx); err != nil {
+					log.Error(err, nil)
+				}
 			}
 		}
 
@@ -156,7 +183,6 @@ func main() {
 		select {
 		case err := <-apiErrors:
 			log.ErrorC("api error received", err, nil)
-			gracefulShutdown()
 		case <-signals:
 			log.Debug("os signal received", nil)
 			gracefulShutdown()
