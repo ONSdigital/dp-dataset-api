@@ -571,13 +571,6 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion *mod
 func populateNewVersionDoc(currentVersion *models.Version, version *models.Version) *models.Version {
 
 	var alerts []models.Alert
-	if currentVersion.Alerts != nil {
-
-		// loop through current alerts and add each alert to array
-		for _, currentAlert := range *currentVersion.Alerts {
-			alerts = append(alerts, currentAlert)
-		}
-	}
 
 	if version.Alerts != nil {
 		// loop through new alerts and add each alert to array
