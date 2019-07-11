@@ -41,7 +41,12 @@ type initialisedStruct struct {
 	healthTicker              bool
 }
 
-var initialised = initialisedStruct{true, true, true, true}
+var initialised = initialisedStruct{
+	generateDownloadsProducer: true,
+	auditProducer:true,
+	mongo: true,
+	healthTicker: true,
+}
 
 func main() {
 	log.Namespace = "dp-dataset-api"
