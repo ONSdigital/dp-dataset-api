@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/ONSdigital/dp-authorisation/auth"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
@@ -85,23 +86,24 @@ type Auditor audit.AuditorService
 
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
-	dataStore            store.DataStore
-	host                 string
-	zebedeeURL           string
-	internalToken        string
-	downloadServiceToken string
-	EnablePrePublishView bool
-	Router               *mux.Router
-	urlBuilder           *url.Builder
-	downloadGenerator    DownloadsGenerator
-	serviceAuthToken     string
-	auditor              Auditor
+	dataStore              store.DataStore
+	host                   string
+	zebedeeURL             string
+	internalToken          string
+	downloadServiceToken   string
+	EnablePrePublishView   bool
+	Router                 *mux.Router
+	urlBuilder             *url.Builder
+	downloadGenerator      DownloadsGenerator
+	serviceAuthToken       string
+	auditor                Auditor
+	enablePrivateEndpoints bool
+	enableDetachDataset    bool
 }
 
 // CreateDatasetAPI manages all the routes configured to API
-func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadsGenerator DownloadsGenerator, auditor Auditor) {
-	router := mux.NewRouter()
-	Routes(cfg, router, dataStore, urlBuilder, downloadsGenerator, auditor)
+func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadGenerator DownloadsGenerator, auditor Auditor) {
+	api := NewDatasetAPI(cfg, dataStore, urlBuilder, downloadGenerator, auditor)
 
 	healthcheckHandler := healthcheck.NewMiddleware(healthcheck.Do)
 	middleware := alice.New(healthcheckHandler)
@@ -113,7 +115,7 @@ func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBu
 
 	middleware = middleware.Append(collectionID.CheckHeader)
 
-	httpServer = server.New(cfg.BindAddr, middleware.Then(router))
+	httpServer = server.New(cfg.BindAddr, middleware.Then(api.Router))
 
 	// Disable this here to allow main to manage graceful shutdown of the entire app.
 	httpServer.HandleOSSignals = false
@@ -125,6 +127,157 @@ func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBu
 			errorChan <- err
 		}
 	}()
+}
+
+// NewDatasetAPI create a new Dataset API instance and register the API routes based on the application configuration.
+func NewDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, auditor Auditor) *DatasetAPI {
+	api := &DatasetAPI{
+		dataStore:              dataStore,
+		host:                   cfg.DatasetAPIURL,
+		zebedeeURL:             cfg.ZebedeeURL,
+		serviceAuthToken:       cfg.ServiceAuthToken,
+		downloadServiceToken:   cfg.DownloadServiceSecretKey,
+		EnablePrePublishView:   cfg.EnablePrivateEnpoints,
+		Router:                 mux.NewRouter(),
+		urlBuilder:             urlBuilder,
+		downloadGenerator:      downloadGenerator,
+		auditor:                auditor,
+		enablePrivateEndpoints: cfg.EnablePrivateEnpoints,
+		enableDetachDataset:    cfg.EnableDetachDataset,
+	}
+
+	api.registerEndpoints()
+	return api
+}
+
+// registerEndpoints register the API endpoints based on the application configuration.
+func (api *DatasetAPI) registerEndpoints() {
+	if api.enablePrivateEndpoints {
+		log.Info("enabling private endpoints for dataset api", nil)
+		api.enablePrivateDatasetEndpoints()
+		api.enablePrivateInstancesEndpoints()
+	} else {
+		log.Info("enabling only public endpoints for dataset api", nil)
+		api.enablePublicEndpoints()
+	}
+}
+
+// enablePublicEndpoints register only the public GET endpoints.
+func (api *DatasetAPI) enablePublicEndpoints() {
+	api.addGetEndpoint("/datasets", api.getDatasets)
+	api.addGetEndpoint("/datasets/{dataset_id}", api.getDataset)
+	api.addGetEndpoint("/datasets/{dataset_id}/editions", api.getEditions)
+	api.addGetEndpoint("/datasets/{dataset_id}/editions/{edition}", api.getEdition)
+	api.addGetEndpoint("/datasets/{dataset_id}/editions/{edition}/versions", api.getVersions)
+	api.addGetEndpoint("/datasets/{dataset_id}/editions/{edition}/versions/{version}", api.getVersion)
+	api.addGetEndpoint("/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata", api.getMetadata)
+	api.addGetEndpoint("/datasets/{dataset_id}/editions/{edition}/versions/{version}/observations", api.getObservations)
+	api.addGetEndpoint("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", api.getDimensions)
+	api.addGetEndpoint("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", api.getDimensionOptions)
+}
+
+func (api *DatasetAPI) enablePrivateDatasetEndpoints() {
+	auditor := api.auditor
+
+	versionPublishChecker := PublishCheck{
+		Auditor:   auditor,
+		Datastore: api.dataStore.Backend,
+	}
+
+	api.addGetEndpoint("/datasets", api.getDatasets)
+
+	getDataset := requiredDatasetReadAuth(api.getDataset)
+	api.addGetEndpoint("/datasets/{dataset_id}", getDataset)
+
+	addDataset := identity.Check(auditor, addDatasetAction, requireDatasetCreateAuth(api.addDataset))
+	api.addPostEndpoint("/datasets/{dataset_id}", addDataset)
+
+	updateDataset := identity.Check(auditor, updateDatasetAction, requireDatasetUpdateAuth(api.putDataset))
+	api.addPutEndpoint("/datasets/{dataset_id}", updateDataset)
+
+	deleteDataset := identity.Check(auditor, deleteDatasetAction, requireDatasetDeleteAuth(api.deleteDataset))
+	api.addDeleteEndpoint("/datasets/{dataset_id}", deleteDataset)
+
+	getEditions := requiredDatasetReadAuth(api.getEditions)
+	api.addGetEndpoint("/datasets/{dataset_id}/editions", getEditions)
+
+	getEdition := requiredDatasetReadAuth(api.getEdition)
+	api.addGetEndpoint("/datasets/{dataset_id}/editions/{edition}", getEdition)
+
+	getVersions := requiredDatasetReadAuth(api.getVersions)
+	api.addGetEndpoint("/datasets/{dataset_id}/editions/{edition}/versions", getVersions)
+
+	getVersion := requiredDatasetReadAuth(api.getVersion)
+	api.addGetEndpoint("/datasets/{dataset_id}/editions/{edition}/versions/{version}", getVersion)
+
+	updateVersion := identity.Check(auditor, updateVersionAction, versionPublishChecker.Check(requireDatasetUpdateAuth(api.putVersion), updateVersionAction))
+	api.addPutEndpoint("/datasets/{dataset_id}/editions/{edition}/versions/{version}", updateVersion)
+
+	if api.enableDetachDataset {
+		detachVersion := identity.Check(auditor, detachVersionAction, requireDatasetDeleteAuth(api.detachVersion))
+		api.addDeleteEndpoint("/datasets/{dataset_id}/editions/{edition}/versions/{version}", detachVersion)
+	}
+
+	getMetadata := requiredDatasetReadAuth(api.getMetadata)
+	api.addGetEndpoint("/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata", getMetadata)
+
+	getObservations := requiredDatasetReadAuth(api.getObservations)
+	api.addGetEndpoint("/datasets/{dataset_id}/editions/{edition}/versions/{version}/observations", getObservations)
+
+	getDimensions := requiredDatasetReadAuth(api.getDimensions)
+	api.addGetEndpoint("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", getDimensions)
+
+	getDimensionOptions := requiredDatasetReadAuth(api.getDimensionOptions)
+	api.addGetEndpoint("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", getDimensionOptions)
+}
+
+func (api *DatasetAPI) enablePrivateInstancesEndpoints() {
+	auditor := api.auditor
+
+	instanceAPI := instance.Store{
+		Host:                api.host,
+		Storer:              api.dataStore.Backend,
+		Auditor:             auditor,
+		EnableDetachDataset: api.enablePrivateEndpoints,
+	}
+
+	instancePublishChecker := instance.PublishCheck{
+		Auditor:   auditor,
+		Datastore: api.dataStore.Backend,
+	}
+
+	api.Router.HandleFunc("/instances", identity.Check(auditor, instance.GetInstancesAction, instanceAPI.GetList)).Methods("GET")
+	api.Router.HandleFunc("/instances", identity.Check(auditor, instance.AddInstanceAction, instanceAPI.Add)).Methods("POST")
+	api.Router.HandleFunc("/instances/{instance_id}", identity.Check(auditor, instance.GetInstanceAction, instanceAPI.Get)).Methods("GET")
+	api.Router.HandleFunc("/instances/{instance_id}", identity.Check(auditor, instance.UpdateInstanceAction, instancePublishChecker.Check(instanceAPI.Update, instance.UpdateInstanceAction))).Methods("PUT")
+	api.Router.HandleFunc("/instances/{instance_id}/dimensions/{dimension}", identity.Check(auditor, instance.UpdateDimensionAction, instancePublishChecker.Check(instanceAPI.UpdateDimension, instance.UpdateDimensionAction))).Methods("PUT")
+	api.Router.HandleFunc("/instances/{instance_id}/events", identity.Check(auditor, instance.AddInstanceEventAction, instanceAPI.AddEvent)).Methods("POST")
+	api.Router.HandleFunc("/instances/{instance_id}/inserted_observations/{inserted_observations}",
+		identity.Check(auditor, instance.UpdateInsertedObservationsAction, instancePublishChecker.Check(instanceAPI.UpdateObservations, instance.UpdateInsertedObservationsAction))).Methods("PUT")
+	api.Router.HandleFunc("/instances/{instance_id}/import_tasks", identity.Check(auditor, instance.UpdateImportTasksAction, instancePublishChecker.Check(instanceAPI.UpdateImportTask, instance.UpdateImportTasksAction))).Methods("PUT")
+
+	dimensionAPI := dimension.Store{Auditor: auditor, Storer: api.dataStore.Backend}
+	api.Router.HandleFunc("/instances/{instance_id}/dimensions", identity.Check(auditor, dimension.GetDimensions, dimensionAPI.GetDimensionsHandler)).Methods("GET")
+	api.Router.HandleFunc("/instances/{instance_id}/dimensions", identity.Check(auditor, dimension.AddDimensionAction, instancePublishChecker.Check(dimensionAPI.AddHandler, dimension.AddDimensionAction))).Methods("POST")
+	api.Router.HandleFunc("/instances/{instance_id}/dimensions/{dimension}/options", identity.Check(auditor, dimension.GetUniqueDimensionAndOptionsAction, dimensionAPI.GetUniqueDimensionAndOptionsHandler)).Methods("GET")
+	api.Router.HandleFunc("/instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}",
+		identity.Check(auditor, dimension.UpdateNodeIDAction, instancePublishChecker.Check(dimensionAPI.AddNodeIDHandler, dimension.UpdateNodeIDAction))).Methods("PUT")
+}
+
+func (api *DatasetAPI) addGetEndpoint(path string, handler http.HandlerFunc) {
+	api.Router.HandleFunc(path, handler).Methods("GET")
+}
+
+func (api *DatasetAPI) addPutEndpoint(path string, handler http.HandlerFunc) {
+	api.Router.HandleFunc(path, handler).Methods("PUT")
+}
+
+func (api *DatasetAPI) addPostEndpoint(path string, handler http.HandlerFunc) {
+	api.Router.HandleFunc(path, handler).Methods("POST")
+}
+
+func (api *DatasetAPI) addDeleteEndpoint(path string, handler http.HandlerFunc) {
+	api.Router.HandleFunc(path, handler).Methods("DELETE")
 }
 
 // Routes represents a list of endpoints that exist with this api
@@ -352,6 +505,22 @@ func (api *DatasetAPI) authenticate(r *http.Request, logData map[string]interfac
 		return authorised, logData
 	}
 	return authorised, logData
+}
+
+func requireDatasetCreateAuth(handler http.HandlerFunc) http.HandlerFunc {
+	return auth.RequireDatasetPermissions(auth.Permissions{Create: true}, handler)
+}
+
+func requiredDatasetReadAuth(handler http.HandlerFunc) http.HandlerFunc {
+	return auth.RequireDatasetPermissions(auth.Permissions{Read: true}, handler)
+}
+
+func requireDatasetUpdateAuth(handler http.HandlerFunc) http.HandlerFunc {
+	return auth.RequireDatasetPermissions(auth.Permissions{Update: true}, handler)
+}
+
+func requireDatasetDeleteAuth(handler http.HandlerFunc) http.HandlerFunc {
+	return auth.RequireDatasetPermissions(auth.Permissions{Delete: true}, handler)
 }
 
 // Close represents the graceful shutting down of the http server

@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
@@ -14,6 +15,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-graph/graph"
+	"github.com/ONSdigital/go-ns/rchttp"
+	"github.com/gorilla/mux"
 
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/healthcheck"
@@ -116,6 +119,9 @@ func main() {
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
 	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor)
+
+	permissionsClient := auth.NewPermissionsClient("http://localhost:8082", rchttp.NewClient())
+	auth.Configure("dataset_id", mux.Vars, permissionsClient, &auth.PermissionsVerifier{})
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {
