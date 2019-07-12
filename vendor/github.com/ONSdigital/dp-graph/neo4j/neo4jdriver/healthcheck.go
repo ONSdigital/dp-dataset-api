@@ -1,4 +1,4 @@
-package driver
+package neo4jdriver
 
 const serviceName = "neo4j"
 const pingStmt = "MATCH (i) RETURN i LIMIT 1"

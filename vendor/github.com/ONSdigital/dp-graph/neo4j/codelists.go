@@ -36,7 +36,7 @@ func (n *Neo4j) GetCodeLists(ctx context.Context, filterBy string) (*models.Code
 func (n *Neo4j) GetCodeList(ctx context.Context, code string) (*models.CodeList, error) {
 	log.InfoCtx(ctx, "about to query neo4j for code list", log.Data{"code_list_id": code})
 
-	query := fmt.Sprintf(query.CodeListExists, code)
+	query := fmt.Sprintf(query.GetCodeList, code)
 	codeListResult := &models.CodeList{}
 
 	if err := n.Read(query, mapper.CodeList(codeListResult, code), true); err != nil {

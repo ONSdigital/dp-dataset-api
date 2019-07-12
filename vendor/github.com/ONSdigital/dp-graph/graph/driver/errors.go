@@ -8,6 +8,10 @@ import (
 // ErrNotFound is returned when the result set from the database held 0 records
 var ErrNotFound = errors.New("not found")
 
+// ErrMultipleFound is returned when the result set from the database holds
+// more than one error, inside a call that requires exactly one.
+var ErrMultipleFound = errors.New("multiple found where should be one")
+
 // ErrAttemptsExceededLimit is returned when the number of attempts has reaced
 // the maximum permitted
 type ErrAttemptsExceededLimit struct {

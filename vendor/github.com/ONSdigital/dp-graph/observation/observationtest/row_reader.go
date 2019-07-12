@@ -5,33 +5,38 @@ package observationtest
 
 import (
 	"context"
+	"github.com/ONSdigital/dp-graph/observation"
 	"sync"
 )
 
 var (
-	lockCSVRowReaderMockClose sync.RWMutex
-	lockCSVRowReaderMockRead  sync.RWMutex
+	lockStreamRowReaderMockClose sync.RWMutex
+	lockStreamRowReaderMockRead  sync.RWMutex
 )
 
-// CSVRowReaderMock is a mock implementation of CSVRowReader.
+// Ensure, that StreamRowReaderMock does implement StreamRowReader.
+// If this is not the case, regenerate this file with moq.
+var _ observation.StreamRowReader = &StreamRowReaderMock{}
+
+// StreamRowReaderMock is a mock implementation of StreamRowReader.
 //
-//     func TestSomethingThatUsesCSVRowReader(t *testing.T) {
+//     func TestSomethingThatUsesStreamRowReader(t *testing.T) {
 //
-//         // make and configure a mocked CSVRowReader
-//         mockedCSVRowReader := &CSVRowReaderMock{
+//         // make and configure a mocked StreamRowReader
+//         mockedStreamRowReader := &StreamRowReaderMock{
 //             CloseFunc: func(in1 context.Context) error {
-// 	               panic("TODO: mock out the Close method")
+// 	               panic("mock out the Close method")
 //             },
 //             ReadFunc: func() (string, error) {
-// 	               panic("TODO: mock out the Read method")
+// 	               panic("mock out the Read method")
 //             },
 //         }
 //
-//         // TODO: use mockedCSVRowReader in code that requires CSVRowReader
-//         //       and then make assertions.
+//         // use mockedStreamRowReader in code that requires StreamRowReader
+//         // and then make assertions.
 //
 //     }
-type CSVRowReaderMock struct {
+type StreamRowReaderMock struct {
 	// CloseFunc mocks the Close method.
 	CloseFunc func(in1 context.Context) error
 
@@ -52,58 +57,58 @@ type CSVRowReaderMock struct {
 }
 
 // Close calls CloseFunc.
-func (mock *CSVRowReaderMock) Close(in1 context.Context) error {
+func (mock *StreamRowReaderMock) Close(in1 context.Context) error {
 	if mock.CloseFunc == nil {
-		panic("CSVRowReaderMock.CloseFunc: method is nil but CSVRowReader.Close was just called")
+		panic("StreamRowReaderMock.CloseFunc: method is nil but StreamRowReader.Close was just called")
 	}
 	callInfo := struct {
 		In1 context.Context
 	}{
 		In1: in1,
 	}
-	lockCSVRowReaderMockClose.Lock()
+	lockStreamRowReaderMockClose.Lock()
 	mock.calls.Close = append(mock.calls.Close, callInfo)
-	lockCSVRowReaderMockClose.Unlock()
+	lockStreamRowReaderMockClose.Unlock()
 	return mock.CloseFunc(in1)
 }
 
 // CloseCalls gets all the calls that were made to Close.
 // Check the length with:
-//     len(mockedCSVRowReader.CloseCalls())
-func (mock *CSVRowReaderMock) CloseCalls() []struct {
+//     len(mockedStreamRowReader.CloseCalls())
+func (mock *StreamRowReaderMock) CloseCalls() []struct {
 	In1 context.Context
 } {
 	var calls []struct {
 		In1 context.Context
 	}
-	lockCSVRowReaderMockClose.RLock()
+	lockStreamRowReaderMockClose.RLock()
 	calls = mock.calls.Close
-	lockCSVRowReaderMockClose.RUnlock()
+	lockStreamRowReaderMockClose.RUnlock()
 	return calls
 }
 
 // Read calls ReadFunc.
-func (mock *CSVRowReaderMock) Read() (string, error) {
+func (mock *StreamRowReaderMock) Read() (string, error) {
 	if mock.ReadFunc == nil {
-		panic("CSVRowReaderMock.ReadFunc: method is nil but CSVRowReader.Read was just called")
+		panic("StreamRowReaderMock.ReadFunc: method is nil but StreamRowReader.Read was just called")
 	}
 	callInfo := struct {
 	}{}
-	lockCSVRowReaderMockRead.Lock()
+	lockStreamRowReaderMockRead.Lock()
 	mock.calls.Read = append(mock.calls.Read, callInfo)
-	lockCSVRowReaderMockRead.Unlock()
+	lockStreamRowReaderMockRead.Unlock()
 	return mock.ReadFunc()
 }
 
 // ReadCalls gets all the calls that were made to Read.
 // Check the length with:
-//     len(mockedCSVRowReader.ReadCalls())
-func (mock *CSVRowReaderMock) ReadCalls() []struct {
+//     len(mockedStreamRowReader.ReadCalls())
+func (mock *StreamRowReaderMock) ReadCalls() []struct {
 } {
 	var calls []struct {
 	}
-	lockCSVRowReaderMockRead.RLock()
+	lockStreamRowReaderMockRead.RLock()
 	calls = mock.calls.Read
-	lockCSVRowReaderMockRead.RUnlock()
+	lockStreamRowReaderMockRead.RUnlock()
 	return calls
 }

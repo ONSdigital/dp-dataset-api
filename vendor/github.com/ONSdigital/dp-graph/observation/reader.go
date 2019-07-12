@@ -6,14 +6,14 @@ import (
 	"io"
 )
 
-//go:generate moq -out observationtest/row_reader.go -pkg observationtest . CSVRowReader
+//go:generate moq -out observationtest/row_reader.go -pkg observationtest . StreamRowReader
 
 // Check that the reader conforms to the io.reader interface.
 var _ io.Reader = (*Reader)(nil)
 
 // StreamRowReader provides a reader of individual rows (lines) of a CSV.
 type StreamRowReader interface {
-	Read() (string, error)
+	Read() (string, error) // TODO: this should take context
 	Close(context.Context) error
 }
 
@@ -89,7 +89,7 @@ func (reader *Reader) TotalBytesRead() int64 {
 	return reader.totalBytesRead
 }
 
-// ObservationsCount returns the total number of bytes read by this reader.
+// ObservationsCount returns the total number of rows read by this reader.
 func (reader *Reader) ObservationsCount() int32 {
 	return reader.obsCount
 }

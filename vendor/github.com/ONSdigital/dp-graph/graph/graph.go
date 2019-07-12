@@ -19,6 +19,8 @@ type DB struct {
 	driver.Instance
 	driver.Observation
 	driver.Dimension
+
+	Errors chan error
 }
 
 // Subsets allows a clear and concise way of requesting any combination of
@@ -59,7 +61,9 @@ func NewDimensionStore(ctx context.Context) (*DB, error) {
 // New DB returned according to provided subsets and the environment config
 // satisfying the interfaces requested by the choice of subsets
 func New(ctx context.Context, choice Subsets) (*DB, error) {
-	cfg, err := config.Get()
+	errs := make(chan error)
+
+	cfg, err := config.Get(errs)
 	if err != nil {
 		return nil, err
 	}
@@ -107,6 +111,7 @@ func New(ctx context.Context, choice Subsets) (*DB, error) {
 		instance,
 		observation,
 		dimension,
+		errs,
 	}, nil
 }
 

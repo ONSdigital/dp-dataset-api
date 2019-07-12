@@ -1,4 +1,4 @@
-package driver
+package neo4jdriver
 
 import (
 	"context"
