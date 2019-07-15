@@ -52,7 +52,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		usagesNotes := &[]models.UsageNote{models.UsageNote{Title: "data_marking", Note: "this marks the obsevation with a special character"}}
 
 		count := 0
-		mockRowReader := &observationtest.CSVRowReaderMock{
+		mockRowReader := &observationtest.StreamRowReaderMock{
 			ReadFunc: func() (string, error) {
 				count++
 				if count == 1 {
@@ -160,7 +160,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		usagesNotes := &[]models.UsageNote{models.UsageNote{Title: "data_marking", Note: "this marks the observation with a special character"}}
 
 		count := 0
-		mockRowReader := &observationtest.CSVRowReaderMock{
+		mockRowReader := &observationtest.StreamRowReaderMock{
 			ReadFunc: func() (string, error) {
 				count++
 				if count == 1 {
@@ -1105,7 +1105,7 @@ func TestGetObservationAuditSuccessfulError(t *testing.T) {
 			usagesNotes := &[]models.UsageNote{models.UsageNote{Title: "data_marking", Note: "this marks the obsevation with a special character"}}
 
 			count := 0
-			mockRowReader := &observationtest.CSVRowReaderMock{
+			mockRowReader := &observationtest.StreamRowReaderMock{
 				ReadFunc: func() (string, error) {
 					count++
 					if count == 1 {
