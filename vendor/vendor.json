@@ -3,7 +3,7 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "5sgCWfSLanm55ORI4knTxLhgaTk=",
+			"checksumSHA1": "UGP9ImI366tZW9hGKIXABvi0pto=",
 			"path": "github.com/ONSdigital/dp-authorisation/auth",
 			"revision": "6c83ffa9d19bfcea3a603edc1109d63ff924365f",
 			"revisionTime": "2019-07-10T14:00:01Z"

@@ -5,25 +5,25 @@ import (
 	"net/http"
 
 	"github.com/ONSdigital/log.go/log"
-	"github.com/gorilla/mux"
 )
 
-// RequireDatasetPermissions is a http.HandlerFunc that wraps another http.HandlerFunc applying an
-// authorisation check.
-//
-// When a request is received the caller's dataset permissions are retrieved from the Permissions API and are compared
-// against the required permissions.
-//
-// If the callers permissions satisfy the requirements authorisation is successful and the
-// the wrapped handler is invoked.
-//
-// If the caller's permissions do not satisfy the permission requirements or there is an issue getting / verifying their
-// permissions then the wrapped handler is NOT called and the appropriate HTTP error status is returned.
-func RequireDatasetPermissions(required Permissions, handler http.HandlerFunc) http.HandlerFunc {
-	return RequirePermissions(required, &DatasetParameterFactory{}, handler)
+type RequireFunc func(required Permissions, handler http.HandlerFunc) http.HandlerFunc
+
+type Handler struct {
+	parameterFactory    ParameterFactory
+	permissionsClient   Clienter
+	permissionsVerifier Verifier
 }
 
-// RequirePermissions is a http.HandlerFunc that wraps another http.HandlerFunc applying an authorisation check. The
+func NewHandler(parameterFactory ParameterFactory, permissionsClient Clienter, permissionsVerifier Verifier) *Handler {
+	return &Handler{
+		parameterFactory:    parameterFactory,
+		permissionsClient:   permissionsClient,
+		permissionsVerifier: permissionsVerifier,
+	}
+}
+
+// Require is a http.HandlerFunc that wraps another http.HandlerFunc applying an authorisation check. The
 // provided ParameterFactory determines the context of the permissions being checking.
 //
 // When a request is received the caller's permissions are retrieved from the Permissions API and are compared against
@@ -34,28 +34,24 @@ func RequireDatasetPermissions(required Permissions, handler http.HandlerFunc) h
 //
 // If the caller's permissions do not satisfy the permission requirements or there is an issue getting / verifying their
 // permissions then the wrapped handler is NOT called and the appropriate HTTP error status is returned.
-func RequirePermissions(required Permissions, parameterFactory ParameterFactory, handler http.HandlerFunc) http.HandlerFunc {
+func (h *Handler) Require(required Permissions, handler http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		vars := mux.Vars(req)
-		datasetID := vars[datasetIDKey]
-		log.Event(nil, datasetID)
-
 		ctx := req.Context()
 		logD := log.Data{"requested_uri": req.URL.RequestURI()}
 
-		parameters, err := parameterFactory.CreateParameters(req)
+		parameters, err := h.parameterFactory.CreateParameters(req)
 		if err != nil {
 			handleAuthoriseError(req.Context(), err, w, logD)
 			return
 		}
 
-		callerPermissions, err := permissionsClient.GetCallerPermissions(ctx, parameters)
+		callerPermissions, err := h.permissionsClient.GetCallerPermissions(ctx, parameters)
 		if err != nil {
 			handleAuthoriseError(req.Context(), err, w, logD)
 			return
 		}
 
-		err = permissionsVerifier.CheckAuthorisation(ctx, callerPermissions, &required)
+		err = h.permissionsVerifier.CheckAuthorisation(ctx, callerPermissions, &required)
 		if err != nil {
 			handleAuthoriseError(req.Context(), err, w, logD)
 			return

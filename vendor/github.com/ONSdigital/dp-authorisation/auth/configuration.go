@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/ONSdigital/log.go/log"
 )
 
 //go:generate moq -out generated_mocks.go -pkg auth . Clienter Verifier HTTPClienter Parameters ParameterFactory
@@ -16,8 +16,6 @@ const (
 
 var (
 	getRequestVars      func(r *http.Request) map[string]string
-	permissionsClient   Clienter
-	permissionsVerifier Verifier
 	datasetIDKey        string
 )
 
@@ -47,24 +45,12 @@ type ParameterFactory interface {
 	CreateParameters(req *http.Request) (Parameters, error)
 }
 
-// DefaultConfiguration initialise the auth package using the default configuration.  DatasetIDKey is the URL
-// placeholder name for dataset ID variable For example if your API route is
-// 	/datasets/{dataset_id}
-// The DatasetIDKey would be
-// 	"dataset_id"
-// PermissionsCli is an implementation of Clienter.
-func DefaultConfiguration(DatasetIDKey string, PermissionsCli Clienter) {
-	Configure(DatasetIDKey, mux.Vars, PermissionsCli, &PermissionsVerifier{})
-}
-
 // Configure is an overloaded initialise function for the auth package.
 // 	- DatasetIDKey is the URL placeholder name for dataset ID variable
 // 	- GetRequestVarsFunc is a function for getting URL path variables and headers form a HTTP request.
-// 	- PermissionsCli a Permissions API client.
-// 	- PermissionsVerifier checks the caller permissions satisfy the required permissions.
-func Configure(DatasetIDKey string, GetRequestVarsFunc GetRequestVarsFunc, PermissionsCli Clienter, PermissionsVerifier Verifier) {
+func Configure(DatasetIDKey string, GetRequestVarsFunc GetRequestVarsFunc, logNamespace string) {
+	log.Namespace = logNamespace
 	datasetIDKey = DatasetIDKey
 	getRequestVars = GetRequestVarsFunc
-	permissionsClient = PermissionsCli
-	permissionsVerifier = PermissionsVerifier
 }
+

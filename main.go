@@ -15,7 +15,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-graph/graph"
-	"github.com/ONSdigital/go-ns/rchttp"
 	"github.com/gorilla/mux"
 
 	"github.com/ONSdigital/go-ns/audit"
@@ -35,6 +34,9 @@ var _ store.Storer = (*DatsetAPIStore)(nil)
 type DatsetAPIStore struct {
 	*mongo.Mongo
 	*graph.DB
+}
+
+type APIAuthoriser struct {
 }
 
 func main() {
@@ -118,10 +120,11 @@ func main() {
 
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
-	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor)
+	authHandler := &auth.NopHandler{}
 
-	permissionsClient := auth.NewPermissionsClient("http://localhost:8082", rchttp.NewClient())
-	auth.Configure("dataset_id", mux.Vars, permissionsClient, &auth.PermissionsVerifier{})
+	auth.Configure("dataset_id", mux.Vars, "dp-dataset-api-auth")
+
+	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor, authHandler)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {
