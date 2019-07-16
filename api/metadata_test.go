@@ -42,7 +42,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -107,7 +107,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -162,7 +162,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -195,7 +195,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -234,7 +234,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -273,7 +273,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -312,7 +312,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -353,7 +353,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -384,7 +384,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 
 			mockedDataStore := &storetest.StorerMock{}
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -422,7 +422,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			}
 
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -453,7 +453,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			}
 
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -487,7 +487,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			}
 
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -515,7 +515,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			}
 
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -548,7 +548,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			}
 
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -585,7 +585,7 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 				},
 			}
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {

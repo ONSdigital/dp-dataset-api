@@ -38,7 +38,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 
 		auditor := auditortest.New()
 		authHandler := getAuthorisationHandlerMock()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -75,7 +75,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 		auditor.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			return errors.New("get editions action attempted audit event error")
 		}
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -106,7 +106,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 
 		auditor := auditortest.NewErroring(getEditionsAction, audit.Successful)
 		authHandler := getAuthorisationHandlerMock()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -132,7 +132,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 
 		auditor := auditortest.NewErroring(getEditionsAction, audit.Unsuccessful)
 		authHandler := getAuthorisationHandlerMock()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -160,7 +160,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.NewErroring(getEditionsAction, audit.Unsuccessful)
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -189,7 +189,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 		auditor := auditortest.New()
 		authHandler := getAuthorisationHandlerMock()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -216,7 +216,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -246,7 +246,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -275,7 +275,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -307,7 +307,7 @@ func TestGetEditionReturnsOK(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -338,7 +338,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -365,7 +365,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -395,7 +395,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -424,7 +424,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -451,7 +451,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.NewErroring(getEditionAction, audit.Attempted)
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -479,7 +479,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.NewErroring(getEditionAction, audit.Unsuccessful)
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -508,7 +508,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.NewErroring(getEditionAction, audit.Unsuccessful)
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -536,7 +536,7 @@ func TestGetEditionAuditErrors(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.NewErroring(getEditionAction, audit.Successful)
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)

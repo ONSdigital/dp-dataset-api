@@ -32,7 +32,7 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -71,7 +71,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -97,7 +97,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -126,7 +126,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -152,7 +152,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -180,7 +180,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 			w := httptest.NewRecorder()
 			mockedDataStore := &storetest.StorerMock{}
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -216,7 +216,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 			}
 
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -246,7 +246,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 			}
 
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -272,7 +272,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 			}
 
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -301,7 +301,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 			}
 
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -335,7 +335,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -364,7 +364,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -394,7 +394,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -421,7 +421,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 
 		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -449,7 +449,7 @@ func TestGetDimensionOptionsAuditingErrors(t *testing.T) {
 			w := httptest.NewRecorder()
 			mockedDataStore := &storetest.StorerMock{}
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -487,7 +487,7 @@ func TestGetDimensionOptionsAuditingErrors(t *testing.T) {
 			}
 
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -519,7 +519,7 @@ func TestGetDimensionOptionsAuditingErrors(t *testing.T) {
 			}
 
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -547,7 +547,7 @@ func TestGetDimensionOptionsAuditingErrors(t *testing.T) {
 			}
 
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
@@ -578,7 +578,7 @@ func TestGetDimensionOptionsAuditingErrors(t *testing.T) {
 			}
 
 			authHandler := getAuthorisationHandlerMock()
-			api := _GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {

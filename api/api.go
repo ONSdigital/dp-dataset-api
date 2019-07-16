@@ -112,7 +112,7 @@ type DatasetAPI struct {
 	auditor                Auditor
 	enablePrivateEndpoints bool
 	enableDetachDataset    bool
-	authHandler            AuthHandler
+	datasetAuth            AuthHandler
 }
 
 // CreateDatasetAPI manages all the routes configured to API
@@ -159,11 +159,12 @@ func NewDatasetAPI(cfg config.Configuration, router *mux.Router, dataStore store
 		auditor:                auditor,
 		enablePrivateEndpoints: cfg.EnablePrivateEnpoints,
 		enableDetachDataset:    cfg.EnableDetachDataset,
+		datasetAuth:            datasetAuth,
 	}
 
 	if api.enablePrivateEndpoints {
 		log.Info("enabling private endpoints for dataset api", nil)
-		api.enablePrivateDatasetEndpoints(datasetAuth)
+		api.enablePrivateDatasetEndpoints()
 		api.enablePrivateInstancesEndpoints()
 	} else {
 		log.Info("enabling only public endpoints for dataset api", nil)
@@ -186,8 +187,10 @@ func (api *DatasetAPI) enablePublicEndpoints() {
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", api.getDimensionOptions)
 }
 
-func (api *DatasetAPI) enablePrivateDatasetEndpoints(datasetAuth AuthHandler) {
+func (api *DatasetAPI) enablePrivateDatasetEndpoints() {
 	auditor := api.auditor
+
+	datasetAuth := api.datasetAuth
 
 	versionPublishChecker := PublishCheck{
 		Auditor:   auditor,
@@ -208,7 +211,7 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(datasetAuth AuthHandler) {
 	api.post("/datasets/{dataset_id}", identity.Check(auditor, addDatasetAction, datasetAuth.Require(createPermission, api.addDataset)))
 	api.put("/datasets/{dataset_id}", identity.Check(auditor, updateDatasetAction, datasetAuth.Require(updatePermission, api.putDataset)))
 	api.delete("/datasets/{dataset_id}", identity.Check(auditor, deleteDatasetAction, datasetAuth.Require(deletePermission, api.deleteDataset)))
-	api.put("/datasets/{dataset_id}/editions/{edition}/versions/{version}", identity.Check(auditor, updateVersionAction, versionPublishChecker.Check(datasetAuth.Require(updatePermission, api.putVersion), updateVersionAction)))
+	api.put("/datasets/{dataset_id}/editions/{edition}/versions/{version}", identity.Check(auditor, updateVersionAction, datasetAuth.Require(updatePermission, versionPublishChecker.Check(api.putVersion, updateVersionAction))))
 
 	if api.enableDetachDataset {
 		api.delete("/datasets/{dataset_id}/editions/{edition}/versions/{version}", identity.Check(auditor, detachVersionAction, datasetAuth.Require(deletePermission, api.detachVersion)))
