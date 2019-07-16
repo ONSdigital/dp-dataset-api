@@ -9,12 +9,13 @@ import (
 type PermissionsVerifier struct {
 }
 
+// NewPermissionsVerifier construct a new PermissionsVerifier
 func NewPermissionsVerifier() *PermissionsVerifier {
 	return &PermissionsVerifier{}
 }
 
-// CheckAuthorisation check the actual Permissions satisfy the required Permissions. Returns nil if requirements are satisfied
-// returns CheckAuthorisation otherwise.
+// CheckAuthorisation check the actual Permissions satisfy the required Permissions. Returns nil if requirements are
+// satisfied, returns CheckAuthorisation otherwise.
 func (verifier *PermissionsVerifier) CheckAuthorisation(ctx context.Context, actual *Permissions, required *Permissions) error {
 	required = defaultIfBlank(required)
 	actual = defaultIfBlank(actual)

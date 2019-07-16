@@ -7,14 +7,17 @@ import (
 	"github.com/ONSdigital/log.go/log"
 )
 
-type RequireFunc func(required Permissions, handler http.HandlerFunc) http.HandlerFunc
-
+// Handler is object providing functionality for applying authorisation checks to http.HandlerFunc's
 type Handler struct {
 	parameterFactory    ParameterFactory
 	permissionsClient   Clienter
 	permissionsVerifier Verifier
 }
 
+// NewHandler construct a new Handler.
+//	- parameterFactory is a factory object which generates Parameters object from a HTTP request.
+//	- permissionsClient is a client for communicating with the permissions API.
+//	- permissionsVerifier is an object that checks a caller's permissions satisfy the permissions requirements.
 func NewHandler(parameterFactory ParameterFactory, permissionsClient Clienter, permissionsVerifier Verifier) *Handler {
 	return &Handler{
 		parameterFactory:    parameterFactory,

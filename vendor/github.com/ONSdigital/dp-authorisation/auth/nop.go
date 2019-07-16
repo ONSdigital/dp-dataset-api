@@ -6,7 +6,7 @@ import (
 	"github.com/ONSdigital/log.go/log"
 )
 
-// NopHandler is a Nop impl of auth.Handler which simply returns the provided handlerFunc.
+// NopHandler is a Nop impl of auth.Handler which simply logs that it has been invoked and returns the wrapped handlerFunc.
 type NopHandler struct{}
 
 func (h *NopHandler) Require(required Permissions, handler http.HandlerFunc) http.HandlerFunc {

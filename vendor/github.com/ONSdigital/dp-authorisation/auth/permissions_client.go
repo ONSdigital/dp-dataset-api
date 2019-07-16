@@ -37,11 +37,16 @@ type Permissions struct {
 	Delete bool
 }
 
+// PermissionsClient implementation of Clienter - provides functionality for getting caller permissions from a
+// Permissions API.
 type PermissionsClient struct {
 	host    string
 	httpCli HTTPClienter
 }
 
+// NewPermissionsClient construct a new PermissionsClient instance.
+//	- host is the URL of the permissions API to call.
+//	- httpClient is instance of HTTPClienter
 func NewPermissionsClient(host string, httpClient HTTPClienter) *PermissionsClient {
 	return &PermissionsClient{
 		host:    host,
@@ -49,6 +54,9 @@ func NewPermissionsClient(host string, httpClient HTTPClienter) *PermissionsClie
 	}
 }
 
+// GetCallerPermissions fulfilling the Clienter interface - get a caller's permissions from the permissions API.
+//	params - a Parameters implementation encapsulating the specifics of the request (see  Parameters doc for more).
+// Return *Permissions if successful or err.
 func (client *PermissionsClient) GetCallerPermissions(ctx context.Context, params Parameters) (callerPermissions *Permissions, err error) {
 	getPermissionsRequest, err := params.CreateGetPermissionsRequest(client.host)
 	if err != nil {
@@ -75,7 +83,7 @@ func (client *PermissionsClient) GetCallerPermissions(ctx context.Context, param
 }
 
 func (client *PermissionsClient) doGetPermissionsRequest(ctx context.Context, request *http.Request) (*http.Response, error) {
-	if request == nil{
+	if request == nil {
 		return nil, getPermissionsRequestNilError
 	}
 

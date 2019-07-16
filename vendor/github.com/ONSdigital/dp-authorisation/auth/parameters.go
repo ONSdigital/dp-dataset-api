@@ -7,8 +7,10 @@ import (
 	"github.com/ONSdigital/go-ns/common"
 )
 
-// Parameters is an interface that defines the specific context of auth check is being made. The details of the fields
-// required and the structure of the HTTP request to get the caller permissions is encapsulated by implementing struct.
+// Parameters is an interface that encapsulates the context of the authorisation check being applied.
+// The purpose of the implementing struct is to define what information to extract from the incoming http.Request and to
+// generate the correct outgoing http.Request to Permissions API. The fields required and the structure of the outgoing
+// HTTP request is defined by the implementing struct.
 type Parameters interface {
 	CreateGetPermissionsRequest(host string) (*http.Request, error)
 }
