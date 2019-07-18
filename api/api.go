@@ -197,7 +197,7 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints() {
 		Datastore: api.dataStore.Backend,
 	}
 
-	api.get("/datasets", datasetAuth.Require(readPermission, api.getDatasets))
+	api.get("/datasets", api.getDatasets)
 	api.get("/datasets/{dataset_id}", datasetAuth.Require(readPermission, api.getDataset))
 	api.get("/datasets/{dataset_id}/editions", datasetAuth.Require(readPermission, api.getEditions))
 	api.get("/datasets/{dataset_id}/editions/{edition}", datasetAuth.Require(readPermission, api.getEdition))

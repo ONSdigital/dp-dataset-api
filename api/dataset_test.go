@@ -85,7 +85,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: getDatasetsAction, Result: audit.Attempted, Params: nil},
@@ -115,7 +115,7 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
@@ -149,7 +149,7 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
@@ -177,7 +177,7 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: getDatasetsAction, Result: audit.Attempted, Params: nil},
@@ -204,7 +204,7 @@ func TestGetDatasetsAuditSuccessfulError(t *testing.T) {
 
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: getDatasetsAction, Result: audit.Attempted, Params: nil},
