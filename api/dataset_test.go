@@ -41,15 +41,21 @@ var (
 	genericAuditParams = common.Params{"caller_identity": callerIdentity, "dataset_id": "123-456"}
 )
 
+func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {
+	return &mocks.AuthHandlerMock{
+		CheckPermissions: &mocks.PermissionCheckCalls{InvocationCount: 0},
+	}
+}
+
 // GetAPIWithMockedDatastore also used in other tests, so exported
-func GetAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, auditMock Auditor) *DatasetAPI {
+func GetAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, auditMock Auditor, authHandler AuthHandler) *DatasetAPI {
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)
 	cfg.ServiceAuthToken = authToken
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEnpoints = true
 
-	return Routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, auditMock)
+	return NewDatasetAPI(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, auditMock, authHandler)
 }
 
 func createRequestWithAuth(method, URL string, body io.Reader) (*http.Request, error) {
@@ -71,12 +77,15 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: getDatasetsAction, Result: audit.Attempted, Params: nil},
@@ -96,15 +105,17 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			return errors.New("boom!")
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
@@ -125,6 +136,7 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
 		auditMock.RecordFunc = func(ctx context.Context, action string, result string, params common.Params) error {
 			if action == getDatasetsAction && result == audit.Unsuccessful {
@@ -133,10 +145,11 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 			return nil
 		}
 
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
@@ -157,12 +170,14 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: getDatasetsAction, Result: audit.Attempted, Params: nil},
@@ -182,12 +197,14 @@ func TestGetDatasetsAuditSuccessfulError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.NewErroring(getDatasetsAction, audit.Successful)
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: getDatasetsAction, Result: audit.Attempted, Params: nil},
@@ -209,11 +226,13 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
@@ -233,12 +252,14 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: getDatasetAction, Result: audit.Attempted, Params: auditParams},
@@ -260,11 +281,13 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
@@ -282,11 +305,13 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
@@ -306,11 +331,13 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
@@ -333,13 +360,15 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", nil)
 			w := httptest.NewRecorder()
 
+			authHandler := getAuthorisationHandlerMock()
 			mockDatastore := &storetest.StorerMock{}
-			api := GetAPIWithMockedDatastore(mockDatastore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			api := GetAPIWithMockedDatastore(mockDatastore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockDatastore.GetDatasetCalls()), ShouldEqual, 0)
 
 				auditMock.AssertRecordCalls(
@@ -372,12 +401,15 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockDatastore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			authHandler := getAuthorisationHandlerMock()
+
+			api := GetAPIWithMockedDatastore(mockDatastore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(len(mockDatastore.GetDatasetCalls()), ShouldEqual, 1)
 				assertInternalServerErr(w)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 
 				auditMock.AssertRecordCalls(
 					auditortest.Expected{Action: getDatasetAction, Result: audit.Attempted, Params: auditParams},
@@ -406,12 +438,14 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockDatastore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			authHandler := getAuthorisationHandlerMock()
+			api := GetAPIWithMockedDatastore(mockDatastore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
 				So(len(mockDatastore.GetDatasetCalls()), ShouldEqual, 1)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 
 				auditMock.AssertRecordCalls(
 					auditortest.Expected{Action: getDatasetAction, Result: audit.Attempted, Params: auditParams},
@@ -440,12 +474,14 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusCreated)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
 
@@ -479,11 +515,13 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -515,11 +553,13 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
@@ -547,12 +587,13 @@ func TestPostDatasetReturnsError(t *testing.T) {
 				return nil
 			},
 		}
-
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
 		So(w.Body.String(), ShouldResemble, "unauthenticated request\n")
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -589,11 +630,13 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(w.Body.String(), ShouldResemble, "forbidden - dataset already exists\n")
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -618,13 +661,15 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 			r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString("{"))
 			So(err, ShouldBeNil)
 
+			authHandler := getAuthorisationHandlerMock()
 			w := httptest.NewRecorder()
 			mockedDataStore := &storetest.StorerMock{}
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
@@ -652,16 +697,18 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 
+			authHandler := getAuthorisationHandlerMock()
 			mockedDataStore := &storetest.StorerMock{
 				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 					return nil, errors.New("get dataset error")
 				},
 			}
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
@@ -687,11 +734,14 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 					return &models.DatasetUpdate{}, nil
 				},
 			}
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+			authHandler := getAuthorisationHandlerMock()
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 403 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusForbidden)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrAddDatasetAlreadyExists.Error())
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -721,11 +771,15 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 					return errors.New("upsert datset error")
 				},
 			}
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+
+			authHandler := getAuthorisationHandlerMock()
+
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 
@@ -758,11 +812,14 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 					return nil
 				},
 			}
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			authHandler := getAuthorisationHandlerMock()
+
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 201 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusCreated)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 
@@ -798,16 +855,19 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
+
 		dataset := &models.Dataset{
 			Title: "CPI",
 		}
 		mockedDataStore.UpdateDataset("123", dataset, models.CreatedState)
 
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
 
@@ -832,6 +892,8 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 
+		authHandler := getAuthorisationHandlerMock()
+
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -844,10 +906,11 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		}
 
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
@@ -884,12 +947,14 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			Title: "CPI",
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		mockedDataStore.UpdateDataset("123", dataset, models.CreatedState)
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
@@ -922,11 +987,13 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -959,11 +1026,13 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
 		So(w.Body.String(), ShouldResemble, "unauthenticated request\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
@@ -1001,11 +1070,14 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			authHandler := getAuthorisationHandlerMock()
+
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 
@@ -1042,11 +1114,14 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			authHandler := getAuthorisationHandlerMock()
+
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 200 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusOK)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 1)
 
@@ -1080,11 +1155,14 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			authHandler := getAuthorisationHandlerMock()
+
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 400 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 
@@ -1111,11 +1189,14 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			authHandler := getAuthorisationHandlerMock()
+
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 400 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusNotFound)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 
@@ -1151,11 +1232,14 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			authHandler := getAuthorisationHandlerMock()
+
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 400 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 
@@ -1185,11 +1269,13 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			authHandler := getAuthorisationHandlerMock()
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 400 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 1)
 
@@ -1226,11 +1312,13 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNoContent)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
@@ -1263,11 +1351,13 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNoContent)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 1)
@@ -1299,11 +1389,13 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
@@ -1333,11 +1425,13 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
@@ -1367,11 +1461,13 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNoContent)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
@@ -1401,11 +1497,13 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
@@ -1424,11 +1522,13 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
 		So(w.Body.String(), ShouldResemble, "unauthenticated request\n")
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
@@ -1454,11 +1554,13 @@ func TestDeleteDatasetAuditActionAttemptedError(t *testing.T) {
 
 			w := httptest.NewRecorder()
 			mockedDataStore := &storetest.StorerMock{}
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			authHandler := getAuthorisationHandlerMock()
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
@@ -1491,11 +1593,13 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 					return nil, errs.ErrDatasetNotFound
 				},
 			}
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			authHandler := getAuthorisationHandlerMock()
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 204 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusNoContent)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
@@ -1519,12 +1623,14 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 				},
 			}
 
+			authHandler := getAuthorisationHandlerMock()
 			auditMock = auditortest.NewErroring(deleteDatasetAction, audit.Unsuccessful)
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
@@ -1548,12 +1654,14 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 				},
 			}
 
+			authHandler := getAuthorisationHandlerMock()
 			auditMock = auditortest.NewErroring(deleteDatasetAction, audit.Unsuccessful)
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 403 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusForbidden)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
@@ -1584,13 +1692,15 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 					return errors.New("DeleteEditionFunc error")
 				},
 			}
+			authHandler := getAuthorisationHandlerMock()
 
 			auditMock = auditortest.NewErroring(deleteDatasetAction, audit.Unsuccessful)
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 1)
@@ -1619,13 +1729,14 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 					return errors.New("DeleteDatasetFunc error")
 				},
 			}
-
+			authHandler := getAuthorisationHandlerMock()
 			auditMock = auditortest.NewErroring(deleteDatasetAction, audit.Unsuccessful)
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
@@ -1658,14 +1769,16 @@ func TestDeleteDatasetAuditActionSuccessfulError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditMock := auditortest.NewErroring(deleteDatasetAction, audit.Successful)
 
 		Convey("when delete dataset is called", func() {
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock)
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 204 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusNoContent)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)

@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
@@ -14,6 +15,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-graph/graph"
+	"github.com/gorilla/mux"
 
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/healthcheck"
@@ -43,9 +45,9 @@ type initialisedStruct struct {
 
 var initialised = initialisedStruct{
 	generateDownloadsProducer: true,
-	auditProducer:true,
-	mongo: true,
-	healthTicker: true,
+	auditProducer:             true,
+	mongo:                     true,
+	healthTicker:              true,
 }
 
 func main() {
@@ -138,7 +140,11 @@ func main() {
 
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
-	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor)
+	datasetAuth := &auth.NopHandler{}
+
+	auth.Configure("dataset_id", mux.Vars, "dp-dataset-api-auth")
+
+	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor, datasetAuth)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {
