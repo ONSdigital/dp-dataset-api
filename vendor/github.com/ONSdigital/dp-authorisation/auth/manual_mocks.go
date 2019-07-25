@@ -13,6 +13,7 @@ type HandlerMock struct {
 type readCloserMock struct {
 	GetEntityFunc func() ([]byte, error)
 	done          bool
+	IsClosed      bool
 }
 
 func (h *HandlerMock) handleFunc(http.ResponseWriter, *http.Request) {
@@ -37,6 +38,6 @@ func (rc *readCloserMock) Read(p []byte) (n int, err error) {
 }
 
 func (rc *readCloserMock) Close() error {
+	rc.IsClosed = true
 	return nil
 }
-

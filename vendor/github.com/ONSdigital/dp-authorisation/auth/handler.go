@@ -7,27 +7,60 @@ import (
 	"github.com/ONSdigital/log.go/log"
 )
 
+//go:generate moq -out generated_mocks.go -pkg auth . Clienter Verifier HTTPClienter GetPermissionsRequestBuilder
+
+const (
+	// CollectionIDHeader is the collection ID request header key.
+	CollectionIDHeader = "Collection-Id"
+)
+
+// HTTPClienter is the interface that defines a client for making HTTP requests
+type HTTPClienter interface {
+	Do(ctx context.Context, req *http.Request) (*http.Response, error)
+}
+
+// Clienter is the interface that defines a client for obtaining Permissions from a Permissions API. The Parameters
+// argument encapsulates the specifics of the request to make.
+type Clienter interface {
+	GetPermissions(ctx context.Context, getPermissionsRequest *http.Request) (*Permissions, error)
+}
+
+// Verifier is an interface defining a permissions checker. Checks that the caller's permissions satisfy the required
+// permissions
+type Verifier interface {
+	CheckAuthorisation(ctx context.Context, callerPermissions *Permissions, requiredPermissions *Permissions) error
+}
+
+type GetPermissionsRequestBuilder interface {
+	NewPermissionsRequest(req *http.Request) (getPermissionsRequest *http.Request, err error)
+}
+
 // Handler is object providing functionality for applying authorisation checks to http.HandlerFunc's
 type Handler struct {
-	parameterFactory    ParameterFactory
+	requestBuilder      GetPermissionsRequestBuilder
 	permissionsClient   Clienter
 	permissionsVerifier Verifier
 }
 
+// LoggerNamespace set the log namespace for auth package logging.
+func LoggerNamespace(logNamespace string) {
+	log.Namespace = logNamespace
+}
+
 // NewHandler construct a new Handler.
-//	- parameterFactory is a factory object which generates Parameters object from a HTTP request.
+//	- requestBuilder an implementation of GetPermissionsRequestBuilder that creates Permissions API requests from the inbound http request.
 //	- permissionsClient is a client for communicating with the permissions API.
 //	- permissionsVerifier is an object that checks a caller's permissions satisfy the permissions requirements.
-func NewHandler(parameterFactory ParameterFactory, permissionsClient Clienter, permissionsVerifier Verifier) *Handler {
+func NewHandler(requestBuilder GetPermissionsRequestBuilder, permissionsClient Clienter, permissionsVerifier Verifier) *Handler {
 	return &Handler{
-		parameterFactory:    parameterFactory,
+		requestBuilder:      requestBuilder,
 		permissionsClient:   permissionsClient,
 		permissionsVerifier: permissionsVerifier,
 	}
 }
 
 // Require is a http.HandlerFunc that wraps another http.HandlerFunc applying an authorisation check. The
-// provided ParameterFactory determines the context of the permissions being checking.
+// provided GetPermissionsRequestBuilder determines what Permissions API request to create from the inbound http request.
 //
 // When a request is received the caller's permissions are retrieved from the Permissions API and are compared against
 // the required permissions.
@@ -42,19 +75,19 @@ func (h *Handler) Require(required Permissions, handler http.HandlerFunc) http.H
 		ctx := req.Context()
 		logD := log.Data{"requested_uri": req.URL.RequestURI()}
 
-		parameters, err := h.parameterFactory.CreateParameters(req)
+		getPermissionsRequest, err := h.requestBuilder.NewPermissionsRequest(req)
 		if err != nil {
 			handleAuthoriseError(req.Context(), err, w, logD)
 			return
 		}
 
-		callerPermissions, err := h.permissionsClient.GetCallerPermissions(ctx, parameters)
+		permissions, err := h.permissionsClient.GetPermissions(ctx, getPermissionsRequest)
 		if err != nil {
 			handleAuthoriseError(req.Context(), err, w, logD)
 			return
 		}
 
-		err = h.permissionsVerifier.CheckAuthorisation(ctx, callerPermissions, &required)
+		err = h.permissionsVerifier.CheckAuthorisation(ctx, permissions, &required)
 		if err != nil {
 			handleAuthoriseError(req.Context(), err, w, logD)
 			return

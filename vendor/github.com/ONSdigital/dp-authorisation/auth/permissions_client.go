@@ -6,6 +6,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/ONSdigital/go-ns/rchttp"
 )
 
 const (
@@ -16,8 +18,10 @@ const (
 )
 
 var (
-	userDatasetPermissionsURL    = "%s/userDatasetPermissions?dataset_id=%s&collection_id=%s"
-	serviceDatasetPermissionsURL = "%s/serviceDatasetPermissions?dataset_id=%s"
+	userInstancePermissionsURL    = "%s/userInstancePermissions"
+	serviceInstancePermissionsURL = "%s/serviceInstancePermissions"
+	userDatasetPermissionsURL     = "%s/userDatasetPermissions?dataset_id=%s&collection_id=%s"
+	serviceDatasetPermissionsURL  = "%s/serviceDatasetPermissions?dataset_id=%s"
 )
 
 type permissionType string
@@ -44,23 +48,20 @@ type PermissionsClient struct {
 	httpCli HTTPClienter
 }
 
+func DefaultPermissionsClient() *PermissionsClient {
+	return &PermissionsClient{httpCli: rchttp.NewClient()}
+}
+
 // NewPermissionsClient construct a new PermissionsClient instance.
 //	- host is the URL of the permissions API to call.
 //	- httpClient is instance of HTTPClienter
-func NewPermissionsClient(host string, httpClient HTTPClienter) *PermissionsClient {
-	return &PermissionsClient{
-		host:    host,
-		httpCli: httpClient,
-	}
+func NewPermissionsClient(httpClient HTTPClienter) *PermissionsClient {
+	return &PermissionsClient{httpCli: httpClient}
 }
 
-// GetCallerPermissions fulfilling the Clienter interface - get a caller's permissions from the permissions API.
-//	params - a Parameters implementation encapsulating the specifics of the request (see  Parameters doc for more).
-// Return *Permissions if successful or err.
-func (client *PermissionsClient) GetCallerPermissions(ctx context.Context, params Parameters) (callerPermissions *Permissions, err error) {
-	getPermissionsRequest, err := params.CreateGetPermissionsRequest(client.host)
-	if err != nil {
-		return nil, err
+func (client *PermissionsClient) GetPermissions(ctx context.Context, getPermissionsRequest *http.Request) (*Permissions, error) {
+	if getPermissionsRequest == nil {
+		return nil, getPermissionsRequestNilError
 	}
 
 	resp, err := client.doGetPermissionsRequest(ctx, getPermissionsRequest)
@@ -69,7 +70,6 @@ func (client *PermissionsClient) GetCallerPermissions(ctx context.Context, param
 	}
 
 	defer resp.Body.Close()
-
 	if resp.StatusCode != 200 {
 		return nil, handleGetPermissionsErrorResponse(ctx, resp.Body, resp.StatusCode)
 	}

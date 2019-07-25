@@ -112,13 +112,14 @@ type DatasetAPI struct {
 	auditor                Auditor
 	enablePrivateEndpoints bool
 	enableDetachDataset    bool
-	datasetAuth            AuthHandler
+	datasetPermissions     AuthHandler
+	permissions            AuthHandler
 }
 
 // CreateDatasetAPI manages all the routes configured to API
-func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadGenerator DownloadsGenerator, auditor Auditor, datasetAuth AuthHandler) {
+func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadGenerator DownloadsGenerator, auditor Auditor, datasetPermissions AuthHandler, permissions AuthHandler) {
 	router := mux.NewRouter()
-	api := NewDatasetAPI(cfg, router, dataStore, urlBuilder, downloadGenerator, auditor, datasetAuth)
+	api := NewDatasetAPI(cfg, router, dataStore, urlBuilder, downloadGenerator, auditor, datasetPermissions, permissions)
 
 	healthcheckHandler := healthcheck.NewMiddleware(healthcheck.Do)
 	middleware := alice.New(healthcheckHandler)
@@ -145,7 +146,7 @@ func CreateDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBu
 }
 
 // NewDatasetAPI create a new Dataset API instance and register the API routes based on the application configuration.
-func NewDatasetAPI(cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, auditor Auditor, datasetAuth AuthHandler) *DatasetAPI {
+func NewDatasetAPI(cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, auditor Auditor, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
 	api := &DatasetAPI{
 		dataStore:              dataStore,
 		host:                   cfg.DatasetAPIURL,
@@ -159,7 +160,8 @@ func NewDatasetAPI(cfg config.Configuration, router *mux.Router, dataStore store
 		auditor:                auditor,
 		enablePrivateEndpoints: cfg.EnablePrivateEnpoints,
 		enableDetachDataset:    cfg.EnableDetachDataset,
-		datasetAuth:            datasetAuth,
+		datasetPermissions:     datasetPermissions,
+		permissions:            permissions,
 	}
 
 	if api.enablePrivateEndpoints {
@@ -190,7 +192,7 @@ func (api *DatasetAPI) enablePublicEndpoints() {
 func (api *DatasetAPI) enablePrivateDatasetEndpoints() {
 	auditor := api.auditor
 
-	datasetAuth := api.datasetAuth
+	datasetPermissions := api.datasetPermissions
 
 	versionPublishChecker := PublishCheck{
 		Auditor:   auditor,
@@ -198,23 +200,49 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints() {
 	}
 
 	api.get("/datasets", api.getDatasets)
-	api.get("/datasets/{dataset_id}", datasetAuth.Require(readPermission, api.getDataset))
-	api.get("/datasets/{dataset_id}/editions", datasetAuth.Require(readPermission, api.getEditions))
-	api.get("/datasets/{dataset_id}/editions/{edition}", datasetAuth.Require(readPermission, api.getEdition))
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions", datasetAuth.Require(readPermission, api.getVersions))
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}", datasetAuth.Require(readPermission, api.getVersion))
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata", datasetAuth.Require(readPermission, api.getMetadata))
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/observations", datasetAuth.Require(readPermission, api.getObservations))
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", datasetAuth.Require(readPermission, api.getDimensions))
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", datasetAuth.Require(readPermission, api.getDimensionOptions))
 
-	api.post("/datasets/{dataset_id}", identity.Check(auditor, addDatasetAction, datasetAuth.Require(createPermission, api.addDataset)))
-	api.put("/datasets/{dataset_id}", identity.Check(auditor, updateDatasetAction, datasetAuth.Require(updatePermission, api.putDataset)))
-	api.delete("/datasets/{dataset_id}", identity.Check(auditor, deleteDatasetAction, datasetAuth.Require(deletePermission, api.deleteDataset)))
-	api.put("/datasets/{dataset_id}/editions/{edition}/versions/{version}", identity.Check(auditor, updateVersionAction, datasetAuth.Require(updatePermission, versionPublishChecker.Check(api.putVersion, updateVersionAction))))
+	getDatasetPrivate := datasetPermissions.Require(readPermission, api.getDataset)
+	api.get("/datasets/{dataset_id}", getDatasetPrivate)
+
+	getEditionsPrivate := datasetPermissions.Require(readPermission, api.getEditions)
+	api.get("/datasets/{dataset_id}/editions", getEditionsPrivate)
+
+	getEditionPrivate := datasetPermissions.Require(readPermission, api.getEdition)
+	api.get("/datasets/{dataset_id}/editions/{edition}", getEditionPrivate)
+
+	getVersionsPrivate := datasetPermissions.Require(readPermission, api.getVersions)
+	api.get("/datasets/{dataset_id}/editions/{edition}/versions", getVersionsPrivate)
+
+	getVersionPrivate := datasetPermissions.Require(readPermission, api.getVersion)
+	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}", getVersionPrivate)
+
+	getMetadataPrivate := datasetPermissions.Require(readPermission, api.getMetadata)
+	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata", getMetadataPrivate)
+
+	getObservationsPrivate := datasetPermissions.Require(readPermission, api.getObservations)
+	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/observations", getObservationsPrivate)
+
+	getDimensionsPrivate := datasetPermissions.Require(readPermission, api.getDimensions)
+	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", getDimensionsPrivate)
+
+	getDimensionOptsPrivate := datasetPermissions.Require(readPermission, api.getDimensionOptions)
+	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", getDimensionOptsPrivate)
+
+	addDatasetPrivate := identity.Check(auditor, addDatasetAction, datasetPermissions.Require(createPermission, api.addDataset))
+	api.post("/datasets/{dataset_id}", addDatasetPrivate)
+
+	putDatasetPrivate := identity.Check(auditor, updateDatasetAction, datasetPermissions.Require(updatePermission, api.putDataset))
+	api.put("/datasets/{dataset_id}", putDatasetPrivate)
+
+	deleteDatasetPrivate := identity.Check(auditor, deleteDatasetAction, datasetPermissions.Require(deletePermission, api.deleteDataset))
+	api.delete("/datasets/{dataset_id}", deleteDatasetPrivate)
+
+	updateVersionPrivate := identity.Check(auditor, updateVersionAction, datasetPermissions.Require(updatePermission, versionPublishChecker.Check(api.putVersion, updateVersionAction)))
+	api.put("/datasets/{dataset_id}/editions/{edition}/versions/{version}", updateVersionPrivate)
 
 	if api.enableDetachDataset {
-		api.delete("/datasets/{dataset_id}/editions/{edition}/versions/{version}", identity.Check(auditor, detachVersionAction, datasetAuth.Require(deletePermission, api.detachVersion)))
+		deleteVersionPrivate := identity.Check(auditor, detachVersionAction, datasetPermissions.Require(deletePermission, api.detachVersion))
+		api.delete("/datasets/{dataset_id}/editions/{edition}/versions/{version}", deleteVersionPrivate)
 	}
 }
 
