@@ -57,7 +57,7 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -89,7 +89,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -117,7 +117,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -148,7 +148,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -183,7 +183,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -217,7 +217,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -254,7 +254,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrResourceState.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -286,7 +286,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -318,7 +318,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -354,7 +354,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -386,7 +386,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -427,7 +427,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -466,7 +466,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -511,7 +511,7 @@ func TestGetVersionReturnsOK(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -542,7 +542,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
@@ -569,7 +569,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
@@ -601,7 +601,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
@@ -636,7 +636,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -670,7 +670,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -714,7 +714,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrResourceState.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -751,7 +751,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
 
 		auditor.AssertRecordCalls(
@@ -775,7 +775,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
@@ -805,7 +805,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -838,7 +838,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -877,7 +877,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -918,7 +918,7 @@ func TestGetVersionAuditErrors(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -990,7 +990,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -1052,7 +1052,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -1126,7 +1126,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		}
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -1247,7 +1247,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
@@ -1375,7 +1375,7 @@ func updateVersionDownloadTest(r *http.Request, firstAuditParams, secondAuditPar
 	api.Router.ServeHTTP(w, r)
 
 	So(w.Code, ShouldEqual, http.StatusOK)
-	So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+	So(authHandler.Required.Calls, ShouldEqual, 1)
 	So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 	So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 	So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
@@ -1521,7 +1521,7 @@ func TestPutEmptyVersion(t *testing.T) {
 			})
 
 			Convey("and the updated version is as expected", func() {
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 				So(mockedDataStore.UpdateVersionCalls()[0].Version.Downloads, ShouldBeNil)
@@ -1565,7 +1565,7 @@ func TestPutEmptyVersion(t *testing.T) {
 
 			Convey("then a http status ok is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusOK)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 			})
 
 			Convey("and any existing version downloads are not overwritten", func() {
@@ -1623,7 +1623,7 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 			So(w.Code, ShouldEqual, http.StatusInternalServerError)
 			So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-			So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
+			So(authHandler.Required.Calls, ShouldEqual, 0)
 
 			Convey("then an error is returned and updateVersion fails", func() {
 				// Check no calls have been made to the datastore
@@ -1705,7 +1705,7 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 			So(w.Code, ShouldEqual, http.StatusOK)
 
 			Convey("then the expected audit events are recorded and the expected error is returned", func() {
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(len(store.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(store.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(store.GetVersionCalls()), ShouldEqual, 2)
@@ -1746,7 +1746,7 @@ func TestUpdateVersionAuditErrors(t *testing.T) {
 			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusNotFound)
 			So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
-			So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+			So(authHandler.Required.Calls, ShouldEqual, 1)
 
 			Convey("then the expected audit events are recorded and the expected error is returned", func() {
 				So(len(store.GetVersionCalls()), ShouldEqual, 1)
@@ -1783,7 +1783,7 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 			So(err, ShouldNotBeNil)
 
 			Convey("then the expected audit events are recorded and an error is returned", func() {
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(authHandler.Required.Calls, ShouldEqual, 0)
 				auditor.AssertRecordCalls(
 					auditortest.Expected{Action: publishVersionAction, Result: audit.Attempted, Params: auditParams},
 				)
@@ -1808,7 +1808,7 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 
 			Convey("then the expected audit events are recorded and the expected error is returned", func() {
 				So(len(store.GetEditionCalls()), ShouldEqual, 1)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(authHandler.Required.Calls, ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
 					auditortest.Expected{Action: publishVersionAction, Result: audit.Attempted, Params: auditParams},
@@ -1897,7 +1897,7 @@ func TestPublishVersionAuditErrors(t *testing.T) {
 
 			Convey("then the expected audit events are recorded and the expected error is returned", func() {
 				So(len(store.GetEditionCalls()), ShouldEqual, 1)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(authHandler.Required.Calls, ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
 					auditortest.Expected{Action: publishVersionAction, Result: audit.Attempted, Params: auditParams},
@@ -1962,7 +1962,7 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 			Convey("then the expected audit event is captured and the expected error is returned", func() {
 				So(len(store.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 				So(len(gen.GenerateCalls()), ShouldEqual, 0)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(authHandler.Required.Calls, ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
 					auditortest.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
@@ -1990,7 +1990,7 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 			Convey("then the expected audit event is captured and the expected error is returned", func() {
 				So(len(store.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
 				So(len(gen.GenerateCalls()), ShouldEqual, 0)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(authHandler.Required.Calls, ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
 					auditortest.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
@@ -2020,7 +2020,7 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 				So(expectedErr.Error(), ShouldEqual, errors.Cause(err).Error())
 				So(len(store.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
 				So(len(gen.GenerateCalls()), ShouldEqual, 1)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(authHandler.Required.Calls, ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
 					auditortest.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
@@ -2053,7 +2053,7 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 			Convey("then the expected audit event is captured and the expected error is returned", func() {
 				So(len(store.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
 				So(len(gen.GenerateCalls()), ShouldEqual, 1)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(authHandler.Required.Calls, ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
 					auditortest.Expected{Action: associateVersionAction, Result: audit.Attempted, Params: auditParams},
@@ -2098,7 +2098,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -2144,7 +2144,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -2193,7 +2193,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -2243,7 +2243,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -2296,7 +2296,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -2341,7 +2341,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
 		So(w.Body.String(), ShouldEqual, "unauthenticated request\n")
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(authHandler.Required.Calls, ShouldEqual, 0)
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -2390,7 +2390,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 
 		auditor.AssertRecordCalls(
 			auditortest.Expected{Action: updateVersionAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
@@ -2439,7 +2439,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldEqual, "missing collection_id for association between version and a collection\n")
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -2562,7 +2562,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 3)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
@@ -2764,7 +2764,7 @@ func TestDetachVersionReturnOK(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -2828,7 +2828,7 @@ func TestDetachVersionReturnOK(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -2884,7 +2884,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -2922,7 +2922,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -2963,7 +2963,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -3007,7 +3007,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -3051,7 +3051,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -3103,7 +3103,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
@@ -3159,7 +3159,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)

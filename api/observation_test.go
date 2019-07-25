@@ -105,7 +105,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(w.Body.String(), ShouldContainSubstring, getTestData("expectedDocWithSingleObservation"))
 
-			So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+			So(authHandler.Required.Calls, ShouldEqual, 1)
 			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -213,7 +213,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(w.Body.String(), ShouldContainSubstring, getTestData("expectedDocWithMultipleObservations"))
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -247,7 +247,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 
@@ -275,7 +275,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 
@@ -303,7 +303,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 
@@ -334,7 +334,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -368,7 +368,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -401,7 +401,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -438,7 +438,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -475,7 +475,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -512,7 +512,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -551,7 +551,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "incorrect selection of query parameters: [geography], these dimensions do not exist for this version of the dataset\n")
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -590,7 +590,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "missing query parameters for the following dimensions: [age]\n")
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -630,7 +630,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "only one wildcard (*) is allowed as a value in selected query parameters\n")
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -673,7 +673,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrObservationsNotFound.Error())
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -737,7 +737,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "multi-valued query parameters for the following dimensions: [geography]\n")
 
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -963,7 +963,7 @@ func TestGetObservationAuditAttemptedError(t *testing.T) {
 
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -1002,7 +1002,7 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
@@ -1036,7 +1036,7 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
@@ -1073,7 +1073,7 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -1110,7 +1110,7 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -1198,7 +1198,7 @@ func TestGetObservationAuditSuccessfulError(t *testing.T) {
 
 			Convey("then a 500 status response is returned", func() {
 				assertInternalServerErr(w)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)

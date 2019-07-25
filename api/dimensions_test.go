@@ -36,7 +36,7 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
 
@@ -75,7 +75,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
@@ -101,7 +101,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
@@ -130,7 +130,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDimensionsNotFound.Error())
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
@@ -156,7 +156,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
@@ -185,7 +185,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
 
@@ -221,7 +221,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
 
@@ -251,7 +251,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
 
@@ -277,7 +277,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
 
@@ -306,7 +306,7 @@ func TestGetDimensionsAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
 
@@ -339,7 +339,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionOptionsCalls()), ShouldEqual, 1)
 
@@ -369,7 +369,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionOptionsCalls()), ShouldEqual, 0)
 
@@ -399,7 +399,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionOptionsCalls()), ShouldEqual, 1)
 
@@ -426,7 +426,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(authHandler.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionOptionsCalls()), ShouldEqual, 0)
 
@@ -454,7 +454,7 @@ func TestGetDimensionOptionsAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.GetDimensionOptionsCalls()), ShouldEqual, 0)
@@ -492,7 +492,7 @@ func TestGetDimensionOptionsAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionOptionsCalls()), ShouldEqual, 1)
@@ -524,7 +524,7 @@ func TestGetDimensionOptionsAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
@@ -552,7 +552,7 @@ func TestGetDimensionOptionsAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
+				So(authHandler.Required.Calls, ShouldEqual, 1)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)

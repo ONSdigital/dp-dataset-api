@@ -44,7 +44,7 @@ var (
 
 func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {
 	return &mocks.AuthHandlerMock{
-		CheckPermissions: &mocks.PermissionCheckCalls{InvocationCount: 0},
+		Required: &mocks.PermissionCheckCalls{Calls: 0},
 	}
 }
 
@@ -98,8 +98,8 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: getDatasetsAction, Result: audit.Attempted, Params: nil},
@@ -130,8 +130,8 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
@@ -166,8 +166,8 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
@@ -196,8 +196,8 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: getDatasetsAction, Result: audit.Attempted, Params: nil},
@@ -225,8 +225,8 @@ func TestGetDatasetsAuditSuccessfulError(t *testing.T) {
 
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: getDatasetsAction, Result: audit.Attempted, Params: nil},
@@ -255,8 +255,8 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
@@ -284,8 +284,8 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: getDatasetAction, Result: audit.Attempted, Params: auditParams},
@@ -314,8 +314,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
@@ -340,8 +340,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
@@ -368,8 +368,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
@@ -401,8 +401,8 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockDatastore.GetDatasetCalls()), ShouldEqual, 0)
 
 				auditMock.AssertRecordCalls(
@@ -444,8 +444,8 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 			Convey("then a 500 status is returned", func() {
 				So(len(mockDatastore.GetDatasetCalls()), ShouldEqual, 1)
 				assertInternalServerErr(w)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 
 				auditMock.AssertRecordCalls(
 					auditortest.Expected{Action: getDatasetAction, Result: audit.Attempted, Params: auditParams},
@@ -482,8 +482,8 @@ func TestGetDatasetAuditingErrors(t *testing.T) {
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
 				So(len(mockDatastore.GetDatasetCalls()), ShouldEqual, 1)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 
 				auditMock.AssertRecordCalls(
 					auditortest.Expected{Action: getDatasetAction, Result: audit.Attempted, Params: auditParams},
@@ -520,8 +520,8 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusCreated)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
 
@@ -562,8 +562,8 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -602,8 +602,8 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
@@ -638,8 +638,8 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldResemble, "unauthenticated request\n")
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -683,8 +683,8 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldResemble, "forbidden - dataset already exists\n")
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -718,8 +718,8 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
@@ -759,8 +759,8 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
@@ -794,8 +794,8 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 
 			Convey("then a 403 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusForbidden)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrAddDatasetAlreadyExists.Error())
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -834,8 +834,8 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 
@@ -876,8 +876,8 @@ func TestPostDatasetAuditErrors(t *testing.T) {
 
 			Convey("then a 201 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusCreated)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 
@@ -926,8 +926,8 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
 
@@ -971,8 +971,8 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
@@ -1017,8 +1017,8 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
@@ -1058,8 +1058,8 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -1099,8 +1099,8 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldResemble, "unauthenticated request\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
@@ -1146,8 +1146,8 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 
@@ -1192,8 +1192,8 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 
 			Convey("then a 200 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusOK)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 1)
 
@@ -1235,8 +1235,8 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 
 			Convey("then a 400 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 
@@ -1271,8 +1271,8 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 
 			Convey("then a 400 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusNotFound)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 
@@ -1316,8 +1316,8 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 
 			Convey("then a 400 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 
@@ -1354,8 +1354,8 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 
 			Convey("then a 400 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 1)
 
@@ -1399,8 +1399,8 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNoContent)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
@@ -1440,8 +1440,8 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNoContent)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 1)
@@ -1480,8 +1480,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
@@ -1518,7 +1518,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
@@ -1555,8 +1555,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNoContent)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
@@ -1593,8 +1593,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
@@ -1620,8 +1620,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
-		So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
-		So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldResemble, "unauthenticated request\n")
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
@@ -1654,8 +1654,8 @@ func TestDeleteDatasetAuditActionAttemptedError(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
@@ -1695,8 +1695,8 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 204 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusNoContent)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
@@ -1728,8 +1728,8 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
@@ -1761,8 +1761,8 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 403 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusForbidden)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
@@ -1802,8 +1802,8 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 1)
@@ -1840,8 +1840,8 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
@@ -1884,8 +1884,8 @@ func TestDeleteDatasetAuditActionSuccessfulError(t *testing.T) {
 
 			Convey("then a 204 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusNoContent)
-				So(datasetPermissions.CheckPermissions.InvocationCount, ShouldEqual, 1)
-				So(permissions.CheckPermissions.InvocationCount, ShouldEqual, 0)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
