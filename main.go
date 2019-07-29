@@ -139,9 +139,10 @@ func main() {
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
 	auth.LoggerNamespace("dp-dataset-api-auth")
-	datasetpermissions := &auth.NopHandler{}
+	datasetPermissions := &auth.NopHandler{}
+	permissions := &auth.NopHandler{}
 
-	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor, datasetpermissions)
+	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor, datasetPermissions, permissions)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {
