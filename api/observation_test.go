@@ -93,9 +93,10 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			},
 		}
 
-		authHandler := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 
 		Convey("When request contains query parameters where the dimension name is in lower casing", func() {
 			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
@@ -105,7 +106,8 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(w.Body.String(), ShouldContainSubstring, getTestData("expectedDocWithSingleObservation"))
 
-			So(authHandler.Required.Calls, ShouldEqual, 1)
+			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+			So(permissions.Required.Calls, ShouldEqual, 0)
 			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -205,15 +207,17 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			},
 		}
 
-		authHandler := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(w.Body.String(), ShouldContainSubstring, getTestData("expectedDocWithMultipleObservations"))
 
-		So(authHandler.Required.Calls, ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -239,15 +243,17 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		authHandler := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldResemble, "internal error\n")
 
-		So(authHandler.Required.Calls, ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 
@@ -267,15 +273,17 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		authHandler := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
 
-		So(authHandler.Required.Calls, ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 
@@ -295,15 +303,17 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		authHandler := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
 
-		So(authHandler.Required.Calls, ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 
@@ -326,15 +336,17 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		authHandler := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 
-		So(authHandler.Required.Calls, ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -361,14 +373,16 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		authHandler := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 
-		So(authHandler.Required.Calls, ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -395,13 +409,15 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		authHandler := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.Required.Calls, ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -431,14 +447,16 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		authHandler := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
-		So(authHandler.Required.Calls, ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -468,14 +486,16 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		authHandler := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 
-		So(authHandler.Required.Calls, ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -506,13 +526,15 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		authHandler := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(authHandler.Required.Calls, ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -543,15 +565,17 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		authHandler := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "incorrect selection of query parameters: [geography], these dimensions do not exist for this version of the dataset\n")
 
-		So(authHandler.Required.Calls, ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -582,15 +606,17 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		authHandler := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "missing query parameters for the following dimensions: [age]\n")
 
-		So(authHandler.Required.Calls, ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -621,16 +647,18 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		authHandler := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "only one wildcard (*) is allowed as a value in selected query parameters\n")
 
-		So(authHandler.Required.Calls, ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -665,15 +693,17 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		authHandler := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrObservationsNotFound.Error())
 
-		So(authHandler.Required.Calls, ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -729,15 +759,17 @@ func TestGetObservationsReturnsError(t *testing.T) {
 			},
 		}
 
-		authHandler := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "multi-valued query parameters for the following dimensions: [geography]\n")
 
-		So(authHandler.Required.Calls, ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -952,8 +984,9 @@ func TestGetObservationAuditAttemptedError(t *testing.T) {
 		auditor := auditortest.NewErroring(getObservationsAction, audit.Attempted)
 
 		mockedDataStore := &storetest.StorerMock{}
-		authHandler := getAuthorisationHandlerMock()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 
 		Convey("when get observation is called", func() {
 			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
@@ -963,7 +996,8 @@ func TestGetObservationAuditAttemptedError(t *testing.T) {
 
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
-				So(authHandler.Required.Calls, ShouldEqual, 1)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -993,8 +1027,9 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 				},
 			}
 
-			authHandler := getAuthorisationHandlerMock()
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			datasetPermissions := getAuthorisationHandlerMock()
+			permissions := getAuthorisationHandlerMock()
+			api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
 			w := httptest.NewRecorder()
 
@@ -1002,7 +1037,8 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
-				So(authHandler.Required.Calls, ShouldEqual, 1)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
@@ -1027,8 +1063,9 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 				},
 			}
 
-			authHandler := getAuthorisationHandlerMock()
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			datasetPermissions := getAuthorisationHandlerMock()
+			permissions := getAuthorisationHandlerMock()
+			api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
 			w := httptest.NewRecorder()
 
@@ -1036,7 +1073,8 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
-				So(authHandler.Required.Calls, ShouldEqual, 1)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
@@ -1064,8 +1102,9 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 				},
 			}
 
-			authHandler := getAuthorisationHandlerMock()
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			datasetPermissions := getAuthorisationHandlerMock()
+			permissions := getAuthorisationHandlerMock()
+			api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
 			w := httptest.NewRecorder()
 
@@ -1073,7 +1112,8 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
-				So(authHandler.Required.Calls, ShouldEqual, 1)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -1101,8 +1141,9 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 				},
 			}
 
-			authHandler := getAuthorisationHandlerMock()
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			datasetPermissions := getAuthorisationHandlerMock()
+			permissions := getAuthorisationHandlerMock()
+			api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
 			w := httptest.NewRecorder()
 
@@ -1110,7 +1151,8 @@ func TestGetObservationAuditUnsuccessfulError(t *testing.T) {
 
 			Convey("then a 500 response status is returned", func() {
 				assertInternalServerErr(w)
-				So(authHandler.Required.Calls, ShouldEqual, 1)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -1189,8 +1231,9 @@ func TestGetObservationAuditSuccessfulError(t *testing.T) {
 				},
 			}
 
-			authHandler := getAuthorisationHandlerMock()
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
+			datasetPermissions := getAuthorisationHandlerMock()
+			permissions := getAuthorisationHandlerMock()
+			api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			r := httptest.NewRequest("GET", "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=cpi1dim1S40403&geography=K02000001", nil)
 			w := httptest.NewRecorder()
 
@@ -1198,7 +1241,8 @@ func TestGetObservationAuditSuccessfulError(t *testing.T) {
 
 			Convey("then a 500 status response is returned", func() {
 				assertInternalServerErr(w)
-				So(authHandler.Required.Calls, ShouldEqual, 1)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
