@@ -68,10 +68,10 @@ const (
 var (
 	trueStringified = strconv.FormatBool(true)
 
-	createPermission = auth.Permissions{Create: true}
-	readPermission   = auth.Permissions{Read: true}
-	updatePermission = auth.Permissions{Update: true}
-	deletePermission = auth.Permissions{Delete: true}
+	create = auth.Permissions{Create: true}
+	read   = auth.Permissions{Read: true}
+	update = auth.Permissions{Update: true}
+	delete = auth.Permissions{Delete: true}
 )
 
 // PublishCheck Checks if an version has been published
@@ -201,47 +201,47 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints() {
 
 	api.get("/datasets", api.getDatasets)
 
-	getDatasetPrivate := datasetPermissions.Require(readPermission, api.getDataset)
+	getDatasetPrivate := datasetPermissions.Require(read, api.getDataset)
 	api.get("/datasets/{dataset_id}", getDatasetPrivate)
 
-	getEditionsPrivate := datasetPermissions.Require(readPermission, api.getEditions)
+	getEditionsPrivate := datasetPermissions.Require(read, api.getEditions)
 	api.get("/datasets/{dataset_id}/editions", getEditionsPrivate)
 
-	getEditionPrivate := datasetPermissions.Require(readPermission, api.getEdition)
+	getEditionPrivate := datasetPermissions.Require(read, api.getEdition)
 	api.get("/datasets/{dataset_id}/editions/{edition}", getEditionPrivate)
 
-	getVersionsPrivate := datasetPermissions.Require(readPermission, api.getVersions)
+	getVersionsPrivate := datasetPermissions.Require(read, api.getVersions)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions", getVersionsPrivate)
 
-	getVersionPrivate := datasetPermissions.Require(readPermission, api.getVersion)
+	getVersionPrivate := datasetPermissions.Require(read, api.getVersion)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}", getVersionPrivate)
 
-	getMetadataPrivate := datasetPermissions.Require(readPermission, api.getMetadata)
+	getMetadataPrivate := datasetPermissions.Require(read, api.getMetadata)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata", getMetadataPrivate)
 
-	getObservationsPrivate := datasetPermissions.Require(readPermission, api.getObservations)
+	getObservationsPrivate := datasetPermissions.Require(read, api.getObservations)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/observations", getObservationsPrivate)
 
-	getDimensionsPrivate := datasetPermissions.Require(readPermission, api.getDimensions)
+	getDimensionsPrivate := datasetPermissions.Require(read, api.getDimensions)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", getDimensionsPrivate)
 
-	getDimensionOptsPrivate := datasetPermissions.Require(readPermission, api.getDimensionOptions)
+	getDimensionOptsPrivate := datasetPermissions.Require(read, api.getDimensionOptions)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", getDimensionOptsPrivate)
 
-	addDatasetPrivate := identity.Check(auditor, addDatasetAction, datasetPermissions.Require(createPermission, api.addDataset))
+	addDatasetPrivate := identity.Check(auditor, addDatasetAction, datasetPermissions.Require(create, api.addDataset))
 	api.post("/datasets/{dataset_id}", addDatasetPrivate)
 
-	putDatasetPrivate := identity.Check(auditor, updateDatasetAction, datasetPermissions.Require(updatePermission, api.putDataset))
+	putDatasetPrivate := identity.Check(auditor, updateDatasetAction, datasetPermissions.Require(update, api.putDataset))
 	api.put("/datasets/{dataset_id}", putDatasetPrivate)
 
-	deleteDatasetPrivate := identity.Check(auditor, deleteDatasetAction, datasetPermissions.Require(deletePermission, api.deleteDataset))
+	deleteDatasetPrivate := identity.Check(auditor, deleteDatasetAction, datasetPermissions.Require(delete, api.deleteDataset))
 	api.delete("/datasets/{dataset_id}", deleteDatasetPrivate)
 
-	updateVersionPrivate := identity.Check(auditor, updateVersionAction, datasetPermissions.Require(updatePermission, versionPublishChecker.Check(api.putVersion, updateVersionAction)))
+	updateVersionPrivate := identity.Check(auditor, updateVersionAction, datasetPermissions.Require(update, versionPublishChecker.Check(api.putVersion, updateVersionAction)))
 	api.put("/datasets/{dataset_id}/editions/{edition}/versions/{version}", updateVersionPrivate)
 
 	if api.enableDetachDataset {
-		deleteVersionPrivate := identity.Check(auditor, detachVersionAction, datasetPermissions.Require(deletePermission, api.detachVersion))
+		deleteVersionPrivate := identity.Check(auditor, detachVersionAction, datasetPermissions.Require(delete, api.detachVersion))
 		api.delete("/datasets/{dataset_id}/editions/{edition}/versions/{version}", deleteVersionPrivate)
 	}
 }
@@ -295,6 +295,7 @@ func (api *DatasetAPI) delete(path string, handler http.HandlerFunc) {
 	api.Router.HandleFunc(path, handler).Methods("DELETE")
 }
 
+// TODO make private
 // Routes represents a list of endpoints that exist with this api
 func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, auditor Auditor) *DatasetAPI {
 

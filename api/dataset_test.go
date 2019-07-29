@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ONSdigital/dp-authorisation/auth"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -46,17 +45,6 @@ func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {
 	return &mocks.AuthHandlerMock{
 		Required: &mocks.PermissionCheckCalls{Calls: 0},
 	}
-}
-
-// GetAPIWithMockedDatastore also used in other tests, so exported
-func GetAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, auditMock Auditor, authHandler AuthHandler) *DatasetAPI {
-	cfg, err := config.Get()
-	So(err, ShouldBeNil)
-	cfg.ServiceAuthToken = authToken
-	cfg.DatasetAPIURL = host
-	cfg.EnablePrivateEnpoints = true
-
-	return NewDatasetAPI(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, auditMock, authHandler, &auth.NopHandler{})
 }
 
 // GetAPIWithMocks also used in other tests, so exported
