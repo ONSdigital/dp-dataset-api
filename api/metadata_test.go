@@ -40,11 +40,13 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -103,11 +105,13 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -156,11 +160,13 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -187,13 +193,14 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
-
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 
@@ -225,13 +232,15 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
 
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 
@@ -262,13 +271,15 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -299,13 +310,15 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -338,11 +351,13 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			},
 		}
 
+		authHandler := getAuthorisationHandlerMock()
 		auditor := auditortest.New()
-		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
+		So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
@@ -368,11 +383,13 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{}
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+			authHandler := getAuthorisationHandlerMock()
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
@@ -404,11 +421,13 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+			authHandler := getAuthorisationHandlerMock()
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -431,14 +450,15 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 				GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
 					return versionDoc, nil
 				},
-
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+			authHandler := getAuthorisationHandlerMock()
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -466,11 +486,13 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+			authHandler := getAuthorisationHandlerMock()
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
@@ -492,11 +514,13 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+			authHandler := getAuthorisationHandlerMock()
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
@@ -523,11 +547,13 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+			authHandler := getAuthorisationHandlerMock()
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
 				assertInternalServerErr(w)
+				So(authHandler.CheckPermissions.InvocationCount, ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
@@ -558,8 +584,8 @@ func TestGetMetadataAuditingErrors(t *testing.T) {
 					return createPublishedVersionDoc(), nil
 				},
 			}
-
-			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+			authHandler := getAuthorisationHandlerMock()
+			api := GetAPIWithMockedDatastore(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, authHandler)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a 500 status is returned", func() {
