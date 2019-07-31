@@ -3,10 +3,10 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "j9ZjYugph4irPiXC+SLkSTLfxiA=",
+			"checksumSHA1": "iEEi+2XnsfVQZ0YMrMzkjzY6CI4=",
 			"path": "github.com/ONSdigital/dp-authorisation/auth",
-			"revision": "b726a0a28eb64cedd1b9aed8bc5f3f16ae693c11",
-			"revisionTime": "2019-07-18T09:00:32Z"
+			"revision": "a2cba587ed8964b556f64f4918e1ddbeeb60f483",
+			"revisionTime": "2019-07-25T12:26:53Z"
 		},
 		{
 			"checksumSHA1": "QsDPQ6jy7ypJqNUHNTxMWWAA/tw=",

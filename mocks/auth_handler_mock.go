@@ -9,20 +9,20 @@ import (
 type CheckPermissionFunc func(handler http.HandlerFunc) http.HandlerFunc
 
 type AuthHandlerMock struct {
-	CheckPermissions *PermissionCheckCalls
+	Required *PermissionCheckCalls
 }
 
 type PermissionCheckCalls struct {
-	InvocationCount int
+	Calls int
 }
 
 func (a AuthHandlerMock) Require(required auth.Permissions, handler http.HandlerFunc) http.HandlerFunc {
-	return a.CheckPermissions.checkPermissions(handler)
+	return a.Required.checkPermissions(handler)
 }
 
 func (c *PermissionCheckCalls) checkPermissions(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		c.InvocationCount += 1
+		c.Calls += 1
 		h.ServeHTTP(w, r)
 	}
 }

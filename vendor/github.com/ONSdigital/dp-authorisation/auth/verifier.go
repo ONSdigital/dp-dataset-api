@@ -9,8 +9,8 @@ import (
 type PermissionsVerifier struct {
 }
 
-// NewPermissionsVerifier construct a new PermissionsVerifier
-func NewPermissionsVerifier() *PermissionsVerifier {
+// DefaultPermissionsVerifier construct a new PermissionsVerifier
+func DefaultPermissionsVerifier() *PermissionsVerifier {
 	return &PermissionsVerifier{}
 }
 

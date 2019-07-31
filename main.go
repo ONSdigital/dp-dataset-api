@@ -15,8 +15,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-graph/graph"
-	"github.com/gorilla/mux"
-
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/healthcheck"
 	"github.com/ONSdigital/go-ns/kafka"
@@ -140,11 +138,11 @@ func main() {
 
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
-	datasetAuth := &auth.NopHandler{}
+	auth.LoggerNamespace("dp-dataset-api-auth")
+	datasetPermissions := &auth.NopHandler{}
+	permissions := &auth.NopHandler{}
 
-	auth.Configure("dataset_id", mux.Vars, "dp-dataset-api-auth")
-
-	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor, datasetAuth)
+	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor, datasetPermissions, permissions)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {
