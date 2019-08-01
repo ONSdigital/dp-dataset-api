@@ -17,13 +17,11 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/audit/auditortest"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/log"
-	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -1497,8 +1495,11 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 			So(err, ShouldBeNil)
 			cfg.EnablePrivateEnpoints = true
 
+			datasetPermissions := getAuthorisationHandlerMock()
+			permissions := getAuthorisationHandlerMock()
 			auditor := auditortest.New()
-			api := Routes(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockDownloadGenerator, auditor)
+
+			api := GetAPIWithMocks(mockedDataStore, mockDownloadGenerator, auditor, datasetPermissions, permissions)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then an internal server error response is returned", func() {
@@ -1506,6 +1507,9 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 			})
 
 			Convey("and the expected store calls are made with the expected parameters", func() {
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
+
 				genCalls := mockDownloadGenerator.GenerateCalls()
 
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
