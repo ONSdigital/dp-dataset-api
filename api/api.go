@@ -115,6 +115,7 @@ type DatasetAPI struct {
 	datasetPermissions       AuthHandler
 	permissions              AuthHandler
 	instancePublishedChecker *instance.PublishCheck
+	versionPublishedChecker  *PublishCheck
 }
 
 // CreateDatasetAPI manages all the routes configured to API
@@ -167,7 +168,16 @@ func NewDatasetAPI(cfg config.Configuration, router *mux.Router, dataStore store
 
 	if api.enablePrivateEndpoints {
 		log.Info("enabling private endpoints for dataset api", nil)
-		api.enablePrivateDatasetEndpoints()
+
+		api.versionPublishedChecker = &PublishCheck{
+			Auditor:   auditor,
+			Datastore: api.dataStore.Backend,
+		}
+
+		api.instancePublishedChecker = &instance.PublishCheck{
+			Auditor:   api.auditor,
+			Datastore: api.dataStore.Backend,
+		}
 
 		instanceAPI := instance.Store{
 			Host:                api.host,
@@ -175,11 +185,15 @@ func NewDatasetAPI(cfg config.Configuration, router *mux.Router, dataStore store
 			Auditor:             api.auditor,
 			EnableDetachDataset: api.enablePrivateEndpoints,
 		}
+
+		dimensionAPI := dimension.Store{
+			Auditor: api.auditor,
+			Storer:  api.dataStore.Backend,
+		}
+
+		api.enablePrivateDatasetEndpoints()
 		api.enablePrivateInstancesEndpoints(instanceAPI)
-
-		dimensionAPI := dimension.Store{Auditor: api.auditor, Storer: api.dataStore.Backend}
 		api.enablePrivateDimensionsEndpoints(dimensionAPI)
-
 	} else {
 		log.Info("enabling only public endpoints for dataset api", nil)
 		api.enablePublicEndpoints()
@@ -201,71 +215,95 @@ func (api *DatasetAPI) enablePublicEndpoints() {
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", api.getDimensionOptions)
 }
 
+// enablePrivateDatasetEndpoints register the datasets endpoints with the appropriate authentication and authorisation
+// checks required when running the dataset API in publishing (private) mode.
 func (api *DatasetAPI) enablePrivateDatasetEndpoints() {
-	auditor := api.auditor
-
-	datasetPermissions := api.datasetPermissions
-
-	versionPublishChecker := PublishCheck{
-		Auditor:   auditor,
-		Datastore: api.dataStore.Backend,
-	}
-
-	api.instancePublishedChecker = &instance.PublishCheck{
-		Auditor:   auditor,
-		Datastore: api.dataStore.Backend,
-	}
-
 	api.get(
 		"/datasets",
 		api.isAuthorised(read, api.getDatasets),
 	)
 
-	getDatasetPrivate := datasetPermissions.Require(read, api.getDataset)
-	api.get("/datasets/{dataset_id}", getDatasetPrivate)
+	api.get(
+		"/datasets/{dataset_id}",
+		api.isAuthorisedForDatasets(read, api.getDataset),
+	)
 
-	getEditionsPrivate := datasetPermissions.Require(read, api.getEditions)
-	api.get("/datasets/{dataset_id}/editions", getEditionsPrivate)
+	api.get(
+		"/datasets/{dataset_id}/editions",
+		api.isAuthorisedForDatasets(read, api.getEditions),
+	)
 
-	getEditionPrivate := datasetPermissions.Require(read, api.getEdition)
-	api.get("/datasets/{dataset_id}/editions/{edition}", getEditionPrivate)
+	api.get(
+		"/datasets/{dataset_id}/editions/{edition}",
+		api.isAuthorisedForDatasets(read, api.getEdition),
+	)
 
-	getVersionsPrivate := datasetPermissions.Require(read, api.getVersions)
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions", getVersionsPrivate)
+	api.get(
+		"/datasets/{dataset_id}/editions/{edition}/versions",
+		api.isAuthorisedForDatasets(read, api.getVersions),
+	)
 
-	getVersionPrivate := datasetPermissions.Require(read, api.getVersion)
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}", getVersionPrivate)
+	api.get(
+		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
+		api.isAuthorisedForDatasets(read, api.getVersion),
+	)
 
-	getMetadataPrivate := datasetPermissions.Require(read, api.getMetadata)
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata", getMetadataPrivate)
+	api.get(
+		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata",
+		api.isAuthorisedForDatasets(read, api.getMetadata),
+	)
 
-	getObservationsPrivate := datasetPermissions.Require(read, api.getObservations)
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/observations", getObservationsPrivate)
+	api.get(
+		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/observations",
+		api.isAuthorisedForDatasets(read, api.getObservations),
+	)
 
-	getDimensionsPrivate := datasetPermissions.Require(read, api.getDimensions)
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", getDimensionsPrivate)
+	api.get(
+		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions",
+		api.isAuthorisedForDatasets(read, api.getDimensions),
+	)
 
-	getDimensionOptsPrivate := datasetPermissions.Require(read, api.getDimensionOptions)
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", getDimensionOptsPrivate)
+	api.get(
+		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options",
+		api.isAuthorisedForDatasets(read, api.getDimensionOptions),
+	)
 
-	addDatasetPrivate := identity.Check(auditor, addDatasetAction, datasetPermissions.Require(create, api.addDataset))
-	api.post("/datasets/{dataset_id}", addDatasetPrivate)
+	api.post(
+		"/datasets/{dataset_id}",
+		api.isAuthenticated(addDatasetAction,
+			api.isAuthorisedForDatasets(create, api.addDataset)),
+	)
 
-	putDatasetPrivate := identity.Check(auditor, updateDatasetAction, datasetPermissions.Require(update, api.putDataset))
-	api.put("/datasets/{dataset_id}", putDatasetPrivate)
+	api.put(
+		"/datasets/{dataset_id}",
+		api.isAuthenticated(updateDatasetAction,
+			api.isAuthorisedForDatasets(update, api.putDataset)),
+	)
 
-	deleteDatasetPrivate := identity.Check(auditor, deleteDatasetAction, datasetPermissions.Require(delete, api.deleteDataset))
-	api.delete("/datasets/{dataset_id}", deleteDatasetPrivate)
+	api.delete(
+		"/datasets/{dataset_id}",
+		api.isAuthenticated(deleteDatasetAction,
+			api.isAuthorisedForDatasets(delete, api.deleteDataset)),
+	)
 
-	updateVersionPrivate := identity.Check(auditor, updateVersionAction, datasetPermissions.Require(update, versionPublishChecker.Check(api.putVersion, updateVersionAction)))
-	api.put("/datasets/{dataset_id}/editions/{edition}/versions/{version}", updateVersionPrivate)
+	api.put(
+		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
+		api.isAuthenticated(updateVersionAction,
+			api.isAuthorisedForDatasets(update,
+				api.isVersionPublished(updateVersionAction, api.putVersion))),
+	)
 
 	if api.enableDetachDataset {
-		deleteVersionPrivate := identity.Check(auditor, detachVersionAction, datasetPermissions.Require(delete, api.detachVersion))
-		api.delete("/datasets/{dataset_id}/editions/{edition}/versions/{version}", deleteVersionPrivate)
+		api.delete(
+			"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
+			api.isAuthenticated(detachVersionAction,
+				api.isAuthorisedForDatasets(delete, api.detachVersion)),
+		)
 	}
 }
 
+// enablePrivateDatasetEndpoints register the instance endpoints with the appropriate authentication and authorisation
+// checks required when running the dataset API in publishing (private) mode.
 func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI instance.Store) {
 	api.get(
 		"/instances",
@@ -320,6 +358,8 @@ func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI instance.Stor
 	)
 }
 
+// enablePrivateDatasetEndpoints register the dimenions endpoints with the appropriate authentication and authorisation
+// checks required when running the dataset API in publishing (private) mode.
 func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI dimension.Store) {
 	api.get(
 		"/instances/{instance_id}/dimensions",
@@ -348,73 +388,63 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI dimension.S
 	)
 }
 
-/*func (api *DatasetAPI) enablePrivateInstancesEndpoints() {
-	auditor := api.auditor
-
-	instanceAPI := instance.Store{
-		Host:                api.host,
-		Storer:              api.dataStore.Backend,
-		Auditor:             auditor,
-		EnableDetachDataset: api.enablePrivateEndpoints,
-	}
-
-	instancePublishChecker := instance.PublishCheck{
-		Auditor:   auditor,
-		Datastore: api.dataStore.Backend,
-	}
-
-	api.Router.HandleFunc("/instances", identity.Check(auditor, instance.GetInstancesAction, instanceAPI.GetList)).Methods("GET")
-	api.Router.HandleFunc("/instances", identity.Check(auditor, instance.AddInstanceAction, instanceAPI.Add)).Methods("POST")
-	api.Router.HandleFunc("/instances/{instance_id}", identity.Check(auditor, instance.GetInstanceAction, instanceAPI.Get)).Methods("GET")
-	api.Router.HandleFunc("/instances/{instance_id}", identity.Check(auditor, instance.UpdateInstanceAction, instancePublishChecker.Check(instanceAPI.Update, instance.UpdateInstanceAction))).Methods("PUT")
-	api.Router.HandleFunc("/instances/{instance_id}/dimensions/{dimension}", identity.Check(auditor, instance.UpdateDimensionAction, instancePublishChecker.Check(instanceAPI.UpdateDimension, instance.UpdateDimensionAction))).Methods("PUT")
-	api.Router.HandleFunc("/instances/{instance_id}/events", identity.Check(auditor, instance.AddInstanceEventAction, instanceAPI.AddEvent)).Methods("POST")
-	api.Router.HandleFunc("/instances/{instance_id}/inserted_observations/{inserted_observations}", identity.Check(auditor, instance.UpdateInsertedObservationsAction, instancePublishChecker.Check(instanceAPI.UpdateObservations, instance.UpdateInsertedObservationsAction))).Methods("PUT")
-	api.Router.HandleFunc("/instances/{instance_id}/import_tasks", identity.Check(auditor, instance.UpdateImportTasksAction, instancePublishChecker.Check(instanceAPI.UpdateImportTask, instance.UpdateImportTasksAction))).Methods("PUT")
-
-	dimensionAPI := dimension.Store{Auditor: auditor, Storer: api.dataStore.Backend}
-	api.Router.HandleFunc("/instances/{instance_id}/dimensions", identity.Check(auditor, dimension.GetDimensions, dimensionAPI.GetDimensionsHandler)).Methods("GET")
-	api.Router.HandleFunc("/instances/{instance_id}/dimensions", identity.Check(auditor, dimension.AddDimensionAction, instancePublishChecker.Check(dimensionAPI.AddHandler, dimension.AddDimensionAction))).Methods("POST")
-	api.Router.HandleFunc("/instances/{instance_id}/dimensions/{dimension}/options", identity.Check(auditor, dimension.GetUniqueDimensionAndOptionsAction, dimensionAPI.GetUniqueDimensionAndOptionsHandler)).Methods("GET")
-	api.Router.HandleFunc("/instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}",
-		identity.Check(auditor, dimension.UpdateNodeIDAction, instancePublishChecker.Check(dimensionAPI.AddNodeIDHandler, dimension.UpdateNodeIDAction))).Methods("PUT")
-}*/
-
-func (api *DatasetAPI) isInstancePublished(action string, handler http.HandlerFunc) http.HandlerFunc {
-	return api.instancePublishedChecker.Check(handler, action)
-}
-
-func (api *DatasetAPI) isDatasetAuthorised(required auth.Permissions, handler http.HandlerFunc) http.HandlerFunc {
-	return api.datasetPermissions.Require(required, handler)
-}
-
-func (api *DatasetAPI) isAuthorised(required auth.Permissions, handler http.HandlerFunc) http.HandlerFunc {
-	return api.permissions.Require(required, handler)
-}
-
+// isAuthenticated wraps a http handler func in another http handler func that checks the caller is authenticated to
+// perform the requested action action. action is the audit event name, handler is the http.HandlerFunc to wrap in an
+// authentication check. The wrapped handler is only called is the caller is authenticated
 func (api *DatasetAPI) isAuthenticated(action string, handler http.HandlerFunc) http.HandlerFunc {
 	return identity.Check(api.auditor, action, handler)
 }
 
+// isAuthorised wraps a http.HandlerFunc another http.HandlerFunc that checks the caller is authorised to perform the
+// requested action. required is the permissions required to perform the action, handler is the http.HandlerFunc to
+// apply the check to. The wrapped handler is only called if the caller has the required permissions.
+func (api *DatasetAPI) isAuthorised(required auth.Permissions, handler http.HandlerFunc) http.HandlerFunc {
+	return api.permissions.Require(required, handler)
+}
+
+// isAuthorised wraps a http.HandlerFunc another http.HandlerFunc that checks the caller is authorised to perform the
+// requested datasets action. This authorisation check is specific to datastes. required is the permissions required to
+// perform the action, handler is the http.HandlerFunc to apply the check to. The wrapped handler is only called if the
+// caller has the required dataset permissions.
+func (api *DatasetAPI) isAuthorisedForDatasets(required auth.Permissions, handler http.HandlerFunc) http.HandlerFunc {
+	return api.datasetPermissions.Require(required, handler)
+}
+
+// isInstancePublished wraps a http.HandlerFunc checking the instance state. The wrapped handler is only invoked if the
+// requested instance is not in a published state.
+func (api *DatasetAPI) isInstancePublished(action string, handler http.HandlerFunc) http.HandlerFunc {
+	return api.instancePublishedChecker.Check(handler, action)
+}
+
+// isInstancePublished wraps a http.HandlerFunc checking the version state. The wrapped handler is only invoked if the
+// requested version is not in a published state.
+func (api *DatasetAPI) isVersionPublished(action string, handler http.HandlerFunc) http.HandlerFunc {
+	return api.versionPublishedChecker.Check(handler, action)
+}
+
+// get register a GET http.HandlerFunc.
 func (api *DatasetAPI) get(path string, handler http.HandlerFunc) {
 	api.Router.HandleFunc(path, handler).Methods("GET")
 }
 
+// get register a PUT http.HandlerFunc.
 func (api *DatasetAPI) put(path string, handler http.HandlerFunc) {
 	api.Router.HandleFunc(path, handler).Methods("PUT")
 }
 
+// get register a POST http.HandlerFunc.
 func (api *DatasetAPI) post(path string, handler http.HandlerFunc) {
 	api.Router.HandleFunc(path, handler).Methods("POST")
 }
 
+// get register a DELETE http.HandlerFunc.
 func (api *DatasetAPI) delete(path string, handler http.HandlerFunc) {
 	api.Router.HandleFunc(path, handler).Methods("DELETE")
 }
 
 // TODO make private
 // Routes represents a list of endpoints that exist with this api
-func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, auditor Auditor) *DatasetAPI {
+/*func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, auditor Auditor) *DatasetAPI {
 
 	api := DatasetAPI{
 		dataStore:            dataStore,
@@ -474,7 +504,7 @@ func Routes(cfg config.Configuration, router *mux.Router, dataStore store.DataSt
 			identity.Check(auditor, dimension.UpdateNodeIDAction, instancePublishChecker.Check(dimensionAPI.AddNodeIDHandler, dimension.UpdateNodeIDAction))).Methods("PUT")
 	}
 	return &api
-}
+}*/
 
 // Check wraps a HTTP handle. Checks that the state is not published
 func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), action string) http.HandlerFunc {
