@@ -1297,16 +1297,6 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 
 var urlBuilder = url.NewBuilder("localhost:20000")
 
-func getAPIWithMockedDatastore(mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, mockAuditor api.Auditor) *api.DatasetAPI {
-	cfg, err := config.Get()
-	So(err, ShouldBeNil)
-	cfg.ServiceAuthToken = "dataset"
-	cfg.DatasetAPIURL = "http://localhost:22000"
-	cfg.EnablePrivateEnpoints = true
-
-	return api.NewDatasetAPI(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockAuditor, mocks.NewAuthHandlerMock(), mocks.NewAuthHandlerMock())
-}
-
 func getAPIWithMocks(mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, mockAuditor api.Auditor, datasetPermissions api.AuthHandler, permissions api.AuthHandler) *api.DatasetAPI {
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)
