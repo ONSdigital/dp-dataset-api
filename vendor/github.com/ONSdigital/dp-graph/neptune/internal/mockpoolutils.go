@@ -3,7 +3,7 @@ package internal
 import (
 	"fmt"
 
-	"github.com/gedge/graphson"
+	"github.com/ONSdigital/graphson"
 )
 
 /*
@@ -41,9 +41,9 @@ var ReturnMalformedIntRequestErr = func(q string, bindings, rebindings map[strin
 }
 
 // ReturnMalformedNilInterfaceRequestErr is a mock implementation for
-// NeptunePool functions that return  (Interface{}, error) which always returns an
+// NeptunePool functions that return  ([]graphson.Vertex, error) which always returns an
 // error that is judged to be not transient by neptune.isTransientError
-var ReturnMalformedNilInterfaceRequestErr = func(q string, bindings, rebindings map[string]string) (interface{}, error) {
+var ReturnMalformedNilInterfaceRequestErr = func(q string, bindings, rebindings map[string]string) ([]graphson.Vertex, error) {
 	return nil, errors.New(" MALFORMED REQUEST ")
 }
 
@@ -59,7 +59,7 @@ var ReturnMalformedStringListRequestErr = func(q string, bindings, rebindings ma
 // - of type "_code_list"
 // - with a "listID" property set to "listID_0", "listID_1", and "ListID_2" respectively.
 // - with an "edition" property set to "my-test-edition"
-var ReturnThreeCodeLists = func(query string, bindings map[string]string, rebindings map[string]string) (interface{}, error) {
+var ReturnThreeCodeLists = func(query string, bindings map[string]string, rebindings map[string]string) ([]graphson.Vertex, error) {
 	codeLists := []graphson.Vertex{}
 	for i := 0; i < 3; i++ {
 		vertex := makeCodeListVertex(i, "my-test-edition")
@@ -72,7 +72,7 @@ var ReturnThreeCodeLists = func(query string, bindings map[string]string, rebind
 // returns a slice of three graphson.Vertex(s):
 // - of type "unused-vertex-type"
 // - with a an "edition" property set to "edition_0", "edition_1", and "edition_2" respectively.
-var ReturnThreeEditionVertices = func(query string, bindings map[string]string, rebindings map[string]string) (interface{}, error) {
+var ReturnThreeEditionVertices = func(query string, bindings map[string]string, rebindings map[string]string) ([]graphson.Vertex, error) {
 	editions := []graphson.Vertex{}
 	for i := 0; i < 3; i++ {
 		vertex := makeVertex("unused-vertex-type")
@@ -86,7 +86,7 @@ var ReturnThreeEditionVertices = func(query string, bindings map[string]string, 
 // returns a slice of three graphson.Vertex(s):
 // - of type "unused-vertex-type"
 // - with a "value" property set to "code_0", "code_1", and "code_2" respectively.
-var ReturnThreeCodeVertices = func(query string, bindings map[string]string, rebindings map[string]string) (interface{}, error) {
+var ReturnThreeCodeVertices = func(query string, bindings map[string]string, rebindings map[string]string) ([]graphson.Vertex, error) {
 	codes := []graphson.Vertex{}
 	for i := 0; i < 3; i++ {
 		vertex := makeVertex("unused-vertex-type")
@@ -99,7 +99,7 @@ var ReturnThreeCodeVertices = func(query string, bindings map[string]string, reb
 // ReturnThreeUselessVertices is mock implementation for NeptunePool.Get() that always
 // returns a slice of three graphson.Vertex(s) of type "_useless_vertex_type", and with
 // no properties set.
-var ReturnThreeUselessVertices = func(query string, bindings map[string]string, rebindings map[string]string) (interface{}, error) {
+var ReturnThreeUselessVertices = func(query string, bindings map[string]string, rebindings map[string]string) ([]graphson.Vertex, error) {
 	codeLists := []graphson.Vertex{}
 	for i := 0; i < 3; i++ {
 		vertex := makeVertex("_useless_vertex_type")
@@ -109,7 +109,7 @@ var ReturnThreeUselessVertices = func(query string, bindings map[string]string, 
 }
 
 // ReturnZeroVertices provides an empty list of graphson.Vertex(s)
-var ReturnZeroVertices = func(query string, bindings map[string]string, rebindings map[string]string) (interface{}, error) {
+var ReturnZeroVertices = func(query string, bindings map[string]string, rebindings map[string]string) ([]graphson.Vertex, error) {
 	return []graphson.Vertex{}, nil
 }
 

@@ -13,7 +13,7 @@ test:
 
 .PHONY: test-bench
 test-bench:
-	@go test -bench=. -race
+	@go test -v -bench=. -race
 
 .PHONY: gremlin
 gremlin:

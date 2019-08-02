@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ONSdigital/dp-graph/graph/driver"
 	"github.com/ONSdigital/dp-graph/neptune/query"
 	"github.com/ONSdigital/dp-hierarchy-api/models"
 	"github.com/ONSdigital/go-ns/log"
-	"github.com/gedge/graphson"
+	"github.com/ONSdigital/graphson"
 )
 
 func (n *NeptuneDB) CreateInstanceHierarchyConstraints(ctx context.Context, attempt int, instanceID, dimensionName string) error {
@@ -31,7 +32,7 @@ func (n *NeptuneDB) CloneNodes(ctx context.Context, attempt int, instanceID, cod
 	log.Debug("cloning nodes from the generic hierarchy", logData)
 
 	if _, err = n.getVertices(gremStmt); err != nil {
-		log.ErrorC("get", err, logData)
+		log.ErrorC("cannot get vertices during cloning", err, logData)
 		return
 	}
 
@@ -49,7 +50,7 @@ func (n *NeptuneDB) CountNodes(ctx context.Context, instanceID, dimensionName st
 	log.Debug("counting nodes in the new instance hierarchy", logData)
 
 	if count, err = n.getNumber(gremStmt); err != nil {
-		log.ErrorC("getNumber", err, logData)
+		log.ErrorC("cannot count nodes in a hierarchy", err, logData)
 		return
 	}
 	return
@@ -74,7 +75,7 @@ func (n *NeptuneDB) CloneRelationships(ctx context.Context, attempt int, instanc
 	log.Debug("cloning relationships from the generic hierarchy", logData)
 
 	if _, err = n.getEdges(gremStmt); err != nil {
-		log.ErrorC("getEdges", err, logData)
+		log.ErrorC("cannot find edges while cloning relationships", err, logData)
 		return
 	}
 
@@ -96,7 +97,7 @@ func (n *NeptuneDB) RemoveCloneEdges(ctx context.Context, attempt int, instanceI
 	log.Debug("removing edges to generic hierarchy", logData)
 
 	if _, err = n.exec(gremStmt); err != nil {
-		log.ErrorC("exec", err, logData)
+		log.ErrorC("exec failed while removing edges during removal of unwanted cloned edges", err, logData)
 		return
 	}
 	return
@@ -119,7 +120,7 @@ func (n *NeptuneDB) SetNumberOfChildren(ctx context.Context, attempt int, instan
 	log.Debug("setting number-of-children property value on the instance hierarchy nodes", logData)
 
 	if _, err = n.getVertices(gremStmt); err != nil {
-		log.ErrorC("getV", err, logData)
+		log.ErrorC("cannot find vertices while settting nChildren on hierarchy nodes", err, logData)
 		return
 	}
 
@@ -144,7 +145,7 @@ func (n *NeptuneDB) SetHasData(ctx context.Context, attempt int, instanceID, dim
 	log.Debug("setting has-data property on the instance hierarchy", logData)
 
 	if _, err = n.getVertices(gremStmt); err != nil {
-		log.ErrorC("getV", err, logData)
+		log.ErrorC("cannot find vertices while setting hasData on hierarchy nodes", err, logData)
 		return
 	}
 
@@ -168,7 +169,7 @@ func (n *NeptuneDB) MarkNodesToRemain(ctx context.Context, attempt int, instance
 	log.Debug("marking nodes to remain after trimming sparse branches", logData)
 
 	if _, err = n.getVertices(gremStmt); err != nil {
-		log.ErrorC("getV", err, logData)
+		log.ErrorC("cannot find vertices while marking hierarchy nodes to keep", err, logData)
 		return
 	}
 
@@ -186,7 +187,7 @@ func (n *NeptuneDB) RemoveNodesNotMarkedToRemain(ctx context.Context, attempt in
 	log.Debug("removing nodes not marked to remain after trimming sparse branches", logData)
 
 	if _, err = n.exec(gremStmt); err != nil {
-		log.ErrorC("exec", err, logData)
+		log.ErrorC("exec query failed while removing hierarchy nodes to cull", err, logData)
 		return
 	}
 	return
@@ -203,7 +204,7 @@ func (n *NeptuneDB) RemoveRemainMarker(ctx context.Context, attempt int, instanc
 	log.Debug("removing the remain property from the nodes that remain", logData)
 
 	if _, err = n.exec(gremStmt); err != nil {
-		log.ErrorC("exec", err, logData)
+		log.ErrorC("exec query failed while removing spent remain markers from hierarchy nodes", err, logData)
 		return
 	}
 	return
@@ -220,11 +221,11 @@ func (n *NeptuneDB) GetHierarchyCodelist(ctx context.Context, instanceID, dimens
 
 	var vertex graphson.Vertex
 	if vertex, err = n.getVertex(gremStmt); err != nil {
-		log.ErrorC("get", err, logData)
+		log.ErrorC("cannot get vertices  while searching for code list node related to hierarchy node", err, logData)
 		return
 	}
 	if codelistID, err = vertex.GetProperty("code_list"); err != nil {
-		log.ErrorC("bad prop", err, logData)
+		log.ErrorC("cannot read code_list property from node", err, logData)
 		return
 	}
 	return
@@ -239,13 +240,29 @@ func (n *NeptuneDB) GetHierarchyRoot(ctx context.Context, instanceID, dimension 
 		"dimension_name": dimension,
 	}
 
-	var vertex graphson.Vertex
-	if vertex, err = n.getVertex(gremStmt); err != nil {
-		log.ErrorC("get", err, logData)
+	var vertices []graphson.Vertex
+	if vertices, err = n.getVertices(gremStmt); err != nil {
+		log.ErrorC("getVertices failed: cannot find hierarchy root node candidates ", err, logData)
 		return
 	}
-	if node, err = n.convertVertexToResponse(vertex, instanceID, dimension); err != nil {
-		log.ErrorC("conv", err, logData)
+	if len(vertices) == 0 {
+		err = driver.ErrNotFound
+		log.ErrorC("Cannot find hierarchy root node", err, logData)
+		return
+	}
+	if len(vertices) > 1 {
+		err = driver.ErrMultipleFound
+		log.ErrorC("Cannot identify hierarchy root node because are multiple candidates", err, logData)
+		return
+	}
+	var vertex graphson.Vertex
+	vertex = vertices[0]
+	// Note the call to buildHierarchyNodeFromGraphsonVertex below does much more than meets the eye,
+	// including launching new queries in of itself to fetch child nodes, and
+	// breadcrumb nodes.
+	wantBreadcrumbs := false // Because meaningless for a root node
+	if node, err = n.buildHierarchyNodeFromGraphsonVertex(vertex, instanceID, dimension, wantBreadcrumbs); err != nil {
+		log.ErrorC("Cannot extract related information needed from hierarchy node", err, logData)
 		return
 	}
 	return
@@ -263,11 +280,15 @@ func (n *NeptuneDB) GetHierarchyElement(ctx context.Context, instanceID, dimensi
 
 	var vertex graphson.Vertex
 	if vertex, err = n.getVertex(gremStmt); err != nil {
-		log.ErrorC("get", err, logData)
+		log.ErrorC("Cannot find vertex when looking for specific hierarchy node", err, logData)
 		return
 	}
-	if node, err = n.convertVertexToResponse(vertex, instanceID, dimension); err != nil {
-		log.ErrorC("conv", err, logData)
+	// Note the call to buildHierarchyNodeFromGraphsonVertex below does much more than meets the eye,
+	// including launching new queries in of itself to fetch child nodes, and
+	// breadcrumb nodes.
+	wantBreadcrumbs := true // Because we are at depth in the hierarchy
+	if node, err = n.buildHierarchyNodeFromGraphsonVertex(vertex, instanceID, dimension, wantBreadcrumbs); err != nil {
+		log.ErrorC("Cannot extract related information needed from hierarchy node", err, logData)
 		return
 	}
 	return

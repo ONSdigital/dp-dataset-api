@@ -11,7 +11,7 @@ import (
 
 	"github.com/ONSdigital/dp-graph/neptune/driver"
 	"github.com/ONSdigital/go-ns/log"
-	"github.com/gedge/graphson"
+	"github.com/ONSdigital/graphson"
 )
 
 type NeptuneDB struct {
@@ -105,7 +105,6 @@ func (n *NeptuneDB) getStringList(gremStmt string) (strings []string, err error)
 	err = ErrAttemptsExceededLimit{err}
 	return
 }
-
 
 func (n *NeptuneDB) getVertex(gremStmt string) (vertex graphson.Vertex, err error) {
 	logData := log.Data{"fn": "getVertex", "statement": gremStmt}

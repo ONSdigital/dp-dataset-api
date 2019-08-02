@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gedge/graphson"
+	"github.com/ONSdigital/graphson"
 	"github.com/pkg/errors"
 )
 
@@ -382,7 +382,7 @@ func (p *Pool) AddVertexCtx(ctx context.Context, label string, i interface{}, bi
 }
 
 // Get
-func (p *Pool) Get(query string, bindings, rebindings map[string]string) (resp interface{}, err error) {
+func (p *Pool) Get(query string, bindings, rebindings map[string]string) (resp []graphson.Vertex, err error) {
 	var pc *conn
 	if pc, err = p.conn(); err != nil {
 		return resp, errors.Wrap(err, "Failed p.conn")
@@ -392,13 +392,24 @@ func (p *Pool) Get(query string, bindings, rebindings map[string]string) (resp i
 }
 
 // GetCtx
-func (p *Pool) GetCtx(ctx context.Context, query string, bindings, rebindings map[string]string) (resp interface{}, err error) {
+func (p *Pool) GetCtx(ctx context.Context, query string, bindings, rebindings map[string]string) (resp []graphson.Vertex, err error) {
 	var pc *conn
 	if pc, err = p.connCtx(ctx); err != nil {
 		return resp, errors.Wrap(err, "GetCtx: Failed p.connCtx")
 	}
 	defer p.putConn(pc, err)
 	return pc.Client.GetCtx(ctx, query, bindings, rebindings)
+}
+
+// OpenStreamCursor initiates a query on the database, returning a stream to iterate over the results
+func (p *Pool) OpenStreamCursor(ctx context.Context, query string, bindings, rebindings map[string]string) (stream *Stream, err error) {
+	var pc *conn
+	if pc, err = p.connCtx(ctx); err != nil {
+		err = errors.Wrap(err, "OpenStreamCursor: Failed p.connCtx")
+		return
+	}
+	defer p.putConn(pc, err)
+	return pc.Client.OpenStreamCursor(ctx, query, bindings, rebindings)
 }
 
 // OpenCursorCtx initiates a query on the database, returning a cursor to iterate over the results

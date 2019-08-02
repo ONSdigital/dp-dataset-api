@@ -1,5 +1,9 @@
-github.com/gedge/graphson v0.0.0-20190531092426-d39cb8fe4384 h1:WnFZkCrqH8PJFxQtp3EG0GKcEneNwqS3hzYDr6d7ctE=
-github.com/gedge/graphson v0.0.0-20190531092426-d39cb8fe4384/go.mod h1:Ehgz7wAEVmSkFMIY2WFsi33IZXvzrgBVsro51AEIkq0=
+github.com/ONSdigital/graphson v0.0.0-20190531092426-d39cb8fe4384 h1:tQOaBPntKLKJZYNTqT6YwE9fXZZLD0jBrke18nAJV5w=
+github.com/ONSdigital/graphson v0.0.0-20190531092426-d39cb8fe4384/go.mod h1:zQ+8pTnCLGuy4eUek81pWUxZo4/f71ri3VYz97Wby+4=
+github.com/ONSdigital/graphson v0.0.0-20190717101729-324718b3a644 h1:qlXGwzq+X2DUd0iOYmkXwnSxYDeU1efFwp7sUXASjO0=
+github.com/ONSdigital/graphson v0.0.0-20190717101729-324718b3a644/go.mod h1:zQ+8pTnCLGuy4eUek81pWUxZo4/f71ri3VYz97Wby+4=
+github.com/ONSdigital/graphson v0.0.0-20190718134034-c13ceacd109d h1:yrCtEGlohmA3OnXtke0nOOp/m9O83orpSnTGOfYOw1Q=
+github.com/ONSdigital/graphson v0.0.0-20190718134034-c13ceacd109d/go.mod h1:zQ+8pTnCLGuy4eUek81pWUxZo4/f71ri3VYz97Wby+4=
 github.com/gofrs/uuid v3.2.0+incompatible h1:y12jRkkFxsd7GpqdSZ+/KCs/fJbqpEXSGd4+jfEaewE=
 github.com/gofrs/uuid v3.2.0+incompatible/go.mod h1:b2aQJv3Z4Fp6yNu3cdSllBxTCLRxnplIgP/c0N/04lM=
 github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 h1:EGx4pi6eqNxGaHF6qqu48+N2wcFQ5qg5FXgOdqsJ5d8=

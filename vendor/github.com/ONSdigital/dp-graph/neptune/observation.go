@@ -2,24 +2,27 @@ package neptune
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
+	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/ONSdigital/dp-graph/neptune/query"
 	"github.com/ONSdigital/dp-graph/observation"
 	"github.com/ONSdigital/dp-observation-importer/models"
+	"github.com/ONSdigital/go-ns/log"
 )
 
-// ErrEmptyFilter is returned if the provided filter is empty.
-var ErrEmptyFilter = errors.New("filter is empty")
+// ErrInvalidFilter is returned if the provided filter is nil.
+var ErrInvalidFilter = errors.New("nil filter cannot be processed")
 
 func (n *NeptuneDB) StreamCSVRows(ctx context.Context, filter *observation.Filter, limit *int) (observation.StreamRowReader, error) {
 	if filter == nil {
-		return nil, ErrEmptyFilter
+		return nil, ErrInvalidFilter
 	}
 
-	q := fmt.Sprintf(query.GetInstanceHeader, filter.InstanceID)
+	q := fmt.Sprintf(query.GetInstanceHeaderPart, filter.InstanceID)
 
 	q += buildObservationsQuery(filter)
 	q += query.GetObservationSelectRowPart
@@ -28,7 +31,7 @@ func (n *NeptuneDB) StreamCSVRows(ctx context.Context, filter *observation.Filte
 		q += fmt.Sprintf(query.LimitPart, *limit)
 	}
 
-	return n.Pool.OpenCursorCtx(ctx, q, nil, nil)
+	return n.Pool.OpenStreamCursor(ctx, q, nil, nil)
 }
 
 func buildObservationsQuery(f *observation.Filter) string {
@@ -57,6 +60,51 @@ func buildObservationsQuery(f *observation.Filter) string {
 	return q
 }
 
+// TODO: this global state is only used for metrics, not actual code flow,
+// but should be revisited before production use
+var batchCount = 0
+var totalTime time.Time
+
 func (n *NeptuneDB) InsertObservationBatch(ctx context.Context, attempt int, instanceID string, observations []*models.Observation, dimensionIDs map[string]string) error {
+	if len(observations) == 0 {
+		fmt.Println("range should be empty")
+		return nil
+	}
+
+	c := batchCount
+	batchCount++
+	batchStart := time.Now()
+	if totalTime.IsZero() {
+		totalTime = batchStart
+	} else {
+		log.Info("opening batch", log.Data{"size": len(observations), "batchID": c})
+	}
+
+	var create string
+	for _, o := range observations {
+		create += fmt.Sprintf(query.DropObservationRelationships, instanceID, o.Row)
+		create += fmt.Sprintf(query.DropObservation, instanceID, o.Row)
+		create += fmt.Sprintf(query.CreateObservationPart, instanceID, o.Row, o.RowIndex)
+		for _, d := range o.DimensionOptions {
+			dimensionName := strings.ToLower(d.DimensionName)
+			dimensionLookup := instanceID + "_" + dimensionName + "_" + d.Name
+
+			nodeID, ok := dimensionIDs[dimensionLookup]
+			if !ok {
+				return fmt.Errorf("no nodeID [%s] found in dimension map", dimensionLookup)
+			}
+
+			create += fmt.Sprintf(query.AddObservationRelationshipPart, nodeID, instanceID, d.DimensionName, d.Name)
+		}
+
+		create = strings.TrimSuffix(create, ".outV()")
+		create += ".iterate() "
+	}
+
+	if _, err := n.exec(create); err != nil {
+		return err
+	}
+
+	log.Info("batch complete", log.Data{"batchID": c, "elapsed": time.Since(totalTime), "batchTime": time.Since(batchStart)})
 	return nil
 }
