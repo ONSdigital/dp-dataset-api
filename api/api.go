@@ -225,7 +225,8 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints() {
 
 	api.get(
 		"/datasets/{dataset_id}",
-		api.isAuthorisedForDatasets(read, api.getDataset),
+		api.isAuthorisedForDatasets(read,
+			api.getDataset),
 	)
 
 	api.get(
@@ -235,69 +236,81 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints() {
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}",
-		api.isAuthorisedForDatasets(read, api.getEdition),
+		api.isAuthorisedForDatasets(read,
+			api.getEdition),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions",
-		api.isAuthorisedForDatasets(read, api.getVersions),
+		api.isAuthorisedForDatasets(read,
+			api.getVersions),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
-		api.isAuthorisedForDatasets(read, api.getVersion),
+		api.isAuthorisedForDatasets(read,
+			api.getVersion),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata",
-		api.isAuthorisedForDatasets(read, api.getMetadata),
+		api.isAuthorisedForDatasets(read,
+			api.getMetadata),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/observations",
-		api.isAuthorisedForDatasets(read, api.getObservations),
+		api.isAuthorisedForDatasets(read,
+			api.getObservations),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions",
-		api.isAuthorisedForDatasets(read, api.getDimensions),
+		api.isAuthorisedForDatasets(read,
+			api.getDimensions),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options",
-		api.isAuthorisedForDatasets(read, api.getDimensionOptions),
+		api.isAuthorisedForDatasets(read,
+			api.getDimensionOptions),
 	)
 
 	api.post(
 		"/datasets/{dataset_id}",
 		api.isAuthenticated(addDatasetAction,
-			api.isAuthorisedForDatasets(create, api.addDataset)),
+			api.isAuthorisedForDatasets(create,
+				api.addDataset)),
 	)
 
 	api.put(
 		"/datasets/{dataset_id}",
 		api.isAuthenticated(updateDatasetAction,
-			api.isAuthorisedForDatasets(update, api.putDataset)),
+			api.isAuthorisedForDatasets(update,
+				api.putDataset)),
 	)
 
 	api.delete(
 		"/datasets/{dataset_id}",
 		api.isAuthenticated(deleteDatasetAction,
-			api.isAuthorisedForDatasets(delete, api.deleteDataset)),
+			api.isAuthorisedForDatasets(delete,
+				api.deleteDataset)),
 	)
 
 	api.put(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
 		api.isAuthenticated(updateVersionAction,
 			api.isAuthorisedForDatasets(update,
-				api.isVersionPublished(updateVersionAction, api.putVersion))),
+				api.isVersionPublished(updateVersionAction,
+					api.putVersion))),
 	)
 
 	if api.enableDetachDataset {
 		api.delete(
 			"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
 			api.isAuthenticated(detachVersionAction,
-				api.isAuthorisedForDatasets(delete, api.detachVersion)),
+				api.isAuthorisedForDatasets(delete,
+					api.detachVersion)),
 		)
 	}
 }
@@ -308,53 +321,61 @@ func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI instance.Stor
 	api.get(
 		"/instances",
 		api.isAuthenticated(instance.GetInstancesAction,
-			api.isAuthorised(read, instanceAPI.GetList)),
+			api.isAuthorised(read,
+				instanceAPI.GetList)),
 	)
 
 	api.post(
 		"/instances",
 		api.isAuthenticated(instance.AddInstanceAction,
-			api.isAuthorised(create, instanceAPI.Add)),
+			api.isAuthorised(create,
+				instanceAPI.Add)),
 	)
 
 	api.get(
 		"/instances/{instance_id}",
 		api.isAuthenticated(instance.GetInstanceAction,
-			api.isAuthorised(read, instanceAPI.Get)),
+			api.isAuthorised(read,
+				instanceAPI.Get)),
 	)
 
 	api.put(
 		"/instances/{instance_id}",
 		api.isAuthenticated(instance.UpdateInstanceAction,
 			api.isAuthorised(update,
-				api.isInstancePublished(instance.UpdateInstanceAction, instanceAPI.Update))),
+				api.isInstancePublished(instance.UpdateInstanceAction,
+					instanceAPI.Update))),
 	)
 
 	api.put(
 		"/instances/{instance_id}/dimensions/{dimension}",
 		api.isAuthenticated(instance.UpdateDimensionAction,
 			api.isAuthorised(update,
-				api.isInstancePublished(instance.UpdateDimensionAction, instanceAPI.UpdateDimension))),
+				api.isInstancePublished(instance.UpdateDimensionAction,
+					instanceAPI.UpdateDimension))),
 	)
 
 	api.post(
 		"/instances/{instance_id}/events",
 		api.isAuthenticated(instance.AddInstanceEventAction,
-			api.isAuthorised(create, instanceAPI.AddEvent)),
+			api.isAuthorised(create,
+				instanceAPI.AddEvent)),
 	)
 
 	api.put(
 		"/instances/{instance_id}/inserted_observations/{inserted_observations}",
 		api.isAuthenticated(instance.UpdateInsertedObservationsAction,
 			api.isAuthorised(update,
-				api.isInstancePublished(instance.UpdateInsertedObservationsAction, instanceAPI.UpdateObservations))),
+				api.isInstancePublished(instance.UpdateInsertedObservationsAction,
+					instanceAPI.UpdateObservations))),
 	)
 
 	api.put(
 		"/instances/{instance_id}/import_tasks",
 		api.isAuthenticated(instance.UpdateImportTasksAction,
 			api.isAuthorised(update,
-				api.isInstancePublished(instance.UpdateImportTasksAction, instanceAPI.UpdateImportTask))),
+				api.isInstancePublished(instance.UpdateImportTasksAction,
+					instanceAPI.UpdateImportTask))),
 	)
 }
 
@@ -364,27 +385,31 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI dimension.S
 	api.get(
 		"/instances/{instance_id}/dimensions",
 		api.isAuthenticated(dimension.GetDimensions,
-			api.isAuthorised(read, dimensionAPI.GetDimensionsHandler)),
+			api.isAuthorised(read,
+				dimensionAPI.GetDimensionsHandler)),
 	)
 
 	api.post(
 		"/instances/{instance_id}/dimensions",
 		api.isAuthenticated(dimension.AddDimensionAction,
 			api.isAuthorised(create,
-				api.isInstancePublished(dimension.AddDimensionAction, dimensionAPI.AddHandler))),
+				api.isInstancePublished(dimension.AddDimensionAction,
+					dimensionAPI.AddHandler))),
 	)
 
 	api.get(
 		"/instances/{instance_id}/dimensions/{dimension}/options",
 		api.isAuthenticated(dimension.GetUniqueDimensionAndOptionsAction,
-			api.isAuthorised(read, dimensionAPI.GetUniqueDimensionAndOptionsHandler)),
+			api.isAuthorised(read,
+				dimensionAPI.GetUniqueDimensionAndOptionsHandler)),
 	)
 
 	api.put(
 		"/instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}",
 		api.isAuthenticated(dimension.UpdateNodeIDAction,
 			api.isAuthorised(update,
-				api.isInstancePublished(dimension.UpdateNodeIDAction, dimensionAPI.AddNodeIDHandler))),
+				api.isInstancePublished(dimension.UpdateNodeIDAction,
+					dimensionAPI.AddNodeIDHandler))),
 	)
 }
 
