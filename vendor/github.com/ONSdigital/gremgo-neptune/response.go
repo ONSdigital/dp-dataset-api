@@ -9,17 +9,17 @@ import (
 )
 
 const (
-	statusSuccess                  = 200
-	statusNoContent                = 204
-	statusPartialContent           = 206
-	statusUnauthorized             = 401
-	statusAuthenticate             = 407
-	statusMalformedRequest         = 498
-	statusInvalidRequestArguments  = 499
-	statusServerError              = 500
-	statusScriptEvaluationError    = 597
-	statusServerTimeout            = 598
-	statusServerSerializationError = 599
+	StatusSuccess                  = 200
+	StatusNoContent                = 204
+	StatusPartialContent           = 206
+	StatusUnauthorized             = 401
+	StatusAuthenticate             = 407
+	StatusMalformedRequest         = 498
+	StatusInvalidRequestArguments  = 499
+	StatusServerError              = 500
+	StatusScriptEvaluationError    = 597
+	StatusServerTimeout            = 598
+	StatusServerSerializationError = 599
 )
 
 // Status struct is used to hold properties returned from requests to the gremlin server
@@ -64,7 +64,7 @@ func (c *Client) saveWorkerCtx(ctx context.Context, msgChan chan []byte, errs ch
 func (c *Client) handleResponse(msg []byte) (err error) {
 	var resp Response
 	resp, err = marshalResponse(msg)
-	if resp.Status.Code == statusAuthenticate { //Server request authentication
+	if resp.Status.Code == StatusAuthenticate { //Server request authentication
 		return c.authenticate(resp.RequestID)
 	}
 	c.saveResponse(resp, err)
@@ -98,7 +98,7 @@ func (c *Client) saveResponse(resp Response, err error) {
 	c.results.Store(resp.RequestID, newdata) // Add new data to buffer for future retrieval
 	respNotifier, _ := c.responseNotifier.LoadOrStore(resp.RequestID, make(chan error, 1))
 	// err is from marshalResponse (json.Unmarshal), but is ignored when Code==statusPartialContent
-	if resp.Status.Code == statusPartialContent {
+	if resp.Status.Code == StatusPartialContent {
 		if chunkNotifier, ok := c.chunkNotifier.Load(resp.RequestID); ok {
 			chunkNotifier.(chan bool) <- true
 		}
@@ -207,22 +207,22 @@ func (c *Client) deleteResponse(id string) {
 // detectError detects any possible errors in responses from Gremlin Server and generates an error for each code
 func (r *Response) detectError() (err error) {
 	switch r.Status.Code {
-	case statusSuccess, statusNoContent, statusPartialContent:
-	case statusUnauthorized:
+	case StatusSuccess, StatusNoContent, StatusPartialContent:
+	case StatusUnauthorized:
 		err = fmt.Errorf("UNAUTHORIZED - Response Message: %s", r.Status.Message)
-	case statusAuthenticate:
+	case StatusAuthenticate:
 		err = fmt.Errorf("AUTHENTICATE - Response Message: %s", r.Status.Message)
-	case statusMalformedRequest:
+	case StatusMalformedRequest:
 		err = fmt.Errorf("MALFORMED REQUEST - Response Message: %s", r.Status.Message)
-	case statusInvalidRequestArguments:
+	case StatusInvalidRequestArguments:
 		err = fmt.Errorf("INVALID REQUEST ARGUMENTS - Response Message: %s", r.Status.Message)
-	case statusServerError:
+	case StatusServerError:
 		err = fmt.Errorf("SERVER ERROR - Response Message: %s", r.Status.Message)
-	case statusScriptEvaluationError:
+	case StatusScriptEvaluationError:
 		err = fmt.Errorf("SCRIPT EVALUATION ERROR - Response Message: %s", r.Status.Message)
-	case statusServerTimeout:
+	case StatusServerTimeout:
 		err = fmt.Errorf("SERVER TIMEOUT - Response Message: %s", r.Status.Message)
-	case statusServerSerializationError:
+	case StatusServerSerializationError:
 		err = fmt.Errorf("SERVER SERIALIZATION ERROR - Response Message: %s", r.Status.Message)
 	default:
 		err = fmt.Errorf("UNKNOWN ERROR - Response Message: %s", r.Status.Message)

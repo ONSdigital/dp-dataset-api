@@ -17,6 +17,11 @@ import (
 // ErrInvalidFilter is returned if the provided filter is nil.
 var ErrInvalidFilter = errors.New("nil filter cannot be processed")
 
+// TODO: this global state is only used for metrics in InsertObservationBatch,
+// not used in actual code flow, but should be revisited before production use
+var batchCount = 0
+var totalTime time.Time
+
 func (n *NeptuneDB) StreamCSVRows(ctx context.Context, filter *observation.Filter, limit *int) (observation.StreamRowReader, error) {
 	if filter == nil {
 		return nil, ErrInvalidFilter
@@ -40,6 +45,7 @@ func buildObservationsQuery(f *observation.Filter) string {
 	}
 
 	q := fmt.Sprintf(query.GetObservationsPart, f.InstanceID)
+	var selectOpts []string
 
 	for _, dim := range f.DimensionFilters {
 		if len(dim.Options) == 0 {
@@ -50,34 +56,29 @@ func buildObservationsQuery(f *observation.Filter) string {
 			dim.Options[i] = fmt.Sprintf("'%s'", opt)
 		}
 
-		q += fmt.Sprintf(query.GetObservationDimensionPart, f.InstanceID, dim.Name, strings.Join(dim.Options, ",")) + ","
+		selectOpts = append(selectOpts, fmt.Sprintf(query.GetObservationDimensionPart, f.InstanceID, dim.Name, strings.Join(dim.Options, ",")))
 	}
 
-	//remove trailing comma and close match statement
-	q = strings.Trim(q, ",")
+	//comma separate dimension option selections and close match statement
+	q += strings.Join(selectOpts, ",")
 	q += ")"
 
 	return q
 }
 
-// TODO: this global state is only used for metrics, not actual code flow,
-// but should be revisited before production use
-var batchCount = 0
-var totalTime time.Time
-
-func (n *NeptuneDB) InsertObservationBatch(ctx context.Context, attempt int, instanceID string, observations []*models.Observation, dimensionIDs map[string]string) error {
+func (n *NeptuneDB) InsertObservationBatch(ctx context.Context, attempt int, instanceID string, observations []*models.Observation, dimensionNodeIDs map[string]string) error {
 	if len(observations) == 0 {
-		fmt.Println("range should be empty")
+		log.Info("no observations in batch", log.Data{"instance_ID": instanceID})
 		return nil
 	}
 
-	c := batchCount
+	bID := batchCount
 	batchCount++
 	batchStart := time.Now()
 	if totalTime.IsZero() {
 		totalTime = batchStart
 	} else {
-		log.Info("opening batch", log.Data{"size": len(observations), "batchID": c})
+		log.Info("opening batch", log.Data{"size": len(observations), "batchID": bID})
 	}
 
 	var create string
@@ -89,7 +90,7 @@ func (n *NeptuneDB) InsertObservationBatch(ctx context.Context, attempt int, ins
 			dimensionName := strings.ToLower(d.DimensionName)
 			dimensionLookup := instanceID + "_" + dimensionName + "_" + d.Name
 
-			nodeID, ok := dimensionIDs[dimensionLookup]
+			nodeID, ok := dimensionNodeIDs[dimensionLookup]
 			if !ok {
 				return fmt.Errorf("no nodeID [%s] found in dimension map", dimensionLookup)
 			}
@@ -105,6 +106,6 @@ func (n *NeptuneDB) InsertObservationBatch(ctx context.Context, attempt int, ins
 		return err
 	}
 
-	log.Info("batch complete", log.Data{"batchID": c, "elapsed": time.Since(totalTime), "batchTime": time.Since(batchStart)})
+	log.Info("batch complete", log.Data{"batchID": bID, "elapsed": time.Since(totalTime), "batchTime": time.Since(batchStart)})
 	return nil
 }

@@ -198,7 +198,7 @@ func (c *Client) GetCtx(ctx context.Context, query string, bindings, rebindings 
 }
 
 func (c *Client) deserializeResponseToVertices(resp []Response) (res []graphson.Vertex, err error) {
-	if len(resp) == 0 || resp[0].Status.Code == statusNoContent {
+	if len(resp) == 0 || resp[0].Status.Code == StatusNoContent {
 		return
 	}
 
@@ -266,7 +266,7 @@ func (c *Client) GetEdgeCtx(ctx context.Context, query string, bindings, rebindi
 	if err != nil {
 		return
 	}
-	if len(resp) == 0 || resp[0].Status.Code == statusNoContent {
+	if len(resp) == 0 || resp[0].Status.Code == StatusNoContent {
 		return
 	}
 

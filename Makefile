@@ -7,13 +7,16 @@ BIN_DIR?=.
 export GOOS?=$(shell go env GOOS)
 export GOARCH?=$(shell go env GOARCH)
 
+export GRAPH_DRIVER_TYPE?="neptune"
+export GRAPH_ADDR?="ws://localhost:8182/gremlin"
+
 export ENABLE_PRIVATE_ENDPOINTS?=true
 
 build:
 	@mkdir -p $(BUILD_ARCH)/$(BIN_DIR)
 	go build -o $(BUILD_ARCH)/$(BIN_DIR)/dp-dataset-api main.go
 debug:
-	GRAPH_DRIVER_TYPE="neptune" GRAPH_ADDR="ws://localhost:8182/gremlin" HUMAN_LOG=1 go run main.go
+	HUMAN_LOG=1 go run main.go
 acceptance-publishing: build
 	ENABLE_PRIVATE_ENDPOINTS=true MONGODB_DATABASE=test HUMAN_LOG=1 go run main.go
 acceptance-web: build

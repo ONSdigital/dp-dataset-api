@@ -4,8 +4,9 @@
 package mocks
 
 import (
-	"github.com/ONSdigital/dp-filter/observation"
 	"sync"
+
+	"github.com/ONSdigital/dp-graph/observation"
 )
 
 var (
@@ -18,7 +19,7 @@ var (
 //
 //         // make and configure a mocked ObservationStore
 //         mockedObservationStore := &ObservationStoreMock{
-//             GetCSVRowsFunc: func(filter *observation.Filter, limit *int) (observation.CSVRowReader, error) {
+//             GetCSVRowsFunc: func(filter *observation.Filter, limit *int) (observation.StreamRowReader, error) {
 // 	               panic("TODO: mock out the GetCSVRows method")
 //             },
 //         }
@@ -29,7 +30,7 @@ var (
 //     }
 type ObservationStoreMock struct {
 	// GetCSVRowsFunc mocks the GetCSVRows method.
-	GetCSVRowsFunc func(filter *observation.Filter, limit *int) (observation.CSVRowReader, error)
+	GetCSVRowsFunc func(filter *observation.Filter, limit *int) (observation.StreamRowReader, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -44,7 +45,7 @@ type ObservationStoreMock struct {
 }
 
 // GetCSVRows calls GetCSVRowsFunc.
-func (mock *ObservationStoreMock) GetCSVRows(filter *observation.Filter, limit *int) (observation.CSVRowReader, error) {
+func (mock *ObservationStoreMock) GetCSVRows(filter *observation.Filter, limit *int) (observation.StreamRowReader, error) {
 	if mock.GetCSVRowsFunc == nil {
 		panic("ObservationStoreMock.GetCSVRowsFunc: method is nil but ObservationStore.GetCSVRows was just called")
 	}

@@ -5,11 +5,10 @@ package internal
 
 import (
 	"context"
-	"sync"
-
 	"github.com/ONSdigital/dp-graph/neptune/driver"
 	"github.com/ONSdigital/graphson"
 	"github.com/ONSdigital/gremgo-neptune"
+	"sync"
 )
 
 var (

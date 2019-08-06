@@ -12,6 +12,7 @@ import (
 	"github.com/ONSdigital/dp-graph/neptune/driver"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/graphson"
+	gremgo "github.com/ONSdigital/gremgo-neptune"
 )
 
 type NeptuneDB struct {
@@ -155,7 +156,7 @@ func (n *NeptuneDB) getEdges(gremStmt string) (edges []graphson.Edge, err error)
 	return
 }
 
-func (n *NeptuneDB) exec(gremStmt string) (res interface{}, err error) {
+func (n *NeptuneDB) exec(gremStmt string) (res []gremgo.Response, err error) {
 	logData := log.Data{"fn": "n.exec", "statement": gremStmt, "attempt": 1}
 
 	for attempt := 1; attempt < n.maxAttempts; attempt++ {

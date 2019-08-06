@@ -76,17 +76,22 @@ const (
 
 	// instance - import process
 	CreateInstance                   = "g.addV('_%s_Instance').property(single,'header','%s')"
-	CountInstance                    = "g.V().hasLabel('_%s_Instance').count()"
-	AddInstanceDimensions            = "g.V().hasLabel('_%s_Instance').property('dimensions',%s)"
+	CheckInstance                    = "g.V().hasLabel('_%s_Instance').count()"
 	CreateInstanceToCodeRelationship = "g.V().hasLabel('_%s_Instance').as('i').addE('inDataset').from(" +
-		"V().hasLabel('_code').has('value','%s').where(out('usedBy').has(label,'_code_list_%s'))" +
+		"V().hasLabel('_code').has('value','%s').where(out('usedBy').hasLabel('_code_list').has('listID','%s'))" +
 		")"
-	AddVersionDetailsToInstance = "g.V().hasLabel('_%s_Instance').property(single,'dataset_id','%s').property(single,'edition','%s').property(single,'version','%s')"
-	SetInstanceIsPublished      = "g.V().hasLabel('_%s_Instance').property(single,'is_published',true)"
-	CountObservations           = "g.V().hasLabel('_%s_observation').count()"
+	AddVersionDetailsToInstance = "g.V().hasLabel('_%s_Instance').property(single,'dataset_id','%s')." +
+		"property(single,'edition','%s').property(single,'version','%s')"
+	SetInstanceIsPublished = "g.V().hasLabel('_%s_Instance').property(single,'is_published',true)"
+	CountObservations      = "g.V().hasLabel('_%s_observation').count()"
+
+	//instance - parts
+	AddInstanceDimensionsPart         = "g.V().hasLabel('_%s_Instance')"
+	AddInstanceDimensionsPropertyPart = ".property(list, 'dimensions', '%s')"
 
 	// dimension
-	CreateDimensionToInstanceRelationship = "g.addV('_%s_%s').property('value','%s').as('d').addE('HAS_DIMENSION').from(V().hasLabel('_%s_Instance')).select('d').by(id)"
+	CreateDimensionToInstanceRelationship = "g.V().hasLabel('_%s_%s').has('value', '%s').fold().coalesce(unfold(), " +
+		"addV('_%s_%s').as('d').property('value','%s').addE('HAS_DIMENSION').from(V().hasLabel('_%s_Instance')).select('d'))"
 
 	// observation
 	DropObservationRelationships   = "g.V().hasLabel('_%s_observation').has('value', '%s').bothE().drop().iterate()"
