@@ -163,14 +163,14 @@ func NewDatasetAPI(cfg config.Configuration, router *mux.Router, dataStore store
 			Datastore: api.dataStore.Backend,
 		}
 
-		instanceAPI := instance.Store{
+		instanceAPI := &instance.Store{
 			Host:                api.host,
 			Storer:              api.dataStore.Backend,
 			Auditor:             api.auditor,
 			EnableDetachDataset: api.enablePrivateEndpoints,
 		}
 
-		dimensionAPI := dimension.Store{
+		dimensionAPI := &dimension.Store{
 			Auditor: api.auditor,
 			Storer:  api.dataStore.Backend,
 		}
@@ -299,9 +299,9 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints() {
 	}
 }
 
-// enablePrivateDatasetEndpoints register the instance endpoints with the appropriate authentication and authorisation
+// enablePrivateInstancesEndpoints register the instance endpoints with the appropriate authentication and authorisation
 // checks required when running the dataset API in publishing (private) mode.
-func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI instance.Store) {
+func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI *instance.Store) {
 	api.get(
 		"/instances",
 		api.isAuthenticated(instance.GetInstancesAction,
@@ -365,7 +365,7 @@ func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI instance.Stor
 
 // enablePrivateDatasetEndpoints register the dimenions endpoints with the appropriate authentication and authorisation
 // checks required when running the dataset API in publishing (private) mode.
-func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI dimension.Store) {
+func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.Store) {
 	api.get(
 		"/instances/{instance_id}/dimensions",
 		api.isAuthenticated(dimension.GetDimensions,

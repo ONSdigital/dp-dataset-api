@@ -198,29 +198,30 @@ func main() {
 }
 
 func getAuthorisationHandlers(cfg *config.Configuration) (api.AuthHandler, api.AuthHandler) {
-	if cfg.EnableCMDAuth {
-		log.Info("feature flag enabled", log.Data{"feature": "CMD AUTH"})
-		auth.LoggerNamespace("dp-dataset-api-auth")
-
-		authClient := auth.NewPermissionsClient(rchttp.NewClient())
-		authVerifier := auth.DefaultPermissionsVerifier()
-
-		// for checking caller permissions when we have a datasetID, collection ID and user/service token
-		datasetPermissions := auth.NewHandler(
-			auth.NewDatasetPermissionsRequestBuilder(cfg.ZebedeeURL, "dataset_id", mux.Vars),
-			authClient,
-			authVerifier,
-		)
-
-		// for checking caller permissions when we only have a user/service token
-		permissions := auth.NewHandler(
-			auth.NewPermissionsRequestBuilder(cfg.ZebedeeURL),
-			authClient,
-			authVerifier,
-		)
-
-		return datasetPermissions, permissions
+	if !cfg.EnablePermissionsAuth {
+		log.Info("feature flag not enabled defaulting to nop auth impl", log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
+		return &auth.NopHandler{}, &auth.NopHandler{}
 	}
-	log.Info("feature flag not enabled defaulting to nop auth impl", log.Data{"feature": "CMD AUTH"})
-	return &auth.NopHandler{}, &auth.NopHandler{}
+
+	log.Info("feature flag enabled", log.Data{"feature": "CMD AUTH"})
+	auth.LoggerNamespace("dp-dataset-api-auth")
+
+	authClient := auth.NewPermissionsClient(rchttp.NewClient())
+	authVerifier := auth.DefaultPermissionsVerifier()
+
+	// for checking caller permissions when we have a datasetID, collection ID and user/service token
+	datasetPermissions := auth.NewHandler(
+		auth.NewDatasetPermissionsRequestBuilder(cfg.ZebedeeURL, "dataset_id", mux.Vars),
+		authClient,
+		authVerifier,
+	)
+
+	// for checking caller permissions when we only have a user/service token
+	permissions := auth.NewHandler(
+		auth.NewPermissionsRequestBuilder(cfg.ZebedeeURL),
+		authClient,
+		authVerifier,
+	)
+
+	return datasetPermissions, permissions
 }

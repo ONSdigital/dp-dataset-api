@@ -33,7 +33,7 @@ func TestSpec(t *testing.T) {
 				So(cfg.MongoConfig.BindAddr, ShouldEqual, "localhost:27017")
 				So(cfg.MongoConfig.Collection, ShouldEqual, "datasets")
 				So(cfg.MongoConfig.Database, ShouldEqual, "datasets")
-				So(cfg.EnableCMDAuth, ShouldBeFalse)
+				So(cfg.EnablePermissionsAuth, ShouldBeFalse)
 			})
 		})
 	})

@@ -23,7 +23,7 @@ type Configuration struct {
 	HealthCheckInterval      time.Duration `envconfig:"HEALTHCHECK_INTERVAL"`
 	EnablePrivateEnpoints    bool          `envconfig:"ENABLE_PRIVATE_ENDPOINTS"`
 	EnableDetachDataset      bool          `envconfig:"ENABLE_DETACH_DATASET"`
-	EnableCMDAuth            bool          `envconfig:"ENABLE_CMD_AUTH"`
+	EnablePermissionsAuth    bool          `envconfig:"ENABLE_PERMISSIONS_AUTH"`
 	MongoConfig              MongoConfig
 }
 
@@ -57,7 +57,7 @@ func Get() (*Configuration, error) {
 		HealthCheckInterval:      30 * time.Second,
 		EnablePrivateEnpoints:    false,
 		EnableDetachDataset:      false,
-		EnableCMDAuth:            false,
+		EnablePermissionsAuth:    false,
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",
