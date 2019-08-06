@@ -87,7 +87,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: getDatasetsAction, Result: audit.Attempted, Params: nil},
@@ -119,7 +119,7 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 
 		assertInternalServerErr(w)
 		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 0)
 
 		auditMock.AssertRecordCalls(
@@ -155,7 +155,7 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 
 		assertInternalServerErr(w)
 		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
@@ -185,7 +185,7 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: getDatasetsAction, Result: audit.Attempted, Params: nil},
@@ -214,7 +214,7 @@ func TestGetDatasetsAuditSuccessfulError(t *testing.T) {
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 1)
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: getDatasetsAction, Result: audit.Attempted, Params: nil},

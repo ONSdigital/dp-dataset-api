@@ -16,6 +16,14 @@ type PermissionCheckCalls struct {
 	Calls int
 }
 
+func NewAuthHandlerMock() *AuthHandlerMock {
+	return &AuthHandlerMock{
+		Required: &PermissionCheckCalls{
+			Calls: 0,
+		},
+	}
+}
+
 func (a AuthHandlerMock) Require(required auth.Permissions, handler http.HandlerFunc) http.HandlerFunc {
 	return a.Required.checkPermissions(handler)
 }

@@ -14,14 +14,15 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/dp-graph/graph"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/healthcheck"
 	"github.com/ONSdigital/go-ns/kafka"
-
-	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/log"
 	mongolib "github.com/ONSdigital/go-ns/mongo"
+	"github.com/ONSdigital/go-ns/rchttp"
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
 
@@ -138,11 +139,9 @@ func main() {
 
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
-	auth.LoggerNamespace("dp-dataset-api-auth")
-	datasetPermissions := &auth.NopHandler{}
-	permissions := &auth.NopHandler{}
+	datasetPermissions, permissions := getAuthorisationHandlers(cfg)
 
-	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor, datasetPermissions, permissions)
+	api.CreateAndInitialiseDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor, datasetPermissions, permissions)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {
@@ -196,4 +195,33 @@ func main() {
 			gracefulShutdown()
 		}
 	}
+}
+
+func getAuthorisationHandlers(cfg *config.Configuration) (api.AuthHandler, api.AuthHandler) {
+	if !cfg.EnablePermissionsAuth {
+		log.Info("feature flag not enabled defaulting to nop auth impl", log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
+		return &auth.NopHandler{}, &auth.NopHandler{}
+	}
+
+	log.Info("feature flag enabled", log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
+	auth.LoggerNamespace("dp-dataset-api-auth")
+
+	authClient := auth.NewPermissionsClient(rchttp.NewClient())
+	authVerifier := auth.DefaultPermissionsVerifier()
+
+	// for checking caller permissions when we have a datasetID, collection ID and user/service token
+	datasetPermissions := auth.NewHandler(
+		auth.NewDatasetPermissionsRequestBuilder(cfg.ZebedeeURL, "dataset_id", mux.Vars),
+		authClient,
+		authVerifier,
+	)
+
+	// for checking caller permissions when we only have a user/service token
+	permissions := auth.NewHandler(
+		auth.NewPermissionsRequestBuilder(cfg.ZebedeeURL),
+		authClient,
+		authVerifier,
+	)
+
+	return datasetPermissions, permissions
 }
