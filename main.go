@@ -203,7 +203,7 @@ func getAuthorisationHandlers(cfg *config.Configuration) (api.AuthHandler, api.A
 		return &auth.NopHandler{}, &auth.NopHandler{}
 	}
 
-	log.Info("feature flag enabled", log.Data{"feature": "CMD AUTH"})
+	log.Info("feature flag enabled", log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
 	auth.LoggerNamespace("dp-dataset-api-auth")
 
 	authClient := auth.NewPermissionsClient(rchttp.NewClient())
