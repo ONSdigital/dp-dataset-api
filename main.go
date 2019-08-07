@@ -7,21 +7,22 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/dp-graph/graph"
-
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/healthcheck"
 	"github.com/ONSdigital/go-ns/kafka"
-
-	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/log"
 	mongolib "github.com/ONSdigital/go-ns/mongo"
+	"github.com/ONSdigital/go-ns/rchttp"
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
 
@@ -32,6 +33,20 @@ var _ store.Storer = (*DatsetAPIStore)(nil)
 type DatsetAPIStore struct {
 	*mongo.Mongo
 	*graph.DB
+}
+
+type initialisedStruct struct {
+	generateDownloadsProducer bool
+	auditProducer             bool
+	mongo                     bool
+	healthTicker              bool
+}
+
+var initialised = initialisedStruct{
+	generateDownloadsProducer: true,
+	auditProducer:             true,
+	mongo:                     true,
+	healthTicker:              true,
 }
 
 func main() {
@@ -51,7 +66,7 @@ func main() {
 	generateDownloadsProducer, err := kafka.NewProducer(cfg.KafkaAddr, cfg.GenerateDownloadsTopic, 0)
 	if err != nil {
 		log.Error(errors.Wrap(err, "error creating kakfa producer"), nil)
-		os.Exit(1)
+		initialised.generateDownloadsProducer = false
 	}
 
 	var auditor audit.AuditorService
@@ -63,7 +78,7 @@ func main() {
 		auditProducer, err = kafka.NewProducer(cfg.KafkaAddr, cfg.AuditEventsTopic, 0)
 		if err != nil {
 			log.Error(errors.Wrap(err, "error creating kakfa audit producer"), nil)
-			os.Exit(1)
+			initialised.auditProducer = false
 		}
 
 		auditor = audit.New(auditProducer, "dp-dataset-api")
@@ -83,19 +98,17 @@ func main() {
 	session, err := mongodb.Init()
 	if err != nil {
 		log.ErrorC("failed to initialise mongo", err, nil)
-		os.Exit(1)
+		initialised.mongo = false
+	} else {
+		mongodb.Session = session
+		log.Debug("listening...", log.Data{
+			"bind_address": cfg.BindAddr,
+		})
 	}
-
-	mongodb.Session = session
-
-	log.Debug("listening...", log.Data{
-		"bind_address": cfg.BindAddr,
-	})
 
 	graphDB, err := graph.New(context.Background(), graph.Subsets{Observation: true, Instance: true})
 	if err != nil {
-		log.ErrorC("failed to connect to graph database", err, nil)
-		os.Exit(1)
+		log.ErrorC("failed to initialise graph driver", err, nil)
 	}
 
 	store := store.DataStore{Backend: DatsetAPIStore{mongodb, graphDB}}
@@ -105,17 +118,30 @@ func main() {
 		Marshaller: schema.GenerateDownloadsEvent,
 	}
 
-	healthTicker := healthcheck.NewTicker(
-		cfg.HealthCheckInterval,
-		graphDB,
-		mongolib.NewHealthCheckClient(mongodb.Session),
-	)
+	var healthyClients []healthcheck.Client
+	healthyClients = append(healthyClients, *graphDB)
+	if initialised.mongo {
+		healthyClients = append(healthyClients, mongolib.NewHealthCheckClient(mongodb.Session))
+	}
+
+	// Only apply a healthticker where the clients are healthy
+	var healthTicker *healthcheck.Ticker
+	if len(healthyClients) != 0 {
+		healthTicker = healthcheck.NewTicker(
+			cfg.HealthCheckInterval,
+			healthyClients...,
+		)
+	} else {
+		initialised.healthTicker = false
+	}
 
 	apiErrors := make(chan error, 1)
 
 	urlBuilder := url.NewBuilder(cfg.WebsiteURL)
 
-	api.CreateDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor)
+	datasetPermissions, permissions := getAuthorisationHandlers(cfg)
+
+	api.CreateAndInitialiseDatasetAPI(*cfg, store, urlBuilder, apiErrors, downloadGenerator, auditor, datasetPermissions, permissions)
 
 	// Gracefully shutdown the application closing any open resources.
 	gracefulShutdown := func() {
@@ -125,24 +151,32 @@ func main() {
 		// stop any incoming requests before closing any outbound connections
 		api.Close(ctx)
 
-		healthTicker.Close()
+		if initialised.healthTicker {
+			healthTicker.Close()
+		}
 
-		if err = mongolib.Close(ctx, session); err != nil {
-			log.Error(err, nil)
+		if initialised.mongo {
+			if err = mongolib.Close(ctx, session); err != nil {
+				log.Error(err, nil)
+			}
 		}
 
 		if err = graphDB.Close(ctx); err != nil {
 			log.Error(err, nil)
 		}
 
-		if err = generateDownloadsProducer.Close(ctx); err != nil {
-			log.Error(errors.Wrap(err, "error while attempting to shutdown kafka producer"), nil)
+		if initialised.generateDownloadsProducer {
+			if err = generateDownloadsProducer.Close(ctx); err != nil {
+				log.Error(errors.Wrap(err, "error while attempting to shutdown kafka producer"), nil)
+			}
 		}
 
 		if cfg.EnablePrivateEnpoints {
 			log.Debug("exiting audit producer", nil)
-			if err = auditProducer.Close(ctx); err != nil {
-				log.Error(err, nil)
+			if initialised.auditProducer {
+				if err = auditProducer.Close(ctx); err != nil {
+					log.Error(err, nil)
+				}
 			}
 		}
 
@@ -156,10 +190,38 @@ func main() {
 		select {
 		case err := <-apiErrors:
 			log.ErrorC("api error received", err, nil)
-			gracefulShutdown()
 		case <-signals:
 			log.Debug("os signal received", nil)
 			gracefulShutdown()
 		}
 	}
+}
+
+func getAuthorisationHandlers(cfg *config.Configuration) (api.AuthHandler, api.AuthHandler) {
+	if !cfg.EnablePermissionsAuth {
+		log.Info("feature flag not enabled defaulting to nop auth impl", log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
+		return &auth.NopHandler{}, &auth.NopHandler{}
+	}
+
+	log.Info("feature flag enabled", log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
+	auth.LoggerNamespace("dp-dataset-api-auth")
+
+	authClient := auth.NewPermissionsClient(rchttp.NewClient())
+	authVerifier := auth.DefaultPermissionsVerifier()
+
+	// for checking caller permissions when we have a datasetID, collection ID and user/service token
+	datasetPermissions := auth.NewHandler(
+		auth.NewDatasetPermissionsRequestBuilder(cfg.ZebedeeURL, "dataset_id", mux.Vars),
+		authClient,
+		authVerifier,
+	)
+
+	// for checking caller permissions when we only have a user/service token
+	permissions := auth.NewHandler(
+		auth.NewPermissionsRequestBuilder(cfg.ZebedeeURL),
+		authClient,
+		authVerifier,
+	)
+
+	return datasetPermissions, permissions
 }
