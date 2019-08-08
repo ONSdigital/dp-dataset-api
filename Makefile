@@ -7,8 +7,8 @@ BIN_DIR?=.
 export GOOS?=$(shell go env GOOS)
 export GOARCH?=$(shell go env GOARCH)
 
-export GRAPH_DRIVER_TYPE?="neptune"
-export GRAPH_ADDR?="ws://localhost:8182/gremlin"
+export GRAPH_DRIVER_TYPE?=neptune
+export GRAPH_ADDR?=ws://localhost:8182/gremlin
 
 export ENABLE_PRIVATE_ENDPOINTS?=true
 
