@@ -3,6 +3,18 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "XSTkos3yRqDizeLvw7mSPKEGPxY=",
+			"path": "github.com/ONSdigital/dp-api-clients-go",
+			"revision": "d6fa85ce4a4e1aaa61daa5b5520437179c81b462",
+			"revisionTime": "2019-09-17T07:56:45Z"
+		},
+		{
+			"checksumSHA1": "KaUDA6IMAlw8qvfTqjZBIY3a+c0=",
+			"path": "github.com/ONSdigital/dp-api-clients-go/identity",
+			"revision": "d6fa85ce4a4e1aaa61daa5b5520437179c81b462",
+			"revisionTime": "2019-09-17T07:56:45Z"
+		},
+		{
 			"checksumSHA1": "iEEi+2XnsfVQZ0YMrMzkjzY6CI4=",
 			"path": "github.com/ONSdigital/dp-authorisation/auth",
 			"revision": "a2cba587ed8964b556f64f4918e1ddbeeb60f483",
@@ -97,6 +109,12 @@
 			"path": "github.com/ONSdigital/dp-observation-importer/models",
 			"revision": "17a25a1d914f591cbd349e79dbea06193fa3e8ce",
 			"revisionTime": "2019-03-22T12:14:13Z"
+		},
+		{
+			"checksumSHA1": "8xu5NNiSDqiklwPxw545JpBX9g8=",
+			"path": "github.com/ONSdigital/dp-rchttp",
+			"revision": "a0a2529a81d239799f959205695b68160a99d6cb",
+			"revisionTime": "2019-08-30T11:25:54Z"
 		},
 		{
 			"checksumSHA1": "8qaOlIKc60HArH/nKi5y9DC2PHM=",
