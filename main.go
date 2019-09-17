@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/api"
@@ -16,12 +17,12 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/dp-graph/graph"
+	"github.com/ONSdigital/dp-rchttp"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/healthcheck"
 	"github.com/ONSdigital/go-ns/kafka"
 	"github.com/ONSdigital/go-ns/log"
 	mongolib "github.com/ONSdigital/go-ns/mongo"
-	"github.com/ONSdigital/go-ns/rchttp"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -127,10 +128,8 @@ func main() {
 	// Only apply a healthticker where the clients are healthy
 	var healthTicker *healthcheck.Ticker
 	if len(healthyClients) != 0 {
-		healthTicker = healthcheck.NewTicker(
-			cfg.HealthCheckInterval,
-			healthyClients...,
-		)
+		// TODO add config for this
+		healthTicker = healthcheck.NewTicker(cfg.HealthCheckInterval, time.Second*10, healthyClients...)
 	} else {
 		initialised.healthTicker = false
 	}

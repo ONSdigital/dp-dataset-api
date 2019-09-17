@@ -44,9 +44,10 @@ func (ds *Datasets) UpdateLinks(host, datasetAPIhost, codeListID, editionID, cod
 		}
 
 		id := dataset.Links.Self.ID
-		l := CreateLink(id, fmt.Sprintf(datasetsURI, codeListID, editionID, codeID), host)
+		l := CreateLink(id, fmt.Sprintf(datasetAPIuri, id), datasetAPIhost)
 		dataset.Links.Self = &Link{
 			Href: l.Href,
+			ID:   id,
 		}
 
 		var editions []DatasetEdition

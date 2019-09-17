@@ -55,13 +55,15 @@ func Get() (*Configuration, error) {
 		DownloadServiceSecretKey: "QB0108EZ-825D-412C-9B1D-41EF7747F462",
 		GracefulShutdownTimeout:  5 * time.Second,
 		HealthCheckInterval:      30 * time.Second,
-		EnablePrivateEnpoints:    false,
+		EnablePrivateEnpoints:    true,
 		EnableDetachDataset:      false,
 		EnablePermissionsAuth:    false,
 		MongoConfig: MongoConfig{
-			BindAddr:   "localhost:27017",
-			Collection: "datasets",
-			Database:   "datasets",
+			BindAddr: "localhost:27017",
+			//Collection: "datasets",
+			Collection: "test",
+			//Database:   "datasets",
+			Database: "test",
 		},
 	}
 

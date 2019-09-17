@@ -11,7 +11,6 @@ type Reader struct {
 	buffer         []byte // buffer a portion of the current line
 	eof            bool   // are we at the end of the csv rows?
 	totalBytesRead int64  // how many bytes in total have been read?
-	obsCount       int32
 }
 
 // NewReader returns a new io.Reader for the given csvRowReader.
@@ -34,7 +33,6 @@ func (reader *Reader) Read(p []byte) (n int, err error) {
 		}
 
 		reader.buffer = []byte(csvRow)
-		reader.obsCount++
 	}
 
 	// copy into the given byte array.
@@ -63,9 +61,4 @@ func (reader *Reader) Close() (err error) {
 // TotalBytesRead returns the total number of bytes read by this reader.
 func (reader *Reader) TotalBytesRead() int64 {
 	return reader.totalBytesRead
-}
-
-// ObservationsCount returns the total number of bytes read by this reader.
-func (reader *Reader) ObservationsCount() int32 {
-	return reader.obsCount
 }

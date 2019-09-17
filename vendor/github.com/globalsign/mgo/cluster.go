@@ -48,26 +48,34 @@ import (
 
 type mongoCluster struct {
 	sync.RWMutex
-	serverSynced sync.Cond
-	userSeeds    []string
-	dynaSeeds    []string
-	servers      mongoServers
-	masters      mongoServers
-	references   int
-	syncing      bool
-	syncCount    uint
-	cachedIndex  map[string]bool
-	sync         chan bool
-	dial         dialer
-	dialInfo     *DialInfo
+	serverSynced  sync.Cond
+	userSeeds     []string
+	dynaSeeds     []string
+	servers       mongoServers
+	masters       mongoServers
+	references    int
+	syncing       bool
+	direct        bool
+	failFast      bool
+	syncCount     uint
+	setName       string
+	cachedIndex   map[string]bool
+	sync          chan bool
+	dial          dialer
+	appName       string
+	minPoolSize   int
+	maxIdleTimeMS int
 }
 
-func newCluster(userSeeds []string, info *DialInfo) *mongoCluster {
+func newCluster(userSeeds []string, direct, failFast bool, dial dialer, setName string, appName string) *mongoCluster {
 	cluster := &mongoCluster{
 		userSeeds:  userSeeds,
 		references: 1,
-		dial:       dialer{info.Dial, info.DialServer},
-		dialInfo:   info,
+		direct:     direct,
+		failFast:   failFast,
+		dial:       dial,
+		setName:    setName,
+		appName:    appName,
 	}
 	cluster.serverSynced.L = cluster.RWMutex.RLocker()
 	cluster.sync = make(chan bool, 1)
@@ -139,7 +147,7 @@ type isMasterResult struct {
 
 func (cluster *mongoCluster) isMaster(socket *mongoSocket, result *isMasterResult) error {
 	// Monotonic let's it talk to a slave and still hold the socket.
-	session := newSession(Monotonic, cluster, cluster.dialInfo)
+	session := newSession(Monotonic, cluster, 10*time.Second)
 	session.setSocket(socket)
 
 	var cmd = bson.D{{Name: "isMaster", Value: 1}}
@@ -163,8 +171,8 @@ func (cluster *mongoCluster) isMaster(socket *mongoSocket, result *isMasterResul
 		}
 
 		// Include the application name if set
-		if cluster.dialInfo.AppName != "" {
-			meta["application"] = bson.M{"name": cluster.dialInfo.AppName}
+		if cluster.appName != "" {
+			meta["application"] = bson.M{"name": cluster.appName}
 		}
 
 		cmd = append(cmd, bson.DocElem{
@@ -182,7 +190,19 @@ type possibleTimeout interface {
 	Timeout() bool
 }
 
+var syncSocketTimeout = 5 * time.Second
+
 func (cluster *mongoCluster) syncServer(server *mongoServer) (info *mongoServerInfo, hosts []string, err error) {
+	var syncTimeout time.Duration
+	if raceDetector {
+		// This variable is only ever touched by tests.
+		globalMutex.Lock()
+		syncTimeout = syncSocketTimeout
+		globalMutex.Unlock()
+	} else {
+		syncTimeout = syncSocketTimeout
+	}
+
 	addr := server.Addr
 	log("SYNC Processing ", addr, "...")
 
@@ -190,7 +210,7 @@ func (cluster *mongoCluster) syncServer(server *mongoServer) (info *mongoServerI
 	var result isMasterResult
 	var tryerr error
 	for retry := 0; ; retry++ {
-		if retry == 3 || retry == 1 && cluster.dialInfo.FailFast {
+		if retry == 3 || retry == 1 && cluster.failFast {
 			return nil, nil, tryerr
 		}
 		if retry > 0 {
@@ -202,22 +222,16 @@ func (cluster *mongoCluster) syncServer(server *mongoServer) (info *mongoServerI
 			time.Sleep(syncShortDelay)
 		}
 
-		// Don't ever hit the pool limit for syncing
-		config := cluster.dialInfo.Copy()
-		config.PoolLimit = 0
-
-		socket, _, err := server.AcquireSocket(config)
+		// It's not clear what would be a good timeout here. Is it
+		// better to wait longer or to retry?
+		socket, _, err := server.AcquireSocket(0, syncTimeout)
 		if err != nil {
 			tryerr = err
 			logf("SYNC Failed to get socket to %s: %v", addr, err)
 			continue
 		}
 		err = cluster.isMaster(socket, &result)
-
-		// Restore the correct dial config before returning it to the pool
-		socket.dialInfo = cluster.dialInfo
 		socket.Release()
-
 		if err != nil {
 			tryerr = err
 			logf("SYNC Command 'ismaster' to %s failed: %v", addr, err)
@@ -227,9 +241,9 @@ func (cluster *mongoCluster) syncServer(server *mongoServer) (info *mongoServerI
 		break
 	}
 
-	if cluster.dialInfo.ReplicaSetName != "" && result.SetName != cluster.dialInfo.ReplicaSetName {
-		logf("SYNC Server %s is not a member of replica set %q", addr, cluster.dialInfo.ReplicaSetName)
-		return nil, nil, fmt.Errorf("server %s is not a member of replica set %q", addr, cluster.dialInfo.ReplicaSetName)
+	if cluster.setName != "" && result.SetName != cluster.setName {
+		logf("SYNC Server %s is not a member of replica set %q", addr, cluster.setName)
+		return nil, nil, fmt.Errorf("server %s is not a member of replica set %q", addr, cluster.setName)
 	}
 
 	if result.IsMaster {
@@ -241,7 +255,7 @@ func (cluster *mongoCluster) syncServer(server *mongoServer) (info *mongoServerI
 		}
 	} else if result.Secondary {
 		debugf("SYNC %s is a slave.", addr)
-	} else if cluster.dialInfo.Direct {
+	} else if cluster.direct {
 		logf("SYNC %s in unknown state. Pretending it's a slave due to direct connection.", addr)
 	} else {
 		logf("SYNC %s is neither a master nor a slave.", addr)
@@ -372,7 +386,7 @@ func (cluster *mongoCluster) syncServersLoop() {
 			break
 		}
 		cluster.references++ // Keep alive while syncing.
-		direct := cluster.dialInfo.Direct
+		direct := cluster.direct
 		cluster.Unlock()
 
 		cluster.syncServersIteration(direct)
@@ -387,7 +401,7 @@ func (cluster *mongoCluster) syncServersLoop() {
 
 		// Hold off before allowing another sync. No point in
 		// burning CPU looking for down servers.
-		if !cluster.dialInfo.FailFast {
+		if !cluster.failFast {
 			time.Sleep(syncShortDelay)
 		}
 
@@ -425,11 +439,13 @@ func (cluster *mongoCluster) syncServersLoop() {
 func (cluster *mongoCluster) server(addr string, tcpaddr *net.TCPAddr) *mongoServer {
 	cluster.RLock()
 	server := cluster.servers.Search(tcpaddr.String())
+	minPoolSize := cluster.minPoolSize
+	maxIdleTimeMS := cluster.maxIdleTimeMS
 	cluster.RUnlock()
 	if server != nil {
 		return server
 	}
-	return newServer(addr, tcpaddr, cluster.sync, cluster.dial, cluster.dialInfo)
+	return newServer(addr, tcpaddr, cluster.sync, cluster.dial, minPoolSize, maxIdleTimeMS)
 }
 
 func resolveAddr(addr string) (*net.TCPAddr, error) {
@@ -598,10 +614,19 @@ func (cluster *mongoCluster) syncServersIteration(direct bool) {
 	cluster.Unlock()
 }
 
+// AcquireSocket returns a socket to a server in the cluster.  If slaveOk is
+// true, it will attempt to return a socket to a slave server.  If it is
+// false, the socket will necessarily be to a master server.
+func (cluster *mongoCluster) AcquireSocket(mode Mode, slaveOk bool, syncTimeout time.Duration, socketTimeout time.Duration, serverTags []bson.D, poolLimit int) (s *mongoSocket, err error) {
+	return cluster.AcquireSocketWithPoolTimeout(mode, slaveOk, syncTimeout, socketTimeout, serverTags, poolLimit, 0)
+}
+
 // AcquireSocketWithPoolTimeout returns a socket to a server in the cluster.  If slaveOk is
 // true, it will attempt to return a socket to a slave server.  If it is
 // false, the socket will necessarily be to a master server.
-func (cluster *mongoCluster) AcquireSocketWithPoolTimeout(mode Mode, slaveOk bool, syncTimeout time.Duration, serverTags []bson.D, info *DialInfo) (s *mongoSocket, err error) {
+func (cluster *mongoCluster) AcquireSocketWithPoolTimeout(
+	mode Mode, slaveOk bool, syncTimeout time.Duration, socketTimeout time.Duration, serverTags []bson.D, poolLimit int, poolTimeout time.Duration,
+) (s *mongoSocket, err error) {
 	var started time.Time
 	var syncCount uint
 	for {
@@ -620,7 +645,7 @@ func (cluster *mongoCluster) AcquireSocketWithPoolTimeout(mode Mode, slaveOk boo
 				// Initialize after fast path above.
 				started = time.Now()
 				syncCount = cluster.syncCount
-			} else if syncTimeout != 0 && started.Before(time.Now().Add(-syncTimeout)) || cluster.dialInfo.FailFast && cluster.syncCount != syncCount {
+			} else if syncTimeout != 0 && started.Before(time.Now().Add(-syncTimeout)) || cluster.failFast && cluster.syncCount != syncCount {
 				cluster.RUnlock()
 				return nil, errors.New("no reachable servers")
 			}
@@ -645,7 +670,7 @@ func (cluster *mongoCluster) AcquireSocketWithPoolTimeout(mode Mode, slaveOk boo
 			continue
 		}
 
-		s, abended, err := server.AcquireSocketWithBlocking(info)
+		s, abended, err := server.AcquireSocketWithBlocking(poolLimit, socketTimeout, poolTimeout)
 		if err == errPoolTimeout {
 			// No need to remove servers from the topology if acquiring a socket fails for this reason.
 			return nil, err
