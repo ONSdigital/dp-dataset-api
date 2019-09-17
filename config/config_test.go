@@ -34,6 +34,8 @@ func TestSpec(t *testing.T) {
 				So(cfg.MongoConfig.Collection, ShouldEqual, "datasets")
 				So(cfg.MongoConfig.Database, ShouldEqual, "datasets")
 				So(cfg.EnablePermissionsAuth, ShouldBeFalse)
+				So(cfg.HealthCheckRecoveryInterval, ShouldEqual, time.Second*10)
+				So(cfg.HealthCheckInterval, ShouldEqual, time.Second*30)
 			})
 		})
 	})

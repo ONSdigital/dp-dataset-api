@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/api"
@@ -128,8 +127,11 @@ func main() {
 	// Only apply a healthticker where the clients are healthy
 	var healthTicker *healthcheck.Ticker
 	if len(healthyClients) != 0 {
-		// TODO add config for this
-		healthTicker = healthcheck.NewTicker(cfg.HealthCheckInterval, time.Second*10, healthyClients...)
+		healthTicker = healthcheck.NewTicker(
+			cfg.HealthCheckInterval,
+			cfg.HealthCheckRecoveryInterval,
+			healthyClients...,
+		)
 	} else {
 		initialised.healthTicker = false
 	}
