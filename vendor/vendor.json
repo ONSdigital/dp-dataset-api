@@ -147,10 +147,10 @@
 			"revisionTime": "2018-06-07T08:14:26Z"
 		},
 		{
-			"checksumSHA1": "VTBPSz/YJghlqnxi9F2JSbVHWoE=",
+			"checksumSHA1": "QwfO5WE/n6QHS3r8XQIJVxkn+Dk=",
 			"path": "github.com/ONSdigital/go-ns/identity",
-			"revision": "18fb86a9248d5f1a1d468e80a2ab51f0c9ac26ef",
-			"revisionTime": "2018-07-16T08:08:15Z"
+			"revision": "dacf81e5819b9521c3c4c7db92bca01a0e964a23",
+			"revisionTime": "2019-09-17T09:20:21Z"
 		},
 		{
 			"checksumSHA1": "qqaN4hllMTNueffB5bcz8xQnwX0=",
