@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ONSdigital/dp-api-clients-go"
+	"github.com/ONSdigital/dp-api-clients-go/headers"
 	"github.com/ONSdigital/dp-rchttp"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/log.go/log"
@@ -66,16 +67,18 @@ func (api Client) CheckRequest(req *http.Request, florenceToken, serviceAuthToke
 
 	log.Event(ctx, "calling AuthAPI to authenticate caller identity", logData)
 
-	outboundAuthReq, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		log.Event(ctx, "error creating AuthAPI identity http request", logData, log.Error(err))
-		return ctx, http.StatusInternalServerError, nil, err
-	}
+	var outboundAuthReq *http.Request
+	var errCreatingReq error
 
 	if isUserReq {
-		outboundAuthReq.Header.Set(common.FlorenceHeaderKey, florenceToken)
+		outboundAuthReq, errCreatingReq = createUserAuthRequest(url, florenceToken)
 	} else {
-		outboundAuthReq.Header.Set(common.AuthHeaderKey, serviceAuthToken)
+		outboundAuthReq, errCreatingReq = createServiceAuthRequest(url, serviceAuthToken)
+	}
+
+	if errCreatingReq != nil {
+		log.Event(ctx, "error creating AuthAPI identity http request", logData, log.Error(errCreatingReq))
+		return ctx, http.StatusInternalServerError, nil, errCreatingReq
 	}
 
 	if api.HTTPClient == nil {
@@ -97,25 +100,22 @@ func (api Client) CheckRequest(req *http.Request, florenceToken, serviceAuthToke
 		return ctx, resp.StatusCode, errors.WithMessage(errUnableToIdentifyRequest, "unexpected status code returned from AuthAPI"), nil
 	}
 
-	identityResp, err := unmarshalIdentityResponse(resp)
+	identityResponse, err := unmarshalIdentityResponse(resp)
 	if err != nil {
-		log.Event(ctx, "error unmarshaling AuthAPI identity response body", logData, log.Error(err))
 		return ctx, http.StatusInternalServerError, nil, err
 	}
 
-	var userIdentity string
-	if isUserReq {
-		userIdentity = identityResp.Identifier
-	} else {
-		userIdentity = req.Header.Get(common.UserHeaderKey)
+	userIdentity, err := getUserIdentity(isUserReq, identityResponse, req)
+	if err != nil {
+		return ctx, http.StatusInternalServerError, nil, err
 	}
 
 	logData["user_identity"] = userIdentity
-	logData["caller_identity"] = identityResp.Identifier
+	logData["caller_identity"] = userIdentity
 	log.Event(ctx, "caller identity retrieved setting context values", logData)
 
 	ctx = context.WithValue(ctx, common.UserIdentityKey, userIdentity)
-	ctx = context.WithValue(ctx, common.CallerIdentityKey, identityResp.Identifier)
+	ctx = context.WithValue(ctx, common.CallerIdentityKey, identityResponse.Identifier)
 
 	return ctx, http.StatusOK, nil, nil
 }
@@ -145,6 +145,32 @@ func splitToken(token string) (tokenObj tokenObject) {
 	return tokenObj
 }
 
+func createUserAuthRequest(url string, userAuthToken string) (*http.Request, error) {
+	outboundAuthReq, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := headers.SetUserAuthToken(outboundAuthReq, userAuthToken); err != nil {
+		return nil, err
+	}
+
+	return outboundAuthReq, nil
+}
+
+func createServiceAuthRequest(url string, serviceAuthToken string) (*http.Request, error) {
+	outboundAuthReq, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := headers.SetServiceAuthToken(outboundAuthReq, serviceAuthToken); err != nil {
+		return nil, err
+	}
+
+	return outboundAuthReq, nil
+}
+
 // unmarshalIdentityResponse converts a resp.Body (JSON) into an IdentityResponse
 func unmarshalIdentityResponse(resp *http.Response) (identityResp *common.IdentityResponse, err error) {
 	b, err := ioutil.ReadAll(resp.Body)
@@ -164,4 +190,24 @@ func closeResponse(ctx context.Context, resp *http.Response, data log.Data) {
 	if errClose := resp.Body.Close(); errClose != nil {
 		log.Event(ctx, "error closing response body", log.Error(errClose), data)
 	}
+}
+
+// getUserIdentity get the user identity. If the request is user driven return identityResponse.Identifier otherwise
+// return the forwarded user Identity header from the inbound request. Return empty string if the header is not found.
+func getUserIdentity(isUserReq bool, identityResp *common.IdentityResponse, originalReq *http.Request) (string, error) {
+	var userIdentity string
+	var err error
+
+	if isUserReq {
+		userIdentity = identityResp.Identifier
+	} else {
+		forwardedUserIdentity, errGetIdentityHeader := headers.GetUserIdentity(originalReq)
+		if errGetIdentityHeader == nil {
+			userIdentity = forwardedUserIdentity
+		} else if headers.IsNotErrNotFound(errGetIdentityHeader) {
+			err = errGetIdentityHeader
+		}
+	}
+
+	return userIdentity, err
 }

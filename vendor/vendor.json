@@ -9,16 +9,22 @@
 			"revisionTime": "2019-09-17T07:56:45Z"
 		},
 		{
-			"checksumSHA1": "KaUDA6IMAlw8qvfTqjZBIY3a+c0=",
-			"path": "github.com/ONSdigital/dp-api-clients-go/identity",
-			"revision": "d6fa85ce4a4e1aaa61daa5b5520437179c81b462",
-			"revisionTime": "2019-09-17T07:56:45Z"
+			"checksumSHA1": "pN+Rtnrh/EBT/8wpBc9DaNo6h60=",
+			"path": "github.com/ONSdigital/dp-api-clients-go/headers",
+			"revision": "e278dd839eef6f25bfdea8744f64dedb0bbb5664",
+			"revisionTime": "2019-10-21T10:13:54Z"
 		},
 		{
-			"checksumSHA1": "baDRy10+W0wfPsFnw5Q2ovOUmXs=",
+			"checksumSHA1": "Vh7fY2ssYjbeH01rv1BEKYyyjYI=",
+			"path": "github.com/ONSdigital/dp-api-clients-go/identity",
+			"revision": "e278dd839eef6f25bfdea8744f64dedb0bbb5664",
+			"revisionTime": "2019-10-21T10:13:54Z"
+		},
+		{
+			"checksumSHA1": "ZZ3JcYJMqEwF1NsDlKOSAc74zag=",
 			"path": "github.com/ONSdigital/dp-authorisation/auth",
-			"revision": "f67be5b0ff6037efd133e4759c42c00ec6aff71a",
-			"revisionTime": "2019-09-17T11:12:50Z"
+			"revision": "d4543527d6cb50711f69446f31d69ca4fd03571d",
+			"revisionTime": "2019-10-18T11:02:24Z"
 		},
 		{
 			"checksumSHA1": "FScyKuzkDBQmRoIdpVLY1H0QA6U=",
@@ -159,10 +165,10 @@
 			"revisionTime": "2019-09-17T09:20:21Z"
 		},
 		{
-			"checksumSHA1": "QwfO5WE/n6QHS3r8XQIJVxkn+Dk=",
+			"checksumSHA1": "qnKv5rLPvX6TCg1UvZDyRu5TuEo=",
 			"path": "github.com/ONSdigital/go-ns/identity",
-			"revision": "dacf81e5819b9521c3c4c7db92bca01a0e964a23",
-			"revisionTime": "2019-09-17T09:20:21Z"
+			"revision": "9011933c1a1ab089021bd4df3bc7aa465e6e5511",
+			"revisionTime": "2019-10-18T08:55:04Z"
 		},
 		{
 			"checksumSHA1": "qqaN4hllMTNueffB5bcz8xQnwX0=",
