@@ -19,6 +19,6 @@ acceptance-publishing: build
 acceptance-web: build
 	ENABLE_PRIVATE_ENDPOINTS=false MONGODB_DATABASE=test HUMAN_LOG=1 go run main.go
 test:
-	go test -cover $(shell go list ./... | grep -v /vendor/)
+	go test -race -cover $(shell go list ./... | grep -v /vendor/)
 
 .PHONEY: test build debug

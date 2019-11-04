@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/ONSdigital/dp-dataset-api/api"
@@ -16,7 +17,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/audit/auditortest"
@@ -27,6 +28,7 @@ import (
 
 var (
 	urlBuilder = url.NewBuilder("localhost:20000")
+	mu         sync.Mutex
 )
 
 func createRequestWithToken(method, url string, body io.Reader) (*http.Request, error) {
@@ -1317,6 +1319,9 @@ func TestGetUniqueDimensionAndOptionsAuditFailure(t *testing.T) {
 }
 
 func getAPIWithMocks(mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, mockAuditor api.Auditor) *api.DatasetAPI {
+	mu.Lock()
+	defer mu.Unlock()
+
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)
 	cfg.ServiceAuthToken = "dataset"
