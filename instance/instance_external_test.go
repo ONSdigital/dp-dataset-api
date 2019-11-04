@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/ONSdigital/dp-dataset-api/api"
@@ -27,7 +28,10 @@ import (
 
 const host = "http://localhost:8080"
 
-var errAudit = errors.New("auditing error")
+var (
+	errAudit = errors.New("auditing error")
+	mu       sync.Mutex
+)
 
 func createRequestWithToken(method, url string, body io.Reader) (*http.Request, error) {
 	r, err := http.NewRequest(method, url, body)
@@ -1298,6 +1302,8 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 var urlBuilder = url.NewBuilder("localhost:20000")
 
 func getAPIWithMocks(mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, mockAuditor api.Auditor, datasetPermissions api.AuthHandler, permissions api.AuthHandler) *api.DatasetAPI {
+	mu.Lock()
+	defer mu.Unlock()
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)
 	cfg.ServiceAuthToken = "dataset"

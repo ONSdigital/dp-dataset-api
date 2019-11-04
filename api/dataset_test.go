@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -39,6 +40,7 @@ var (
 
 	urlBuilder         = url.NewBuilder("localhost:20000")
 	genericAuditParams = common.Params{"caller_identity": callerIdentity, "dataset_id": "123-456"}
+	mu                 sync.Mutex
 )
 
 func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {
@@ -49,6 +51,8 @@ func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {
 
 // GetAPIWithMocks also used in other tests, so exported
 func GetAPIWithMocks(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, auditMock Auditor, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
+	mu.Lock()
+	defer mu.Unlock()
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)
 	cfg.ServiceAuthToken = authToken
