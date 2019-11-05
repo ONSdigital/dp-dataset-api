@@ -117,12 +117,6 @@
 			"revisionTime": "2018-06-07T08:14:26Z"
 		},
 		{
-			"checksumSHA1": "+0u/sLRc5sJWxxTA4kaMlvEXrrc=",
-			"path": "github.com/ONSdigital/go-ns/clients/identity",
-			"revision": "b9e0d3becece650f6f72b3dd1b1a1f65ea03bff7",
-			"revisionTime": "2018-07-12T08:51:53Z"
-		},
-		{
 			"checksumSHA1": "hlr8fdPLJMYY6YkPuiBkI8Jm9Mc=",
 			"path": "github.com/ONSdigital/go-ns/common",
 			"revision": "caee21dda39f1143056a5ec0b3031036e14c7c42",
@@ -169,12 +163,6 @@
 			"path": "github.com/ONSdigital/go-ns/mongo",
 			"revision": "7e321b536cf0ce8706090bf16c75f16a489bc5af",
 			"revisionTime": "2018-07-12T13:38:54Z"
-		},
-		{
-			"checksumSHA1": "ACpnYmqNJhkkLg4jDqQnX4N2+AE=",
-			"path": "github.com/ONSdigital/go-ns/rchttp",
-			"revision": "eaa06db76f9dcf5459f2915b9e69a639e1a9a1eb",
-			"revisionTime": "2018-07-13T09:18:56Z"
 		},
 		{
 			"checksumSHA1": "fRvn/yfzF56k6mIJxg6kAvA+PE0=",

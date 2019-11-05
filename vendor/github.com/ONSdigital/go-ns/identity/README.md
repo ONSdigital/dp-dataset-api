@@ -37,7 +37,7 @@ or, put less portably:
     req.Header.Add("User-Identity", "UserA")
 ```
 
-But most of this should be done by `go-ns/rchttp` and `go-ns/clients/...`.
+But most of this should be done by `go-ns/rchttp` and `dp-api-clients-go/...`.
 
 ### Testing
 
@@ -47,7 +47,7 @@ If you need to use the middleware component in unit tests you can call the const
 import clientsidentity "github.com/ONSdigital/go-ns/clients/identity"
 import "github.com/ONSdigital/go-ns/common/commontest"
 
-httpClient := &commontest.RCHTTPClienterMock{
+httpClient := &rchttp.ClienterMock{
     DoFunc: func(ctx context.Context, req *http.Request) (*http.Response, error) {
         return &http.Response{
             StatusCode: http.StatusOK,

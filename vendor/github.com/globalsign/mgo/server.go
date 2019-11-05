@@ -67,8 +67,9 @@ type mongoServer struct {
 	pingCount     uint32
 	closed        bool
 	abended       bool
+	minPoolSize   int
+	maxIdleTimeMS int
 	poolWaiter    *sync.Cond
-	dialInfo      *DialInfo
 }
 
 type dialer struct {
@@ -90,20 +91,21 @@ type mongoServerInfo struct {
 
 var defaultServerInfo mongoServerInfo
 
-func newServer(addr string, tcpaddr *net.TCPAddr, syncChan chan bool, dial dialer, info *DialInfo) *mongoServer {
+func newServer(addr string, tcpaddr *net.TCPAddr, syncChan chan bool, dial dialer, minPoolSize, maxIdleTimeMS int) *mongoServer {
 	server := &mongoServer{
-		Addr:         addr,
-		ResolvedAddr: tcpaddr.String(),
-		tcpaddr:      tcpaddr,
-		sync:         syncChan,
-		dial:         dial,
-		info:         &defaultServerInfo,
-		pingValue:    time.Hour, // Push it back before an actual ping.
-		dialInfo:     info,
+		Addr:          addr,
+		ResolvedAddr:  tcpaddr.String(),
+		tcpaddr:       tcpaddr,
+		sync:          syncChan,
+		dial:          dial,
+		info:          &defaultServerInfo,
+		pingValue:     time.Hour, // Push it back before an actual ping.
+		minPoolSize:   minPoolSize,
+		maxIdleTimeMS: maxIdleTimeMS,
 	}
 	server.poolWaiter = sync.NewCond(server)
 	go server.pinger(true)
-	if info.MaxIdleTimeMS != 0 {
+	if maxIdleTimeMS != 0 {
 		go server.poolShrinker()
 	}
 	return server
@@ -121,18 +123,22 @@ var errServerClosed = errors.New("server was closed")
 // If the poolLimit argument is greater than zero and the number of sockets in
 // use in this server is greater than the provided limit, errPoolLimit is
 // returned.
-func (server *mongoServer) AcquireSocket(info *DialInfo) (socket *mongoSocket, abended bool, err error) {
-	return server.acquireSocketInternal(info, false)
+func (server *mongoServer) AcquireSocket(poolLimit int, timeout time.Duration) (socket *mongoSocket, abended bool, err error) {
+	return server.acquireSocketInternal(poolLimit, timeout, false, 0*time.Millisecond)
 }
 
 // AcquireSocketWithBlocking wraps AcquireSocket, but if a socket is not available, it will _not_
 // return errPoolLimit. Instead, it will block waiting for a socket to become available. If poolTimeout
 // should elapse before a socket is available, it will return errPoolTimeout.
-func (server *mongoServer) AcquireSocketWithBlocking(info *DialInfo) (socket *mongoSocket, abended bool, err error) {
-	return server.acquireSocketInternal(info, true)
+func (server *mongoServer) AcquireSocketWithBlocking(
+	poolLimit int, socketTimeout time.Duration, poolTimeout time.Duration,
+) (socket *mongoSocket, abended bool, err error) {
+	return server.acquireSocketInternal(poolLimit, socketTimeout, true, poolTimeout)
 }
 
-func (server *mongoServer) acquireSocketInternal(info *DialInfo, shouldBlock bool) (socket *mongoSocket, abended bool, err error) {
+func (server *mongoServer) acquireSocketInternal(
+	poolLimit int, timeout time.Duration, shouldBlock bool, poolTimeout time.Duration,
+) (socket *mongoSocket, abended bool, err error) {
 	for {
 		server.Lock()
 		abended = server.abended
@@ -140,7 +146,7 @@ func (server *mongoServer) acquireSocketInternal(info *DialInfo, shouldBlock boo
 			server.Unlock()
 			return nil, abended, errServerClosed
 		}
-		if info.PoolLimit > 0 {
+		if poolLimit > 0 {
 			if shouldBlock {
 				// Beautiful. Golang conditions don't have a WaitWithTimeout, so I've implemented the timeout
 				// with a wait + broadcast. The broadcast will cause the loop here to re-check the timeout,
@@ -152,11 +158,11 @@ func (server *mongoServer) acquireSocketInternal(info *DialInfo, shouldBlock boo
 				// https://github.com/golang/go/issues/16620, since the lock needs to be held in _this_ goroutine.
 				waitDone := make(chan struct{})
 				timeoutHit := false
-				if info.PoolTimeout > 0 {
+				if poolTimeout > 0 {
 					go func() {
 						select {
 						case <-waitDone:
-						case <-time.After(info.PoolTimeout):
+						case <-time.After(poolTimeout):
 							// timeoutHit is part of the wait condition, so needs to be changed under mutex.
 							server.Lock()
 							defer server.Unlock()
@@ -166,7 +172,7 @@ func (server *mongoServer) acquireSocketInternal(info *DialInfo, shouldBlock boo
 					}()
 				}
 				timeSpentWaiting := time.Duration(0)
-				for len(server.liveSockets)-len(server.unusedSockets) >= info.PoolLimit && !timeoutHit {
+				for len(server.liveSockets)-len(server.unusedSockets) >= poolLimit && !timeoutHit {
 					// We only count time spent in Wait(), and not time evaluating the entire loop,
 					// so that in the happy non-blocking path where the condition above evaluates true
 					// first time, we record a nice round zero wait time.
@@ -185,7 +191,7 @@ func (server *mongoServer) acquireSocketInternal(info *DialInfo, shouldBlock boo
 				// Record that we fetched a connection of of a socket list and how long we spent waiting
 				stats.noticeSocketAcquisition(timeSpentWaiting)
 			} else {
-				if len(server.liveSockets)-len(server.unusedSockets) >= info.PoolLimit {
+				if len(server.liveSockets)-len(server.unusedSockets) >= poolLimit {
 					server.Unlock()
 					return nil, false, errPoolLimit
 				}
@@ -196,15 +202,15 @@ func (server *mongoServer) acquireSocketInternal(info *DialInfo, shouldBlock boo
 			socket = server.unusedSockets[n-1]
 			server.unusedSockets[n-1] = nil // Help GC.
 			server.unusedSockets = server.unusedSockets[:n-1]
-			serverInfo := server.info
+			info := server.info
 			server.Unlock()
-			err = socket.InitialAcquire(serverInfo, info)
+			err = socket.InitialAcquire(info, timeout)
 			if err != nil {
 				continue
 			}
 		} else {
 			server.Unlock()
-			socket, err = server.Connect(info)
+			socket, err = server.Connect(timeout)
 			if err == nil {
 				server.Lock()
 				// We've waited for the Connect, see if we got
@@ -225,18 +231,20 @@ func (server *mongoServer) acquireSocketInternal(info *DialInfo, shouldBlock boo
 
 // Connect establishes a new connection to the server. This should
 // generally be done through server.AcquireSocket().
-func (server *mongoServer) Connect(info *DialInfo) (*mongoSocket, error) {
+func (server *mongoServer) Connect(timeout time.Duration) (*mongoSocket, error) {
 	server.RLock()
 	master := server.info.Master
 	dial := server.dial
 	server.RUnlock()
 
-	logf("Establishing new connection to %s (timeout=%s)...", server.Addr, info.Timeout)
+	logf("Establishing new connection to %s (timeout=%s)...", server.Addr, timeout)
 	var conn net.Conn
 	var err error
 	switch {
 	case !dial.isSet():
-		conn, err = net.DialTimeout("tcp", server.ResolvedAddr, info.Timeout)
+		// Cannot do this because it lacks timeout support. :-(
+		//conn, err = net.DialTCP("tcp", nil, server.tcpaddr)
+		conn, err = net.DialTimeout("tcp", server.ResolvedAddr, timeout)
 		if tcpconn, ok := conn.(*net.TCPConn); ok {
 			tcpconn.SetKeepAlive(true)
 		} else if err == nil {
@@ -256,7 +264,7 @@ func (server *mongoServer) Connect(info *DialInfo) (*mongoSocket, error) {
 	logf("Connection to %s established.", server.Addr)
 
 	stats.conn(+1, master)
-	return newSocket(server, conn, info), nil
+	return newSocket(server, conn, timeout), nil
 }
 
 // Close forces closing all sockets that are alive, whether
@@ -399,8 +407,7 @@ func (server *mongoServer) pinger(loop bool) {
 			time.Sleep(delay)
 		}
 		op := op
-
-		socket, _, err := server.AcquireSocket(server.dialInfo)
+		socket, _, err := server.AcquireSocket(0, delay)
 		if err == nil {
 			start := time.Now()
 			_, _ = socket.SimpleQuery(&op)
@@ -441,7 +448,7 @@ func (server *mongoServer) poolShrinker() {
 		}
 		server.Lock()
 		unused := len(server.unusedSockets)
-		if unused < server.dialInfo.MinPoolSize {
+		if unused < server.minPoolSize {
 			server.Unlock()
 			continue
 		}
@@ -450,8 +457,8 @@ func (server *mongoServer) poolShrinker() {
 		reclaimMap := map[*mongoSocket]struct{}{}
 		// Because the acquisition and recycle are done at the tail of array,
 		// the head is always the oldest unused socket.
-		for _, s := range server.unusedSockets[:unused-server.dialInfo.MinPoolSize] {
-			if s.lastTimeUsed.Add(time.Duration(server.dialInfo.MaxIdleTimeMS) * time.Millisecond).After(now) {
+		for _, s := range server.unusedSockets[:unused-server.minPoolSize] {
+			if s.lastTimeUsed.Add(time.Duration(server.maxIdleTimeMS) * time.Millisecond).After(now) {
 				break
 			}
 			end++
@@ -565,7 +572,7 @@ func (servers *mongoServers) BestFit(mode Mode, serverTags []bson.D) *mongoServe
 		if best == nil {
 			best = next
 			best.RLock()
-			if len(serverTags) != 0 && !next.info.Mongos && !best.hasTags(serverTags) {
+			if serverTags != nil && !next.info.Mongos && !best.hasTags(serverTags) {
 				best.RUnlock()
 				best = nil
 			}
@@ -574,7 +581,7 @@ func (servers *mongoServers) BestFit(mode Mode, serverTags []bson.D) *mongoServe
 		next.RLock()
 		swap := false
 		switch {
-		case len(serverTags) != 0 && !next.info.Mongos && !next.hasTags(serverTags):
+		case serverTags != nil && !next.info.Mongos && !next.hasTags(serverTags):
 			// Must have requested tags.
 		case mode == Secondary && next.info.Master && !next.info.Mongos:
 			// Must be a secondary or mongos.

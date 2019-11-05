@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ONSdigital/go-ns/common"
+	"github.com/ONSdigital/dp-api-clients-go/headers"
 )
 
 // DatasetPermissionsRequestBuilder is an implementation of the GetPermissionsRequestBuilder interface that creates a
@@ -65,10 +65,15 @@ func (builder *DatasetPermissionsRequestBuilder) NewPermissionsRequest(req *http
 
 // extractRequestParameters helper function get the required headers and parameters from the inbound request.
 func (builder *DatasetPermissionsRequestBuilder) extractRequestParameters(req *http.Request) parameters {
+	// ignore errors and continue with empty string.
+	userAuthToken, _ := headers.GetUserAuthToken(req)
+	serviceAuthToken, _ := headers.GetServiceAuthToken(req)
+	collectionID, _ := headers.GetCollectionID(req)
+
 	return parameters{
-		userAuthToken:    req.Header.Get(common.FlorenceHeaderKey),
-		serviceAuthToken: req.Header.Get(common.AuthHeaderKey),
-		collectionID:     req.Header.Get(common.CollectionIDHeaderKey),
+		userAuthToken:    userAuthToken,
+		serviceAuthToken: serviceAuthToken,
+		collectionID:     collectionID,
 		datasetID:        builder.GetRequestVarsFunc(req)[builder.DatasetIDKey],
 	}
 }
@@ -76,23 +81,32 @@ func (builder *DatasetPermissionsRequestBuilder) extractRequestParameters(req *h
 // createUserDatasetPermissionsRequest creates a new get user dataset permissions http.Request from the parameters provided.
 func (builder *DatasetPermissionsRequestBuilder) createUserDatasetPermissionsRequest(params parameters) (*http.Request, error) {
 	url := fmt.Sprintf(userDatasetPermissionsURL, builder.Host, params.datasetID, params.collectionID)
+
 	getPermissionsReq, err := createRequest(url)
 	if err != nil {
 		return nil, err
 	}
 
-	getPermissionsReq.Header.Set(common.FlorenceHeaderKey, params.userAuthToken)
+	if err := headers.SetUserAuthToken(getPermissionsReq, params.userAuthToken); err != nil {
+		return nil, err
+	}
+
 	return getPermissionsReq, nil
 }
 
 // DatasetPermissionsRequestBuilder creates a new get service dataset permissions http.Request from the parameters provided.
 func (builder *DatasetPermissionsRequestBuilder) createServiceDatasetPermissionsRequest(params parameters) (*http.Request, error) {
 	url := fmt.Sprintf(serviceDatasetPermissionsURL, builder.Host, params.datasetID)
+
 	getPermissionsReq, err := createRequest(url)
 	if err != nil {
 		return nil, err
 	}
-	getPermissionsReq.Header.Set(common.AuthHeaderKey, params.serviceAuthToken)
+
+	if err = headers.SetServiceAuthToken(getPermissionsReq, params.serviceAuthToken); err != nil {
+		return nil, err
+	}
+
 	return getPermissionsReq, nil
 }
 

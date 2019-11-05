@@ -16,7 +16,7 @@ type Configuration struct {
 	DatabaseAddress string `envconfig:"GRAPH_ADDR"`
 	PoolSize        int    `envconfig:"GRAPH_POOL_SIZE"`
 	MaxRetries      int    `envconfig:"MAX_RETRIES"`
-	QueryTimeout    int    `envconfig:"QUERY_TIMEOUT"`
+	QueryTimeout    int    `envconfig:"GRAPH_QUERY_TIMEOUT"`
 
 	Driver driver.Driver
 }

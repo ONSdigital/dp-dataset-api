@@ -454,7 +454,12 @@ func unmarshalInstance(ctx context.Context, reader io.Reader, post bool) (*model
 		// One could use a different model, so when unmarshalling request body into an
 		// instance object, it will not include those fields.
 
-		instance.InstanceID = uuid.NewV4().String()
+		id, err := uuid.NewV4()
+		if err != nil {
+			return nil, err
+		}
+
+		instance.InstanceID = id.String()
 		log.InfoCtx(ctx, "post request on an instance", log.Data{"instance_id": instance.InstanceID})
 		if instance.Links == nil || instance.Links.Job == nil {
 			return nil, errs.ErrMissingJobProperties

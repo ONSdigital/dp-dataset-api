@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ONSdigital/go-ns/common"
+	"github.com/ONSdigital/dp-api-clients-go/headers"
 )
 
 // PermissionsRequestBuilder is an implementation of the GetPermissionsRequestBuilder interface that creates a
@@ -13,6 +13,7 @@ import (
 type PermissionsRequestBuilder struct {
 	Host string
 }
+
 // NewPermissionsRequestBuilder is a constructor method for creating a new PermissionsRequestBuilder
 // Host - the host of Permissions API.
 func NewPermissionsRequestBuilder(host string) GetPermissionsRequestBuilder {
@@ -29,11 +30,9 @@ func (builder *PermissionsRequestBuilder) NewPermissionsRequest(req *http.Reques
 		return nil, requestRequiredButNilError
 	}
 
-	userAuthToken := req.Header.Get(common.FlorenceHeaderKey)
-	serviceAuthToken := req.Header.Get(common.AuthHeaderKey)
-
-	if userAuthToken == "" && serviceAuthToken == "" {
-		return nil, noUserOrServiceAuthTokenProvidedError
+	userAuthToken, serviceAuthToken, err := getAuthTokens(req)
+	if err != nil {
+		return nil, err
 	}
 
 	if userAuthToken != "" {
@@ -49,17 +48,25 @@ func (builder *PermissionsRequestBuilder) createUserPermissionsRequest(authToken
 	if err != nil {
 		return nil, err
 	}
-	getPermissionsRequest.Header.Set(common.FlorenceHeaderKey, authToken)
+
+	if err := headers.SetUserAuthToken(getPermissionsRequest, authToken); err != nil {
+		return nil, err
+	}
+
 	return getPermissionsRequest, nil
 }
 
-func (builder *PermissionsRequestBuilder) createServicePermissionsRequest(authToken string) (*http.Request, error) {
+func (builder *PermissionsRequestBuilder) createServicePermissionsRequest(serviceAuthToken string) (*http.Request, error) {
 	url := fmt.Sprintf(serviceInstancePermissionsURL, builder.Host)
 	getPermissionsRequest, err := createRequest(url)
 	if err != nil {
 		return nil, err
 	}
-	getPermissionsRequest.Header.Set(common.AuthHeaderKey, authToken)
+
+	if err := headers.SetServiceAuthToken(getPermissionsRequest, serviceAuthToken); err != nil {
+		return nil, err
+	}
+
 	return getPermissionsRequest, nil
 }
 
@@ -71,4 +78,25 @@ func (builder *PermissionsRequestBuilder) checkConfiguration() error {
 		}
 	}
 	return nil
+}
+
+// getAuthTokens get the user and or service auth tokens from the request. 
+func getAuthTokens(req *http.Request) (string, string, error) {
+	userAuthToken, errUserToken := headers.GetUserAuthToken(req)
+	if errUserToken != nil && headers.IsNotErrNotFound(errUserToken) {
+		// something has gone wrong - bail
+		return "", "", errUserToken
+	}
+
+	serviceAuthToken, errServiceToken := headers.GetServiceAuthToken(req)
+	if errServiceToken != nil && headers.IsNotErrNotFound(errServiceToken) {
+		// something has gone wrong - bail
+		return "", "", errServiceToken
+	}
+
+	if headers.IsErrNotFound(errUserToken) && headers.IsErrNotFound(errServiceToken) {
+		// neither token found - bail with error.
+		return "", "", noUserOrServiceAuthTokenProvidedError
+	}
+	return userAuthToken, serviceAuthToken, nil
 }
