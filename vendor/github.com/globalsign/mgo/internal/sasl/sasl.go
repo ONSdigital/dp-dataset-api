@@ -127,7 +127,6 @@ func (ss *saslSession) Step(serverData []byte) (clientData []byte, done bool, er
 	if rc == C.SASL_CONTINUE {
 		return clientData, false, nil
 	}
-
 	return nil, false, saslError(rc, ss.conn, "cannot establish SASL session")
 }
 

@@ -5,12 +5,13 @@ import (
 )
 
 const (
-	codeListURI = "/code-lists/%s"
-	editionsURI = "/code-lists/%s/editions"
-	editionURI  = "/code-lists/%s/editions/%s"
-	codesURI    = "/code-lists/%s/editions/%s/codes"
-	codeURI     = "/code-lists/%s/editions/%s/codes/%s"
-	datasetsURI = "/code-lists/%s/editions/%s/codes/%s/datasets"
+	codeListURI   = "/code-lists/%s"
+	editionsURI   = "/code-lists/%s/editions"
+	editionURI    = "/code-lists/%s/editions/%s"
+	codesURI      = "/code-lists/%s/editions/%s/codes"
+	codeURI       = "/code-lists/%s/editions/%s/codes/%s"
+	datasetsURI   = "/code-lists/%s/editions/%s/codes/%s/datasets"
+	datasetAPIuri = "/datasets/%s"
 )
 
 // Link contains the id and a link to a resource

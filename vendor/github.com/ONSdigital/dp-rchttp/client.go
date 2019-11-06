@@ -1,7 +1,8 @@
 package rchttp
 
+//go:generate moq -out mock_client.go . Clienter
+
 import (
-	"errors"
 	"io"
 	"math"
 	"math/rand"
@@ -19,12 +20,10 @@ import (
 // Client is an extension of the net/http client with ability to add
 // timeouts, exponential backoff and context-based cancellation
 type Client struct {
-	MaxRetries           int
-	ExponentialBackoff   bool
-	RetryTime            time.Duration
-	HTTPClient           *http.Client
-	AuthToken            string
-	DownloadServiceToken string
+	MaxRetries         int
+	ExponentialBackoff bool
+	RetryTime          time.Duration
+	HTTPClient         *http.Client
 }
 
 // DefaultClient is a go-ns specific http client with sensible timeouts,
@@ -47,47 +46,39 @@ var DefaultClient = &Client{
 	},
 }
 
+// Clienter provides an interface for methods on an HTTP Client
+type Clienter interface {
+	SetTimeout(timeout time.Duration)
+	SetMaxRetries(int)
+	GetMaxRetries() int
+
+	Get(ctx context.Context, url string) (*http.Response, error)
+	Head(ctx context.Context, url string) (*http.Response, error)
+	Post(ctx context.Context, url string, contentType string, body io.Reader) (*http.Response, error)
+	Put(ctx context.Context, url string, contentType string, body io.Reader) (*http.Response, error)
+	PostForm(ctx context.Context, uri string, data url.Values) (*http.Response, error)
+
+	Do(ctx context.Context, req *http.Request) (*http.Response, error)
+}
+
 // NewClient returns a copy of DefaultClient
-func NewClient() common.RCHTTPClienter {
+func NewClient() Clienter {
 	newClient := *DefaultClient
 	return &newClient
 }
 
 // ClientWithTimeout facilitates creating a client and setting request timeout
-func ClientWithTimeout(c common.RCHTTPClienter, timeout time.Duration) common.RCHTTPClienter {
+func ClientWithTimeout(c Clienter, timeout time.Duration) Clienter {
 	if c == nil {
 		c = NewClient()
 	}
 	c.SetTimeout(timeout)
 	return c
-} // ClientWithTimeout facilitates creating a client and setting request timeout
+}
 
+// SetTimeout sets HTTP request timeout
 func (c *Client) SetTimeout(timeout time.Duration) {
 	c.HTTPClient.Timeout = timeout
-}
-
-// ClientWithServiceToken facilitates creating a client and setting service auth
-func ClientWithServiceToken(c common.RCHTTPClienter, authToken string) common.RCHTTPClienter {
-	if c == nil {
-		c = NewClient()
-	}
-	c.SetAuthToken(authToken)
-	return c
-}
-func (c *Client) SetAuthToken(authToken string) {
-	c.AuthToken = authToken
-}
-
-// ClientWithDownloadServiceToken facilitates creating a client and setting service auth
-func ClientWithDownloadServiceToken(c common.RCHTTPClienter, token string) common.RCHTTPClienter {
-	if c == nil {
-		c = NewClient()
-	}
-	c.SetDownloadServiceToken(token)
-	return c
-}
-func (c *Client) SetDownloadServiceToken(token string) {
-	c.DownloadServiceToken = token
 }
 
 func (c *Client) GetMaxRetries() int {
@@ -100,43 +91,20 @@ func (c *Client) SetMaxRetries(maxRetries int) {
 // Do calls ctxhttp.Do with the addition of exponential backoff
 func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, error) {
 
-	if len(c.AuthToken) > 0 {
-		// only add this header if not already set (e.g. for authClient)
-		if len(req.Header.Get(common.AuthHeaderKey)) == 0 {
-			common.AddServiceTokenHeader(req, c.AuthToken)
-		}
-	}
-	if len(c.DownloadServiceToken) > 0 {
-		// only add this header if not already set
-		if len(req.Header.Get(common.DownloadServiceHeaderKey)) == 0 {
-			common.AddDownloadServiceTokenHeader(req, c.DownloadServiceToken)
-		}
-	}
-	if common.IsUserPresent(ctx) {
-		// only add this header if not already set
-		if len(req.Header.Get(common.UserHeaderKey)) == 0 {
-			common.AddUserHeader(req, common.User(ctx))
-		}
-	}
-	if common.IsFlorenceIdentityPresent(ctx) {
-		common.SetFlorenceHeader(ctx, req)
-	}
-
 	// get any existing correlation-id (might be "id1,id2"), append a new one, add to headers
-	upstreamCorrelationIds := common.GetRequestId(ctx)
-	addedIdLen := 20
-	if upstreamCorrelationIds != "" {
+	upstreamCorrelationIDs := common.GetRequestId(ctx)
+	addedIDLen := 20
+	if upstreamCorrelationIDs != "" {
 		// get length of (first of) IDs (e.g. "id1" is 3), new ID will be half that size
-		addedIdLen = len(upstreamCorrelationIds) / 2
-		if commaPosition := strings.Index(upstreamCorrelationIds, ","); commaPosition > 1 {
-			addedIdLen = commaPosition / 2
+		addedIDLen = len(upstreamCorrelationIDs) / 2
+		if commaPosition := strings.Index(upstreamCorrelationIDs, ","); commaPosition > 1 {
+			addedIDLen = commaPosition / 2
 		}
-		upstreamCorrelationIds += ","
+		upstreamCorrelationIDs += ","
 	}
-	common.AddRequestIdHeader(req, upstreamCorrelationIds+common.NewRequestID(addedIdLen))
+	common.AddRequestIdHeader(req, upstreamCorrelationIDs+common.NewRequestID(addedIDLen))
 
-	doer := func(args ...interface{}) (*http.Response, error) {
-		req := args[2].(*http.Request)
+	doer := func(ctx context.Context, client *http.Client, req *http.Request) (*http.Response, error) {
 		if req.ContentLength > 0 {
 			var err error
 			req.Body, err = req.GetBody()
@@ -144,24 +112,24 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 				return nil, err
 			}
 		}
-		return ctxhttp.Do(args[0].(context.Context), args[1].(*http.Client), req)
+		return ctxhttp.Do(ctx, client, req)
 	}
 
 	resp, err := doer(ctx, c.HTTPClient, req)
 	if err != nil {
 		if c.ExponentialBackoff {
-			return c.backoff(doer, err, ctx, c.HTTPClient, req)
+			return c.backoff(ctx, doer, err, c.HTTPClient, req)
 		}
 		return nil, err
 	}
 
 	if c.ExponentialBackoff {
 		if resp.StatusCode >= http.StatusInternalServerError {
-			return c.backoff(doer, err, ctx, c.HTTPClient, req, errors.New("Bad server status"))
+			return c.backoff(ctx, doer, err, c.HTTPClient, req)
 		}
 
 		if resp.StatusCode == http.StatusConflict {
-			return c.backoff(doer, err, ctx, c.HTTPClient, req, errors.New("Conflict - request could not be completed due to a conflict with the current state of the target resource"))
+			return c.backoff(ctx, doer, err, c.HTTPClient, req)
 		}
 	}
 
@@ -215,26 +183,26 @@ func (c *Client) PostForm(ctx context.Context, uri string, data url.Values) (*ht
 	return c.Post(ctx, uri, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
 }
 
-func (c *Client) backoff(f func(...interface{}) (*http.Response, error), retryErr error, args ...interface{}) (resp *http.Response, err error) {
+func (c *Client) backoff(ctx context.Context, doer func(context.Context, *http.Client, *http.Request) (*http.Response, error), retryErr error, client *http.Client, req *http.Request) (resp *http.Response, err error) {
 	if c.GetMaxRetries() < 1 {
 		return nil, retryErr
 	}
 	for attempt := 1; attempt <= c.GetMaxRetries(); attempt++ {
 		// ensure that the context is not cancelled before iterating
-		if args[0].(context.Context).Err() != nil {
-			err = args[0].(context.Context).Err()
+		if ctx.Err() != nil {
+			err = ctx.Err()
 			return
 		}
 
 		time.Sleep(getSleepTime(attempt, c.RetryTime))
 
-		resp, err = f(args...)
+		resp, err = doer(ctx, client, req)
 		// prioritise any context cancellation
-		if args[0].(context.Context).Err() != nil {
-			err = args[0].(context.Context).Err()
+		if ctx.Err() != nil {
+			err = ctx.Err()
 			return
 		}
-		if err == nil && resp.StatusCode < http.StatusInternalServerError {
+		if err == nil && resp.StatusCode < http.StatusInternalServerError && resp.StatusCode != http.StatusConflict {
 			return
 		}
 	}

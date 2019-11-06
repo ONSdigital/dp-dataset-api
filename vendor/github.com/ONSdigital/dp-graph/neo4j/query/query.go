@@ -4,7 +4,6 @@ const (
 	// codelists
 	GetCodeLists       = "MATCH (i) WHERE i:_code_list%s RETURN distinct labels(i) as labels"
 	GetCodeList        = "MATCH (i:_code_list:`_code_list_%s`) RETURN i"
-	CodeListExists     = "MATCH (cl:_code_list:`_code_list_%s`) RETURN count(*)"
 	GetCodeListEdition = "MATCH (i:_code_list:`_code_list_%s` {edition:" + `"%s"` + "}) RETURN i"
 	CountEditions      = "MATCH (cl:_code_list:`_code_list_%s`) WHERE cl.edition = %q RETURN count(*)"
 	GetCodes           = "MATCH (c:_code) -[r:usedBy]->(cl:_code_list: `_code_list_%s`) WHERE cl.edition = %q RETURN c, r"

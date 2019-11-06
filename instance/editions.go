@@ -35,7 +35,11 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 				return nil, action, auditErr
 			}
 
-			editionDoc = models.CreateEdition(s.Host, datasetID, edition)
+			editionDoc, err = models.CreateEdition(s.Host, datasetID, edition)
+			if err != nil {
+				return nil, action, err
+			}
+
 			log.Debug("created new edition", logData)
 		} else {
 

@@ -1,9 +1,9 @@
 package observation
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/ONSdigital/go-ns/log"
 	bolt "github.com/johnnadratowski/golang-neo4j-bolt-driver"
@@ -75,31 +75,42 @@ func createObservationQuery(filter *Filter) string {
 
 	matchDimensions := "MATCH "
 	where := " WHERE "
+	with := " WITH "
+	match := " MATCH "
 
-	count := 0
-	for _, dimension := range filter.DimensionFilters {
+	for index, dimension := range filter.DimensionFilters {
 		// If the dimension options is empty then don't bother specifying in the query as this will exclude all matches.
 		if len(dimension.Options) > 0 {
-			if count > 0 {
+			if index != 0 {
 				matchDimensions += ", "
 				where += " AND "
+				with += ", "
+				match += ", "
 			}
 
-			matchDimensions += fmt.Sprintf("(o)-[:isValueOf]->(`%s`:`_%s_%s`)", dimension.Name, filter.InstanceID, dimension.Name)
-			where += createOptionList(dimension.Name, dimension.Options)
-			count++
+			optionList := createOptionList(dimension.Options)
+			matchDimensions += fmt.Sprintf("(%s:`_%s_%s`)", dimension.Name, filter.InstanceID, dimension.Name)
+			where += fmt.Sprintf("%s.value IN [%s]", dimension.Name, optionList)
+			with += dimension.Name
+			match += fmt.Sprintf("(o:`_%s_observation`)-[:isValueOf]->(%s)", filter.InstanceID, dimension.Name)
 		}
 	}
 
-	return matchDimensions + where + " RETURN o.value AS row"
+	return matchDimensions + where + with + match + " RETURN o.value AS row"
 }
 
-func createOptionList(name string, opts []string) string {
-	var q []string
+func createOptionList(options []string) string {
 
-	for _, o := range opts {
-		q = append(q, fmt.Sprintf("`%s`.value='%s'", name, o))
+	var buffer bytes.Buffer
+
+	for index, option := range options {
+
+		if index != 0 {
+			buffer.WriteString(", ")
+		}
+
+		buffer.WriteString(fmt.Sprintf("'%s'", option))
 	}
 
-	return fmt.Sprintf("(%s)", strings.Join(q, " OR "))
+	return buffer.String()
 }

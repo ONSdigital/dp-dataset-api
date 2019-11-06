@@ -247,9 +247,14 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 		return nil, errs.ErrUnableToReadMessage
 	}
 
-	var version Version
 	// Create unique id
-	version.ID = uuid.NewV4().String()
+	id, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
+
+	var version Version
+	version.ID = id.String()
 
 	err = json.Unmarshal(b, &version)
 	if err != nil {
@@ -287,14 +292,23 @@ func CreateContact(reader io.Reader) (*Contact, error) {
 	}
 
 	// Create unique id
-	contact.ID = (uuid.NewV4()).String()
+	id, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
+	contact.ID = id.String()
 
 	return &contact, nil
 }
 
-func CreateEdition(host, datasetID, edition string) *EditionUpdate {
+func CreateEdition(host, datasetID, edition string) (*EditionUpdate, error) {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
+
 	return &EditionUpdate{
-		ID: uuid.NewV4().String(),
+		ID: id.String(),
 		Next: &Edition{
 			Edition: edition,
 			State:   EditionConfirmedState,
@@ -315,7 +329,7 @@ func CreateEdition(host, datasetID, edition string) *EditionUpdate {
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 //UpdateLinks in the editions.next document, ensuring links can't regress once published to current
