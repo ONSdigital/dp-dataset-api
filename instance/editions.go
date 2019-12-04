@@ -21,7 +21,7 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 
 	if editionDoc, action, err = func() (*models.EditionUpdate, string, error) {
 
-		log.Debug("getting edition", logData)
+		log.DebugCtx(ctx, "getting edition", logData)
 		editionDoc, err := s.GetEdition(datasetID, edition, "")
 		if err != nil {
 			if err != errs.ErrEditionNotFound {
@@ -54,7 +54,7 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 				}
 			}
 
-			log.Debug("edition found, updating", logData)
+			log.DebugCtx(ctx, "edition found, updating", logData)
 			if auditErr := s.Auditor.Record(ctx, action, audit.Attempted, auditParams); auditErr != nil {
 				return nil, action, auditErr
 			}

@@ -1399,7 +1399,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123"}},
+			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 		)
 	})
 
@@ -1441,7 +1441,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123"}},
+			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 		)
 	})
 }
@@ -1481,7 +1481,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 		)
 	})
 
@@ -1518,7 +1518,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 		)
 	})
 
@@ -1556,7 +1556,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 		)
 	})
 
@@ -1593,7 +1593,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 		)
 	})
 
@@ -1696,7 +1696,7 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 
 				auditMock.AssertRecordCalls(
 					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 				)
 			})
 		})
@@ -1729,7 +1729,7 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 
 				auditMock.AssertRecordCalls(
 					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 				)
 			})
 		})
@@ -1762,7 +1762,7 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 
 				auditMock.AssertRecordCalls(
 					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 				)
 			})
 		})
@@ -1803,7 +1803,7 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 
 				auditMock.AssertRecordCalls(
 					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 				)
 			})
 		})
@@ -1841,7 +1841,7 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 
 				auditMock.AssertRecordCalls(
 					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 				)
 			})
 		})
@@ -1885,7 +1885,7 @@ func TestDeleteDatasetAuditActionSuccessfulError(t *testing.T) {
 
 				auditMock.AssertRecordCalls(
 					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123"}},
+					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 				)
 			})
 		})
