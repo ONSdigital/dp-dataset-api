@@ -156,7 +156,7 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 		logData["query_parameters"] = queryParameters
 
 		// retrieve observations
-		observations, err := api.getObservationList(versionDoc, queryParameters, defaultObservationLimit, dimensionOffset, logData)
+		observations, err := api.getObservationList(ctx, versionDoc, queryParameters, defaultObservationLimit, dimensionOffset, logData)
 		if err != nil {
 			log.ErrorCtx(ctx, errors.WithMessage(err, "get observations: unable to retrieve observations"), logData)
 			return nil, err
@@ -266,7 +266,7 @@ func extractQueryParameters(urlQuery url.Values, validDimensions []string) (map[
 	return queryParameters, nil
 }
 
-func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParameters map[string]string, limit, dimensionOffset int, logData log.Data) ([]models.Observation, error) {
+func (api *DatasetAPI) getObservationList(ctx context.Context, versionDoc *models.Version, queryParameters map[string]string, limit, dimensionOffset int, logData log.Data) ([]models.Observation, error) {
 
 	// Build query (observation.Filter type)
 	var dimensionFilters []*observation.DimensionFilter
@@ -299,7 +299,7 @@ func (api *DatasetAPI) getObservationList(versionDoc *models.Version, queryParam
 	}
 	logData["query_object"] = queryObject
 
-	log.Info("query object built to retrieve observations from neo4j", logData)
+	log.InfoCtx(ctx, "query object built to retrieve observations from db", logData)
 
 	csvRowReader, err := api.dataStore.Backend.StreamCSVRows(context.Background(), &queryObject, &limit)
 	if err != nil {
