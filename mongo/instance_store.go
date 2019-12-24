@@ -28,7 +28,7 @@ func (m *Mongo) GetInstances(states []string, datasets []string) (*models.Instan
 		filter["links.dataset.id"] = bson.M{"$in": datasets}
 	}
 
-	iter := s.DB(m.Database).C(instanceCollection).Find(filter).Iter()
+	iter := s.DB(m.Database).C(instanceCollection).Find(filter).Sort("-$natural").Iter()
 	defer func() {
 		err := iter.Close()
 		if err != nil {
