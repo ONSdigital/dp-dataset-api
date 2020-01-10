@@ -23,7 +23,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	version := vars["version"]
-	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
+	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "func": "getDimensions"}
 	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	if err := api.auditor.Record(ctx, getDimensionsAction, audit.Attempted, auditParams); err != nil {
@@ -41,25 +41,25 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 
 		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "getDimensions endpoint: datastore.getversion returned an error"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "datastore.getversion returned an error"), logData)
 			return nil, err
 		}
 
 		if err = models.CheckState("version", versionDoc.State); err != nil {
 			logData["state"] = versionDoc.State
-			log.ErrorCtx(ctx, errors.WithMessage(err, "getDimensions endpoint: unpublished version has an invalid state"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "unpublished version has an invalid state"), logData)
 			return nil, err
 		}
 
 		dimensions, err := api.dataStore.Backend.GetDimensions(datasetID, versionDoc.ID)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "getDimensions endpoint: failed to get version dimensions"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to get version dimensions"), logData)
 			return nil, err
 		}
 
 		results, err := api.createListOfDimensions(versionDoc, dimensions)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "getDimensions endpoint: failed to convert bson to dimension"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to convert bson to dimension"), logData)
 			return nil, err
 		}
 
@@ -67,7 +67,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 
 		b, err := json.Marshal(listOfDimensions)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "getDimensions endpoint: failed to marshal list of dimension resources into bytes"), logData)
+			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to marshal list of dimension resources into bytes"), logData)
 			return nil, err
 		}
 		return b, nil
@@ -88,7 +88,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	setJSONContentType(w)
 	_, err = w.Write(b)
 	if err != nil {
-		log.ErrorCtx(ctx, errors.WithMessage(err, "getDimensions endpoint: error writing bytes to response"), logData)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "error writing bytes to response"), logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
@@ -149,7 +149,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	versionID := vars["version"]
 	dimension := vars["dimension"]
 
-	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension}
+	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension, "func": "getDimensionOptions"}
 	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension}
 
 	if err := api.auditor.Record(ctx, getDimensionOptionsAction, audit.Attempted, auditParams); err != nil {
@@ -214,11 +214,11 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	setJSONContentType(w)
 	_, err = w.Write(b)
 	if err != nil {
-		log.Error(err, logData)
+		log.ErrorCtx(ctx, errors.WithMessage(err, "error writing bytes to response"), logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	log.Debug("get dimension options", logData)
+	log.DebugCtx(ctx, "get dimension options", logData)
 }
 
 func handleDimensionsErr(ctx context.Context, w http.ResponseWriter, err error, data log.Data) {
