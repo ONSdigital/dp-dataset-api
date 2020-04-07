@@ -294,7 +294,7 @@ func (api *DatasetAPI) getObservationList(ctx context.Context, versionDoc *model
 	}
 
 	queryObject := observation.Filter{
-		InstanceID:       "d413012e-d960-4faf-b6b9-731c4362975f", //versionDoc.ID,
+		InstanceID:       versionDoc.ID,
 		DimensionFilters: dimensionFilters,
 	}
 	logData["query_object"] = queryObject

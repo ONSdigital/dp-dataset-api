@@ -80,6 +80,6 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 	}
 
 	s.Auditor.Record(ctx, action, audit.Successful, auditParams)
-	log.Event(ctx, "confirm edition: created/updated edition", logData)
+	log.Event(ctx, "confirm edition: created/updated edition", log.INFO, logData)
 	return editionDoc, nil
 }
