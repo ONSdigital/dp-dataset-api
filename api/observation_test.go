@@ -15,8 +15,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	"github.com/ONSdigital/dp-graph/observation"
-	observationtest "github.com/ONSdigital/dp-graph/observation/observationtest"
+	"github.com/ONSdigital/dp-graph/v2/observation"
+	observationtest "github.com/ONSdigital/dp-graph/v2/observation/observationtest"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/audit/auditortest"
 	"github.com/ONSdigital/go-ns/common"
@@ -90,7 +90,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 					UsageNotes: usagesNotes,
 				}, nil
 			},
-			StreamCSVRowsFunc: func(context.Context, *observation.Filter, *int) (observation.StreamRowReader, error) {
+			StreamCSVRowsFunc: func(context.Context, string, string, *observation.DimensionFilters, *int) (observation.StreamRowReader, error) {
 				return mockRowReader, nil
 			},
 		}
@@ -204,7 +204,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 					UsageNotes: usagesNotes,
 				}, nil
 			},
-			StreamCSVRowsFunc: func(context.Context, *observation.Filter, *int) (observation.StreamRowReader, error) {
+			StreamCSVRowsFunc: func(context.Context, string, string, *observation.DimensionFilters, *int) (observation.StreamRowReader, error) {
 				return mockRowReader, nil
 			},
 		}
@@ -690,7 +690,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 					},
 					nil
 			},
-			StreamCSVRowsFunc: func(context.Context, *observation.Filter, *int) (observation.StreamRowReader, error) {
+			StreamCSVRowsFunc: func(context.Context, string, string, *observation.DimensionFilters, *int) (observation.StreamRowReader, error) {
 				return nil, errs.ErrObservationsNotFound
 			},
 		}
@@ -1228,7 +1228,7 @@ func TestGetObservationAuditSuccessfulError(t *testing.T) {
 						UsageNotes: usagesNotes,
 					}, nil
 				},
-				StreamCSVRowsFunc: func(context.Context, *observation.Filter, *int) (observation.StreamRowReader, error) {
+				StreamCSVRowsFunc: func(context.Context, string, string, *observation.DimensionFilters, *int) (observation.StreamRowReader, error) {
 					return mockRowReader, nil
 				},
 			}

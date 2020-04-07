@@ -13,7 +13,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-graph/observation"
+	"github.com/ONSdigital/dp-graph/v2/observation"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/log.go/log"
@@ -269,7 +269,7 @@ func extractQueryParameters(urlQuery url.Values, validDimensions []string) (map[
 func (api *DatasetAPI) getObservationList(ctx context.Context, versionDoc *models.Version, queryParameters map[string]string, limit, dimensionOffset int, logData log.Data) ([]models.Observation, error) {
 
 	// Build query (observation.Filter type)
-	var dimensionFilters []*observation.DimensionFilter
+	var dimensionFilters []*observation.Dimension
 
 	// Unable to have more than one wildcard parameter per query
 	var wildcardParameter string
@@ -285,7 +285,7 @@ func (api *DatasetAPI) getObservationList(ctx context.Context, versionDoc *model
 			continue
 		}
 
-		dimensionFilter := &observation.DimensionFilter{
+		dimensionFilter := &observation.Dimension{
 			Name:    dimension,
 			Options: []string{option},
 		}
@@ -293,15 +293,15 @@ func (api *DatasetAPI) getObservationList(ctx context.Context, versionDoc *model
 		dimensionFilters = append(dimensionFilters, dimensionFilter)
 	}
 
-	queryObject := observation.Filter{
-		InstanceID:       versionDoc.ID,
-		DimensionFilters: dimensionFilters,
+	queryObject := observation.DimensionFilters{
+		Dimensions: dimensionFilters,
 	}
+
 	logData["query_object"] = queryObject
 
 	log.Event(ctx, "query object built to retrieve observations from db", log.INFO, logData)
 
-	csvRowReader, err := api.dataStore.Backend.StreamCSVRows(ctx, &queryObject, &limit)
+	csvRowReader, err := api.dataStore.Backend.StreamCSVRows(ctx, versionDoc.ID, "", &queryObject, &limit)
 	if err != nil {
 		return nil, err
 	}

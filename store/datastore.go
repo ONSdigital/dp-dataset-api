@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-graph/observation"
+	"github.com/ONSdigital/dp-graph/v2/observation"
 	"github.com/globalsign/mgo/bson"
 )
 
@@ -53,5 +53,5 @@ type Storer interface {
 
 	AddVersionDetailsToInstance(ctx context.Context, instanceID string, datasetID string, edition string, version int) error
 	SetInstanceIsPublished(ctx context.Context, instanceID string) error
-	StreamCSVRows(ctx context.Context, filter *observation.Filter, limit *int) (observation.StreamRowReader, error)
+	StreamCSVRows(ctx context.Context, instanceID, filterID string, filters *observation.DimensionFilters, limit *int) (observation.StreamRowReader, error)
 }

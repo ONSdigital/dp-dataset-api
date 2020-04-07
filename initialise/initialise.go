@@ -6,7 +6,7 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
-	"github.com/ONSdigital/dp-graph/graph"
+	"github.com/ONSdigital/dp-graph/v2/graph"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka"
 	mongoHealth "github.com/ONSdigital/dp-mongodb/health"
