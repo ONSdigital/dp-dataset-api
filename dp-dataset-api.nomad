@@ -51,7 +51,7 @@ job "dp-dataset-api" {
         tags = ["web"]
         check {
           type     = "http"
-          path     = "/healthcheck"
+          path     = "/health"
           interval = "10s"
           timeout  = "2s"
         }
@@ -117,7 +117,7 @@ job "dp-dataset-api" {
         tags = ["publishing"]
         check {
           type     = "http"
-          path     = "/healthcheck"
+          path     = "/health"
           interval = "10s"
           timeout  = "2s"
         }

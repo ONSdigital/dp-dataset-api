@@ -11,8 +11,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/request"
+	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -64,7 +64,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, err := func() ([]byte, error) {
-		authorised, logData := api.authenticate(r, logData)
+		authorised := api.authenticate(r, logData)
 
 		var state string
 		if !authorised {
@@ -72,18 +72,18 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err := api.dataStore.Backend.CheckDatasetExists(datasetID, state); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to find dataset for list of versions"), logData)
+			log.Event(ctx, "failed to find dataset for list of versions", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
 		if err := api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to find edition for list of versions"), logData)
+			log.Event(ctx, "failed to find edition for list of versions", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
-		results, err := api.dataStore.Backend.GetVersions(datasetID, edition, state)
+		results, err := api.dataStore.Backend.GetVersions(ctx, datasetID, edition, state)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to find any versions for dataset edition"), logData)
+			log.Event(ctx, "failed to find any versions for dataset edition", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
@@ -91,7 +91,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 		for _, item := range results.Items {
 			if err = models.CheckState("version", item.State); err != nil {
 				hasInvalidState = true
-				log.ErrorCtx(ctx, errors.WithMessage(err, "unpublished version has an invalid state"), log.Data{"state": item.State})
+				log.Event(ctx, "unpublished version has an invalid state", log.ERROR, log.Error(err), log.Data{"state": item.State})
 			}
 
 			// Only the download service should have access to the
@@ -120,7 +120,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 
 		b, err := json.Marshal(results)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to marshal list of version resources into bytes"), logData)
+			log.Event(ctx, "failed to marshal list of version resources into bytes", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 		return b, nil
@@ -142,10 +142,10 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	setJSONContentType(w)
 	_, err = w.Write(b)
 	if err != nil {
-		log.ErrorCtx(ctx, errors.WithMessage(err, "error writing bytes to response"), logData)
+		log.Event(ctx, "error writing bytes to response", log.ERROR, log.Error(err), logData)
 		handleVersionAPIErr(ctx, err, w, logData)
 	}
-	log.InfoCtx(ctx, "getVersions endpoint: request successful", logData)
+	log.Event(ctx, "getVersions endpoint: request successful", log.INFO, logData)
 }
 
 func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
@@ -163,7 +163,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, getVersionErr := func() ([]byte, error) {
-		authorised, logData := api.authenticate(r, logData)
+		authorised := api.authenticate(r, logData)
 
 		var state string
 		if !authorised {
@@ -171,26 +171,25 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err := api.dataStore.Backend.CheckDatasetExists(datasetID, state); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to find dataset"), logData)
+			log.Event(ctx, "failed to find dataset", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
 		if err := api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
-			checkEditionErr := errors.WithMessage(err, "failed to find edition for dataset")
-			log.ErrorCtx(ctx, checkEditionErr, logData)
+			log.Event(ctx, "failed to find edition for dataset", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
 		results, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to find version for dataset edition"), logData)
+			log.Event(ctx, "failed to find version for dataset edition", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
 		results.Links.Self.HRef = results.Links.Version.HRef
 
 		if err = models.CheckState("version", results.State); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "unpublished version has an invalid state"), log.Data{"state": results.State})
+			log.Event(ctx, "unpublished version has an invalid state", log.ERROR, log.Error(err), log.Data{"state": results.State})
 			return nil, errs.ErrResourceState
 		}
 
@@ -215,7 +214,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 
 		b, err := json.Marshal(results)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to marshal version resource into bytes"), logData)
+			log.Event(ctx, "failed to marshal version resource into bytes", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 		return b, nil
@@ -237,10 +236,10 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	setJSONContentType(w)
 	_, err := w.Write(b)
 	if err != nil {
-		log.ErrorCtx(ctx, errors.WithMessage(err, "failed writing bytes to response"), logData)
+		log.Event(ctx, "failed writing bytes to response", log.ERROR, log.Error(err), logData)
 		handleVersionAPIErr(ctx, err, w, logData)
 	}
-	log.InfoCtx(ctx, "getVersion endpoint: request successful", logData)
+	log.Event(ctx, "getVersion endpoint: request successful", log.INFO, logData)
 }
 
 func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
@@ -285,7 +284,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
-	log.InfoCtx(ctx, "putVersion endpoint: request successful", data)
+	log.Event(ctx, "putVersion endpoint: request successful", log.INFO, data)
 }
 
 func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
@@ -295,7 +294,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
-	log.InfoCtx(ctx, "detachVersion endpoint: endpoint called", nil)
+	log.Event(ctx, "detachVersion endpoint: endpoint called", log.INFO)
 
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
@@ -311,47 +310,47 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 
 	err := func() error {
 
-		authorised, logData := api.authenticate(r, logData)
+		authorised := api.authenticate(r, logData)
 		if !authorised {
-			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrUnauthorised, "detachVersion endpoint: User is not authorised to detach a dataset version"), logData)
+			log.Event(ctx, "detachVersion endpoint: User is not authorised to detach a dataset version", log.ERROR, log.Error(errs.ErrUnauthorised), logData)
 			return errs.ErrNotFound
 		}
 
 		editionDoc, err := api.dataStore.Backend.GetEdition(datasetID, edition, "")
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrEditionNotFound, "detachVersion endpoint: Cannot find the specified edition"), logData)
+			log.Event(ctx, "detachVersion endpoint: Cannot find the specified edition", log.ERROR, log.Error(errs.ErrEditionNotFound), logData)
 			return err
 		}
 
 		// Only permit detachment of the latest version.
 		if editionDoc.Next.Links.LatestVersion.ID != version {
-			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrVersionAlreadyExists, "detachVersion endpoint: Detach called againt a version other than latest, aborting"), logData)
+			log.Event(ctx, "detachVersion endpoint: Detach called againt a version other than latest, aborting", log.ERROR, log.Error(errs.ErrVersionAlreadyExists), logData)
 			return errs.ErrVersionAlreadyExists
 		}
 
 		// Only permit detachment where state is edition-confirmed or associated
 		state := editionDoc.Next.State
 		if state != models.AssociatedState && state != models.EditionConfirmedState {
-			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrIncorrectStateToDetach, "detachVersion endpoint: You can only detach a version with a state of edition-confirmed or associated"), logData)
+			log.Event(ctx, "detachVersion endpoint: You can only detach a version with a state of edition-confirmed or associated", log.ERROR, log.Error(errs.ErrIncorrectStateToDetach), logData)
 			return errs.ErrIncorrectStateToDetach
 		}
 
 		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, editionDoc.Next.State)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrVersionNotFound, "detachVersion endpoint: Cannot find the specified version"), logData)
+			log.Event(ctx, "detachVersion endpoint: Cannot find the specified version", log.ERROR, log.Error(errs.ErrVersionNotFound), logData)
 			return errs.ErrVersionNotFound
 		}
 
 		datasetDoc, err := api.dataStore.Backend.GetDataset(datasetID)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "detachVersion endpoint: datastore.GetDatasets returned an error"), nil)
+			log.Event(ctx, "detachVersion endpoint: datastore.GetDatasets returned an error", log.ERROR, log.Error(err), logData)
 			return err
 		}
 
 		// Detach the version
 		versionDoc.State = models.DetachedState
 		if err = api.dataStore.Backend.UpdateVersion(versionDoc.ID, versionDoc); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "detachVersion endpoint: failed to update version document"), logData)
+			log.Event(ctx, "detachVersion endpoint: failed to update version document", log.ERROR, log.Error(err), logData)
 			return err
 		}
 
@@ -360,14 +359,14 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 			// Rollback the edition
 			editionDoc.Next = editionDoc.Current
 			if err = api.dataStore.Backend.UpsertEdition(datasetID, edition, editionDoc); err != nil {
-				log.ErrorCtx(ctx, errors.WithMessage(err, "detachVersion endpoint: failed to update edition document"), logData)
+				log.Event(ctx, "detachVersion endpoint: failed to update edition document", log.ERROR, log.Error(err), logData)
 				return err
 			}
 
 			// Rollback the dataset
 			datasetDoc.Next = datasetDoc.Current
 			if err = api.dataStore.Backend.UpsertDataset(datasetID, datasetDoc); err != nil {
-				log.ErrorCtx(ctx, errors.WithMessage(err, "detachVersion endpoint: failed to update dataset document"), logData)
+				log.Event(ctx, "detachVersion endpoint: failed to update dataset document", log.ERROR, log.Error(err), logData)
 				return err
 			}
 		}
@@ -390,7 +389,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	log.InfoCtx(ctx, "detachVersion endpoint: request successful", logData)
+	log.Event(ctx, "detachVersion endpoint: request successful", log.INFO, logData)
 }
 
 func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, versionDetails VersionDetails) (*models.DatasetUpdate, *models.Version, *models.Version, error) {
@@ -401,39 +400,39 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	currentDataset, currentVersion, versionUpdate, err := func() (*models.DatasetUpdate, *models.Version, *models.Version, error) {
 		versionUpdate, err := models.CreateVersion(body)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "putVersion endpoint: failed to model version resource based on request"), data)
+			log.Event(ctx, "putVersion endpoint: failed to model version resource based on request", log.ERROR, log.Error(err), data)
 			return nil, nil, nil, errs.ErrUnableToParseJSON
 		}
 
 		currentDataset, err := api.dataStore.Backend.GetDataset(versionDetails.datasetID)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "putVersion endpoint: datastore.getDataset returned an error"), data)
+			log.Event(ctx, "putVersion endpoint: datastore.getDataset returned an error", log.ERROR, log.Error(err), data)
 			return nil, nil, nil, err
 		}
 
 		if err = api.dataStore.Backend.CheckEditionExists(versionDetails.datasetID, versionDetails.edition, ""); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "putVersion endpoint: failed to find edition of dataset"), data)
+			log.Event(ctx, "putVersion endpoint: failed to find edition of dataset", log.ERROR, log.Error(err), data)
 			return nil, nil, nil, err
 		}
 
 		currentVersion, err := api.dataStore.Backend.GetVersion(versionDetails.datasetID, versionDetails.edition, versionDetails.version, "")
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "putVersion endpoint: datastore.GetVersion returned an error"), data)
+			log.Event(ctx, "putVersion endpoint: datastore.GetVersion returned an error", log.ERROR, log.Error(err), data)
 			return nil, nil, nil, err
 		}
 
 		// Combine update version document to existing version document
 		populateNewVersionDoc(currentVersion, versionUpdate)
 		data["updated_version"] = versionUpdate
-		log.InfoCtx(ctx, "putVersion endpoint: combined current version document with update request", data)
+		log.Event(ctx, "putVersion endpoint: combined current version document with update request", log.INFO, data)
 
 		if err = models.ValidateVersion(versionUpdate); err != nil {
-			log.ErrorCtx(ctx, errors.Wrap(err, "putVersion endpoint: failed validation check for version update"), nil)
+			log.Event(ctx, "putVersion endpoint: failed validation check for version update", log.ERROR, log.Error(err))
 			return nil, nil, nil, err
 		}
 
 		if err := api.dataStore.Backend.UpdateVersion(versionUpdate.ID, versionUpdate); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "putVersion endpoint: failed to update version document"), data)
+			log.Event(ctx, "putVersion endpoint: failed to update version document", log.ERROR, log.Error(err), data)
 			return nil, nil, nil, err
 		}
 		return currentDataset, currentVersion, versionUpdate, nil
@@ -451,7 +450,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		audit.LogActionFailure(ctx, updateVersionAction, audit.Successful, auditErr, data)
 	}
 
-	log.InfoCtx(ctx, "update version completed successfully", data)
+	log.Event(ctx, "update version completed successfully", log.INFO, data)
 	return currentDataset, currentVersion, versionUpdate, nil
 }
 
@@ -464,25 +463,25 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 		return auditErr
 	}
 
-	log.InfoCtx(ctx, "attempting to publish version", data)
+	log.Event(ctx, "attempting to publish version", log.INFO, data)
 
 	err := func() error {
 		editionDoc, err := api.dataStore.Backend.GetEdition(versionDetails.datasetID, versionDetails.edition, "")
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "putVersion endpoint: failed to find the edition we're trying to update"), data)
+			log.Event(ctx, "putVersion endpoint: failed to find the edition we're trying to update", log.ERROR, log.Error(err), data)
 			return err
 		}
 
 		editionDoc.Next.State = models.PublishedState
-		if err := editionDoc.PublishLinks(api.host, versionDoc.Links.Version); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "putVersion endpoint: failed to update the edition links for the version we're trying to publish"), data)
+		if err := editionDoc.PublishLinks(ctx, api.host, versionDoc.Links.Version); err != nil {
+			log.Event(ctx, "putVersion endpoint: failed to update the edition links for the version we're trying to publish", log.ERROR, log.Error(err), data)
 			return err
 		}
 
 		editionDoc.Current = editionDoc.Next
 
 		if err := api.dataStore.Backend.UpsertEdition(versionDetails.datasetID, versionDetails.edition, editionDoc); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "putVersion endpoint: failed to update edition during publishing"), data)
+			log.Event(ctx, "putVersion endpoint: failed to update edition during publishing", log.ERROR, log.Error(err), data)
 			return err
 		}
 
@@ -493,16 +492,16 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 
 		// Pass in newVersion variable to include relevant data needed for update on dataset API (e.g. links)
 		if err := api.publishDataset(ctx, currentDataset, versionDoc); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "putVersion endpoint: failed to update dataset document once version state changes to publish"), data)
+			log.Event(ctx, "putVersion endpoint: failed to update dataset document once version state changes to publish", log.ERROR, log.Error(err), data)
 			return err
 		}
 
 		// Only want to generate downloads again if there is no public link available
 		if currentVersion.Downloads != nil && currentVersion.Downloads.CSV != nil && currentVersion.Downloads.CSV.Public == "" {
-			if err := api.downloadGenerator.Generate(versionDetails.datasetID, versionDoc.ID, versionDetails.edition, versionDetails.version); err != nil {
+			if err := api.downloadGenerator.Generate(ctx, versionDetails.datasetID, versionDoc.ID, versionDetails.edition, versionDetails.version); err != nil {
 				data["instance_id"] = versionDoc.ID
 				data["state"] = versionDoc.State
-				log.ErrorCtx(ctx, errors.WithMessage(err, "putVersion endpoint: error while attempting to generate full dataset version downloads on version publish"), data)
+				log.Event(ctx, "putVersion endpoint: error while attempting to generate full dataset version downloads on version publish", log.ERROR, log.Error(err), data)
 				// TODO - TECH DEBT - need to add an error event for this.
 				return err
 			}
@@ -522,7 +521,7 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 		audit.LogActionFailure(ctx, publishVersionAction, audit.Successful, auditErr, data)
 	}
 
-	log.InfoCtx(ctx, "publish version completed successfully", data)
+	log.Event(ctx, "publish version completed successfully", log.INFO, data)
 	return nil
 }
 
@@ -537,17 +536,16 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion *mod
 
 	associateVersionErr := func() error {
 		if err := api.dataStore.Backend.UpdateDatasetWithAssociation(versionDetails.datasetID, versionDoc.State, versionDoc); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "putVersion endpoint: failed to update dataset document after a version of a dataset has been associated with a collection"), data)
+			log.Event(ctx, "putVersion endpoint: failed to update dataset document after a version of a dataset has been associated with a collection", log.ERROR, log.Error(err), data)
 			return err
 		}
 
-		log.InfoCtx(ctx, "putVersion endpoint: generating full dataset version downloads", data)
+		log.Event(ctx, "putVersion endpoint: generating full dataset version downloads", log.INFO, data)
 
-		if err := api.downloadGenerator.Generate(versionDetails.datasetID, versionDoc.ID, versionDetails.edition, versionDetails.version); err != nil {
+		if err := api.downloadGenerator.Generate(ctx, versionDetails.datasetID, versionDoc.ID, versionDetails.edition, versionDetails.version); err != nil {
 			data["instance_id"] = versionDoc.ID
 			data["state"] = versionDoc.State
-			err = errors.WithMessage(err, "putVersion endpoint: error while attempting to generate full dataset version downloads on version association")
-			log.ErrorCtx(ctx, err, data)
+			log.Event(ctx, "putVersion endpoint: error while attempting to generate full dataset version downloads on version association", log.ERROR, log.Error(err), data)
 			return err
 		}
 		return nil
@@ -564,7 +562,7 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion *mod
 		audit.LogActionFailure(ctx, associateVersionAction, audit.Successful, auditErr, data)
 	}
 
-	log.InfoCtx(ctx, "associate version completed successfully", data)
+	log.Event(ctx, "associate version completed successfully", log.INFO, data)
 	return associateVersionErr
 }
 
@@ -710,6 +708,6 @@ func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 		data = log.Data{}
 	}
 
-	log.ErrorCtx(ctx, errors.WithMessage(err, "request unsuccessful"), data)
+	log.Event(ctx, "request unsuccessful", log.ERROR, log.Error(err), data)
 	http.Error(w, err.Error(), status)
 }

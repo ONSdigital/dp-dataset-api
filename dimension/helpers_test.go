@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
-	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/log.go/log"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

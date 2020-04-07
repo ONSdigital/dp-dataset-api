@@ -11,8 +11,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/request"
+	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -38,7 +38,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 		currentVersion, err := d.Datastore.GetVersion(datasetID, edition, version, "")
 		if err != nil {
 			if err != errs.ErrVersionNotFound {
-				log.ErrorCtx(ctx, errors.WithMessage(err, "errored whilst retrieving version resource"), data)
+				log.Event(ctx, "errored whilst retrieving version resource", log.ERROR, log.Error(err), data)
 
 				if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
 					err = errs.ErrInternalServer
@@ -66,7 +66,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 				if action == updateVersionAction {
 					versionDoc, err := models.CreateVersion(r.Body)
 					if err != nil {
-						log.ErrorCtx(ctx, errors.WithMessage(err, "failed to model version resource based on request"), data)
+						log.Event(ctx, "failed to model version resource based on request", log.ERROR, log.Error(err), data)
 
 						if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
 							request.DrainBody(r)
@@ -109,7 +109,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 							var b []byte
 							b, err = json.Marshal(newVersion)
 							if err != nil {
-								log.ErrorCtx(ctx, errors.WithMessage(err, "failed to marshal new version resource based on request"), data)
+								log.Event(ctx, "failed to marshal new version resource based on request", log.ERROR, log.Error(err), data)
 
 								if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
 									request.DrainBody(r)
@@ -123,7 +123,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 							}
 
 							if err = r.Body.Close(); err != nil {
-								log.ErrorCtx(ctx, errors.WithMessage(err, "could not close response body"), data)
+								log.Event(ctx, "could not close response body", log.ERROR, log.Error(err), data)
 							}
 
 							// Set variable `has_downloads` to true to prevent request
@@ -138,7 +138,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 
 				err = errors.New("unable to update version as it has been published")
 				data["version"] = currentVersion
-				log.ErrorCtx(ctx, err, data)
+				log.Event(ctx, "failed to update version", log.ERROR, log.Error(err), data)
 				if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
 					request.DrainBody(r)
 					http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)

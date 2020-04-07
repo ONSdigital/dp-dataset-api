@@ -6,8 +6,8 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/go-ns/log"
-	"github.com/ONSdigital/go-ns/mongo"
+	mongo "github.com/ONSdigital/dp-mongodb"
+	"github.com/ONSdigital/log.go/log"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 )
@@ -15,7 +15,7 @@ import (
 const instanceCollection = "instances"
 
 // GetInstances from a mongo collection
-func (m *Mongo) GetInstances(states []string, datasets []string) (*models.InstanceResults, error) {
+func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []string) (*models.InstanceResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -32,7 +32,7 @@ func (m *Mongo) GetInstances(states []string, datasets []string) (*models.Instan
 	defer func() {
 		err := iter.Close()
 		if err != nil {
-			log.ErrorC("error closing iterator", err, log.Data{"state_query": states, "dataset_query": datasets})
+			log.Event(ctx, "error closing iterator", log.ERROR, log.Error(err), log.Data{"state_query": states, "dataset_query": datasets})
 		}
 	}()
 
@@ -109,7 +109,7 @@ func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance 
 
 	logData := log.Data{"instance_id": instanceID, "instance": instance}
 
-	log.InfoCtx(ctx, "building update query for instance resource", logData)
+	log.Event(ctx, "building update query for instance resource", log.INFO, logData)
 
 	if instance.Alerts != nil {
 		updates["alerts"] = instance.Alerts
@@ -228,7 +228,7 @@ func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance 
 	}
 
 	logData["updates"] = updates
-	log.InfoCtx(ctx, "built update query for instance resource", logData)
+	log.Event(ctx, "built update query for instance resource", log.INFO, logData)
 
 	return updates
 }

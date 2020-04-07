@@ -1,6 +1,7 @@
 package api
 
 //go:generate moq -out ../mocks/generated_auth_mocks.go -pkg mocks . AuthHandler
+//go:generate moq -out ../mocks/mocks.go -pkg mocks . DownloadsGenerator
 
 import (
 	"context"
@@ -13,13 +14,13 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
+	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/go-ns/handlers/collectionID"
-	"github.com/ONSdigital/go-ns/healthcheck"
 	"github.com/ONSdigital/go-ns/identity"
-	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/server"
+	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 )
@@ -69,12 +70,13 @@ type API interface {
 
 // DownloadsGenerator pre generates full file downloads for the specified dataset/edition/version
 type DownloadsGenerator interface {
-	Generate(datasetID, instanceID, edition, version string) error
+	Generate(ctx context.Context, datasetID, instanceID, edition, version string) error
 }
 
 // Auditor is an alias for the auditor service
 type Auditor audit.AuditorService
 
+// AuthHandler provides authorisation checks on requests
 type AuthHandler interface {
 	Require(required auth.Permissions, handler http.HandlerFunc) http.HandlerFunc
 }
@@ -100,12 +102,12 @@ type DatasetAPI struct {
 	versionPublishedChecker  *PublishCheck
 }
 
-// CreateDatasetAPI create a new DatasetAPI instance based on the configuration provided, apply middleware and starts the HTTP server.
-func CreateAndInitialiseDatasetAPI(cfg config.Configuration, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadGenerator DownloadsGenerator, auditor Auditor, datasetPermissions AuthHandler, permissions AuthHandler) {
+// CreateAndInitialiseDatasetAPI create a new DatasetAPI instance based on the configuration provided, apply middleware and starts the HTTP server.
+func CreateAndInitialiseDatasetAPI(ctx context.Context, cfg config.Configuration, hc *healthcheck.HealthCheck, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadGenerator DownloadsGenerator, auditor Auditor, datasetPermissions AuthHandler, permissions AuthHandler) {
 	router := mux.NewRouter()
-	api := NewDatasetAPI(cfg, router, dataStore, urlBuilder, downloadGenerator, auditor, datasetPermissions, permissions)
+	api := NewDatasetAPI(ctx, cfg, router, dataStore, urlBuilder, downloadGenerator, auditor, datasetPermissions, permissions)
 
-	healthcheckHandler := healthcheck.NewMiddleware(healthcheck.Do)
+	healthcheckHandler := newMiddleware(hc.Handler)
 	middleware := alice.New(healthcheckHandler)
 
 	// Only add the identity middleware when running in publishing.
@@ -121,16 +123,31 @@ func CreateAndInitialiseDatasetAPI(cfg config.Configuration, dataStore store.Dat
 	httpServer.HandleOSSignals = false
 
 	go func() {
-		log.Debug("Starting api...", nil)
+		log.Event(ctx, "Starting api...", log.INFO)
 		if err := httpServer.ListenAndServe(); err != nil {
-			log.ErrorC("api http server returned error", err, nil)
+			log.Event(ctx, "api http server returned error", log.ERROR, log.Error(err))
 			errorChan <- err
 		}
 	}()
 }
 
+// newMiddleware creates a new http.Handler to intercept /health requests.
+func newMiddleware(healthcheckHandler func(http.ResponseWriter, *http.Request)) func(http.Handler) http.Handler {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+
+			if req.Method == "GET" && req.URL.Path == "/health" {
+				healthcheckHandler(w, req)
+				return
+			}
+
+			h.ServeHTTP(w, req)
+		})
+	}
+}
+
 // NewDatasetAPI create a new Dataset API instance and register the API routes based on the application configuration.
-func NewDatasetAPI(cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, auditor Auditor, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
+func NewDatasetAPI(ctx context.Context, cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, auditor Auditor, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
 	api := &DatasetAPI{
 		dataStore:                dataStore,
 		host:                     cfg.DatasetAPIURL,
@@ -151,7 +168,7 @@ func NewDatasetAPI(cfg config.Configuration, router *mux.Router, dataStore store
 	}
 
 	if api.enablePrivateEndpoints {
-		log.Info("enabling private endpoints for dataset api", nil)
+		log.Event(ctx, "enabling private endpoints for dataset api", log.INFO)
 
 		api.versionPublishedChecker = &PublishCheck{
 			Auditor:   auditor,
@@ -179,7 +196,7 @@ func NewDatasetAPI(cfg config.Configuration, router *mux.Router, dataStore store
 		api.enablePrivateInstancesEndpoints(instanceAPI)
 		api.enablePrivateDimensionsEndpoints(dimensionAPI)
 	} else {
-		log.Info("enabling only public endpoints for dataset api", nil)
+		log.Event(ctx, "enabling only public endpoints for dataset api", log.INFO)
 		api.enablePublicEndpoints()
 	}
 	return api
@@ -451,7 +468,7 @@ func (api *DatasetAPI) delete(path string, handler http.HandlerFunc) {
 	api.Router.HandleFunc(path, handler).Methods("DELETE")
 }
 
-func (api *DatasetAPI) authenticate(r *http.Request, logData map[string]interface{}) (bool, map[string]interface{}) {
+func (api *DatasetAPI) authenticate(r *http.Request, logData log.Data) bool {
 	var authorised bool
 
 	if api.EnablePrePublishView {
@@ -474,9 +491,9 @@ func (api *DatasetAPI) authenticate(r *http.Request, logData map[string]interfac
 		}
 		logData["authenticated"] = authorised
 
-		return authorised, logData
+		return authorised
 	}
-	return authorised, logData
+	return authorised
 }
 
 func setJSONContentType(w http.ResponseWriter) {
@@ -488,6 +505,6 @@ func Close(ctx context.Context) error {
 	if err := httpServer.Shutdown(ctx); err != nil {
 		return err
 	}
-	log.Info("graceful shutdown of http server complete", nil)
+	log.Event(ctx, "graceful shutdown of http server complete", log.INFO)
 	return nil
 }

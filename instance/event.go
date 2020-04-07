@@ -10,9 +10,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
 )
 
 // AddInstanceEventAction represents the audit action to add event
@@ -38,23 +37,23 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
-	data := log.Data{"instance_id": instanceID}
+	data := log.Data{"instance_id": instanceID, "action": AddInstanceEventAction}
 	ap := common.Params{"instance_id": instanceID}
 
 	if err := func() error {
 		event, err := unmarshalEvent(r.Body)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "add instance event: failed to unmarshal request body"), data)
+			log.Event(ctx, "add instance event: failed to unmarshal request body", log.ERROR, log.Error(err), data)
 			return err
 		}
 
 		if err = event.Validate(); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "add instance event: failed to validate event object"), data)
+			log.Event(ctx, "add instance event: failed to validate event object", log.ERROR, log.Error(err), data)
 			return err
 		}
 
 		if err = s.AddEventToInstance(instanceID, event); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "add instance event: failed to add event to instance in datastore"), data)
+			log.Event(ctx, "add instance event: failed to add event to instance in datastore", log.ERROR, log.Error(err), data)
 			return err
 		}
 
@@ -72,5 +71,5 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.InfoCtx(ctx, "add instance event: request successful", data)
+	log.Event(ctx, "add instance event: request successful", log.INFO, data)
 }
