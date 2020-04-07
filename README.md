@@ -70,8 +70,8 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | WEBSITE_URL                  | http://localhost:20000                 | The host name for the website
 | KAFKA_ADDR                   | localhost:9092                         | The list of kafka hosts
 | GENERATE_DOWNLOADS_TOPIC     | filter-job-submitted                   | The topic to send generate full dataset version downloads to
-| HEALTHCHECK_INTERVAL         | 30s                                   | The time between calling healthcheck endpoints for check subsystems
-| HEALTHCHECK_CRITICAL_TIMEOUT | 90s                                   | The time taken for the health changes from warning state to critical due to subsystem check failures
+| HEALTHCHECK_INTERVAL         | 30s                                    | The time between calling healthcheck endpoints for check subsystems
+| HEALTHCHECK_CRITICAL_TIMEOUT | 90s                                    | The time taken for the health changes from warning state to critical due to subsystem check failures
 | ENABLE_PRIVATE_ENDPOINTS     | false                                  | Enable private endpoints for the API
 | DOWNLOAD_SERVICE_SECRET_KEY  | QB0108EZ-825D-412C-9B1D-41EF7747F462   | A key specific for the download service to access public/private links
 | ZEBEDEE_URL                  | http://localhost:8082                  | The host name for Zebedee
