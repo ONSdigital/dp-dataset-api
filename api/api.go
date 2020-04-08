@@ -107,8 +107,12 @@ func CreateAndInitialiseDatasetAPI(ctx context.Context, cfg config.Configuration
 	router := mux.NewRouter()
 	api := NewDatasetAPI(ctx, cfg, router, dataStore, urlBuilder, downloadGenerator, auditor, datasetPermissions, permissions)
 
-	healthcheckHandler := newMiddleware(hc.Handler)
+	healthcheckHandler := newMiddleware(hc.Handler, "/health")
 	middleware := alice.New(healthcheckHandler)
+
+	// TODO can be removed once upstream services start calling the new health endpoint
+	oldHealthcheckHandler := newMiddleware(hc.Handler, "/healthcheck")
+	middleware = middleware.Append(oldHealthcheckHandler)
 
 	// Only add the identity middleware when running in publishing.
 	if cfg.EnablePrivateEnpoints {
@@ -132,11 +136,11 @@ func CreateAndInitialiseDatasetAPI(ctx context.Context, cfg config.Configuration
 }
 
 // newMiddleware creates a new http.Handler to intercept /health requests.
-func newMiddleware(healthcheckHandler func(http.ResponseWriter, *http.Request)) func(http.Handler) http.Handler {
+func newMiddleware(healthcheckHandler func(http.ResponseWriter, *http.Request), path string) func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 
-			if req.Method == "GET" && req.URL.Path == "/health" {
+			if req.Method == "GET" && req.URL.Path == path {
 				healthcheckHandler(w, req)
 				return
 			}
