@@ -1,7 +1,7 @@
 #!/bin/bash -eux
 
-export GOPATH=$(pwd)/go
+cwd=$(pwd)
 
-pushd $GOPATH/src/github.com/ONSdigital/dp-dataset-api
+pushd $cwd/dp-dataset-api
   make test
 popd

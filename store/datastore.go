@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-graph/observation"
+	"github.com/ONSdigital/dp-graph/v2/observation"
 	"github.com/globalsign/mgo/bson"
 )
 
@@ -23,19 +23,19 @@ type Storer interface {
 	CheckDatasetExists(ID, state string) error
 	CheckEditionExists(ID, editionID, state string) error
 	GetDataset(ID string) (*models.DatasetUpdate, error)
-	GetDatasets() ([]models.DatasetUpdate, error)
+	GetDatasets(ctx context.Context) ([]models.DatasetUpdate, error)
 	GetDimensionsFromInstance(ID string) (*models.DimensionNodeResults, error)
 	GetDimensions(datasetID, versionID string) ([]bson.M, error)
 	GetDimensionOptions(version *models.Version, dimension string) (*models.DimensionOptionResults, error)
 	GetEdition(ID, editionID, state string) (*models.EditionUpdate, error)
-	GetEditions(ID, state string) (*models.EditionUpdateResults, error)
-	GetInstances(states []string, datasets []string) (*models.InstanceResults, error)
+	GetEditions(ctx context.Context, ID, state string) (*models.EditionUpdateResults, error)
+	GetInstances(ctx context.Context, states []string, datasets []string) (*models.InstanceResults, error)
 	GetInstance(ID string) (*models.Instance, error)
 	GetNextVersion(datasetID, editionID string) (int, error)
 	GetUniqueDimensionAndOptions(ID, dimension string) (*models.DimensionValues, error)
 	GetVersion(datasetID, editionID, version, state string) (*models.Version, error)
-	GetVersions(datasetID, editionID, state string) (*models.VersionResults, error)
-	UpdateDataset(ID string, dataset *models.Dataset, currentState string) error
+	GetVersions(ctx context.Context, datasetID, editionID, state string) (*models.VersionResults, error)
+	UpdateDataset(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
 	UpdateDatasetWithAssociation(ID, state string, version *models.Version) error
 	UpdateDimensionNodeID(dimension *models.DimensionOption) error
 	UpdateInstance(ctx context.Context, ID string, instance *models.Instance) error
@@ -53,5 +53,5 @@ type Storer interface {
 
 	AddVersionDetailsToInstance(ctx context.Context, instanceID string, datasetID string, edition string, version int) error
 	SetInstanceIsPublished(ctx context.Context, instanceID string) error
-	StreamCSVRows(ctx context.Context, filter *observation.Filter, limit *int) (observation.StreamRowReader, error)
+	StreamCSVRows(ctx context.Context, instanceID, filterID string, filters *observation.DimensionFilters, limit *int) (observation.StreamRowReader, error)
 }

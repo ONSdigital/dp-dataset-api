@@ -57,25 +57,25 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 
 ### Configuration
 
-| Environment variable        | Default                                | Description
-| --------------------------- | ---------------------------------------| -----------
-| BIND_ADDR                   | :22000                                 | The host and port to bind to
-| MONGODB_BIND_ADDR           | localhost:27017                        | The MongoDB bind address
-| MONGODB_DATABASE            | datasets                               | The MongoDB dataset database
-| MONGODB_COLLECTION          | datasets                               | MongoDB collection
-| SECRET_KEY                  | FD0108EA-825D-411C-9B1D-41EF7727F465   | A secret key used authentication
-| CODE_LIST_API_URL           | http://localhost:22400                 | The host name for the CodeList API
-| DATASET_API_URL             | http://localhost:22000                 | The host name for the Dataset API
-| GRACEFUL_SHUTDOWN_TIMEOUT   | 5s                                     | The graceful shutdown timeout in seconds
-| WEBSITE_URL                 | http://localhost:20000                 | The host name for the website
-| KAFKA_ADDR                  | localhost:9092                         | The list of kafka hosts
-| GENERATE_DOWNLOADS_TOPIC    | filter-job-submitted                   | The topic to send generate full dataset version downloads to
-| HEALTHCHECK_INTERVAL        | 30s                                    | Time between self-healthchecks (`time.Duration` format)
-| ENABLE_PRIVATE_ENDPOINTS    | false                                  | Enable private endpoints for the API
-| DOWNLOAD_SERVICE_SECRET_KEY | QB0108EZ-825D-412C-9B1D-41EF7747F462   | A key specific for the download service to access public/private links
-| ZEBEDEE_URL                 | http://localhost:8082                  | The host name for Zebedee
-| ENABLE_PERMISSIONS_AUTH     | false                                  | Enable/disable user/service permissions checking for private endpoints
-| HEALTHCHECK_RECOVERY_INTERVAL | 10s                                  | The time for a failing health check to recover and become healthy again
+| Environment variable         | Default                                | Description
+| ---------------------------- | ---------------------------------------| -----------
+| BIND_ADDR                    | :22000                                 | The host and port to bind to
+| MONGODB_BIND_ADDR            | localhost:27017                        | The MongoDB bind address
+| MONGODB_DATABASE             | datasets                               | The MongoDB dataset database
+| MONGODB_COLLECTION           | datasets                               | MongoDB collection
+| SECRET_KEY                   | FD0108EA-825D-411C-9B1D-41EF7727F465   | A secret key used authentication
+| CODE_LIST_API_URL            | http://localhost:22400                 | The host name for the CodeList API
+| DATASET_API_URL              | http://localhost:22000                 | The host name for the Dataset API
+| GRACEFUL_SHUTDOWN_TIMEOUT    | 5s                                     | The graceful shutdown timeout in seconds
+| WEBSITE_URL                  | http://localhost:20000                 | The host name for the website
+| KAFKA_ADDR                   | localhost:9092                         | The list of kafka hosts
+| GENERATE_DOWNLOADS_TOPIC     | filter-job-submitted                   | The topic to send generate full dataset version downloads to
+| HEALTHCHECK_INTERVAL         | 30s                                    | The time between calling healthcheck endpoints for check subsystems
+| HEALTHCHECK_CRITICAL_TIMEOUT | 90s                                    | The time taken for the health changes from warning state to critical due to subsystem check failures
+| ENABLE_PRIVATE_ENDPOINTS     | false                                  | Enable private endpoints for the API
+| DOWNLOAD_SERVICE_SECRET_KEY  | QB0108EZ-825D-412C-9B1D-41EF7747F462   | A key specific for the download service to access public/private links
+| ZEBEDEE_URL                  | http://localhost:8082                  | The host name for Zebedee
+| ENABLE_PERMISSIONS_AUTH      | false                                  | Enable/disable user/service permissions checking for private endpoints
 
 ### Contributing
 

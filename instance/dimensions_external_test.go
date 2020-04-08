@@ -42,7 +42,7 @@ func Test_UpdateDimensionReturnsOk(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -86,7 +86,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -123,7 +123,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -157,7 +157,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -191,7 +191,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -231,7 +231,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -267,7 +267,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -307,7 +307,7 @@ func Test_UpdateDimensionAuditErrors(t *testing.T) {
 			datasetPermissions := mocks.NewAuthHandlerMock()
 			permissions := mocks.NewAuthHandlerMock()
 
-			datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+			datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then response returns internal server error (500)", func() {
@@ -342,7 +342,7 @@ func Test_UpdateDimensionAuditErrors(t *testing.T) {
 			datasetPermissions := mocks.NewAuthHandlerMock()
 			permissions := mocks.NewAuthHandlerMock()
 
-			datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+			datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then response returns internal server error (500)", func() {
@@ -385,7 +385,7 @@ func Test_UpdateDimensionAuditErrors(t *testing.T) {
 			datasetPermissions := mocks.NewAuthHandlerMock()
 			permissions := mocks.NewAuthHandlerMock()
 
-			datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+			datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then response returns status ok (200)", func() {

@@ -12,8 +12,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/request"
+	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -27,16 +27,17 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 	insert := vars["inserted_observations"]
 	auditParams := common.Params{"instance_id": instanceID, "inserted_observations": insert}
 	logData := audit.ToLogData(auditParams)
+	logData["action"] = UpdateInsertedObservationsAction
 
 	if err := func() error {
 		observations, err := strconv.ParseInt(insert, 10, 64)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "update imported observations: failed to parse inserted_observations string to int"), logData)
+			log.Event(ctx, "update imported observations: failed to parse inserted_observations string to int", log.ERROR, log.Error(err), logData)
 			return errs.ErrInsertedObservationsInvalidSyntax
 		}
 
 		if err = s.UpdateObservationInserted(instanceID, observations); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "update imported observations: store.UpdateObservationInserted returned an error"), logData)
+			log.Event(ctx, "update imported observations: store.UpdateObservationInserted returned an error", log.ERROR, log.Error(err), logData)
 			return err
 		}
 
@@ -51,7 +52,7 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 
 	s.Auditor.Record(ctx, UpdateInsertedObservationsAction, audit.Successful, auditParams)
 
-	log.InfoCtx(ctx, "update imported observations: request successful", logData)
+	log.Event(ctx, "update imported observations: request successful", log.INFO, logData)
 }
 
 // UpdateImportTask updates any task in the request body against an instance
@@ -64,12 +65,13 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 	instanceID := vars["instance_id"]
 	auditParams := common.Params{"instance_id": instanceID}
 	logData := audit.ToLogData(auditParams)
+	logData["action"] = UpdateImportTasksAction
 	defer r.Body.Close()
 
 	updateErr := func() *taskError {
 		tasks, err := unmarshalImportTasks(r.Body)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "failed to unmarshal request body to UpdateImportTasks model"), logData)
+			log.Event(ctx, "failed to unmarshal request body to UpdateImportTasks model", log.ERROR, log.Error(err), logData)
 			return &taskError{err, http.StatusBadRequest}
 		}
 
@@ -83,7 +85,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 					validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value for import observations: %v", tasks.ImportObservations.State))
 				} else {
 					if err := s.UpdateImportObservationsTaskState(instanceID, tasks.ImportObservations.State); err != nil {
-						log.ErrorCtx(ctx, errors.WithMessage(err, "Failed to update import observations task state"), logData)
+						log.Event(ctx, "failed to update import observations task state", log.ERROR, log.Error(err), logData)
 						return &taskError{err, http.StatusInternalServerError}
 					}
 				}
@@ -103,10 +105,10 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 					if err := s.UpdateBuildHierarchyTaskState(instanceID, task.DimensionName, task.State); err != nil {
 						if err.Error() == errs.ErrNotFound.Error() {
 							notFoundErr := task.DimensionName + " hierarchy import task does not exist"
-							log.ErrorCtx(ctx, errors.WithMessage(err, notFoundErr), logData)
+							log.Event(ctx, notFoundErr, log.ERROR, log.Error(err), logData)
 							return &taskError{errors.New(notFoundErr), http.StatusNotFound}
 						}
-						log.ErrorCtx(ctx, errors.WithMessage(err, "failed to update build hierarchy task state"), logData)
+						log.Event(ctx, "failed to update build hierarchy task state", log.ERROR, log.Error(err), logData)
 						return &taskError{err, http.StatusInternalServerError}
 					}
 				}
@@ -127,10 +129,10 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 					if err := s.UpdateBuildSearchTaskState(instanceID, task.DimensionName, task.State); err != nil {
 						if err.Error() == "not found" {
 							notFoundErr := task.DimensionName + " search index import task does not exist"
-							log.ErrorCtx(ctx, errors.WithMessage(err, notFoundErr), logData)
+							log.Event(ctx, notFoundErr, log.ERROR, log.Error(err), logData)
 							return &taskError{errors.New(notFoundErr), http.StatusNotFound}
 						}
-						log.ErrorCtx(ctx, errors.WithMessage(err, "failed to update build hierarchy task state"), logData)
+						log.Event(ctx, "failed to update build hierarchy task state", log.ERROR, log.Error(err), logData)
 						return &taskError{err, http.StatusInternalServerError}
 					}
 				}
@@ -146,7 +148,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 
 		if len(validationErrs) > 0 {
 			for _, err := range validationErrs {
-				log.ErrorCtx(ctx, errors.WithMessage(err, "validation error"), logData)
+				log.Event(ctx, "validation error", log.ERROR, log.Error(err), logData)
 			}
 			// todo: add all validation errors to the response
 			return &taskError{validationErrs[0], http.StatusBadRequest}
@@ -158,7 +160,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 		if auditErr := s.Auditor.Record(ctx, UpdateImportTasksAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			updateErr = &taskError{errs.ErrInternalServer, http.StatusInternalServerError}
 		}
-		log.ErrorCtx(ctx, errors.WithMessage(updateErr, "updateImportTask endpoint: request unsuccessful"), logData)
+		log.Event(ctx, "updateImportTask endpoint: request unsuccessful", log.ERROR, log.Error(updateErr), logData)
 		http.Error(w, updateErr.Error(), updateErr.status)
 		return
 	}
@@ -167,7 +169,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.InfoCtx(ctx, "updateImportTask endpoint: request successful", logData)
+	log.Event(ctx, "updateImportTask endpoint: request successful", log.INFO, logData)
 }
 
 func unmarshalImportTasks(reader io.Reader) (*models.InstanceImportTasks, error) {

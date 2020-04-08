@@ -29,8 +29,9 @@ import (
 const host = "http://localhost:8080"
 
 var (
-	errAudit = errors.New("auditing error")
-	mu       sync.Mutex
+	errAudit    = errors.New("auditing error")
+	mu          sync.Mutex
+	testContext = context.Background()
 )
 
 func createRequestWithToken(method, url string, body io.Reader) (*http.Request, error) {
@@ -51,7 +52,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func([]string, []string) (*models.InstanceResults, error) {
+					GetInstancesFunc: func(context.Context, []string, []string) (*models.InstanceResults, error) {
 						return &models.InstanceResults{}, nil
 					},
 				}
@@ -59,7 +60,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -82,7 +83,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				var result []string
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func(state []string, dataset []string) (*models.InstanceResults, error) {
+					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string) (*models.InstanceResults, error) {
 						result = state
 						return &models.InstanceResults{}, nil
 					},
@@ -91,7 +92,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -115,7 +116,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				var result []string
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func(state []string, dataset []string) (*models.InstanceResults, error) {
+					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string) (*models.InstanceResults, error) {
 						result = dataset
 						return &models.InstanceResults{}, nil
 					},
@@ -124,7 +125,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -148,7 +149,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				var result []string
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func(state []string, dataset []string) (*models.InstanceResults, error) {
+					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string) (*models.InstanceResults, error) {
 						result = state
 						return &models.InstanceResults{}, nil
 					},
@@ -157,7 +158,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -181,7 +182,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				var result []string
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func(state []string, dataset []string) (*models.InstanceResults, error) {
+					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string) (*models.InstanceResults, error) {
 						result = append(result, state...)
 						result = append(result, dataset...)
 						return &models.InstanceResults{}, nil
@@ -191,7 +192,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -219,7 +220,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func([]string, []string) (*models.InstanceResults, error) {
+					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string) (*models.InstanceResults, error) {
 						return nil, errs.ErrInternalServer
 					},
 				}
@@ -227,7 +228,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -243,31 +244,31 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 			})
 		})
 
-		Convey("When the request contains an invalid state to filter on", func() {
-			Convey("Then return status bad request (400)", func() {
-				r, err := createRequestWithToken("GET", "http://localhost:21800/instances?state=foo", nil)
-				So(err, ShouldBeNil)
-				w := httptest.NewRecorder()
+			Convey("When the request contains an invalid state to filter on", func() {
+				Convey("Then return status bad request (400)", func() {
+					r, err := createRequestWithToken("GET", "http://localhost:21800/instances?state=foo", nil)
+					So(err, ShouldBeNil)
+					w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{}
+					mockedDataStore := &storetest.StorerMock{}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
-				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
-				datasetAPI.Router.ServeHTTP(w, r)
+					datasetPermissions := mocks.NewAuthHandlerMock()
+					permissions := mocks.NewAuthHandlerMock()
+					auditor := auditortest.New()
+					datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+					datasetAPI.Router.ServeHTTP(w, r)
 
-				So(w.Code, ShouldEqual, http.StatusBadRequest)
-				So(w.Body.String(), ShouldContainSubstring, "bad request - invalid filter state values: [foo]")
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
+					So(w.Code, ShouldEqual, http.StatusBadRequest)
+					So(w.Body.String(), ShouldContainSubstring, "bad request - invalid filter state values: [foo]")
+					So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+					So(permissions.Required.Calls, ShouldEqual, 1)
 
-				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
-					auditortest.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, common.Params{"state_query": "foo"}),
-				)
+					auditor.AssertRecordCalls(
+						auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
+						auditortest.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, common.Params{"state_query": "foo"}),
+					)
+				})
 			})
-		})
 	})
 }
 
@@ -285,7 +286,7 @@ func Test_GetInstancesAuditErrors(t *testing.T) {
 
 			datasetPermissions := mocks.NewAuthHandlerMock()
 			permissions := mocks.NewAuthHandlerMock()
-			datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+			datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then a 500 status is returned", func() {
@@ -312,14 +313,14 @@ func Test_GetInstancesAuditErrors(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
-				GetInstancesFunc: func([]string, []string) (*models.InstanceResults, error) {
+				GetInstancesFunc: func(context.Context, []string, []string) (*models.InstanceResults, error) {
 					return nil, errs.ErrInternalServer
 				},
 			}
 			datasetPermissions := mocks.NewAuthHandlerMock()
 			permissions := mocks.NewAuthHandlerMock()
 
-			datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+			datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then a 500 status is returned", func() {
@@ -347,14 +348,14 @@ func Test_GetInstancesAuditErrors(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
-				GetInstancesFunc: func([]string, []string) (*models.InstanceResults, error) {
+				GetInstancesFunc: func(context.Context, []string, []string) (*models.InstanceResults, error) {
 					return &models.InstanceResults{}, nil
 				},
 			}
 			datasetPermissions := mocks.NewAuthHandlerMock()
 			permissions := mocks.NewAuthHandlerMock()
 
-			datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+			datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then a 500 status is returned", func() {
@@ -394,7 +395,7 @@ func Test_GetInstanceReturnsOK(t *testing.T) {
 				permissions := mocks.NewAuthHandlerMock()
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -403,8 +404,8 @@ func Test_GetInstanceReturnsOK(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}},
-					auditortest.Expected{instance.GetInstanceAction, audit.Successful, common.Params{"instance_id": "123"}},
+					auditortest.Expected{Action: instance.GetInstanceAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123"}},
+					auditortest.Expected{Action: instance.GetInstanceAction, Result: audit.Successful, Params: common.Params{"instance_id": "123"}},
 				)
 			})
 		})
@@ -433,7 +434,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				permissions := mocks.NewAuthHandlerMock()
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -443,8 +444,8 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
-					auditortest.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{Action: instance.GetInstanceAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+					auditortest.Expected{Action: instance.GetInstanceAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -464,7 +465,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -474,8 +475,8 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
-					auditortest.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{Action: instance.GetInstanceAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+					auditortest.Expected{Action: instance.GetInstanceAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -496,7 +497,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				permissions := mocks.NewAuthHandlerMock()
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -506,8 +507,8 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
-					auditortest.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{Action: instance.GetInstanceAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+					auditortest.Expected{Action: instance.GetInstanceAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -536,7 +537,7 @@ func Test_GetInstanceAuditErrors(t *testing.T) {
 			datasetPermissions := mocks.NewAuthHandlerMock()
 			permissions := mocks.NewAuthHandlerMock()
 
-			datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+			datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then response returns internal server error (500)", func() {
@@ -547,7 +548,7 @@ func Test_GetInstanceAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
+					auditortest.Expected{Action: instance.GetInstanceAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 				)
 			})
 		})
@@ -570,7 +571,7 @@ func Test_GetInstanceAuditErrors(t *testing.T) {
 			datasetPermissions := mocks.NewAuthHandlerMock()
 			permissions := mocks.NewAuthHandlerMock()
 
-			datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+			datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then response returns internal server error (500)", func() {
@@ -581,8 +582,8 @@ func Test_GetInstanceAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
-					auditortest.Expected{instance.GetInstanceAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{Action: instance.GetInstanceAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+					auditortest.Expected{Action: instance.GetInstanceAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -605,7 +606,7 @@ func Test_GetInstanceAuditErrors(t *testing.T) {
 			datasetPermissions := mocks.NewAuthHandlerMock()
 			permissions := mocks.NewAuthHandlerMock()
 
-			datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+			datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then response returns internal server error (500)", func() {
@@ -616,8 +617,8 @@ func Test_GetInstanceAuditErrors(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.GetInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
-					auditortest.Expected{instance.GetInstanceAction, audit.Successful, auditParams},
+					auditortest.Expected{Action: instance.GetInstanceAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+					auditortest.Expected{Action: instance.GetInstanceAction, Result: audit.Successful, Params: auditParams},
 				)
 			})
 		})
@@ -665,7 +666,7 @@ func Test_AddInstanceReturnsCreated(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusCreated)
@@ -705,7 +706,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -741,7 +742,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -777,7 +778,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -813,7 +814,7 @@ func Test_AddInstanceAuditErrors(t *testing.T) {
 			datasetPermissions := mocks.NewAuthHandlerMock()
 			permissions := mocks.NewAuthHandlerMock()
 
-			datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+			datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then response returns internal server error (500)", func() {
@@ -850,7 +851,7 @@ func Test_AddInstanceAuditErrors(t *testing.T) {
 			datasetPermissions := mocks.NewAuthHandlerMock()
 			permissions := mocks.NewAuthHandlerMock()
 
-			datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+			datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then response returns internal server error (500)", func() {
@@ -889,7 +890,7 @@ func Test_AddInstanceAuditErrors(t *testing.T) {
 			datasetPermissions := mocks.NewAuthHandlerMock()
 			permissions := mocks.NewAuthHandlerMock()
 
-			datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+			datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 			datasetAPI.Router.ServeHTTP(w, r)
 
 			Convey("Then response returns status created (201)", func() {
@@ -948,7 +949,7 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -959,8 +960,8 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Successful, auditParams},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Successful, Params: auditParams},
 				)
 			})
 		})
@@ -990,7 +991,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1004,8 +1005,8 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -1025,7 +1026,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				permissions := mocks.NewAuthHandlerMock()
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1037,8 +1038,8 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "123", "instance_state": "gobbledygook"}},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Unsuccessful, Params: common.Params{"instance_id": "123", "instance_state": "gobbledygook"}},
 				)
 			})
 		})
@@ -1058,7 +1059,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
 
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -1071,8 +1072,8 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -1096,7 +1097,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				permissions := mocks.NewAuthHandlerMock()
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -1110,8 +1111,8 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -1132,7 +1133,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				permissions := mocks.NewAuthHandlerMock()
 
 				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -1146,8 +1147,8 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -1178,7 +1179,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 				permissions := mocks.NewAuthHandlerMock()
 
 				auditor := auditortest.NewErroring(instance.UpdateInstanceAction, audit.Attempted)
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1192,7 +1193,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
 				)
 			})
 		})
@@ -1228,7 +1229,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 				permissions := mocks.NewAuthHandlerMock()
 
 				auditor := auditortest.NewErroring(instance.UpdateInstanceAction, audit.Unsuccessful)
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1241,8 +1242,8 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, common.Params{"instance_id": "123", "instance_state": models.PublishedState}},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Unsuccessful, Params: common.Params{"instance_id": "123", "instance_state": models.PublishedState}},
 				)
 			})
 		})
@@ -1277,7 +1278,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 				permissions := mocks.NewAuthHandlerMock()
 
 				auditor := auditortest.NewErroring(instance.UpdateInstanceAction, audit.Unsuccessful)
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1291,8 +1292,8 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
 				auditor.AssertRecordCalls(
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Attempted, auditParamsWithCallerIdentity},
-					auditortest.Expected{instance.UpdateInstanceAction, audit.Unsuccessful, auditParams},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Attempted, Params: auditParamsWithCallerIdentity},
+					auditortest.Expected{Action: instance.UpdateInstanceAction, Result: audit.Unsuccessful, Params: auditParams},
 				)
 			})
 		})
@@ -1301,7 +1302,7 @@ func Test_UpdateInstance_AuditFailure(t *testing.T) {
 
 var urlBuilder = url.NewBuilder("localhost:20000")
 
-func getAPIWithMocks(mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, mockAuditor api.Auditor, datasetPermissions api.AuthHandler, permissions api.AuthHandler) *api.DatasetAPI {
+func getAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, mockAuditor api.Auditor, datasetPermissions api.AuthHandler, permissions api.AuthHandler) *api.DatasetAPI {
 	mu.Lock()
 	defer mu.Unlock()
 	cfg, err := config.Get()
@@ -1310,5 +1311,5 @@ func getAPIWithMocks(mockedDataStore store.Storer, mockedGeneratedDownloads api.
 	cfg.DatasetAPIURL = "http://localhost:22000"
 	cfg.EnablePrivateEnpoints = true
 
-	return api.NewDatasetAPI(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockAuditor, datasetPermissions, permissions)
+	return api.NewDatasetAPI(ctx, *cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockAuditor, datasetPermissions, permissions)
 }

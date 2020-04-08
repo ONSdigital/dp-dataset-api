@@ -9,10 +9,9 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/request"
+	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
 )
 
 // UpdateDimension updates label and/or description
@@ -27,13 +26,14 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	dimension := vars["dimension"]
 	auditParams := common.Params{"instance_id": instanceID, "dimension": dimension}
 	logData := audit.ToLogData(auditParams)
+	logData["action"] = UpdateDimensionAction
 
-	log.InfoCtx(ctx, "update instance dimension", logData)
+	log.Event(ctx, "update instance dimension: update instance dimension", log.INFO, logData)
 
 	if err := func() error {
 		instance, err := s.GetInstance(instanceID)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "update instance dimension: Failed to GET instance"), logData)
+			log.Event(ctx, "update instance dimension: Failed to GET instance", log.ERROR, log.Error(err), logData)
 			return err
 		}
 		auditParams["instance_state"] = instance.State
@@ -41,14 +41,14 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 		// Early return if instance state is invalid
 		if err = models.CheckState("instance", instance.State); err != nil {
 			logData["state"] = instance.State
-			log.ErrorCtx(ctx, errors.WithMessage(err, "update instance dimension: current instance has an invalid state"), logData)
+			log.Event(ctx, "update instance dimension: current instance has an invalid state", log.ERROR, log.Error(err), logData)
 			return err
 		}
 
 		// Read and unmarshal request body
 		b, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "update instance dimension: error reading request.body"), logData)
+			log.Event(ctx, "update instance dimension: error reading request.body", log.ERROR, log.Error(err), logData)
 			return errs.ErrUnableToReadMessage
 		}
 
@@ -56,7 +56,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 		err = json.Unmarshal(b, &dim)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "update instance dimension: failing to model models.Codelist resource based on request"), logData)
+			log.Event(ctx, "update instance dimension: failing to model models.Codelist resource based on request", log.ERROR, log.Error(err), logData)
 			return errs.ErrUnableToParseJSON
 		}
 
@@ -80,7 +80,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if notFound {
-			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrDimensionNotFound, "update instance dimension: dimension not found"), logData)
+			log.Event(ctx, "update instance dimension: dimension not found", log.ERROR, log.Error(errs.ErrDimensionNotFound), logData)
 			return errs.ErrDimensionNotFound
 		}
 
@@ -92,7 +92,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 		// Update instance
 		if err = s.UpdateInstance(ctx, instanceID, instanceUpdate); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "update instance dimension: failed to update instance with new dimension label/description"), logData)
+			log.Event(ctx, "update instance dimension: failed to update instance with new dimension label/description", log.ERROR, log.Error(err), logData)
 			return err
 		}
 
@@ -107,5 +107,5 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	s.Auditor.Record(ctx, UpdateDimensionAction, audit.Successful, auditParams)
 
-	log.InfoCtx(ctx, "updated instance dimension: request successful", logData)
+	log.Event(ctx, "updated instance dimension: request successful", log.INFO, logData)
 }

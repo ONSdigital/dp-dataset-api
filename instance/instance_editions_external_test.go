@@ -73,7 +73,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
 
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -156,7 +156,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
 
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -206,7 +206,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.New()
 
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -263,7 +263,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.NewErroring(instance.CreateEditionAction, audit.Attempted)
 
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -370,7 +370,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.NewErroring(instance.UpdateInstanceAction, audit.Unsuccessful)
 
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -472,7 +472,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 				permissions := mocks.NewAuthHandlerMock()
 				auditor := auditortest.NewErroring(instance.UpdateInstanceAction, audit.Unsuccessful)
 
-				datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,9 +10,9 @@ import (
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
-	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/log.go/log"
 	"github.com/pkg/errors"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 // List of error variables
@@ -248,10 +249,7 @@ func CreateVersion(reader io.Reader) (*Version, error) {
 	}
 
 	// Create unique id
-	id, err := uuid.NewV4()
-	if err != nil {
-		return nil, err
-	}
+	id := uuid.NewV4()
 
 	var version Version
 	version.ID = id.String()
@@ -292,20 +290,15 @@ func CreateContact(reader io.Reader) (*Contact, error) {
 	}
 
 	// Create unique id
-	id, err := uuid.NewV4()
-	if err != nil {
-		return nil, err
-	}
+	id := uuid.NewV4()
 	contact.ID = id.String()
 
 	return &contact, nil
 }
 
+// CreateEdition manages the creation of a an edition object
 func CreateEdition(host, datasetID, edition string) (*EditionUpdate, error) {
-	id, err := uuid.NewV4()
-	if err != nil {
-		return nil, err
-	}
+	id := uuid.NewV4()
 
 	return &EditionUpdate{
 		ID: id.String(),
@@ -333,7 +326,7 @@ func CreateEdition(host, datasetID, edition string) (*EditionUpdate, error) {
 }
 
 //UpdateLinks in the editions.next document, ensuring links can't regress once published to current
-func (ed *EditionUpdate) UpdateLinks(host string) error {
+func (ed *EditionUpdate) UpdateLinks(ctx context.Context, host string) error {
 	if ed.Next == nil || ed.Next.Links == nil || ed.Next.Links.LatestVersion == nil || ed.Next.Links.LatestVersion.ID == "" {
 		return ErrEditionLinksInvalid
 	}
@@ -355,7 +348,7 @@ func (ed *EditionUpdate) UpdateLinks(host string) error {
 	}
 
 	if currentVersion > version {
-		log.Debug("published edition links to a higher version than the requested change", log.Data{"doc": ed, "versionID": versionID})
+		log.Event(ctx, "published edition links to a higher version than the requested change", log.INFO, log.Data{"doc": ed, "versionID": versionID})
 		return errors.New("published edition links to a higher version than the requested change")
 	}
 
@@ -372,7 +365,7 @@ func (ed *EditionUpdate) UpdateLinks(host string) error {
 
 //PublishLinks applies the provided versionLink object to the edition being published only
 //if that version is greater than the latest published version
-func (ed *EditionUpdate) PublishLinks(host string, versionLink *LinkObject) error {
+func (ed *EditionUpdate) PublishLinks(ctx context.Context, host string, versionLink *LinkObject) error {
 	if ed.Next == nil || ed.Next.Links == nil || ed.Next.Links.LatestVersion == nil {
 		return errors.New("editions links do not exist")
 	}
@@ -397,7 +390,7 @@ func (ed *EditionUpdate) PublishLinks(host string, versionLink *LinkObject) erro
 	}
 
 	if currentVersion > version {
-		log.Debug("current latest version is higher, no edition update required", log.Data{"doc": ed, "currentVersionID": currentVersion, "versionID": versionLink.ID})
+		log.Event(ctx, "current latest version is higher, no edition update required", log.INFO, log.Data{"doc": ed, "currentVersionID": currentVersion, "versionID": versionLink.ID})
 		return nil
 	}
 

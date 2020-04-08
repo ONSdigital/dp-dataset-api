@@ -15,12 +15,12 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	"github.com/ONSdigital/dp-graph/observation"
-	observationtest "github.com/ONSdigital/dp-graph/observation/observationtest"
+	"github.com/ONSdigital/dp-graph/v2/observation"
+	observationtest "github.com/ONSdigital/dp-graph/v2/observation/observationtest"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/audit/auditortest"
 	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/log.go/log"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -32,6 +32,8 @@ var (
 )
 
 func TestGetObservationsReturnsOK(t *testing.T) {
+	ctx := context.Background()
+
 	t.Parallel()
 	Convey("Given a request to get a single observation for a version of a dataset returns 200 OK response", t, func() {
 
@@ -52,7 +54,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		usagesNotes := &[]models.UsageNote{models.UsageNote{Title: "data_marking", Note: "this marks the obsevation with a special character"}}
 
 		count := 0
-		mockRowReader := &observationtest.CSVRowReaderMock{
+		mockRowReader := &observationtest.StreamRowReaderMock{
 			ReadFunc: func() (string, error) {
 				count++
 				if count == 1 {
@@ -88,7 +90,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 					UsageNotes: usagesNotes,
 				}, nil
 			},
-			StreamCSVRowsFunc: func(context.Context, *observation.Filter, *int) (observation.StreamRowReader, error) {
+			StreamCSVRowsFunc: func(context.Context, string, string, *observation.DimensionFilters, *int) (observation.StreamRowReader, error) {
 				return mockRowReader, nil
 			},
 		}
@@ -104,7 +106,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			api.Router.ServeHTTP(w, r)
 
 			So(w.Code, ShouldEqual, http.StatusOK)
-			So(w.Body.String(), ShouldContainSubstring, getTestData("expectedDocWithSingleObservation"))
+			So(w.Body.String(), ShouldContainSubstring, getTestData(ctx, "expectedDocWithSingleObservation"))
 
 			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 			So(permissions.Required.Calls, ShouldEqual, 0)
@@ -127,7 +129,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 			api.Router.ServeHTTP(w, r)
 
 			So(w.Code, ShouldEqual, http.StatusOK)
-			So(w.Body.String(), ShouldContainSubstring, getTestData("expectedSecondDocWithSingleObservation"))
+			So(w.Body.String(), ShouldContainSubstring, getTestData(ctx, "expectedSecondDocWithSingleObservation"))
 
 			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -164,7 +166,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		usagesNotes := &[]models.UsageNote{models.UsageNote{Title: "data_marking", Note: "this marks the observation with a special character"}}
 
 		count := 0
-		mockRowReader := &observationtest.CSVRowReaderMock{
+		mockRowReader := &observationtest.StreamRowReaderMock{
 			ReadFunc: func() (string, error) {
 				count++
 				if count == 1 {
@@ -202,7 +204,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 					UsageNotes: usagesNotes,
 				}, nil
 			},
-			StreamCSVRowsFunc: func(context.Context, *observation.Filter, *int) (observation.StreamRowReader, error) {
+			StreamCSVRowsFunc: func(context.Context, string, string, *observation.DimensionFilters, *int) (observation.StreamRowReader, error) {
 				return mockRowReader, nil
 			},
 		}
@@ -214,7 +216,7 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(w.Body.String(), ShouldContainSubstring, getTestData("expectedDocWithMultipleObservations"))
+		So(w.Body.String(), ShouldContainSubstring, getTestData(ctx, "expectedDocWithMultipleObservations"))
 
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
@@ -688,7 +690,7 @@ func TestGetObservationsReturnsError(t *testing.T) {
 					},
 					nil
 			},
-			StreamCSVRowsFunc: func(context.Context, *observation.Filter, *int) (observation.StreamRowReader, error) {
+			StreamCSVRowsFunc: func(context.Context, string, string, *observation.DimensionFilters, *int) (observation.StreamRowReader, error) {
 				return nil, errs.ErrObservationsNotFound
 			},
 		}
@@ -1190,7 +1192,7 @@ func TestGetObservationAuditSuccessfulError(t *testing.T) {
 			usagesNotes := &[]models.UsageNote{models.UsageNote{Title: "data_marking", Note: "this marks the obsevation with a special character"}}
 
 			count := 0
-			mockRowReader := &observationtest.CSVRowReaderMock{
+			mockRowReader := &observationtest.StreamRowReaderMock{
 				ReadFunc: func() (string, error) {
 					count++
 					if count == 1 {
@@ -1226,7 +1228,7 @@ func TestGetObservationAuditSuccessfulError(t *testing.T) {
 						UsageNotes: usagesNotes,
 					}, nil
 				},
-				StreamCSVRowsFunc: func(context.Context, *observation.Filter, *int) (observation.StreamRowReader, error) {
+				StreamCSVRowsFunc: func(context.Context, string, string, *observation.DimensionFilters, *int) (observation.StreamRowReader, error) {
 					return mockRowReader, nil
 				},
 			}
@@ -1258,15 +1260,15 @@ func TestGetObservationAuditSuccessfulError(t *testing.T) {
 	})
 }
 
-func getTestData(filename string) string {
+func getTestData(ctx context.Context, filename string) string {
 	jsonBytes, err := ioutil.ReadFile("./observation_test_data/" + filename + ".json")
 	if err != nil {
-		log.ErrorC("unable to read json file into bytes", err, log.Data{"filename": filename})
+		log.Event(ctx, "unable to read json file into bytes", log.ERROR, log.Error(err), log.Data{"filename": filename})
 		os.Exit(1)
 	}
 	buffer := new(bytes.Buffer)
 	if err := json.Compact(buffer, jsonBytes); err != nil {
-		log.ErrorC("unable to remove whitespace from json bytes", err, log.Data{"filename": filename})
+		log.Event(ctx, "unable to remove whitespace from json bytes", log.ERROR, log.Error(err), log.Data{"filename": filename})
 		os.Exit(1)
 	}
 

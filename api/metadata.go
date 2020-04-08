@@ -8,7 +8,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -32,25 +32,25 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, "")
 		if err != nil {
 			if err == errs.ErrVersionNotFound {
-				log.ErrorCtx(ctx, errors.WithMessage(err, "getMetadata endpoint: failed to find version for dataset edition"), logData)
+				log.Event(ctx, "getMetadata endpoint: failed to find version for dataset edition", log.ERROR, log.Error(err), logData)
 				return nil, errs.ErrMetadataVersionNotFound
 			}
-			log.ErrorCtx(ctx, errors.WithMessage(err, "getMetadata endpoint: get datastore.getVersion returned an error"), logData)
+			log.Event(ctx, "getMetadata endpoint: get datastore.getVersion returned an error", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
 		datasetDoc, err := api.dataStore.Backend.GetDataset(datasetID)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "getMetadata endpoint: get datastore.getDataset returned an error"), logData)
+			log.Event(ctx, "getMetadata endpoint: get datastore.getDataset returned an error", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
-		authorised, logData := api.authenticate(r, logData)
+		authorised := api.authenticate(r, logData)
 		state := versionDoc.State
 
 		// if the requested version is not yet published and the user is unauthorised, return a 404
 		if !authorised && versionDoc.State != models.PublishedState {
-			log.ErrorCtx(ctx, errors.WithMessage(errs.ErrUnauthorised, "getMetadata endpoint: unauthorised user requested unpublished version, returning 404"), logData)
+			log.Event(ctx, "getMetadata endpoint: unauthorised user requested unpublished version, returning 404", log.ERROR, log.Error(errs.ErrUnauthorised), logData)
 			return nil, errs.ErrUnauthorised
 		}
 
@@ -59,7 +59,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			// Check for current sub document
 			if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
 				logData["dataset"] = datasetDoc.Current
-				log.ErrorCtx(ctx, errors.New("getMetadata endpoint: caller not is authorised and dataset but currently unpublished"), logData)
+				log.Event(ctx, "getMetadata endpoint: caller not is authorised and dataset but currently unpublished", log.ERROR, log.Error(errors.New("document is not currently published")), logData)
 				return nil, errs.ErrDatasetNotFound
 			}
 
@@ -67,13 +67,13 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, ""); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "getMetadata endpoint: failed to find edition for dataset"), logData)
+			log.Event(ctx, "getMetadata endpoint: failed to find edition for dataset", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
 		if err = models.CheckState("version", versionDoc.State); err != nil {
 			logData["state"] = versionDoc.State
-			log.ErrorCtx(ctx, errors.WithMessage(err, "getMetadata endpoint: unpublished version has an invalid state"), logData)
+			log.Event(ctx, "getMetadata endpoint: unpublished version has an invalid state", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
@@ -87,14 +87,14 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 		b, err := json.Marshal(metaDataDoc)
 		if err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "getMetadata endpoint: failed to marshal metadata resource into bytes"), logData)
+			log.Event(ctx, "getMetadata endpoint: failed to marshal metadata resource into bytes", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 		return b, err
 	}()
 
 	if err != nil {
-		log.ErrorCtx(ctx, err, logData)
+		log.Event(ctx, "received error", log.ERROR, log.Error(err), logData)
 		if auditErr := api.auditor.Record(ctx, getMetadataAction, audit.Unsuccessful, auditParams); auditErr != nil {
 			err = auditErr
 		}
@@ -109,10 +109,10 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 	setJSONContentType(w)
 	if _, err = w.Write(b); err != nil {
-		log.ErrorCtx(ctx, errors.WithMessage(err, "getMetadata endpoint: failed to write bytes to response"), logData)
+		log.Event(ctx, "getMetadata endpoint: failed to write bytes to response", log.ERROR, log.Error(err), logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	log.InfoCtx(ctx, "getMetadata endpoint: get metadata request successful", logData)
+	log.Event(ctx, "getMetadata endpoint: get metadata request successful", log.INFO, logData)
 }
 
 func handleMetadataErr(w http.ResponseWriter, err error) {
