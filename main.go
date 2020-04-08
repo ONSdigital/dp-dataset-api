@@ -89,7 +89,7 @@ func run(ctx context.Context) error {
 			0,
 		)
 		if err != nil {
-			log.Event(ctx, "could not obtain audit producer", log.ERROR, log.Error(err))
+			log.Event(ctx, "could not obtain audit producer", log.FATAL, log.Error(err))
 			return err
 		}
 
