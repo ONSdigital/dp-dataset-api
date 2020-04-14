@@ -25,6 +25,7 @@ type Configuration struct {
 	EnablePrivateEnpoints      bool          `envconfig:"ENABLE_PRIVATE_ENDPOINTS"`
 	EnableDetachDataset        bool          `envconfig:"ENABLE_DETACH_DATASET"`
 	EnablePermissionsAuth      bool          `envconfig:"ENABLE_PERMISSIONS_AUTH"`
+	EnableObservationEndpoint  bool          `envconfig:"ENABLE_OBSERVATION_ENDPOINT"`
 	MongoConfig                MongoConfig
 }
 
@@ -60,6 +61,7 @@ func Get() (*Configuration, error) {
 		EnablePrivateEnpoints:      false,
 		EnableDetachDataset:        false,
 		EnablePermissionsAuth:      false,
+		EnableObservationEndpoint:  true,
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",

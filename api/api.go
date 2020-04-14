@@ -83,23 +83,24 @@ type AuthHandler interface {
 
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
-	dataStore                store.DataStore
-	host                     string
-	zebedeeURL               string
-	internalToken            string
-	downloadServiceToken     string
-	EnablePrePublishView     bool
-	Router                   *mux.Router
-	urlBuilder               *url.Builder
-	downloadGenerator        DownloadsGenerator
-	serviceAuthToken         string
-	auditor                  Auditor
-	enablePrivateEndpoints   bool
-	enableDetachDataset      bool
-	datasetPermissions       AuthHandler
-	permissions              AuthHandler
-	instancePublishedChecker *instance.PublishCheck
-	versionPublishedChecker  *PublishCheck
+	dataStore                 store.DataStore
+	host                      string
+	zebedeeURL                string
+	internalToken             string
+	downloadServiceToken      string
+	EnablePrePublishView      bool
+	Router                    *mux.Router
+	urlBuilder                *url.Builder
+	downloadGenerator         DownloadsGenerator
+	serviceAuthToken          string
+	auditor                   Auditor
+	enablePrivateEndpoints    bool
+	enableDetachDataset       bool
+	enableObservationEndpoint bool
+	datasetPermissions        AuthHandler
+	permissions               AuthHandler
+	instancePublishedChecker  *instance.PublishCheck
+	versionPublishedChecker   *PublishCheck
 }
 
 // CreateAndInitialiseDatasetAPI create a new DatasetAPI instance based on the configuration provided, apply middleware and starts the HTTP server.
@@ -153,22 +154,23 @@ func newMiddleware(healthcheckHandler func(http.ResponseWriter, *http.Request), 
 // NewDatasetAPI create a new Dataset API instance and register the API routes based on the application configuration.
 func NewDatasetAPI(ctx context.Context, cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, auditor Auditor, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
 	api := &DatasetAPI{
-		dataStore:                dataStore,
-		host:                     cfg.DatasetAPIURL,
-		zebedeeURL:               cfg.ZebedeeURL,
-		serviceAuthToken:         cfg.ServiceAuthToken,
-		downloadServiceToken:     cfg.DownloadServiceSecretKey,
-		EnablePrePublishView:     cfg.EnablePrivateEnpoints,
-		Router:                   router,
-		urlBuilder:               urlBuilder,
-		downloadGenerator:        downloadGenerator,
-		auditor:                  auditor,
-		enablePrivateEndpoints:   cfg.EnablePrivateEnpoints,
-		enableDetachDataset:      cfg.EnableDetachDataset,
-		datasetPermissions:       datasetPermissions,
-		permissions:              permissions,
-		versionPublishedChecker:  nil,
-		instancePublishedChecker: nil,
+		dataStore:                 dataStore,
+		host:                      cfg.DatasetAPIURL,
+		zebedeeURL:                cfg.ZebedeeURL,
+		serviceAuthToken:          cfg.ServiceAuthToken,
+		downloadServiceToken:      cfg.DownloadServiceSecretKey,
+		EnablePrePublishView:      cfg.EnablePrivateEnpoints,
+		Router:                    router,
+		urlBuilder:                urlBuilder,
+		downloadGenerator:         downloadGenerator,
+		auditor:                   auditor,
+		enablePrivateEndpoints:    cfg.EnablePrivateEnpoints,
+		enableDetachDataset:       cfg.EnableDetachDataset,
+		enableObservationEndpoint: cfg.EnableObservationEndpoint,
+		datasetPermissions:        datasetPermissions,
+		permissions:               permissions,
+		versionPublishedChecker:   nil,
+		instancePublishedChecker:  nil,
 	}
 
 	if api.enablePrivateEndpoints {
@@ -215,9 +217,12 @@ func (api *DatasetAPI) enablePublicEndpoints() {
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions", api.getVersions)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}", api.getVersion)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata", api.getMetadata)
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/observations", api.getObservations)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", api.getDimensions)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", api.getDimensionOptions)
+
+	if api.enableObservationEndpoint {
+		api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/observations", api.getObservations)
+	}
 }
 
 // enablePrivateDatasetEndpoints register the datasets endpoints with the appropriate authentication and authorisation
@@ -263,11 +268,13 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints() {
 			api.getMetadata),
 	)
 
-	api.get(
-		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/observations",
-		api.isAuthorisedForDatasets(readPermission,
-			api.getObservations),
-	)
+	if api.enableObservationEndpoint {
+		api.get(
+			"/datasets/{dataset_id}/editions/{edition}/versions/{version}/observations",
+			api.isAuthorisedForDatasets(readPermission,
+				api.getObservations),
+		)
+	}
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions",

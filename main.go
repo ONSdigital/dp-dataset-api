@@ -107,7 +107,7 @@ func run(ctx context.Context) error {
 	}
 
 	// Get graphdb connection for observation store
-	graphDB, err := serviceList.GetGraphDB(ctx)
+	graphDB, err := serviceList.GetGraphDB(ctx, cfg.EnableObservationEndpoint)
 	if err != nil {
 		log.Event(ctx, "failed to initialise graph driver", log.FATAL, log.Error(err))
 		return err
@@ -142,7 +142,16 @@ func run(ctx context.Context) error {
 	zebedeeClient := zebedee.New(cfg.ZebedeeURL)
 
 	// Add dataset API and graph checks
-	if err := registerCheckers(ctx, &hc, generateDownloadsProducer, auditProducer, graphDB, mongoClient, zebedeeClient, cfg.EnablePrivateEnpoints); err != nil {
+	if err := registerCheckers(
+		ctx,
+		&hc,
+		generateDownloadsProducer,
+		auditProducer,
+		graphDB,
+		mongoClient,
+		zebedeeClient,
+		cfg.EnablePrivateEnpoints,
+		cfg.EnableObservationEndpoint); err != nil {
 		return err
 	}
 
@@ -260,14 +269,14 @@ func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (a
 	return datasetPermissions, permissions
 }
 
-// registerCheckers adds the checkers for the provided clients to the healthcheck object
-func registerCheckers(ctx context.Context, hc *healthcheck.HealthCheck,
+// registerCheckers adds the checkers for the provided clients to the health check object
+func registerCheckers(ctx context.Context,
+	hc *healthcheck.HealthCheck,
 	generateDownloads, auditProducer *kafka.Producer,
 	graphDB *graph.DB,
 	mongoClient *mongoHealth.Client,
 	zebedeeClient *zebedee.Client,
-	enablePrivateEnpoints bool,
-) (err error) {
+	enablePrivateEnpoints, enableObservationEndpoint bool) (err error) {
 
 	hasErrors := false
 
@@ -297,9 +306,11 @@ func registerCheckers(ctx context.Context, hc *healthcheck.HealthCheck,
 		log.Event(ctx, "error adding check for mongo db", log.ERROR, log.Error(err))
 	}
 
-	if err = hc.AddCheck("Graph DB", graphDB.Driver.Checker); err != nil {
-		hasErrors = true
-		log.Event(ctx, "error adding check for graph db", log.ERROR, log.Error(err))
+	if enableObservationEndpoint {
+		if err = hc.AddCheck("Graph DB", graphDB.Driver.Checker); err != nil {
+			hasErrors = true
+			log.Event(ctx, "error adding check for graph db", log.ERROR, log.Error(err))
+		}
 	}
 
 	if hasErrors {

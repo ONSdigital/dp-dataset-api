@@ -36,6 +36,7 @@ func TestSpec(t *testing.T) {
 				So(cfg.EnablePermissionsAuth, ShouldBeFalse)
 				So(cfg.HealthCheckCriticalTimeout, ShouldEqual, 90*time.Second)
 				So(cfg.HealthCheckInterval, ShouldEqual, 30*time.Second)
+				So(cfg.EnableObservationEndpoint, ShouldEqual, true)
 			})
 		})
 	})
