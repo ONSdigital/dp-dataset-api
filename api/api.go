@@ -198,18 +198,18 @@ func NewDatasetAPI(ctx context.Context, cfg config.Configuration, router *mux.Ro
 			Storer:  api.dataStore.Backend,
 		}
 
-		api.enablePrivateDatasetEndpoints()
+		api.enablePrivateDatasetEndpoints(ctx)
 		api.enablePrivateInstancesEndpoints(instanceAPI)
 		api.enablePrivateDimensionsEndpoints(dimensionAPI)
 	} else {
 		log.Event(ctx, "enabling only public endpoints for dataset api", log.INFO)
-		api.enablePublicEndpoints()
+		api.enablePublicEndpoints(ctx)
 	}
 	return api
 }
 
 // enablePublicEndpoints register only the public GET endpoints.
-func (api *DatasetAPI) enablePublicEndpoints() {
+func (api *DatasetAPI) enablePublicEndpoints(ctx context.Context) {
 	api.get("/datasets", api.getDatasets)
 	api.get("/datasets/{dataset_id}", api.getDataset)
 	api.get("/datasets/{dataset_id}/editions", api.getEditions)
@@ -221,13 +221,14 @@ func (api *DatasetAPI) enablePublicEndpoints() {
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", api.getDimensionOptions)
 
 	if api.enableObservationEndpoint {
+		log.Event(ctx, "enabling observations endpoint", log.INFO)
 		api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/observations", api.getObservations)
 	}
 }
 
 // enablePrivateDatasetEndpoints register the datasets endpoints with the appropriate authentication and authorisation
 // checks required when running the dataset API in publishing (private) mode.
-func (api *DatasetAPI) enablePrivateDatasetEndpoints() {
+func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context) {
 	api.get(
 		"/datasets",
 		api.isAuthorised(readPermission, api.getDatasets),
@@ -269,6 +270,7 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints() {
 	)
 
 	if api.enableObservationEndpoint {
+		log.Event(ctx, "enabling observations endpoint", log.INFO)
 		api.get(
 			"/datasets/{dataset_id}/editions/{edition}/versions/{version}/observations",
 			api.isAuthorisedForDatasets(readPermission,

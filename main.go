@@ -307,6 +307,7 @@ func registerCheckers(ctx context.Context,
 	}
 
 	if enableObservationEndpoint {
+		log.Event(ctx, "adding graph db health check as the observations endpoint is enabled", log.INFO)
 		if err = hc.AddCheck("Graph DB", graphDB.Driver.Checker); err != nil {
 			hasErrors = true
 			log.Event(ctx, "error adding check for graph db", log.ERROR, log.Error(err))
