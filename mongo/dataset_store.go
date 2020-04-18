@@ -629,22 +629,47 @@ func (m *Mongo) CheckEditionExists(id, editionID, state string) error {
 	return nil
 }
 
+var (
+	mutex        sync.Mutex
+	pingInFlight bool = false
+)
+
 // Ping the mongodb database
 func (m *Mongo) Ping(ctx context.Context) (time.Time, error) {
-	if time.Since(m.lastPingTime) < 1*time.Second {
-		return m.lastPingTime, m.lastPingResult
+	mutex.Lock()
+	if (pingInFlight == true) || (time.Since(m.lastPingTime) < 1*time.Second) {
+		// reject re-entrant calls (should this function get called from different go routines)
+		lpt := m.lastPingTime // protect from race
+		lres := m.lastPingResult
+		mutex.Unlock()
+		return lpt, lres
 	}
+	pingInFlight = true
+	mutex.Unlock()
 
 	s := m.Session.Copy()
-	defer s.Close()
+	defer func() {
+		s.Close()
+		mutex.Lock()
+		pingInFlight = false
+		mutex.Unlock()
+	}()
 
+	mutex.Lock()
 	m.lastPingTime = time.Now()
+	mutex.Unlock()
+
 	pingDoneChan := make(chan error)
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 	go func() {
 		log.Trace("db ping", nil)
+		// NOTE: if at this point the mongodb stops / stops responding ...
+		// (which is entirely possible when mongo db being accessed is
+		//  on another server)
+		// the following Ping will timeout after ~60 seconds and
+		// return "no reachable servers" as the error string.
 		err := s.Ping()
 		if err != nil {
 			log.ErrorC("Ping mongo", err, nil)
@@ -660,9 +685,13 @@ func (m *Mongo) Ping(ctx context.Context) (time.Time, error) {
 
 	select {
 	case err := <-pingDoneChan:
+		mutex.Lock()
 		m.lastPingResult = err
+		mutex.Unlock()
 	case <-ctx.Done():
+		mutex.Lock()
 		m.lastPingResult = ctx.Err()
+		mutex.Unlock()
 	}
 	return m.lastPingTime, m.lastPingResult
 }
