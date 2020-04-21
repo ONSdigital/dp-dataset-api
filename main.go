@@ -16,7 +16,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/dp-graph/graph"
-	"github.com/ONSdigital/dp-rchttp"
+	rchttp "github.com/ONSdigital/dp-rchttp"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/healthcheck"
 	"github.com/ONSdigital/go-ns/kafka"
@@ -60,6 +60,13 @@ func main() {
 		log.Error(err, nil)
 		os.Exit(1)
 	}
+
+	defer func() {
+		if x := recover(); x != nil {
+			// Capture run time panic's in the log ...
+			log.Error(errors.New(fmt.Sprintf("PANIC: %+v", x)), nil)
+		}
+	}()
 
 	log.Info("config on startup", log.Data{"config": cfg})
 
