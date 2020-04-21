@@ -2,17 +2,18 @@ package models
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"reflect"
 	"testing"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
-	"github.com/ONSdigital/go-ns/log"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+var testContext = context.Background()
 
 func TestCreateDataset(t *testing.T) {
 	t.Parallel()
@@ -25,8 +26,8 @@ func TestCreateDataset(t *testing.T) {
 
 			b, err := json.Marshal(inputDataset)
 			if err != nil {
-				log.ErrorC("Failed to marshal test data into bytes", err, nil)
-				os.Exit(1)
+				t.Logf("failed to marshal test data into bytes, error: %v", err)
+				t.FailNow()
 			}
 			r := bytes.NewReader(b)
 			dataset, err := CreateDataset(r)
@@ -64,8 +65,8 @@ func TestCreateDataset(t *testing.T) {
 
 			b, err := json.Marshal(inputDataset)
 			if err != nil {
-				log.ErrorC("Failed to marshal test data into bytes", err, nil)
-				os.Exit(1)
+				t.Logf("failed to marshal test data into bytes, error: %v", err)
+				t.FailNow()
 			}
 			r := bytes.NewReader(b)
 			dataset, err := CreateDataset(r)
@@ -83,8 +84,8 @@ func TestCreateDataset(t *testing.T) {
 	Convey("Return with error when the request body contains the correct fields but of the wrong type", t, func() {
 		b, err := json.Marshal(badInputData)
 		if err != nil {
-			log.ErrorC("Failed to marshal test data into bytes", err, nil)
-			os.Exit(1)
+			t.Logf("failed to marshal test data into bytes, error: %v", err)
+			t.FailNow()
 		}
 		r := bytes.NewReader(b)
 		version, err := CreateDataset(r)
@@ -100,8 +101,8 @@ func TestCreateVersion(t *testing.T) {
 		Convey("when the version has all fields", func() {
 			b, err := json.Marshal(associatedVersion)
 			if err != nil {
-				log.ErrorC("Failed to marshal test data into bytes", err, nil)
-				os.Exit(1)
+				t.Logf("failed to marshal test data into bytes, error: %v", err)
+				t.FailNow()
 			}
 			r := bytes.NewReader(b)
 			version, err := CreateVersion(r)
@@ -123,8 +124,8 @@ func TestCreateVersion(t *testing.T) {
 	Convey("Return with error when the request body contains the correct fields but of the wrong type", t, func() {
 		b, err := json.Marshal(badInputData)
 		if err != nil {
-			log.ErrorC("Failed to marshal test data into bytes", err, nil)
-			os.Exit(1)
+			t.Logf("failed to marshal test data into bytes, error: %v", err)
+			t.FailNow()
 		}
 		r := bytes.NewReader(b)
 		version, err := CreateVersion(r)
@@ -268,7 +269,7 @@ func TestUpdateLinks(t *testing.T) {
 		}
 
 		Convey("when UpdateLinks is called", func() {
-			err := edition.UpdateLinks(host)
+			err := edition.UpdateLinks(testContext, host)
 
 			Convey("then an error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -300,7 +301,7 @@ func TestUpdateLinks(t *testing.T) {
 		}
 
 		Convey("when UpdateLinks is called", func() {
-			err := edition.UpdateLinks(host)
+			err := edition.UpdateLinks(testContext, host)
 
 			Convey("then links are correctly updated", func() {
 				So(err, ShouldBeNil)
@@ -350,7 +351,7 @@ func TestUpdateLinks(t *testing.T) {
 		}
 
 		Convey("when UpdateLinks is called", func() {
-			err := edition.UpdateLinks(host)
+			err := edition.UpdateLinks(testContext, host)
 			Convey("then links are correctly updated", func() {
 				So(err, ShouldBeNil)
 				So(edition.Next.Links.LatestVersion.ID, ShouldEqual, "2")
@@ -360,7 +361,7 @@ func TestUpdateLinks(t *testing.T) {
 
 		Convey("when UpdateLinks is called with a version ID which is lower than the latest published version", func() {
 			edition.Current.Links.LatestVersion.ID = "3"
-			err := edition.UpdateLinks(host)
+			err := edition.UpdateLinks(testContext, host)
 			Convey("then an error should be returned", func() {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldResemble, "published edition links to a higher version than the requested change")
@@ -369,7 +370,7 @@ func TestUpdateLinks(t *testing.T) {
 
 		Convey("when UpdateLinks is called on an edition with an invalid current version ID", func() {
 			edition.Current.Links.LatestVersion.ID = "hi"
-			err := edition.UpdateLinks(host)
+			err := edition.UpdateLinks(testContext, host)
 			Convey("then an error should be returned", func() {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldResemble, "failed to convert version id from edition.current document: strconv.Atoi: parsing \"hi\": invalid syntax")
@@ -378,7 +379,7 @@ func TestUpdateLinks(t *testing.T) {
 
 		Convey("when UpdateLinks is called on an edition with an invalid next version ID", func() {
 			edition.Next.Links.LatestVersion.ID = "there"
-			err := edition.UpdateLinks(host)
+			err := edition.UpdateLinks(testContext, host)
 			Convey("then an error should be returned", func() {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldResemble, "failed to convert version id from edition.next document: strconv.Atoi: parsing \"there\": invalid syntax")
@@ -400,7 +401,7 @@ func TestPublishLinks(t *testing.T) {
 		}
 
 		Convey("when PublishLinks is called", func() {
-			err := edition.PublishLinks(host, nil)
+			err := edition.PublishLinks(testContext, host, nil)
 
 			Convey("then an error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -435,7 +436,7 @@ func TestPublishLinks(t *testing.T) {
 		}
 
 		Convey("when PublishLinks is called", func() {
-			err := edition.PublishLinks(host, nil)
+			err := edition.PublishLinks(testContext, host, nil)
 
 			Convey("then an error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -462,7 +463,7 @@ func TestPublishLinks(t *testing.T) {
 		}
 
 		Convey("when PublishLinks is called with an invalid version link", func() {
-			err := edition.PublishLinks(host, nil)
+			err := edition.PublishLinks(testContext, host, nil)
 
 			Convey("then an error is returned", func() {
 				So(err, ShouldNotBeNil)
@@ -471,7 +472,7 @@ func TestPublishLinks(t *testing.T) {
 		})
 
 		Convey("when PublishLinks is called with an invalid version link ID", func() {
-			err := edition.PublishLinks(host, &LinkObject{
+			err := edition.PublishLinks(testContext, host, &LinkObject{
 				ID: "hello",
 			})
 
@@ -482,7 +483,7 @@ func TestPublishLinks(t *testing.T) {
 		})
 
 		Convey("when PublishLinks is called with a version link", func() {
-			err := edition.PublishLinks(host, version)
+			err := edition.PublishLinks(testContext, host, version)
 
 			Convey("then links are correctly updated", func() {
 				So(err, ShouldBeNil)
@@ -527,7 +528,7 @@ func TestPublishLinks(t *testing.T) {
 				HRef: "example.com/datasets/1/editions/time-series/versions/3",
 			}
 
-			err := edition.PublishLinks(host, argLink)
+			err := edition.PublishLinks(testContext, host, argLink)
 
 			Convey("then links are correctly updated", func() {
 				So(err, ShouldBeNil)
@@ -541,7 +542,7 @@ func TestPublishLinks(t *testing.T) {
 				ID:   "1",
 				HRef: "example.com/datasets/1/editions/time-series/versions/1",
 			}
-			err := edition.PublishLinks(host, argLink)
+			err := edition.PublishLinks(testContext, host, argLink)
 
 			Convey("then no changes should be made", func() {
 				So(err, ShouldBeNil)

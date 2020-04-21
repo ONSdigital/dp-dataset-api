@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -39,6 +40,7 @@ var (
 
 	urlBuilder         = url.NewBuilder("localhost:20000")
 	genericAuditParams = common.Params{"caller_identity": callerIdentity, "dataset_id": "123-456"}
+	mu                 sync.Mutex
 )
 
 func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {
@@ -49,13 +51,15 @@ func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {
 
 // GetAPIWithMocks also used in other tests, so exported
 func GetAPIWithMocks(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, auditMock Auditor, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
+	mu.Lock()
+	defer mu.Unlock()
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)
 	cfg.ServiceAuthToken = authToken
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEnpoints = true
 
-	return NewDatasetAPI(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, auditMock, datasetPermissions, permissions)
+	return NewDatasetAPI(testContext, *cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, auditMock, datasetPermissions, permissions)
 }
 
 func createRequestWithAuth(method, URL string, body io.Reader) (*http.Request, error) {
@@ -72,7 +76,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func() ([]models.DatasetUpdate, error) {
+			GetDatasetsFunc: func(context.Context) ([]models.DatasetUpdate, error) {
 				return []models.DatasetUpdate{}, nil
 			},
 		}
@@ -102,7 +106,7 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func() ([]models.DatasetUpdate, error) {
+			GetDatasetsFunc: func(context.Context) ([]models.DatasetUpdate, error) {
 				return nil, errs.ErrInternalServer
 			},
 		}
@@ -135,7 +139,7 @@ func TestGetDatasetsReturnsErrorIfAuditAttemptFails(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func() ([]models.DatasetUpdate, error) {
+			GetDatasetsFunc: func(context.Context) ([]models.DatasetUpdate, error) {
 				return nil, errs.ErrInternalServer
 			},
 		}
@@ -171,7 +175,7 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func() ([]models.DatasetUpdate, error) {
+			GetDatasetsFunc: func(context.Context) ([]models.DatasetUpdate, error) {
 				return nil, errs.ErrInternalServer
 			},
 		}
@@ -200,7 +204,7 @@ func TestGetDatasetsAuditSuccessfulError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func() ([]models.DatasetUpdate, error) {
+			GetDatasetsFunc: func(context.Context) ([]models.DatasetUpdate, error) {
 				return []models.DatasetUpdate{}, nil
 			},
 		}
@@ -896,7 +900,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
 			},
-			UpdateDatasetFunc: func(string, *models.Dataset, string) error {
+			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -907,7 +911,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		dataset := &models.Dataset{
 			Title: "CPI",
 		}
-		mockedDataStore.UpdateDataset("123", dataset, models.CreatedState)
+		mockedDataStore.UpdateDataset(testContext, "123", dataset, models.CreatedState)
 
 		auditMock := auditortest.New()
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, datasetPermissions, permissions)
@@ -949,7 +953,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
 			},
-			UpdateDatasetFunc: func(string, *models.Dataset, string) error {
+			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
 				return errs.ErrAddUpdateDatasetBadRequest
 			},
 		}
@@ -988,7 +992,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			UpdateDatasetFunc: func(string, *models.Dataset, string) error {
+			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
 				return errs.ErrInternalServer
 			},
 		}
@@ -999,7 +1003,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		mockedDataStore.UpdateDataset("123", dataset, models.CreatedState)
+		mockedDataStore.UpdateDataset(testContext, "123", dataset, models.CreatedState)
 		auditMock := auditortest.New()
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditMock, datasetPermissions, permissions)
 
@@ -1034,7 +1038,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpdateDatasetFunc: func(string, *models.Dataset, string) error {
+			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
 				return errs.ErrDatasetNotFound
 			},
 		}
@@ -1075,7 +1079,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
 			},
-			UpdateDatasetFunc: func(string, *models.Dataset, string) error {
+			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -1121,7 +1125,7 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 					return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
 				},
-				UpdateDatasetFunc: func(string, *models.Dataset, string) error {
+				UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
 					return nil
 				},
 			}
@@ -1167,7 +1171,7 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 					return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
 				},
-				UpdateDatasetFunc: func(string, *models.Dataset, string) error {
+				UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
 					return nil
 				},
 			}
@@ -1210,7 +1214,7 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 					return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
 				},
-				UpdateDatasetFunc: func(string, *models.Dataset, string) error {
+				UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
 					return nil
 				},
 			}
@@ -1330,7 +1334,7 @@ func TestPutDatasetAuditErrors(t *testing.T) {
 				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 					return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
 				},
-				UpdateDatasetFunc: func(ID string, dataset *models.Dataset, currentState string) error {
+				UpdateDatasetFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
 					return errors.New("update dataset error")
 				},
 			}
@@ -1372,7 +1376,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+			GetEditionsFunc: func(ctx context.Context, ID string, state string) (*models.EditionUpdateResults, error) {
 				return &models.EditionUpdateResults{}, nil
 			},
 			DeleteDatasetFunc: func(string) error {
@@ -1395,7 +1399,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123"}},
+			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 		)
 	})
 
@@ -1408,7 +1412,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+			GetEditionsFunc: func(ctx context.Context, ID string, state string) (*models.EditionUpdateResults, error) {
 				var items []*models.EditionUpdate
 				items = append(items, &models.EditionUpdate{})
 				return &models.EditionUpdateResults{Items: items}, nil
@@ -1437,7 +1441,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123"}},
+			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 		)
 	})
 }
@@ -1453,7 +1457,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
 			},
-			GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+			GetEditionsFunc: func(ctx context.Context, ID string, state string) (*models.EditionUpdateResults, error) {
 				return &models.EditionUpdateResults{}, nil
 			},
 			DeleteDatasetFunc: func(string) error {
@@ -1477,7 +1481,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 		)
 	})
 
@@ -1491,7 +1495,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+			GetEditionsFunc: func(ctx context.Context, ID string, state string) (*models.EditionUpdateResults, error) {
 				return &models.EditionUpdateResults{}, nil
 			},
 			DeleteDatasetFunc: func(string) error {
@@ -1514,7 +1518,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 		)
 	})
 
@@ -1528,7 +1532,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+			GetEditionsFunc: func(ctx context.Context, ID string, state string) (*models.EditionUpdateResults, error) {
 				return &models.EditionUpdateResults{}, nil
 			},
 			DeleteDatasetFunc: func(string) error {
@@ -1552,7 +1556,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 		)
 	})
 
@@ -1566,7 +1570,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return nil, errors.New("database is broken")
 			},
-			GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+			GetEditionsFunc: func(ctx context.Context, ID string, state string) (*models.EditionUpdateResults, error) {
 				return &models.EditionUpdateResults{}, nil
 			},
 			DeleteDatasetFunc: func(string) error {
@@ -1589,7 +1593,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		auditMock.AssertRecordCalls(
 			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+			auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 		)
 	})
 
@@ -1692,7 +1696,7 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 
 				auditMock.AssertRecordCalls(
 					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 				)
 			})
 		})
@@ -1725,7 +1729,7 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 
 				auditMock.AssertRecordCalls(
 					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 				)
 			})
 		})
@@ -1758,7 +1762,7 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 
 				auditMock.AssertRecordCalls(
 					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 				)
 			})
 		})
@@ -1772,7 +1776,7 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 					return &models.DatasetUpdate{Next: &models.Dataset{State: models.CompletedState}}, nil
 				},
-				GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+				GetEditionsFunc: func(ctx context.Context, ID string, state string) (*models.EditionUpdateResults, error) {
 					var items []*models.EditionUpdate
 					items = append(items, &models.EditionUpdate{})
 					return &models.EditionUpdateResults{Items: items}, nil
@@ -1799,7 +1803,7 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 
 				auditMock.AssertRecordCalls(
 					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 				)
 			})
 		})
@@ -1813,7 +1817,7 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 				GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 					return &models.DatasetUpdate{Next: &models.Dataset{State: models.CompletedState}}, nil
 				},
-				GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+				GetEditionsFunc: func(ctx context.Context, ID string, state string) (*models.EditionUpdateResults, error) {
 					return &models.EditionUpdateResults{}, nil
 				},
 				DeleteDatasetFunc: func(ID string) error {
@@ -1837,7 +1841,7 @@ func TestDeleteDatasetAuditauditUnsuccessfulError(t *testing.T) {
 
 				auditMock.AssertRecordCalls(
 					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123"}},
+					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Unsuccessful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 				)
 			})
 		})
@@ -1854,7 +1858,7 @@ func TestDeleteDatasetAuditActionSuccessfulError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			GetEditionsFunc: func(ID string, state string) (*models.EditionUpdateResults, error) {
+			GetEditionsFunc: func(ctx context.Context, ID string, state string) (*models.EditionUpdateResults, error) {
 				return &models.EditionUpdateResults{}, nil
 			},
 			DeleteDatasetFunc: func(string) error {
@@ -1881,7 +1885,7 @@ func TestDeleteDatasetAuditActionSuccessfulError(t *testing.T) {
 
 				auditMock.AssertRecordCalls(
 					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Attempted, Params: common.Params{"caller_identity": "someone@ons.gov.uk", "dataset_id": "123"}},
-					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123"}},
+					auditortest.Expected{Action: deleteDatasetAction, Result: audit.Successful, Params: common.Params{"dataset_id": "123", "func": "deleteDataset"}},
 				)
 			})
 		})

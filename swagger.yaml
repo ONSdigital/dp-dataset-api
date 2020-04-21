@@ -17,6 +17,11 @@ tags:
 schemes:
 - "http"
 parameters:
+  dataset:
+    name: dataset
+    description: "A unique id for a dataset to filter on"
+    in: query
+    type: string
   dimension:
     name: dimension
     description: "A dimension from a dataset"
@@ -512,6 +517,7 @@ paths:
       description: "Get a list of instances which has been paged"
       parameters:
         - $ref: '#/parameters/state'
+        - $ref: '#/parameters/dataset'
       produces:
       - "application/json"
       security:

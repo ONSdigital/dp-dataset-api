@@ -1,12 +1,15 @@
 package download
 
 import (
+	"context"
 	"testing"
 
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+var testContext = context.Background()
 
 func TestGenerator_GenerateFullDatasetDownloadsValidationErrors(t *testing.T) {
 	producerMock := &mocks.KafkaProducerMock{
@@ -29,7 +32,7 @@ func TestGenerator_GenerateFullDatasetDownloadsValidationErrors(t *testing.T) {
 	Convey("Given an invalid datasetID", t, func() {
 
 		Convey("When the generator is called", func() {
-			err := gen.Generate("", "", "", "")
+			err := gen.Generate(testContext, "", "", "", "")
 
 			Convey("Then the expected error is returned", func() {
 				So(err, ShouldResemble, datasetIDEmptyErr)
@@ -47,7 +50,7 @@ func TestGenerator_GenerateFullDatasetDownloadsValidationErrors(t *testing.T) {
 
 	Convey("Given an empty instanceID", t, func() {
 		Convey("When the generator is called", func() {
-			err := gen.Generate("1234567890", "", "", "")
+			err := gen.Generate(testContext, "1234567890", "", "", "")
 
 			Convey("Then the expected error is returned", func() {
 				So(err, ShouldResemble, instanceIDEmptyErr)
@@ -65,7 +68,7 @@ func TestGenerator_GenerateFullDatasetDownloadsValidationErrors(t *testing.T) {
 
 	Convey("Given an empty edition", t, func() {
 		Convey("When the generator is called", func() {
-			err := gen.Generate("1234567890", "1234567890", "", "")
+			err := gen.Generate(testContext, "1234567890", "1234567890", "", "")
 
 			Convey("Then the expected error is returned", func() {
 				So(err, ShouldResemble, editionEmptyErr)
@@ -83,7 +86,7 @@ func TestGenerator_GenerateFullDatasetDownloadsValidationErrors(t *testing.T) {
 
 	Convey("Given an empty version", t, func() {
 		Convey("When the generator is called", func() {
-			err := gen.Generate("1234567890", "1234567890", "time-series", "")
+			err := gen.Generate(testContext, "1234567890", "1234567890", "time-series", "")
 
 			Convey("Then the expected error is returned", func() {
 				So(err, ShouldResemble, versionEmptyErr)
@@ -125,7 +128,7 @@ func TestGenerator_GenerateMarshalError(t *testing.T) {
 			Marshaller: marhsallerMock,
 		}
 
-		err := gen.Generate(datasetID, instanceID, edition, version)
+		err := gen.Generate(testContext, datasetID, instanceID, edition, version)
 
 		Convey("then then expected error is returned", func() {
 			So(err, ShouldResemble, newGeneratorError(mockErr, avroMarshalErr))
@@ -177,7 +180,7 @@ func TestGenerator_Generate(t *testing.T) {
 		}
 
 		Convey("when generate is called no error is returned", func() {
-			err := gen.Generate(datasetID, instanceID, edition, version)
+			err := gen.Generate(testContext, datasetID, instanceID, edition, version)
 			So(err, ShouldBeNil)
 
 			Convey("then marshal is called with the expected parameters", func() {

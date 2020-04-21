@@ -17,11 +17,11 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/audit/auditortest"
 	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/log.go/log"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -44,7 +44,7 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(datasetID, editionID, state string) (*models.VersionResults, error) {
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.VersionResults, error) {
 				return &models.VersionResults{}, nil
 			},
 		}
@@ -176,7 +176,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(datasetID, editionID, state string) (*models.VersionResults, error) {
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.VersionResults, error) {
 				return nil, errs.ErrVersionNotFound
 			},
 		}
@@ -212,7 +212,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(datasetID, editionID, state string) (*models.VersionResults, error) {
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.VersionResults, error) {
 				return nil, errs.ErrVersionNotFound
 			},
 		}
@@ -251,7 +251,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(datasetID, editionID, state string) (*models.VersionResults, error) {
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.VersionResults, error) {
 				return &models.VersionResults{Items: items}, nil
 			},
 		}
@@ -393,7 +393,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 			CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(datasetID string, editionID string, state string) (*models.VersionResults, error) {
+			GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string) (*models.VersionResults, error) {
 				return nil, err
 			},
 		}
@@ -427,7 +427,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 			CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(datasetID string, editionID string, state string) (*models.VersionResults, error) {
+			GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string) (*models.VersionResults, error) {
 				return &models.VersionResults{
 					Items: []models.Version{{State: "not valid"}},
 				}, nil
@@ -470,7 +470,7 @@ func TestGetVersionsAuditError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(datasetID, editionID, state string) (*models.VersionResults, error) {
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.VersionResults, error) {
 				return &models.VersionResults{}, nil
 			},
 		}
@@ -987,7 +987,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 	t.Parallel()
 	Convey("When state is unchanged", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -1066,7 +1066,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 	Convey("When state is set to associated", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -1132,7 +1132,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		downloadsGenerated := make(chan bool, 1)
 
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				downloadsGenerated <- true
 				return nil
 			},
@@ -1171,12 +1171,13 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		api := GetAPIWithMocks(mockedDataStore, generatorMock, auditor, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
+		ctx := context.Background()
 		select {
 		case <-downloadsGenerated:
-			log.Info("download generated as expected", nil)
+			log.Event(ctx, "download generated as expected", log.INFO)
 		case <-time.After(time.Second * 10):
 			err := errors.New("failing test due to timeout")
-			log.Error(err, nil)
+			log.Event(ctx, "timed out", log.ERROR, log.Error(err))
 			t.Fail()
 		}
 
@@ -1208,7 +1209,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 	Convey("When state is set to published", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -1364,7 +1365,7 @@ func updateVersionDownloadTest(r *http.Request, firstAuditParams, secondAuditPar
 	w := httptest.NewRecorder()
 
 	generatorMock := &mocks.DownloadsGeneratorMock{
-		GenerateFunc: func(string, string, string, string) error {
+		GenerateFunc: func(context.Context, string, string, string, string) error {
 			return nil
 		},
 	}
@@ -1481,7 +1482,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 		}
 
 		mockDownloadGenerator := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return mockedErr
 			},
 		}
@@ -2092,7 +2093,7 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 				},
 			}
 			gen := &mocks.DownloadsGeneratorMock{
-				GenerateFunc: func(datasetID string, instanceID string, edition string, version string) error {
+				GenerateFunc: func(ctx context.Context, datasetID string, instanceID string, edition string, version string) error {
 					return expectedErr
 				},
 			}
@@ -2128,7 +2129,7 @@ func TestAssociateVersionAuditErrors(t *testing.T) {
 				},
 			}
 			gen := &mocks.DownloadsGeneratorMock{
-				GenerateFunc: func(datasetID string, instanceID string, edition string, version string) error {
+				GenerateFunc: func(ctx context.Context, datasetID string, instanceID string, edition string, version string) error {
 					return nil
 				},
 			}
@@ -2160,7 +2161,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 	t.Parallel()
 	Convey("When the request contain malformed json a bad request status is returned", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -2208,7 +2209,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -2256,7 +2257,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 	Convey("When the dataset document cannot be found for version return status not found", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(datasetID string, edition string, versionID string, version string) error {
+			GenerateFunc: func(ctx context.Context, datasetID string, edition string, versionID string, version string) error {
 				return nil
 			},
 		}
@@ -2308,7 +2309,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 	Convey("When the edition document cannot be found for version return status not found", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -2360,7 +2361,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 	Convey("When the version document cannot be found return status not found", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -2416,7 +2417,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 	Convey("When the request is not authorised to update version then response returns status not found", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -2460,7 +2461,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 	Convey("When the version document has already been published return status forbidden", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -2509,7 +2510,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 	Convey("When the request body is invalid return status bad request", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -2565,7 +2566,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 	Convey("When setting the instance node to published fails", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -2826,7 +2827,7 @@ func TestDetachVersionReturnOK(t *testing.T) {
 
 	Convey("A successful detach request against a version of a published dataset returns 200 OK response.", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -2892,7 +2893,7 @@ func TestDetachVersionReturnOK(t *testing.T) {
 
 	Convey("A successful detach request against a version of a unpublished dataset returns 200 OK response.", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -2972,7 +2973,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 	Convey("When the api cannot connect to datastore return an internal server error.", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -3012,7 +3013,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 	Convey("When the provided edition cannot be found, return a 404 not found error.", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -3052,7 +3053,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 	Convey("When detached is called against a version other than latest, return an internal server error", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -3095,7 +3096,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 	Convey("When state is neither edition-confirmed or associated, return an internal server error", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -3141,7 +3142,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 	Convey("When the requested version cannot be found, return a not found error", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -3187,7 +3188,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 	Convey("When updating the version fails, return an internal server error", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
@@ -3242,7 +3243,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 	Convey("When edition update fails whilst rolling back the edition, return an internal server error", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(string, string, string, string) error {
+			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}

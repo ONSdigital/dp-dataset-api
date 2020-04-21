@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/ONSdigital/dp-dataset-api/api"
@@ -16,7 +17,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/audit/auditortest"
@@ -26,7 +27,9 @@ import (
 )
 
 var (
-	urlBuilder = url.NewBuilder("localhost:20000")
+	urlBuilder  = url.NewBuilder("localhost:20000")
+	mu          sync.Mutex
+	testContext = context.Background()
 )
 
 func createRequestWithToken(method, url string, body io.Reader) (*http.Request, error) {
@@ -55,7 +58,7 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -97,7 +100,7 @@ func TestAddNodeIDToDimensionReturnsBadRequest(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -136,7 +139,7 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -170,7 +173,7 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -209,7 +212,7 @@ func TestAddNodeIDToDimensionReturnsForbidden(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -246,7 +249,7 @@ func TestAddNodeIDToDimensionReturnsUnauthorized(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
@@ -286,7 +289,7 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 			return errors.New("unable to send message to kafka audit topic")
 		}
 
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -321,7 +324,7 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 			return errors.New("unable to send message to kafka audit topic")
 		}
 
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -366,7 +369,7 @@ func TestAddNodeIDToDimensionAuditFailure(t *testing.T) {
 			return errors.New("unable to send message to kafka audit topic")
 		}
 
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -408,7 +411,7 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -451,7 +454,7 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -495,7 +498,7 @@ func TestAddDimensionToInstanceReturnsForbidden(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -534,7 +537,7 @@ func TestAddDimensionToInstanceReturnsUnauthorized(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
@@ -575,7 +578,7 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -615,7 +618,7 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -659,7 +662,7 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 			return errors.New("unable to send message to kafka audit topic")
 		}
 
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -695,7 +698,7 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 			return errors.New("unable to send message to kafka audit topic")
 		}
 
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -741,7 +744,7 @@ func TestAddDimensionAuditFailure(t *testing.T) {
 			return errors.New("unable to send message to kafka audit topic")
 		}
 
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -783,7 +786,7 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -823,7 +826,7 @@ func TestGetDimensionsReturnsNotFound(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -864,7 +867,7 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -902,7 +905,7 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -939,7 +942,7 @@ func TestGetDimensionsAndOptionsAuditFailure(t *testing.T) {
 			return errors.New("unable to send message to kafka audit topic")
 		}
 
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -973,7 +976,7 @@ func TestGetDimensionsAndOptionsAuditFailure(t *testing.T) {
 			return errors.New("unable to send message to kafka audit topic")
 		}
 
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1018,7 +1021,7 @@ func TestGetDimensionsAndOptionsAuditFailure(t *testing.T) {
 			return errors.New("unable to send message to kafka audit topic")
 		}
 
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1060,7 +1063,7 @@ func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -1099,7 +1102,7 @@ func TestGetUniqueDimensionAndOptionsReturnsNotFound(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -1139,7 +1142,7 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1176,7 +1179,7 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 		}
 
 		auditor := auditortest.New()
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1213,7 +1216,7 @@ func TestGetUniqueDimensionAndOptionsAuditFailure(t *testing.T) {
 			return errors.New("unable to send message to kafka audit topic")
 		}
 
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1247,7 +1250,7 @@ func TestGetUniqueDimensionAndOptionsAuditFailure(t *testing.T) {
 			return errors.New("unable to send message to kafka audit topic")
 		}
 
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1292,7 +1295,7 @@ func TestGetUniqueDimensionAndOptionsAuditFailure(t *testing.T) {
 			return errors.New("unable to send message to kafka audit topic")
 		}
 
-		datasetAPI := getAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1316,7 +1319,10 @@ func TestGetUniqueDimensionAndOptionsAuditFailure(t *testing.T) {
 	})
 }
 
-func getAPIWithMocks(mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, mockAuditor api.Auditor) *api.DatasetAPI {
+func getAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, mockAuditor api.Auditor) *api.DatasetAPI {
+	mu.Lock()
+	defer mu.Unlock()
+
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)
 	cfg.ServiceAuthToken = "dataset"
@@ -1326,7 +1332,7 @@ func getAPIWithMocks(mockedDataStore store.Storer, mockedGeneratedDownloads api.
 	datasetPermissions := getAuthorisationHandlerMock()
 	permissions := getAuthorisationHandlerMock()
 
-	return api.NewDatasetAPI(*cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockAuditor, datasetPermissions, permissions)
+	return api.NewDatasetAPI(ctx, *cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockAuditor, datasetPermissions, permissions)
 }
 
 func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {

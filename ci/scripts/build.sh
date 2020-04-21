@@ -2,9 +2,7 @@
 
 cwd=$(pwd)
 
-export GOPATH=$cwd/go
-
-pushd $GOPATH/src/github.com/ONSdigital/dp-dataset-api
-  make build && mv build/$(go env GOOS)-$(go env GOARCH)/* $cwd/build
+pushd $cwd/dp-dataset-api
+  make build && mv build/dp-dataset-api $cwd/build
   cp Dockerfile.concourse $cwd/build
 popd

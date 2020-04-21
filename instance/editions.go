@@ -7,8 +7,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/log"
-	"github.com/pkg/errors"
+	"github.com/ONSdigital/log.go/log"
 )
 
 func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instanceID string) (*models.EditionUpdate, error) {
@@ -21,22 +20,26 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 
 	if editionDoc, action, err = func() (*models.EditionUpdate, string, error) {
 
-		log.Debug("getting edition", logData)
+		log.Event(ctx, "confirm edition: getting edition", log.INFO, logData)
 		editionDoc, err := s.GetEdition(datasetID, edition, "")
 		if err != nil {
 			if err != errs.ErrEditionNotFound {
-				log.ErrorCtx(ctx, err, logData)
+				log.Event(ctx, "confirm edition: failed to confirm edition", log.ERROR, log.Error(err), logData)
 				return nil, action, err
 			}
 
-			log.Debug("edition not found, creating", logData)
+			log.Event(ctx, "confirm edition: edition not found, creating", log.INFO, logData)
 			action = CreateEditionAction
 			if auditErr := s.Auditor.Record(ctx, action, audit.Attempted, auditParams); auditErr != nil {
 				return nil, action, auditErr
 			}
 
-			editionDoc = models.CreateEdition(s.Host, datasetID, edition)
-			log.Debug("created new edition", logData)
+			editionDoc, err = models.CreateEdition(s.Host, datasetID, edition)
+			if err != nil {
+				return nil, action, err
+			}
+
+			log.Event(ctx, "confirm edition: created new edition", log.INFO, logData)
 		} else {
 
 			action = UpdateEditionAction
@@ -45,18 +48,18 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 			if s.EnableDetachDataset {
 				// Abort if a new/next version is already in flight
 				if editionDoc.Current == nil || editionDoc.Current.Links.LatestVersion.ID != editionDoc.Next.Links.LatestVersion.ID {
-					log.InfoCtx(ctx, "there was an attempted skip of versioning sequence. Aborting edition update", logData)
+					log.Event(ctx, "confirm edition: there was an attempted skip of versioning sequence. Aborting edition update", log.INFO, logData)
 					return nil, action, errs.ErrVersionAlreadyExists
 				}
 			}
 
-			log.Debug("edition found, updating", logData)
+			log.Event(ctx, "confirm edition: edition found, updating", log.INFO, logData)
 			if auditErr := s.Auditor.Record(ctx, action, audit.Attempted, auditParams); auditErr != nil {
 				return nil, action, auditErr
 			}
 
-			if err = editionDoc.UpdateLinks(s.Host); err != nil {
-				log.ErrorCtx(ctx, errors.WithMessage(err, "unable to update edition links"), logData)
+			if err = editionDoc.UpdateLinks(ctx, s.Host); err != nil {
+				log.Event(ctx, "confirm edition: unable to update edition links", log.ERROR, log.Error(err), logData)
 				return nil, action, err
 			}
 		}
@@ -64,7 +67,7 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 		editionDoc.Next.State = models.EditionConfirmedState
 
 		if err = s.UpsertEdition(datasetID, edition, editionDoc); err != nil {
-			log.ErrorCtx(ctx, errors.WithMessage(err, "confirm edition: store.UpsertEdition returned an error"), logData)
+			log.Event(ctx, "confirm edition: store.UpsertEdition returned an error", log.ERROR, log.Error(err), logData)
 			return nil, action, err
 		}
 
@@ -77,6 +80,6 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 	}
 
 	s.Auditor.Record(ctx, action, audit.Successful, auditParams)
-	log.InfoCtx(ctx, "instance update: created/updated edition", logData)
+	log.Event(ctx, "confirm edition: created/updated edition", log.INFO, logData)
 	return editionDoc, nil
 }

@@ -12,7 +12,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/log.go/log"
 )
 
 // Mongo represents a simplistic MongoDB configuration.
@@ -47,7 +47,7 @@ func (m *Mongo) Init() (session *mgo.Session, err error) {
 }
 
 // GetDatasets retrieves all dataset documents
-func (m *Mongo) GetDatasets() ([]models.DatasetUpdate, error) {
+func (m *Mongo) GetDatasets(ctx context.Context) ([]models.DatasetUpdate, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -55,7 +55,7 @@ func (m *Mongo) GetDatasets() ([]models.DatasetUpdate, error) {
 	defer func() {
 		err := iter.Close()
 		if err != nil {
-			log.ErrorC("error closing iterator", err, log.Data{})
+			log.Event(ctx, "error closing iterator", log.ERROR, log.Error(err))
 		}
 	}()
 
@@ -87,7 +87,7 @@ func (m *Mongo) GetDataset(id string) (*models.DatasetUpdate, error) {
 }
 
 // GetEditions retrieves all edition documents for a dataset
-func (m *Mongo) GetEditions(id, state string) (*models.EditionUpdateResults, error) {
+func (m *Mongo) GetEditions(ctx context.Context, id, state string) (*models.EditionUpdateResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -97,7 +97,7 @@ func (m *Mongo) GetEditions(id, state string) (*models.EditionUpdateResults, err
 	defer func() {
 		err := iter.Close()
 		if err != nil {
-			log.ErrorC("error closing edition iterator", err, log.Data{"selector": selector})
+			log.Event(ctx, "error closing edition iterator", log.ERROR, log.Error(err), log.Data{"selector": selector})
 		}
 	}()
 
@@ -194,7 +194,7 @@ func (m *Mongo) GetNextVersion(datasetID, edition string) (int, error) {
 }
 
 // GetVersions retrieves all version documents for a dataset edition
-func (m *Mongo) GetVersions(id, editionID, state string) (*models.VersionResults, error) {
+func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string) (*models.VersionResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -204,7 +204,7 @@ func (m *Mongo) GetVersions(id, editionID, state string) (*models.VersionResults
 	defer func() {
 		err := iter.Close()
 		if err != nil {
-			log.ErrorC("error closing instance iterator ", err, log.Data{"selector": selector})
+			log.Event(ctx, "error closing instance iterator", log.ERROR, log.Error(err), log.Data{"selector": selector})
 		}
 	}()
 
@@ -294,11 +294,11 @@ func buildVersionQuery(id, editionID, state string, versionID int) bson.M {
 }
 
 // UpdateDataset updates an existing dataset document
-func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset, currentState string) (err error) {
+func (m *Mongo) UpdateDataset(ctx context.Context, id string, dataset *models.Dataset, currentState string) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	updates := createDatasetUpdateQuery(id, dataset, currentState)
+	updates := createDatasetUpdateQuery(ctx, id, dataset, currentState)
 	update := bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}}
 	if err = s.DB(m.Database).C("datasets").UpdateId(id, update); err != nil {
 		if err == mgo.ErrNotFound {
@@ -310,10 +310,10 @@ func (m *Mongo) UpdateDataset(id string, dataset *models.Dataset, currentState s
 	return nil
 }
 
-func createDatasetUpdateQuery(id string, dataset *models.Dataset, currentState string) bson.M {
+func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Dataset, currentState string) bson.M {
 	updates := make(bson.M)
 
-	log.Debug("building update query for dataset resource", log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
+	log.Event(ctx, "building update query for dataset resource", log.INFO, log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
 
 	if dataset.CollectionID != "" {
 		updates["next.collection_id"] = dataset.CollectionID
@@ -417,7 +417,7 @@ func createDatasetUpdateQuery(id string, dataset *models.Dataset, currentState s
 		updates["next.uri"] = dataset.URI
 	}
 
-	log.Debug("built update query for dataset resource", log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
+	log.Event(ctx, "built update query for dataset resource", log.INFO, log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
 
 	return updates
 }
@@ -644,10 +644,10 @@ func (m *Mongo) Ping(ctx context.Context) (time.Time, error) {
 
 	wg.Add(1)
 	go func() {
-		log.Trace("db ping", nil)
+		log.Event(ctx, "db ping", log.INFO)
 		err := s.Ping()
 		if err != nil {
-			log.ErrorC("Ping mongo", err, nil)
+			log.Event(ctx, "Ping mongo", log.ERROR, log.Error(err))
 		}
 		pingDoneChan <- err
 		wg.Done()

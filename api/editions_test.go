@@ -10,7 +10,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/go-ns/audit"
 	"github.com/ONSdigital/go-ns/audit/auditortest"
 	"github.com/ONSdigital/go-ns/common"
@@ -31,7 +31,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(id string, state string) (*models.EditionUpdateResults, error) {
+			GetEditionsFunc: func(ctx context.Context, id string, state string) (*models.EditionUpdateResults, error) {
 				return &models.EditionUpdateResults{}, nil
 			},
 		}
@@ -67,7 +67,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(id string, state string) (*models.EditionUpdateResults, error) {
+			GetEditionsFunc: func(ctx context.Context, id string, state string) (*models.EditionUpdateResults, error) {
 				return &models.EditionUpdateResults{}, nil
 			},
 		}
@@ -103,7 +103,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(id string, state string) (*models.EditionUpdateResults, error) {
+			GetEditionsFunc: func(ctx context.Context, id string, state string) (*models.EditionUpdateResults, error) {
 				return &models.EditionUpdateResults{}, nil
 			},
 		}
@@ -161,7 +161,7 @@ func TestGetEditionsAuditingError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(id string, state string) (*models.EditionUpdateResults, error) {
+			GetEditionsFunc: func(ctx context.Context, id string, state string) (*models.EditionUpdateResults, error) {
 				return nil, errs.ErrEditionNotFound
 			},
 		}
@@ -253,7 +253,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(id string, state string) (*models.EditionUpdateResults, error) {
+			GetEditionsFunc: func(ctx context.Context, id string, state string) (*models.EditionUpdateResults, error) {
 				return nil, errs.ErrEditionNotFound
 			},
 		}
@@ -284,7 +284,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(id string, state string) (*models.EditionUpdateResults, error) {
+			GetEditionsFunc: func(ctx context.Context, id string, state string) (*models.EditionUpdateResults, error) {
 				return nil, errs.ErrEditionNotFound
 			},
 		}

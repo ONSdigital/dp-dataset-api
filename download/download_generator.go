@@ -1,9 +1,10 @@
 package download
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/log.go/log"
 	"github.com/pkg/errors"
 )
 
@@ -43,7 +44,7 @@ type Generator struct {
 }
 
 // Generate the full file download files for the specified dataset/edition/version
-func (gen *Generator) Generate(datasetID string, instanceID string, edition string, version string) error {
+func (gen *Generator) Generate(ctx context.Context, datasetID string, instanceID string, edition string, version string) error {
 	if datasetID == "" {
 		return datasetIDEmptyErr
 	}
@@ -67,7 +68,7 @@ func (gen *Generator) Generate(datasetID string, instanceID string, edition stri
 		Version:    version,
 	}
 
-	log.Info("send generate downloads event", log.Data{
+	log.Event(ctx, "send generate downloads event", log.INFO, log.Data{
 		"datasetID":  datasetID,
 		"instanceID": instanceID,
 		"edition":    edition,

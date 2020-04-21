@@ -6,11 +6,10 @@ image_resource:
   type: docker-image
   source:
     repository: golang
-    tag: 1.10.2
+    tag: 1.13.9
 
 inputs:
   - name: dp-dataset-api
-    path: go/src/github.com/ONSdigital/dp-dataset-api
 
 run:
-  path: go/src/github.com/ONSdigital/dp-dataset-api/ci/scripts/unit.sh
+  path: dp-dataset-api/ci/scripts/unit.sh

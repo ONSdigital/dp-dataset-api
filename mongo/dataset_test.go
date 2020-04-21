@@ -1,6 +1,7 @@
 package mongo
 
 import (
+	"context"
 	"testing"
 
 	"github.com/globalsign/mgo/bson"
@@ -10,10 +11,11 @@ import (
 )
 
 var (
-	id        = "123"
-	editionID = "2017"
-	state     = models.PublishedState
-	versionID = 2
+	id          = "123"
+	editionID   = "2017"
+	state       = models.PublishedState
+	versionID   = 2
+	testContext = context.Background()
 )
 
 func TestBuildEditionsQuery(t *testing.T) {
@@ -226,7 +228,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			URI:              "http://ons.gov.uk/dataset/123/landing-page",
 		}
 
-		selector := createDatasetUpdateQuery("123", dataset, models.CreatedState)
+		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
 		So(selector, ShouldNotBeNil)
 		So(selector, ShouldResemble, expectedUpdate)
 	})
@@ -239,7 +241,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 		expectedUpdate := bson.M{
 			"next.national_statistic": &nationalStatistic,
 		}
-		selector := createDatasetUpdateQuery("123", dataset, models.CreatedState)
+		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
 		So(selector, ShouldNotBeNil)
 		So(selector, ShouldResemble, expectedUpdate)
 	})
@@ -247,7 +249,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 	Convey("When national statistic is not set", t, func() {
 		dataset := &models.Dataset{}
 
-		selector := createDatasetUpdateQuery("123", dataset, models.CreatedState)
+		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
 		So(selector, ShouldNotBeNil)
 		So(selector, ShouldResemble, bson.M{})
 	})
