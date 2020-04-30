@@ -59,12 +59,7 @@ func (e *ExternalServiceList) GetProducer(ctx context.Context, kafkaBrokers []st
 }
 
 // GetGraphDB returns a graphDB
-func (e *ExternalServiceList) GetGraphDB(ctx context.Context, enableObservationEndpoint bool) (*graph.DB, error) {
-
-	// the graph DB is only used for the observation endpoint
-	if !enableObservationEndpoint {
-		return nil, nil
-	}
+func (e *ExternalServiceList) GetGraphDB(ctx context.Context) (*graph.DB, error) {
 
 	graphDB, err := graph.New(ctx, graph.Subsets{Observation: true, Instance: true})
 	if err != nil {
