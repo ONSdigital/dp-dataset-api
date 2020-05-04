@@ -107,7 +107,7 @@ func run(ctx context.Context) error {
 	}
 
 	// Get graphdb connection for observation store
-	graphDB, err := serviceList.GetGraphDB(ctx, cfg.EnableObservationEndpoint)
+	graphDB, err := serviceList.GetGraphDB(ctx)
 	if err != nil {
 		log.Event(ctx, "failed to initialise graph driver", log.FATAL, log.Error(err))
 		return err
@@ -150,8 +150,7 @@ func run(ctx context.Context) error {
 		graphDB,
 		mongoClient,
 		zebedeeClient,
-		cfg.EnablePrivateEnpoints,
-		cfg.EnableObservationEndpoint); err != nil {
+		cfg.EnablePrivateEnpoints); err != nil {
 		return err
 	}
 
@@ -276,7 +275,7 @@ func registerCheckers(ctx context.Context,
 	graphDB *graph.DB,
 	mongoClient *mongoHealth.Client,
 	zebedeeClient *zebedee.Client,
-	enablePrivateEnpoints, enableObservationEndpoint bool) (err error) {
+	enablePrivateEnpoints bool) (err error) {
 
 	hasErrors := false
 
@@ -306,12 +305,10 @@ func registerCheckers(ctx context.Context,
 		log.Event(ctx, "error adding check for mongo db", log.ERROR, log.Error(err))
 	}
 
-	if enableObservationEndpoint {
-		log.Event(ctx, "adding graph db health check as the observations endpoint is enabled", log.INFO)
-		if err = hc.AddCheck("Graph DB", graphDB.Driver.Checker); err != nil {
-			hasErrors = true
-			log.Event(ctx, "error adding check for graph db", log.ERROR, log.Error(err))
-		}
+	log.Event(ctx, "adding graph db health check as the observations endpoint is enabled", log.INFO)
+	if err = hc.AddCheck("Graph DB", graphDB.Driver.Checker); err != nil {
+		hasErrors = true
+		log.Event(ctx, "error adding check for graph db", log.ERROR, log.Error(err))
 	}
 
 	if hasErrors {
