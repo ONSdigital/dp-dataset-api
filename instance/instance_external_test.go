@@ -244,31 +244,31 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 			})
 		})
 
-			Convey("When the request contains an invalid state to filter on", func() {
-				Convey("Then return status bad request (400)", func() {
-					r, err := createRequestWithToken("GET", "http://localhost:21800/instances?state=foo", nil)
-					So(err, ShouldBeNil)
-					w := httptest.NewRecorder()
+		Convey("When the request contains an invalid state to filter on", func() {
+			Convey("Then return status bad request (400)", func() {
+				r, err := createRequestWithToken("GET", "http://localhost:21800/instances?state=foo", nil)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
 
-					mockedDataStore := &storetest.StorerMock{}
+				mockedDataStore := &storetest.StorerMock{}
 
-					datasetPermissions := mocks.NewAuthHandlerMock()
-					permissions := mocks.NewAuthHandlerMock()
-					auditor := auditortest.New()
-					datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
-					datasetAPI.Router.ServeHTTP(w, r)
+				datasetPermissions := mocks.NewAuthHandlerMock()
+				permissions := mocks.NewAuthHandlerMock()
+				auditor := auditortest.New()
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI.Router.ServeHTTP(w, r)
 
-					So(w.Code, ShouldEqual, http.StatusBadRequest)
-					So(w.Body.String(), ShouldContainSubstring, "bad request - invalid filter state values: [foo]")
-					So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-					So(permissions.Required.Calls, ShouldEqual, 1)
+				So(w.Code, ShouldEqual, http.StatusBadRequest)
+				So(w.Body.String(), ShouldContainSubstring, "bad request - invalid filter state values: [foo]")
+				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+				So(permissions.Required.Calls, ShouldEqual, 1)
 
-					auditor.AssertRecordCalls(
-						auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
-						auditortest.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, common.Params{"state_query": "foo"}),
-					)
-				})
+				auditor.AssertRecordCalls(
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk"}),
+					auditortest.NewExpectation(instance.GetInstancesAction, audit.Unsuccessful, common.Params{"state_query": "foo"}),
+				)
 			})
+		})
 	})
 }
 
@@ -1309,7 +1309,7 @@ func getAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mockedGe
 	So(err, ShouldBeNil)
 	cfg.ServiceAuthToken = "dataset"
 	cfg.DatasetAPIURL = "http://localhost:22000"
-	cfg.EnablePrivateEnpoints = true
+	cfg.EnablePrivateEndpoints = true
 
 	return api.NewDatasetAPI(ctx, *cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, mockAuditor, datasetPermissions, permissions)
 }

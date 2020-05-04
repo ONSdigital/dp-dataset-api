@@ -345,7 +345,7 @@ func GetWebAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 	So(err, ShouldBeNil)
 	cfg.ServiceAuthToken = authToken
 	cfg.DatasetAPIURL = host
-	cfg.EnablePrivateEnpoints = false
+	cfg.EnablePrivateEndpoints = false
 
 	return NewDatasetAPI(ctx, *cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, auditor, datasetPermissions, permissions)
 }
