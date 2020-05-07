@@ -22,7 +22,7 @@ type Configuration struct {
 	GracefulShutdownTimeout    time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 	HealthCheckInterval        time.Duration `envconfig:"HEALTHCHECK_INTERVAL"`
 	HealthCheckCriticalTimeout time.Duration `envconfig:"HEALTHCHECK_CRITICAL_TIMEOUT"`
-	EnablePrivateEnpoints      bool          `envconfig:"ENABLE_PRIVATE_ENDPOINTS"`
+	EnablePrivateEndpoints     bool          `envconfig:"ENABLE_PRIVATE_ENDPOINTS"`
 	EnableDetachDataset        bool          `envconfig:"ENABLE_DETACH_DATASET"`
 	EnablePermissionsAuth      bool          `envconfig:"ENABLE_PERMISSIONS_AUTH"`
 	EnableObservationEndpoint  bool          `envconfig:"ENABLE_OBSERVATION_ENDPOINT"`
@@ -58,7 +58,7 @@ func Get() (*Configuration, error) {
 		GracefulShutdownTimeout:    5 * time.Second,
 		HealthCheckInterval:        30 * time.Second,
 		HealthCheckCriticalTimeout: 90 * time.Second,
-		EnablePrivateEnpoints:      false,
+		EnablePrivateEndpoints:     false,
 		EnableDetachDataset:        false,
 		EnablePermissionsAuth:      false,
 		EnableObservationEndpoint:  true,

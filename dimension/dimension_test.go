@@ -1327,7 +1327,7 @@ func getAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mockedGe
 	So(err, ShouldBeNil)
 	cfg.ServiceAuthToken = "dataset"
 	cfg.DatasetAPIURL = "http://localhost:22000"
-	cfg.EnablePrivateEnpoints = true
+	cfg.EnablePrivateEndpoints = true
 
 	datasetPermissions := getAuthorisationHandlerMock()
 	permissions := getAuthorisationHandlerMock()

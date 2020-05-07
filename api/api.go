@@ -116,7 +116,7 @@ func CreateAndInitialiseDatasetAPI(ctx context.Context, cfg config.Configuration
 	middleware = middleware.Append(oldHealthcheckHandler)
 
 	// Only add the identity middleware when running in publishing.
-	if cfg.EnablePrivateEnpoints {
+	if cfg.EnablePrivateEndpoints {
 		middleware = middleware.Append(identity.Handler(cfg.ZebedeeURL))
 	}
 
@@ -159,12 +159,12 @@ func NewDatasetAPI(ctx context.Context, cfg config.Configuration, router *mux.Ro
 		zebedeeURL:                cfg.ZebedeeURL,
 		serviceAuthToken:          cfg.ServiceAuthToken,
 		downloadServiceToken:      cfg.DownloadServiceSecretKey,
-		EnablePrePublishView:      cfg.EnablePrivateEnpoints,
+		EnablePrePublishView:      cfg.EnablePrivateEndpoints,
 		Router:                    router,
 		urlBuilder:                urlBuilder,
 		downloadGenerator:         downloadGenerator,
 		auditor:                   auditor,
-		enablePrivateEndpoints:    cfg.EnablePrivateEnpoints,
+		enablePrivateEndpoints:    cfg.EnablePrivateEndpoints,
 		enableDetachDataset:       cfg.EnableDetachDataset,
 		enableObservationEndpoint: cfg.EnableObservationEndpoint,
 		datasetPermissions:        datasetPermissions,

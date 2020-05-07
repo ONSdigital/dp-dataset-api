@@ -78,7 +78,7 @@ func run(ctx context.Context) error {
 	var auditor audit.AuditorService
 	var auditProducer *kafka.Producer
 
-	if cfg.EnablePrivateEnpoints {
+	if cfg.EnablePrivateEndpoints {
 		log.Event(ctx, "private endpoints enabled, enabling action auditing", log.INFO, log.Data{"auditTopicName": cfg.AuditEventsTopic})
 
 		auditProducer, err = serviceList.GetProducer(
@@ -106,8 +106,8 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	// Get graphdb connection for observation store
-	graphDB, err := serviceList.GetGraphDB(ctx, cfg.EnableObservationEndpoint)
+	// Get graphDB connection for observation store
+	graphDB, err := serviceList.GetGraphDB(ctx, cfg)
 	if err != nil {
 		log.Event(ctx, "failed to initialise graph driver", log.FATAL, log.Error(err))
 		return err
@@ -150,7 +150,7 @@ func run(ctx context.Context) error {
 		graphDB,
 		mongoClient,
 		zebedeeClient,
-		cfg.EnablePrivateEnpoints,
+		cfg.EnablePrivateEndpoints,
 		cfg.EnableObservationEndpoint); err != nil {
 		return err
 	}
@@ -204,7 +204,7 @@ func run(ctx context.Context) error {
 			log.Event(shutdownContext, "closed generated downloads kafka producer", log.INFO, log.Data{"producer": "DimensionExtracted"})
 		}
 
-		if cfg.EnablePrivateEnpoints {
+		if cfg.EnablePrivateEndpoints {
 			// If audit events kafka producer exists, close it
 			if serviceList.AuditProducer {
 				log.Event(shutdownContext, "closing audit events kafka producer", log.INFO, log.Data{"producer": "DimensionExtracted"})
@@ -276,11 +276,12 @@ func registerCheckers(ctx context.Context,
 	graphDB *graph.DB,
 	mongoClient *mongoHealth.Client,
 	zebedeeClient *zebedee.Client,
-	enablePrivateEnpoints, enableObservationEndpoint bool) (err error) {
+	enablePrivateEndpoints,
+	enableObservationEndpoint bool) (err error) {
 
 	hasErrors := false
 
-	if enablePrivateEnpoints {
+	if enablePrivateEndpoints {
 		if err = hc.AddCheck("Kafka Audit Producer", auditProducer.Checker); err != nil {
 			hasErrors = true
 			log.Event(ctx, "error adding check for kafka audit producer", log.ERROR, log.Error(err))
@@ -306,8 +307,8 @@ func registerCheckers(ctx context.Context,
 		log.Event(ctx, "error adding check for mongo db", log.ERROR, log.Error(err))
 	}
 
-	if enableObservationEndpoint {
-		log.Event(ctx, "adding graph db health check as the observations endpoint is enabled", log.INFO)
+	if enablePrivateEndpoints || enableObservationEndpoint {
+		log.Event(ctx, "adding graph db health check as the private or observation endpoints are enabled", log.INFO)
 		if err = hc.AddCheck("Graph DB", graphDB.Driver.Checker); err != nil {
 			hasErrors = true
 			log.Event(ctx, "error adding check for graph db", log.ERROR, log.Error(err))
