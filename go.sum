@@ -7,6 +7,10 @@ github.com/ONSdigital/dp-authorisation v0.0.0-20191018110224-d4543527d6cb/go.mod
 github.com/ONSdigital/dp-frontend-models v1.1.0/go.mod h1:TT96P7Mi69N3Tc/jFNdbjiwG4GAaMjP26HLotFQ6BPw=
 github.com/ONSdigital/dp-graph/v2 v2.0.4 h1:KwACJNL5r3P41yc3gZPF1fpSfWVSzCfd3DpL2qLgUZI=
 github.com/ONSdigital/dp-graph/v2 v2.0.4/go.mod h1:jh7BsDGMG0VgNtSvc3hlA2wXs3H1cwdWCp84VGzMVB8=
+github.com/ONSdigital/dp-graph/v2 v2.0.5-0.20200506094018-cf6a6309416b h1:wIByzvaqR/eS9DKh46w0kqPAE/KyALwoqqiE7+rs9Os=
+github.com/ONSdigital/dp-graph/v2 v2.0.5-0.20200506094018-cf6a6309416b/go.mod h1:jh7BsDGMG0VgNtSvc3hlA2wXs3H1cwdWCp84VGzMVB8=
+github.com/ONSdigital/dp-graph/v2 v2.0.5 h1:i5+uPKgYTI2Sdyc6ecAYkFaDFMuo7jx88cZEpmAoAYA=
+github.com/ONSdigital/dp-graph/v2 v2.0.5/go.mod h1:jh7BsDGMG0VgNtSvc3hlA2wXs3H1cwdWCp84VGzMVB8=
 github.com/ONSdigital/dp-healthcheck v0.0.0-20200131122546-9db6d3f0494e/go.mod h1:zighxZ/0m5u7zo0eAr8XFlA+Dz2ic7A1vna6YXvhCjQ=
 github.com/ONSdigital/dp-healthcheck v1.0.0/go.mod h1:zighxZ/0m5u7zo0eAr8XFlA+Dz2ic7A1vna6YXvhCjQ=
 github.com/ONSdigital/dp-healthcheck v1.0.2 h1:N8SzpYzdixVgJS9NMzTBA2RZ2bi3Am1wE5F8ROEpTYw=
