@@ -1494,7 +1494,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 			w := httptest.NewRecorder()
 			cfg, err := config.Get()
 			So(err, ShouldBeNil)
-			cfg.EnablePrivateEnpoints = true
+			cfg.EnablePrivateEndpoints = true
 
 			datasetPermissions := getAuthorisationHandlerMock()
 			permissions := getAuthorisationHandlerMock()

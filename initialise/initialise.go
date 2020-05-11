@@ -59,7 +59,17 @@ func (e *ExternalServiceList) GetProducer(ctx context.Context, kafkaBrokers []st
 }
 
 // GetGraphDB returns a graphDB
-func (e *ExternalServiceList) GetGraphDB(ctx context.Context) (*graph.DB, error) {
+func (e *ExternalServiceList) GetGraphDB(ctx context.Context, cfg *config.Configuration) (*graph.DB, error) {
+
+	// the graph DB is only used for the observation and private endpoint
+	if !cfg.EnableObservationEndpoint && !cfg.EnablePrivateEndpoints {
+		log.Event(ctx, "skipping graph DB client creation, because it is not required by the enabled endpoints", log.INFO, log.Data{
+			"EnableObservationEndpoint": cfg.EnableObservationEndpoint,
+			"EnablePrivateEndpoints":    cfg.EnablePrivateEndpoints,
+		})
+		return nil, nil
+	}
+
 	graphDB, err := graph.New(ctx, graph.Subsets{Observation: true, Instance: true})
 	if err != nil {
 		return nil, err
