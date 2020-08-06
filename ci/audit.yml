@@ -1,0 +1,15 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: onsdigital/dp-concourse-tools-nancy
+    tag: latest
+
+inputs:
+  - name: dp-dataset-api
+    path: dp-dataset-api
+
+run:
+  path: dp-dataset-api/ci/scripts/audit.sh

@@ -13,17 +13,29 @@ export GRAPH_ADDR?=ws://localhost:8182/gremlin
 
 export ENABLE_PRIVATE_ENDPOINTS?=true
 
+.PHONY: all
+all: audit test build
+
+.PHONY: audit
+audit:
+	nancy go.sum
+
+.PHONY: build
 build:
 	@mkdir -p $(BUILD)/$(BIN_DIR)
 	go build $(LDFLAGS) -o $(BUILD)/$(BIN_DIR)/dp-dataset-api main.go
+
+.PHONY: debug
 debug:
-	HUMAN_LOG=1 go run $(LDFLAGS) main.go
+	HUMAN_LOG=1 go run -race $(LDFLAGS) main.go
 acceptance-publishing: build
 	ENABLE_PRIVATE_ENDPOINTS=true MONGODB_DATABASE=test HUMAN_LOG=1 go run -race $(LDFLAGS) main.go
 
+.PHONY: acceptance-web
 acceptance-web: build
 	ENABLE_PRIVATE_ENDPOINTS=false MONGODB_DATABASE=test HUMAN_LOG=1 go run -race $(LDFLAGS) main.go
 
+.PHONY: test
 test:
 	go test -race -cover ./...
 

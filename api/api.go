@@ -190,7 +190,7 @@ func NewDatasetAPI(ctx context.Context, cfg config.Configuration, router *mux.Ro
 			Host:                api.host,
 			Storer:              api.dataStore.Backend,
 			Auditor:             api.auditor,
-			EnableDetachDataset: api.enablePrivateEndpoints,
+			EnableDetachDataset: api.enableDetachDataset,
 		}
 
 		dimensionAPI := &dimension.Store{
