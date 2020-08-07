@@ -264,6 +264,80 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 		})
 	})
 
+	Convey("given an edition exists with nil current doc", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			GetEditionFunc: func(dataset, edition, state string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{
+					ID: "test",
+					Next: &models.Edition{
+						Links: &models.EditionUpdateLinks{
+							LatestVersion: &models.LinkObject{
+								ID: ""},
+						},
+					},
+				}, nil
+			},
+		}
+
+		host := "example.com"
+		s := Store{
+			Storer:              mockedDataStore,
+			Host:                host,
+			Auditor:             auditortest.New(),
+			EnableDetachDataset: true,
+		}
+
+		Convey("when confirmEdition is called", func() {
+			datasetID := "1234"
+			editionName := "failure"
+			instanceID := "new-instance-1234"
+
+			_, err := s.confirmEdition(ctx, datasetID, editionName, instanceID)
+
+			Convey("then updating links fails and an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err, ShouldResemble, models.ErrEditionLinksInvalid)
+			})
+		})
+	})
+
+	Convey("given an edition exists with nil next doc", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			GetEditionFunc: func(dataset, edition, state string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{
+					ID: "test",
+					Current: &models.Edition{
+						Links: &models.EditionUpdateLinks{
+							LatestVersion: &models.LinkObject{
+								ID: ""},
+						},
+					},
+				}, nil
+			},
+		}
+
+		host := "example.com"
+		s := Store{
+			Storer:              mockedDataStore,
+			Host:                host,
+			Auditor:             auditortest.New(),
+			EnableDetachDataset: true,
+		}
+
+		Convey("when confirmEdition is called", func() {
+			datasetID := "1234"
+			editionName := "failure"
+			instanceID := "new-instance-1234"
+
+			_, err := s.confirmEdition(ctx, datasetID, editionName, instanceID)
+
+			Convey("then updating links fails and an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err, ShouldResemble, models.ErrEditionLinksInvalid)
+			})
+		})
+	})
+
 	Convey("given intermittent datastore failures", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(dataset, edition, state string) (*models.EditionUpdate, error) {
