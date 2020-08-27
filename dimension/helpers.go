@@ -9,9 +9,14 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/go-ns/audit"
+	dprequest "github.com/ONSdigital/dp-net/request"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/pkg/errors"
+)
+
+const (
+	reqUser   = "req_user"
+	reqCaller = "req_caller"
 )
 
 func unmarshalDimensionCache(reader io.Reader) (*models.CachedDimensionOption, error) {
@@ -52,6 +57,18 @@ func handleDimensionErr(ctx context.Context, w http.ResponseWriter, err error, d
 	}
 
 	data["response_status"] = status
-	audit.LogError(ctx, errors.WithMessage(err, "request unsuccessful"), data)
+	logError(ctx, errors.WithMessage(err, "request unsuccessful"), data)
 	http.Error(w, resource.Error(), status)
+}
+
+func logError(ctx context.Context, err error, data log.Data) error {
+	if user := dprequest.User(ctx); user != "" {
+		data[reqUser] = user
+	}
+	if caller := dprequest.Caller(ctx); caller != "" {
+		data[reqCaller] = caller
+	}
+	err = errors.WithMessage(err, "putVersion endpoint: failed to set instance node is_published")
+	log.Event(ctx, "failed to publish instance version", log.ERROR, log.Error(err), data)
+	return err
 }

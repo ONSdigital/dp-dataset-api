@@ -14,8 +14,6 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-graph/v2/observation"
-	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -75,14 +73,7 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	version := vars["version"]
-
-	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": version}
-	logData := audit.ToLogData(auditParams)
-
-	if auditErr := api.auditor.Record(ctx, getObservationsAction, audit.Attempted, auditParams); auditErr != nil {
-		handleObservationsErrorType(ctx, w, auditErr, logData)
-		return
-	}
+	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	observationsDoc, err := func() (*models.ObservationsDoc, error) {
 		// get dataset document
@@ -166,15 +157,7 @@ func (api *DatasetAPI) getObservations(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		if auditErr := api.auditor.Record(ctx, getObservationsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			err = auditErr
-		}
 		handleObservationsErrorType(ctx, w, err, logData)
-		return
-	}
-
-	if auditErr := api.auditor.Record(ctx, getObservationsAction, audit.Successful, auditParams); auditErr != nil {
-		handleObservationsErrorType(ctx, w, auditErr, logData)
 		return
 	}
 

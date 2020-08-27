@@ -24,8 +24,7 @@ import (
 	kafka "github.com/ONSdigital/dp-kafka"
 	mongolib "github.com/ONSdigital/dp-mongodb"
 	mongoHealth "github.com/ONSdigital/dp-mongodb/health"
-	rchttp "github.com/ONSdigital/dp-rchttp"
-	"github.com/ONSdigital/go-ns/audit"
+	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 )
@@ -75,31 +74,6 @@ func run(ctx context.Context) error {
 	// External services and their initialization state
 	var serviceList initialise.ExternalServiceList
 
-	var auditor audit.AuditorService
-	var auditProducer *kafka.Producer
-
-	if cfg.EnablePrivateEndpoints {
-		log.Event(ctx, "private endpoints enabled, enabling action auditing", log.INFO, log.Data{"auditTopicName": cfg.AuditEventsTopic})
-
-		auditProducer, err = serviceList.GetProducer(
-			ctx,
-			cfg.KafkaAddr,
-			cfg.AuditEventsTopic,
-			initialise.Audit,
-			0,
-		)
-		if err != nil {
-			log.Event(ctx, "could not obtain audit producer", log.FATAL, log.Error(err))
-			return err
-		}
-
-		auditProducerAdapter := adapter.NewProducerAdapter(auditProducer)
-		auditor = audit.New(auditProducerAdapter, "dp-dataset-api")
-	} else {
-		log.Event(ctx, "private endpoints disabled, auditing will not be enabled", log.INFO)
-		auditor = &audit.NopAuditor{}
-	}
-
 	mongoClient, mongodb, err := serviceList.GetMongoDB(ctx, cfg)
 	if err != nil {
 		log.Event(ctx, "could not obtain mongo session", log.ERROR, log.Error(err))
@@ -119,7 +93,6 @@ func run(ctx context.Context) error {
 		ctx,
 		cfg.KafkaAddr,
 		cfg.GenerateDownloadsTopic,
-		initialise.GenerateDownloads,
 		0,
 	)
 	if err != nil {
@@ -146,7 +119,6 @@ func run(ctx context.Context) error {
 		ctx,
 		&hc,
 		generateDownloadsProducer,
-		auditProducer,
 		graphDB,
 		mongoClient,
 		zebedeeClient,
@@ -162,7 +134,7 @@ func run(ctx context.Context) error {
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, cfg)
 
 	hc.Start(ctx)
-	api.CreateAndInitialiseDatasetAPI(ctx, *cfg, &hc, store, urlBuilder, apiErrors, downloadGenerator, auditor, datasetPermissions, permissions)
+	api.CreateAndInitialiseDatasetAPI(ctx, *cfg, &hc, store, urlBuilder, apiErrors, downloadGenerator, datasetPermissions, permissions)
 
 	// block until a fatal error occurs
 	select {
@@ -204,15 +176,6 @@ func run(ctx context.Context) error {
 			log.Event(shutdownContext, "closed generated downloads kafka producer", log.INFO, log.Data{"producer": "DimensionExtracted"})
 		}
 
-		if cfg.EnablePrivateEndpoints {
-			// If audit events kafka producer exists, close it
-			if serviceList.AuditProducer {
-				log.Event(shutdownContext, "closing audit events kafka producer", log.INFO, log.Data{"producer": "DimensionExtracted"})
-				auditProducer.Close(shutdownContext)
-				log.Event(shutdownContext, "closed audit events kafka producer", log.INFO, log.Data{"producer": "DimensionExtracted"})
-			}
-		}
-
 		if serviceList.Graph {
 			err = graphDB.Close(ctx)
 			if err != nil {
@@ -249,7 +212,7 @@ func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (a
 	log.Event(ctx, "feature flag enabled", log.INFO, log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
 	auth.LoggerNamespace("dp-dataset-api-auth")
 
-	authClient := auth.NewPermissionsClient(rchttp.NewClient())
+	authClient := auth.NewPermissionsClient(dphttp.NewClient())
 	authVerifier := auth.DefaultPermissionsVerifier()
 
 	// for checking caller permissions when we have a datasetID, collection ID and user/service token
@@ -272,7 +235,7 @@ func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (a
 // registerCheckers adds the checkers for the provided clients to the health check object
 func registerCheckers(ctx context.Context,
 	hc *healthcheck.HealthCheck,
-	generateDownloads, auditProducer *kafka.Producer,
+	generateDownloads *kafka.Producer,
 	graphDB *graph.DB,
 	mongoClient *mongoHealth.Client,
 	zebedeeClient *zebedee.Client,
@@ -282,11 +245,6 @@ func registerCheckers(ctx context.Context,
 	hasErrors := false
 
 	if enablePrivateEndpoints {
-		if err = hc.AddCheck("Kafka Audit Producer", auditProducer.Checker); err != nil {
-			hasErrors = true
-			log.Event(ctx, "error adding check for kafka audit producer", log.ERROR, log.Error(err))
-		}
-
 		if err = hc.AddCheck("Zebedee", zebedeeClient.Checker); err != nil {
 			hasErrors = true
 			log.Event(ctx, "error adding check for zebedeee", log.ERROR, log.Error(err))

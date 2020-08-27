@@ -8,13 +8,9 @@ import (
 	"testing"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
-	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/audit/auditortest"
-	"github.com/ONSdigital/go-ns/common"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -41,8 +37,7 @@ func Test_UpdateDimensionReturnsOk(t *testing.T) {
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
-				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
@@ -50,21 +45,12 @@ func Test_UpdateDimensionReturnsOk(t *testing.T) {
 				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
-
-				auditParams := common.Params{"instance_id": "123", "dimension": "age", "instance_state": "edition-confirmed"}
-				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123", "dimension": "age"}),
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Successful, auditParams),
-				)
 			})
 		})
 	})
 }
 
 func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
-	auditParams := common.Params{"instance_id": "123", "dimension": "age"}
-	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123", "dimension": "age"}
-
 	t.Parallel()
 	Convey("Given a PUT request to update a dimension on an instance resource", t, func() {
 		Convey("When service is unable to connect to datastore", func() {
@@ -85,8 +71,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
-				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -97,11 +82,6 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-
-				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParamsWithCallerIdentity),
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
-				)
 			})
 		})
 
@@ -122,8 +102,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
-				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -134,12 +113,6 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-
-				auditParamsWithState := common.Params{"instance_id": "123", "dimension": "age", "instance_state": "gobbly gook"}
-				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParamsWithCallerIdentity),
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParamsWithState),
-				)
 			})
 		})
 
@@ -156,8 +129,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
-				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -168,12 +140,6 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-
-				auditParamsWithState := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.PublishedState}
-				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParamsWithCallerIdentity),
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParamsWithState),
-				)
 			})
 		})
 
@@ -190,8 +156,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
-				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -202,11 +167,6 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-
-				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParamsWithCallerIdentity),
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParams),
-				)
 			})
 		})
 
@@ -230,8 +190,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
-				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -242,12 +201,6 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-
-				auditParamsWithState := common.Params{"instance_id": "123", "dimension": "notage", "instance_state": models.EditionConfirmedState}
-				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123", "dimension": "notage"}),
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParamsWithState),
-				)
 			})
 		})
 
@@ -266,8 +219,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
-				auditor := auditortest.New()
-				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -278,128 +230,6 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-
-				auditParamsWithState := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.CompletedState}
-				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParamsWithCallerIdentity),
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParamsWithState),
-				)
-			})
-		})
-	})
-}
-
-func Test_UpdateDimensionAuditErrors(t *testing.T) {
-	auditParamsWithCallerIdentity := common.Params{"caller_identity": "someone@ons.gov.uk", "instance_id": "123", "dimension": "age"}
-
-	t.Parallel()
-	Convey("Given audit action 'attempted' fails", t, func() {
-		auditor := auditortest.NewErroring(instance.UpdateDimensionAction, audit.Attempted)
-
-		Convey("When a PUT request is made to update dimension on an instance resource", func() {
-			body := strings.NewReader(`{"label":"ages", "description": "A range of ages between 18 and 60"}`)
-			r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
-			So(err, ShouldBeNil)
-			w := httptest.NewRecorder()
-
-			mockedDataStore := &storetest.StorerMock{}
-
-			datasetPermissions := mocks.NewAuthHandlerMock()
-			permissions := mocks.NewAuthHandlerMock()
-
-			datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
-			datasetAPI.Router.ServeHTTP(w, r)
-
-			Convey("Then response returns internal server error (500)", func() {
-				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 0)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
-
-				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParamsWithCallerIdentity),
-				)
-			})
-		})
-	})
-
-	Convey("Given audit action 'unsuccessful' fails", t, func() {
-		auditor := auditortest.NewErroring(instance.UpdateDimensionAction, audit.Unsuccessful)
-
-		Convey("When a PUT request is made to update dimension on an instance resource", func() {
-			body := strings.NewReader("{")
-			r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
-			So(err, ShouldBeNil)
-			w := httptest.NewRecorder()
-
-			mockedDataStore := &storetest.StorerMock{
-				GetInstanceFunc: func(id string) (*models.Instance, error) {
-					return &models.Instance{State: models.CreatedState}, nil
-				},
-			}
-
-			datasetPermissions := mocks.NewAuthHandlerMock()
-			permissions := mocks.NewAuthHandlerMock()
-
-			datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
-			datasetAPI.Router.ServeHTTP(w, r)
-
-			Convey("Then response returns internal server error (500)", func() {
-				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
-				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-
-				auditParamsWithState := common.Params{"instance_id": "123", "dimension": "age", "instance_state": models.CreatedState}
-				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParamsWithCallerIdentity),
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Unsuccessful, auditParamsWithState),
-				)
-			})
-		})
-	})
-
-	Convey("Given audit action 'successful' fails", t, func() {
-		auditor := auditortest.NewErroring(instance.AddInstanceAction, audit.Successful)
-
-		Convey("When a PUT request is made to update dimension on an instance resource", func() {
-			body := strings.NewReader(`{"label":"ages", "description": "A range of ages between 18 and 60"}`)
-			r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
-			So(err, ShouldBeNil)
-			w := httptest.NewRecorder()
-
-			mockedDataStore := &storetest.StorerMock{
-				GetInstanceFunc: func(id string) (*models.Instance, error) {
-					return &models.Instance{State: models.EditionConfirmedState,
-						InstanceID: "123",
-						Dimensions: []models.Dimension{{Name: "age", ID: "age"}}}, nil
-				},
-				UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
-					return nil
-				},
-			}
-
-			datasetPermissions := mocks.NewAuthHandlerMock()
-			permissions := mocks.NewAuthHandlerMock()
-
-			datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, auditor, datasetPermissions, permissions)
-			datasetAPI.Router.ServeHTTP(w, r)
-
-			Convey("Then response returns status ok (200)", func() {
-				So(w.Code, ShouldEqual, http.StatusOK)
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
-				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
-
-				auditParamsWithState := common.Params{"instance_id": "123", "dimension": "age", "instance_state": "edition-confirmed"}
-				auditor.AssertRecordCalls(
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Attempted, auditParamsWithCallerIdentity),
-					auditortest.NewExpectation(instance.UpdateDimensionAction, audit.Successful, auditParamsWithState),
-				)
 			})
 		})
 	})

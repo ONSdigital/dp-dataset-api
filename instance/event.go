@@ -8,8 +8,6 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 )
@@ -38,7 +36,6 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
 	data := log.Data{"instance_id": instanceID, "action": AddInstanceEventAction}
-	ap := common.Params{"instance_id": instanceID}
 
 	if err := func() error {
 		event, err := unmarshalEvent(r.Body)
@@ -59,15 +56,7 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 
 		return nil
 	}(); err != nil {
-		if auditErr := s.Auditor.Record(ctx, AddInstanceEventAction, audit.Unsuccessful, ap); auditErr != nil {
-			err = auditErr
-		}
 		handleInstanceErr(ctx, err, w, data)
-		return
-	}
-
-	if auditErr := s.Auditor.Record(ctx, AddInstanceEventAction, audit.Successful, ap); auditErr != nil {
-		handleInstanceErr(ctx, auditErr, w, data)
 		return
 	}
 

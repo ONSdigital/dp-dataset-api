@@ -2,7 +2,6 @@ package initialise
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
@@ -15,46 +14,20 @@ import (
 
 // ExternalServiceList represents a list of services
 type ExternalServiceList struct {
-	AuditProducer             bool
 	GenerateDownloadsProducer bool
 	Graph                     bool
 	HealthCheck               bool
 	MongoDB                   bool
 }
 
-// KafkaProducerName : Type for kafka producer name used by iota constants
-type KafkaProducerName int
-
-// Possible names of Kafa Producers
-const (
-	Audit = iota
-	GenerateDownloads
-)
-
-var kafkaProducerNames = []string{"Audit", "GenerateDownloads"}
-
-// Values of the kafka producers names
-func (k KafkaProducerName) String() string {
-	return kafkaProducerNames[k]
-}
-
 // GetProducer returns a kafka producer, which might not be initialised yet.
-func (e *ExternalServiceList) GetProducer(ctx context.Context, kafkaBrokers []string, topic string, name KafkaProducerName, envMax int) (kafkaProducer *kafka.Producer, err error) {
+func (e *ExternalServiceList) GetProducer(ctx context.Context, kafkaBrokers []string, topic string, envMax int) (kafkaProducer *kafka.Producer, err error) {
 	pChannels := kafka.CreateProducerChannels()
 	kafkaProducer, err = kafka.NewProducer(ctx, kafkaBrokers, topic, envMax, pChannels)
 	if err != nil {
 		return
 	}
-
-	switch {
-	case name == Audit:
-		e.AuditProducer = true
-	case name == GenerateDownloads:
-		e.GenerateDownloadsProducer = true
-	default:
-		err = fmt.Errorf("Kafka producer name not recognised: '%s'. Valid names: %v", name.String(), kafkaProducerNames)
-	}
-
+	e.GenerateDownloadsProducer = true
 	return
 }
 

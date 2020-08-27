@@ -10,9 +10,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/request"
+	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -25,9 +23,7 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
 	insert := vars["inserted_observations"]
-	auditParams := common.Params{"instance_id": instanceID, "inserted_observations": insert}
-	logData := audit.ToLogData(auditParams)
-	logData["action"] = UpdateInsertedObservationsAction
+	logData := log.Data{"instance_id": instanceID, "inserted_observations": insert, "action": UpdateInsertedObservationsAction}
 
 	if err := func() error {
 		observations, err := strconv.ParseInt(insert, 10, 64)
@@ -43,14 +39,9 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 
 		return nil
 	}(); err != nil {
-		if auditErr := s.Auditor.Record(ctx, UpdateInsertedObservationsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			err = auditErr
-		}
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
-
-	s.Auditor.Record(ctx, UpdateInsertedObservationsAction, audit.Successful, auditParams)
 
 	log.Event(ctx, "update imported observations: request successful", log.INFO, logData)
 }
@@ -58,14 +49,12 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 // UpdateImportTask updates any task in the request body against an instance
 func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 
-	defer request.DrainBody(r)
+	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
-	auditParams := common.Params{"instance_id": instanceID}
-	logData := audit.ToLogData(auditParams)
-	logData["action"] = UpdateImportTasksAction
+	logData := log.Data{"instance_id": instanceID, "action": UpdateImportTasksAction}
 	defer r.Body.Close()
 
 	updateErr := func() *taskError {
@@ -157,15 +146,8 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if updateErr != nil {
-		if auditErr := s.Auditor.Record(ctx, UpdateImportTasksAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			updateErr = &taskError{errs.ErrInternalServer, http.StatusInternalServerError}
-		}
 		log.Event(ctx, "updateImportTask endpoint: request unsuccessful", log.ERROR, log.Error(updateErr), logData)
 		http.Error(w, updateErr.Error(), updateErr.status)
-		return
-	}
-
-	if auditErr := s.Auditor.Record(ctx, UpdateImportTasksAction, audit.Successful, auditParams); auditErr != nil {
 		return
 	}
 

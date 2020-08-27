@@ -15,17 +15,15 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/handlers/collectionID"
-	"github.com/ONSdigital/go-ns/identity"
-	"github.com/ONSdigital/go-ns/server"
+	dphandlers "github.com/ONSdigital/dp-net/handlers"
+	dphttp "github.com/ONSdigital/dp-net/http"
+	dprequest "github.com/ONSdigital/dp-net/request"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 )
 
-var httpServer *server.Server
+var httpServer *dphttp.Server
 
 const (
 	downloadServiceToken = "X-Download-Service-Token"
@@ -73,9 +71,6 @@ type DownloadsGenerator interface {
 	Generate(ctx context.Context, datasetID, instanceID, edition, version string) error
 }
 
-// Auditor is an alias for the auditor service
-type Auditor audit.AuditorService
-
 // AuthHandler provides authorisation checks on requests
 type AuthHandler interface {
 	Require(required auth.Permissions, handler http.HandlerFunc) http.HandlerFunc
@@ -93,7 +88,6 @@ type DatasetAPI struct {
 	urlBuilder                *url.Builder
 	downloadGenerator         DownloadsGenerator
 	serviceAuthToken          string
-	auditor                   Auditor
 	enablePrivateEndpoints    bool
 	enableDetachDataset       bool
 	enableObservationEndpoint bool
@@ -104,9 +98,9 @@ type DatasetAPI struct {
 }
 
 // CreateAndInitialiseDatasetAPI create a new DatasetAPI instance based on the configuration provided, apply middleware and starts the HTTP server.
-func CreateAndInitialiseDatasetAPI(ctx context.Context, cfg config.Configuration, hc *healthcheck.HealthCheck, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadGenerator DownloadsGenerator, auditor Auditor, datasetPermissions AuthHandler, permissions AuthHandler) {
+func CreateAndInitialiseDatasetAPI(ctx context.Context, cfg config.Configuration, hc *healthcheck.HealthCheck, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadGenerator DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler) {
 	router := mux.NewRouter()
-	api := NewDatasetAPI(ctx, cfg, router, dataStore, urlBuilder, downloadGenerator, auditor, datasetPermissions, permissions)
+	api := NewDatasetAPI(ctx, cfg, router, dataStore, urlBuilder, downloadGenerator, datasetPermissions, permissions)
 
 	healthcheckHandler := newMiddleware(hc.Handler, "/health")
 	middleware := alice.New(healthcheckHandler)
@@ -117,12 +111,12 @@ func CreateAndInitialiseDatasetAPI(ctx context.Context, cfg config.Configuration
 
 	// Only add the identity middleware when running in publishing.
 	if cfg.EnablePrivateEndpoints {
-		middleware = middleware.Append(identity.Handler(cfg.ZebedeeURL))
+		middleware = middleware.Append(dphandlers.Identity(cfg.ZebedeeURL))
 	}
 
-	middleware = middleware.Append(collectionID.CheckHeader)
+	middleware = middleware.Append(dphandlers.CheckHeader(dphandlers.CollectionID))
 
-	httpServer = server.New(cfg.BindAddr, middleware.Then(api.Router))
+	httpServer = dphttp.NewServer(cfg.BindAddr, middleware.Then(api.Router))
 
 	// Disable this here to allow main to manage graceful shutdown of the entire app.
 	httpServer.HandleOSSignals = false
@@ -152,7 +146,7 @@ func newMiddleware(healthcheckHandler func(http.ResponseWriter, *http.Request), 
 }
 
 // NewDatasetAPI create a new Dataset API instance and register the API routes based on the application configuration.
-func NewDatasetAPI(ctx context.Context, cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, auditor Auditor, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
+func NewDatasetAPI(ctx context.Context, cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
 	api := &DatasetAPI{
 		dataStore:                 dataStore,
 		host:                      cfg.DatasetAPIURL,
@@ -163,7 +157,6 @@ func NewDatasetAPI(ctx context.Context, cfg config.Configuration, router *mux.Ro
 		Router:                    router,
 		urlBuilder:                urlBuilder,
 		downloadGenerator:         downloadGenerator,
-		auditor:                   auditor,
 		enablePrivateEndpoints:    cfg.EnablePrivateEndpoints,
 		enableDetachDataset:       cfg.EnableDetachDataset,
 		enableObservationEndpoint: cfg.EnableObservationEndpoint,
@@ -177,25 +170,21 @@ func NewDatasetAPI(ctx context.Context, cfg config.Configuration, router *mux.Ro
 		log.Event(ctx, "enabling private endpoints for dataset api", log.INFO)
 
 		api.versionPublishedChecker = &PublishCheck{
-			Auditor:   auditor,
 			Datastore: api.dataStore.Backend,
 		}
 
 		api.instancePublishedChecker = &instance.PublishCheck{
-			Auditor:   api.auditor,
 			Datastore: api.dataStore.Backend,
 		}
 
 		instanceAPI := &instance.Store{
 			Host:                api.host,
 			Storer:              api.dataStore.Backend,
-			Auditor:             api.auditor,
 			EnableDetachDataset: api.enableDetachDataset,
 		}
 
 		dimensionAPI := &dimension.Store{
-			Auditor: api.auditor,
-			Storer:  api.dataStore.Backend,
+			Storer: api.dataStore.Backend,
 		}
 
 		api.enablePrivateDatasetEndpoints(ctx)
@@ -431,7 +420,7 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.
 // perform the requested action action. action is the audit event name, handler is the http.HandlerFunc to wrap in an
 // authentication check. The wrapped handler is only called is the caller is authenticated
 func (api *DatasetAPI) isAuthenticated(action string, handler http.HandlerFunc) http.HandlerFunc {
-	return identity.Check(api.auditor, action, handler)
+	return dphandlers.CheckIdentity(handler)
 }
 
 // isAuthorised wraps a http.HandlerFunc another http.HandlerFunc that checks the caller is authorised to perform the
@@ -487,13 +476,13 @@ func (api *DatasetAPI) authenticate(r *http.Request, logData log.Data) bool {
 	if api.EnablePrePublishView {
 		var hasCallerIdentity, hasUserIdentity bool
 
-		callerIdentity := common.Caller(r.Context())
+		callerIdentity := dprequest.Caller(r.Context())
 		if callerIdentity != "" {
 			logData["caller_identity"] = callerIdentity
 			hasCallerIdentity = true
 		}
 
-		userIdentity := common.User(r.Context())
+		userIdentity := dprequest.User(r.Context())
 		if userIdentity != "" {
 			logData["user_identity"] = userIdentity
 			hasUserIdentity = true

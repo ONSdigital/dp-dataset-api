@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"context"
+
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	"github.com/ONSdigital/go-ns/audit/auditortest"
+	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -28,9 +28,8 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 
 		host := "example.com"
 		s := Store{
-			Storer:  mockedDataStore,
-			Host:    host,
-			Auditor: auditortest.New(),
+			Storer: mockedDataStore,
+			Host:   host,
 		}
 
 		Convey("when confirmEdition is called", func() {
@@ -100,7 +99,6 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 				EnableDetachDataset: true,
 				Storer:              mockedDataStore,
 				Host:                host,
-				Auditor:             auditortest.New(),
 			}
 
 			Convey("when confirmEdition is called again", func() {
@@ -165,9 +163,8 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 
 		host := "example.com"
 		s := Store{
-			Storer:  mockedDataStore,
-			Host:    host,
-			Auditor: auditortest.New(),
+			Storer: mockedDataStore,
+			Host:   host,
 		}
 		Convey("when confirmEdition is called", func() {
 			datasetID := "1234"
@@ -204,9 +201,8 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 
 		host := "example.com"
 		s := Store{
-			Storer:  mockedDataStore,
-			Host:    host,
-			Auditor: auditortest.New(),
+			Storer: mockedDataStore,
+			Host:   host,
 		}
 		Convey("when confirmEdition is called", func() {
 			datasetID := "1234"
@@ -245,9 +241,8 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 
 		host := "example.com"
 		s := Store{
-			Storer:  mockedDataStore,
-			Host:    host,
-			Auditor: auditortest.New(),
+			Storer: mockedDataStore,
+			Host:   host,
 		}
 
 		Convey("when confirmEdition is called", func() {
@@ -283,7 +278,6 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 		s := Store{
 			Storer:              mockedDataStore,
 			Host:                host,
-			Auditor:             auditortest.New(),
 			EnableDetachDataset: true,
 		}
 
@@ -320,7 +314,6 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 		s := Store{
 			Storer:              mockedDataStore,
 			Host:                host,
-			Auditor:             auditortest.New(),
 			EnableDetachDataset: true,
 		}
 
@@ -386,9 +379,8 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 
 		host := "example.com"
 		s := Store{
-			Storer:  mockedDataStore,
-			Host:    host,
-			Auditor: auditortest.New(),
+			Storer: mockedDataStore,
+			Host:   host,
 		}
 
 		Convey("when confirmEdition is called and updating the datastore for the edition fails", func() {

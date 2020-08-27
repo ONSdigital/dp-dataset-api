@@ -9,12 +9,16 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/request"
+	dphttp "github.com/ONSdigital/dp-net/http"
+	dprequest "github.com/ONSdigital/dp-net/request"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+)
+
+const (
+	reqUser   = "req_user"
+	reqCaller = "req_caller"
 )
 
 var (
@@ -46,8 +50,8 @@ type VersionDetails struct {
 	version   string
 }
 
-func (v VersionDetails) baseAuditParams() common.Params {
-	return common.Params{"dataset_id": v.datasetID, "edition": v.edition, "version": v.version}
+func (v VersionDetails) baseLogData() log.Data {
+	return log.Data{"dataset_id": v.datasetID, "edition": v.edition, "version": v.version}
 }
 
 func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
@@ -55,13 +59,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
-	auditParams := common.Params{"dataset_id": datasetID, "edition": edition}
-	logData := audit.ToLogData(auditParams)
-
-	if auditErr := api.auditor.Record(ctx, getVersionsAction, audit.Attempted, auditParams); auditErr != nil {
-		handleVersionAPIErr(ctx, errs.ErrInternalServer, w, logData)
-		return
-	}
+	logData := log.Data{"dataset_id": datasetID, "edition": edition}
 
 	b, err := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
@@ -127,15 +125,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		if auditErr := api.auditor.Record(ctx, getVersionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			err = auditErr
-		}
 		handleVersionAPIErr(ctx, err, w, logData)
-		return
-	}
-
-	if auditErr := api.auditor.Record(ctx, getVersionsAction, audit.Successful, auditParams); auditErr != nil {
-		handleVersionAPIErr(ctx, auditErr, w, logData)
 		return
 	}
 
@@ -154,13 +144,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	version := vars["version"]
-	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": version}
-	logData := audit.ToLogData(auditParams)
-
-	if auditErr := api.auditor.Record(ctx, getVersionAction, audit.Attempted, auditParams); auditErr != nil {
-		handleVersionAPIErr(ctx, auditErr, w, logData)
-		return
-	}
+	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	b, getVersionErr := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
@@ -221,15 +205,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if getVersionErr != nil {
-		if auditErr := api.auditor.Record(ctx, getVersionAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			getVersionErr = auditErr
-		}
 		handleVersionAPIErr(ctx, getVersionErr, w, logData)
-		return
-	}
-
-	if auditErr := api.auditor.Record(ctx, getVersionAction, audit.Successful, auditParams); auditErr != nil {
-		handleVersionAPIErr(ctx, auditErr, w, logData)
 		return
 	}
 
@@ -244,7 +220,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 
 func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
-	defer request.DrainBody(r)
+	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -289,7 +265,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 
-	defer request.DrainBody(r)
+	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -300,13 +276,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 	edition := vars["edition"]
 	version := vars["version"]
 
-	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": version}
-	logData := audit.ToLogData(auditParams)
-
-	if auditErr := api.auditor.Record(ctx, detachVersionAction, audit.Attempted, auditParams); auditErr != nil {
-		handleVersionAPIErr(ctx, auditErr, w, logData)
-		return
-	}
+	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	err := func() error {
 
@@ -375,16 +345,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-
-		if auditErr := api.auditor.Record(ctx, detachVersionAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			err = auditErr
-		}
 		handleVersionAPIErr(ctx, err, w, logData)
-		return
-	}
-
-	if auditErr := api.auditor.Record(ctx, detachVersionAction, audit.Successful, auditParams); auditErr != nil {
-		handleVersionAPIErr(ctx, auditErr, w, logData)
 		return
 	}
 
@@ -393,8 +354,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, versionDetails VersionDetails) (*models.DatasetUpdate, *models.Version, *models.Version, error) {
-	ap := versionDetails.baseAuditParams()
-	data := audit.ToLogData(ap)
+	data := versionDetails.baseLogData()
 
 	// attempt to update the version
 	currentDataset, currentVersion, versionUpdate, err := func() (*models.DatasetUpdate, *models.Version, *models.Version, error) {
@@ -440,14 +400,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 
 	// audit update unsuccessful if error
 	if err != nil {
-		if auditErr := api.auditor.Record(ctx, updateVersionAction, audit.Unsuccessful, ap); auditErr != nil {
-			audit.LogActionFailure(ctx, updateVersionAction, audit.Unsuccessful, auditErr, data)
-		}
 		return nil, nil, nil, err
-	}
-
-	if auditErr := api.auditor.Record(ctx, updateVersionAction, audit.Successful, ap); auditErr != nil {
-		audit.LogActionFailure(ctx, updateVersionAction, audit.Successful, auditErr, data)
 	}
 
 	log.Event(ctx, "update version completed successfully", log.INFO, data)
@@ -455,14 +408,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 }
 
 func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *models.DatasetUpdate, currentVersion *models.Version, versionDoc *models.Version, versionDetails VersionDetails) error {
-	ap := versionDetails.baseAuditParams()
-	data := audit.ToLogData(ap)
-
-	if auditErr := api.auditor.Record(ctx, publishVersionAction, audit.Attempted, ap); auditErr != nil {
-		audit.LogActionFailure(ctx, publishVersionAction, audit.Attempted, auditErr, data)
-		return auditErr
-	}
-
+	data := versionDetails.baseLogData()
 	log.Event(ctx, "attempting to publish version", log.INFO, data)
 
 	err := func() error {
@@ -486,7 +432,14 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 		}
 
 		if err := api.dataStore.Backend.SetInstanceIsPublished(ctx, versionDoc.ID); err != nil {
-			audit.LogError(ctx, errors.WithMessage(err, "putVersion endpoint: failed to set instance node is_published"), data)
+			if user := dprequest.User(ctx); user != "" {
+				data[reqUser] = user
+			}
+			if caller := dprequest.Caller(ctx); caller != "" {
+				data[reqCaller] = caller
+			}
+			err := errors.WithMessage(err, "putVersion endpoint: failed to set instance node is_published")
+			log.Event(ctx, "failed to publish instance version", log.ERROR, log.Error(err), data)
 			return err
 		}
 
@@ -511,14 +464,7 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 	}()
 
 	if err != nil {
-		if auditErr := api.auditor.Record(ctx, publishVersionAction, audit.Unsuccessful, ap); auditErr != nil {
-			audit.LogActionFailure(ctx, publishVersionAction, audit.Unsuccessful, auditErr, data)
-		}
 		return err
-	}
-
-	if auditErr := api.auditor.Record(ctx, publishVersionAction, audit.Successful, ap); auditErr != nil {
-		audit.LogActionFailure(ctx, publishVersionAction, audit.Successful, auditErr, data)
 	}
 
 	log.Event(ctx, "publish version completed successfully", log.INFO, data)
@@ -526,13 +472,7 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 }
 
 func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion *models.Version, versionDoc *models.Version, versionDetails VersionDetails) error {
-	ap := versionDetails.baseAuditParams()
-	data := audit.ToLogData(ap)
-
-	if auditErr := api.auditor.Record(ctx, associateVersionAction, audit.Attempted, ap); auditErr != nil {
-		audit.LogActionFailure(ctx, associateVersionAction, audit.Attempted, auditErr, data)
-		return auditErr
-	}
+	data := versionDetails.baseLogData()
 
 	associateVersionErr := func() error {
 		if err := api.dataStore.Backend.UpdateDatasetWithAssociation(versionDetails.datasetID, versionDoc.State, versionDoc); err != nil {
@@ -552,14 +492,7 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion *mod
 	}()
 
 	if associateVersionErr != nil {
-		if auditErr := api.auditor.Record(ctx, associateVersionAction, audit.Unsuccessful, ap); auditErr != nil {
-			audit.LogActionFailure(ctx, associateVersionAction, audit.Unsuccessful, auditErr, data)
-		}
 		return associateVersionErr
-	}
-
-	if auditErr := api.auditor.Record(ctx, associateVersionAction, audit.Successful, ap); auditErr != nil {
-		audit.LogActionFailure(ctx, associateVersionAction, audit.Successful, auditErr, data)
 	}
 
 	log.Event(ctx, "associate version completed successfully", log.INFO, data)

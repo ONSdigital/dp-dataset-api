@@ -7,9 +7,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/request"
+	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 )
@@ -18,15 +16,13 @@ import (
 // for a specific dimension within an instance
 func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
-	defer request.DrainBody(r)
+	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
 	dimension := vars["dimension"]
-	auditParams := common.Params{"instance_id": instanceID, "dimension": dimension}
-	logData := audit.ToLogData(auditParams)
-	logData["action"] = UpdateDimensionAction
+	logData := log.Data{"instance_id": instanceID, "dimension": dimension, "action": UpdateDimensionAction}
 
 	log.Event(ctx, "update instance dimension: update instance dimension", log.INFO, logData)
 
@@ -36,7 +32,6 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 			log.Event(ctx, "update instance dimension: Failed to GET instance", log.ERROR, log.Error(err), logData)
 			return err
 		}
-		auditParams["instance_state"] = instance.State
 
 		// Early return if instance state is invalid
 		if err = models.CheckState("instance", instance.State); err != nil {
@@ -98,14 +93,9 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 		return nil
 	}(); err != nil {
-		if auditErr := s.Auditor.Record(ctx, UpdateDimensionAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			err = auditErr
-		}
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
-
-	s.Auditor.Record(ctx, UpdateDimensionAction, audit.Successful, auditParams)
 
 	log.Event(ctx, "updated instance dimension: request successful", log.INFO, logData)
 }

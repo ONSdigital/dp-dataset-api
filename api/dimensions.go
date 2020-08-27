@@ -9,8 +9,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/common"
+	dprequest "github.com/ONSdigital/dp-net/request"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/mux"
@@ -23,12 +22,6 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	edition := vars["edition"]
 	version := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "func": "getDimensions"}
-	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": version}
-
-	if err := api.auditor.Record(ctx, getDimensionsAction, audit.Attempted, auditParams); err != nil {
-		handleDimensionsErr(ctx, w, err, logData)
-		return
-	}
 
 	b, err := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
@@ -72,15 +65,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 		return b, nil
 	}()
 	if err != nil {
-		if auditErr := api.auditor.Record(ctx, getDimensionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			err = auditErr
-		}
 		handleDimensionsErr(ctx, w, err, logData)
-		return
-	}
-
-	if auditErr := api.auditor.Record(ctx, getDimensionsAction, audit.Successful, auditParams); auditErr != nil {
-		handleDimensionsErr(ctx, w, auditErr, logData)
 		return
 	}
 
@@ -149,12 +134,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	dimension := vars["dimension"]
 
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension, "func": "getDimensionOptions"}
-	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension}
-
-	if err := api.auditor.Record(ctx, getDimensionOptionsAction, audit.Attempted, auditParams); err != nil {
-		handleDimensionsErr(ctx, w, err, logData)
-		return
-	}
+	auditParams := dprequest.Params{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension}
 
 	authorised := api.authenticate(r, logData)
 	auditParams["authorised"] = strconv.FormatBool(authorised)
@@ -198,15 +178,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		return b, nil
 	}()
 	if err != nil {
-		if auditErr := api.auditor.Record(ctx, getDimensionOptionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			err = auditErr
-		}
 		handleDimensionsErr(ctx, w, err, logData)
-		return
-	}
-
-	if auditErr := api.auditor.Record(ctx, getDimensionOptionsAction, audit.Successful, auditParams); auditErr != nil {
-		handleDimensionsErr(ctx, w, auditErr, logData)
 		return
 	}
 
