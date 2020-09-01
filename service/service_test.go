@@ -113,7 +113,8 @@ func TestRun(t *testing.T) {
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
-			_, err := service.Run(ctx, cfg, svcList, testBuildTime, testGitCommit, testVersion, svcErrors)
+			svc := service.New(cfg, svcList)
+			err := svc.Run(ctx, testBuildTime, testGitCommit, testVersion, svcErrors)
 
 			Convey("Then service Run fails with the same error and the flag is not set. No further initialisations are attempted", func() {
 				So(err, ShouldResemble, errMongo)
@@ -131,7 +132,8 @@ func TestRun(t *testing.T) {
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
-			_, err := service.Run(ctx, cfg, svcList, testBuildTime, testGitCommit, testVersion, svcErrors)
+			svc := service.New(cfg, svcList)
+			err := svc.Run(ctx, testBuildTime, testGitCommit, testVersion, svcErrors)
 
 			Convey("Then service Run fails with the same error and the flag is not set. No further initialisations are attempted", func() {
 				So(err, ShouldResemble, errGraph)
@@ -150,7 +152,8 @@ func TestRun(t *testing.T) {
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
-			_, err := service.Run(ctx, cfg, svcList, testBuildTime, testGitCommit, testVersion, svcErrors)
+			svc := service.New(cfg, svcList)
+			err := svc.Run(ctx, testBuildTime, testGitCommit, testVersion, svcErrors)
 
 			Convey("Then service Run fails with the same error and the flag is not set. No further initialisations are attempted", func() {
 				So(err, ShouldResemble, errKafka)
@@ -170,7 +173,8 @@ func TestRun(t *testing.T) {
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
-			_, err := service.Run(ctx, cfg, svcList, testBuildTime, testGitCommit, testVersion, svcErrors)
+			svc := service.New(cfg, svcList)
+			err := svc.Run(ctx, testBuildTime, testGitCommit, testVersion, svcErrors)
 
 			Convey("Then service Run fails with the same error and the flag is not set. No further initialisations are attempted", func() {
 				So(err, ShouldResemble, errHealthcheck)
@@ -199,7 +203,8 @@ func TestRun(t *testing.T) {
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
-			_, err := service.Run(ctx, cfg, svcList, testBuildTime, testGitCommit, testVersion, svcErrors)
+			svc := service.New(cfg, svcList)
+			err := svc.Run(ctx, testBuildTime, testGitCommit, testVersion, svcErrors)
 
 			Convey("Then service Run fails, but all checks try to register", func() {
 				So(err, ShouldNotBeNil)
@@ -226,8 +231,9 @@ func TestRun(t *testing.T) {
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
+			svc := service.New(cfg, svcList)
+			err := svc.Run(ctx, testBuildTime, testGitCommit, testVersion, svcErrors)
 			serverWg.Add(1)
-			_, err := service.Run(ctx, cfg, svcList, testBuildTime, testGitCommit, testVersion, svcErrors)
 
 			Convey("Then service Run succeeds and all the flags are set", func() {
 				So(err, ShouldBeNil)
@@ -262,8 +268,9 @@ func TestRun(t *testing.T) {
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
+			svc := service.New(cfg, svcList)
+			err := svc.Run(ctx, testBuildTime, testGitCommit, testVersion, svcErrors)
 			serverWg.Add(1)
-			_, err := service.Run(ctx, cfg, svcList, testBuildTime, testGitCommit, testVersion, svcErrors)
 
 			Convey("Then service Run succeeds and all the flags except Graph are set", func() {
 				So(err, ShouldBeNil)
@@ -296,8 +303,9 @@ func TestRun(t *testing.T) {
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
+			svc := service.New(cfg, svcList)
+			err := svc.Run(ctx, testBuildTime, testGitCommit, testVersion, svcErrors)
 			serverWg.Add(1)
-			_, err := service.Run(ctx, cfg, svcList, testBuildTime, testGitCommit, testVersion, svcErrors)
 			So(err, ShouldBeNil)
 
 			Convey("Then the error is returned in the error channel", func() {
@@ -366,12 +374,9 @@ func TestClose(t *testing.T) {
 		Convey("Closing a service does not close uninitialised dependencies", func() {
 			svcList := service.NewServiceList(nil)
 			svcList.HealthCheck = true
-			svc := service.Service{
-				Config:      cfg,
-				ServiceList: svcList,
-				Server:      serverMock,
-				HealthCheck: hcMock,
-			}
+			svc := service.New(cfg, svcList)
+			svc.SetServer(serverMock)
+			svc.SetHealthCheck(hcMock)
 			err = svc.Close(context.Background())
 			So(err, ShouldBeNil)
 			So(len(hcMock.StopCalls()), ShouldEqual, 1)
@@ -387,15 +392,12 @@ func TestClose(t *testing.T) {
 		}
 
 		Convey("Closing the service results in all the initialised dependencies being closed in the expected order", func() {
-			svc := service.Service{
-				Config:                    cfg,
-				ServiceList:               fullSvcList,
-				Server:                    serverMock,
-				HealthCheck:               hcMock,
-				GenerateDownloadsProducer: kafkaProducerMock,
-				MongoDB:                   mongoMock,
-				GraphDB:                   graphMock,
-			}
+			svc := service.New(cfg, fullSvcList)
+			svc.SetServer(serverMock)
+			svc.SetHealthCheck(hcMock)
+			svc.SetDownloadsProducer(kafkaProducerMock)
+			svc.SetMongoDB(mongoMock)
+			svc.SetGraphDB(graphMock)
 			err = svc.Close(context.Background())
 			So(err, ShouldBeNil)
 			So(len(hcMock.StopCalls()), ShouldEqual, 1)
@@ -413,15 +415,12 @@ func TestClose(t *testing.T) {
 				},
 			}
 
-			svc := service.Service{
-				Config:                    cfg,
-				ServiceList:               fullSvcList,
-				Server:                    failingserverMock,
-				HealthCheck:               hcMock,
-				GenerateDownloadsProducer: kafkaProducerMock,
-				MongoDB:                   mongoMock,
-				GraphDB:                   graphMock,
-			}
+			svc := service.New(cfg, fullSvcList)
+			svc.SetServer(failingserverMock)
+			svc.SetHealthCheck(hcMock)
+			svc.SetDownloadsProducer(kafkaProducerMock)
+			svc.SetMongoDB(mongoMock)
+			svc.SetGraphDB(graphMock)
 			err = svc.Close(context.Background())
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldResemble, "failed to shutdown gracefully")
