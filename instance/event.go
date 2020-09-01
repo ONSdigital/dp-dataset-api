@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// AddInstanceEventAction represents the audit action to add event
+// AddInstanceEventAction represents the action to add event
 const AddInstanceEventAction = "addInstanceEvent"
 
 func unmarshalEvent(reader io.Reader) (*models.Event, error) {

@@ -17,7 +17,7 @@ type Store struct {
 	store.Storer
 }
 
-// List of audit actions for dimensions
+// List of actions for dimensions
 const (
 	GetDimensions                      = "getInstanceDimensions"
 	GetUniqueDimensionAndOptionsAction = "getInstanceUniqueDimensionAndOptions"

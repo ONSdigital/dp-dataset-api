@@ -2,7 +2,6 @@ package instance_test
 
 import (
 	"context"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -26,7 +25,6 @@ import (
 const host = "http://localhost:8080"
 
 var (
-	errAudit    = errors.New("auditing error")
 	mu          sync.Mutex
 	testContext = context.Background()
 )

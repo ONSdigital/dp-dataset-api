@@ -23,7 +23,7 @@ import (
 const (
 	downloadServiceToken = "X-Download-Service-Token"
 
-	// audit actions
+	// actions
 	addDatasetAction    = "addDataset"
 	deleteDatasetAction = "deleteDataset"
 	getDatasetsAction   = "getDatasets"
@@ -360,7 +360,7 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.
 }
 
 // isAuthenticated wraps a http handler func in another http handler func that checks the caller is authenticated to
-// perform the requested action. action is the audit event name, handler is the http.HandlerFunc to wrap in an
+// perform the requested action. action is the event name, handler is the http.HandlerFunc to wrap in an
 // authentication check. The wrapped handler is only called is the caller is authenticated
 func (api *DatasetAPI) isAuthenticated(action string, handler http.HandlerFunc) http.HandlerFunc {
 	return dphandlers.CheckIdentity(handler)

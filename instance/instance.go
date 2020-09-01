@@ -14,7 +14,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	dphttp "github.com/ONSdigital/dp-net/http"
-	dprequest "github.com/ONSdigital/dp-net/request"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -139,7 +138,6 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		return b, nil
 	}()
 
-	log.Event(ctx, "get instance: auditing outcome", log.INFO, logData)
 	if err != nil {
 		handleInstanceErr(ctx, err, w, logData)
 		return
@@ -156,7 +154,6 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	logData := log.Data{"action": AddInstanceAction}
-	auditParams := dprequest.Params{}
 
 	log.Event(ctx, "add instance", log.INFO, logData)
 
@@ -167,7 +164,6 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 		}
 
 		logData["instance_id"] = instance.InstanceID
-		auditParams["instance_id"] = instance.InstanceID
 
 		instance.Links.Self = &models.LinkObject{
 			HRef: fmt.Sprintf("%s/instances/%s", s.Host, instance.InstanceID),

@@ -8,7 +8,6 @@ import (
 var (
 	ErrAddDatasetAlreadyExists           = errors.New("forbidden - dataset already exists")
 	ErrAddUpdateDatasetBadRequest        = errors.New("failed to parse json body")
-	ErrAuditActionAttemptedFailure       = errors.New("internal server error")
 	ErrConflictUpdatingInstance          = errors.New("conflict updating instance resource")
 	ErrDatasetNotFound                   = errors.New("dataset not found")
 	ErrDeleteDatasetNotFound             = errors.New("dataset not found")
