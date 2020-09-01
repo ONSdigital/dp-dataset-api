@@ -5,8 +5,7 @@ import (
 	"net/http"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
-	"github.com/ONSdigital/dp-dataset-api/mongo"
-	"github.com/ONSdigital/dp-graph/v2/graph"
+	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka"
 )
@@ -20,8 +19,8 @@ type Initialiser interface {
 	DoGetHTTPServer(bindAddr string, router http.Handler) HTTPServer
 	DoGetHealthCheck(cfg *config.Configuration, buildTime, gitCommit, version string) (HealthChecker, error)
 	DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error)
-	DoGetGraphDB(ctx context.Context) (*graph.DB, error)
-	DoGetMongoDB(cfg *config.Configuration) (*mongo.Mongo, error)
+	DoGetGraphDB(ctx context.Context) (store.GraphDB, error)
+	DoGetMongoDB(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error)
 }
 
 // HTTPServer defines the required methods from the HTTP server

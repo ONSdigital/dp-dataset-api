@@ -10,13 +10,10 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	adapter "github.com/ONSdigital/dp-dataset-api/kafka"
-	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
-	"github.com/ONSdigital/dp-graph/v2/graph"
 	kafka "github.com/ONSdigital/dp-kafka"
-	mongolib "github.com/ONSdigital/dp-mongodb"
 	dphandlers "github.com/ONSdigital/dp-net/handlers"
 	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
@@ -30,20 +27,20 @@ var _ store.Storer = (*DatsetAPIStore)(nil)
 
 //DatsetAPIStore is a wrapper which embeds Neo4j Mongo structs which between them satisfy the store.Storer interface.
 type DatsetAPIStore struct {
-	*mongo.Mongo
-	*graph.DB
+	store.MongoDB
+	store.GraphDB
 }
 
 // Service contains all the configs, server and clients to run the Dataset API
 type Service struct {
 	Config                    *config.Configuration
 	ServiceList               *ExternalServiceList
-	graphDB                   *graph.DB
-	generateDownloadsProducer kafka.IProducer
+	GraphDB                   store.GraphDB
+	MongoDB                   store.MongoDB
+	GenerateDownloadsProducer kafka.IProducer
 	identityClient            *clientsidentity.Client
 	Server                    HTTPServer
 	HealthCheck               HealthChecker
-	mongoDB                   *mongo.Mongo
 	API                       *api.DatasetAPI
 }
 
@@ -56,7 +53,7 @@ func Run(ctx context.Context, cfg *config.Configuration, serviceList *ExternalSe
 	}
 
 	// Get MongoDB connection
-	svc.mongoDB, err = serviceList.GetMongoDB(ctx, cfg)
+	svc.MongoDB, err = serviceList.GetMongoDB(ctx, cfg)
 	if err != nil {
 		log.Event(ctx, "could not obtain mongo session", log.ERROR, log.Error(err))
 		return nil, err
@@ -69,23 +66,23 @@ func Run(ctx context.Context, cfg *config.Configuration, serviceList *ExternalSe
 			"EnablePrivateEndpoints":    cfg.EnablePrivateEndpoints,
 		})
 	} else {
-		svc.graphDB, err = serviceList.GetGraphDB(ctx)
+		svc.GraphDB, err = serviceList.GetGraphDB(ctx)
 		if err != nil {
 			log.Event(ctx, "failed to initialise graph driver", log.FATAL, log.Error(err))
 			return nil, err
 		}
 	}
-	store := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB}}
+	store := store.DataStore{Backend: DatsetAPIStore{svc.MongoDB, svc.GraphDB}}
 
 	// Get GenerateDownloads Kafka Producer
-	svc.generateDownloadsProducer, err = serviceList.GetProducer(ctx, cfg)
+	svc.GenerateDownloadsProducer, err = serviceList.GetProducer(ctx, cfg)
 	if err != nil {
 		log.Event(ctx, "could not obtain generate downloads producer", log.FATAL, log.Error(err))
 		return nil, err
 	}
 
 	downloadGenerator := &download.Generator{
-		Producer:   adapter.NewProducerAdapter(svc.generateDownloadsProducer),
+		Producer:   adapter.NewProducerAdapter(svc.GenerateDownloadsProducer),
 		Marshaller: schema.GenerateDownloadsEvent,
 	}
 
@@ -206,14 +203,14 @@ func (svc *Service) Close(ctx context.Context) error {
 		}
 
 		// stop any incoming requests
-		if err := svc.Server.Shutdown(ctx); err != nil {
-			log.Event(ctx, "failed to shutdown http server", log.Error(err), log.ERROR)
+		if err := svc.Server.Shutdown(shutdownContext); err != nil {
+			log.Event(shutdownContext, "failed to shutdown http server", log.Error(err), log.ERROR)
 			hasShutdownError = true
 		}
 
 		// Close MongoDB (if it exists)
 		if svc.ServiceList.MongoDB {
-			if err := mongolib.Close(ctx, svc.mongoDB.Session); err != nil {
+			if err := svc.MongoDB.Close(shutdownContext); err != nil {
 				log.Event(shutdownContext, "failed to close mongo db session", log.ERROR, log.Error(err))
 				hasShutdownError = true
 			}
@@ -222,14 +219,14 @@ func (svc *Service) Close(ctx context.Context) error {
 		// Close GenerateDownloadsProducer (if it exists)
 		if svc.ServiceList.GenerateDownloadsProducer {
 			log.Event(shutdownContext, "closing generated downloads kafka producer", log.INFO, log.Data{"producer": "DimensionExtracted"})
-			svc.generateDownloadsProducer.Close(shutdownContext)
+			svc.GenerateDownloadsProducer.Close(shutdownContext)
 			log.Event(shutdownContext, "closed generated downloads kafka producer", log.INFO, log.Data{"producer": "DimensionExtracted"})
 		}
 
 		// Close GraphDB (if it exists)
 		if svc.ServiceList.Graph {
-			if err := svc.graphDB.Close(ctx); err != nil {
-				log.Event(ctx, "failed to close graph db", log.ERROR, log.Error(err))
+			if err := svc.GraphDB.Close(shutdownContext); err != nil {
+				log.Event(shutdownContext, "failed to close graph db", log.ERROR, log.Error(err))
 				hasShutdownError = true
 			}
 		}
@@ -239,9 +236,9 @@ func (svc *Service) Close(ctx context.Context) error {
 	<-shutdownContext.Done()
 
 	// timeout expired
-	if ctx.Err() == context.DeadlineExceeded {
-		log.Event(ctx, "shutdown timed out", log.ERROR, log.Error(ctx.Err()))
-		return ctx.Err()
+	if shutdownContext.Err() == context.DeadlineExceeded {
+		log.Event(shutdownContext, "shutdown timed out", log.ERROR, log.Error(shutdownContext.Err()))
+		return shutdownContext.Err()
 	}
 
 	// other error
@@ -266,19 +263,19 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 		}
 	}
 
-	if err = svc.HealthCheck.AddCheck("Kafka Generate Downloads Producer", svc.generateDownloadsProducer.Checker); err != nil {
+	if err = svc.HealthCheck.AddCheck("Kafka Generate Downloads Producer", svc.GenerateDownloadsProducer.Checker); err != nil {
 		hasErrors = true
 		log.Event(ctx, "error adding check for kafka downloads producer", log.ERROR, log.Error(err))
 	}
 
-	if err = svc.HealthCheck.AddCheck("Mongo DB", svc.mongoDB.Checker); err != nil {
+	if err = svc.HealthCheck.AddCheck("Mongo DB", svc.MongoDB.Checker); err != nil {
 		hasErrors = true
 		log.Event(ctx, "error adding check for mongo db", log.ERROR, log.Error(err))
 	}
 
 	if svc.Config.EnablePrivateEndpoints || svc.Config.EnableObservationEndpoint {
 		log.Event(ctx, "adding graph db health check as the private or observation endpoints are enabled", log.INFO)
-		if err = svc.HealthCheck.AddCheck("Graph DB", svc.graphDB.Driver.Checker); err != nil {
+		if err = svc.HealthCheck.AddCheck("Graph DB", svc.GraphDB.Checker); err != nil {
 			hasErrors = true
 			log.Event(ctx, "error adding check for graph db", log.ERROR, log.Error(err))
 		}

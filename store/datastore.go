@@ -5,6 +5,7 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-graph/v2/observation"
+	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"github.com/globalsign/mgo/bson"
 )
 
@@ -13,10 +14,12 @@ type DataStore struct {
 	Backend Storer
 }
 
+//go:generate moq -out datastoretest/mongo.go -pkg storetest . MongoDB
+//go:generate moq -out datastoretest/graph.go -pkg storetest . GraphDB
 //go:generate moq -out datastoretest/datastore.go -pkg storetest . Storer
 
-// Storer represents basic data access via Get, Remove and Upsert methods.
-type Storer interface {
+// dataMongoDB represents the required methos to access data from mongoDB
+type dataMongoDB interface {
 	AddDimensionToInstance(dimension *models.CachedDimensionOption) error
 	AddEventToInstance(instanceID string, event *models.Event) error
 	AddInstance(instance *models.Instance) (*models.Instance, error)
@@ -50,8 +53,31 @@ type Storer interface {
 	UpsertVersion(ID string, versionDoc *models.Version) error
 	DeleteDataset(ID string) error
 	DeleteEdition(ID string) error
+}
 
+// MongoDB represents all the required methods from mongo DB
+type MongoDB interface {
+	dataMongoDB
+	Close(context.Context) error
+	Checker(context.Context, *healthcheck.CheckState) error
+}
+
+// dataGraphDB represents the required methods to access data from GraphDB
+type dataGraphDB interface {
 	AddVersionDetailsToInstance(ctx context.Context, instanceID string, datasetID string, edition string, version int) error
 	SetInstanceIsPublished(ctx context.Context, instanceID string) error
 	StreamCSVRows(ctx context.Context, instanceID, filterID string, filters *observation.DimensionFilters, limit *int) (observation.StreamRowReader, error)
+}
+
+// GraphDB represents all the required methods from graph DB
+type GraphDB interface {
+	dataGraphDB
+	Close(ctx context.Context) error
+	Checker(context.Context, *healthcheck.CheckState) error
+}
+
+// Storer represents basic data access via Get, Remove and Upsert methods, abstracting it from mongoDB or graphDB
+type Storer interface {
+	dataMongoDB
+	dataGraphDB
 }

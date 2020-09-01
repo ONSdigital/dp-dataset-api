@@ -10,6 +10,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
+	dpmongo "github.com/ONSdigital/dp-mongodb"
 	dpMongoHealth "github.com/ONSdigital/dp-mongodb/health"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/globalsign/mgo"
@@ -55,6 +56,14 @@ func (m *Mongo) Init() (err error) {
 	}
 
 	return nil
+}
+
+// Close represents mongo session closing within the context deadline
+func (m *Mongo) Close(ctx context.Context) error {
+	if m.Session == nil {
+		return errors.New("cannot close a mongoDB connection without a valid session")
+	}
+	return dpmongo.Close(ctx, m.Session)
 }
 
 // Checker is called by the healthcheck library to check the health state of this mongoDB instance

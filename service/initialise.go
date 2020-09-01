@@ -6,6 +6,7 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
+	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-graph/v2/graph"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka"
@@ -59,7 +60,7 @@ func (e *ExternalServiceList) GetProducer(ctx context.Context, cfg *config.Confi
 }
 
 // GetGraphDB returns a graphDB (only if observation and private endpoint are enabled)
-func (e *ExternalServiceList) GetGraphDB(ctx context.Context) (*graph.DB, error) {
+func (e *ExternalServiceList) GetGraphDB(ctx context.Context) (store.GraphDB, error) {
 	graphDB, err := e.Init.DoGetGraphDB(ctx)
 	if err != nil {
 		return nil, err
@@ -69,13 +70,12 @@ func (e *ExternalServiceList) GetGraphDB(ctx context.Context) (*graph.DB, error)
 }
 
 // GetMongoDB returns a mongodb health client and dataset mongo object
-func (e *ExternalServiceList) GetMongoDB(ctx context.Context, cfg *config.Configuration) (*mongo.Mongo, error) {
-	mongodb, err := e.Init.DoGetMongoDB(cfg)
+func (e *ExternalServiceList) GetMongoDB(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error) {
+	mongodb, err := e.Init.DoGetMongoDB(ctx, cfg)
 	if err != nil {
 		log.Event(ctx, "failed to initialise mongo", log.ERROR, log.Error(err))
 		return nil, err
 	}
-	log.Event(ctx, "listening to mongo db session", log.INFO, log.Data{"URI": mongodb.URI})
 	e.MongoDB = true
 	return mongodb, nil
 }
@@ -104,12 +104,12 @@ func (e *Init) DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration
 }
 
 // DoGetGraphDB creates a new GraphDB
-func (e *Init) DoGetGraphDB(ctx context.Context) (*graph.DB, error) {
+func (e *Init) DoGetGraphDB(ctx context.Context) (store.GraphDB, error) {
 	return graph.New(ctx, graph.Subsets{Observation: true, Instance: true})
 }
 
 // DoGetMongoDB returns a MongoDB
-func (e *Init) DoGetMongoDB(cfg *config.Configuration) (*mongo.Mongo, error) {
+func (e *Init) DoGetMongoDB(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error) {
 	mongodb := &mongo.Mongo{
 		CodeListURL: cfg.CodeListAPIURL,
 		Collection:  cfg.MongoConfig.Collection,
@@ -120,5 +120,6 @@ func (e *Init) DoGetMongoDB(cfg *config.Configuration) (*mongo.Mongo, error) {
 	if err := mongodb.Init(); err != nil {
 		return nil, err
 	}
+	log.Event(ctx, "listening to mongo db session", log.INFO, log.Data{"URI": mongodb.URI})
 	return mongodb, nil
 }
