@@ -15,13 +15,10 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	dphandlers "github.com/ONSdigital/dp-net/handlers"
-	dphttp "github.com/ONSdigital/dp-net/http"
 	dprequest "github.com/ONSdigital/dp-net/request"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 )
-
-var httpServer *dphttp.Server
 
 const (
 	downloadServiceToken = "X-Download-Service-Token"
@@ -363,7 +360,7 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.
 }
 
 // isAuthenticated wraps a http handler func in another http handler func that checks the caller is authenticated to
-// perform the requested action action. action is the audit event name, handler is the http.HandlerFunc to wrap in an
+// perform the requested action. action is the audit event name, handler is the http.HandlerFunc to wrap in an
 // authentication check. The wrapped handler is only called is the caller is authenticated
 func (api *DatasetAPI) isAuthenticated(action string, handler http.HandlerFunc) http.HandlerFunc {
 	return dphandlers.CheckIdentity(handler)
@@ -446,13 +443,4 @@ func (api *DatasetAPI) authenticate(r *http.Request, logData log.Data) bool {
 
 func setJSONContentType(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
-}
-
-// Close represents the graceful shutting down of the http server
-func Close(ctx context.Context) error {
-	if err := httpServer.Shutdown(ctx); err != nil {
-		return err
-	}
-	log.Event(ctx, "graceful shutdown of http server complete", log.INFO)
-	return nil
 }

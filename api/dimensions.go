@@ -5,11 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	dprequest "github.com/ONSdigital/dp-net/request"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/mux"
@@ -134,10 +132,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	dimension := vars["dimension"]
 
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension, "func": "getDimensionOptions"}
-	auditParams := dprequest.Params{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension}
-
 	authorised := api.authenticate(r, logData)
-	auditParams["authorised"] = strconv.FormatBool(authorised)
 
 	var state string
 	if !authorised {

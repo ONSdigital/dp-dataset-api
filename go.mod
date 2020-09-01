@@ -9,7 +9,7 @@ require (
 	github.com/ONSdigital/dp-healthcheck v1.0.5
 	github.com/ONSdigital/dp-kafka v1.1.7
 	github.com/ONSdigital/dp-mongodb v1.4.0
-	github.com/ONSdigital/dp-net v1.0.7
+	github.com/ONSdigital/dp-net v1.0.8-0.20200901091958-2df9a102ca3d
 	github.com/ONSdigital/go-ns v0.0.0-20200205115900-a11716f93bad
 	github.com/ONSdigital/log.go v1.0.1
 	github.com/frankban/quicktest v1.9.0 // indirect
@@ -30,7 +30,3 @@ require (
 	golang.org/x/text v0.3.3 // indirect
 	gopkg.in/avro.v0 v0.0.0-20171217001914-a730b5802183 // indirect
 )
-
-replace github.com/ONSdigital/dp-net => ../dp-net
-
-replace github.com/ONSdigital/dp-api-clients-go => ../dp-api-clients-go
