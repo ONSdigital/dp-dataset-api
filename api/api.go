@@ -14,13 +14,11 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
-	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	dphandlers "github.com/ONSdigital/dp-net/handlers"
 	dphttp "github.com/ONSdigital/dp-net/http"
 	dprequest "github.com/ONSdigital/dp-net/request"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
-	"github.com/justinas/alice"
 )
 
 var httpServer *dphttp.Server
@@ -78,16 +76,13 @@ type AuthHandler interface {
 
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
+	Router                    *mux.Router
 	dataStore                 store.DataStore
+	urlBuilder                *url.Builder
 	host                      string
-	zebedeeURL                string
-	internalToken             string
 	downloadServiceToken      string
 	EnablePrePublishView      bool
-	Router                    *mux.Router
-	urlBuilder                *url.Builder
 	downloadGenerator         DownloadsGenerator
-	serviceAuthToken          string
 	enablePrivateEndpoints    bool
 	enableDetachDataset       bool
 	enableObservationEndpoint bool
@@ -97,61 +92,12 @@ type DatasetAPI struct {
 	versionPublishedChecker   *PublishCheck
 }
 
-// CreateAndInitialiseDatasetAPI create a new DatasetAPI instance based on the configuration provided, apply middleware and starts the HTTP server.
-func CreateAndInitialiseDatasetAPI(ctx context.Context, cfg config.Configuration, hc *healthcheck.HealthCheck, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadGenerator DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler) {
-	router := mux.NewRouter()
-	api := NewDatasetAPI(ctx, cfg, router, dataStore, urlBuilder, downloadGenerator, datasetPermissions, permissions)
+// Setup creates a new Dataset API instance and register the API routes based on the application configuration.
+func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
 
-	healthcheckHandler := newMiddleware(hc.Handler, "/health")
-	middleware := alice.New(healthcheckHandler)
-
-	// TODO can be removed once upstream services start calling the new health endpoint
-	oldHealthcheckHandler := newMiddleware(hc.Handler, "/healthcheck")
-	middleware = middleware.Append(oldHealthcheckHandler)
-
-	// Only add the identity middleware when running in publishing.
-	if cfg.EnablePrivateEndpoints {
-		middleware = middleware.Append(dphandlers.Identity(cfg.ZebedeeURL))
-	}
-
-	middleware = middleware.Append(dphandlers.CheckHeader(dphandlers.CollectionID))
-
-	httpServer = dphttp.NewServer(cfg.BindAddr, middleware.Then(api.Router))
-
-	// Disable this here to allow main to manage graceful shutdown of the entire app.
-	httpServer.HandleOSSignals = false
-
-	go func() {
-		log.Event(ctx, "Starting api...", log.INFO)
-		if err := httpServer.ListenAndServe(); err != nil {
-			log.Event(ctx, "api http server returned error", log.ERROR, log.Error(err))
-			errorChan <- err
-		}
-	}()
-}
-
-// newMiddleware creates a new http.Handler to intercept /health requests.
-func newMiddleware(healthcheckHandler func(http.ResponseWriter, *http.Request), path string) func(http.Handler) http.Handler {
-	return func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-
-			if req.Method == "GET" && req.URL.Path == path {
-				healthcheckHandler(w, req)
-				return
-			}
-
-			h.ServeHTTP(w, req)
-		})
-	}
-}
-
-// NewDatasetAPI create a new Dataset API instance and register the API routes based on the application configuration.
-func NewDatasetAPI(ctx context.Context, cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
 	api := &DatasetAPI{
 		dataStore:                 dataStore,
 		host:                      cfg.DatasetAPIURL,
-		zebedeeURL:                cfg.ZebedeeURL,
-		serviceAuthToken:          cfg.ServiceAuthToken,
 		downloadServiceToken:      cfg.DownloadServiceSecretKey,
 		EnablePrePublishView:      cfg.EnablePrivateEndpoints,
 		Router:                    router,

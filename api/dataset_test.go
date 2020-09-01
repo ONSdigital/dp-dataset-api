@@ -55,7 +55,7 @@ func GetAPIWithMocks(mockedDataStore store.Storer, mockedGeneratedDownloads Down
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEndpoints = true
 
-	return NewDatasetAPI(testContext, *cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, datasetPermissions, permissions)
+	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, datasetPermissions, permissions)
 }
 
 func createRequestWithAuth(method, URL string, body io.Reader) (*http.Request, error) {
