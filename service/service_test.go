@@ -104,7 +104,11 @@ func TestRun(t *testing.T) {
 		}
 
 		funcDoGetKafkaProducerOk := func(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error) {
-			return &kafkatest.IProducerMock{}, nil
+			return &kafkatest.IProducerMock{
+				ChannelsFunc: func() *kafka.ProducerChannels {
+					return &kafka.ProducerChannels{}
+				},
+			}, nil
 		}
 
 		Convey("Given that initialising MongoDB returns an error", func() {
@@ -232,8 +236,8 @@ func TestRun(t *testing.T) {
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
 			svc := service.New(cfg, svcList)
-			err := svc.Run(ctx, testBuildTime, testGitCommit, testVersion, svcErrors)
 			serverWg.Add(1)
+			err := svc.Run(ctx, testBuildTime, testGitCommit, testVersion, svcErrors)
 
 			Convey("Then service Run succeeds and all the flags are set", func() {
 				So(err, ShouldBeNil)
@@ -269,8 +273,8 @@ func TestRun(t *testing.T) {
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
 			svc := service.New(cfg, svcList)
-			err := svc.Run(ctx, testBuildTime, testGitCommit, testVersion, svcErrors)
 			serverWg.Add(1)
+			err := svc.Run(ctx, testBuildTime, testGitCommit, testVersion, svcErrors)
 
 			Convey("Then service Run succeeds and all the flags except Graph are set", func() {
 				So(err, ShouldBeNil)
@@ -304,8 +308,8 @@ func TestRun(t *testing.T) {
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
 			svc := service.New(cfg, svcList)
-			err := svc.Run(ctx, testBuildTime, testGitCommit, testVersion, svcErrors)
 			serverWg.Add(1)
+			err := svc.Run(ctx, testBuildTime, testGitCommit, testVersion, svcErrors)
 			So(err, ShouldBeNil)
 
 			Convey("Then the error is returned in the error channel", func() {
@@ -368,6 +372,9 @@ func TestClose(t *testing.T) {
 
 		// Kafka producer will fail if healthcheck or http server are not stopped
 		kafkaProducerMock := &kafkatest.IProducerMock{
+			ChannelsFunc: func() *kafka.ProducerChannels {
+				return &kafka.ProducerChannels{}
+			},
 			CloseFunc: funcClose,
 		}
 

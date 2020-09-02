@@ -142,6 +142,9 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 
 	svc.healthCheck.Start(ctx)
 
+	// Log kafka producer errors in parallel go-routine
+	svc.generateDownloadsProducer.Channels().LogErrors(ctx, "generate downloads producer error")
+
 	// Run the http server in a new go-routine
 	go func() {
 		if err := svc.server.ListenAndServe(); err != nil {
