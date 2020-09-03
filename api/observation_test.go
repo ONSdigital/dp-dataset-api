@@ -35,20 +35,20 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 	Convey("Given a request to get a single observation for a version of a dataset returns 200 OK response", t, func() {
 
 		dimensions := []models.Dimension{
-			models.Dimension{
+			{
 				Name: "aggregate",
 				HRef: "http://localhost:8081/code-lists/cpih1dim1aggid",
 			},
-			models.Dimension{
+			{
 				Name: "geography",
 				HRef: "http://localhost:8081/code-lists/uk-only",
 			},
-			models.Dimension{
+			{
 				Name: "time",
 				HRef: "http://localhost:8081/code-lists/time",
 			},
 		}
-		usagesNotes := &[]models.UsageNote{models.UsageNote{Title: "data_marking", Note: "this marks the obsevation with a special character"}}
+		usagesNotes := &[]models.UsageNote{{Title: "data_marking", Note: "this marks the obsevation with a special character"}}
 
 		count := 0
 		mockRowReader := &observationtest.StreamRowReaderMock{
@@ -134,20 +134,20 @@ func TestGetObservationsReturnsOK(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		dimensions := []models.Dimension{
-			models.Dimension{
+			{
 				Name: "aggregate",
 				HRef: "http://localhost:8081/code-lists/cpih1dim1aggid",
 			},
-			models.Dimension{
+			{
 				Name: "geography",
 				HRef: "http://localhost:8081/code-lists/uk-only",
 			},
-			models.Dimension{
+			{
 				Name: "time",
 				HRef: "http://localhost:8081/code-lists/time",
 			},
 		}
-		usagesNotes := &[]models.UsageNote{models.UsageNote{Title: "data_marking", Note: "this marks the observation with a special character"}}
+		usagesNotes := &[]models.UsageNote{{Title: "data_marking", Note: "this marks the observation with a special character"}}
 
 		count := 0
 		mockRowReader := &observationtest.StreamRowReaderMock{
@@ -609,20 +609,20 @@ func TestGetObservationsReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		dimensions := []models.Dimension{
-			models.Dimension{
+			{
 				Name: "aggregate",
 				HRef: "http://localhost:8081/code-lists/cpih1dim1aggid",
 			},
-			models.Dimension{
+			{
 				Name: "geography",
 				HRef: "http://localhost:8081/code-lists/uk-only",
 			},
-			models.Dimension{
+			{
 				Name: "time",
 				HRef: "http://localhost:8081/code-lists/time",
 			},
 		}
-		usagesNotes := &[]models.UsageNote{models.UsageNote{Title: "data_marking", Note: "this marks the obsevation with a special character"}}
+		usagesNotes := &[]models.UsageNote{{Title: "data_marking", Note: "this marks the obsevation with a special character"}}
 
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {

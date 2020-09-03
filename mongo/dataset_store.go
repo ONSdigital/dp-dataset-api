@@ -27,7 +27,6 @@ type Mongo struct {
 	URI            string
 	lastPingTime   time.Time
 	lastPingResult error
-	client         *dpMongoHealth.Client
 	healthClient   *dpMongoHealth.CheckMongoClient
 }
 
@@ -49,10 +48,10 @@ func (m *Mongo) Init() (err error) {
 	m.Session.SetMode(mgo.Strong, true)
 
 	// Create client and healthclient from session
-	m.client = dpMongoHealth.NewClient(m.Session)
+	client := dpMongoHealth.NewClient(m.Session)
 	m.healthClient = &dpMongoHealth.CheckMongoClient{
-		Client:      *m.client,
-		Healthcheck: m.client.Healthcheck,
+		Client:      *client,
+		Healthcheck: client.Healthcheck,
 	}
 
 	return nil

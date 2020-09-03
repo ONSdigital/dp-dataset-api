@@ -22,7 +22,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
 	dimension := vars["dimension"]
-	logData := log.Data{"instance_id": instanceID, "dimension": dimension, "action": UpdateDimensionAction}
+	logData := log.Data{"instance_id": instanceID, "dimension": dimension}
 
 	log.Event(ctx, "update instance dimension: update instance dimension", log.INFO, logData)
 

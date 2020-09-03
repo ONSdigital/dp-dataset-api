@@ -24,8 +24,6 @@ import (
 const (
 	defaultObservationLimit = 10000
 	defaultOffset           = 0
-
-	getObservationsAction = "getObservations"
 )
 
 var (

@@ -22,29 +22,8 @@ import (
 
 const (
 	downloadServiceToken = "X-Download-Service-Token"
-
-	// actions
-	addDatasetAction    = "addDataset"
-	deleteDatasetAction = "deleteDataset"
-	getDatasetsAction   = "getDatasets"
-	getDatasetAction    = "getDataset"
-
-	getEditionsAction = "getEditions"
-	getEditionAction  = "getEdition"
-
-	getVersionsAction      = "getVersions"
-	getVersionAction       = "getVersion"
-	updateDatasetAction    = "updateDataset"
-	updateVersionAction    = "updateVersion"
-	associateVersionAction = "associateVersionAction"
-	publishVersionAction   = "publishVersion"
-	detachVersionAction    = "detachVersion"
-
-	getDimensionsAction       = "getDimensions"
-	getDimensionOptionsAction = "getDimensionOptionsAction"
-	getMetadataAction         = "getMetadata"
-
-	hasDownloads = "has_downloads"
+	updateVersionAction  = "updateVersion"
+	hasDownloads         = "has_downloads"
 )
 
 var (
@@ -224,28 +203,28 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context) {
 
 	api.post(
 		"/datasets/{dataset_id}",
-		api.isAuthenticated(addDatasetAction,
+		api.isAuthenticated(
 			api.isAuthorisedForDatasets(createPermission,
 				api.addDataset)),
 	)
 
 	api.put(
 		"/datasets/{dataset_id}",
-		api.isAuthenticated(updateDatasetAction,
+		api.isAuthenticated(
 			api.isAuthorisedForDatasets(updatePermission,
 				api.putDataset)),
 	)
 
 	api.delete(
 		"/datasets/{dataset_id}",
-		api.isAuthenticated(deleteDatasetAction,
+		api.isAuthenticated(
 			api.isAuthorisedForDatasets(deletePermission,
 				api.deleteDataset)),
 	)
 
 	api.put(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
-		api.isAuthenticated(updateVersionAction,
+		api.isAuthenticated(
 			api.isAuthorisedForDatasets(updatePermission,
 				api.isVersionPublished(updateVersionAction,
 					api.putVersion))),
@@ -254,7 +233,7 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context) {
 	if api.enableDetachDataset {
 		api.delete(
 			"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
-			api.isAuthenticated(detachVersionAction,
+			api.isAuthenticated(
 				api.isAuthorisedForDatasets(deletePermission,
 					api.detachVersion)),
 		)
@@ -266,62 +245,58 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context) {
 func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI *instance.Store) {
 	api.get(
 		"/instances",
-		api.isAuthenticated(instance.GetInstancesAction,
+		api.isAuthenticated(
 			api.isAuthorised(readPermission,
 				instanceAPI.GetList)),
 	)
 
 	api.post(
 		"/instances",
-		api.isAuthenticated(instance.AddInstanceAction,
+		api.isAuthenticated(
 			api.isAuthorised(createPermission,
 				instanceAPI.Add)),
 	)
 
 	api.get(
 		"/instances/{instance_id}",
-		api.isAuthenticated(instance.GetInstanceAction,
+		api.isAuthenticated(
 			api.isAuthorised(readPermission,
 				instanceAPI.Get)),
 	)
 
 	api.put(
 		"/instances/{instance_id}",
-		api.isAuthenticated(instance.UpdateInstanceAction,
+		api.isAuthenticated(
 			api.isAuthorised(updatePermission,
-				api.isInstancePublished(instance.UpdateInstanceAction,
-					instanceAPI.Update))),
+				api.isInstancePublished(instanceAPI.Update))),
 	)
 
 	api.put(
 		"/instances/{instance_id}/dimensions/{dimension}",
-		api.isAuthenticated(instance.UpdateDimensionAction,
+		api.isAuthenticated(
 			api.isAuthorised(updatePermission,
-				api.isInstancePublished(instance.UpdateDimensionAction,
-					instanceAPI.UpdateDimension))),
+				api.isInstancePublished(instanceAPI.UpdateDimension))),
 	)
 
 	api.post(
 		"/instances/{instance_id}/events",
-		api.isAuthenticated(instance.AddInstanceEventAction,
+		api.isAuthenticated(
 			api.isAuthorised(createPermission,
 				instanceAPI.AddEvent)),
 	)
 
 	api.put(
 		"/instances/{instance_id}/inserted_observations/{inserted_observations}",
-		api.isAuthenticated(instance.UpdateInsertedObservationsAction,
+		api.isAuthenticated(
 			api.isAuthorised(updatePermission,
-				api.isInstancePublished(instance.UpdateInsertedObservationsAction,
-					instanceAPI.UpdateObservations))),
+				api.isInstancePublished(instanceAPI.UpdateObservations))),
 	)
 
 	api.put(
 		"/instances/{instance_id}/import_tasks",
-		api.isAuthenticated(instance.UpdateImportTasksAction,
+		api.isAuthenticated(
 			api.isAuthorised(updatePermission,
-				api.isInstancePublished(instance.UpdateImportTasksAction,
-					instanceAPI.UpdateImportTask))),
+				api.isInstancePublished(instanceAPI.UpdateImportTask))),
 	)
 }
 
@@ -330,39 +305,37 @@ func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI *instance.Sto
 func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.Store) {
 	api.get(
 		"/instances/{instance_id}/dimensions",
-		api.isAuthenticated(dimension.GetDimensions,
+		api.isAuthenticated(
 			api.isAuthorised(readPermission,
 				dimensionAPI.GetDimensionsHandler)),
 	)
 
 	api.post(
 		"/instances/{instance_id}/dimensions",
-		api.isAuthenticated(dimension.AddDimensionAction,
+		api.isAuthenticated(
 			api.isAuthorised(createPermission,
-				api.isInstancePublished(dimension.AddDimensionAction,
-					dimensionAPI.AddHandler))),
+				api.isInstancePublished(dimensionAPI.AddHandler))),
 	)
 
 	api.get(
 		"/instances/{instance_id}/dimensions/{dimension}/options",
-		api.isAuthenticated(dimension.GetUniqueDimensionAndOptionsAction,
+		api.isAuthenticated(
 			api.isAuthorised(readPermission,
 				dimensionAPI.GetUniqueDimensionAndOptionsHandler)),
 	)
 
 	api.put(
 		"/instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}",
-		api.isAuthenticated(dimension.UpdateNodeIDAction,
+		api.isAuthenticated(
 			api.isAuthorised(updatePermission,
-				api.isInstancePublished(dimension.UpdateNodeIDAction,
-					dimensionAPI.AddNodeIDHandler))),
+				api.isInstancePublished(dimensionAPI.AddNodeIDHandler))),
 	)
 }
 
 // isAuthenticated wraps a http handler func in another http handler func that checks the caller is authenticated to
-// perform the requested action. action is the event name, handler is the http.HandlerFunc to wrap in an
-// authentication check. The wrapped handler is only called is the caller is authenticated
-func (api *DatasetAPI) isAuthenticated(action string, handler http.HandlerFunc) http.HandlerFunc {
+// perform the requested action. handler is the http.HandlerFunc to wrap in an
+// authentication check. The wrapped handler is only called if the caller is authenticated
+func (api *DatasetAPI) isAuthenticated(handler http.HandlerFunc) http.HandlerFunc {
 	return dphandlers.CheckIdentity(handler)
 }
 
@@ -383,8 +356,8 @@ func (api *DatasetAPI) isAuthorisedForDatasets(required auth.Permissions, handle
 
 // isInstancePublished wraps a http.HandlerFunc checking the instance state. The wrapped handler is only invoked if the
 // requested instance is not in a published state.
-func (api *DatasetAPI) isInstancePublished(action string, handler http.HandlerFunc) http.HandlerFunc {
-	return api.instancePublishedChecker.Check(handler, action)
+func (api *DatasetAPI) isInstancePublished(handler http.HandlerFunc) http.HandlerFunc {
+	return api.instancePublishedChecker.Check(handler)
 }
 
 // isInstancePublished wraps a http.HandlerFunc checking the version state. The wrapped handler is only invoked if the

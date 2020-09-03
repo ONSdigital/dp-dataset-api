@@ -23,7 +23,7 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
 	insert := vars["inserted_observations"]
-	logData := log.Data{"instance_id": instanceID, "inserted_observations": insert, "action": UpdateInsertedObservationsAction}
+	logData := log.Data{"instance_id": instanceID, "inserted_observations": insert}
 
 	if err := func() error {
 		observations, err := strconv.ParseInt(insert, 10, 64)
@@ -54,7 +54,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
-	logData := log.Data{"instance_id": instanceID, "action": UpdateImportTasksAction}
+	logData := log.Data{"instance_id": instanceID}
 	defer r.Body.Close()
 
 	updateErr := func() *taskError {

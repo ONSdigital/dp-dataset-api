@@ -39,19 +39,6 @@ func (e taskError) Error() string {
 	return ""
 }
 
-// List of actions for instances
-const (
-	AddInstanceAction                = "addInstance"
-	CreateEditionAction              = "createEditionForInstance"
-	GetInstanceAction                = "getInstance"
-	GetInstancesAction               = "getInstances"
-	UpdateInstanceAction             = "updateInstance"
-	UpdateDimensionAction            = "updateDimension"
-	UpdateEditionAction              = "updateEditionNextSubDocForInstance"
-	UpdateInsertedObservationsAction = "updateInsertedObservations"
-	UpdateImportTasksAction          = "updateImportTasks"
-)
-
 //GetList a list of all instances
 func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -59,7 +46,7 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	datasetFilterQuery := r.URL.Query().Get("dataset")
 	var stateFilterList []string
 	var datasetFilterList []string
-	logData := log.Data{"action": GetInstancesAction}
+	logData := log.Data{}
 
 	if stateFilterQuery != "" {
 		logData["state_query"] = stateFilterQuery
@@ -109,7 +96,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
-	logData := log.Data{"instance_id": instanceID, "action": GetInstanceAction}
+	logData := log.Data{"instance_id": instanceID}
 
 	log.Event(ctx, "get instance", log.INFO, logData)
 
@@ -153,7 +140,7 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()
-	logData := log.Data{"action": AddInstanceAction}
+	logData := log.Data{}
 
 	log.Event(ctx, "add instance", log.INFO, logData)
 
@@ -203,7 +190,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
-	logData := log.Data{"instance_id": instanceID, "action": UpdateInstanceAction}
+	logData := log.Data{"instance_id": instanceID}
 	var b []byte
 	var err error
 
@@ -456,7 +443,7 @@ type PublishCheck struct {
 }
 
 // Check wraps a HTTP handle. Checks that the state is not published
-func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), action string) http.HandlerFunc {
+func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)

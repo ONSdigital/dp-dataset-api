@@ -25,7 +25,6 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 			}
 
 			log.Event(ctx, "confirm edition: edition not found, creating", log.INFO, logData)
-			action = CreateEditionAction
 			editionDoc, err = models.CreateEdition(s.Host, datasetID, edition)
 			if err != nil {
 				return nil, action, err
@@ -33,8 +32,6 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 
 			log.Event(ctx, "confirm edition: created new edition", log.INFO, logData)
 		} else {
-
-			action = UpdateEditionAction
 
 			// TODO - feature flag. Will need removing eventually.
 			if s.EnableDetachDataset {
