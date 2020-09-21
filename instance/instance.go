@@ -13,9 +13,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/request"
+	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -26,7 +24,6 @@ import (
 type Store struct {
 	store.Storer
 	Host                string
-	Auditor             audit.AuditorService
 	EnableDetachDataset bool
 }
 
@@ -42,42 +39,22 @@ func (e taskError) Error() string {
 	return ""
 }
 
-// List of audit actions for instances
-const (
-	AddInstanceAction                = "addInstance"
-	CreateEditionAction              = "createEditionForInstance"
-	GetInstanceAction                = "getInstance"
-	GetInstancesAction               = "getInstances"
-	UpdateInstanceAction             = "updateInstance"
-	UpdateDimensionAction            = "updateDimension"
-	UpdateEditionAction              = "updateEditionNextSubDocForInstance"
-	UpdateInsertedObservationsAction = "updateInsertedObservations"
-	UpdateImportTasksAction          = "updateImportTasks"
-)
-
 //GetList a list of all instances
 func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	stateFilterQuery := r.URL.Query().Get("state")
 	datasetFilterQuery := r.URL.Query().Get("dataset")
-	var auditParams common.Params
 	var stateFilterList []string
 	var datasetFilterList []string
-	logData := log.Data{"action": GetInstancesAction}
-
-	if stateFilterQuery != "" || datasetFilterQuery != "" {
-		auditParams = make(common.Params)
-	}
+	logData := log.Data{}
 
 	if stateFilterQuery != "" {
 		logData["state_query"] = stateFilterQuery
-		auditParams["state_query"] = stateFilterQuery
 		stateFilterList = strings.Split(stateFilterQuery, ",")
 	}
 
 	if datasetFilterQuery != "" {
 		logData["dataset_query"] = datasetFilterQuery
-		auditParams["dataset_query"] = datasetFilterQuery
 		datasetFilterList = strings.Split(datasetFilterQuery, ",")
 	}
 
@@ -106,15 +83,7 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		if auditErr := s.Auditor.Record(ctx, GetInstancesAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			err = auditErr
-		}
 		handleInstanceErr(ctx, err, w, logData)
-		return
-	}
-
-	if auditErr := s.Auditor.Record(ctx, GetInstancesAction, audit.Successful, auditParams); auditErr != nil {
-		handleInstanceErr(ctx, auditErr, w, logData)
 		return
 	}
 
@@ -127,9 +96,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
-	auditParams := common.Params{"instance_id": instanceID}
-	logData := audit.ToLogData(auditParams)
-	logData["action"] = GetInstanceAction
+	logData := log.Data{"instance_id": instanceID}
 
 	log.Event(ctx, "get instance", log.INFO, logData)
 
@@ -158,17 +125,8 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		return b, nil
 	}()
 
-	log.Event(ctx, "get instance: auditing outcome", log.INFO, logData)
 	if err != nil {
-		if auditErr := s.Auditor.Record(ctx, GetInstanceAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			err = auditErr
-		}
 		handleInstanceErr(ctx, err, w, logData)
-		return
-	}
-
-	if auditErr := s.Auditor.Record(ctx, GetInstanceAction, audit.Successful, auditParams); auditErr != nil {
-		handleInstanceErr(ctx, auditErr, w, logData)
 		return
 	}
 
@@ -179,11 +137,10 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 //Add an instance
 func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 
-	defer request.DrainBody(r)
+	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()
-	logData := log.Data{"action": AddInstanceAction}
-	auditParams := common.Params{}
+	logData := log.Data{}
 
 	log.Event(ctx, "add instance", log.INFO, logData)
 
@@ -194,7 +151,6 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 		}
 
 		logData["instance_id"] = instance.InstanceID
-		auditParams["instance_id"] = instance.InstanceID
 
 		instance.Links.Self = &models.LinkObject{
 			HRef: fmt.Sprintf("%s/instances/%s", s.Host, instance.InstanceID),
@@ -215,14 +171,9 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 		return b, nil
 	}()
 	if err != nil {
-		if auditErr := s.Auditor.Record(ctx, AddInstanceAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			err = auditErr
-		}
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
-
-	s.Auditor.Record(ctx, AddInstanceAction, audit.Successful, auditParams)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -234,14 +185,12 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 //Update a specific instance
 func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
-	defer request.DrainBody(r)
+	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
-	auditParams := common.Params{"instance_id": instanceID}
-	logData := audit.ToLogData(auditParams)
-	logData["action"] = UpdateInstanceAction
+	logData := log.Data{"instance_id": instanceID}
 	var b []byte
 	var err error
 
@@ -331,10 +280,6 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 		return b, nil
 	}(); err != nil {
-		if auditErr := s.Auditor.Record(ctx, UpdateInstanceAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			err = auditErr
-		}
-
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
@@ -342,8 +287,6 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	writeBody(ctx, w, b, logData)
-
-	s.Auditor.Record(ctx, UpdateInstanceAction, audit.Successful, auditParams)
 
 	log.Event(ctx, "update instance: request successful", log.INFO, logData)
 }
@@ -497,29 +440,18 @@ func writeBody(ctx context.Context, w http.ResponseWriter, b []byte, logData log
 // PublishCheck Checks if an instance has been published
 type PublishCheck struct {
 	Datastore store.Storer
-	Auditor   audit.AuditorService
 }
 
 // Check wraps a HTTP handle. Checks that the state is not published
-func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), action string) http.HandlerFunc {
+func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
 		instanceID := vars["instance_id"]
 		logData := log.Data{"action": "CheckAction", "instance_id": instanceID}
-		auditParams := common.Params{"instance_id": instanceID}
 
-		if vars["dimension"] != "" {
-			auditParams["dimension"] = vars["dimension"]
-		}
-
-		if err := d.checkState(instanceID, logData, auditParams); err != nil {
+		if err := d.checkState(instanceID); err != nil {
 			log.Event(ctx, "errored whilst checking instance state", log.ERROR, log.Error(err), logData)
-			if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
-				handleInstanceErr(ctx, errs.ErrAuditActionAttemptedFailure, w, logData)
-				return
-			}
-
 			handleInstanceErr(ctx, err, w, logData)
 			return
 		}
@@ -528,12 +460,11 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 	})
 }
 
-func (d *PublishCheck) checkState(instanceID string, logData log.Data, auditParams common.Params) error {
+func (d *PublishCheck) checkState(instanceID string) error {
 	instance, err := d.Datastore.GetInstance(instanceID)
 	if err != nil {
 		return err
 	}
-	auditParams["instance_state"] = instance.State
 
 	if instance.State == models.PublishedState {
 		return errs.ErrResourcePublished

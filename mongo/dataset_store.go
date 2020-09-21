@@ -7,12 +7,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
-
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-healthcheck/healthcheck"
+	dpmongo "github.com/ONSdigital/dp-mongodb"
+	dpMongoHealth "github.com/ONSdigital/dp-mongodb/health"
 	"github.com/ONSdigital/log.go/log"
+	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 )
 
 // Mongo represents a simplistic MongoDB configuration.
@@ -25,25 +27,47 @@ type Mongo struct {
 	URI            string
 	lastPingTime   time.Time
 	lastPingResult error
+	healthClient   *dpMongoHealth.CheckMongoClient
 }
 
 const (
 	editionsCollection = "editions"
 )
 
-// Init creates a new mgo.Session with a strong consistency and a write mode of "majortiy".
-func (m *Mongo) Init() (session *mgo.Session, err error) {
-	if session != nil {
-		return nil, errors.New("session already exists")
+// Init creates a new mgo.Session with a strong consistency and a write mode of "majortiy"; and initialises the mongo health client.
+func (m *Mongo) Init() (err error) {
+	if m.Session != nil {
+		return errors.New("session already exists")
 	}
 
-	if session, err = mgo.Dial(m.URI); err != nil {
-		return nil, err
+	// Create session
+	if m.Session, err = mgo.Dial(m.URI); err != nil {
+		return err
+	}
+	m.Session.EnsureSafe(&mgo.Safe{WMode: "majority"})
+	m.Session.SetMode(mgo.Strong, true)
+
+	// Create client and healthclient from session
+	client := dpMongoHealth.NewClient(m.Session)
+	m.healthClient = &dpMongoHealth.CheckMongoClient{
+		Client:      *client,
+		Healthcheck: client.Healthcheck,
 	}
 
-	session.EnsureSafe(&mgo.Safe{WMode: "majority"})
-	session.SetMode(mgo.Strong, true)
-	return session, nil
+	return nil
+}
+
+// Close represents mongo session closing within the context deadline
+func (m *Mongo) Close(ctx context.Context) error {
+	if m.Session == nil {
+		return errors.New("cannot close a mongoDB connection without a valid session")
+	}
+	return dpmongo.Close(ctx, m.Session)
+}
+
+// Checker is called by the healthcheck library to check the health state of this mongoDB instance
+func (m *Mongo) Checker(ctx context.Context, state *healthcheck.CheckState) error {
+	return m.healthClient.Checker(ctx, state)
 }
 
 // GetDatasets retrieves all dataset documents

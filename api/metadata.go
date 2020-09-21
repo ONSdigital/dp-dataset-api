@@ -6,8 +6,6 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -19,13 +17,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	version := vars["version"]
-	auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": version}
-	logData := audit.ToLogData(auditParams)
-
-	if auditErr := api.auditor.Record(ctx, getMetadataAction, audit.Attempted, auditParams); auditErr != nil {
-		handleMetadataErr(w, auditErr)
-		return
-	}
+	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	b, err := func() ([]byte, error) {
 
@@ -95,15 +87,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Event(ctx, "received error", log.ERROR, log.Error(err), logData)
-		if auditErr := api.auditor.Record(ctx, getMetadataAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			err = auditErr
-		}
 		handleMetadataErr(w, err)
-		return
-	}
-
-	if auditErr := api.auditor.Record(ctx, getMetadataAction, audit.Successful, auditParams); auditErr != nil {
-		handleMetadataErr(w, auditErr)
 		return
 	}
 

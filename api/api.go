@@ -14,44 +14,16 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
-	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/handlers/collectionID"
-	"github.com/ONSdigital/go-ns/identity"
-	"github.com/ONSdigital/go-ns/server"
+	dphandlers "github.com/ONSdigital/dp-net/handlers"
+	dprequest "github.com/ONSdigital/dp-net/request"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
-	"github.com/justinas/alice"
 )
-
-var httpServer *server.Server
 
 const (
 	downloadServiceToken = "X-Download-Service-Token"
-
-	// audit actions
-	addDatasetAction    = "addDataset"
-	deleteDatasetAction = "deleteDataset"
-	getDatasetsAction   = "getDatasets"
-	getDatasetAction    = "getDataset"
-
-	getEditionsAction = "getEditions"
-	getEditionAction  = "getEdition"
-
-	getVersionsAction      = "getVersions"
-	getVersionAction       = "getVersion"
-	updateDatasetAction    = "updateDataset"
-	updateVersionAction    = "updateVersion"
-	associateVersionAction = "associateVersionAction"
-	publishVersionAction   = "publishVersion"
-	detachVersionAction    = "detachVersion"
-
-	getDimensionsAction       = "getDimensions"
-	getDimensionOptionsAction = "getDimensionOptionsAction"
-	getMetadataAction         = "getMetadata"
-
-	hasDownloads = "has_downloads"
+	updateVersionAction  = "updateVersion"
+	hasDownloads         = "has_downloads"
 )
 
 var (
@@ -73,9 +45,6 @@ type DownloadsGenerator interface {
 	Generate(ctx context.Context, datasetID, instanceID, edition, version string) error
 }
 
-// Auditor is an alias for the auditor service
-type Auditor audit.AuditorService
-
 // AuthHandler provides authorisation checks on requests
 type AuthHandler interface {
 	Require(required auth.Permissions, handler http.HandlerFunc) http.HandlerFunc
@@ -83,17 +52,13 @@ type AuthHandler interface {
 
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
+	Router                    *mux.Router
 	dataStore                 store.DataStore
+	urlBuilder                *url.Builder
 	host                      string
-	zebedeeURL                string
-	internalToken             string
 	downloadServiceToken      string
 	EnablePrePublishView      bool
-	Router                    *mux.Router
-	urlBuilder                *url.Builder
 	downloadGenerator         DownloadsGenerator
-	serviceAuthToken          string
-	auditor                   Auditor
 	enablePrivateEndpoints    bool
 	enableDetachDataset       bool
 	enableObservationEndpoint bool
@@ -103,67 +68,17 @@ type DatasetAPI struct {
 	versionPublishedChecker   *PublishCheck
 }
 
-// CreateAndInitialiseDatasetAPI create a new DatasetAPI instance based on the configuration provided, apply middleware and starts the HTTP server.
-func CreateAndInitialiseDatasetAPI(ctx context.Context, cfg config.Configuration, hc *healthcheck.HealthCheck, dataStore store.DataStore, urlBuilder *url.Builder, errorChan chan error, downloadGenerator DownloadsGenerator, auditor Auditor, datasetPermissions AuthHandler, permissions AuthHandler) {
-	router := mux.NewRouter()
-	api := NewDatasetAPI(ctx, cfg, router, dataStore, urlBuilder, downloadGenerator, auditor, datasetPermissions, permissions)
+// Setup creates a new Dataset API instance and register the API routes based on the application configuration.
+func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
 
-	healthcheckHandler := newMiddleware(hc.Handler, "/health")
-	middleware := alice.New(healthcheckHandler)
-
-	// TODO can be removed once upstream services start calling the new health endpoint
-	oldHealthcheckHandler := newMiddleware(hc.Handler, "/healthcheck")
-	middleware = middleware.Append(oldHealthcheckHandler)
-
-	// Only add the identity middleware when running in publishing.
-	if cfg.EnablePrivateEndpoints {
-		middleware = middleware.Append(identity.Handler(cfg.ZebedeeURL))
-	}
-
-	middleware = middleware.Append(collectionID.CheckHeader)
-
-	httpServer = server.New(cfg.BindAddr, middleware.Then(api.Router))
-
-	// Disable this here to allow main to manage graceful shutdown of the entire app.
-	httpServer.HandleOSSignals = false
-
-	go func() {
-		log.Event(ctx, "Starting api...", log.INFO)
-		if err := httpServer.ListenAndServe(); err != nil {
-			log.Event(ctx, "api http server returned error", log.ERROR, log.Error(err))
-			errorChan <- err
-		}
-	}()
-}
-
-// newMiddleware creates a new http.Handler to intercept /health requests.
-func newMiddleware(healthcheckHandler func(http.ResponseWriter, *http.Request), path string) func(http.Handler) http.Handler {
-	return func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-
-			if req.Method == "GET" && req.URL.Path == path {
-				healthcheckHandler(w, req)
-				return
-			}
-
-			h.ServeHTTP(w, req)
-		})
-	}
-}
-
-// NewDatasetAPI create a new Dataset API instance and register the API routes based on the application configuration.
-func NewDatasetAPI(ctx context.Context, cfg config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, auditor Auditor, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
 	api := &DatasetAPI{
 		dataStore:                 dataStore,
 		host:                      cfg.DatasetAPIURL,
-		zebedeeURL:                cfg.ZebedeeURL,
-		serviceAuthToken:          cfg.ServiceAuthToken,
 		downloadServiceToken:      cfg.DownloadServiceSecretKey,
 		EnablePrePublishView:      cfg.EnablePrivateEndpoints,
 		Router:                    router,
 		urlBuilder:                urlBuilder,
 		downloadGenerator:         downloadGenerator,
-		auditor:                   auditor,
 		enablePrivateEndpoints:    cfg.EnablePrivateEndpoints,
 		enableDetachDataset:       cfg.EnableDetachDataset,
 		enableObservationEndpoint: cfg.EnableObservationEndpoint,
@@ -177,25 +92,21 @@ func NewDatasetAPI(ctx context.Context, cfg config.Configuration, router *mux.Ro
 		log.Event(ctx, "enabling private endpoints for dataset api", log.INFO)
 
 		api.versionPublishedChecker = &PublishCheck{
-			Auditor:   auditor,
 			Datastore: api.dataStore.Backend,
 		}
 
 		api.instancePublishedChecker = &instance.PublishCheck{
-			Auditor:   api.auditor,
 			Datastore: api.dataStore.Backend,
 		}
 
 		instanceAPI := &instance.Store{
 			Host:                api.host,
 			Storer:              api.dataStore.Backend,
-			Auditor:             api.auditor,
 			EnableDetachDataset: api.enableDetachDataset,
 		}
 
 		dimensionAPI := &dimension.Store{
-			Auditor: api.auditor,
-			Storer:  api.dataStore.Backend,
+			Storer: api.dataStore.Backend,
 		}
 
 		api.enablePrivateDatasetEndpoints(ctx)
@@ -292,28 +203,28 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context) {
 
 	api.post(
 		"/datasets/{dataset_id}",
-		api.isAuthenticated(addDatasetAction,
+		api.isAuthenticated(
 			api.isAuthorisedForDatasets(createPermission,
 				api.addDataset)),
 	)
 
 	api.put(
 		"/datasets/{dataset_id}",
-		api.isAuthenticated(updateDatasetAction,
+		api.isAuthenticated(
 			api.isAuthorisedForDatasets(updatePermission,
 				api.putDataset)),
 	)
 
 	api.delete(
 		"/datasets/{dataset_id}",
-		api.isAuthenticated(deleteDatasetAction,
+		api.isAuthenticated(
 			api.isAuthorisedForDatasets(deletePermission,
 				api.deleteDataset)),
 	)
 
 	api.put(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
-		api.isAuthenticated(updateVersionAction,
+		api.isAuthenticated(
 			api.isAuthorisedForDatasets(updatePermission,
 				api.isVersionPublished(updateVersionAction,
 					api.putVersion))),
@@ -322,7 +233,7 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context) {
 	if api.enableDetachDataset {
 		api.delete(
 			"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
-			api.isAuthenticated(detachVersionAction,
+			api.isAuthenticated(
 				api.isAuthorisedForDatasets(deletePermission,
 					api.detachVersion)),
 		)
@@ -334,62 +245,58 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context) {
 func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI *instance.Store) {
 	api.get(
 		"/instances",
-		api.isAuthenticated(instance.GetInstancesAction,
+		api.isAuthenticated(
 			api.isAuthorised(readPermission,
 				instanceAPI.GetList)),
 	)
 
 	api.post(
 		"/instances",
-		api.isAuthenticated(instance.AddInstanceAction,
+		api.isAuthenticated(
 			api.isAuthorised(createPermission,
 				instanceAPI.Add)),
 	)
 
 	api.get(
 		"/instances/{instance_id}",
-		api.isAuthenticated(instance.GetInstanceAction,
+		api.isAuthenticated(
 			api.isAuthorised(readPermission,
 				instanceAPI.Get)),
 	)
 
 	api.put(
 		"/instances/{instance_id}",
-		api.isAuthenticated(instance.UpdateInstanceAction,
+		api.isAuthenticated(
 			api.isAuthorised(updatePermission,
-				api.isInstancePublished(instance.UpdateInstanceAction,
-					instanceAPI.Update))),
+				api.isInstancePublished(instanceAPI.Update))),
 	)
 
 	api.put(
 		"/instances/{instance_id}/dimensions/{dimension}",
-		api.isAuthenticated(instance.UpdateDimensionAction,
+		api.isAuthenticated(
 			api.isAuthorised(updatePermission,
-				api.isInstancePublished(instance.UpdateDimensionAction,
-					instanceAPI.UpdateDimension))),
+				api.isInstancePublished(instanceAPI.UpdateDimension))),
 	)
 
 	api.post(
 		"/instances/{instance_id}/events",
-		api.isAuthenticated(instance.AddInstanceEventAction,
+		api.isAuthenticated(
 			api.isAuthorised(createPermission,
 				instanceAPI.AddEvent)),
 	)
 
 	api.put(
 		"/instances/{instance_id}/inserted_observations/{inserted_observations}",
-		api.isAuthenticated(instance.UpdateInsertedObservationsAction,
+		api.isAuthenticated(
 			api.isAuthorised(updatePermission,
-				api.isInstancePublished(instance.UpdateInsertedObservationsAction,
-					instanceAPI.UpdateObservations))),
+				api.isInstancePublished(instanceAPI.UpdateObservations))),
 	)
 
 	api.put(
 		"/instances/{instance_id}/import_tasks",
-		api.isAuthenticated(instance.UpdateImportTasksAction,
+		api.isAuthenticated(
 			api.isAuthorised(updatePermission,
-				api.isInstancePublished(instance.UpdateImportTasksAction,
-					instanceAPI.UpdateImportTask))),
+				api.isInstancePublished(instanceAPI.UpdateImportTask))),
 	)
 }
 
@@ -398,40 +305,38 @@ func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI *instance.Sto
 func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.Store) {
 	api.get(
 		"/instances/{instance_id}/dimensions",
-		api.isAuthenticated(dimension.GetDimensions,
+		api.isAuthenticated(
 			api.isAuthorised(readPermission,
 				dimensionAPI.GetDimensionsHandler)),
 	)
 
 	api.post(
 		"/instances/{instance_id}/dimensions",
-		api.isAuthenticated(dimension.AddDimensionAction,
+		api.isAuthenticated(
 			api.isAuthorised(createPermission,
-				api.isInstancePublished(dimension.AddDimensionAction,
-					dimensionAPI.AddHandler))),
+				api.isInstancePublished(dimensionAPI.AddHandler))),
 	)
 
 	api.get(
 		"/instances/{instance_id}/dimensions/{dimension}/options",
-		api.isAuthenticated(dimension.GetUniqueDimensionAndOptionsAction,
+		api.isAuthenticated(
 			api.isAuthorised(readPermission,
 				dimensionAPI.GetUniqueDimensionAndOptionsHandler)),
 	)
 
 	api.put(
 		"/instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}",
-		api.isAuthenticated(dimension.UpdateNodeIDAction,
+		api.isAuthenticated(
 			api.isAuthorised(updatePermission,
-				api.isInstancePublished(dimension.UpdateNodeIDAction,
-					dimensionAPI.AddNodeIDHandler))),
+				api.isInstancePublished(dimensionAPI.AddNodeIDHandler))),
 	)
 }
 
 // isAuthenticated wraps a http handler func in another http handler func that checks the caller is authenticated to
-// perform the requested action action. action is the audit event name, handler is the http.HandlerFunc to wrap in an
-// authentication check. The wrapped handler is only called is the caller is authenticated
-func (api *DatasetAPI) isAuthenticated(action string, handler http.HandlerFunc) http.HandlerFunc {
-	return identity.Check(api.auditor, action, handler)
+// perform the requested action. handler is the http.HandlerFunc to wrap in an
+// authentication check. The wrapped handler is only called if the caller is authenticated
+func (api *DatasetAPI) isAuthenticated(handler http.HandlerFunc) http.HandlerFunc {
+	return dphandlers.CheckIdentity(handler)
 }
 
 // isAuthorised wraps a http.HandlerFunc another http.HandlerFunc that checks the caller is authorised to perform the
@@ -451,8 +356,8 @@ func (api *DatasetAPI) isAuthorisedForDatasets(required auth.Permissions, handle
 
 // isInstancePublished wraps a http.HandlerFunc checking the instance state. The wrapped handler is only invoked if the
 // requested instance is not in a published state.
-func (api *DatasetAPI) isInstancePublished(action string, handler http.HandlerFunc) http.HandlerFunc {
-	return api.instancePublishedChecker.Check(handler, action)
+func (api *DatasetAPI) isInstancePublished(handler http.HandlerFunc) http.HandlerFunc {
+	return api.instancePublishedChecker.Check(handler)
 }
 
 // isInstancePublished wraps a http.HandlerFunc checking the version state. The wrapped handler is only invoked if the
@@ -487,13 +392,13 @@ func (api *DatasetAPI) authenticate(r *http.Request, logData log.Data) bool {
 	if api.EnablePrePublishView {
 		var hasCallerIdentity, hasUserIdentity bool
 
-		callerIdentity := common.Caller(r.Context())
+		callerIdentity := dprequest.Caller(r.Context())
 		if callerIdentity != "" {
 			logData["caller_identity"] = callerIdentity
 			hasCallerIdentity = true
 		}
 
-		userIdentity := common.User(r.Context())
+		userIdentity := dprequest.User(r.Context())
 		if userIdentity != "" {
 			logData["user_identity"] = userIdentity
 			hasUserIdentity = true
@@ -511,13 +416,4 @@ func (api *DatasetAPI) authenticate(r *http.Request, logData log.Data) bool {
 
 func setJSONContentType(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
-}
-
-// Close represents the graceful shutting down of the http server
-func Close(ctx context.Context) error {
-	if err := httpServer.Shutdown(ctx); err != nil {
-		return err
-	}
-	log.Event(ctx, "graceful shutdown of http server complete", log.INFO)
-	return nil
 }

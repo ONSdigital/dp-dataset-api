@@ -9,9 +9,13 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/go-ns/audit"
+	dprequest "github.com/ONSdigital/dp-net/request"
 	"github.com/ONSdigital/log.go/log"
-	"github.com/pkg/errors"
+)
+
+const (
+	reqUser   = "req_user"
+	reqCaller = "req_caller"
 )
 
 func unmarshalDimensionCache(reader io.Reader) (*models.CachedDimensionOption, error) {
@@ -40,7 +44,6 @@ func handleDimensionErr(ctx context.Context, w http.ResponseWriter, err error, d
 	}
 
 	var status int
-	resource := err
 	switch {
 	case errs.NotFoundMap[err]:
 		status = http.StatusNotFound
@@ -48,10 +51,20 @@ func handleDimensionErr(ctx context.Context, w http.ResponseWriter, err error, d
 		status = http.StatusBadRequest
 	default:
 		status = http.StatusInternalServerError
-		resource = errs.ErrInternalServer
+		err = errs.ErrInternalServer
 	}
 
 	data["response_status"] = status
-	audit.LogError(ctx, errors.WithMessage(err, "request unsuccessful"), data)
-	http.Error(w, resource.Error(), status)
+	logError(ctx, err, data)
+	http.Error(w, err.Error(), status)
+}
+
+func logError(ctx context.Context, err error, data log.Data) {
+	if user := dprequest.User(ctx); user != "" {
+		data[reqUser] = user
+	}
+	if caller := dprequest.Caller(ctx); caller != "" {
+		data[reqCaller] = caller
+	}
+	log.Event(ctx, "unsuccessful request", log.ERROR, log.Error(err), data)
 }
