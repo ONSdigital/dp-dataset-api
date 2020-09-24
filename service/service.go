@@ -162,7 +162,6 @@ func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (a
 	}
 
 	log.Event(ctx, "feature flag enabled", log.INFO, log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
-	auth.LoggerNamespace("dp-dataset-api-auth")
 
 	authClient := auth.NewPermissionsClient(dphttp.NewClient())
 	authVerifier := auth.DefaultPermissionsVerifier()
