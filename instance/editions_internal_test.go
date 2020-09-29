@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"context"
+
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	"github.com/ONSdigital/go-ns/audit/auditortest"
+	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -28,9 +28,8 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 
 		host := "example.com"
 		s := Store{
-			Storer:  mockedDataStore,
-			Host:    host,
-			Auditor: auditortest.New(),
+			Storer: mockedDataStore,
+			Host:   host,
 		}
 
 		Convey("when confirmEdition is called", func() {
@@ -100,7 +99,6 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 				EnableDetachDataset: true,
 				Storer:              mockedDataStore,
 				Host:                host,
-				Auditor:             auditortest.New(),
 			}
 
 			Convey("when confirmEdition is called again", func() {
@@ -165,9 +163,8 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 
 		host := "example.com"
 		s := Store{
-			Storer:  mockedDataStore,
-			Host:    host,
-			Auditor: auditortest.New(),
+			Storer: mockedDataStore,
+			Host:   host,
 		}
 		Convey("when confirmEdition is called", func() {
 			datasetID := "1234"
@@ -204,9 +201,8 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 
 		host := "example.com"
 		s := Store{
-			Storer:  mockedDataStore,
-			Host:    host,
-			Auditor: auditortest.New(),
+			Storer: mockedDataStore,
+			Host:   host,
 		}
 		Convey("when confirmEdition is called", func() {
 			datasetID := "1234"
@@ -245,9 +241,80 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 
 		host := "example.com"
 		s := Store{
-			Storer:  mockedDataStore,
-			Host:    host,
-			Auditor: auditortest.New(),
+			Storer: mockedDataStore,
+			Host:   host,
+		}
+
+		Convey("when confirmEdition is called", func() {
+			datasetID := "1234"
+			editionName := "failure"
+			instanceID := "new-instance-1234"
+
+			_, err := s.confirmEdition(ctx, datasetID, editionName, instanceID)
+
+			Convey("then updating links fails and an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err, ShouldResemble, models.ErrEditionLinksInvalid)
+			})
+		})
+	})
+
+	Convey("given an edition exists with nil current doc", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			GetEditionFunc: func(dataset, edition, state string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{
+					ID: "test",
+					Next: &models.Edition{
+						Links: &models.EditionUpdateLinks{
+							LatestVersion: &models.LinkObject{
+								ID: ""},
+						},
+					},
+				}, nil
+			},
+		}
+
+		host := "example.com"
+		s := Store{
+			Storer:              mockedDataStore,
+			Host:                host,
+			EnableDetachDataset: true,
+		}
+
+		Convey("when confirmEdition is called", func() {
+			datasetID := "1234"
+			editionName := "failure"
+			instanceID := "new-instance-1234"
+
+			_, err := s.confirmEdition(ctx, datasetID, editionName, instanceID)
+
+			Convey("then updating links fails and an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err, ShouldResemble, models.ErrEditionLinksInvalid)
+			})
+		})
+	})
+
+	Convey("given an edition exists with nil next doc", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			GetEditionFunc: func(dataset, edition, state string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{
+					ID: "test",
+					Current: &models.Edition{
+						Links: &models.EditionUpdateLinks{
+							LatestVersion: &models.LinkObject{
+								ID: ""},
+						},
+					},
+				}, nil
+			},
+		}
+
+		host := "example.com"
+		s := Store{
+			Storer:              mockedDataStore,
+			Host:                host,
+			EnableDetachDataset: true,
 		}
 
 		Convey("when confirmEdition is called", func() {
@@ -312,9 +379,8 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 
 		host := "example.com"
 		s := Store{
-			Storer:  mockedDataStore,
-			Host:    host,
-			Auditor: auditortest.New(),
+			Storer: mockedDataStore,
+			Host:   host,
 		}
 
 		Convey("when confirmEdition is called and updating the datastore for the edition fails", func() {

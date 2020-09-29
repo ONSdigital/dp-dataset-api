@@ -6,8 +6,6 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 )
@@ -17,12 +15,6 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	logData := log.Data{"dataset_id": datasetID}
-	auditParams := common.Params{"dataset_id": datasetID}
-
-	if auditErr := api.auditor.Record(r.Context(), getEditionsAction, audit.Attempted, auditParams); auditErr != nil {
-		http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
-		return
-	}
 
 	b, err := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
@@ -75,20 +67,11 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		if auditErr := api.auditor.Record(ctx, getEditionsAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			err = auditErr
-		}
-
 		if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 		}
-		return
-	}
-
-	if auditErr := api.auditor.Record(r.Context(), getEditionsAction, audit.Successful, auditParams); auditErr != nil {
-		http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -106,13 +89,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
-	auditParams := common.Params{"dataset_id": datasetID, "edition": edition}
-	logData := audit.ToLogData(auditParams)
-
-	if auditErr := api.auditor.Record(r.Context(), getEditionAction, audit.Attempted, auditParams); auditErr != nil {
-		http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
-		return
-	}
+	logData := log.Data{"dataset_id": datasetID, "edition": edition}
 
 	b, err := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
@@ -157,20 +134,11 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		if auditErr := api.auditor.Record(ctx, getEditionAction, audit.Unsuccessful, auditParams); auditErr != nil {
-			err = auditErr
-		}
-
 		if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 		}
-		return
-	}
-
-	if auditErr := api.auditor.Record(ctx, getEditionAction, audit.Successful, auditParams); auditErr != nil {
-		http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 		return
 	}
 

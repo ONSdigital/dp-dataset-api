@@ -9,9 +9,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/ONSdigital/go-ns/audit"
-	"github.com/ONSdigital/go-ns/common"
-	"github.com/ONSdigital/go-ns/request"
+	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -20,7 +18,6 @@ import (
 // PublishCheck Checks if an version has been published
 type PublishCheck struct {
 	Datastore store.Storer
-	Auditor   audit.AuditorService
 }
 
 // Check wraps a HTTP handle. Checks that the state is not published
@@ -33,18 +30,12 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 		edition := vars["edition"]
 		version := vars["version"]
 		data := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
-		auditParams := common.Params{"dataset_id": datasetID, "edition": edition, "version": version}
 
 		currentVersion, err := d.Datastore.GetVersion(datasetID, edition, version, "")
 		if err != nil {
 			if err != errs.ErrVersionNotFound {
 				log.Event(ctx, "errored whilst retrieving version resource", log.ERROR, log.Error(err), data)
-
-				if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
-					err = errs.ErrInternalServer
-				}
-
-				request.DrainBody(r)
+				dphttp.DrainBody(r)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -67,14 +58,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 					versionDoc, err := models.CreateVersion(r.Body)
 					if err != nil {
 						log.Event(ctx, "failed to model version resource based on request", log.ERROR, log.Error(err), data)
-
-						if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
-							request.DrainBody(r)
-							http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
-							return
-						}
-
-						request.DrainBody(r)
+						dphttp.DrainBody(r)
 						http.Error(w, err.Error(), http.StatusBadRequest)
 						return
 					}
@@ -110,14 +94,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 							b, err = json.Marshal(newVersion)
 							if err != nil {
 								log.Event(ctx, "failed to marshal new version resource based on request", log.ERROR, log.Error(err), data)
-
-								if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
-									request.DrainBody(r)
-									http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
-									return
-								}
-
-								request.DrainBody(r)
+								dphttp.DrainBody(r)
 								http.Error(w, err.Error(), http.StatusForbidden)
 								return
 							}
@@ -139,13 +116,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 				err = errors.New("unable to update version as it has been published")
 				data["version"] = currentVersion
 				log.Event(ctx, "failed to update version", log.ERROR, log.Error(err), data)
-				if auditErr := d.Auditor.Record(ctx, action, audit.Unsuccessful, auditParams); auditErr != nil {
-					request.DrainBody(r)
-					http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
-					return
-				}
-
-				request.DrainBody(r)
+				dphttp.DrainBody(r)
 				http.Error(w, err.Error(), http.StatusForbidden)
 				return
 			}

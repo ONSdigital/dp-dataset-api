@@ -86,15 +86,4 @@ func TestHandleDimensionErr(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, dimensionError.Error())
 	})
-
-	Convey("Correctly handle failure to audit", t, func() {
-		w := httptest.NewRecorder()
-		dimensionError := errs.ErrAuditActionAttemptedFailure
-		logData := log.Data{"test": "audit failure"}
-
-		handleDimensionErr(ctx, w, dimensionError, logData)
-
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-	})
 }

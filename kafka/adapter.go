@@ -3,13 +3,13 @@ package kafka
 import kafka "github.com/ONSdigital/dp-kafka"
 
 // NewProducerAdapter creates a new kafka producer with access to Output function
-func NewProducerAdapter(producer *kafka.Producer) *Producer {
+func NewProducerAdapter(producer kafka.IProducer) *Producer {
 	return &Producer{kafkaProducer: producer}
 }
 
 // Producer exposes an output function, to satisfy the interface used by go-ns libraries
 type Producer struct {
-	kafkaProducer *kafka.Producer
+	kafkaProducer kafka.IProducer
 }
 
 // Output returns the output channel
