@@ -3,13 +3,13 @@ module github.com/ONSdigital/dp-dataset-api
 go 1.13
 
 require (
-	github.com/ONSdigital/dp-api-clients-go v1.28.0
+	github.com/ONSdigital/dp-api-clients-go v1.30.0
 	github.com/ONSdigital/dp-authorisation v0.1.0
-	github.com/ONSdigital/dp-graph/v2 v2.2.0
+	github.com/ONSdigital/dp-graph/v2 v2.2.2
 	github.com/ONSdigital/dp-healthcheck v1.0.5
 	github.com/ONSdigital/dp-kafka v1.1.7
 	github.com/ONSdigital/dp-mongodb v1.4.0
-	github.com/ONSdigital/dp-net v1.0.8
+	github.com/ONSdigital/dp-net v1.0.9
 	github.com/ONSdigital/go-ns v0.0.0-20200205115900-a11716f93bad
 	github.com/ONSdigital/log.go v1.0.1
 	github.com/frankban/quicktest v1.9.0 // indirect
