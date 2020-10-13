@@ -27,6 +27,8 @@ build:
 .PHONY: debug
 debug:
 	HUMAN_LOG=1 go run -race $(LDFLAGS) main.go
+
+.PHONY: acceptance-publishing
 acceptance-publishing: build
 	ENABLE_PRIVATE_ENDPOINTS=true MONGODB_DATABASE=test HUMAN_LOG=1 go run -race $(LDFLAGS) main.go
 
