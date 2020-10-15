@@ -159,17 +159,17 @@ func TestValidateDataset(t *testing.T) {
 		Convey("when dataset.URI does not contain 'datasets' path", func() {
 			dataset := createDataset()
 			dataset.URI = "/123"
-			valid := ValidateDataset(testContext, &dataset)
-			So(valid, ShouldNotBeNil)
-			So(valid.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
+			validationErr := ValidateDataset(testContext, &dataset)
+			So(validationErr, ShouldNotBeNil)
+			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
 		})
 
 		Convey("when dataset.URI does not contain 'id' path", func() {
 			dataset := createDataset()
 			dataset.URI = "http://localhost:22000/datasets"
-			valid := ValidateDataset(testContext, &dataset)
-			So(valid, ShouldNotBeNil)
-			So(valid.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
+			validationErr := ValidateDataset(testContext, &dataset)
+			So(validationErr, ShouldNotBeNil)
+			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
 		})
 
 	})
@@ -180,8 +180,8 @@ func TestValidateDataset(t *testing.T) {
 			dataset := createDataset()
 			dataset.ID = "123"
 			dataset.URI = "http://localhost:22000/datasets/123/breadcrumbs"
-			valid := ValidateDataset(testContext, &dataset)
-			So(valid, ShouldBeNil)
+			validationErr := ValidateDataset(testContext, &dataset)
+			So(validationErr, ShouldBeNil)
 		})
 	})
 
@@ -191,8 +191,9 @@ func TestValidateDataset(t *testing.T) {
 			dataset := createDataset()
 			dataset.ID = "123"
 			dataset.URI = "  http://localhost:22000/datasets/123/breadcrumbs  "
-			valid := ValidateDataset(testContext, &dataset)
-			So(valid, ShouldBeNil)
+			validationErr := ValidateDataset(testContext, &dataset)
+			So(validationErr, ShouldBeNil)
+			So(dataset.URI, ShouldEqual, "http://localhost:22000/datasets/123/breadcrumbs")
 		})
 	})
 
