@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -395,6 +397,27 @@ func (ed *EditionUpdate) PublishLinks(ctx context.Context, host string, versionL
 	}
 
 	ed.Next.Links.LatestVersion = versionLink
+	return nil
+}
+
+func ValidateDataset(ctx context.Context, dataset *Dataset) error {
+	var invalidFields []string
+	if dataset.URI != "" {
+		dataset.URI = strings.TrimSpace(dataset.URI)
+		datasetURI, err := url.Parse(dataset.URI)
+		if err != nil {
+			invalidFields = append(invalidFields, "URI")
+			log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
+		} else {
+			if !strings.Contains(datasetURI.Path, "/datasets") || !strings.Contains(datasetURI.Path, dataset.ID) {
+				fmt.Println("hello")
+				invalidFields = append(invalidFields, "URI")
+			}
+		}
+	}
+	if invalidFields != nil {
+		return fmt.Errorf("invalid fields: %v", invalidFields)
+	}
 	return nil
 }
 

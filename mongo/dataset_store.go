@@ -441,6 +441,11 @@ func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Da
 		updates["next.uri"] = dataset.URI
 	}
 
+	if err := models.ValidateDataset(ctx, dataset); err != nil {
+		log.Event(ctx, "failed validation check to create dataset", log.ERROR, log.Error(err))
+		return nil
+	}
+
 	log.Event(ctx, "built update query for dataset resource", log.INFO, log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
 
 	return updates

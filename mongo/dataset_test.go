@@ -197,7 +197,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			"next.release_frequency":        "yearly",
 			"next.theme":                    "construction",
 			"next.title":                    "CPI",
-			"next.uri":                      "http://ons.gov.uk/dataset/123/landing-page",
+			"next.uri":                      "http://ons.gov.uk/datasets/123/landing-page",
 		}
 
 		dataset := &models.Dataset{
@@ -225,7 +225,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			ReleaseFrequency: "yearly",
 			Theme:            "construction",
 			Title:            "CPI",
-			URI:              "http://ons.gov.uk/dataset/123/landing-page",
+			URI:              "http://ons.gov.uk/datasets/123/landing-page",
 		}
 
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
