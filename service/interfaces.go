@@ -13,13 +13,14 @@ import (
 //go:generate moq -out mock/initialiser.go -pkg mock . Initialiser
 //go:generate moq -out mock/server.go -pkg mock . HTTPServer
 //go:generate moq -out mock/healthcheck.go -pkg mock . HealthChecker
+//go:generate moq -out mock/closer.go -pkg mock . Closer
 
 // Initialiser defines the methods to initialise external services
 type Initialiser interface {
 	DoGetHTTPServer(bindAddr string, router http.Handler) HTTPServer
 	DoGetHealthCheck(cfg *config.Configuration, buildTime, gitCommit, version string) (HealthChecker, error)
 	DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error)
-	DoGetGraphDB(ctx context.Context) (store.GraphDB, error)
+	DoGetGraphDB(ctx context.Context) (store.GraphDB, Closer, error)
 	DoGetMongoDB(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error)
 }
 
@@ -35,4 +36,9 @@ type HealthChecker interface {
 	Start(ctx context.Context)
 	Stop()
 	AddCheck(name string, checker healthcheck.Checker) (err error)
+}
+
+// Closer defines the required methods for a closable resource
+type Closer interface {
+	Close(ctx context.Context) error
 }

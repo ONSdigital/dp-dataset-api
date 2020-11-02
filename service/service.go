@@ -36,6 +36,7 @@ type Service struct {
 	config                    *config.Configuration
 	serviceList               *ExternalServiceList
 	graphDB                   store.GraphDB
+	graphDBErrorConsumer      Closer
 	mongoDB                   store.MongoDB
 	generateDownloadsProducer kafka.IProducer
 	identityClient            *clientsidentity.Client
@@ -78,6 +79,11 @@ func (svc *Service) SetGraphDB(graphDB store.GraphDB) {
 	svc.graphDB = graphDB
 }
 
+// SetGraphDBErrorConsumer sets the graphDB error consumer for a service
+func (svc *Service) SetGraphDBErrorConsumer(graphDBErrorConsumer Closer) {
+	svc.graphDBErrorConsumer = graphDBErrorConsumer
+}
+
 // Run the service
 func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version string, svcErrors chan error) (err error) {
 
@@ -95,7 +101,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 			"EnablePrivateEndpoints":    svc.config.EnablePrivateEndpoints,
 		})
 	} else {
-		svc.graphDB, err = svc.serviceList.GetGraphDB(ctx)
+		svc.graphDB, svc.graphDBErrorConsumer, err = svc.serviceList.GetGraphDB(ctx)
 		if err != nil {
 			log.Event(ctx, "failed to initialise graph driver", log.FATAL, log.Error(err))
 			return err
@@ -258,6 +264,11 @@ func (svc *Service) Close(ctx context.Context) error {
 		if svc.serviceList.Graph {
 			if err := svc.graphDB.Close(shutdownContext); err != nil {
 				log.Event(shutdownContext, "failed to close graph db", log.ERROR, log.Error(err))
+				hasShutdownError = true
+			}
+
+			if err := svc.graphDBErrorConsumer.Close(shutdownContext); err != nil {
+				log.Event(shutdownContext, "failed to close graph db error consumer", log.ERROR, log.Error(err))
 				hasShutdownError = true
 			}
 		}

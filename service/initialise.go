@@ -60,13 +60,13 @@ func (e *ExternalServiceList) GetProducer(ctx context.Context, cfg *config.Confi
 }
 
 // GetGraphDB returns a graphDB (only if observation and private endpoint are enabled)
-func (e *ExternalServiceList) GetGraphDB(ctx context.Context) (store.GraphDB, error) {
-	graphDB, err := e.Init.DoGetGraphDB(ctx)
+func (e *ExternalServiceList) GetGraphDB(ctx context.Context) (store.GraphDB, Closer, error) {
+	graphDB, graphDBErrorConsumer, err := e.Init.DoGetGraphDB(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	e.Graph = true
-	return graphDB, nil
+	return graphDB, graphDBErrorConsumer, nil
 }
 
 // GetMongoDB returns a mongodb health client and dataset mongo object
@@ -104,8 +104,15 @@ func (e *Init) DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration
 }
 
 // DoGetGraphDB creates a new GraphDB
-func (e *Init) DoGetGraphDB(ctx context.Context) (store.GraphDB, error) {
-	return graph.New(ctx, graph.Subsets{Observation: true, Instance: true})
+func (e *Init) DoGetGraphDB(ctx context.Context) (store.GraphDB, Closer, error) {
+	graphDB, err := graph.New(ctx, graph.Subsets{Observation: true, Instance: true})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	graphDBErrorConsumer := graph.NewLoggingErrorConsumer(ctx, graphDB.ErrorChan())
+
+	return graphDB, graphDBErrorConsumer, nil
 }
 
 // DoGetMongoDB returns a MongoDB

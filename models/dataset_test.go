@@ -13,6 +13,13 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func createDataset() Dataset {
+	return Dataset{
+		ID:  "123",
+		URI: "http://localhost:22000/datasets/123",
+	}
+}
+
 var testContext = context.Background()
 
 func TestCreateDataset(t *testing.T) {
@@ -133,6 +140,63 @@ func TestCreateVersion(t *testing.T) {
 		So(err, ShouldNotBeNil)
 		So(err, ShouldResemble, errs.ErrUnableToParseJSON)
 	})
+}
+
+func TestValidateDataset(t *testing.T) {
+	t.Parallel()
+
+	Convey("Unsuccessful validation (false) returned", t, func() {
+
+		Convey("when dataset.URI is unable to be parsed into url format", func() {
+			dataset := createDataset()
+			dataset.URI = ":foo"
+			fmt.Println(dataset.URI)
+			validationErr := ValidateDataset(testContext, &dataset)
+			So(validationErr, ShouldNotBeNil)
+			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
+		})
+
+		Convey("when dataset.URI does not contain 'datasets' path", func() {
+			dataset := createDataset()
+			dataset.URI = "/123"
+			validationErr := ValidateDataset(testContext, &dataset)
+			So(validationErr, ShouldNotBeNil)
+			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
+		})
+
+		Convey("when dataset.URI does not contain 'id' path", func() {
+			dataset := createDataset()
+			dataset.URI = "http://localhost:22000/datasets"
+			validationErr := ValidateDataset(testContext, &dataset)
+			So(validationErr, ShouldNotBeNil)
+			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
+		})
+
+	})
+
+	Convey("Successful validation (true) returned", t, func() {
+
+		Convey("when dataset.URI contains its path in appropriate url format ", func() {
+			dataset := createDataset()
+			dataset.ID = "123"
+			dataset.URI = "http://localhost:22000/datasets/123/breadcrumbs"
+			validationErr := ValidateDataset(testContext, &dataset)
+			So(validationErr, ShouldBeNil)
+		})
+	})
+
+	Convey("Successful validation (true) returned", t, func() {
+
+		Convey("when dataset.URI contains whitespace it should not return an error ", func() {
+			dataset := createDataset()
+			dataset.ID = "123"
+			dataset.URI = "  http://localhost:22000/datasets/123/breadcrumbs  "
+			validationErr := ValidateDataset(testContext, &dataset)
+			So(validationErr, ShouldBeNil)
+			So(dataset.URI, ShouldEqual, "http://localhost:22000/datasets/123/breadcrumbs")
+		})
+	})
+
 }
 
 func TestValidateVersion(t *testing.T) {
