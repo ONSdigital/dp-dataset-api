@@ -1052,6 +1052,15 @@ definitions:
       uri:
         description: "The uri to the location of this resource on the web"
         type: string
+      type:
+        description: "The type for a dataset" 
+        type: string
+        enum: [filterable, nomis]
+        example: "filterable"
+      nomis_ref_url:
+        description: "The NOMIS reference url for the dataset"
+        type: string
+        example: "https://www.nomisweb.co.uk/census/2011/ks106ew"
   Dimension:
     description: "A single dimension within a dataset"
     type: object
