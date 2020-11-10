@@ -60,6 +60,8 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.Title, ShouldEqual, "CensusEthnicity")
 			So(dataset.UnitOfMeasure, ShouldEqual, "Pounds Sterling")
 			So(dataset.URI, ShouldEqual, "http://localhost:22000/datasets/123/breadcrumbs")
+			So(dataset.Type, ShouldEqual, "filterable")
+			So(dataset.NomisReferenceURL, ShouldEqual, "")
 		})
 	})
 

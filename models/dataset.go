@@ -17,6 +17,32 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+// DatasetType defines possible dataset types
+type DatasetType int
+
+// possible dataset types
+const (
+	FILTERABLE DatasetType = iota
+	NOMIS
+)
+
+var datasetTypes = []string{"filterable", "nomis"}
+
+func (dt DatasetType) String() string {
+	return datasetTypes[dt]
+}
+
+func getDatasetType(datasetType string) DatasetType {
+	switch datasetType {
+	case "filterable":
+		return FILTERABLE
+	case "nomis":
+		return NOMIS
+	default:
+		return FILTERABLE
+	}
+}
+
 // List of error variables
 var (
 	ErrAssociatedVersionCollectionIDInvalid = errors.New("missing collection_id for association between version and a collection")
@@ -82,6 +108,8 @@ type Dataset struct {
 	Title             string           `bson:"title,omitempty"                  json:"title,omitempty"`
 	UnitOfMeasure     string           `bson:"unit_of_measure,omitempty"        json:"unit_of_measure,omitempty"`
 	URI               string           `bson:"uri,omitempty"                    json:"uri,omitempty"`
+	Type              string           `bson:"type,omitempty"                   json:"type,omitempty"`
+	NomisReferenceURL string           `bson:"nomis_reference_url,omitempty"    json:"nomis_reference_url,omitempty"`
 }
 
 // DatasetLinks represents a list of specific links related to the dataset resource
@@ -229,6 +257,7 @@ type VersionLinks struct {
 
 // CreateDataset manages the creation of a dataset from a reader
 func CreateDataset(reader io.Reader) (*Dataset, error) {
+
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errs.ErrUnableToReadMessage
@@ -240,6 +269,7 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 	if err != nil {
 		return nil, errs.ErrUnableToParseJSON
 	}
+	dataset.Type = getDatasetType(dataset.Type).String()
 	return &dataset, nil
 }
 
@@ -400,6 +430,7 @@ func (ed *EditionUpdate) PublishLinks(ctx context.Context, host string, versionL
 	return nil
 }
 
+// ValidateDataset checks the dataset has invalid fields
 func ValidateDataset(ctx context.Context, dataset *Dataset) error {
 	var invalidFields []string
 	if dataset.URI != "" {

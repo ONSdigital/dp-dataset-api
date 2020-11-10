@@ -194,7 +194,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 		dataset.Links.LatestVersion = nil
 
 		dataset.LastUpdated = time.Now()
-
+		
 		datasetDoc := &models.DatasetUpdate{
 			ID:   datasetID,
 			Next: dataset,
