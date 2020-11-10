@@ -22,6 +22,15 @@ func createDataset() Dataset {
 
 var testContext = context.Background()
 
+func TestGetDatasetType(t *testing.T) {
+	Convey("Given the dataset type to be nomis", t, func() {
+		Convey("Then the values should be set to the expected dataset type", func() {
+			result := getDatasetType("")
+			So(result, ShouldEqual, FILTERABLE)
+		})
+	})
+}
+
 func TestCreateDataset(t *testing.T) {
 	t.Parallel()
 
