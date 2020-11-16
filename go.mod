@@ -8,7 +8,7 @@ require (
 	github.com/ONSdigital/dp-graph/v2 v2.3.0
 	github.com/ONSdigital/dp-healthcheck v1.0.5
 	github.com/ONSdigital/dp-kafka v1.1.7
-	github.com/ONSdigital/dp-mongodb v1.4.0
+	github.com/ONSdigital/dp-mongodb v1.5.0
 	github.com/ONSdigital/dp-net v1.0.9
 	github.com/ONSdigital/go-ns v0.0.0-20200205115900-a11716f93bad
 	github.com/ONSdigital/log.go v1.0.1
