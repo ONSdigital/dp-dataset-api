@@ -12,7 +12,6 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
-// InstanceCollection name
 const instanceCollection = "instances"
 
 // GetInstances from a mongo collection

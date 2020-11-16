@@ -9,7 +9,6 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
-//DimensionOptions Collection name
 const dimensionOptions = "dimension.options"
 
 // GetDimensionsFromInstance returns a list of dimensions and their options for an instance resource
