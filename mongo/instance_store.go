@@ -13,7 +13,7 @@ import (
 )
 
 // InstanceCollection name
-const InstanceCollection = "instances"
+const instanceCollection = "instances"
 
 // GetInstances from a mongo collection
 func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []string) (*models.InstanceResults, error) {
@@ -29,7 +29,7 @@ func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []st
 		filter["links.dataset.id"] = bson.M{"$in": datasets}
 	}
 
-	iter := s.DB(m.Database).C(InstanceCollection).Find(filter).Sort("-$natural").Iter()
+	iter := s.DB(m.Database).C(instanceCollection).Find(filter).Sort("-$natural").Iter()
 	defer func() {
 		err := iter.Close()
 		if err != nil {
@@ -54,7 +54,7 @@ func (m *Mongo) GetInstance(ID string) (*models.Instance, error) {
 	defer s.Close()
 
 	var instance models.Instance
-	err := s.DB(m.Database).C(InstanceCollection).Find(bson.M{"id": ID}).One(&instance)
+	err := s.DB(m.Database).C(instanceCollection).Find(bson.M{"id": ID}).One(&instance)
 
 	if err == mgo.ErrNotFound {
 		return nil, errs.ErrInstanceNotFound
@@ -73,7 +73,7 @@ func (m *Mongo) AddInstance(instance *models.Instance) (*models.Instance, error)
 	if instance.UniqueTimestamp, err = bson.NewMongoTimestamp(instance.LastUpdated, 1); err != nil {
 		return nil, err
 	}
-	if err = s.DB(m.Database).C(InstanceCollection).Insert(&instance); err != nil {
+	if err = s.DB(m.Database).C(instanceCollection).Insert(&instance); err != nil {
 		return nil, err
 	}
 
@@ -94,7 +94,7 @@ func (m *Mongo) UpdateInstance(ctx context.Context, instanceID string, instance 
 		return err
 	}
 
-	if err = s.DB(m.Database).C(InstanceCollection).Update(bson.M{"id": instanceID, mongo.UniqueTimestampKey: instance.UniqueTimestamp}, updateWithTimestamps); err != nil {
+	if err = s.DB(m.Database).C(instanceCollection).Update(bson.M{"id": instanceID, mongo.UniqueTimestampKey: instance.UniqueTimestamp}, updateWithTimestamps); err != nil {
 		if err != mgo.ErrNotFound {
 			return err
 		}
@@ -239,7 +239,7 @@ func (m *Mongo) AddEventToInstance(instanceID string, event *models.Event) error
 	s := m.Session.Copy()
 	defer s.Close()
 
-	info, err := s.DB(m.Database).C(InstanceCollection).Upsert(bson.M{"id": instanceID},
+	info, err := s.DB(m.Database).C(instanceCollection).Upsert(bson.M{"id": instanceID},
 		bson.M{"$push": bson.M{"events": &event}, "$set": bson.M{"last_updated": time.Now().UTC()}})
 	if err != nil {
 		return err
@@ -257,7 +257,7 @@ func (m *Mongo) UpdateDimensionNodeID(dimension *models.DimensionOption) error {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	err := s.DB(m.Database).C(DimensionOptions).Update(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
+	err := s.DB(m.Database).C(dimensionOptions).Update(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
 		"option": dimension.Option}, bson.M{"$set": bson.M{"node_id": &dimension.NodeID, "last_updated": time.Now().UTC()}})
 	if err == mgo.ErrNotFound {
 		return errs.ErrDimensionOptionNotFound
@@ -275,7 +275,7 @@ func (m *Mongo) UpdateObservationInserted(id string, observationInserted int64) 
 	s := m.Session.Copy()
 	defer s.Close()
 
-	err := s.DB(m.Database).C(InstanceCollection).Update(bson.M{"id": id},
+	err := s.DB(m.Database).C(instanceCollection).Update(bson.M{"id": id},
 		bson.M{
 			"$inc": bson.M{"import_tasks.import_observations.total_inserted_observations": observationInserted},
 			"$set": bson.M{"last_updated": time.Now().UTC()},
@@ -298,7 +298,7 @@ func (m *Mongo) UpdateImportObservationsTaskState(id string, state string) error
 	s := m.Session.Copy()
 	defer s.Close()
 
-	err := s.DB(m.Database).C(InstanceCollection).Update(bson.M{"id": id},
+	err := s.DB(m.Database).C(instanceCollection).Update(bson.M{"id": id},
 		bson.M{
 			"$set":         bson.M{"import_tasks.import_observations.state": state},
 			"$currentDate": bson.M{"last_updated": true},
@@ -331,7 +331,7 @@ func (m *Mongo) UpdateBuildHierarchyTaskState(id, dimension, state string) (err 
 		"$currentDate": bson.M{"last_updated": true},
 	}
 
-	err = s.DB(m.Database).C(InstanceCollection).Update(selector, update)
+	err = s.DB(m.Database).C(instanceCollection).Update(selector, update)
 	return
 }
 
@@ -350,6 +350,6 @@ func (m *Mongo) UpdateBuildSearchTaskState(id, dimension, state string) (err err
 		"$currentDate": bson.M{"last_updated": true},
 	}
 
-	err = s.DB(m.Database).C(InstanceCollection).Update(selector, update)
+	err = s.DB(m.Database).C(instanceCollection).Update(selector, update)
 	return
 }
