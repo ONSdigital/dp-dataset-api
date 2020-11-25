@@ -25,8 +25,8 @@ type Configuration struct {
 	EnableDetachDataset        bool          `envconfig:"ENABLE_DETACH_DATASET"`
 	EnablePermissionsAuth      bool          `envconfig:"ENABLE_PERMISSIONS_AUTH"`
 	EnableObservationEndpoint  bool          `envconfig:"ENABLE_OBSERVATION_ENDPOINT"`
+	KafkaVersion               string        `envconfig:"KAFKA_VERSION"`
 	MongoConfig                MongoConfig
-	KafkaVersion               string `envconfig:"KAFKA_VERSION"`
 }
 
 // MongoConfig contains the config required to connect to MongoDB.
