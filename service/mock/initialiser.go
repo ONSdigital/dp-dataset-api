@@ -5,12 +5,13 @@ package mock
 
 import (
 	"context"
+	"net/http"
+	"sync"
+
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/service"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/ONSdigital/dp-kafka"
-	"net/http"
-	"sync"
+	kafka "github.com/ONSdigital/dp-kafka/v2"
 )
 
 var (

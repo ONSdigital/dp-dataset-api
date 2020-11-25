@@ -9,7 +9,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-graph/v2/graph"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	kafka "github.com/ONSdigital/dp-kafka"
+	kafka "github.com/ONSdigital/dp-kafka/v2"
 	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
 )
@@ -99,8 +99,13 @@ func (e *Init) DoGetHealthCheck(cfg *config.Configuration, buildTime, gitCommit,
 
 // DoGetKafkaProducer creates a new Kafka Producer
 func (e *Init) DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error) {
+
+	pConfig := &kafka.ProducerConfig{
+		KafkaVersion: &cfg.KafkaVersion,
+	}
+
 	pChannels := kafka.CreateProducerChannels()
-	return kafka.NewProducer(ctx, cfg.KafkaAddr, cfg.GenerateDownloadsTopic, 0, pChannels)
+	return kafka.NewProducer(ctx, cfg.KafkaAddr, cfg.GenerateDownloadsTopic, pChannels, pConfig)
 }
 
 // DoGetGraphDB creates a new GraphDB
