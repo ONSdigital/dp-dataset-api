@@ -7,8 +7,8 @@ github.com/ONSdigital/dp-api-clients-go v1.30.0/go.mod h1:iyJy6uRL4B6OYOJA0XMr5U
 github.com/ONSdigital/dp-authorisation v0.1.0 h1:HzYwJdvk7ZAeB56KMAH6MP5+5uZuuJnEyGq6CViDoCg=
 github.com/ONSdigital/dp-authorisation v0.1.0/go.mod h1:rT81tcvWto5/cUWUFd0Q6gTqBoRfQmD6Qp0sq7FyiMg=
 github.com/ONSdigital/dp-frontend-models v1.1.0/go.mod h1:TT96P7Mi69N3Tc/jFNdbjiwG4GAaMjP26HLotFQ6BPw=
-github.com/ONSdigital/dp-graph/v2 v2.2.2 h1:hqA+BCHdxsDw3KawdiemRmtWBQhAxDHP+DXhhFpk3H8=
-github.com/ONSdigital/dp-graph/v2 v2.2.2/go.mod h1:K4LIhFcyxB8g7nUG5I5I8x6QVf89x82dCEFBbE0mmaQ=
+github.com/ONSdigital/dp-graph/v2 v2.3.0 h1:xK9qImVbh86l04aAUeurjB7d8mwn27eacP+5gpvPLO8=
+github.com/ONSdigital/dp-graph/v2 v2.3.0/go.mod h1:K4LIhFcyxB8g7nUG5I5I8x6QVf89x82dCEFBbE0mmaQ=
 github.com/ONSdigital/dp-healthcheck v0.0.0-20200131122546-9db6d3f0494e/go.mod h1:zighxZ/0m5u7zo0eAr8XFlA+Dz2ic7A1vna6YXvhCjQ=
 github.com/ONSdigital/dp-healthcheck v1.0.0/go.mod h1:zighxZ/0m5u7zo0eAr8XFlA+Dz2ic7A1vna6YXvhCjQ=
 github.com/ONSdigital/dp-healthcheck v1.0.5 h1:DXnohGIqXaLLeYGdaGOhgkZjAbWMNoLAjQ3EgZeMT3M=
@@ -21,6 +21,8 @@ github.com/ONSdigital/dp-mocking v0.0.0-20190905163309-fee2702ad1b9 h1:+WXVfTDyW
 github.com/ONSdigital/dp-mocking v0.0.0-20190905163309-fee2702ad1b9/go.mod h1:BcIRgitUju//qgNePRBmNjATarTtynAgc0yV29VpLEk=
 github.com/ONSdigital/dp-mongodb v1.4.0 h1:nDyRgGLfLYkQnS1SZgpq9y3BD87IqfjihZERn9pudy0=
 github.com/ONSdigital/dp-mongodb v1.4.0/go.mod h1:kJRKmL4JUub+DGlWGeqaV8D13Jaj9939UEaPXfSIdVg=
+github.com/ONSdigital/dp-mongodb v1.5.0 h1:Jrqixx0xr9aPSPya0Wce8Ly1zVwB0M6nC3K4umNPfqI=
+github.com/ONSdigital/dp-mongodb v1.5.0/go.mod h1:zm2gWzuqR+aiy2y2NLnfBIafvhKQ0IVPtiClaYyLkmo=
 github.com/ONSdigital/dp-net v1.0.5-0.20200805082802-e518bc287596/go.mod h1:wDVhk2pYosQ1q6PXxuFIRYhYk2XX5+1CeRRnXpSczPY=
 github.com/ONSdigital/dp-net v1.0.5-0.20200805145012-9227a11caddb/go.mod h1:MrSZwDUvp8u1VJEqa+36Gwq4E7/DdceW+BDCvGes6Cs=
 github.com/ONSdigital/dp-net v1.0.5-0.20200805150805-cac050646ab5/go.mod h1:de3LB9tedE0tObBwa12dUOt5rvTW4qQkF5rXtt4b6CE=
@@ -84,6 +86,7 @@ github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8/go.mod h1:xkRDCp4j0
 github.com/go-avro/avro v0.0.0-20171219232920-444163702c11 h1:yswqe8UdKNWn4kjh1YTaAbvOSPeg95xhW7h4qeICL5E=
 github.com/go-avro/avro v0.0.0-20171219232920-444163702c11/go.mod h1:kxj6THYP0dmFPk4Z+bijIAhJoGgeBfyOKXMduhvdJPA=
 github.com/go-test/deep v1.0.6/go.mod h1:QV8Hv/iy04NyLBxAdO9njL0iVPN1S4d/A3NVv1V36o8=
+github.com/go-test/deep v1.0.7/go.mod h1:QV8Hv/iy04NyLBxAdO9njL0iVPN1S4d/A3NVv1V36o8=
 github.com/gofrs/uuid v3.2.0+incompatible h1:y12jRkkFxsd7GpqdSZ+/KCs/fJbqpEXSGd4+jfEaewE=
 github.com/gofrs/uuid v3.2.0+incompatible/go.mod h1:b2aQJv3Z4Fp6yNu3cdSllBxTCLRxnplIgP/c0N/04lM=
 github.com/golang/mock v1.3.1/go.mod h1:sBzyDLLjw3U8JLTeZvSv8jJB+tU5PVekmnlKIyFUx0Y=
@@ -224,6 +227,7 @@ gopkg.in/avro.v0 v0.0.0-20171217001914-a730b5802183/go.mod h1:FvqrFXt+jCsyQibeRv
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f h1:BLraFXnmrev5lT+xlilqcH8XK9/i0At2xKjWk4p6zsU=
 gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/fsnotify.v1 v1.4.7 h1:xOHLXZwVvI9hhs+cLKq5+I5onOuwQLhQwiu63xxlHs4=
 gopkg.in/fsnotify.v1 v1.4.7/go.mod h1:Tz8NjZHkW78fSQdbUxIjBTcgA1z1m8ZHf0WmKUhAMys=
 gopkg.in/jcmturner/aescts.v1 v1.0.1 h1:cVVZBK2b1zY26haWB4vbBiZrfFQnfbTVrE3xZq6hrEw=

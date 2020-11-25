@@ -22,7 +22,7 @@ var (
 	lockInitialiserMockDoGetMongoDB       sync.RWMutex
 )
 
-// Ensure, that InitialiserMock does implement service.Initialiser.
+// Ensure, that InitialiserMock does implement Initialiser.
 // If this is not the case, regenerate this file with moq.
 var _ service.Initialiser = &InitialiserMock{}
 
@@ -32,7 +32,7 @@ var _ service.Initialiser = &InitialiserMock{}
 //
 //         // make and configure a mocked service.Initialiser
 //         mockedInitialiser := &InitialiserMock{
-//             DoGetGraphDBFunc: func(ctx context.Context) (store.GraphDB, error) {
+//             DoGetGraphDBFunc: func(ctx context.Context) (store.GraphDB, service.Closer, error) {
 // 	               panic("mock out the DoGetGraphDB method")
 //             },
 //             DoGetHTTPServerFunc: func(bindAddr string, router http.Handler) service.HTTPServer {
@@ -55,7 +55,7 @@ var _ service.Initialiser = &InitialiserMock{}
 //     }
 type InitialiserMock struct {
 	// DoGetGraphDBFunc mocks the DoGetGraphDB method.
-	DoGetGraphDBFunc func(ctx context.Context) (store.GraphDB, error)
+	DoGetGraphDBFunc func(ctx context.Context) (store.GraphDB, service.Closer, error)
 
 	// DoGetHTTPServerFunc mocks the DoGetHTTPServer method.
 	DoGetHTTPServerFunc func(bindAddr string, router http.Handler) service.HTTPServer
@@ -112,7 +112,7 @@ type InitialiserMock struct {
 }
 
 // DoGetGraphDB calls DoGetGraphDBFunc.
-func (mock *InitialiserMock) DoGetGraphDB(ctx context.Context) (store.GraphDB, error) {
+func (mock *InitialiserMock) DoGetGraphDB(ctx context.Context) (store.GraphDB, service.Closer, error) {
 	if mock.DoGetGraphDBFunc == nil {
 		panic("InitialiserMock.DoGetGraphDBFunc: method is nil but Initialiser.DoGetGraphDB was just called")
 	}

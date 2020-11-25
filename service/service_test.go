@@ -47,8 +47,8 @@ var funcDoGetMongoDBErr = func(ctx context.Context, cfg *config.Configuration) (
 	return nil, errMongo
 }
 
-var funcDoGetGraphDBErr = func(ctx context.Context) (store.GraphDB, error) {
-	return nil, errGraph
+var funcDoGetGraphDBErr = func(ctx context.Context) (store.GraphDB, service.Closer, error) {
+	return nil, nil, errGraph
 }
 
 var funcDoGetKafkaProducerErr = func(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error) {
@@ -99,8 +99,11 @@ func TestRun(t *testing.T) {
 			return &storeMock.MongoDBMock{}, nil
 		}
 
-		funcDoGetGraphDBOk := func(ctx context.Context) (store.GraphDB, error) {
-			return &storeMock.GraphDBMock{}, nil
+		funcDoGetGraphDBOk := func(ctx context.Context) (store.GraphDB, service.Closer, error) {
+			var funcClose = func(ctx context.Context) error {
+				return nil
+			}
+			return &storeMock.GraphDBMock{}, &serviceMock.CloserMock{CloseFunc: funcClose}, nil
 		}
 
 		funcDoGetKafkaProducerOk := func(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error) {
@@ -370,6 +373,10 @@ func TestClose(t *testing.T) {
 			CloseFunc: funcClose,
 		}
 
+		graphErrorConsumerMock := &serviceMock.CloserMock{
+			CloseFunc: funcClose,
+		}
+
 		// Kafka producer will fail if healthcheck or http server are not stopped
 		kafkaProducerMock := &kafkatest.IProducerMock{
 			ChannelsFunc: func() *kafka.ProducerChannels {
@@ -405,12 +412,14 @@ func TestClose(t *testing.T) {
 			svc.SetDownloadsProducer(kafkaProducerMock)
 			svc.SetMongoDB(mongoMock)
 			svc.SetGraphDB(graphMock)
+			svc.SetGraphDBErrorConsumer(graphErrorConsumerMock)
 			err = svc.Close(context.Background())
 			So(err, ShouldBeNil)
 			So(len(hcMock.StopCalls()), ShouldEqual, 1)
 			So(len(serverMock.ShutdownCalls()), ShouldEqual, 1)
 			So(len(mongoMock.CloseCalls()), ShouldEqual, 1)
 			So(len(graphMock.CloseCalls()), ShouldEqual, 1)
+			So(len(graphErrorConsumerMock.CloseCalls()), ShouldEqual, 1)
 			So(len(kafkaProducerMock.CloseCalls()), ShouldEqual, 1)
 		})
 
@@ -428,6 +437,7 @@ func TestClose(t *testing.T) {
 			svc.SetDownloadsProducer(kafkaProducerMock)
 			svc.SetMongoDB(mongoMock)
 			svc.SetGraphDB(graphMock)
+			svc.SetGraphDBErrorConsumer(graphErrorConsumerMock)
 			err = svc.Close(context.Background())
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldResemble, "failed to shutdown gracefully")
@@ -435,8 +445,8 @@ func TestClose(t *testing.T) {
 			So(len(failingserverMock.ShutdownCalls()), ShouldEqual, 1)
 			So(len(mongoMock.CloseCalls()), ShouldEqual, 1)
 			So(len(graphMock.CloseCalls()), ShouldEqual, 1)
+			So(len(graphErrorConsumerMock.CloseCalls()), ShouldEqual, 1)
 			So(len(kafkaProducerMock.CloseCalls()), ShouldEqual, 1)
-
 		})
 	})
 }
