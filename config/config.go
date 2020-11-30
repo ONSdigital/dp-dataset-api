@@ -25,6 +25,7 @@ type Configuration struct {
 	EnableDetachDataset        bool          `envconfig:"ENABLE_DETACH_DATASET"`
 	EnablePermissionsAuth      bool          `envconfig:"ENABLE_PERMISSIONS_AUTH"`
 	EnableObservationEndpoint  bool          `envconfig:"ENABLE_OBSERVATION_ENDPOINT"`
+	KafkaVersion               string        `envconfig:"KAFKA_VERSION"`
 	MongoConfig                MongoConfig
 }
 
@@ -62,6 +63,7 @@ func Get() (*Configuration, error) {
 		EnableDetachDataset:        false,
 		EnablePermissionsAuth:      false,
 		EnableObservationEndpoint:  true,
+		KafkaVersion:               "1.0.2",
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",
