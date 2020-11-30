@@ -33,6 +33,8 @@ func TestSpec(t *testing.T) {
 				So(cfg.MongoConfig.BindAddr, ShouldEqual, "localhost:27017")
 				So(cfg.MongoConfig.Collection, ShouldEqual, "datasets")
 				So(cfg.MongoConfig.Database, ShouldEqual, "datasets")
+				So(cfg.MongoConfig.Limit, ShouldEqual, 0)
+				So(cfg.MongoConfig.Offset, ShouldEqual, 0)
 				So(cfg.EnablePermissionsAuth, ShouldBeFalse)
 				So(cfg.HealthCheckCriticalTimeout, ShouldEqual, 90*time.Second)
 				So(cfg.HealthCheckInterval, ShouldEqual, 30*time.Second)

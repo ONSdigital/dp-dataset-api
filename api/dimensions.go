@@ -125,17 +125,20 @@ func convertBSONToDimensionOption(data interface{}) (*models.DimensionOption, er
 	return &dim, nil
 }
 
-// getLimitAndOffset obtains the int values for limit and offset from the provided map
-// with a default of 0 if not present.
-func getLimitAndOffset(queryVars url.Values) (limit, offset int, err error) {
+// getLimitAndOffset obtains the int values for limit and offset from the provided url values.
+// If values are not provided, the defaults will be used.
+func (api *DatasetAPI) getLimitAndOffset(queryVars url.Values) (limit, offset int, err error) {
 	limitStr, found := queryVars["limit"]
 	if found {
 		limit, err = strconv.Atoi(limitStr[0])
 		if err != nil {
 			return -1, -1, errs.ErrInvalidQueryParameter
 		}
+		if limit < 0 {
+			limit = 0
+		}
 	} else {
-		limit = 0
+		limit = api.defaultLimit
 	}
 
 	offsetStr, found := queryVars["offset"]
@@ -146,6 +149,9 @@ func getLimitAndOffset(queryVars url.Values) (limit, offset int, err error) {
 		}
 	}
 	if !found {
+		offset = api.defaultOffset
+	}
+	if offset < 0 {
 		offset = 0
 	}
 	return
@@ -169,40 +175,35 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 
 	b, err := func() ([]byte, error) {
 
-		limit, offset, err := getLimitAndOffset(r.URL.Query())
+		// get limit and offset from query parameters, or default values
+		limit, offset, err := api.getLimitAndOffset(r.URL.Query())
 		if err != nil {
 			log.Event(ctx, "failed to obtain limit and offest from request query paramters", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
+		// ger version for provided dataset, edition and versionID
 		version, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionID, state)
 		if err != nil {
 			log.Event(ctx, "failed to get version", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
+		// vaidate state
 		if err = models.CheckState("version", version.State); err != nil {
 			logData["version_state"] = version.State
 			log.Event(ctx, "unpublished version has an invalid state", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
-		totalCount, err := api.dataStore.Backend.CountDimensionOptions(version, dimension)
-		if err != nil {
-			log.Event(ctx, "failed to count dimension options", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		results, err := api.dataStore.Backend.GetDimensionOptions(version, dimension)
+		// get sorted dimension options, starting at offset index, with a limit on the number of items
+		results, err := api.dataStore.Backend.GetDimensionOptions(version, dimension, offset, limit)
 		if err != nil {
 			log.Event(ctx, "failed to get a list of dimension options", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
-		results.Count = len(results.Items)
-		results.TotalCount = totalCount
-		results.Limit = limit
-		results.Offset = offset
 
+		// populate links
 		for i := range results.Items {
 			results.Items[i].Links.Version.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s",
 				api.host, datasetID, edition, versionID)

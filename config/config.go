@@ -33,6 +33,8 @@ type MongoConfig struct {
 	BindAddr   string `envconfig:"MONGODB_BIND_ADDR"   json:"-"`
 	Collection string `envconfig:"MONGODB_COLLECTION"`
 	Database   string `envconfig:"MONGODB_DATABASE"`
+	Limit      int    `envconfig:"MONGODB_LIMIT"`
+	Offset     int    `envconfig:"MONGODB_OFFSET"`
 }
 
 var cfg *Configuration
@@ -64,6 +66,8 @@ func Get() (*Configuration, error) {
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",
 			Database:   "datasets",
+			Limit:      0,
+			Offset:     0,
 		},
 	}
 

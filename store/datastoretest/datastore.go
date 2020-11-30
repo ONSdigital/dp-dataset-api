@@ -18,7 +18,6 @@ var (
 	lockStorerMockAddVersionDetailsToInstance       sync.RWMutex
 	lockStorerMockCheckDatasetExists                sync.RWMutex
 	lockStorerMockCheckEditionExists                sync.RWMutex
-	lockStorerMockCountDimensionOptions             sync.RWMutex
 	lockStorerMockDeleteDataset                     sync.RWMutex
 	lockStorerMockDeleteEdition                     sync.RWMutex
 	lockStorerMockGetDataset                        sync.RWMutex
@@ -75,9 +74,6 @@ var (
 //             CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
 // 	               panic("mock out the CheckEditionExists method")
 //             },
-//             CountDimensionOptionsFunc: func(version *models.Version, dimension string) (int, error) {
-// 	               panic("mock out the CountDimensionOptions method")
-//             },
 //             DeleteDatasetFunc: func(ID string) error {
 // 	               panic("mock out the DeleteDataset method")
 //             },
@@ -90,7 +86,7 @@ var (
 //             GetDatasetsFunc: func(ctx context.Context) ([]models.DatasetUpdate, error) {
 // 	               panic("mock out the GetDatasets method")
 //             },
-//             GetDimensionOptionsFunc: func(version *models.Version, dimension string) (*models.DimensionOptionResults, error) {
+//             GetDimensionOptionsFunc: func(version *models.Version, dimension string, offset int, limit int) (*models.DimensionOptionResults, error) {
 // 	               panic("mock out the GetDimensionOptions method")
 //             },
 //             GetDimensionsFunc: func(datasetID string, versionID string) ([]bson.M, error) {
@@ -193,9 +189,6 @@ type StorerMock struct {
 	// CheckEditionExistsFunc mocks the CheckEditionExists method.
 	CheckEditionExistsFunc func(ID string, editionID string, state string) error
 
-	// CountDimensionOptionsFunc mocks the CountDimensionOptions method.
-	CountDimensionOptionsFunc func(version *models.Version, dimension string) (int, error)
-
 	// DeleteDatasetFunc mocks the DeleteDataset method.
 	DeleteDatasetFunc func(ID string) error
 
@@ -209,7 +202,7 @@ type StorerMock struct {
 	GetDatasetsFunc func(ctx context.Context) ([]models.DatasetUpdate, error)
 
 	// GetDimensionOptionsFunc mocks the GetDimensionOptions method.
-	GetDimensionOptionsFunc func(version *models.Version, dimension string) (*models.DimensionOptionResults, error)
+	GetDimensionOptionsFunc func(version *models.Version, dimension string, offset int, limit int) (*models.DimensionOptionResults, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
 	GetDimensionsFunc func(datasetID string, versionID string) ([]bson.M, error)
@@ -334,13 +327,6 @@ type StorerMock struct {
 			// State is the state argument value.
 			State string
 		}
-		// CountDimensionOptions holds details about calls to the CountDimensionOptions method.
-		CountDimensionOptions []struct {
-			// Version is the version argument value.
-			Version *models.Version
-			// Dimension is the dimension argument value.
-			Dimension string
-		}
 		// DeleteDataset holds details about calls to the DeleteDataset method.
 		DeleteDataset []struct {
 			// ID is the ID argument value.
@@ -367,6 +353,10 @@ type StorerMock struct {
 			Version *models.Version
 			// Dimension is the dimension argument value.
 			Dimension string
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
 		}
 		// GetDimensions holds details about calls to the GetDimensions method.
 		GetDimensions []struct {
@@ -792,41 +782,6 @@ func (mock *StorerMock) CheckEditionExistsCalls() []struct {
 	return calls
 }
 
-// CountDimensionOptions calls CountDimensionOptionsFunc.
-func (mock *StorerMock) CountDimensionOptions(version *models.Version, dimension string) (int, error) {
-	if mock.CountDimensionOptionsFunc == nil {
-		panic("StorerMock.CountDimensionOptionsFunc: method is nil but Storer.CountDimensionOptions was just called")
-	}
-	callInfo := struct {
-		Version   *models.Version
-		Dimension string
-	}{
-		Version:   version,
-		Dimension: dimension,
-	}
-	lockStorerMockCountDimensionOptions.Lock()
-	mock.calls.CountDimensionOptions = append(mock.calls.CountDimensionOptions, callInfo)
-	lockStorerMockCountDimensionOptions.Unlock()
-	return mock.CountDimensionOptionsFunc(version, dimension)
-}
-
-// CountDimensionOptionsCalls gets all the calls that were made to CountDimensionOptions.
-// Check the length with:
-//     len(mockedStorer.CountDimensionOptionsCalls())
-func (mock *StorerMock) CountDimensionOptionsCalls() []struct {
-	Version   *models.Version
-	Dimension string
-} {
-	var calls []struct {
-		Version   *models.Version
-		Dimension string
-	}
-	lockStorerMockCountDimensionOptions.RLock()
-	calls = mock.calls.CountDimensionOptions
-	lockStorerMockCountDimensionOptions.RUnlock()
-	return calls
-}
-
 // DeleteDataset calls DeleteDatasetFunc.
 func (mock *StorerMock) DeleteDataset(ID string) error {
 	if mock.DeleteDatasetFunc == nil {
@@ -952,21 +907,25 @@ func (mock *StorerMock) GetDatasetsCalls() []struct {
 }
 
 // GetDimensionOptions calls GetDimensionOptionsFunc.
-func (mock *StorerMock) GetDimensionOptions(version *models.Version, dimension string) (*models.DimensionOptionResults, error) {
+func (mock *StorerMock) GetDimensionOptions(version *models.Version, dimension string, offset int, limit int) (*models.DimensionOptionResults, error) {
 	if mock.GetDimensionOptionsFunc == nil {
 		panic("StorerMock.GetDimensionOptionsFunc: method is nil but Storer.GetDimensionOptions was just called")
 	}
 	callInfo := struct {
 		Version   *models.Version
 		Dimension string
+		Offset    int
+		Limit     int
 	}{
 		Version:   version,
 		Dimension: dimension,
+		Offset:    offset,
+		Limit:     limit,
 	}
 	lockStorerMockGetDimensionOptions.Lock()
 	mock.calls.GetDimensionOptions = append(mock.calls.GetDimensionOptions, callInfo)
 	lockStorerMockGetDimensionOptions.Unlock()
-	return mock.GetDimensionOptionsFunc(version, dimension)
+	return mock.GetDimensionOptionsFunc(version, dimension, offset, limit)
 }
 
 // GetDimensionOptionsCalls gets all the calls that were made to GetDimensionOptions.
@@ -975,10 +934,14 @@ func (mock *StorerMock) GetDimensionOptions(version *models.Version, dimension s
 func (mock *StorerMock) GetDimensionOptionsCalls() []struct {
 	Version   *models.Version
 	Dimension string
+	Offset    int
+	Limit     int
 } {
 	var calls []struct {
 		Version   *models.Version
 		Dimension string
+		Offset    int
+		Limit     int
 	}
 	lockStorerMockGetDimensionOptions.RLock()
 	calls = mock.calls.GetDimensionOptions
