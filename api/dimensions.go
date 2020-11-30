@@ -125,36 +125,20 @@ func convertBSONToDimensionOption(data interface{}) (*models.DimensionOption, er
 	return &dim, nil
 }
 
-// getLimitAndOffset obtains the int values for limit and offset from the provided url values.
-// If values are not provided, the defaults will be used.
-func (api *DatasetAPI) getLimitAndOffset(queryVars url.Values) (limit, offset int, err error) {
-	limitStr, found := queryVars["limit"]
-	if found {
-		limit, err = strconv.Atoi(limitStr[0])
-		if err != nil {
-			return -1, -1, errs.ErrInvalidQueryParameter
-		}
-		if limit < 0 {
-			limit = 0
-		}
-	} else {
-		limit = api.defaultLimit
-	}
-
-	offsetStr, found := queryVars["offset"]
-	if found {
-		offset, err = strconv.Atoi(offsetStr[0])
-		if err != nil {
-			return -1, -1, errs.ErrInvalidQueryParameter
-		}
-	}
+// getPositiveIntQueryParameter obtains the positive int value of query var defined by the provided varKey
+func getPositiveIntQueryParameter(queryVars url.Values, varKey string, defaultValue int) (val int, err error) {
+	strVal, found := queryVars[varKey]
 	if !found {
-		offset = api.defaultOffset
+		return defaultValue, nil
 	}
-	if offset < 0 {
-		offset = 0
+	val, err = strconv.Atoi(strVal[0])
+	if err != nil {
+		return -1, errs.ErrInvalidQueryParameter
 	}
-	return
+	if val < 0 {
+		return 0, nil
+	}
+	return val, nil
 }
 
 func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Request) {
@@ -175,10 +159,17 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 
 	b, err := func() ([]byte, error) {
 
-		// get limit and offset from query parameters, or default values
-		limit, offset, err := api.getLimitAndOffset(r.URL.Query())
+		// get limit from query parameters, or default value
+		limit, err := getPositiveIntQueryParameter(r.URL.Query(), "limit", api.defaultLimit)
 		if err != nil {
-			log.Event(ctx, "failed to obtain limit and offest from request query paramters", log.ERROR, log.Error(err), logData)
+			log.Event(ctx, "failed to obtain limit from request query paramters", log.ERROR, log.Error(err), logData)
+			return nil, err
+		}
+
+		// get offset from query parameters, or default value
+		offset, err := getPositiveIntQueryParameter(r.URL.Query(), "offset", api.defaultOffset)
+		if err != nil {
+			log.Event(ctx, "failed to obtain offset from request query paramters", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 

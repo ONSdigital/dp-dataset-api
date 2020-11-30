@@ -1,6 +1,7 @@
 package mongo
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -86,8 +87,12 @@ func (m *Mongo) GetDimensions(datasetID, versionID string) ([]bson.M, error) {
 }
 
 // GetDimensionOptions returns dimension options for a dimensions within a dataset, according to the provided limit and offest.
-// Offset and limit will not be validated, assuming they are positive or zero. Zero limit is equivalent to no limit (all items starting at offset will be returned)
+// Offset and limit need to be positive or zero. Zero limit is equivalent to no limit (all items starting at offset will be returned)
 func (m *Mongo) GetDimensionOptions(version *models.Version, dimension string, offset, limit int) (*models.DimensionOptionResults, error) {
+	if offset < 0 || limit < 0 {
+		return nil, errors.New("offset and limit must be positive or zero")
+	}
+
 	s := m.Session.Copy()
 	defer s.Close()
 
