@@ -6,7 +6,6 @@ package storetest
 import (
 	"context"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"github.com/globalsign/mgo/bson"
 	"sync"
@@ -20,6 +19,7 @@ var (
 	lockMongoDBMockCheckEditionExists                sync.RWMutex
 	lockMongoDBMockChecker                           sync.RWMutex
 	lockMongoDBMockClose                             sync.RWMutex
+	lockMongoDBMockCountDimensionOptions             sync.RWMutex
 	lockMongoDBMockDeleteDataset                     sync.RWMutex
 	lockMongoDBMockDeleteEdition                     sync.RWMutex
 	lockMongoDBMockGetDataset                        sync.RWMutex
@@ -50,10 +50,6 @@ var (
 	lockMongoDBMockUpsertVersion                     sync.RWMutex
 )
 
-// Ensure, that MongoDBMock does implement store.MongoDB.
-// If this is not the case, regenerate this file with moq.
-var _ store.MongoDB = &MongoDBMock{}
-
 // MongoDBMock is a mock implementation of store.MongoDB.
 //
 //     func TestSomethingThatUsesMongoDB(t *testing.T) {
@@ -80,6 +76,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //             },
 //             CloseFunc: func(in1 context.Context) error {
 // 	               panic("mock out the Close method")
+//             },
+//             CountDimensionOptionsFunc: func(version *models.Version, dimension string) (int, error) {
+// 	               panic("mock out the CountDimensionOptions method")
 //             },
 //             DeleteDatasetFunc: func(ID string) error {
 // 	               panic("mock out the DeleteDataset method")
@@ -192,6 +191,9 @@ type MongoDBMock struct {
 
 	// CloseFunc mocks the Close method.
 	CloseFunc func(in1 context.Context) error
+
+	// CountDimensionOptionsFunc mocks the CountDimensionOptions method.
+	CountDimensionOptionsFunc func(version *models.Version, dimension string) (int, error)
 
 	// DeleteDatasetFunc mocks the DeleteDataset method.
 	DeleteDatasetFunc func(ID string) error
@@ -323,6 +325,13 @@ type MongoDBMock struct {
 		Close []struct {
 			// In1 is the in1 argument value.
 			In1 context.Context
+		}
+		// CountDimensionOptions holds details about calls to the CountDimensionOptions method.
+		CountDimensionOptions []struct {
+			// Version is the version argument value.
+			Version *models.Version
+			// Dimension is the dimension argument value.
+			Dimension string
 		}
 		// DeleteDataset holds details about calls to the DeleteDataset method.
 		DeleteDataset []struct {
@@ -771,6 +780,41 @@ func (mock *MongoDBMock) CloseCalls() []struct {
 	lockMongoDBMockClose.RLock()
 	calls = mock.calls.Close
 	lockMongoDBMockClose.RUnlock()
+	return calls
+}
+
+// CountDimensionOptions calls CountDimensionOptionsFunc.
+func (mock *MongoDBMock) CountDimensionOptions(version *models.Version, dimension string) (int, error) {
+	if mock.CountDimensionOptionsFunc == nil {
+		panic("MongoDBMock.CountDimensionOptionsFunc: method is nil but MongoDB.CountDimensionOptions was just called")
+	}
+	callInfo := struct {
+		Version   *models.Version
+		Dimension string
+	}{
+		Version:   version,
+		Dimension: dimension,
+	}
+	lockMongoDBMockCountDimensionOptions.Lock()
+	mock.calls.CountDimensionOptions = append(mock.calls.CountDimensionOptions, callInfo)
+	lockMongoDBMockCountDimensionOptions.Unlock()
+	return mock.CountDimensionOptionsFunc(version, dimension)
+}
+
+// CountDimensionOptionsCalls gets all the calls that were made to CountDimensionOptions.
+// Check the length with:
+//     len(mockedMongoDB.CountDimensionOptionsCalls())
+func (mock *MongoDBMock) CountDimensionOptionsCalls() []struct {
+	Version   *models.Version
+	Dimension string
+} {
+	var calls []struct {
+		Version   *models.Version
+		Dimension string
+	}
+	lockMongoDBMockCountDimensionOptions.RLock()
+	calls = mock.calls.CountDimensionOptions
+	lockMongoDBMockCountDimensionOptions.RUnlock()
 	return calls
 }
 

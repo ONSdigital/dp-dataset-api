@@ -85,6 +85,12 @@ func (m *Mongo) GetDimensions(datasetID, versionID string) ([]bson.M, error) {
 	return results, nil
 }
 
+// CountDimensionOptions returns the total number of dimension options present in the databse for a dimension.
+func (m *Mongo) CountDimensionOptions(version *models.Version, dimension string) (int, error) {
+	//TODO implement
+	return 9999, nil
+}
+
 // GetDimensionOptions returns all dimension options for a dimensions within a dataset.
 func (m *Mongo) GetDimensionOptions(version *models.Version, dimension string) (*models.DimensionOptionResults, error) {
 	s := m.Session.Copy()

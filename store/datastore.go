@@ -29,6 +29,7 @@ type dataMongoDB interface {
 	GetDatasets(ctx context.Context) ([]models.DatasetUpdate, error)
 	GetDimensionsFromInstance(ID string) (*models.DimensionNodeResults, error)
 	GetDimensions(datasetID, versionID string) ([]bson.M, error)
+	CountDimensionOptions(version *models.Version, dimension string) (int, error)
 	GetDimensionOptions(version *models.Version, dimension string) (*models.DimensionOptionResults, error)
 	GetEdition(ID, editionID, state string) (*models.EditionUpdate, error)
 	GetEditions(ctx context.Context, ID, state string) (*models.EditionUpdateResults, error)

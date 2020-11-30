@@ -6,7 +6,6 @@ package storetest
 import (
 	"context"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-graph/v2/observation"
 	"github.com/globalsign/mgo/bson"
 	"sync"
@@ -19,6 +18,7 @@ var (
 	lockStorerMockAddVersionDetailsToInstance       sync.RWMutex
 	lockStorerMockCheckDatasetExists                sync.RWMutex
 	lockStorerMockCheckEditionExists                sync.RWMutex
+	lockStorerMockCountDimensionOptions             sync.RWMutex
 	lockStorerMockDeleteDataset                     sync.RWMutex
 	lockStorerMockDeleteEdition                     sync.RWMutex
 	lockStorerMockGetDataset                        sync.RWMutex
@@ -51,10 +51,6 @@ var (
 	lockStorerMockUpsertVersion                     sync.RWMutex
 )
 
-// Ensure, that StorerMock does implement store.Storer.
-// If this is not the case, regenerate this file with moq.
-var _ store.Storer = &StorerMock{}
-
 // StorerMock is a mock implementation of store.Storer.
 //
 //     func TestSomethingThatUsesStorer(t *testing.T) {
@@ -78,6 +74,9 @@ var _ store.Storer = &StorerMock{}
 //             },
 //             CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
 // 	               panic("mock out the CheckEditionExists method")
+//             },
+//             CountDimensionOptionsFunc: func(version *models.Version, dimension string) (int, error) {
+// 	               panic("mock out the CountDimensionOptions method")
 //             },
 //             DeleteDatasetFunc: func(ID string) error {
 // 	               panic("mock out the DeleteDataset method")
@@ -193,6 +192,9 @@ type StorerMock struct {
 
 	// CheckEditionExistsFunc mocks the CheckEditionExists method.
 	CheckEditionExistsFunc func(ID string, editionID string, state string) error
+
+	// CountDimensionOptionsFunc mocks the CountDimensionOptions method.
+	CountDimensionOptionsFunc func(version *models.Version, dimension string) (int, error)
 
 	// DeleteDatasetFunc mocks the DeleteDataset method.
 	DeleteDatasetFunc func(ID string) error
@@ -331,6 +333,13 @@ type StorerMock struct {
 			EditionID string
 			// State is the state argument value.
 			State string
+		}
+		// CountDimensionOptions holds details about calls to the CountDimensionOptions method.
+		CountDimensionOptions []struct {
+			// Version is the version argument value.
+			Version *models.Version
+			// Dimension is the dimension argument value.
+			Dimension string
 		}
 		// DeleteDataset holds details about calls to the DeleteDataset method.
 		DeleteDataset []struct {
@@ -780,6 +789,41 @@ func (mock *StorerMock) CheckEditionExistsCalls() []struct {
 	lockStorerMockCheckEditionExists.RLock()
 	calls = mock.calls.CheckEditionExists
 	lockStorerMockCheckEditionExists.RUnlock()
+	return calls
+}
+
+// CountDimensionOptions calls CountDimensionOptionsFunc.
+func (mock *StorerMock) CountDimensionOptions(version *models.Version, dimension string) (int, error) {
+	if mock.CountDimensionOptionsFunc == nil {
+		panic("StorerMock.CountDimensionOptionsFunc: method is nil but Storer.CountDimensionOptions was just called")
+	}
+	callInfo := struct {
+		Version   *models.Version
+		Dimension string
+	}{
+		Version:   version,
+		Dimension: dimension,
+	}
+	lockStorerMockCountDimensionOptions.Lock()
+	mock.calls.CountDimensionOptions = append(mock.calls.CountDimensionOptions, callInfo)
+	lockStorerMockCountDimensionOptions.Unlock()
+	return mock.CountDimensionOptionsFunc(version, dimension)
+}
+
+// CountDimensionOptionsCalls gets all the calls that were made to CountDimensionOptions.
+// Check the length with:
+//     len(mockedStorer.CountDimensionOptionsCalls())
+func (mock *StorerMock) CountDimensionOptionsCalls() []struct {
+	Version   *models.Version
+	Dimension string
+} {
+	var calls []struct {
+		Version   *models.Version
+		Dimension string
+	}
+	lockStorerMockCountDimensionOptions.RLock()
+	calls = mock.calls.CountDimensionOptions
+	lockStorerMockCountDimensionOptions.RUnlock()
 	return calls
 }
 
