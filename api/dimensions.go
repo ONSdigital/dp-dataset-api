@@ -224,24 +224,21 @@ func handleDimensionsErr(ctx context.Context, w http.ResponseWriter, msg string,
 		data = log.Data{}
 	}
 
-	logAndReply := func(status int, resp string, showStackTrace bool) {
-		data["response_status"] = status
-		if showStackTrace {
-			log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, log.Error(err), data)
-		} else {
-			data["user_error"] = err.Error()
-			log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, data)
-		}
-		http.Error(w, resp, status)
-	}
-
 	switch {
 	case errs.BadRequestMap[err]:
-		logAndReply(http.StatusBadRequest, err.Error(), false)
+		data["response_status"] = http.StatusBadRequest
+		data["user_error"] = err.Error()
+		log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, data)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	case errs.NotFoundMap[err]:
-		logAndReply(http.StatusNotFound, err.Error(), false)
+		data["response_status"] = http.StatusNotFound
+		data["user_error"] = err.Error()
+		log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, data)
+		http.Error(w, err.Error(), http.StatusNotFound)
 	default:
-		logAndReply(http.StatusInternalServerError, errs.ErrInternalServer.Error(), true)
+		data["response_status"] = http.StatusInternalServerError
+		log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, log.Error(err), data)
+		http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 	}
 
 }
