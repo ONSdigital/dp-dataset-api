@@ -65,7 +65,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 		return b, nil
 	}()
 	if err != nil {
-		handleDimensionsErr(ctx, w, err, logData)
+		handleDimensionsErr(ctx, w, "", err, logData)
 		return
 	}
 
@@ -157,60 +157,53 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		state = models.PublishedState
 	}
 
-	b, err := func() ([]byte, error) {
-
-		// get limit from query parameters, or default value
-		limit, err := getPositiveIntQueryParameter(r.URL.Query(), "limit", api.defaultLimit)
-		if err != nil {
-			log.Event(ctx, "failed to obtain limit from request query paramters", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		// get offset from query parameters, or default value
-		offset, err := getPositiveIntQueryParameter(r.URL.Query(), "offset", api.defaultOffset)
-		if err != nil {
-			log.Event(ctx, "failed to obtain offset from request query paramters", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		// ger version for provided dataset, edition and versionID
-		version, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionID, state)
-		if err != nil {
-			log.Event(ctx, "failed to get version", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		// vaidate state
-		if err = models.CheckState("version", version.State); err != nil {
-			logData["version_state"] = version.State
-			log.Event(ctx, "unpublished version has an invalid state", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		// get sorted dimension options, starting at offset index, with a limit on the number of items
-		results, err := api.dataStore.Backend.GetDimensionOptions(version, dimension, offset, limit)
-		if err != nil {
-			log.Event(ctx, "failed to get a list of dimension options", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		// populate links
-		for i := range results.Items {
-			results.Items[i].Links.Version.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s",
-				api.host, datasetID, edition, versionID)
-			results.Items[i].Links.Version.ID = versionID
-		}
-
-		b, err := json.Marshal(results)
-		if err != nil {
-			log.Event(ctx, "failed to marshal list of dimension option resources into bytes", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		return b, nil
-	}()
+	// get limit from query parameters, or default value
+	limit, err := getPositiveIntQueryParameter(r.URL.Query(), "limit", api.defaultLimit)
 	if err != nil {
-		handleDimensionsErr(ctx, w, err, logData)
+		logData["query_params"] = r.URL.RawQuery
+		handleDimensionsErr(ctx, w, "failed to obtain limit from request query paramters", err, logData)
+		return
+	}
+
+	// get offset from query parameters, or default value
+	offset, err := getPositiveIntQueryParameter(r.URL.Query(), "offset", api.defaultOffset)
+	if err != nil {
+		logData["query_params"] = r.URL.RawQuery
+		handleDimensionsErr(ctx, w, "failed to obtain offset from request query paramters", err, logData)
+		return
+	}
+
+	// ger version for provided dataset, edition and versionID
+	version, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionID, state)
+	if err != nil {
+		handleDimensionsErr(ctx, w, "failed to get version", err, logData)
+		return
+	}
+
+	// vaidate state
+	if err = models.CheckState("version", version.State); err != nil {
+		logData["version_state"] = version.State
+		handleDimensionsErr(ctx, w, "unpublished version has an invalid state", err, logData)
+		return
+	}
+
+	// get sorted dimension options, starting at offset index, with a limit on the number of items
+	results, err := api.dataStore.Backend.GetDimensionOptions(version, dimension, offset, limit)
+	if err != nil {
+		handleDimensionsErr(ctx, w, "failed to get a list of dimension options", err, logData)
+		return
+	}
+
+	// populate links
+	for i := range results.Items {
+		results.Items[i].Links.Version.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s",
+			api.host, datasetID, edition, versionID)
+		results.Items[i].Links.Version.ID = versionID
+	}
+
+	b, err := json.Marshal(results)
+	if err != nil {
+		handleDimensionsErr(ctx, w, "failed to marshal list of dimension option resources into bytes", err, logData)
 		return
 	}
 
@@ -224,24 +217,31 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	log.Event(ctx, "get dimension options", log.INFO, logData)
 }
 
-func handleDimensionsErr(ctx context.Context, w http.ResponseWriter, err error, data log.Data) {
+// handleDimensionsErr maps the provided error to its corresponding status code.
+// The error is logged with ERROR severity, but the stack trace is only shown for errors corresponding to InternalServerError status
+func handleDimensionsErr(ctx context.Context, w http.ResponseWriter, msg string, err error, data log.Data) {
 	if data == nil {
 		data = log.Data{}
 	}
 
-	var status int
-	response := err
-	switch {
-	case errs.BadRequestMap[err]:
-		status = http.StatusBadRequest
-	case errs.NotFoundMap[err]:
-		status = http.StatusNotFound
-	default:
-		status = http.StatusInternalServerError
-		response = errs.ErrInternalServer
+	logAndReply := func(status int, resp string, showStackTrace bool) {
+		data["response_status"] = status
+		if showStackTrace {
+			log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, log.Error(err), data)
+		} else {
+			data["user_error"] = err.Error()
+			log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, data)
+		}
+		http.Error(w, resp, status)
 	}
 
-	data["response_status"] = status
-	log.Event(ctx, "request unsuccessful", log.ERROR, log.Error(err), data)
-	http.Error(w, response.Error(), status)
+	switch {
+	case errs.BadRequestMap[err]:
+		logAndReply(http.StatusBadRequest, err.Error(), false)
+	case errs.NotFoundMap[err]:
+		logAndReply(http.StatusNotFound, err.Error(), false)
+	default:
+		logAndReply(http.StatusInternalServerError, errs.ErrInternalServer.Error(), true)
+	}
+
 }
