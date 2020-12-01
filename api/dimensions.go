@@ -195,9 +195,9 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	}
 
 	// populate links
+	versionHref := fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", api.host, datasetID, edition, versionID)
 	for i := range results.Items {
-		results.Items[i].Links.Version.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s",
-			api.host, datasetID, edition, versionID)
+		results.Items[i].Links.Version.HRef = versionHref
 		results.Items[i].Links.Version.ID = versionID
 	}
 
@@ -236,6 +236,7 @@ func handleDimensionsErr(ctx context.Context, w http.ResponseWriter, msg string,
 		log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, data)
 		http.Error(w, err.Error(), http.StatusNotFound)
 	default:
+		// a stack trace is added for Non User errors
 		data["response_status"] = http.StatusInternalServerError
 		log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, log.Error(err), data)
 		http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
