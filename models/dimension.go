@@ -9,7 +9,11 @@ type DatasetDimensionResults struct {
 
 // DimensionOptionResults represents a structure for a list of dimension options
 type DimensionOptionResults struct {
-	Items []PublicDimensionOption `json:"items"`
+	Items      []PublicDimensionOption `json:"items"`
+	Count      int                     `json:"count"`
+	Offset     int                     `json:"offset"`
+	Limit      int                     `json:"limit"`
+	TotalCount int                     `json:"total_count"`
 }
 
 // Dimension represents an overview for a single dimension. This includes a link to the code list API

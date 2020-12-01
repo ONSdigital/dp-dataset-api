@@ -25,6 +25,7 @@ var (
 	ErrInstanceNotFound                  = errors.New("instance not found")
 	ErrInternalServer                    = errors.New("internal error")
 	ErrInsertedObservationsInvalidSyntax = errors.New("inserted observation request parameter not an integer")
+	ErrInvalidQueryParameter             = errors.New("invalid query parameter")
 	ErrMetadataVersionNotFound           = errors.New("version not found")
 	ErrMissingJobProperties              = errors.New("missing job properties")
 	ErrMissingParameters                 = errors.New("missing properties in JSON")
@@ -61,6 +62,7 @@ var (
 
 	BadRequestMap = map[error]bool{
 		ErrInsertedObservationsInvalidSyntax: true,
+		ErrInvalidQueryParameter:             true,
 		ErrMissingJobProperties:              true,
 		ErrMissingParameters:                 true,
 		ErrUnableToParseJSON:                 true,

@@ -6,7 +6,6 @@ package storetest
 import (
 	"context"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"github.com/globalsign/mgo/bson"
 	"sync"
@@ -50,10 +49,6 @@ var (
 	lockMongoDBMockUpsertVersion                     sync.RWMutex
 )
 
-// Ensure, that MongoDBMock does implement store.MongoDB.
-// If this is not the case, regenerate this file with moq.
-var _ store.MongoDB = &MongoDBMock{}
-
 // MongoDBMock is a mock implementation of store.MongoDB.
 //
 //     func TestSomethingThatUsesMongoDB(t *testing.T) {
@@ -93,7 +88,7 @@ var _ store.MongoDB = &MongoDBMock{}
 //             GetDatasetsFunc: func(ctx context.Context) ([]models.DatasetUpdate, error) {
 // 	               panic("mock out the GetDatasets method")
 //             },
-//             GetDimensionOptionsFunc: func(version *models.Version, dimension string) (*models.DimensionOptionResults, error) {
+//             GetDimensionOptionsFunc: func(version *models.Version, dimension string, offset int, limit int) (*models.DimensionOptionResults, error) {
 // 	               panic("mock out the GetDimensionOptions method")
 //             },
 //             GetDimensionsFunc: func(datasetID string, versionID string) ([]bson.M, error) {
@@ -206,7 +201,7 @@ type MongoDBMock struct {
 	GetDatasetsFunc func(ctx context.Context) ([]models.DatasetUpdate, error)
 
 	// GetDimensionOptionsFunc mocks the GetDimensionOptions method.
-	GetDimensionOptionsFunc func(version *models.Version, dimension string) (*models.DimensionOptionResults, error)
+	GetDimensionOptionsFunc func(version *models.Version, dimension string, offset int, limit int) (*models.DimensionOptionResults, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
 	GetDimensionsFunc func(datasetID string, versionID string) ([]bson.M, error)
@@ -350,6 +345,10 @@ type MongoDBMock struct {
 			Version *models.Version
 			// Dimension is the dimension argument value.
 			Dimension string
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
 		}
 		// GetDimensions holds details about calls to the GetDimensions method.
 		GetDimensions []struct {
@@ -899,21 +898,25 @@ func (mock *MongoDBMock) GetDatasetsCalls() []struct {
 }
 
 // GetDimensionOptions calls GetDimensionOptionsFunc.
-func (mock *MongoDBMock) GetDimensionOptions(version *models.Version, dimension string) (*models.DimensionOptionResults, error) {
+func (mock *MongoDBMock) GetDimensionOptions(version *models.Version, dimension string, offset int, limit int) (*models.DimensionOptionResults, error) {
 	if mock.GetDimensionOptionsFunc == nil {
 		panic("MongoDBMock.GetDimensionOptionsFunc: method is nil but MongoDB.GetDimensionOptions was just called")
 	}
 	callInfo := struct {
 		Version   *models.Version
 		Dimension string
+		Offset    int
+		Limit     int
 	}{
 		Version:   version,
 		Dimension: dimension,
+		Offset:    offset,
+		Limit:     limit,
 	}
 	lockMongoDBMockGetDimensionOptions.Lock()
 	mock.calls.GetDimensionOptions = append(mock.calls.GetDimensionOptions, callInfo)
 	lockMongoDBMockGetDimensionOptions.Unlock()
-	return mock.GetDimensionOptionsFunc(version, dimension)
+	return mock.GetDimensionOptionsFunc(version, dimension, offset, limit)
 }
 
 // GetDimensionOptionsCalls gets all the calls that were made to GetDimensionOptions.
@@ -922,10 +925,14 @@ func (mock *MongoDBMock) GetDimensionOptions(version *models.Version, dimension 
 func (mock *MongoDBMock) GetDimensionOptionsCalls() []struct {
 	Version   *models.Version
 	Dimension string
+	Offset    int
+	Limit     int
 } {
 	var calls []struct {
 		Version   *models.Version
 		Dimension string
+		Offset    int
+		Limit     int
 	}
 	lockMongoDBMockGetDimensionOptions.RLock()
 	calls = mock.calls.GetDimensionOptions

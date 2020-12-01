@@ -47,8 +47,11 @@ func (m *Mongo) Init() (err error) {
 	m.Session.EnsureSafe(&mgo.Safe{WMode: "majority"})
 	m.Session.SetMode(mgo.Strong, true)
 
+	databaseCollectionBuilder := make(map[dpMongoHealth.Database][]dpMongoHealth.Collection)
+	databaseCollectionBuilder[(dpMongoHealth.Database)(m.Database)] = []dpMongoHealth.Collection{(dpMongoHealth.Collection)(m.Collection), (dpMongoHealth.Collection)(editionsCollection), (dpMongoHealth.Collection)(instanceCollection), (dpMongoHealth.Collection)(dimensionOptions)}
+
 	// Create client and healthclient from session
-	client := dpMongoHealth.NewClient(m.Session)
+	client := dpMongoHealth.NewClientWithCollections(m.Session, databaseCollectionBuilder)
 	m.healthClient = &dpMongoHealth.CheckMongoClient{
 		Client:      *client,
 		Healthcheck: client.Healthcheck,
