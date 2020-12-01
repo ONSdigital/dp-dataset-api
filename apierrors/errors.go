@@ -7,6 +7,8 @@ import (
 // A list of error messages for Dataset API
 var (
 	ErrAddDatasetAlreadyExists           = errors.New("forbidden - dataset already exists")
+	ErrDatasetTypeInvalid                = errors.New("invalid dataset type")
+	ErrTypeMismatch                      = errors.New("type mismatch")
 	ErrAddUpdateDatasetBadRequest        = errors.New("failed to parse json body")
 	ErrConflictUpdatingInstance          = errors.New("conflict updating instance resource")
 	ErrDatasetNotFound                   = errors.New("dataset not found")
@@ -63,6 +65,8 @@ var (
 		ErrMissingParameters:                 true,
 		ErrUnableToParseJSON:                 true,
 		ErrUnableToReadMessage:               true,
+		ErrTypeMismatch:                      true,
+		ErrDatasetTypeInvalid:                true,
 	}
 
 	ConflictRequestMap = map[error]bool{

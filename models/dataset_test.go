@@ -23,10 +23,43 @@ func createDataset() Dataset {
 var testContext = context.Background()
 
 func TestGetDatasetType(t *testing.T) {
-	Convey("Given the dataset type to be nomis", t, func() {
-		Convey("Then the values should be set to the expected dataset type", func() {
-			result := getDatasetType("")
-			So(result, ShouldEqual, FILTERABLE)
+	Convey("Given the dataset type", t, func() {
+		Convey("When the type is empty", func() {
+			Convey("Then it should default to filterable", func() {
+				result, err := GetDatasetType("")
+				So(result, ShouldEqual, Filterable)
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When the type is invalid", func() {
+			Convey("Then an error should be returned", func() {
+				result, err := GetDatasetType("abcdefg")
+				So(result, ShouldEqual, Invalid)
+				So(err, ShouldResemble, errs.ErrDatasetTypeInvalid)
+			})
+		})
+	})
+}
+
+func TestValidateDatasetType(t *testing.T) {
+	Convey("Given a dataset type return an error ", t, func() {
+		Convey("When the request has invalid dataset type ", func() {
+			Convey("Then should return type invalid error", func() {
+				dt, err := ValidateDatasetType(testContext, "abc123")
+				So(dt, ShouldBeNil)
+				So(err, ShouldResemble, errs.ErrDatasetTypeInvalid)
+			})
+		})
+	})
+}
+func TestValidateNomisURL(t *testing.T) {
+	Convey("Given a nomis URL return an error ", t, func() {
+		Convey("When the request has filterable type and a nomis url ", func() {
+			Convey("Then should return type mismatch", func() {
+				_, err := ValidateNomisURL(testContext, "filterable", "www.nomisweb.co.uk")
+				So(err, ShouldResemble, errs.ErrTypeMismatch)
+			})
 		})
 	})
 }

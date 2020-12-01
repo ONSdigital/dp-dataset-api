@@ -22,24 +22,27 @@ type DatasetType int
 
 // possible dataset types
 const (
-	FILTERABLE DatasetType = iota
-	NOMIS
+	Filterable DatasetType = iota
+	Nomis
+	Invalid
 )
 
-var datasetTypes = []string{"filterable", "nomis"}
+var datasetTypes = []string{"filterable", "nomis", "invalid"}
 
 func (dt DatasetType) String() string {
 	return datasetTypes[dt]
 }
 
-func getDatasetType(datasetType string) DatasetType {
+func GetDatasetType(datasetType string) (DatasetType, error) {
 	switch datasetType {
 	case "filterable":
-		return FILTERABLE
+		return Filterable, nil
 	case "nomis":
-		return NOMIS
+		return Nomis, nil
+	case "":
+		return Filterable, nil
 	default:
-		return FILTERABLE
+		return Invalid, errs.ErrDatasetTypeInvalid
 	}
 }
 
@@ -269,7 +272,7 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 	if err != nil {
 		return nil, errs.ErrUnableToParseJSON
 	}
-	dataset.Type = getDatasetType(dataset.Type).String()
+
 	return &dataset, nil
 }
 
@@ -450,6 +453,26 @@ func ValidateDataset(ctx context.Context, dataset *Dataset) error {
 		return fmt.Errorf("invalid fields: %v", invalidFields)
 	}
 	return nil
+}
+
+//ValidateDatasetType checks the dataset.type field has valid type
+func ValidateDatasetType(ctx context.Context, datasetType string) (*DatasetType, error) {
+	dataType, err := GetDatasetType(datasetType)
+	if err != nil {
+		log.Event(ctx, "error Invalid dataset type", log.ERROR, log.Error(errs.ErrDatasetTypeInvalid))
+		return nil, errs.ErrDatasetTypeInvalid
+	}
+	return &dataType, nil
+}
+
+//ValidateNomisURL checks for the nomis type when the dataset has nomis URL
+func ValidateNomisURL(ctx context.Context, datasetType string, nomisURL string) (string, error) {
+
+	if nomisURL != "" && datasetType != Nomis.String() {
+		log.Event(ctx, "error Type mismatch", log.ERROR, log.Error(errs.ErrDatasetTypeInvalid))
+		return "", errs.ErrTypeMismatch
+	}
+	return datasetType, nil
 }
 
 // ValidateVersion checks the content of the version structure

@@ -33,10 +33,9 @@ const (
 )
 
 var (
-	datasetPayload = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","periodicity":"yearly","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"}}`
-
-	urlBuilder = url.NewBuilder("localhost:20000")
-	mu         sync.Mutex
+	datasetPayload = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"nomis","nomis_reference_url":"https://www.nomis.co.uk"}`
+	urlBuilder     = url.NewBuilder("localhost:20000")
+	mu             sync.Mutex
 )
 
 func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {
@@ -397,6 +396,110 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
+
+	Convey("When the request has an filterable datatype and nomis url it should return type mismatch error", t, func() {
+		var b string
+		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable","nomis_reference_url":"https://www.nomis.co.uk"}`
+
+		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123123", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Body.String(), ShouldResemble, "type mismatch\n")
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
+
+	Convey("When the request has an invalid datatype it should return invalid type errorq", t, func() {
+		var b string
+		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"nomis_filterable"}`
+
+		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldResemble, "invalid dataset type\n")
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
+
+	Convey("When the request body has an empty type field it should create a dataset with type defaulted to filterable", t, func() {
+		var b string
+		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":""}`
+		res := `{"id":"123123","next":{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","id":"123123","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"},"editions":{"href":"http://localhost:22000/datasets/123123/editions"},"self":{"href":"http://localhost:22000/datasets/123123"}},"next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department"},"state":"created","theme":"population","title":"CensusEthnicity","type":"filterable"}}`
+		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123123", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		mockedDataStore.UpsertDataset("123123", &models.DatasetUpdate{Next: &models.Dataset{}})
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusCreated)
+		So(w.Body.String(), ShouldContainSubstring, res)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
+
 }
 
 func TestPutDatasetReturnsSuccessfully(t *testing.T) {
@@ -410,7 +513,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
+				return &models.DatasetUpdate{Next: &models.Dataset{Type: "nomis"}}, nil
 			},
 			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
 				return nil
@@ -549,6 +652,83 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
+
+	Convey("When updating the dataset nomis_reference_url and the stored dataset type is not nomis return bad request", t, func() {
+		var b string
+		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"nomis_reference_url":"https://www.nomis.co.uk"}`
+
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{Type: "filterable"}}, nil
+			},
+			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+				return nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(w.Body.String(), ShouldResemble, errs.ErrTypeMismatch.Error()+"\n")
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
+
+	Convey("When update dataset type has a value of filterable and stored dataset type is nomis return status ok", t, func() {
+		// Dataset type field cannot be updated and hence is ignored in any updates to the dataset
+
+		var b string
+		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable","nomis_reference_url":"https://www.nomis.co.uk"}`
+
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{Type: "nomis"}}, nil
+			},
+			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+				return nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err = r.Body.Read(make([]byte, 1))
