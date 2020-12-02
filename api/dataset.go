@@ -270,7 +270,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 
 		_, err = models.ValidateNomisURL(ctx, dataset.Type, dataset.NomisReferenceURL)
 		if err != nil {
-			log.Event(ctx, "putDataset endpoint: error dataset.Type mismatch", log.INFO, log.Error(err))
+			log.Event(ctx, "putDataset endpoint: error dataset.Type mismatch", log.ERROR, log.Error(err), data)
 			return err
 		}
 
