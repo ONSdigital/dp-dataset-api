@@ -33,14 +33,13 @@ func (dt DatasetType) String() string {
 	return datasetTypes[dt]
 }
 
+// GetDatasetType returns a dataset type for a given dataset
 func GetDatasetType(datasetType string) (DatasetType, error) {
 	switch datasetType {
-	case "filterable":
+	case "filterable", "":
 		return Filterable, nil
 	case "nomis":
 		return Nomis, nil
-	case "":
-		return Filterable, nil
 	default:
 		return Invalid, errs.ErrDatasetTypeInvalid
 	}
@@ -455,17 +454,17 @@ func ValidateDataset(ctx context.Context, dataset *Dataset) error {
 	return nil
 }
 
-//ValidateDatasetType checks the dataset.type field has valid type
+// ValidateDatasetType checks the dataset.type field has valid type
 func ValidateDatasetType(ctx context.Context, datasetType string) (*DatasetType, error) {
 	dataType, err := GetDatasetType(datasetType)
 	if err != nil {
-		log.Event(ctx, "error Invalid dataset type", log.ERROR, log.Error(errs.ErrDatasetTypeInvalid))
-		return nil, errs.ErrDatasetTypeInvalid
+		log.Event(ctx, "error Invalid dataset type", log.ERROR, log.Error(err))
+		return nil, err
 	}
 	return &dataType, nil
 }
 
-//ValidateNomisURL checks for the nomis type when the dataset has nomis URL
+// ValidateNomisURL checks for the nomis type when the dataset has nomis URL
 func ValidateNomisURL(ctx context.Context, datasetType string, nomisURL string) (string, error) {
 
 	if nomisURL != "" && datasetType != Nomis.String() {

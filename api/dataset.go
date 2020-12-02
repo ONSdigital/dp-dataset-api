@@ -179,13 +179,13 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 
 		dataType, err := models.ValidateDatasetType(ctx, dataset.Type)
 		if err != nil {
-			log.Event(ctx, "addDataset endpoint: error Invalid dataset type", log.INFO, logData)
+			log.Event(ctx, "addDataset endpoint: error Invalid dataset type", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
 		datasetType, err := models.ValidateNomisURL(ctx, dataType.String(), dataset.NomisReferenceURL)
 		if err != nil {
-			log.Event(ctx, "addDataset endpoint: error dataset.Type mismatch", log.INFO, logData)
+			log.Event(ctx, "addDataset endpoint: error dataset.Type mismatch", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 

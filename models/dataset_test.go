@@ -22,6 +22,19 @@ func createDataset() Dataset {
 
 var testContext = context.Background()
 
+func TestString(t *testing.T) {
+	Convey("Given an index for a dataset type", t, func() {
+		Convey("Then it should return the appropriate value", func() {
+			result := Filterable.String()
+			So(result, ShouldEqual, "filterable")
+			So(datasetTypes[0], ShouldEqual, "filterable")
+			So(datasetTypes[1], ShouldEqual, "nomis")
+			So(datasetTypes[2], ShouldEqual, "invalid")
+
+		})
+	})
+}
+
 func TestGetDatasetType(t *testing.T) {
 	Convey("Given the dataset type", t, func() {
 		Convey("When the type is empty", func() {

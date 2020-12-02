@@ -422,9 +422,9 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Body.String(), ShouldResemble, "type mismatch\n")
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 0)
 
 		Convey("then the request body has been drained", func() {
 			_, err = r.Body.Read(make([]byte, 1))
@@ -456,9 +456,8 @@ func TestPostDatasetReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "invalid dataset type\n")
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 0)
 
 		Convey("then the request body has been drained", func() {
 			_, err = r.Body.Read(make([]byte, 1))
@@ -491,10 +490,8 @@ func TestPostDatasetReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusCreated)
 		So(w.Body.String(), ShouldContainSubstring, res)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
+		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 2)
 
 		Convey("then the request body has been drained", func() {
 			_, err = r.Body.Read(make([]byte, 1))
@@ -538,6 +535,41 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
+
+	Convey("When update dataset type has a value of filterable and stored dataset type is nomis return status ok", t, func() {
+		// Dataset type field cannot be updated and hence is ignored in any updates to the dataset
+
+		var b string
+		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable","nomis_reference_url":"https://www.nomis.co.uk"}`
+
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{Type: "nomis"}}, nil
+			},
+			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+				return nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err = r.Body.Read(make([]byte, 1))
@@ -686,51 +718,9 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldResemble, errs.ErrTypeMismatch.Error()+"\n")
-
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
-
-		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
-			So(err, ShouldEqual, io.EOF)
-		})
-	})
-
-	Convey("When update dataset type has a value of filterable and stored dataset type is nomis return status ok", t, func() {
-		// Dataset type field cannot be updated and hence is ignored in any updates to the dataset
-
-		var b string
-		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable","nomis_reference_url":"https://www.nomis.co.uk"}`
-
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
-
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{Type: "nomis"}}, nil
-			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
-				return nil
-			},
-		}
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-
-		api.Router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusOK)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
-
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
 
 		Convey("then the request body has been drained", func() {
 			_, err = r.Body.Read(make([]byte, 1))
