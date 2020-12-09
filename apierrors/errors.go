@@ -7,6 +7,8 @@ import (
 // A list of error messages for Dataset API
 var (
 	ErrAddDatasetAlreadyExists           = errors.New("forbidden - dataset already exists")
+	ErrDatasetTypeInvalid                = errors.New("invalid dataset type")
+	ErrTypeMismatch                      = errors.New("type mismatch")
 	ErrAddUpdateDatasetBadRequest        = errors.New("failed to parse json body")
 	ErrConflictUpdatingInstance          = errors.New("conflict updating instance resource")
 	ErrDatasetNotFound                   = errors.New("dataset not found")
@@ -23,6 +25,7 @@ var (
 	ErrInstanceNotFound                  = errors.New("instance not found")
 	ErrInternalServer                    = errors.New("internal error")
 	ErrInsertedObservationsInvalidSyntax = errors.New("inserted observation request parameter not an integer")
+	ErrInvalidQueryParameter             = errors.New("invalid query parameter")
 	ErrMetadataVersionNotFound           = errors.New("version not found")
 	ErrMissingJobProperties              = errors.New("missing job properties")
 	ErrMissingParameters                 = errors.New("missing properties in JSON")
@@ -59,10 +62,13 @@ var (
 
 	BadRequestMap = map[error]bool{
 		ErrInsertedObservationsInvalidSyntax: true,
+		ErrInvalidQueryParameter:             true,
 		ErrMissingJobProperties:              true,
 		ErrMissingParameters:                 true,
 		ErrUnableToParseJSON:                 true,
 		ErrUnableToReadMessage:               true,
+		ErrTypeMismatch:                      true,
+		ErrDatasetTypeInvalid:                true,
 	}
 
 	ConflictRequestMap = map[error]bool{

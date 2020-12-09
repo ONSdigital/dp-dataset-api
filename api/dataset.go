@@ -29,6 +29,8 @@ var (
 	// errors that should return a 400 status
 	datasetsBadRequest = map[error]bool{
 		errs.ErrAddUpdateDatasetBadRequest: true,
+		errs.ErrTypeMismatch:               true,
+		errs.ErrDatasetTypeInvalid:         true,
 	}
 
 	// errors that should return a 404 status
@@ -175,6 +177,19 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, errs.ErrAddUpdateDatasetBadRequest
 		}
 
+		dataType, err := models.ValidateDatasetType(ctx, dataset.Type)
+		if err != nil {
+			log.Event(ctx, "addDataset endpoint: error Invalid dataset type", log.ERROR, log.Error(err), logData)
+			return nil, err
+		}
+
+		datasetType, err := models.ValidateNomisURL(ctx, dataType.String(), dataset.NomisReferenceURL)
+		if err != nil {
+			log.Event(ctx, "addDataset endpoint: error dataset.Type mismatch", log.ERROR, log.Error(err), logData)
+			return nil, err
+		}
+
+		dataset.Type = datasetType
 		dataset.State = models.CreatedState
 		dataset.ID = datasetID
 
@@ -248,6 +263,14 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
 		if err != nil {
 			log.Event(ctx, "putDataset endpoint: datastore.getDataset returned an error", log.ERROR, log.Error(err), data)
+			return err
+		}
+
+		dataset.Type = currentDataset.Next.Type
+
+		_, err = models.ValidateNomisURL(ctx, dataset.Type, dataset.NomisReferenceURL)
+		if err != nil {
+			log.Event(ctx, "putDataset endpoint: error dataset.Type mismatch", log.ERROR, log.Error(err), data)
 			return err
 		}
 

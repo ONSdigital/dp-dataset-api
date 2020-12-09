@@ -198,6 +198,8 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			"next.theme":                    "construction",
 			"next.title":                    "CPI",
 			"next.uri":                      "http://ons.gov.uk/datasets/123/landing-page",
+			"next.type":                     "nomis",
+			"next.nomis_reference_url":      "https://www.nomisweb.co.uk/census/2011/ks106ew",
 		}
 
 		dataset := &models.Dataset{
@@ -220,12 +222,14 @@ func TestDatasetUpdateQuery(t *testing.T) {
 				Type: "Public",
 				HRef: "http://ons.gov.uk",
 			},
-			QMI:              &qmi,
-			RelatedDatasets:  relatedDatasets,
-			ReleaseFrequency: "yearly",
-			Theme:            "construction",
-			Title:            "CPI",
-			URI:              "http://ons.gov.uk/datasets/123/landing-page",
+			QMI:               &qmi,
+			RelatedDatasets:   relatedDatasets,
+			ReleaseFrequency:  "yearly",
+			Theme:             "construction",
+			Title:             "CPI",
+			URI:               "http://ons.gov.uk/datasets/123/landing-page",
+			Type:              "nomis",
+			NomisReferenceURL: "https://www.nomisweb.co.uk/census/2011/ks106ew",
 		}
 
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)

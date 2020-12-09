@@ -444,6 +444,14 @@ func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Da
 		updates["next.uri"] = dataset.URI
 	}
 
+	if dataset.Type != "" {
+		updates["next.type"] = dataset.Type
+	}
+
+	if dataset.NomisReferenceURL != "" {
+		updates["next.nomis_reference_url"] = dataset.NomisReferenceURL
+	}
+
 	if err := models.ValidateDataset(ctx, dataset); err != nil {
 		log.Event(ctx, "failed validation check to create dataset", log.ERROR, log.Error(err))
 		return nil

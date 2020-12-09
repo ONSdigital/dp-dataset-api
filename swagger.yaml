@@ -83,7 +83,12 @@ parameters:
     in: body
     required: true
     schema:
-      $ref: '#/definitions/Dataset'
+     allOf:
+        - type: object
+          properties:
+            type:  
+              $ref: '#/definitions/Type'
+        - $ref: "#/definitions/Dataset"
   new_edition:
     name: new_edition
     description: "A new edition of the dataset"
@@ -122,6 +127,13 @@ parameters:
     description: "A comma separated list of state values to filter on (e.g. ‘completed,edition-confirmed’)"
     in: query
     type: string
+  update_dataset:
+    name: dataset
+    description: "An update to a dataset"
+    in: body
+    required: true
+    schema:
+      $ref: "#/definitions/Dataset"
   update_dimension:
     name: dimension
     description: "A dimension object to update for a given instance"
@@ -148,6 +160,18 @@ parameters:
     required: true
     schema:
       $ref: '#/definitions/UpdateVersion'
+  limit:
+    name: limit
+    description: "Maximum number of items that will be returned. A value of zero (default) will return all available items, without limit."
+    in: query
+    required: false
+    type: integer
+  offset:
+    name: offset
+    description: "Starting index of the items array that will be returned. By default it is zero, meaning that the returned items will start from the beginning."
+    in: query
+    required: false
+    type: integer
 securityDefinitions:
   FlorenceAPIKey:
     name: florence-token
@@ -227,12 +251,10 @@ paths:
       description: "Update the metadata for the next release of the dataset. The dataset contains all high level information, for additional details see editions or versions of a dataset."
       parameters:
       - $ref: '#/parameters/id'
-      - $ref: '#/parameters/new_dataset'
+      - $ref: '#/parameters/update_dataset'
       responses:
         200:
           description: "A json object for a single Dataset"
-          schema:
-            $ref: '#/definitions/NewDatasetResponse'
         400:
           description: "Bad Request due to invalid json in the request body"
         401:
@@ -429,12 +451,14 @@ paths:
       tags:
       - "Public"
       summary: "Get a list of options from a dimension"
-      description: "Get a list of all options which appear in this dimension and dataset"
+      description: "Get a list of options which appear in this dimension and dataset. By default all options are returned, but a subset can be requested by providing offset and limit query paramters."
       parameters:
       - $ref: '#/parameters/dimension'
       - $ref: '#/parameters/edition'
       - $ref: '#/parameters/id'
       - $ref: '#/parameters/version'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
       responses:
         200:
           description: "Json object containing all options for a dimension"
@@ -447,6 +471,8 @@ paths:
               * edition was incorrect
               * version was incorrect
               * dimension was incorrect
+              * query parameters incorrect offset provided
+              * query parameters incorrect limit provided
         404:
           description: "No dimension options were found for dimension"
         500:
@@ -946,6 +972,8 @@ definitions:
           example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
           readOnly: true
           type: string
+        type:
+          $ref: "#/definitions/Type"
     - $ref: "#/definitions/Dataset"
   Dataset:
     description: "The dataset"
@@ -992,6 +1020,10 @@ definitions:
       next_release:
         description: "The next release date for a dataset"
         type: string
+      nomis_ref_url:
+        description: "The NOMIS reference url for the dataset"
+        type: string
+        example: "https://www.nomisweb.co.uk/census/2011/ks106ew"
       publications:
         description: "A list of publications for a dataset"
         type: array
@@ -1052,6 +1084,12 @@ definitions:
       uri:
         description: "The uri to the location of this resource on the web"
         type: string
+
+  Type:
+    description: "The type for a dataset" 
+    type: string
+    enum: [filterable, nomis]
+    default: "filterable"    
   Dimension:
     description: "A single dimension within a dataset"
     type: object
@@ -1608,6 +1646,8 @@ definitions:
           properties:
             collection_id:
               $ref: '#/definitions/CollectionID'
+            type:  
+              $ref: '#/definitions/Type'
         - $ref: "#/definitions/Dataset"
       next:
         allOf:
@@ -1615,6 +1655,8 @@ definitions:
           properties:
             collection_id:
               $ref: '#/definitions/CollectionID'
+            type:  
+              $ref: '#/definitions/Type'
         - $ref: "#/definitions/Dataset"
   NewInstance:
     description: "A model for the request and response body for creating a new instance"
@@ -1800,6 +1842,28 @@ definitions:
         frequency:
           description: "The time frequency the version of the dataset covers for the period of time between start_date and end_date"
           type: string
+  UpdateDatasetResponse:
+    description: "A model for the response body when creating a new dataset"
+    type: object
+    properties:
+      id:
+        description: "An unique id for a dataset"
+        example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
+        type: string
+      current:
+        allOf:
+        - type: object
+          properties:
+            collection_id:
+              $ref: '#/definitions/CollectionID'
+        - $ref: "#/definitions/Dataset"
+      next:
+        allOf:
+        - type: object
+          properties:
+            collection_id:
+              $ref: '#/definitions/CollectionID'
+        - $ref: "#/definitions/Dataset"
   UpdateDimensionOptionRequest:
     description: "A cached dimension. (Only used by the Private API)"
     type: object

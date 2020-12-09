@@ -66,6 +66,8 @@ type DatasetAPI struct {
 	permissions               AuthHandler
 	instancePublishedChecker  *instance.PublishCheck
 	versionPublishedChecker   *PublishCheck
+	defaultLimit              int
+	defaultOffset             int
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
@@ -86,6 +88,8 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		permissions:               permissions,
 		versionPublishedChecker:   nil,
 		instancePublishedChecker:  nil,
+		defaultLimit:              cfg.MongoConfig.Limit,
+		defaultOffset:             cfg.MongoConfig.Offset,
 	}
 
 	if api.enablePrivateEndpoints {

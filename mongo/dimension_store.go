@@ -1,6 +1,7 @@
 package mongo
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -85,13 +86,24 @@ func (m *Mongo) GetDimensions(datasetID, versionID string) ([]bson.M, error) {
 	return results, nil
 }
 
-// GetDimensionOptions returns all dimension options for a dimensions within a dataset.
-func (m *Mongo) GetDimensionOptions(version *models.Version, dimension string) (*models.DimensionOptionResults, error) {
+// GetDimensionOptions returns dimension options for a dimensions within a dataset, according to the provided limit and offest.
+// Offset and limit need to be positive or zero. Zero limit is equivalent to no limit (all items starting at offset will be returned)
+func (m *Mongo) GetDimensionOptions(version *models.Version, dimension string, offset, limit int) (*models.DimensionOptionResults, error) {
+	if offset < 0 || limit < 0 {
+		return nil, errors.New("offset and limit must be positive or zero")
+	}
+
 	s := m.Session.Copy()
 	defer s.Close()
 
+	q := s.DB(m.Database).C(dimensionOptions).Find(bson.M{"instance_id": version.ID, "name": dimension})
+	totalCount, err := q.Count()
+	if err != nil {
+		return nil, err
+	}
+
 	var values []models.PublicDimensionOption
-	iter := s.DB(m.Database).C(dimensionOptions).Find(bson.M{"instance_id": version.ID, "name": dimension}).Iter()
+	iter := q.Sort("option").Skip(offset).Limit(limit).Iter()
 	if err := iter.All(&values); err != nil {
 		return nil, err
 	}
@@ -100,5 +112,11 @@ func (m *Mongo) GetDimensionOptions(version *models.Version, dimension string) (
 		values[i].Links.Version = *version.Links.Self
 	}
 
-	return &models.DimensionOptionResults{Items: values}, nil
+	return &models.DimensionOptionResults{
+		Items:      values,
+		Count:      len(values),
+		TotalCount: totalCount,
+		Offset:     offset,
+		Limit:      limit,
+	}, nil
 }

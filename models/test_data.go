@@ -72,12 +72,14 @@ func createTestDataset() *Dataset {
 		RelatedDatasets: []GeneralDetails{
 			relatedDatasets,
 		},
-		ReleaseFrequency: "yearly",
-		State:            AssociatedState,
-		Theme:            "population",
-		Title:            "CensusEthnicity",
-		UnitOfMeasure:    "Pounds Sterling",
-		URI:              "http://localhost:22000/datasets/123/breadcrumbs",
+		ReleaseFrequency:  "yearly",
+		State:             AssociatedState,
+		Theme:             "population",
+		Title:             "CensusEthnicity",
+		UnitOfMeasure:     "Pounds Sterling",
+		URI:               "http://localhost:22000/datasets/123/breadcrumbs",
+		Type:              "filterable",
+		NomisReferenceURL: "",
 	}
 }
 
@@ -112,6 +114,8 @@ func expectedDataset() Dataset {
 		Title:             "CensusEthnicity",
 		UnitOfMeasure:     "Pounds Sterling",
 		URI:               "http://localhost:22000/datasets/123/breadcrumbs",
+		Type:              "filterable",
+		NomisReferenceURL: "",
 	}
 }
 

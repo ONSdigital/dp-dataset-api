@@ -17,6 +17,34 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+// DatasetType defines possible dataset types
+type DatasetType int
+
+// possible dataset types
+const (
+	Filterable DatasetType = iota
+	Nomis
+	Invalid
+)
+
+var datasetTypes = []string{"filterable", "nomis", "invalid"}
+
+func (dt DatasetType) String() string {
+	return datasetTypes[dt]
+}
+
+// GetDatasetType returns a dataset type for a given dataset
+func GetDatasetType(datasetType string) (DatasetType, error) {
+	switch datasetType {
+	case "filterable", "":
+		return Filterable, nil
+	case "nomis":
+		return Nomis, nil
+	default:
+		return Invalid, errs.ErrDatasetTypeInvalid
+	}
+}
+
 // List of error variables
 var (
 	ErrAssociatedVersionCollectionIDInvalid = errors.New("missing collection_id for association between version and a collection")
@@ -82,6 +110,8 @@ type Dataset struct {
 	Title             string           `bson:"title,omitempty"                  json:"title,omitempty"`
 	UnitOfMeasure     string           `bson:"unit_of_measure,omitempty"        json:"unit_of_measure,omitempty"`
 	URI               string           `bson:"uri,omitempty"                    json:"uri,omitempty"`
+	Type              string           `bson:"type,omitempty"                   json:"type,omitempty"`
+	NomisReferenceURL string           `bson:"nomis_reference_url,omitempty"    json:"nomis_reference_url,omitempty"`
 }
 
 // DatasetLinks represents a list of specific links related to the dataset resource
@@ -229,6 +259,7 @@ type VersionLinks struct {
 
 // CreateDataset manages the creation of a dataset from a reader
 func CreateDataset(reader io.Reader) (*Dataset, error) {
+
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errs.ErrUnableToReadMessage
@@ -240,6 +271,7 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 	if err != nil {
 		return nil, errs.ErrUnableToParseJSON
 	}
+
 	return &dataset, nil
 }
 
@@ -400,6 +432,7 @@ func (ed *EditionUpdate) PublishLinks(ctx context.Context, host string, versionL
 	return nil
 }
 
+// ValidateDataset checks the dataset has invalid fields
 func ValidateDataset(ctx context.Context, dataset *Dataset) error {
 	var invalidFields []string
 	if dataset.URI != "" {
@@ -419,6 +452,26 @@ func ValidateDataset(ctx context.Context, dataset *Dataset) error {
 		return fmt.Errorf("invalid fields: %v", invalidFields)
 	}
 	return nil
+}
+
+// ValidateDatasetType checks the dataset.type field has valid type
+func ValidateDatasetType(ctx context.Context, datasetType string) (*DatasetType, error) {
+	dataType, err := GetDatasetType(datasetType)
+	if err != nil {
+		log.Event(ctx, "error Invalid dataset type", log.ERROR, log.Error(err))
+		return nil, err
+	}
+	return &dataType, nil
+}
+
+// ValidateNomisURL checks for the nomis type when the dataset has nomis URL
+func ValidateNomisURL(ctx context.Context, datasetType string, nomisURL string) (string, error) {
+
+	if nomisURL != "" && datasetType != Nomis.String() {
+		log.Event(ctx, "error Type mismatch", log.ERROR, log.Error(errs.ErrDatasetTypeInvalid))
+		return "", errs.ErrTypeMismatch
+	}
+	return datasetType, nil
 }
 
 // ValidateVersion checks the content of the version structure

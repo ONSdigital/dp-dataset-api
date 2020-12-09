@@ -11,19 +11,19 @@ var (
 	lockKafkaProducerMockOutput sync.RWMutex
 )
 
-// KafkaProducerMock is a mock implementation of KafkaProducer.
+// KafkaProducerMock is a mock implementation of download.KafkaProducer.
 //
 //     func TestSomethingThatUsesKafkaProducer(t *testing.T) {
 //
-//         // make and configure a mocked KafkaProducer
+//         // make and configure a mocked download.KafkaProducer
 //         mockedKafkaProducer := &KafkaProducerMock{
 //             OutputFunc: func() chan []byte {
-// 	               panic("TODO: mock out the Output method")
+// 	               panic("mock out the Output method")
 //             },
 //         }
 //
-//         // TODO: use mockedKafkaProducer in code that requires KafkaProducer
-//         //       and then make assertions.
+//         // use mockedKafkaProducer in code that requires download.KafkaProducer
+//         // and then make assertions.
 //
 //     }
 type KafkaProducerMock struct {
@@ -68,19 +68,19 @@ var (
 	lockGenerateDownloadsEventMockMarshal sync.RWMutex
 )
 
-// GenerateDownloadsEventMock is a mock implementation of GenerateDownloadsEvent.
+// GenerateDownloadsEventMock is a mock implementation of download.GenerateDownloadsEvent.
 //
 //     func TestSomethingThatUsesGenerateDownloadsEvent(t *testing.T) {
 //
-//         // make and configure a mocked GenerateDownloadsEvent
+//         // make and configure a mocked download.GenerateDownloadsEvent
 //         mockedGenerateDownloadsEvent := &GenerateDownloadsEventMock{
 //             MarshalFunc: func(s interface{}) ([]byte, error) {
-// 	               panic("TODO: mock out the Marshal method")
+// 	               panic("mock out the Marshal method")
 //             },
 //         }
 //
-//         // TODO: use mockedGenerateDownloadsEvent in code that requires GenerateDownloadsEvent
-//         //       and then make assertions.
+//         // use mockedGenerateDownloadsEvent in code that requires download.GenerateDownloadsEvent
+//         // and then make assertions.
 //
 //     }
 type GenerateDownloadsEventMock struct {
