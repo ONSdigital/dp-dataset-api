@@ -1,6 +1,5 @@
 package api
 
-//go:generate moq -out ../mocks/generated_auth_mocks.go -pkg mocks . AuthHandler
 //go:generate moq -out ../mocks/mocks.go -pkg mocks . DownloadsGenerator
 
 import (

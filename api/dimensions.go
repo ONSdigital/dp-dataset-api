@@ -15,6 +15,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const maxIDs = 1000
+
 func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -141,6 +143,18 @@ func getPositiveIntQueryParameter(queryVars url.Values, varKey string, defaultVa
 	return val, nil
 }
 
+// getStringListFromQueryParameter obtains a list of strings from the provided query paramters, up to maxNumItems
+func getStringListFromQueryParameter(queryVars url.Values, varKey string, maxNumItems int) ([]string, error) {
+	items, found := queryVars[varKey]
+	if !found {
+		return []string{}, nil
+	}
+	if len(items) > maxNumItems {
+		return []string{}, errs.ErrTooManyQueryParameters
+	}
+	return items, nil
+}
+
 func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -157,20 +171,32 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		state = models.PublishedState
 	}
 
-	// get limit from query parameters, or default value
-	limit, err := getPositiveIntQueryParameter(r.URL.Query(), "limit", api.defaultLimit)
+	// get list of option IDs that we want to get
+	ids, err := getStringListFromQueryParameter(r.URL.Query(), "ids", maxIDs)
 	if err != nil {
 		logData["query_params"] = r.URL.RawQuery
-		handleDimensionsErr(ctx, w, "failed to obtain limit from request query paramters", err, logData)
+		handleDimensionsErr(ctx, w, "failed to obtain list of IDs from request query paramters", err, logData)
 		return
 	}
 
-	// get offset from query parameters, or default value
-	offset, err := getPositiveIntQueryParameter(r.URL.Query(), "offset", api.defaultOffset)
-	if err != nil {
-		logData["query_params"] = r.URL.RawQuery
-		handleDimensionsErr(ctx, w, "failed to obtain offset from request query paramters", err, logData)
-		return
+	// if no list of IDs is provided, get offset and limit
+	var offset, limit int
+	if len(ids) == 0 {
+		// get limit from query parameters, or default value
+		limit, err = getPositiveIntQueryParameter(r.URL.Query(), "limit", api.defaultLimit)
+		if err != nil {
+			logData["query_params"] = r.URL.RawQuery
+			handleDimensionsErr(ctx, w, "failed to obtain limit from request query paramters", err, logData)
+			return
+		}
+
+		// get offset from query parameters, or default value
+		offset, err = getPositiveIntQueryParameter(r.URL.Query(), "offset", api.defaultOffset)
+		if err != nil {
+			logData["query_params"] = r.URL.RawQuery
+			handleDimensionsErr(ctx, w, "failed to obtain offset from request query paramters", err, logData)
+			return
+		}
 	}
 
 	// ger version for provided dataset, edition and versionID
@@ -187,11 +213,21 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// get sorted dimension options, starting at offset index, with a limit on the number of items
-	results, err := api.dataStore.Backend.GetDimensionOptions(version, dimension, offset, limit)
-	if err != nil {
-		handleDimensionsErr(ctx, w, "failed to get a list of dimension options", err, logData)
-		return
+	var results *models.DimensionOptionResults
+	if len(ids) == 0 {
+		// get sorted dimension options, starting at offset index, with a limit on the number of items
+		results, err = api.dataStore.Backend.GetDimensionOptions(version, dimension, offset, limit)
+		if err != nil {
+			handleDimensionsErr(ctx, w, "failed to get a list of dimension options", err, logData)
+			return
+		}
+	} else {
+		// get dimension options from the provided list of IDs, sorted by option
+		results, err = api.dataStore.Backend.GetDimensionOptionsFromIDs(version, dimension, ids)
+		if err != nil {
+			handleDimensionsErr(ctx, w, "failed to get a list of dimension options", err, logData)
+			return
+		}
 	}
 
 	// populate links
