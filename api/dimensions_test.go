@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"testing"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -174,6 +175,26 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 					Offset:     offset,
 				}, nil
 			},
+			GetDimensionOptionsFromIDsFunc: func(version *models.Version, dimension string, ids []string) (*models.DimensionOptionResults, error) {
+				ret := &models.DimensionOptionResults{TotalCount: 5}
+				sort.Strings(ids)
+				for _, id := range ids {
+					switch id {
+					case "op1":
+						ret.Items = append(ret.Items, models.PublicDimensionOption{Option: "op1"})
+					case "op2":
+						ret.Items = append(ret.Items, models.PublicDimensionOption{Option: "op2"})
+					case "op3":
+						ret.Items = append(ret.Items, models.PublicDimensionOption{Option: "op3"})
+					case "op4":
+						ret.Items = append(ret.Items, models.PublicDimensionOption{Option: "op4"})
+					case "op5":
+						ret.Items = append(ret.Items, models.PublicDimensionOption{Option: "op5"})
+					}
+				}
+				ret.Count = len(ret.Items)
+				return ret, nil
+			},
 		}
 
 		// permissions mocks
@@ -297,6 +318,54 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusOK)
 				validateBody(w.Body.Bytes(), expectedResponse)
 				validateCalls()
+			})
+		})
+
+		Convey("When a valid dimension and list of existing IDs is provided", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?ids=op1,op3", nil)
+			w := call(r)
+
+			Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
+				expectedResponse := models.DimensionOptionResults{
+					Items: []models.PublicDimensionOption{
+						{Option: "op1", Links: expectedLinks},
+						{Option: "op3", Links: expectedLinks},
+					},
+					Count:      2,
+					Offset:     0,
+					Limit:      0,
+					TotalCount: 5,
+				}
+				So(w.Code, ShouldEqual, http.StatusOK)
+				validateBody(w.Body.Bytes(), expectedResponse)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetDimensionOptionsFromIDsCalls()), ShouldEqual, 1)
+			})
+		})
+
+		Convey("When a valid offset, limit and dimension and list of existing IDs are provided", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?ids=op1,op3&offset=0&limit=1", nil)
+			w := call(r)
+
+			Convey("Then the call succeeds with 200 OK code, the list of IDs take precedence (offset and limit are ignored), and the expected body and calls are performed", func() {
+				expectedResponse := models.DimensionOptionResults{
+					Items: []models.PublicDimensionOption{
+						{Option: "op1", Links: expectedLinks},
+						{Option: "op3", Links: expectedLinks},
+					},
+					Count:      2,
+					Offset:     0,
+					Limit:      0,
+					TotalCount: 5,
+				}
+				So(w.Code, ShouldEqual, http.StatusOK)
+				validateBody(w.Body.Bytes(), expectedResponse)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetDimensionOptionsFromIDsCalls()), ShouldEqual, 1)
 			})
 		})
 	})

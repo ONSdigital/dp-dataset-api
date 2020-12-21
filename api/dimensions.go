@@ -2,11 +2,13 @@ package api
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -143,12 +145,15 @@ func getPositiveIntQueryParameter(queryVars url.Values, varKey string, defaultVa
 	return val, nil
 }
 
-// getStringListFromQueryParameter obtains a list of strings from the provided query paramters, up to maxNumItems
-func getStringListFromQueryParameter(queryVars url.Values, varKey string, maxNumItems int) ([]string, error) {
-	items, found := queryVars[varKey]
+// getStringListFromCSVQueryParameter obtains a list of strings from the provided query parameter,
+// by parsing the CSV value. Up to maxNumItems values are allowed.
+func getStringListFromCSVQueryParameter(queryVars url.Values, varKey string, maxNumItems int) (items []string, err error) {
+	q, found := queryVars[varKey]
 	if !found {
 		return []string{}, nil
 	}
+	r := csv.NewReader(strings.NewReader(q[0]))
+	items, err = r.Read()
 	if len(items) > maxNumItems {
 		return []string{}, errs.ErrTooManyQueryParameters
 	}
@@ -172,7 +177,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	}
 
 	// get list of option IDs that we want to get
-	ids, err := getStringListFromQueryParameter(r.URL.Query(), "ids", maxIDs)
+	ids, err := getStringListFromCSVQueryParameter(r.URL.Query(), "ids", maxIDs)
 	if err != nil {
 		logData["query_params"] = r.URL.RawQuery
 		handleDimensionsErr(ctx, w, "failed to obtain list of IDs from request query paramters", err, logData)
