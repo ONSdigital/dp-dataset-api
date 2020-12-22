@@ -381,6 +381,8 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 	t.Parallel()
 
+	MaxIDs = func() int { return 5 }
+
 	Convey("Given a set of mocked dependencies", t, func() {
 
 		// permissions mocks
@@ -416,7 +418,6 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 		})
 
 		Convey("Then providing more IDs than the maximum allowed results in 400 BadRequest response", func() {
-			MaxIDs = func() int { return 5 }
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=id1,id2,id3&id=id4,id5,id6", nil)
 			w := call(r)
 
