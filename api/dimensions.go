@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -17,7 +16,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const maxIDs = 1000
+const maxIDs = 200
+
+// MaxIDs returns the maximum number of IDs acceptable in a list
+var MaxIDs = func() int {
+	return maxIDs
+}
 
 func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -145,17 +149,22 @@ func getPositiveIntQueryParameter(queryVars url.Values, varKey string, defaultVa
 	return val, nil
 }
 
-// getStringListFromCSVQueryParameter obtains a list of strings from the provided query parameter,
-// by parsing the CSV value. Up to maxNumItems values are allowed.
-func getStringListFromCSVQueryParameter(queryVars url.Values, varKey string, maxNumItems int) (items []string, err error) {
-	q, found := queryVars[varKey]
+// getQueryParamListValues obtains a list of strings from the provided queryVars,
+// by parsing all values with key 'varKey' and splitting the values by commas, if they contain commas.
+// Up to maxNumItems values are allowed in total.
+func getQueryParamListValues(queryVars url.Values, varKey string, maxNumItems int) (items []string, err error) {
+	// get query paramters values for the provided key
+	values, found := queryVars[varKey]
 	if !found {
 		return []string{}, nil
 	}
-	r := csv.NewReader(strings.NewReader(q[0]))
-	items, err = r.Read()
-	if len(items) > maxNumItems {
-		return []string{}, errs.ErrTooManyQueryParameters
+
+	// each value may contain a simple value or a list of values, in a comma-separated format
+	for _, value := range values {
+		items = append(items, strings.Split(value, ",")...)
+		if len(items) > maxNumItems {
+			return []string{}, errs.ErrTooManyQueryParameters
+		}
 	}
 	return items, nil
 }
@@ -177,7 +186,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	}
 
 	// get list of option IDs that we want to get
-	ids, err := getStringListFromCSVQueryParameter(r.URL.Query(), "ids", maxIDs)
+	ids, err := getQueryParamListValues(r.URL.Query(), "id", MaxIDs())
 	if err != nil {
 		logData["query_params"] = r.URL.RawQuery
 		handleDimensionsErr(ctx, w, "failed to obtain list of IDs from request query paramters", err, logData)
