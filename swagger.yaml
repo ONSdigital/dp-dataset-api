@@ -457,7 +457,7 @@ paths:
       tags:
       - "Public"
       summary: "Get a list of options from a dimension"
-      description: "Get a list of options which appear in this dimension and dataset. By default all options are returned, but a subset can be requested by providing offset and limit query parameters, or by providing the list of opion IDs that we want, only the IDs that can be found will be returned."
+      description: "Get a list of options which appear in this dimension and dataset. By default all options are returned, but a subset can be requested by providing offset and limit query parameters, or by providing the list of option IDs, only the IDs that are found will be returned."
       parameters:
       - $ref: '#/parameters/dimension'
       - $ref: '#/parameters/edition'

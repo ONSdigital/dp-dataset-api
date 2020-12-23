@@ -153,7 +153,7 @@ func getPositiveIntQueryParameter(queryVars url.Values, varKey string, defaultVa
 // by parsing all values with key 'varKey' and splitting the values by commas, if they contain commas.
 // Up to maxNumItems values are allowed in total.
 func getQueryParamListValues(queryVars url.Values, varKey string, maxNumItems int) (items []string, err error) {
-	// get query paramters values for the provided key
+	// get query parameters values for the provided key
 	values, found := queryVars[varKey]
 	if !found {
 		return []string{}, nil
@@ -189,7 +189,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	ids, err := getQueryParamListValues(r.URL.Query(), "id", MaxIDs())
 	if err != nil {
 		logData["query_params"] = r.URL.RawQuery
-		handleDimensionsErr(ctx, w, "failed to obtain list of IDs from request query paramters", err, logData)
+		handleDimensionsErr(ctx, w, "failed to obtain list of IDs from request query parameters", err, logData)
 		return
 	}
 
@@ -200,7 +200,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		limit, err = getPositiveIntQueryParameter(r.URL.Query(), "limit", api.defaultLimit)
 		if err != nil {
 			logData["query_params"] = r.URL.RawQuery
-			handleDimensionsErr(ctx, w, "failed to obtain limit from request query paramters", err, logData)
+			handleDimensionsErr(ctx, w, "failed to obtain limit from request query parameters", err, logData)
 			return
 		}
 
@@ -208,7 +208,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		offset, err = getPositiveIntQueryParameter(r.URL.Query(), "offset", api.defaultOffset)
 		if err != nil {
 			logData["query_params"] = r.URL.RawQuery
-			handleDimensionsErr(ctx, w, "failed to obtain offset from request query paramters", err, logData)
+			handleDimensionsErr(ctx, w, "failed to obtain offset from request query parameters", err, logData)
 			return
 		}
 	}
