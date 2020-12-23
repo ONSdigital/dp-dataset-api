@@ -11,6 +11,7 @@ import (
 )
 
 const dimensionOptions = "dimension.options"
+const maxIDs = 1000
 
 // GetDimensionsFromInstance returns a list of dimensions and their options for an instance resource
 func (m *Mongo) GetDimensionsFromInstance(id string) (*models.DimensionNodeResults, error) {
@@ -118,5 +119,46 @@ func (m *Mongo) GetDimensionOptions(version *models.Version, dimension string, o
 		TotalCount: totalCount,
 		Offset:     offset,
 		Limit:      limit,
+	}, nil
+}
+
+// GetDimensionOptionsFromIDs returns dimension options for a dimension within a dataset, whose IDs match the provided list of IDs
+func (m *Mongo) GetDimensionOptionsFromIDs(version *models.Version, dimension string, IDs []string) (*models.DimensionOptionResults, error) {
+	if len(IDs) > maxIDs {
+		return nil, errors.New("too many IDs provided")
+	}
+
+	s := m.Session.Copy()
+	defer s.Close()
+
+	selectorAll := bson.M{"instance_id": version.ID, "name": dimension}
+	selectorInList := bson.M{"instance_id": version.ID, "name": dimension, "option": bson.M{"$in": IDs}}
+
+	// count total number of options in dimension
+	q := s.DB(m.Database).C(dimensionOptions).Find(selectorAll)
+	totalCount, err := q.Count()
+	if err != nil {
+		return nil, err
+	}
+
+	// obtain only options matching the provided IDs
+	q = s.DB(m.Database).C(dimensionOptions).Find(selectorInList)
+
+	var values []models.PublicDimensionOption
+	iter := q.Sort("option").Iter()
+	if err := iter.All(&values); err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < len(values); i++ {
+		values[i].Links.Version = *version.Links.Self
+	}
+
+	return &models.DimensionOptionResults{
+		Items:      values,
+		Count:      len(values),
+		TotalCount: totalCount,
+		Offset:     0,
+		Limit:      0,
 	}, nil
 }

@@ -3,3 +3,4 @@ debug
 *.tar.gz
 build
 .idea
+.vscode
