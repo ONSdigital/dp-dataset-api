@@ -33,7 +33,7 @@ func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []st
 		return nil, err
 	}
 
-	iter := s.DB(m.Database).C(instanceCollection).Find(filter).Sort("-$natural").Skip(offset).Limit(limit).Iter()
+	iter := s.DB(m.Database).C(instanceCollection).Find(filter).Sort("-last_updated").Skip(offset).Limit(limit).Iter()
 	defer func() {
 		err := iter.Close()
 		if err != nil {
