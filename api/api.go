@@ -106,6 +106,8 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 			Host:                api.host,
 			Storer:              api.dataStore.Backend,
 			EnableDetachDataset: api.enableDetachDataset,
+			DefaultOffset:       api.defaultOffset,
+			DefaultLimit:        api.defaultLimit,
 		}
 
 		dimensionAPI := &dimension.Store{

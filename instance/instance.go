@@ -13,6 +13,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
@@ -25,6 +26,8 @@ type Store struct {
 	store.Storer
 	Host                string
 	EnableDetachDataset bool
+	DefaultOffset       int
+	DefaultLimit        int
 }
 
 type taskError struct {
@@ -58,6 +61,22 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 		datasetFilterList = strings.Split(datasetFilterQuery, ",")
 	}
 
+	// get limit from query parameters, or default value
+	limit, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "limit", s.DefaultLimit)
+	if err != nil {
+		logData["query_params"] = r.URL.RawQuery
+		handleInstanceErr(ctx, err, w, logData)
+		return
+	}
+
+	// get offset from query parameters, or default value
+	offset, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "offset", s.DefaultOffset)
+	if err != nil {
+		logData["query_params"] = r.URL.RawQuery
+		handleInstanceErr(ctx, err, w, logData)
+		return
+	}
+
 	log.Event(ctx, "get list of instances", log.INFO, logData)
 
 	b, err := func() ([]byte, error) {
@@ -68,7 +87,7 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		results, err := s.GetInstances(ctx, stateFilterList, datasetFilterList)
+		results, err := s.GetInstances(ctx, stateFilterList, datasetFilterList, offset, limit)
 		if err != nil {
 			log.Event(ctx, "get instances: store.GetInstances returned and error", log.ERROR, log.Error(err), logData)
 			return nil, err

@@ -8,10 +8,6 @@ import (
 	"sync"
 )
 
-var (
-	lockCloserMockClose sync.RWMutex
-)
-
 // CloserMock is a mock implementation of service.Closer.
 //
 //     func TestSomethingThatUsesCloser(t *testing.T) {
@@ -39,6 +35,7 @@ type CloserMock struct {
 			Ctx context.Context
 		}
 	}
+	lockClose sync.RWMutex
 }
 
 // Close calls CloseFunc.
@@ -51,9 +48,9 @@ func (mock *CloserMock) Close(ctx context.Context) error {
 	}{
 		Ctx: ctx,
 	}
-	lockCloserMockClose.Lock()
+	mock.lockClose.Lock()
 	mock.calls.Close = append(mock.calls.Close, callInfo)
-	lockCloserMockClose.Unlock()
+	mock.lockClose.Unlock()
 	return mock.CloseFunc(ctx)
 }
 
@@ -66,8 +63,8 @@ func (mock *CloserMock) CloseCalls() []struct {
 	var calls []struct {
 		Ctx context.Context
 	}
-	lockCloserMockClose.RLock()
+	mock.lockClose.RLock()
 	calls = mock.calls.Close
-	lockCloserMockClose.RUnlock()
+	mock.lockClose.RUnlock()
 	return calls
 }

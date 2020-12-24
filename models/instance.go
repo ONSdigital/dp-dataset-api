@@ -80,7 +80,11 @@ type Event struct {
 
 // InstanceResults wraps instances objects for pagination
 type InstanceResults struct {
-	Items []Instance `json:"items"`
+	Items      []Instance `json:"items"`
+	Count      int        `json:"count"`
+	Offset     int        `json:"offset"`
+	Limit      int        `json:"limit"`
+	TotalCount int        `json:"total_count"`
 }
 
 // Validate the event structure

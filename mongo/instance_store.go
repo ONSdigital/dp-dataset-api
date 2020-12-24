@@ -15,7 +15,7 @@ import (
 const instanceCollection = "instances"
 
 // GetInstances from a mongo collection
-func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []string) (*models.InstanceResults, error) {
+func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []string, offset, limit int) (*models.InstanceResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -28,7 +28,12 @@ func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []st
 		filter["links.dataset.id"] = bson.M{"$in": datasets}
 	}
 
-	iter := s.DB(m.Database).C(instanceCollection).Find(filter).Sort("-$natural").Iter()
+	totalCount, err := s.DB(m.Database).C(instanceCollection).Find(filter).Count()
+	if err != nil {
+		return nil, err
+	}
+
+	iter := s.DB(m.Database).C(instanceCollection).Find(filter).Sort("-$natural").Skip(offset).Limit(limit).Iter()
 	defer func() {
 		err := iter.Close()
 		if err != nil {
@@ -44,7 +49,13 @@ func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []st
 		return nil, err
 	}
 
-	return &models.InstanceResults{Items: results}, nil
+	return &models.InstanceResults{
+		Items:      results,
+		TotalCount: totalCount,
+		Count:      len(results),
+		Offset:     offset,
+		Limit:      limit,
+	}, nil
 }
 
 // GetInstance returns a single instance from an ID
