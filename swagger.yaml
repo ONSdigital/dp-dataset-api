@@ -162,7 +162,7 @@ parameters:
       $ref: '#/definitions/UpdateVersion'
   limit:
     name: limit
-    description: "Maximum number of items that will be returned. A value of zero (default) will return all available items, without limit."
+    description: "Maximum number of items that will be returned. A value of zero will return all available items, without limit. The default value is 100."
     in: query
     required: false
     type: integer
@@ -172,6 +172,12 @@ parameters:
     in: query
     required: false
     type: integer
+  ids:
+    name: id
+    description: "List of ids, as comma separated values and/or as multiple query parameters with the same key (e.g. 'id=op1,op2&id=op3'). It defines the IDs that we want to retrieve. If provided, it takes precedence over offset and limit."
+    in: query
+    required: false
+    type: string
 securityDefinitions:
   FlorenceAPIKey:
     name: florence-token
@@ -451,7 +457,7 @@ paths:
       tags:
       - "Public"
       summary: "Get a list of options from a dimension"
-      description: "Get a list of options which appear in this dimension and dataset. By default all options are returned, but a subset can be requested by providing offset and limit query paramters."
+      description: "Get a list of options which appear in this dimension and dataset. By default all options are returned, but a subset can be requested by providing offset and limit query parameters, or by providing the list of option IDs, only the IDs that are found will be returned."
       parameters:
       - $ref: '#/parameters/dimension'
       - $ref: '#/parameters/edition'
@@ -459,6 +465,7 @@ paths:
       - $ref: '#/parameters/version'
       - $ref: '#/parameters/limit'
       - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/ids'
       responses:
         200:
           description: "Json object containing all options for a dimension"

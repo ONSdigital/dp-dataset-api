@@ -68,7 +68,7 @@ func Get() (*Configuration, error) {
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",
 			Database:   "datasets",
-			Limit:      0,
+			Limit:      100,
 			Offset:     0,
 		},
 	}
