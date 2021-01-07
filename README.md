@@ -45,11 +45,13 @@ the path to get to `completed` is longer than the `submitted` one.
 
 ### Healthcheck
 
-The endpoint `/healthcheck` checks the connection to the database and returns
+The endpoint `/health` checks the connection to the database and returns
 one of:
 
 * success (200, JSON "status": "OK")
 * failure (500, JSON "status": "error").
+
+The `/health` endpoint replaces `/healthcheck`, which now returns a `404 Not Found` response.
 
 ### Kafka scripts
 
