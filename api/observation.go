@@ -373,6 +373,7 @@ func (api *DatasetAPI) getObservationList(ctx context.Context, versionDoc *model
 func handleObservationsErrorType(ctx context.Context, w http.ResponseWriter, err error, data log.Data) {
 	_, isObservationErr := err.(observationQueryError)
 	var status int
+	resErrMsg := err.Error()
 
 	switch {
 	case isObservationErr:
@@ -382,7 +383,7 @@ func handleObservationsErrorType(ctx context.Context, w http.ResponseWriter, err
 	case observationBadRequest[err]:
 		status = http.StatusBadRequest
 	default:
-		err = errs.ErrInternalServer
+		resErrMsg = errs.ErrInternalServer.Error()
 		status = http.StatusInternalServerError
 	}
 
@@ -392,5 +393,5 @@ func handleObservationsErrorType(ctx context.Context, w http.ResponseWriter, err
 
 	data["responseStatus"] = status
 	log.Event(ctx, "get observation endpoint: request unsuccessful", log.ERROR, log.Error(err), data)
-	http.Error(w, err.Error(), status)
+	http.Error(w, resErrMsg, status)
 }
