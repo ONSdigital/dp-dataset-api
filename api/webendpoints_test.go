@@ -34,11 +34,14 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(ctx context.Context) ([]models.DatasetUpdate, error) {
-				return []models.DatasetUpdate{{
-					Current: current,
-					Next:    next,
-				}}, nil
+			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) (*models.DatasetUpdateResults, error) {
+				return &models.DatasetUpdateResults{
+					Items: []models.DatasetUpdate{
+						{
+							Current: current,
+							Next:    next,
+						}},
+				}, nil
 			},
 		}
 		Convey("Calling the datasets endpoint should allow only published items", func() {

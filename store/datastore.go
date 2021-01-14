@@ -26,7 +26,7 @@ type dataMongoDB interface {
 	CheckDatasetExists(ID, state string) error
 	CheckEditionExists(ID, editionID, state string) error
 	GetDataset(ID string) (*models.DatasetUpdate, error)
-	GetDatasets(ctx context.Context) ([]models.DatasetUpdate, error)
+	GetDatasets(ctx context.Context, offset, limit int, authorised bool) (*models.DatasetUpdateResults, error)
 	GetDimensionsFromInstance(ID string) (*models.DimensionNodeResults, error)
 	GetDimensions(datasetID, versionID string) ([]bson.M, error)
 	GetDimensionOptions(version *models.Version, dimension string, offset, limit int) (*models.DimensionOptionResults, error)

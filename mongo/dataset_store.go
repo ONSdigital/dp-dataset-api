@@ -74,11 +74,20 @@ func (m *Mongo) Checker(ctx context.Context, state *healthcheck.CheckState) erro
 }
 
 // GetDatasets retrieves all dataset documents
-func (m *Mongo) GetDatasets(ctx context.Context) ([]models.DatasetUpdate, error) {
+func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised bool) (*models.DatasetUpdateResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	iter := s.DB(m.Database).C("datasets").Find(nil).Iter()
+	var q *mgo.Query
+
+	if authorised {
+		q = s.DB(m.Database).C("datasets").Find(nil)
+	} else {
+		q = s.DB(m.Database).C("datasets").Find(bson.M{"current": bson.M{"$exists": true}})
+	}
+
+	iter := q.Sort().Skip(offset).Limit(limit).Iter()
+
 	defer func() {
 		err := iter.Close()
 		if err != nil {
@@ -86,15 +95,27 @@ func (m *Mongo) GetDatasets(ctx context.Context) ([]models.DatasetUpdate, error)
 		}
 	}()
 
-	results := []models.DatasetUpdate{}
-	if err := iter.All(&results); err != nil {
+	totalCount, err := q.Count()
+	if err != nil {
+		log.Event(ctx, "error counting items", log.ERROR, log.Error(err))
+	}
+
+	values := []models.DatasetUpdate{}
+
+	if err := iter.All(&values); err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, errs.ErrDatasetNotFound
 		}
 		return nil, err
 	}
 
-	return results, nil
+	return &models.DatasetUpdateResults{
+		Items:      values,
+		Count:      len(values),
+		TotalCount: totalCount,
+		Offset:     offset,
+		Limit:      limit,
+	}, nil
 }
 
 // GetDataset retrieves a dataset document

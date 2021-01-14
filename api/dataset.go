@@ -9,6 +9,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
@@ -43,24 +44,49 @@ var (
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	// get limit from query parameters, or default value
+	limit, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "limit", api.defaultLimit)
+	if err != nil {
+		log.Event(ctx, "failed to obtain limit from request query parameters", log.ERROR)
+		handleDatasetAPIErr(ctx, err, w, nil)
+		return
+	}
+
+	// get offset from query parameters, or default value
+	offset, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "offset", api.defaultOffset)
+	if err != nil {
+		log.Event(ctx, "failed to obtain offset from request query parameters", log.ERROR)
+		handleDatasetAPIErr(ctx, err, w, nil)
+		return
+	}
+
 	b, err := func() ([]byte, error) {
-		datasets, err := api.dataStore.Backend.GetDatasets(ctx)
+
+		logData := log.Data{}
+
+		authorised := api.authenticate(r, logData)
+
+		datasets, err := api.dataStore.Backend.GetDatasets(ctx, offset, limit, authorised)
 		if err != nil {
 			log.Event(ctx, "api endpoint getDatasets datastore.GetDatasets returned an error", log.ERROR, log.Error(err))
 			return nil, err
 		}
-		logData := log.Data{}
-		authorised := api.authenticate(r, logData)
 
 		var b []byte
+
 		var datasetsResponse interface{}
 
 		if authorised {
-			// User has valid authentication to get raw dataset document
-			datasetsResponse = &models.DatasetUpdateResults{Items: datasets}
+			datasetsResponse = datasets
 		} else {
-			// User is not authenticated and hence has only access to current sub document
-			datasetsResponse = &models.DatasetResults{Items: mapResults(datasets)}
+			datasetsResponse = &models.DatasetResults{
+				Items:      mapResults(datasets.Items),
+				Offset:     offset,
+				Limit:      limit,
+				Count:      datasets.Count,
+				TotalCount: datasets.TotalCount,
+			}
+
 		}
 
 		b, err = json.Marshal(datasetsResponse)
@@ -386,6 +412,20 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	log.Event(ctx, "delete dataset", log.INFO, logData)
 }
 
+// utility function to cut a slice according to the provided offset and limit.
+// limit=0 means no limit, and values higher than the slice length are ignored
+func slice(full []string, offset, limit int) (sliced []string) {
+	end := offset + limit
+	if limit == 0 || end > len(full) {
+		end = len(full)
+	}
+
+	if offset > len(full) {
+		return []string{}
+	}
+	return full[offset:end]
+}
+
 func mapResults(results []models.DatasetUpdate) []*models.Dataset {
 	items := []*models.Dataset{}
 	for _, item := range results {
@@ -393,7 +433,6 @@ func mapResults(results []models.DatasetUpdate) []*models.Dataset {
 			continue
 		}
 		item.Current.ID = item.ID
-
 		items = append(items, item.Current)
 	}
 	return items

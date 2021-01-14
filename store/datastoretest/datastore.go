@@ -5,11 +5,12 @@ package storetest
 
 import (
 	"context"
+	"sync"
+
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-graph/v2/observation"
 	"github.com/globalsign/mgo/bson"
-	"sync"
 )
 
 // Ensure, that StorerMock does implement store.Storer.
@@ -49,7 +50,7 @@ var _ store.Storer = &StorerMock{}
 //             GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
 // 	               panic("mock out the GetDataset method")
 //             },
-//             GetDatasetsFunc: func(ctx context.Context) ([]models.DatasetUpdate, error) {
+//             GetDatasetsFunc: func(ctx context.Context, offset int, limit int, authorised bool) (*models.DatasetUpdateResults, error) {
 // 	               panic("mock out the GetDatasets method")
 //             },
 //             GetDimensionOptionsFunc: func(version *models.Version, dimension string, offset int, limit int) (*models.DimensionOptionResults, error) {
@@ -168,7 +169,7 @@ type StorerMock struct {
 	GetDatasetFunc func(ID string) (*models.DatasetUpdate, error)
 
 	// GetDatasetsFunc mocks the GetDatasets method.
-	GetDatasetsFunc func(ctx context.Context) ([]models.DatasetUpdate, error)
+	GetDatasetsFunc func(ctx context.Context, offset int, limit int, authorised bool) (*models.DatasetUpdateResults, error)
 
 	// GetDimensionOptionsFunc mocks the GetDimensionOptions method.
 	GetDimensionOptionsFunc func(version *models.Version, dimension string, offset int, limit int) (*models.DimensionOptionResults, error)
@@ -318,6 +319,12 @@ type StorerMock struct {
 		GetDatasets []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+			// Authorised is the authorised argument value.
+			Authorised bool
 		}
 		// GetDimensionOptions holds details about calls to the GetDimensionOptions method.
 		GetDimensionOptions []struct {
@@ -898,29 +905,41 @@ func (mock *StorerMock) GetDatasetCalls() []struct {
 }
 
 // GetDatasets calls GetDatasetsFunc.
-func (mock *StorerMock) GetDatasets(ctx context.Context) ([]models.DatasetUpdate, error) {
+func (mock *StorerMock) GetDatasets(ctx context.Context, offset int, limit int, authorised bool) (*models.DatasetUpdateResults, error) {
 	if mock.GetDatasetsFunc == nil {
 		panic("StorerMock.GetDatasetsFunc: method is nil but Storer.GetDatasets was just called")
 	}
 	callInfo := struct {
-		Ctx context.Context
+		Ctx        context.Context
+		Offset     int
+		Limit      int
+		Authorised bool
 	}{
-		Ctx: ctx,
+		Ctx:        ctx,
+		Offset:     offset,
+		Limit:      limit,
+		Authorised: authorised,
 	}
 	mock.lockGetDatasets.Lock()
 	mock.calls.GetDatasets = append(mock.calls.GetDatasets, callInfo)
 	mock.lockGetDatasets.Unlock()
-	return mock.GetDatasetsFunc(ctx)
+	return mock.GetDatasetsFunc(ctx, offset, limit, authorised)
 }
 
 // GetDatasetsCalls gets all the calls that were made to GetDatasets.
 // Check the length with:
 //     len(mockedStorer.GetDatasetsCalls())
 func (mock *StorerMock) GetDatasetsCalls() []struct {
-	Ctx context.Context
+	Ctx        context.Context
+	Offset     int
+	Limit      int
+	Authorised bool
 } {
 	var calls []struct {
-		Ctx context.Context
+		Ctx        context.Context
+		Offset     int
+		Limit      int
+		Authorised bool
 	}
 	mock.lockGetDatasets.RLock()
 	calls = mock.calls.GetDatasets

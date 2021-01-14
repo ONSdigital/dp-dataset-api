@@ -55,13 +55,21 @@ var (
 
 // DatasetResults represents a structure for a list of datasets
 type DatasetResults struct {
-	Items []*Dataset `json:"items"`
+	Items      []*Dataset `json:"items"`
+	Count      int        `json:"count"`
+	Offset     int        `json:"offset"`
+	Limit      int        `json:"limit"`
+	TotalCount int        `json:"total_count"`
 }
 
 // DatasetUpdateResults represents a structure for a list of evolving dataset
 // with the current dataset and the updated dataset
 type DatasetUpdateResults struct {
-	Items []DatasetUpdate `json:"items"`
+	Items      []DatasetUpdate `json:"items"`
+	Count      int             `json:"count"`
+	Offset     int             `json:"offset"`
+	Limit      int             `json:"limit"`
+	TotalCount int             `json:"total_count"`
 }
 
 // EditionResults represents a structure for a list of editions for a dataset

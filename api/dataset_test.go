@@ -73,8 +73,8 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(context.Context) ([]models.DatasetUpdate, error) {
-				return []models.DatasetUpdate{}, nil
+			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) (*models.DatasetUpdateResults, error) {
+				return &models.DatasetUpdateResults{}, nil
 			},
 		}
 
@@ -97,7 +97,7 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(context.Context) ([]models.DatasetUpdate, error) {
+			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) (*models.DatasetUpdateResults, error) {
 				return nil, errs.ErrInternalServer
 			},
 		}

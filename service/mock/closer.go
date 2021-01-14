@@ -5,8 +5,13 @@ package mock
 
 import (
 	"context"
+	"github.com/ONSdigital/dp-dataset-api/service"
 	"sync"
 )
+
+// Ensure, that CloserMock does implement service.Closer.
+// If this is not the case, regenerate this file with moq.
+var _ service.Closer = &CloserMock{}
 
 // CloserMock is a mock implementation of service.Closer.
 //
