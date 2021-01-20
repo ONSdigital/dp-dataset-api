@@ -144,6 +144,8 @@ github.com/square/mongo-lock v0.0.0-20191001051310-282c90e422d0/go.mod h1:wR5++/
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.6.0 h1:jlIyCplCJFULU/01vCkhKuTyc3OorI3bJFuw6obfgho=
 github.com/stretchr/testify v1.6.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
+github.com/tamerh/jsparser v1.4.0 h1:1Hu5UEb7DyRxKNe1z4tnqEI0/JqiOALeQE3BdDbzu2M=
+github.com/tamerh/jsparser v1.4.0/go.mod h1:Dbrn+kGS04Vak3MYe5YpN9/mwh7QWecqBLxBw3T8vSw=
 github.com/unrolled/render v1.0.2/go.mod h1:gN9T0NhL4Bfbwu8ann7Ry/TGHYfosul+J0obPf6NBdM=
 github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c/go.mod h1:lB8K/P019DLNhemzwFU4jHLhdvlE6uDZjXFejJXr49I=
 github.com/xdg/stringprep v1.0.0/go.mod h1:Jhud4/sHMO4oL310DaZAKk9ZaJ08SJfe+sJh0HrGL1Y=
