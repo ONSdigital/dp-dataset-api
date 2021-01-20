@@ -135,19 +135,32 @@ func (m *Mongo) GetDataset(id string) (*models.DatasetUpdate, error) {
 }
 
 // GetEditions retrieves all edition documents for a dataset
-func (m *Mongo) GetEditions(ctx context.Context, id, state string) (*models.EditionUpdateResults, error) {
+func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit int, authorised bool) (*models.EditionUpdateResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
 	selector := buildEditionsQuery(id, state)
 
-	iter := s.DB(m.Database).C(editionsCollection).Find(selector).Iter()
+	var q *mgo.Query
+
+	if authorised {
+		q = s.DB(m.Database).C(editionsCollection).Find(selector)
+	} else {
+		q = s.DB(m.Database).C(editionsCollection).Find(bson.M{"current": bson.M{"$exists": true}})
+	}
+
+	iter := q.Sort().Skip(offset).Limit(limit).Iter()
 	defer func() {
 		err := iter.Close()
 		if err != nil {
 			log.Event(ctx, "error closing edition iterator", log.ERROR, log.Error(err), log.Data{"selector": selector})
 		}
 	}()
+
+	totalCount, err := q.Count()
+	if err != nil {
+		log.Event(ctx, "error counting items", log.ERROR, log.Error(err))
+	}
 
 	var results []*models.EditionUpdate
 	if err := iter.All(&results); err != nil {
@@ -160,7 +173,13 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string) (*models.Edit
 	if len(results) < 1 {
 		return nil, errs.ErrEditionNotFound
 	}
-	return &models.EditionUpdateResults{Items: results}, nil
+	return &models.EditionUpdateResults{
+		Items:      results,
+		Count:      len(results),
+		TotalCount: totalCount,
+		Offset:     offset,
+		Limit:      limit,
+	}, nil
 }
 
 func buildEditionsQuery(id, state string) bson.M {
@@ -242,13 +261,25 @@ func (m *Mongo) GetNextVersion(datasetID, edition string) (int, error) {
 }
 
 // GetVersions retrieves all version documents for a dataset edition
-func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string) (*models.VersionResults, error) {
+func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string, offset, limit int) (*models.VersionResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
+	var q *mgo.Query
+
 	selector := buildVersionsQuery(id, editionID, state)
 
-	iter := s.DB(m.Database).C("instances").Find(selector).Iter()
+	q = s.DB(m.Database).C("instances").Find(selector)
+
+	var results []models.Version
+
+	iter := q.Sort("-last_updated").Skip(offset).Limit(limit).Iter()
+
+	totalCount, err := q.Count()
+	if err != nil {
+		log.Event(ctx, "error counting items", log.ERROR, log.Error(err))
+	}
+
 	defer func() {
 		err := iter.Close()
 		if err != nil {
@@ -256,7 +287,6 @@ func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string) (*
 		}
 	}()
 
-	var results []models.Version
 	if err := iter.All(&results); err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, errs.ErrVersionNotFound
@@ -273,7 +303,13 @@ func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string) (*
 		results[i].Links.Self.HRef = results[i].Links.Version.HRef
 	}
 
-	return &models.VersionResults{Items: results}, nil
+	return &models.VersionResults{
+		Items:      results,
+		Count:      len(results),
+		TotalCount: totalCount,
+		Offset:     offset,
+		Limit:      limit,
+	}, nil
 }
 
 func buildVersionsQuery(id, editionID, state string) bson.M {

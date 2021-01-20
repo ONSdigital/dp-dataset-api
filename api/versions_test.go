@@ -41,7 +41,7 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.VersionResults, error) {
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
 				return &models.VersionResults{}, nil
 			},
 		}
@@ -147,7 +147,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.VersionResults, error) {
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
 				return nil, errs.ErrVersionNotFound
 			},
 		}
@@ -177,7 +177,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.VersionResults, error) {
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
 				return nil, errs.ErrVersionNotFound
 			},
 		}
@@ -210,7 +210,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.VersionResults, error) {
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
 				return &models.VersionResults{Items: items}, nil
 			},
 		}

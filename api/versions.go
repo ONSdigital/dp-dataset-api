@@ -9,6 +9,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	dphttp "github.com/ONSdigital/dp-net/http"
 	dprequest "github.com/ONSdigital/dp-net/request"
 	"github.com/ONSdigital/log.go/log"
@@ -61,6 +62,22 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	edition := vars["edition"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition}
 
+	// get limit from query parameters, or default value
+	limit, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "limit", api.defaultLimit)
+	if err != nil {
+		log.Event(ctx, "failed to obtain limit from request query parameters", log.ERROR)
+		handleDatasetAPIErr(ctx, err, w, nil)
+		return
+	}
+
+	// get offset from query parameters, or default value
+	offset, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "offset", api.defaultOffset)
+	if err != nil {
+		log.Event(ctx, "failed to obtain offset from request query parameters", log.ERROR)
+		handleDatasetAPIErr(ctx, err, w, nil)
+		return
+	}
+
 	b, err := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
 
@@ -79,7 +96,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		results, err := api.dataStore.Backend.GetVersions(ctx, datasetID, edition, state)
+		results, err := api.dataStore.Backend.GetVersions(ctx, datasetID, edition, state, offset, limit)
 		if err != nil {
 			log.Event(ctx, "failed to find any versions for dataset edition", log.ERROR, log.Error(err), logData)
 			return nil, err
@@ -410,7 +427,6 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *models.DatasetUpdate, currentVersion *models.Version, versionDoc *models.Version, versionDetails VersionDetails) error {
 	data := versionDetails.baseLogData()
 	log.Event(ctx, "attempting to publish version", log.INFO, data)
-
 	err := func() error {
 		editionDoc, err := api.dataStore.Backend.GetEdition(versionDetails.datasetID, versionDetails.edition, "")
 		if err != nil {

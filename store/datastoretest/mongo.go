@@ -5,12 +5,11 @@ package storetest
 
 import (
 	"context"
-	"sync"
-
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"github.com/globalsign/mgo/bson"
+	"sync"
 )
 
 // Ensure, that MongoDBMock does implement store.MongoDB.
@@ -71,7 +70,7 @@ var _ store.MongoDB = &MongoDBMock{}
 //             GetEditionFunc: func(ID string, editionID string, state string) (*models.EditionUpdate, error) {
 // 	               panic("mock out the GetEdition method")
 //             },
-//             GetEditionsFunc: func(ctx context.Context, ID string, state string) (*models.EditionUpdateResults, error) {
+//             GetEditionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) (*models.EditionUpdateResults, error) {
 // 	               panic("mock out the GetEditions method")
 //             },
 //             GetInstanceFunc: func(ID string) (*models.Instance, error) {
@@ -89,7 +88,7 @@ var _ store.MongoDB = &MongoDBMock{}
 //             GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
 // 	               panic("mock out the GetVersion method")
 //             },
-//             GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string) (*models.VersionResults, error) {
+//             GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) (*models.VersionResults, error) {
 // 	               panic("mock out the GetVersions method")
 //             },
 //             UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
@@ -187,7 +186,7 @@ type MongoDBMock struct {
 	GetEditionFunc func(ID string, editionID string, state string) (*models.EditionUpdate, error)
 
 	// GetEditionsFunc mocks the GetEditions method.
-	GetEditionsFunc func(ctx context.Context, ID string, state string) (*models.EditionUpdateResults, error)
+	GetEditionsFunc func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) (*models.EditionUpdateResults, error)
 
 	// GetInstanceFunc mocks the GetInstance method.
 	GetInstanceFunc func(ID string) (*models.Instance, error)
@@ -205,7 +204,7 @@ type MongoDBMock struct {
 	GetVersionFunc func(datasetID string, editionID string, version string, state string) (*models.Version, error)
 
 	// GetVersionsFunc mocks the GetVersions method.
-	GetVersionsFunc func(ctx context.Context, datasetID string, editionID string, state string) (*models.VersionResults, error)
+	GetVersionsFunc func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) (*models.VersionResults, error)
 
 	// UpdateBuildHierarchyTaskStateFunc mocks the UpdateBuildHierarchyTaskState method.
 	UpdateBuildHierarchyTaskStateFunc func(id string, dimension string, state string) error
@@ -368,6 +367,12 @@ type MongoDBMock struct {
 			ID string
 			// State is the state argument value.
 			State string
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+			// Authorised is the authorised argument value.
+			Authorised bool
 		}
 		// GetInstance holds details about calls to the GetInstance method.
 		GetInstance []struct {
@@ -422,6 +427,10 @@ type MongoDBMock struct {
 			EditionID string
 			// State is the state argument value.
 			State string
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
 		}
 		// UpdateBuildHierarchyTaskState holds details about calls to the UpdateBuildHierarchyTaskState method.
 		UpdateBuildHierarchyTaskState []struct {
@@ -1126,37 +1135,49 @@ func (mock *MongoDBMock) GetEditionCalls() []struct {
 }
 
 // GetEditions calls GetEditionsFunc.
-func (mock *MongoDBMock) GetEditions(ctx context.Context, ID string, state string) (*models.EditionUpdateResults, error) {
+func (mock *MongoDBMock) GetEditions(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) (*models.EditionUpdateResults, error) {
 	if mock.GetEditionsFunc == nil {
 		panic("MongoDBMock.GetEditionsFunc: method is nil but MongoDB.GetEditions was just called")
 	}
 	callInfo := struct {
-		Ctx   context.Context
-		ID    string
-		State string
+		Ctx        context.Context
+		ID         string
+		State      string
+		Offset     int
+		Limit      int
+		Authorised bool
 	}{
-		Ctx:   ctx,
-		ID:    ID,
-		State: state,
+		Ctx:        ctx,
+		ID:         ID,
+		State:      state,
+		Offset:     offset,
+		Limit:      limit,
+		Authorised: authorised,
 	}
 	mock.lockGetEditions.Lock()
 	mock.calls.GetEditions = append(mock.calls.GetEditions, callInfo)
 	mock.lockGetEditions.Unlock()
-	return mock.GetEditionsFunc(ctx, ID, state)
+	return mock.GetEditionsFunc(ctx, ID, state, offset, limit, authorised)
 }
 
 // GetEditionsCalls gets all the calls that were made to GetEditions.
 // Check the length with:
 //     len(mockedMongoDB.GetEditionsCalls())
 func (mock *MongoDBMock) GetEditionsCalls() []struct {
-	Ctx   context.Context
-	ID    string
-	State string
+	Ctx        context.Context
+	ID         string
+	State      string
+	Offset     int
+	Limit      int
+	Authorised bool
 } {
 	var calls []struct {
-		Ctx   context.Context
-		ID    string
-		State string
+		Ctx        context.Context
+		ID         string
+		State      string
+		Offset     int
+		Limit      int
+		Authorised bool
 	}
 	mock.lockGetEditions.RLock()
 	calls = mock.calls.GetEditions
@@ -1356,7 +1377,7 @@ func (mock *MongoDBMock) GetVersionCalls() []struct {
 }
 
 // GetVersions calls GetVersionsFunc.
-func (mock *MongoDBMock) GetVersions(ctx context.Context, datasetID string, editionID string, state string) (*models.VersionResults, error) {
+func (mock *MongoDBMock) GetVersions(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) (*models.VersionResults, error) {
 	if mock.GetVersionsFunc == nil {
 		panic("MongoDBMock.GetVersionsFunc: method is nil but MongoDB.GetVersions was just called")
 	}
@@ -1365,16 +1386,20 @@ func (mock *MongoDBMock) GetVersions(ctx context.Context, datasetID string, edit
 		DatasetID string
 		EditionID string
 		State     string
+		Offset    int
+		Limit     int
 	}{
 		Ctx:       ctx,
 		DatasetID: datasetID,
 		EditionID: editionID,
 		State:     state,
+		Offset:    offset,
+		Limit:     limit,
 	}
 	mock.lockGetVersions.Lock()
 	mock.calls.GetVersions = append(mock.calls.GetVersions, callInfo)
 	mock.lockGetVersions.Unlock()
-	return mock.GetVersionsFunc(ctx, datasetID, editionID, state)
+	return mock.GetVersionsFunc(ctx, datasetID, editionID, state, offset, limit)
 }
 
 // GetVersionsCalls gets all the calls that were made to GetVersions.
@@ -1385,12 +1410,16 @@ func (mock *MongoDBMock) GetVersionsCalls() []struct {
 	DatasetID string
 	EditionID string
 	State     string
+	Offset    int
+	Limit     int
 } {
 	var calls []struct {
 		Ctx       context.Context
 		DatasetID string
 		EditionID string
 		State     string
+		Offset    int
+		Limit     int
 	}
 	mock.lockGetVersions.RLock()
 	calls = mock.calls.GetVersions

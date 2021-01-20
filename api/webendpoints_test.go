@@ -107,7 +107,7 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 				datasetSearchState = state
 				return nil
 			},
-			GetEditionsFunc: func(ctx context.Context, ID, state string) (*models.EditionUpdateResults, error) {
+			GetEditionsFunc: func(ctx context.Context, ID, state string, offset, limit int, authorised bool) (*models.EditionUpdateResults, error) {
 				editionSearchState = state
 				return &models.EditionUpdateResults{
 					Items: []*models.EditionUpdate{edition},
@@ -173,7 +173,7 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 				editionSearchState = state
 				return nil
 			},
-			GetVersionsFunc: func(ctx context.Context, id string, editionID string, state string) (*models.VersionResults, error) {
+			GetVersionsFunc: func(ctx context.Context, id string, editionID string, state string, offset, limit int) (*models.VersionResults, error) {
 				versionSearchState = state
 				return &models.VersionResults{
 					Items: []models.Version{{ID: "124", State: models.PublishedState}},

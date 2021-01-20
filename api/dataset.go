@@ -381,7 +381,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Find any editions associated with this dataset
-		editionDocs, err := api.dataStore.Backend.GetEditions(ctx, currentDataset.ID, "")
+		editionDocs, err := api.dataStore.Backend.GetEditions(ctx, currentDataset.ID, "", 0, 0, true)
 		if err != nil {
 			log.Event(ctx, "unable to find the dataset editions", log.ERROR, log.Error(errs.ErrEditionsNotFound), logData)
 			return errs.ErrEditionsNotFound
