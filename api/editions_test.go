@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -43,6 +44,123 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 	})
+
+	// func to unmarshal and validate body bytes
+	validateBody := func(bytes []byte, expected models.EditionUpdateResults) {
+		var response models.EditionUpdateResults
+		err := json.Unmarshal(bytes, &response)
+		So(err, ShouldBeNil)
+		So(response, ShouldResemble, expected)
+	}
+
+	Convey("When valid limit and offset query parameters are provided, then return datasets information according to the offset and limit", t, func() {
+
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions?offset=2&limit=2", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(datasetID, state string) error {
+				return nil
+			},
+			GetEditionsFunc: func(ctx context.Context, id string, state string, offset, limit int, authorised bool) (*models.EditionUpdateResults, error) {
+				return &models.EditionUpdateResults{
+					Items:      []*models.EditionUpdate{},
+					Count:      2,
+					Offset:     offset,
+					Limit:      limit,
+					TotalCount: 5,
+				}, nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
+			expectedResponse := models.EditionUpdateResults{
+				Items:      []*models.EditionUpdate{},
+				Count:      2,
+				Offset:     2,
+				Limit:      2,
+				TotalCount: 5,
+			}
+
+			So(w.Code, ShouldEqual, http.StatusOK)
+			validateBody(w.Body.Bytes(), expectedResponse)
+		})
+	})
+
+	// Convey("When valid limit above maximum and offset query parameters are provided, then return datasets information according to the offset and limit", t, func() {
+
+	// 	r := httptest.NewRequest("GET", "http://localhost:22000/datasets?offset=2&limit=7", nil)
+	// 	w := httptest.NewRecorder()
+	// 	mockedDataStore := &storetest.StorerMock{
+	// 		GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) (*models.DatasetUpdateResults, error) {
+	// 			return &models.DatasetUpdateResults{
+	// 				Items:      []models.DatasetUpdate{},
+	// 				Count:      2,
+	// 				Offset:     offset,
+	// 				Limit:      limit,
+	// 				TotalCount: 5,
+	// 			}, nil
+	// 		},
+	// 	}
+
+	// 	datasetPermissions := getAuthorisationHandlerMock()
+	// 	permissions := getAuthorisationHandlerMock()
+	// 	api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+	// 	api.Router.ServeHTTP(w, r)
+
+	// 	Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
+	// 		expectedResponse := models.DatasetUpdateResults{
+	// 			Items:      []models.DatasetUpdate{},
+	// 			Count:      2,
+	// 			Offset:     2,
+	// 			Limit:      7,
+	// 			TotalCount: 5,
+	// 		}
+
+	// 		So(w.Code, ShouldEqual, http.StatusOK)
+	// 		validateBody(w.Body.Bytes(), expectedResponse)
+	// 	})
+	// })
+
+	// Convey("When a negative limit and offset query parameters are provided, then return datasets information with offset and limit equal to zero", t, func() {
+
+	// 	r := httptest.NewRequest("GET", "http://localhost:22000/datasets?offset=-2&limit=-7", nil)
+	// 	w := httptest.NewRecorder()
+	// 	mockedDataStore := &storetest.StorerMock{
+	// 		GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) (*models.DatasetUpdateResults, error) {
+	// 			return &models.DatasetUpdateResults{
+	// 				Items:      []models.DatasetUpdate{},
+	// 				Count:      2,
+	// 				Offset:     offset,
+	// 				Limit:      limit,
+	// 				TotalCount: 5,
+	// 			}, nil
+	// 		},
+	// 	}
+
+	// 	datasetPermissions := getAuthorisationHandlerMock()
+	// 	permissions := getAuthorisationHandlerMock()
+	// 	api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+	// 	api.Router.ServeHTTP(w, r)
+
+	// 	Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
+	// 		expectedResponse := models.DatasetUpdateResults{
+	// 			Items:      []models.DatasetUpdate{},
+	// 			Count:      2,
+	// 			Offset:     0,
+	// 			Limit:      0,
+	// 			TotalCount: 5,
+	// 		}
+
+	// 		So(w.Code, ShouldEqual, http.StatusOK)
+	// 		validateBody(w.Body.Bytes(), expectedResponse)
+	// 	})
+	// })
+
 }
 
 func TestGetEditionsReturnsError(t *testing.T) {

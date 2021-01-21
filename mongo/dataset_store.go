@@ -270,30 +270,25 @@ func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string, of
 	selector := buildVersionsQuery(id, editionID, state)
 
 	q = s.DB(m.Database).C("instances").Find(selector)
-
-	var results []models.Version
-
-	iter := q.Sort("-last_updated").Skip(offset).Limit(limit).Iter()
-
 	totalCount, err := q.Count()
 	if err != nil {
 		log.Event(ctx, "error counting items", log.ERROR, log.Error(err))
 	}
-
+	log.Event(ctx, "totalcount", log.Data{"total_count": totalCount})
+	iter := q.Sort("-last_updated").Skip(offset).Limit(limit).Iter()
 	defer func() {
 		err := iter.Close()
 		if err != nil {
 			log.Event(ctx, "error closing instance iterator", log.ERROR, log.Error(err), log.Data{"selector": selector})
 		}
 	}()
-
+	var results []models.Version
 	if err := iter.All(&results); err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, errs.ErrVersionNotFound
 		}
 		return nil, err
 	}
-
 	if len(results) < 1 {
 		return nil, errs.ErrVersionNotFound
 	}

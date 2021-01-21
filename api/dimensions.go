@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -29,6 +30,22 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	version := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "func": "getDimensions"}
 
+	// get limit from query parameters, or default value
+	limit, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "limit", api.defaultLimit)
+	if err != nil {
+		log.Event(ctx, "failed to obtain limit from request query parameters", log.ERROR)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	// get offset from query parameters, or default value
+	offset, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "offset", api.defaultOffset)
+	if err != nil {
+		log.Event(ctx, "failed to obtain offset from request query parameters", log.ERROR)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return
+	}
+
 	b, err := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
 
@@ -49,19 +66,33 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		dimensions, err := api.dataStore.Backend.GetDimensions(datasetID, versionDoc.ID)
+		dimensions, err := api.dataStore.Backend.GetDimensions(datasetID, versionDoc.ID, offset, limit)
 		if err != nil {
 			log.Event(ctx, "failed to get version dimensions", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
-		results, err := api.createListOfDimensions(versionDoc, dimensions)
+		totalCount := len(dimensions)
+
+		sort.Slice(dimensions, func(i, j int) bool {
+			return dimensions[i]["name"].(string) > (dimensions[j]["name"]).(string)
+		})
+
+		slicedDimensions := utils.Slice(dimensions, offset, limit)
+
+		results, err := api.createListOfDimensions(versionDoc, slicedDimensions)
 		if err != nil {
 			log.Event(ctx, "failed to convert bson to dimension", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
-		listOfDimensions := &models.DatasetDimensionResults{Items: results}
+		listOfDimensions := &models.DatasetDimensionResults{
+			Items:      results,
+			Offset:     offset,
+			Limit:      limit,
+			Count:      len(results),
+			TotalCount: totalCount,
+		}
 
 		b, err := json.Marshal(listOfDimensions)
 		if err != nil {
