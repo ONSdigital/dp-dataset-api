@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
-	"github.com/globalsign/mgo/bson"
+	"github.com/ONSdigital/dp-dataset-api/models"
 )
 
 // GetPositiveIntQueryParameter obtains the positive int value of query var defined by the provided varKey
@@ -47,14 +47,14 @@ func GetQueryParamListValues(queryVars url.Values, varKey string, maxNumItems in
 
 // utility function to cut a slice according to the provided offset and limit.
 // limit=0 means no limit, and values higher than the slice length are ignored
-func Slice(full []bson.M, offset, limit int) (sliced []bson.M) {
+func Slice(full []models.Dimension, offset, limit int) (sliced []models.Dimension) {
 	end := offset + limit
 	if limit == 0 || end > len(full) {
 		end = len(full)
 	}
 
 	if offset > len(full) {
-		return []bson.M{}
+		return []models.Dimension{}
 	}
 	return full[offset:end]
 }

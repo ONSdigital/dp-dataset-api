@@ -15,8 +15,40 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+// func to unmarshal and validate body bytes
+var validateBody = func(bytes []byte, expected models.DatasetDimensionResults) {
+	var response models.DatasetDimensionResults
+	err := json.Unmarshal(bytes, &response)
+	So(err, ShouldBeNil)
+	So(response, ShouldResemble, expected)
+}
+
 func TestGetDimensionsReturnsOk(t *testing.T) {
 	t.Parallel()
+
+	mongoData := []bson.M{
+		bson.M{"doc": bson.M{}},
+		bson.M{"doc": bson.M{
+			"links": bson.M{
+				"code_list": bson.M{},
+			},
+		},
+		},
+	}
+
+	mongoVersion := &models.Version{
+		State:      models.AssociatedState,
+		Dimensions: []models.Dimension{},
+		Links: &models.VersionLinks{
+			Dataset: &models.LinkObject{
+				ID: "version_dataset_id",
+			},
+			Version: &models.LinkObject{
+				ID: "version_ID",
+			},
+		},
+	}
+
 	Convey("When the request contain valid ids return dimension information", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
 		w := httptest.NewRecorder()
@@ -39,6 +71,158 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
+	})
+
+	Convey("When valid limit and offset query parameters are provided", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions?offset=1&limit=2", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+				return mongoVersion, nil
+			},
+			GetDimensionsFunc: func(datasetID, versionID string) ([]bson.M, error) {
+				return mongoData, nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		Convey("then return dimensions information according to the offset and limit", func() {
+			expectedResponse := models.DatasetDimensionResults{
+				Items: []models.Dimension{
+					{
+						Links: models.DimensionLink{
+							Options: models.LinkObject{
+								HRef: "http://localhost:22000/datasets/version_dataset_id/editions//versions/version_ID/dimensions//options",
+							},
+							CodeList: models.LinkObject{},
+							Version: models.LinkObject{
+								HRef: "http://localhost:22000/datasets/version_dataset_id/editions//versions/version_ID",
+							},
+						},
+					},
+				},
+				Count:      1,
+				Offset:     1,
+				Limit:      2,
+				TotalCount: 2,
+			}
+
+			So(w.Code, ShouldEqual, http.StatusOK)
+			validateBody(w.Body.Bytes(), expectedResponse)
+		})
+
+		Convey("then the expected calls are performed against the database", func() {
+			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+			So(permissions.Required.Calls, ShouldEqual, 0)
+			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
+		})
+	})
+
+	Convey("When valid limit above maximum and offset query parameters are provided", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions?offset=1&limit=7", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+				return mongoVersion, nil
+			},
+			GetDimensionsFunc: func(datasetID, versionID string) ([]bson.M, error) {
+				return mongoData, nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		Convey("then return editions information according to the offset and limit", func() {
+			expectedResponse := models.DatasetDimensionResults{
+				Items: []models.Dimension{
+					{
+						Links: models.DimensionLink{
+							Options: models.LinkObject{
+								HRef: "http://localhost:22000/datasets/version_dataset_id/editions//versions/version_ID/dimensions//options",
+							},
+							CodeList: models.LinkObject{},
+							Version: models.LinkObject{
+								HRef: "http://localhost:22000/datasets/version_dataset_id/editions//versions/version_ID",
+							},
+						},
+					},
+				},
+				Count:      1,
+				Offset:     1,
+				Limit:      7,
+				TotalCount: 2,
+			}
+
+			So(w.Code, ShouldEqual, http.StatusOK)
+			validateBody(w.Body.Bytes(), expectedResponse)
+		})
+
+		Convey("then the expected calls are performed against the database", func() {
+			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+			So(permissions.Required.Calls, ShouldEqual, 0)
+			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
+		})
+	})
+
+	Convey("When a negative limit and offset query parameters are provided", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions?offset=-1&limit=-7", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+				return mongoVersion, nil
+			},
+			GetDimensionsFunc: func(datasetID, versionID string) ([]bson.M, error) {
+				return []bson.M{
+					bson.M{"doc": bson.M{}},
+				}, nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		Convey("then return editions information with offset and limit equal to zero", func() {
+			expectedResponse := models.DatasetDimensionResults{
+				Items: []models.Dimension{
+					{
+						Links: models.DimensionLink{
+							Options: models.LinkObject{
+								HRef: "http://localhost:22000/datasets/version_dataset_id/editions//versions/version_ID/dimensions//options",
+							},
+							CodeList: models.LinkObject{},
+							Version: models.LinkObject{
+								HRef: "http://localhost:22000/datasets/version_dataset_id/editions//versions/version_ID",
+							},
+						},
+					},
+				},
+				Count:      1,
+				Offset:     0,
+				Limit:      0,
+				TotalCount: 1,
+			}
+
+			So(w.Code, ShouldEqual, http.StatusOK)
+			validateBody(w.Body.Bytes(), expectedResponse)
+		})
+
+		Convey("then the expected calls are performed against the database", func() {
+			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+			So(permissions.Required.Calls, ShouldEqual, 0)
+			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
+		})
 	})
 }
 

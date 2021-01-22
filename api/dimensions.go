@@ -66,7 +66,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		dimensions, err := api.dataStore.Backend.GetDimensions(datasetID, versionDoc.ID, offset, limit)
+		dimensions, err := api.dataStore.Backend.GetDimensions(datasetID, versionDoc.ID)
 		if err != nil {
 			log.Event(ctx, "failed to get version dimensions", log.ERROR, log.Error(err), logData)
 			return nil, err
@@ -74,23 +74,29 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 
 		totalCount := len(dimensions)
 
-		sort.Slice(dimensions, func(i, j int) bool {
-			return dimensions[i]["name"].(string) > (dimensions[j]["name"]).(string)
-		})
+		// sort.Slice(dimensions, func(i, j int) bool {
+		// 	return dimensions[i]["doc"]["name"].(string) > (dimensions[j]["doc"]["name"]).(string)
+		// })
 
-		slicedDimensions := utils.Slice(dimensions, offset, limit)
+		// slicedDimensions := utils.Slice(dimensions, offset, limit)
 
-		results, err := api.createListOfDimensions(versionDoc, slicedDimensions)
+		results, err := api.createListOfDimensions(versionDoc, dimensions)
 		if err != nil {
 			log.Event(ctx, "failed to convert bson to dimension", log.ERROR, log.Error(err), logData)
 			return nil, err
 		}
 
+		sort.Slice(results, func(i, j int) bool {
+			return results[i].Name > results[j].Name
+		})
+
+		slicedResults := utils.Slice(results, offset, limit)
+
 		listOfDimensions := &models.DatasetDimensionResults{
-			Items:      results,
+			Items:      slicedResults,
 			Offset:     offset,
 			Limit:      limit,
-			Count:      len(results),
+			Count:      len(slicedResults),
 			TotalCount: totalCount,
 		}
 
