@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/log.go/log"
@@ -67,9 +68,14 @@ func CensusContactDetails() models.ContactDetails{
 }
 
 func main() {
+
+	var mongoURL string
+	flag.StringVar(&mongoURL, "mongo-url", "localhost:27017", "mongoDB URL")
+	flag.Parse()
+
     downloadFile()
 	ctx := context.Background()
-	session, err := mgo.Dial("localhost")
+	session, err := mgo.Dial(mongoURL)
 	if err != nil {
 		log.Event(ctx, "failed to initialise mongo", log.FATAL, log.Error(err))
 		os.Exit(1)
@@ -209,6 +215,7 @@ func main() {
 		createDocument(ctx,censusEditionData,session,"editions")
 		createDocument(ctx,censusInstances,session,"instances")
 	}
+	fmt.Println("datasets, instances and editions have been added to datasets db")
 }
 
 
