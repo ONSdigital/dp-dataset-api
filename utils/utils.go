@@ -36,7 +36,13 @@ func GetQueryParamListValues(queryVars url.Values, varKey string, maxNumItems in
 
 	// each value may contain a simple value or a list of values, in a comma-separated format
 	for _, value := range values {
-		items = append(items, strings.Split(value, ",")...)
+		for _, val := range strings.Split(value, ",") {
+			v, err := url.QueryUnescape(val)
+			if err != nil {
+				return []string{}, err
+			}
+			items = append(items, v)
+		}
 		if len(items) > maxNumItems {
 			return []string{}, errs.ErrTooManyQueryParameters
 		}
