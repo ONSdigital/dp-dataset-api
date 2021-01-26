@@ -11,11 +11,14 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	flag.Parse()
 	var opts = godog.Options{
 		Output: colors.Colored(os.Stdout),
-		Format: "progress", // can define default values
+		Format: "pretty", // can define default values
 	}
+	godog.BindFlags("godog.", flag.CommandLine, &opts) // godog v0.10.0 and earlier
+	godog.BindCommandLineFlags("godog.", &opts)        // godog v0.11.0 (latest)
+	flag.Parse()
+
 	opts.Paths = flag.Args()
 
 	status := godog.TestSuite{

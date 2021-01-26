@@ -40,7 +40,6 @@ func run(ctx context.Context) error {
 	// Create the service, providing an error channel for fatal errors
 	svcErrors := make(chan error, 1)
 	svcList := service.NewServiceList(&service.Init{})
-
 	// Read config
 	cfg, err := config.Get()
 	if err != nil {
