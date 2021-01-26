@@ -143,7 +143,7 @@ func main() {
 			Edition: censusYear,
 			Links: &models.EditionUpdateLinks{
 				Dataset:       &models.LinkObject{HRef: fmt.Sprintf("%s%s", datasetUrl, cenId), ID: cenId},
-				LatestVersion: &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s%s%s", datasetUrl, cenId, editionUrl, censusYear, versionUrl, "/", censusVersion), ID: censusVersion},
+				LatestVersion: &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s%s%s", datasetUrl, cenId, editionUrl, "/"+censusYear, versionUrl, "/", censusVersion), ID: censusVersion},
 				Self:          &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s", datasetUrl, cenId, "/editions/", censusYear)},
 				Versions:      &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s", datasetUrl, cenId, editionUrl, "/"+censusYear, versionUrl)},
 			},
@@ -240,6 +240,7 @@ func main() {
 		datasetDoc := &models.DatasetUpdate{
 			ID:      mapData.ID,
 			Current: &mapData,
+			Next:    &mapData,
 		}
 
 		createDocument(ctx, datasetDoc, session, "datasets")
