@@ -16,7 +16,7 @@ import (
 	"github.com/ONSdigital/dp-kafka/v2/kafkatest"
 )
 
-type apiFeature struct {
+type APIFeature struct {
 	err error
 	svc *service.Service
 	// context   TestContext
@@ -26,9 +26,9 @@ type apiFeature struct {
 	Datasets     []*models.Dataset
 }
 
-func newAPIFeature() *apiFeature {
+func NewAPIFeature() *APIFeature {
 
-	f := &apiFeature{
+	f := &APIFeature{
 		errorChan:  make(chan error),
 		httpServer: &http.Server{},
 		Datasets:   make([]*models.Dataset, 0),
@@ -51,7 +51,7 @@ func newAPIFeature() *apiFeature {
 	return f
 }
 
-func (f *apiFeature) Reset() *apiFeature {
+func (f *APIFeature) Reset() *APIFeature {
 	f.Datasets = make([]*models.Dataset, 0)
 	if err := f.svc.Run(context.Background(), "1", "", "", f.errorChan); err != nil {
 		panic(err)
@@ -59,7 +59,7 @@ func (f *apiFeature) Reset() *apiFeature {
 	return f
 }
 
-func (f *apiFeature) Close() error {
+func (f *APIFeature) Close() error {
 	if f.svc != nil {
 		f.svc.Close(context.Background())
 	}
@@ -70,7 +70,7 @@ func funcClose(ctx context.Context) error {
 	return nil
 }
 
-func (f *apiFeature) DoGetHealthcheckOk(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error) {
+func (f *APIFeature) DoGetHealthcheckOk(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error) {
 	return &mock.HealthCheckerMock{
 		AddCheckFunc: func(name string, checker healthcheck.Checker) error { return nil },
 		StartFunc:    func(ctx context.Context) {},
@@ -78,13 +78,13 @@ func (f *apiFeature) DoGetHealthcheckOk(cfg *config.Configuration, buildTime str
 	}, nil
 }
 
-func (f *apiFeature) DoGetHTTPServer(bindAddr string, router http.Handler) service.HTTPServer {
+func (f *APIFeature) DoGetHTTPServer(bindAddr string, router http.Handler) service.HTTPServer {
 	f.httpServer.Addr = bindAddr
 	f.httpServer.Handler = router
 	return f.httpServer
 }
 
-func (f *apiFeature) DoGetMongoDBOk(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error) {
+func (f *APIFeature) DoGetMongoDBOk(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error) {
 	return &storeMock.MongoDBMock{
 		CloseFunc: funcClose,
 		GetDatasetsFunc: func(context.Context) ([]models.DatasetUpdate, error) {
@@ -101,11 +101,11 @@ func (f *apiFeature) DoGetMongoDBOk(ctx context.Context, cfg *config.Configurati
 	}, nil
 }
 
-func (f *apiFeature) DoGetGraphDBOk(ctx context.Context) (store.GraphDB, service.Closer, error) {
+func (f *APIFeature) DoGetGraphDBOk(ctx context.Context) (store.GraphDB, service.Closer, error) {
 	return &storeMock.GraphDBMock{CloseFunc: funcClose}, &serviceMock.CloserMock{CloseFunc: funcClose}, nil
 }
 
-func (f *apiFeature) DoGetKafkaProducerOk(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error) {
+func (f *APIFeature) DoGetKafkaProducerOk(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error) {
 	return &kafkatest.IProducerMock{
 		ChannelsFunc: func() *kafka.ProducerChannels {
 			return &kafka.ProducerChannels{}
