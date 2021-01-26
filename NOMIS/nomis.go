@@ -5,64 +5,69 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/log.go/log"
-	"github.com/globalsign/mgo"
-	uuid "github.com/satori/go.uuid"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/log.go/log"
+	"github.com/globalsign/mgo"
+	uuid "github.com/satori/go.uuid"
 )
 
 type CenStructure struct {
-	Structure	KeyfamiliesStruct  `bson:"structure,omitempty"      json:"structure,omitempty"`
+	Structure KeyfamiliesStruct `bson:"structure,omitempty"      json:"structure,omitempty"`
 }
 
 type KeyfamiliesStruct struct {
-	Keyfamilies	 *KeyfamilyArray   `bson:"keyfamilies,omitempty"    json:"keyfamilies,omitempty"`
+	Keyfamilies *KeyfamilyArray `bson:"keyfamilies,omitempty"    json:"keyfamilies,omitempty"`
 }
 
 type KeyfamilyArray struct {
-	Keyfamily   []KeyfamilyDetails `bson:"keyfamily,omitempty"      json:"keyfamily,omitempty"`
+	Keyfamily []KeyfamilyDetails `bson:"keyfamily,omitempty"      json:"keyfamily,omitempty"`
 }
 
 type KeyfamilyDetails struct {
-	ID  		string             `bson:"id,omitempty"              json:"id,omitempty"`
+	ID          string             `bson:"id,omitempty"              json:"id,omitempty"`
 	Annotations *AnnotationDetails `bson:"annotations,omitempty"     json:"annotations,omitempty"`
-	Name 	    *NameDetails       `bson:"name,omitempty"            json:"name,omitempty"`
+	Name        *NameDetails       `bson:"name,omitempty"            json:"name,omitempty"`
 }
 
 type AnnotationDetails struct {
-	Annotation  []AnnoTextTitle    `bson:"annotation,omitempty"       json:"annotation,omitempty"`
+	Annotation []AnnoTextTitle `bson:"annotation,omitempty"       json:"annotation,omitempty"`
 }
 type AnnoTextTitle struct {
-	Text        interface{}       `bson:"annotationtext,omitempty"    json:"annotationtext,omitempty"`
-	Title       string            `bson:"annotationtitle,omitempty"   json:"annotationtitle,omitempty"`
+	Text  interface{} `bson:"annotationtext,omitempty"    json:"annotationtext,omitempty"`
+	Title string      `bson:"annotationtitle,omitempty"   json:"annotationtitle,omitempty"`
 }
 type NameDetails struct {
-	Value 		string 			  `bson:"value,omitempty"             json:"value,omitempty"`
+	Value string `bson:"value,omitempty"             json:"value,omitempty"`
 }
 
 var (
 	censusNationalStatistic = false
-	fileName    string
-	fullURLFile string
-	title string
+	fileName                string
+	fullURLFile             string
+	title                   string
+	metaTitle               []int
+	num                     int
 )
 
 const (
-	censusYear string = "2011"
+	censusYear    string = "2011"
 	censusVersion string = "1"
 )
 
-func CensusContactDetails() models.ContactDetails{
+//CensusContactDetails returns the default values for contact details
+func CensusContactDetails() models.ContactDetails {
 	return models.ContactDetails{
-		Email : "support@nomisweb.co.uk",
-		Name :"Nomis",
+		Email:     "support@nomisweb.co.uk",
+		Name:      "Nomis",
 		Telephone: "+44(0) 191 3342680",
 	}
 }
@@ -73,7 +78,7 @@ func main() {
 	flag.StringVar(&mongoURL, "mongo-url", "localhost:27017", "mongoDB URL")
 	flag.Parse()
 
-    downloadFile()
+	downloadFile()
 	ctx := context.Background()
 	session, err := mgo.Dial(mongoURL)
 	if err != nil {
@@ -103,75 +108,88 @@ func main() {
 		return
 	}
 
-	for index0,_:=range res.Structure.Keyfamilies.Keyfamily {
-
-		censusEditionData :=models.EditionUpdate{}
+	for index0, _ := range res.Structure.Keyfamilies.Keyfamily {
+		censusEditionData := models.EditionUpdate{}
 		mapData := models.Dataset{}
 		cenId := res.Structure.Keyfamilies.Keyfamily[index0].ID
-		mapData.Title= res.Structure.Keyfamilies.Keyfamily[index0].Name.Value
+		mapData.Title = res.Structure.Keyfamilies.Keyfamily[index0].Name.Value
 		mapData.ID = cenId
 
+		datasetUrl := "http://127.0.0.1:12345/datasets/"
+		instanceUrl := "http://127.0.0.1:12345/instances/"
+		editionUrl := "/editions"
+		versionUrl := "/versions"
 
-		datasetUrl:="http://127.0.0.1:12345/datasets/"
-		instanceUrl:="http://127.0.0.1:12345/instances/"
-		editionUrl:="/editions"
-		versionUrl:="/versions"
-
-		createEditionLink :=fmt.Sprintf("%s%s%s",datasetUrl,cenId,editionUrl)
-		createLatestVersion:=fmt.Sprintf("%s%s%s%s%s%s",datasetUrl,cenId,editionUrl,"/"+censusYear,versionUrl,"/"+censusVersion)
+		createEditionLink := fmt.Sprintf("%s%s%s", datasetUrl, cenId, editionUrl)
+		createLatestVersion := fmt.Sprintf("%s%s%s%s%s%s", datasetUrl, cenId, editionUrl, "/"+censusYear, versionUrl, "/"+censusVersion)
 		mapData.Links = &models.DatasetLinks{
-			Editions: &models.LinkObject{HRef: createEditionLink},
+			Editions:      &models.LinkObject{HRef: createEditionLink},
 			LatestVersion: &models.LinkObject{HRef: createLatestVersion},
-			Self:&models.LinkObject{HRef: fmt.Sprintf("%s%s",datasetUrl,cenId)},
+			Self:          &models.LinkObject{HRef: fmt.Sprintf("%s%s", datasetUrl, cenId)},
 		}
-		mapData.Contacts=[]models.ContactDetails{
+		mapData.Contacts = []models.ContactDetails{
 			CensusContactDetails(),
 		}
 
-		mapData.License="Open Government Licence v3.0"
-		mapData.NationalStatistic= &censusNationalStatistic
-		mapData.NextRelease="To Be Confirmed"
-		mapData.ReleaseFrequency ="Decennially"
-		mapData.State="published"
-		mapData.Type="nomis"
+		mapData.License = "Open Government Licence v3.0"
+		mapData.NationalStatistic = &censusNationalStatistic
+		mapData.NextRelease = "To Be Confirmed"
+		mapData.ReleaseFrequency = "Decennially"
+		mapData.State = "published"
+		mapData.Type = "nomis"
 
 		//Model to generate editions document in mongodb
-		generalModel:= &models.Edition{
+		generalModel := &models.Edition{
 			Edition: censusYear,
 			Links: &models.EditionUpdateLinks{
-				Dataset: &models.LinkObject{HRef: fmt.Sprintf("%s%s",datasetUrl,cenId), ID: cenId},
-				LatestVersion: &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s%s%s",datasetUrl,cenId,editionUrl,censusYear,versionUrl,"/",censusVersion),ID: censusVersion},
-				Self:&models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s",datasetUrl,cenId,"/editions/",censusYear)},
-				Versions: &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s",datasetUrl,cenId,editionUrl,"/"+censusYear,versionUrl)},
-			},
-			State:"published",
-		}
-
-		censusEditionData.ID=uuid.NewV4().String()
-		censusEditionData.Next=generalModel
-		censusEditionData.Current=generalModel
-
-		//Model to generate instances documents in mongodb
-		generateId:=uuid.NewV4().String()
-		censusInstances := models.Version{
-			Edition: censusYear,
-			ID: generateId,
-			LastUpdated: mapData.LastUpdated,
-			Links: &models.VersionLinks{
-				Dataset: &models.LinkObject{HRef: fmt.Sprintf("%s%s",datasetUrl,cenId), ID: cenId},
-				Edition: &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s",datasetUrl,cenId,editionUrl,"/",censusYear),ID: censusYear},
-				Self: &models.LinkObject{HRef: fmt.Sprintf("%s%s",instanceUrl,generateId)},
-				Version: &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s%s",datasetUrl,cenId,"/editions/",censusYear,versionUrl,"/"+censusVersion),ID: censusVersion},
+				Dataset:       &models.LinkObject{HRef: fmt.Sprintf("%s%s", datasetUrl, cenId), ID: cenId},
+				LatestVersion: &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s%s%s", datasetUrl, cenId, editionUrl, censusYear, versionUrl, "/", censusVersion), ID: censusVersion},
+				Self:          &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s", datasetUrl, cenId, "/editions/", censusYear)},
+				Versions:      &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s", datasetUrl, cenId, editionUrl, "/"+censusYear, versionUrl)},
 			},
 			State: "published",
-			Version: 1,
-			UsageNotes:&[]models.UsageNote{},
 		}
 
+		censusEditionData.ID = uuid.NewV4().String()
+		censusEditionData.Next = generalModel
+		censusEditionData.Current = generalModel
 
-		for indx, _ := range res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation {
+		//Model to generate instances documents in mongodb
+		generateId := uuid.NewV4().String()
+		censusInstances := models.Version{
+			Edition:     censusYear,
+			ID:          generateId,
+			LastUpdated: mapData.LastUpdated,
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{HRef: fmt.Sprintf("%s%s", datasetUrl, cenId), ID: cenId},
+				Edition: &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s", datasetUrl, cenId, editionUrl, "/", censusYear), ID: censusYear},
+				Self:    &models.LinkObject{HRef: fmt.Sprintf("%s%s", instanceUrl, generateId)},
+				Version: &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s%s", datasetUrl, cenId, "/editions/", censusYear, versionUrl, "/"+censusVersion), ID: censusVersion},
+			},
+			State:      "published",
+			Version:    1,
+			UsageNotes: &[]models.UsageNote{},
+		}
+		var metaTitleInfo [5]string
+		for indx1 := range res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation {
+			str1 := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx1].Title
+			if strings.HasPrefix(str1, "MetadataTitle") {
+				title = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx1].Text.(string)
+				splitTitle := strings.Split(str1, "MetadataTitle")
+				if splitTitle[1] == "" {
+					num = 0
+				} else {
+					temp, _ := strconv.Atoi(splitTitle[1])
+					num = temp + 1
+				}
+				metaTitleInfo[num] = title
+			}
+		}
+
+		for indx := range res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation {
 
 			str := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Title
+
 			switch str {
 			case "MetadataText0":
 				mapData.Description = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string)
@@ -195,43 +213,54 @@ func main() {
 				param := strings.Split(ref, "c2011")
 				mapData.NomisReferenceURL = "https://www.nomisweb.co.uk/census/2011/" + param[1]
 
-			case"FirstReleased":
+			case "FirstReleased":
 				releaseDt := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string)
-				rd,_ := time.Parse("2006-01-02 15:04:05",releaseDt)
-				censusInstances.ReleaseDate=rd.String()
+				rd, _ := time.Parse("2006-01-02 15:04:05", releaseDt)
+				censusInstances.ReleaseDate = rd.String()
 			}
 
-			if strings.HasPrefix(str, "MetadataTitle") {
-				title= res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string)
-			}
 			if strings.HasPrefix(str, "MetadataText") {
-				*censusInstances.UsageNotes=append(*censusInstances.UsageNotes,models.UsageNote{
-					Note: res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string),
-					Title: title,
-				})
+				splitMetaData := strings.Split(str, "MetadataText")
+				txtNumber, _ := strconv.Atoi(splitMetaData[1])
+				if splitMetaData[1] == "" && splitMetaData[1] != "0" {
+					*censusInstances.UsageNotes = append(*censusInstances.UsageNotes, models.UsageNote{
+						Note:  res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string),
+						Title: metaTitleInfo[0],
+					})
+
+				} else if splitMetaData[1] != "0" {
+					*censusInstances.UsageNotes = append(*censusInstances.UsageNotes, models.UsageNote{
+						Note:  res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string),
+						Title: metaTitleInfo[txtNumber+1],
+					})
+				}
+
 			}
 		}
-		createDocument(ctx,mapData,session,"datasets")
-		createDocument(ctx,censusEditionData,session,"editions")
-		createDocument(ctx,censusInstances,session,"instances")
+		datasetDoc := &models.DatasetUpdate{
+			ID:      mapData.ID,
+			Current: &mapData,
+		}
+
+		createDocument(ctx, datasetDoc, session, "datasets")
+		createDocument(ctx, censusEditionData, session, "editions")
+		createDocument(ctx, censusInstances, session, "instances")
 	}
-	fmt.Println("datasets, instances and editions have been added to datasets db")
+	fmt.Println("\ndatasets, instances and editions have been added to datasets db")
 }
 
-
 //Inserts a document in the specific collection
-func createDocument( ctx context.Context,class interface{}, session *mgo.Session,document string){
+func createDocument(ctx context.Context, class interface{}, session *mgo.Session, document string) {
 	var err error
-	logData:= log.Data{"data": class}
+	logData := log.Data{"data": class}
 	if err = session.DB("datasets").C(document).Insert(class); err != nil {
 		log.Event(ctx, "failed to insert data in collection", log.ERROR, log.Error(err), logData)
 		os.Exit(1)
 	}
 }
 
-
 //Download a file from nomis website for census 2011 data
-func downloadFile(){
+func downloadFile() {
 	fullURLFile = "https://www.nomisweb.co.uk/api/v01/dataset/def.sdmx.json?search=*c2011*"
 
 	// Build fileName from fullPath
@@ -243,7 +272,7 @@ func downloadFile(){
 	path := fileURL.Path
 	segments := strings.Split(path, "/")
 	fileName = segments[len(segments)-1]
-	newFileName :="./NOMIS/"+fileName
+	newFileName := "./NOMIS/" + fileName
 
 	// Create blank file
 	file, err := os.Create(newFileName)
