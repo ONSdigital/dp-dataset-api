@@ -98,6 +98,13 @@ func (f *APIFeature) DoGetMongoDBOk(ctx context.Context, cfg *config.Configurati
 			}
 			return response, nil
 		},
+		GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
+			response := models.DatasetUpdate{
+				ID:      ID,
+				Current: &models.Dataset{},
+			}
+			return &response, nil
+		},
 	}, nil
 }
 
