@@ -11,6 +11,7 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/cucumber/godog"
+	"github.com/globalsign/mgo"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -47,28 +48,31 @@ func (f *APIFeature) IHaveTheseDatasets(datasetsJson *godog.DocString) error {
 	defer s.Close()
 
 	for _, datasetDoc := range datasets {
-
-		datasetID := datasetDoc.ID
-
-		datasetUp := models.DatasetUpdate{
-			ID:      datasetID,
-			Next:    &datasetDoc,
-			Current: &datasetDoc,
-		}
-
-		update := bson.M{
-			"$set": datasetUp,
-			"$setOnInsert": bson.M{
-				"last_updated": time.Now(),
-			},
-		}
-		_, err = s.DB(m.Database).C("datasets").UpsertId(datasetID, update)
-		if err != nil {
-			panic(err)
-		}
+		f.putDatasetInDatabase(s, datasetDoc)
 	}
 
 	return nil
+}
+
+func (f *APIFeature) putDatasetInDatabase(s *mgo.Session, datasetDoc models.Dataset) {
+	datasetID := datasetDoc.ID
+
+	datasetUp := models.DatasetUpdate{
+		ID:      datasetID,
+		Next:    &datasetDoc,
+		Current: &datasetDoc,
+	}
+
+	update := bson.M{
+		"$set": datasetUp,
+		"$setOnInsert": bson.M{
+			"last_updated": time.Now(),
+		},
+	}
+	_, err := s.DB(f.MongoClient.Database).C("datasets").UpsertId(datasetID, update)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (f *APIFeature) IShouldReceiveTheFollowingJSONResponse(expectedAPIResponse *godog.DocString) error {
