@@ -17,7 +17,7 @@ all: audit test build
 
 .PHONY: audit
 audit:
-	nancy go.sum
+	go list -m all | nancy sleuth
 
 .PHONY: build
 build:
@@ -40,4 +40,10 @@ acceptance-web: build
 test:
 	go test -race -cover ./...
 
-.PHONEY: test build debug
+.PHONY: nomis
+nomis:
+	go run NOMIS/nomis.go -mongo-url=localhost:27017
+
+.PHONY: test build debug
+
+
