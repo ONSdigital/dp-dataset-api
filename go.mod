@@ -24,6 +24,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/stretchr/testify v1.6.1
+	go.mongodb.org/mongo-driver v1.0.3
 	gopkg.in/avro.v0 v0.0.0-20171217001914-a730b5802183 // indirect
 	gopkg.in/jcmturner/gokrb5.v7 v7.5.0
 )

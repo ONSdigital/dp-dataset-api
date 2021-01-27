@@ -7,9 +7,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"time"
 
+	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type TestContext struct {
@@ -31,11 +34,42 @@ func (f *APIFeature) IGet(path string) error {
 	return nil
 }
 
-func (f *APIFeature) IHaveTheseDatasets(datasets *godog.DocString) error {
+func (f *APIFeature) IHaveTheseDatasets(datasetsJson *godog.DocString) error {
 
-	err := json.Unmarshal([]byte(datasets.Content), &f.Datasets)
+	datasets := []models.Dataset{}
+	m := f.MongoClient
+
+	err := json.Unmarshal([]byte(datasetsJson.Content), &datasets)
 	if err != nil {
 		return err
+	}
+
+	datasetDoc := datasets[0]
+	fmt.Println(datasetDoc)
+
+	fmt.Println("========================")
+	fmt.Println(m.Database)
+
+	s := m.Session.Copy()
+	defer s.Close()
+
+	datasetID := datasetDoc.ID
+
+	datasetUp := models.DatasetUpdate{
+		ID:   datasetID,
+		Next: &datasetDoc,
+	}
+
+	update := bson.M{
+		"$set": datasetUp,
+		"$setOnInsert": bson.M{
+			"last_updated": time.Now(),
+		},
+	}
+
+	_, err = s.DB(m.Database).C("datasets").UpsertId(datasetID, update)
+	if err != nil {
+		panic(err)
 	}
 
 	return nil
@@ -45,7 +79,7 @@ func (f *APIFeature) IShouldReceiveTheFollowingJSONResponse(expectedAPIResponse 
 	responseBody := f.httpResponse.Body
 	body, _ := ioutil.ReadAll(responseBody)
 
-	assert.JSONEq(f, string(body), expectedAPIResponse.Content)
+	assert.JSONEq(f, expectedAPIResponse.Content, string(body))
 
 	return f.err
 }

@@ -28,7 +28,8 @@ type APIFeature struct {
 	httpServer   *http.Server
 	httpResponse *http.Response
 	Datasets     []*models.Dataset
-	Mongo        *memongo.Server
+	MongoServer  *memongo.Server
+	MongoClient  *mongo.Mongo
 }
 
 func NewAPIFeature() *APIFeature {
@@ -53,7 +54,7 @@ func NewAPIFeature() *APIFeature {
 	if err != nil {
 		panic(err)
 	}
-	f.Mongo = mongoServer
+	f.MongoServer = mongoServer
 
 	initMock := &serviceMock.InitialiserMock{
 		DoGetMongoDBFunc:       f.DoGetMongoDB,
@@ -73,6 +74,8 @@ func (f *APIFeature) Reset() *APIFeature {
 		panic(err)
 	}
 
+	f.MongoClient.Database = memongo.RandomDatabase()
+	f.MongoClient.Init()
 	return f
 }
 
@@ -80,7 +83,7 @@ func (f *APIFeature) Close() error {
 	if f.svc != nil {
 		f.svc.Close(context.Background())
 	}
-	f.Mongo.Stop()
+	f.MongoServer.Stop()
 	return nil
 }
 
@@ -104,17 +107,21 @@ func (f *APIFeature) DoGetHTTPServer(bindAddr string, router http.Handler) servi
 
 // DoGetMongoDB returns a MongoDB
 func (f *APIFeature) DoGetMongoDB(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error) {
+
 	mongodb := &mongo.Mongo{
-		CodeListURL: cfg.CodeListAPIURL,
-		Collection:  cfg.MongoConfig.Collection,
-		Database:    cfg.MongoConfig.Database,
-		DatasetURL:  cfg.DatasetAPIURL,
-		URI:         cfg.MongoConfig.BindAddr,
+		CodeListURL: "",
+		Collection:  "datasets",
+		Database:    memongo.RandomDatabase(),
+		DatasetURL:  "datasets",
+		URI:         f.MongoServer.URI(),
 	}
 	if err := mongodb.Init(); err != nil {
 		return nil, err
 	}
 	log.Event(ctx, "listening to mongo db session", log.INFO, log.Data{"URI": mongodb.URI})
+
+	f.MongoClient = mongodb
+
 	return mongodb, nil
 }
 
