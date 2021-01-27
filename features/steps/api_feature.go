@@ -125,36 +125,6 @@ func (f *APIFeature) DoGetMongoDB(ctx context.Context, cfg *config.Configuration
 	return mongodb, nil
 }
 
-// func (f *APIFeature) DoGetMongoDBOk(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error) {
-
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	defer mongoServer.Stop()
-
-// 	return &storeMock.MongoDBMock{
-// 		CloseFunc: funcClose,
-// 		GetDatasetsFunc: func(context.Context) ([]models.DatasetUpdate, error) {
-// 			response := make([]models.DatasetUpdate, 0)
-// 			for _, dataset := range f.Datasets {
-// 				response = append(response, models.DatasetUpdate{
-// 					ID:      dataset.ID,
-// 					Current: dataset,
-// 					Next:    dataset,
-// 				})
-// 			}
-// 			return response, nil
-// 		},
-// 		GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
-// 			response := models.DatasetUpdate{
-// 				ID:      ID,
-// 				Current: &models.Dataset{},
-// 			}
-// 			return &response, nil
-// 		},
-// 	}, nil
-// }
-
 func (f *APIFeature) DoGetGraphDBOk(ctx context.Context) (store.GraphDB, service.Closer, error) {
 	return &storeMock.GraphDBMock{CloseFunc: funcClose}, &serviceMock.CloserMock{CloseFunc: funcClose}, nil
 }
