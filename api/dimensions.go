@@ -74,12 +74,6 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 
 		totalCount := len(dimensions)
 
-		// sort.Slice(dimensions, func(i, j int) bool {
-		// 	return dimensions[i]["doc"]["name"].(string) > (dimensions[j]["doc"]["name"]).(string)
-		// })
-
-		// slicedDimensions := utils.Slice(dimensions, offset, limit)
-
 		results, err := api.createListOfDimensions(versionDoc, dimensions)
 		if err != nil {
 			log.Event(ctx, "failed to convert bson to dimension", log.ERROR, log.Error(err), logData)
@@ -87,7 +81,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 		}
 
 		sort.Slice(results, func(i, j int) bool {
-			return results[i].Name > results[j].Name
+			return results[i].Name < results[j].Name
 		})
 
 		slicedResults := utils.Slice(results, offset, limit)
