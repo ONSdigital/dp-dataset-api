@@ -43,33 +43,29 @@ func (f *APIFeature) IHaveTheseDatasets(datasetsJson *godog.DocString) error {
 	if err != nil {
 		return err
 	}
-
-	datasetDoc := datasets[0]
-	fmt.Println(datasetDoc)
-
-	fmt.Println("========================")
-	fmt.Println(m.Database)
-
 	s := m.Session.Copy()
 	defer s.Close()
 
-	datasetID := datasetDoc.ID
+	for _, datasetDoc := range datasets {
 
-	datasetUp := models.DatasetUpdate{
-		ID:   datasetID,
-		Next: &datasetDoc,
-	}
+		datasetID := datasetDoc.ID
 
-	update := bson.M{
-		"$set": datasetUp,
-		"$setOnInsert": bson.M{
-			"last_updated": time.Now(),
-		},
-	}
+		datasetUp := models.DatasetUpdate{
+			ID:      datasetID,
+			Next:    &datasetDoc,
+			Current: &datasetDoc,
+		}
 
-	_, err = s.DB(m.Database).C("datasets").UpsertId(datasetID, update)
-	if err != nil {
-		panic(err)
+		update := bson.M{
+			"$set": datasetUp,
+			"$setOnInsert": bson.M{
+				"last_updated": time.Now(),
+			},
+		}
+		_, err = s.DB(m.Database).C("datasets").UpsertId(datasetID, update)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	return nil
