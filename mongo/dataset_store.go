@@ -3,7 +3,6 @@ package mongo
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -78,9 +77,6 @@ func (m *Mongo) Checker(ctx context.Context, state *healthcheck.CheckState) erro
 func (m *Mongo) GetDatasets(ctx context.Context) ([]models.DatasetUpdate, error) {
 	s := m.Session.Copy()
 	defer s.Close()
-
-	fmt.Println("========================")
-	fmt.Println(m.Database)
 
 	iter := s.DB(m.Database).C("datasets").Find(nil).Iter()
 	defer func() {
