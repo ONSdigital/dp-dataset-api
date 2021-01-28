@@ -41,7 +41,6 @@ func (f *APIFeature) makeRequest(method, path string, data []byte) {
 	req := httptest.NewRequest(method, "http://"+f.httpServer.Addr+path, bytes.NewReader(data))
 	req.Header.Set("Authorization", "ItDoesntMatter")
 
-	fmt.Println(req)
 	w := httptest.NewRecorder()
 	f.httpServer.Handler.ServeHTTP(w, req)
 
