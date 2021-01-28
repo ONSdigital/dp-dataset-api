@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/identity"
@@ -94,9 +93,6 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		log.Event(ctx, "could not obtain mongo session", log.ERROR, log.Error(err))
 		return err
 	}
-
-	fmt.Printf("config inside service: %p\n", svc.config)
-	fmt.Printf("EnablePrivateEndpoints inside service: %v\n", &svc.config.EnablePrivateEndpoints)
 
 	// Get graphDB connection for observation store
 	if !svc.config.EnableObservationEndpoint && !svc.config.EnablePrivateEndpoints {

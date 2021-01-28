@@ -27,43 +27,17 @@ func (f *APIFeature) Errorf(format string, args ...interface{}) {
 }
 
 func (f *APIFeature) IGet(path string) error {
-	f.startService()
-
-	f.get(path)
-
+	f.makeRequest("GET", path, nil)
 	return nil
 }
 
 func (f *APIFeature) IPOSTTheFollowingTo(path string, body *godog.DocString) error {
-	f.startService()
-
-	dataset := models.Dataset{}
-
-	err := json.Unmarshal([]byte(body.Content), &dataset)
-
-	payload := map[string]string{
-		"title": dataset.Title,
-	}
-
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-
-	f.post(path, data)
-
+	f.makeRequest("POST", path, []byte(body.Content))
 	return nil
 }
 
-func (f *APIFeature) post(path string, data []byte) {
-	f.makeRequest("POST", path, data)
-}
-
-func (f *APIFeature) get(path string) {
-	f.makeRequest("GET", path, nil)
-}
-
 func (f *APIFeature) makeRequest(method, path string, data []byte) {
+	f.startService()
 	req := httptest.NewRequest(method, "http://"+f.httpServer.Addr+path, bytes.NewReader(data))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -150,10 +124,6 @@ func (f *APIFeature) IAmNotIdentified() error {
 }
 
 func (f *APIFeature) PrivateEndpointsAreEnabled() error {
-
-	fmt.Printf("config: %p\n", f.Config)
-	fmt.Printf("EnablePrivateEndpoints in steps: %p\n", &f.Config.EnablePrivateEndpoints)
-
 	f.Config.EnablePrivateEndpoints = true
 	return nil
 }

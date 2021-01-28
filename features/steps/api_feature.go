@@ -2,6 +2,8 @@ package steps
 
 import (
 	"context"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 
@@ -51,6 +53,7 @@ func NewAPIFeature() *APIFeature {
 		Port:           27017,
 		MongoVersion:   "4.0.5",
 		StartupTimeout: time.Second * 10,
+		Logger:         log.New(ioutil.Discard, "", 0),
 	}
 
 	mongoServer, err := memongo.StartWithOptions(&opts)
