@@ -30,6 +30,7 @@ type APIFeature struct {
 	Datasets     []*models.Dataset
 	MongoServer  *memongo.Server
 	MongoClient  *mongo.Mongo
+	Config       *config.Configuration
 }
 
 func NewAPIFeature() *APIFeature {
@@ -40,10 +41,13 @@ func NewAPIFeature() *APIFeature {
 		Datasets:   make([]*models.Dataset, 0),
 	}
 
-	cfg, err := config.Get()
+	var err error
+
+	f.Config, err = config.Get()
 	if err != nil {
 		panic(err)
 	}
+
 	opts := memongo.Options{
 		Port:           27017,
 		MongoVersion:   "4.0.5",
@@ -64,16 +68,13 @@ func NewAPIFeature() *APIFeature {
 		DoGetHTTPServerFunc:    f.DoGetHTTPServer,
 	}
 
-	f.svc = service.New(cfg, service.NewServiceList(initMock))
+	f.svc = service.New(f.Config, service.NewServiceList(initMock))
+
 	return f
 }
 
 func (f *APIFeature) Reset() *APIFeature {
 	f.Datasets = make([]*models.Dataset, 0)
-	if err := f.svc.Run(context.Background(), "1", "", "", f.errorChan); err != nil {
-		panic(err)
-	}
-
 	f.MongoClient.Database = memongo.RandomDatabase()
 	f.MongoClient.Init()
 	return f
@@ -118,7 +119,7 @@ func (f *APIFeature) DoGetMongoDB(ctx context.Context, cfg *config.Configuration
 	if err := mongodb.Init(); err != nil {
 		return nil, err
 	}
-	log.Event(ctx, "listening to mongo db session", log.INFO, log.Data{"URI": mongodb.URI})
+	log.Event(ctx, "listening to in-memory mongo db session", log.INFO, log.Data{"URI": mongodb.URI})
 
 	f.MongoClient = mongodb
 

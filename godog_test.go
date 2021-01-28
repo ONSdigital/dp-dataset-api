@@ -22,6 +22,9 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the response header "([^"]*)" should be "([^"]*)"$`, f.TheResponseHeaderShouldBe)
 	ctx.Step(`^I should receive the following JSON response:$`, f.IShouldReceiveTheFollowingJSONResponse)
 	ctx.Step(`^I should receive the following JSON response with status "([^"]*)":$`, f.IShouldReceiveTheFollowingJSONResponseWithStatus)
+	ctx.Step(`^I am not identified$`, f.IAmNotIdentified)
+	ctx.Step(`^I POST the following to "([^"]*)":$`, f.IPOSTTheFollowingTo)
+	ctx.Step(`^private endpoints are enabled$`, f.PrivateEndpointsAreEnabled)
 }
 
 func InitializeTestSuite(ctx *godog.TestSuiteContext) {
