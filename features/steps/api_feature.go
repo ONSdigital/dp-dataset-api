@@ -16,7 +16,6 @@ import (
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka/v2"
 	"github.com/ONSdigital/dp-kafka/v2/kafkatest"
-	"github.com/ONSdigital/log.go/log"
 	"github.com/benweissmann/memongo"
 )
 
@@ -60,6 +59,19 @@ func NewAPIFeature() *APIFeature {
 	}
 	f.MongoServer = mongoServer
 
+	mongodb := &mongo.Mongo{
+		CodeListURL: "",
+		Collection:  "datasets",
+		Database:    memongo.RandomDatabase(),
+		DatasetURL:  "datasets",
+		URI:         f.MongoServer.URI(),
+	}
+	if err := mongodb.Init(); err != nil {
+		panic(err)
+	}
+
+	f.MongoClient = mongodb
+
 	initMock := &serviceMock.InitialiserMock{
 		DoGetMongoDBFunc:       f.DoGetMongoDB,
 		DoGetGraphDBFunc:       f.DoGetGraphDBOk,
@@ -77,6 +89,7 @@ func (f *APIFeature) Reset() *APIFeature {
 	f.Datasets = make([]*models.Dataset, 0)
 	f.MongoClient.Database = memongo.RandomDatabase()
 	f.MongoClient.Init()
+	f.Config.EnablePrivateEndpoints = false
 	return f
 }
 
@@ -108,22 +121,7 @@ func (f *APIFeature) DoGetHTTPServer(bindAddr string, router http.Handler) servi
 
 // DoGetMongoDB returns a MongoDB
 func (f *APIFeature) DoGetMongoDB(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error) {
-
-	mongodb := &mongo.Mongo{
-		CodeListURL: "",
-		Collection:  "datasets",
-		Database:    memongo.RandomDatabase(),
-		DatasetURL:  "datasets",
-		URI:         f.MongoServer.URI(),
-	}
-	if err := mongodb.Init(); err != nil {
-		return nil, err
-	}
-	log.Event(ctx, "listening to in-memory mongo db session", log.INFO, log.Data{"URI": mongodb.URI})
-
-	f.MongoClient = mongodb
-
-	return mongodb, nil
+	return f.MongoClient, nil
 }
 
 func (f *APIFeature) DoGetGraphDBOk(ctx context.Context) (store.GraphDB, service.Closer, error) {

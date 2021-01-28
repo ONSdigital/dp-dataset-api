@@ -55,16 +55,16 @@ func (f *APIFeature) IPOSTTheFollowingTo(path string, body *godog.DocString) err
 	return nil
 }
 
-func (f *APIFeature) post(path string, data []byte)  {
-	f.makeRequest("POST", f.httpServer.Addr+path, data)
+func (f *APIFeature) post(path string, data []byte) {
+	f.makeRequest("POST", path, data)
 }
 
-func (f *APIFeature) get(path string)  {
-	f.makeRequest("GET", f.httpServer.Addr+path, nil)
+func (f *APIFeature) get(path string) {
+	f.makeRequest("GET", path, nil)
 }
 
 func (f *APIFeature) makeRequest(method, path string, data []byte) {
-	req := httptest.NewRequest("GET", "http://"+f.httpServer.Addr+path, bytes.NewReader(data))
+	req := httptest.NewRequest(method, "http://"+f.httpServer.Addr+path, bytes.NewReader(data))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	f.httpServer.Handler.ServeHTTP(w, req)
@@ -149,12 +149,10 @@ func (f *APIFeature) IAmNotIdentified() error {
 	return nil
 }
 
-
 func (f *APIFeature) PrivateEndpointsAreEnabled() error {
 
 	fmt.Printf("config: %p\n", f.Config)
 	fmt.Printf("EnablePrivateEndpoints in steps: %p\n", &f.Config.EnablePrivateEndpoints)
-
 
 	f.Config.EnablePrivateEndpoints = true
 	return nil
@@ -165,4 +163,3 @@ func (f *APIFeature) startService() {
 		panic(err)
 	}
 }
-
