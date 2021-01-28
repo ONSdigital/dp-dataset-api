@@ -39,7 +39,9 @@ func (f *APIFeature) IPOSTTheFollowingTo(path string, body *godog.DocString) err
 func (f *APIFeature) makeRequest(method, path string, data []byte) {
 	f.startService()
 	req := httptest.NewRequest(method, "http://"+f.httpServer.Addr+path, bytes.NewReader(data))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "ItDoesntMatter")
+
+	fmt.Println(req)
 	w := httptest.NewRecorder()
 	f.httpServer.Handler.ServeHTTP(w, req)
 
@@ -120,6 +122,14 @@ func (f *APIFeature) IShouldReceiveTheFollowingJSONResponseWithStatus(expectedCo
 }
 
 func (f *APIFeature) IAmNotIdentified() error {
+	f.FakeAuthService.NewHandler().Get("/identity").Reply(401)
+	f.Config.ZebedeeURL = f.FakeAuthService.ResolveURL("")
+	return nil
+}
+
+func (f *APIFeature) IAmIdentified() error {
+	f.FakeAuthService.NewHandler().Get("/identity").Reply(200).BodyString(`{ "Identifier": "SomeUserIdk"}`)
+	f.Config.ZebedeeURL = f.FakeAuthService.ResolveURL("")
 	return nil
 }
 

@@ -25,6 +25,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I am not identified$`, f.IAmNotIdentified)
 	ctx.Step(`^I POST the following to "([^"]*)":$`, f.IPOSTTheFollowingTo)
 	ctx.Step(`^private endpoints are enabled$`, f.PrivateEndpointsAreEnabled)
+	ctx.Step(`^I am identified$`, f.IAmIdentified)
 }
 
 func InitializeTestSuite(ctx *godog.TestSuiteContext) {

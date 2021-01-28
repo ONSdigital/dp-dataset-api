@@ -19,27 +19,30 @@ import (
 	kafka "github.com/ONSdigital/dp-kafka/v2"
 	"github.com/ONSdigital/dp-kafka/v2/kafkatest"
 	"github.com/benweissmann/memongo"
+	"github.com/maxcnunes/httpfake"
 )
 
 type APIFeature struct {
 	err error
 	svc *service.Service
 	// context   TestContext
-	errorChan    chan error
-	httpServer   *http.Server
-	httpResponse *http.Response
-	Datasets     []*models.Dataset
-	MongoServer  *memongo.Server
-	MongoClient  *mongo.Mongo
-	Config       *config.Configuration
+	errorChan       chan error
+	httpServer      *http.Server
+	httpResponse    *http.Response
+	Datasets        []*models.Dataset
+	MongoServer     *memongo.Server
+	MongoClient     *mongo.Mongo
+	Config          *config.Configuration
+	FakeAuthService *httpfake.HTTPFake
 }
 
 func NewAPIFeature() *APIFeature {
 
 	f := &APIFeature{
-		errorChan:  make(chan error),
-		httpServer: &http.Server{},
-		Datasets:   make([]*models.Dataset, 0),
+		errorChan:       make(chan error),
+		httpServer:      &http.Server{},
+		Datasets:        make([]*models.Dataset, 0),
+		FakeAuthService: httpfake.New(),
 	}
 
 	var err error
@@ -93,6 +96,7 @@ func (f *APIFeature) Reset() *APIFeature {
 	f.MongoClient.Database = memongo.RandomDatabase()
 	f.MongoClient.Init()
 	f.Config.EnablePrivateEndpoints = false
+	f.FakeAuthService.Reset()
 	return f
 }
 
@@ -101,6 +105,7 @@ func (f *APIFeature) Close() error {
 		f.svc.Close(context.Background())
 	}
 	f.MongoServer.Stop()
+	f.FakeAuthService.Close()
 	return nil
 }
 
