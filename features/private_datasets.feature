@@ -5,19 +5,41 @@ Feature: Private Dataset API
         And I am identified as "user@ons.gov.uk"
 
 
-    Scenario: 
+    Scenario:
         When I POST the following to "/datasets/E3BC0B6-D6C4-4E20-917E-95D7EA8C91DC":
-        """
-        {
-            "title": "CID"
-        }
-        """
+            """
+            {
+                "title": "CID"
+            }
+            """
         Then the HTTP status code should be "201"
-        And The data in the database for id "E3BC0B6-D6C4-4E20-917E-95D7EA8C91DC" should be:
-        """
-        {
-            "id": "E3BC0B6-D6C4-4E20-917E-95D7EA8C91DC",
-            "title": "CID",
-            "state": "created"
-        }
-        """
+        And the document in the database for id "E3BC0B6-D6C4-4E20-917E-95D7EA8C91DC" should be:
+            """
+            {
+                "id": "E3BC0B6-D6C4-4E20-917E-95D7EA8C91DC",
+                "title": "CID",
+                "state": "created",
+                "filterable": true
+            }
+            """
+
+    Scenario: Document with same ID already exists
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
+                }
+            ]
+            """
+        When I POST the following to "/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC":
+            """
+            {
+                "title": "CID"
+            }
+            """
+        Then the HTTP status code should be "403"
+        And I should receive the following response:
+            """
+            forbidden - dataset already exists
+            """

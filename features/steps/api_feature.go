@@ -45,14 +45,14 @@ func NewAPIFeature() *APIFeature {
 		FakeAuthService: httpfake.New(),
 	}
 
-	f.Config.ZebedeeURL = f.FakeAuthService.ResolveURL("")
-
 	var err error
 
 	f.Config, err = config.Get()
 	if err != nil {
 		panic(err)
 	}
+
+	f.Config.ZebedeeURL = f.FakeAuthService.ResolveURL("")
 
 	opts := memongo.Options{
 		Port:           27017,

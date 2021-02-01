@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -77,6 +78,15 @@ func (f *APIFeature) putDatasetInDatabase(s *mgo.Session, datasetDoc models.Data
 	}
 }
 
+func (f *APIFeature) IShouldReceiveTheFollowingResponse(expectedAPIResponse *godog.DocString) error {
+	responseBody := f.httpResponse.Body
+	body, _ := ioutil.ReadAll(responseBody)
+
+	assert.Equal(f, strings.TrimSpace(expectedAPIResponse.Content), strings.TrimSpace(string(body)))
+
+	return f.err
+}
+
 func (f *APIFeature) IShouldReceiveTheFollowingJSONResponse(expectedAPIResponse *godog.DocString) error {
 	responseBody := f.httpResponse.Body
 	body, _ := ioutil.ReadAll(responseBody)
@@ -108,6 +118,30 @@ func (f *APIFeature) IShouldReceiveTheFollowingJSONResponseWithStatus(expectedCo
 		return err
 	}
 	return f.IShouldReceiveTheFollowingJSONResponse(expectedBody)
+}
+
+func (f *APIFeature) TheDocumentInTheDatabaseForIdShouldBe(documentId string, documentJson *godog.DocString) error {
+	s := f.MongoClient.Session.Copy()
+	defer s.Close()
+
+	var expectedDataset models.Dataset
+
+	err := json.Unmarshal([]byte(documentJson.Content), &expectedDataset)
+
+	filterCursor := s.DB(f.MongoClient.Database).C("datasets").FindId(documentId)
+
+	var document models.DatasetUpdate
+	err = filterCursor.One(&document)
+	if err != nil {
+		return err
+	}
+
+	assert.Equal(f, documentId, document.ID)
+	// FIXME: either test the intersection of the 2 JSONs, or use a table for the expected
+	assert.Equal(f, expectedDataset.Title, document.Next.Title)
+	assert.Equal(f, "created", document.Next.State)
+
+	return f.err
 }
 
 func (f *APIFeature) IAmNotIdentified() error {

@@ -20,12 +20,14 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I GET "([^"]*)"$`, f.IGet)
 	ctx.Step(`^the HTTP status code should be "([^"]*)"$`, f.TheHTTPStatusCodeShouldBe)
 	ctx.Step(`^the response header "([^"]*)" should be "([^"]*)"$`, f.TheResponseHeaderShouldBe)
+	ctx.Step(`^I should receive the following response:$`, f.IShouldReceiveTheFollowingResponse)
 	ctx.Step(`^I should receive the following JSON response:$`, f.IShouldReceiveTheFollowingJSONResponse)
 	ctx.Step(`^I should receive the following JSON response with status "([^"]*)":$`, f.IShouldReceiveTheFollowingJSONResponseWithStatus)
 	ctx.Step(`^I am not identified$`, f.IAmNotIdentified)
 	ctx.Step(`^I POST the following to "([^"]*)":$`, f.IPOSTTheFollowingTo)
 	ctx.Step(`^private endpoints are enabled$`, f.PrivateEndpointsAreEnabled)
 	ctx.Step(`^I am identified as "([^"]*)"$`, f.IAmIdentifiedAs)
+	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, f.TheDocumentInTheDatabaseForIdShouldBe)
 }
 
 func InitializeTestSuite(ctx *godog.TestSuiteContext) {
