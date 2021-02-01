@@ -126,8 +126,8 @@ func (f *APIFeature) IAmNotIdentified() error {
 	return nil
 }
 
-func (f *APIFeature) IAmIdentified() error {
-	f.FakeAuthService.NewHandler().Get("/identity").Reply(200).BodyString(`{ "Identifier": "SomeUserIdk"}`)
+func (f *APIFeature) IAmIdentifiedAs(username string) error {
+	f.FakeAuthService.NewHandler().Get("/identity").Reply(200).BodyString(`{ "identifier": "`+username+`"}`)
 	f.Config.ZebedeeURL = f.FakeAuthService.ResolveURL("")
 	return nil
 }

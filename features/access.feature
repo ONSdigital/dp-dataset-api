@@ -15,7 +15,7 @@ Feature: Access should not be given for private end-points unless identity is ve
         Then the HTTP status code should be "401"
 
     Scenario: Being allowed access to a private end point when id provided
-        Given I am identified
+        Given I am identified as "user@ons.gov.uk"
         When I POST the following to "/datasets/E3BC0B6-D6C4-4E20-917E-95D7EA8C91DC":
             """
             {
