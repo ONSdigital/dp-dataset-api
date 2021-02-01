@@ -1,0 +1,146 @@
+package steps
+
+import (
+	"context"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"time"
+
+	"github.com/ONSdigital/dp-dataset-api/config"
+	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/mongo"
+	"github.com/ONSdigital/dp-dataset-api/service"
+	"github.com/ONSdigital/dp-dataset-api/service/mock"
+	serviceMock "github.com/ONSdigital/dp-dataset-api/service/mock"
+	"github.com/ONSdigital/dp-dataset-api/store"
+	storeMock "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/dp-healthcheck/healthcheck"
+	kafka "github.com/ONSdigital/dp-kafka/v2"
+	"github.com/ONSdigital/dp-kafka/v2/kafkatest"
+	"github.com/benweissmann/memongo"
+	"github.com/maxcnunes/httpfake"
+)
+
+type APIFeature struct {
+	err error
+	svc *service.Service
+	// context   TestContext
+	errorChan       chan error
+	httpServer      *http.Server
+	httpResponse    *http.Response
+	Datasets        []*models.Dataset
+	MongoServer     *memongo.Server
+	MongoClient     *mongo.Mongo
+	Config          *config.Configuration
+	FakeAuthService *httpfake.HTTPFake
+}
+
+func NewAPIFeature() *APIFeature {
+
+	f := &APIFeature{
+		errorChan:       make(chan error),
+		httpServer:      &http.Server{},
+		Datasets:        make([]*models.Dataset, 0),
+		FakeAuthService: httpfake.New(),
+	}
+
+	var err error
+
+	f.Config, err = config.Get()
+	if err != nil {
+		panic(err)
+	}
+
+	opts := memongo.Options{
+		Port:           27017,
+		MongoVersion:   "4.0.5",
+		StartupTimeout: time.Second * 10,
+		Logger:         log.New(ioutil.Discard, "", 0),
+	}
+
+	mongoServer, err := memongo.StartWithOptions(&opts)
+	if err != nil {
+		panic(err)
+	}
+	f.MongoServer = mongoServer
+
+	mongodb := &mongo.Mongo{
+		CodeListURL: "",
+		Collection:  "datasets",
+		Database:    memongo.RandomDatabase(),
+		DatasetURL:  "datasets",
+		URI:         f.MongoServer.URI(),
+	}
+	if err := mongodb.Init(); err != nil {
+		panic(err)
+	}
+
+	f.MongoClient = mongodb
+
+	initMock := &serviceMock.InitialiserMock{
+		DoGetMongoDBFunc:       f.DoGetMongoDB,
+		DoGetGraphDBFunc:       f.DoGetGraphDBOk,
+		DoGetKafkaProducerFunc: f.DoGetKafkaProducerOk,
+		DoGetHealthCheckFunc:   f.DoGetHealthcheckOk,
+		DoGetHTTPServerFunc:    f.DoGetHTTPServer,
+	}
+
+	f.svc = service.New(f.Config, service.NewServiceList(initMock))
+
+	return f
+}
+
+func (f *APIFeature) Reset() *APIFeature {
+	f.Datasets = make([]*models.Dataset, 0)
+	f.MongoClient.Database = memongo.RandomDatabase()
+	f.MongoClient.Init()
+	f.Config.EnablePrivateEndpoints = false
+	f.FakeAuthService.Reset()
+	return f
+}
+
+func (f *APIFeature) Close() error {
+	if f.svc != nil {
+		f.svc.Close(context.Background())
+	}
+	f.MongoServer.Stop()
+	f.FakeAuthService.Close()
+	return nil
+}
+
+func funcClose(ctx context.Context) error {
+	return nil
+}
+
+func (f *APIFeature) DoGetHealthcheckOk(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error) {
+	return &mock.HealthCheckerMock{
+		AddCheckFunc: func(name string, checker healthcheck.Checker) error { return nil },
+		StartFunc:    func(ctx context.Context) {},
+		StopFunc:     func() {},
+	}, nil
+}
+
+func (f *APIFeature) DoGetHTTPServer(bindAddr string, router http.Handler) service.HTTPServer {
+	f.httpServer.Addr = bindAddr
+	f.httpServer.Handler = router
+	return f.httpServer
+}
+
+// DoGetMongoDB returns a MongoDB
+func (f *APIFeature) DoGetMongoDB(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error) {
+	return f.MongoClient, nil
+}
+
+func (f *APIFeature) DoGetGraphDBOk(ctx context.Context) (store.GraphDB, service.Closer, error) {
+	return &storeMock.GraphDBMock{CloseFunc: funcClose}, &serviceMock.CloserMock{CloseFunc: funcClose}, nil
+}
+
+func (f *APIFeature) DoGetKafkaProducerOk(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error) {
+	return &kafkatest.IProducerMock{
+		ChannelsFunc: func() *kafka.ProducerChannels {
+			return &kafka.ProducerChannels{}
+		},
+		CloseFunc: funcClose,
+	}, nil
+}
