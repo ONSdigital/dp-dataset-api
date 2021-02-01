@@ -2,6 +2,7 @@ package steps
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -23,9 +24,8 @@ import (
 )
 
 type APIFeature struct {
-	err error
-	svc *service.Service
-	// context   TestContext
+	err             error
+	svc             *service.Service
 	errorChan       chan error
 	httpServer      *http.Server
 	httpResponse    *http.Response
@@ -44,6 +44,8 @@ func NewAPIFeature() *APIFeature {
 		Datasets:        make([]*models.Dataset, 0),
 		FakeAuthService: httpfake.New(),
 	}
+
+	f.Config.ZebedeeURL = f.FakeAuthService.ResolveURL("")
 
 	var err error
 
@@ -72,6 +74,7 @@ func NewAPIFeature() *APIFeature {
 		DatasetURL:  "datasets",
 		URI:         f.MongoServer.URI(),
 	}
+
 	if err := mongodb.Init(); err != nil {
 		panic(err)
 	}
@@ -89,6 +92,10 @@ func NewAPIFeature() *APIFeature {
 	f.svc = service.New(f.Config, service.NewServiceList(initMock))
 
 	return f
+}
+
+func (f *APIFeature) Errorf(format string, args ...interface{}) {
+	f.err = fmt.Errorf(format, args...)
 }
 
 func (f *APIFeature) Reset() *APIFeature {

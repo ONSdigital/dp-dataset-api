@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"time"
@@ -17,14 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 )
-
-type TestContext struct {
-	response *http.Response
-}
-
-func (f *APIFeature) Errorf(format string, args ...interface{}) {
-	f.err = fmt.Errorf(format, args...)
-}
 
 func (f *APIFeature) IGet(path string) error {
 	f.makeRequest("GET", path, nil)
@@ -122,13 +112,11 @@ func (f *APIFeature) IShouldReceiveTheFollowingJSONResponseWithStatus(expectedCo
 
 func (f *APIFeature) IAmNotIdentified() error {
 	f.FakeAuthService.NewHandler().Get("/identity").Reply(401)
-	f.Config.ZebedeeURL = f.FakeAuthService.ResolveURL("")
 	return nil
 }
 
 func (f *APIFeature) IAmIdentifiedAs(username string) error {
-	f.FakeAuthService.NewHandler().Get("/identity").Reply(200).BodyString(`{ "identifier": "`+username+`"}`)
-	f.Config.ZebedeeURL = f.FakeAuthService.ResolveURL("")
+	f.FakeAuthService.NewHandler().Get("/identity").Reply(200).BodyString(`{ "identifier": "` + username + `"}`)
 	return nil
 }
 
