@@ -3,10 +3,11 @@ Feature: Private Dataset API
     Background:
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
+        And I am authorised
 
 
     Scenario:
-        When I POST the following to "/datasets/E3BC0B6-D6C4-4E20-917E-95D7EA8C91DC":
+        When I POST to "/datasets/E3BC0B6-D6C4-4E20-917E-95D7EA8C91DC" with body:
             """
             {
                 "title": "CID"
@@ -32,7 +33,7 @@ Feature: Private Dataset API
                 }
             ]
             """
-        When I POST the following to "/datasets/helloworld":
+        When I POST to "/datasets/helloworld" with body:
             """
             {
                 "title": "Hello"
