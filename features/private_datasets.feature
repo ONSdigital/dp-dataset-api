@@ -23,19 +23,19 @@ Feature: Private Dataset API
             }
             """
 
-    Scenario: Document with same ID already exists
+    Scenario: A document with the same ID already exists in the database
         Given I have these datasets:
             """
             [
                 {
-                    "id": "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
+                    "id": "helloworld"
                 }
             ]
             """
-        When I POST the following to "/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC":
+        When I POST the following to "/datasets/helloworld":
             """
             {
-                "title": "CID"
+                "title": "Hello"
             }
             """
         Then the HTTP status code should be "403"

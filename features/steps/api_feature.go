@@ -1,153 +1,126 @@
-package steps
+package steps_test
 
 import (
-	"context"
-	"fmt"
+	"bytes"
 	"io/ioutil"
-	"log"
 	"net/http"
-	"time"
+	"net/http/httptest"
+	"strconv"
+	"strings"
 
-	"github.com/ONSdigital/dp-dataset-api/config"
-	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/mongo"
-	"github.com/ONSdigital/dp-dataset-api/service"
-	"github.com/ONSdigital/dp-dataset-api/service/mock"
-	serviceMock "github.com/ONSdigital/dp-dataset-api/service/mock"
-	"github.com/ONSdigital/dp-dataset-api/store"
-	storeMock "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	kafka "github.com/ONSdigital/dp-kafka/v2"
-	"github.com/ONSdigital/dp-kafka/v2/kafkatest"
-	"github.com/benweissmann/memongo"
-	"github.com/maxcnunes/httpfake"
+	"github.com/cucumber/godog"
+	"github.com/stretchr/testify/assert"
 )
 
 type APIFeature struct {
-	err             error
-	svc             *service.Service
-	errorChan       chan error
-	httpServer      *http.Server
-	httpResponse    *http.Response
-	Datasets        []*models.Dataset
-	MongoServer     *memongo.Server
-	MongoClient     *mongo.Mongo
-	Config          *config.Configuration
-	FakeAuthService *httpfake.HTTPFake
+	ErrorFeature
+	httpServer        *http.Server
+	httpResponse      *http.Response
+	BeforeRequestHook func() error
+	requestHeaders    map[string]string
 }
 
-func NewAPIFeature() *APIFeature {
-
-	f := &APIFeature{
-		errorChan:       make(chan error),
-		httpServer:      &http.Server{},
-		Datasets:        make([]*models.Dataset, 0),
-		FakeAuthService: httpfake.New(),
+func NewAPIFeature(httpServer *http.Server) *APIFeature {
+	return &APIFeature{
+		httpServer:     httpServer,
+		requestHeaders: make(map[string]string),
 	}
-
-	var err error
-
-	f.Config, err = config.Get()
-	if err != nil {
-		panic(err)
-	}
-
-	f.Config.ZebedeeURL = f.FakeAuthService.ResolveURL("")
-
-	opts := memongo.Options{
-		Port:           27017,
-		MongoVersion:   "4.0.5",
-		StartupTimeout: time.Second * 10,
-		Logger:         log.New(ioutil.Discard, "", 0),
-	}
-
-	mongoServer, err := memongo.StartWithOptions(&opts)
-	if err != nil {
-		panic(err)
-	}
-	f.MongoServer = mongoServer
-
-	mongodb := &mongo.Mongo{
-		CodeListURL: "",
-		Collection:  "datasets",
-		Database:    memongo.RandomDatabase(),
-		DatasetURL:  "datasets",
-		URI:         f.MongoServer.URI(),
-	}
-
-	if err := mongodb.Init(); err != nil {
-		panic(err)
-	}
-
-	f.MongoClient = mongodb
-
-	initMock := &serviceMock.InitialiserMock{
-		DoGetMongoDBFunc:       f.DoGetMongoDB,
-		DoGetGraphDBFunc:       f.DoGetGraphDBOk,
-		DoGetKafkaProducerFunc: f.DoGetKafkaProducerOk,
-		DoGetHealthCheckFunc:   f.DoGetHealthcheckOk,
-		DoGetHTTPServerFunc:    f.DoGetHTTPServer,
-	}
-
-	f.svc = service.New(f.Config, service.NewServiceList(initMock))
-
-	return f
 }
 
-func (f *APIFeature) Errorf(format string, args ...interface{}) {
-	f.err = fmt.Errorf(format, args...)
+func (f *APIFeature) Reset() {
+	f.requestHeaders = make(map[string]string)
 }
 
-func (f *APIFeature) Reset() *APIFeature {
-	f.Datasets = make([]*models.Dataset, 0)
-	f.MongoClient.Database = memongo.RandomDatabase()
-	f.MongoClient.Init()
-	f.Config.EnablePrivateEndpoints = false
-	f.FakeAuthService.Reset()
-	return f
+func (f *APIFeature) RegisterSteps(ctx *godog.ScenarioContext) {
+	ctx.Step(`^I set the "([^"]*)" header to "([^"]*)"$`, f.ISetTheHeaderTo)
+	ctx.Step(`^I am authorised$`, f.IAmAuthorised)
+	ctx.Step(`^I am not authorised$`, f.IAmNotAuthorised)
+	ctx.Step(`^I GET "([^"]*)"$`, f.IGet)
+	ctx.Step(`^I POST the following to "([^"]*)":$`, f.IPOSTTheFollowingTo)
+	ctx.Step(`^the HTTP status code should be "([^"]*)"$`, f.TheHTTPStatusCodeShouldBe)
+	ctx.Step(`^the response header "([^"]*)" should be "([^"]*)"$`, f.TheResponseHeaderShouldBe)
+	ctx.Step(`^I should receive the following response:$`, f.IShouldReceiveTheFollowingResponse)
+	ctx.Step(`^I should receive the following JSON response:$`, f.IShouldReceiveTheFollowingJSONResponse)
+	ctx.Step(`^I should receive the following JSON response with status "([^"]*)":$`, f.IShouldReceiveTheFollowingJSONResponseWithStatus)
 }
 
-func (f *APIFeature) Close() error {
-	if f.svc != nil {
-		f.svc.Close(context.Background())
-	}
-	f.MongoServer.Stop()
-	f.FakeAuthService.Close()
+func (f *APIFeature) ISetTheHeaderTo(header, value string) error {
+	f.requestHeaders[header] = value
 	return nil
 }
 
-func funcClose(ctx context.Context) error {
+func (f *APIFeature) IAmAuthorised() error {
+	f.ISetTheHeaderTo("Authorization", "bearer SomeFakeToken")
 	return nil
 }
 
-func (f *APIFeature) DoGetHealthcheckOk(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error) {
-	return &mock.HealthCheckerMock{
-		AddCheckFunc: func(name string, checker healthcheck.Checker) error { return nil },
-		StartFunc:    func(ctx context.Context) {},
-		StopFunc:     func() {},
-	}, nil
+func (f *APIFeature) IAmNotAuthorised() error {
+	delete(f.requestHeaders, "Authorization")
+	return nil
 }
 
-func (f *APIFeature) DoGetHTTPServer(bindAddr string, router http.Handler) service.HTTPServer {
-	f.httpServer.Addr = bindAddr
-	f.httpServer.Handler = router
-	return f.httpServer
+func (f *APIFeature) IGet(path string) error {
+	return f.makeRequest("GET", path, nil)
 }
 
-// DoGetMongoDB returns a MongoDB
-func (f *APIFeature) DoGetMongoDB(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error) {
-	return f.MongoClient, nil
+func (f *APIFeature) IPOSTTheFollowingTo(path string, body *godog.DocString) error {
+	return f.makeRequest("POST", path, []byte(body.Content))
 }
 
-func (f *APIFeature) DoGetGraphDBOk(ctx context.Context) (store.GraphDB, service.Closer, error) {
-	return &storeMock.GraphDBMock{CloseFunc: funcClose}, &serviceMock.CloserMock{CloseFunc: funcClose}, nil
+func (f *APIFeature) makeRequest(method, path string, data []byte) error {
+	if f.BeforeRequestHook != nil {
+		if err := f.BeforeRequestHook(); err != nil {
+			return err
+		}
+	}
+	req := httptest.NewRequest(method, "http://"+f.httpServer.Addr+path, bytes.NewReader(data))
+	req.Header.Set("Authorization", "ItDoesntMatter")
+
+	w := httptest.NewRecorder()
+	f.httpServer.Handler.ServeHTTP(w, req)
+
+	f.httpResponse = w.Result()
+	return nil
 }
 
-func (f *APIFeature) DoGetKafkaProducerOk(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error) {
-	return &kafkatest.IProducerMock{
-		ChannelsFunc: func() *kafka.ProducerChannels {
-			return &kafka.ProducerChannels{}
-		},
-		CloseFunc: funcClose,
-	}, nil
+func (f *APIFeature) IShouldReceiveTheFollowingResponse(expectedAPIResponse *godog.DocString) error {
+	responseBody := f.httpResponse.Body
+	body, _ := ioutil.ReadAll(responseBody)
+
+	assert.Equal(f, strings.TrimSpace(expectedAPIResponse.Content), strings.TrimSpace(string(body)))
+
+	return f.StepError()
+}
+
+func (f *APIFeature) IShouldReceiveTheFollowingJSONResponse(expectedAPIResponse *godog.DocString) error {
+	responseBody := f.httpResponse.Body
+	body, _ := ioutil.ReadAll(responseBody)
+
+	assert.JSONEq(f, expectedAPIResponse.Content, string(body))
+
+	return f.StepError()
+}
+
+func (f *APIFeature) TheHTTPStatusCodeShouldBe(expectedCodeStr string) error {
+	expectedCode, err := strconv.Atoi(expectedCodeStr)
+	if err != nil {
+		return err
+	}
+	assert.Equal(f, expectedCode, f.httpResponse.StatusCode)
+	return f.StepError()
+}
+
+func (f *APIFeature) TheResponseHeaderShouldBe(headerName, expectedValue string) error {
+	assert.Equal(f, expectedValue, f.httpResponse.Header.Get(headerName))
+	return f.StepError()
+}
+
+func (f *APIFeature) IShouldReceiveTheFollowingJSONResponseWithStatus(expectedCodeStr string, expectedBody *godog.DocString) error {
+	if err := f.TheHTTPStatusCodeShouldBe(expectedCodeStr); err != nil {
+		return err
+	}
+	if err := f.TheResponseHeaderShouldBe("Content-Type", "application/json"); err != nil {
+		return err
+	}
+	return f.IShouldReceiveTheFollowingJSONResponse(expectedBody)
 }

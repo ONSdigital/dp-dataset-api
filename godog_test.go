@@ -1,33 +1,33 @@
 package main_test
 
 import (
-	"github.com/ONSdigital/dp-dataset-api/features/steps"
+	"io/ioutil"
+	"log"
+
+	steps_test "github.com/ONSdigital/dp-dataset-api/features/steps"
 	"github.com/cucumber/godog"
 )
 
 func InitializeScenario(ctx *godog.ScenarioContext) {
-	var f *steps.APIFeature = steps.NewAPIFeature()
+	mongoCapability := steps_test.NewMongoCapability(steps_test.MongoOptions{27017, "4.0.5", log.New(ioutil.Discard, "", 0)})
+	datasetFeature := steps_test.NewDatasetFeature(mongoCapability)
+	apiFeature := steps_test.NewAPIFeature(datasetFeature.HTTPServer)
+	apiFeature.BeforeRequestHook = datasetFeature.BeforeRequestHook
 
 	ctx.BeforeScenario(func(*godog.Scenario) {
-		f.Reset()
+		apiFeature.Reset()
+		datasetFeature.Reset()
+		mongoCapability.Reset()
 	})
 
 	ctx.AfterScenario(func(*godog.Scenario, error) {
-		f.Close()
+		datasetFeature.Close()
+		mongoCapability.Close()
+
 	})
 
-	ctx.Step(`^I have these datasets:$`, f.IHaveTheseDatasets)
-	ctx.Step(`^I GET "([^"]*)"$`, f.IGet)
-	ctx.Step(`^the HTTP status code should be "([^"]*)"$`, f.TheHTTPStatusCodeShouldBe)
-	ctx.Step(`^the response header "([^"]*)" should be "([^"]*)"$`, f.TheResponseHeaderShouldBe)
-	ctx.Step(`^I should receive the following response:$`, f.IShouldReceiveTheFollowingResponse)
-	ctx.Step(`^I should receive the following JSON response:$`, f.IShouldReceiveTheFollowingJSONResponse)
-	ctx.Step(`^I should receive the following JSON response with status "([^"]*)":$`, f.IShouldReceiveTheFollowingJSONResponseWithStatus)
-	ctx.Step(`^I am not identified$`, f.IAmNotIdentified)
-	ctx.Step(`^I POST the following to "([^"]*)":$`, f.IPOSTTheFollowingTo)
-	ctx.Step(`^private endpoints are enabled$`, f.PrivateEndpointsAreEnabled)
-	ctx.Step(`^I am identified as "([^"]*)"$`, f.IAmIdentifiedAs)
-	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, f.TheDocumentInTheDatabaseForIdShouldBe)
+	datasetFeature.RegisterSteps(ctx)
+	apiFeature.RegisterSteps(ctx)
 }
 
 func InitializeTestSuite(ctx *godog.TestSuiteContext) {
