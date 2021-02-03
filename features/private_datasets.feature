@@ -5,22 +5,21 @@ Feature: Private Dataset API
         And I am identified as "user@ons.gov.uk"
         And I am authorised
 
-
-    Scenario:
-        When I POST to "/datasets/E3BC0B6-D6C4-4E20-917E-95D7EA8C91DC" with body:
+    Scenario: Successfully creating a new dataset document
+        When I POST to "/datasets/ageing-population-estimates" with body:
             """
             {
                 "title": "CID"
             }
             """
         Then the HTTP status code should be "201"
-        And the document in the database for id "E3BC0B6-D6C4-4E20-917E-95D7EA8C91DC" should be:
+        And the document in the database for id "ageing-population-estimates" should be:
             """
             {
-                "id": "E3BC0B6-D6C4-4E20-917E-95D7EA8C91DC",
-                "title": "CID",
+                "id": "ageing-population-estimates",
                 "state": "created",
-                "filterable": true
+                "title": "CID",
+                "type": "filterable"
             }
             """
 
@@ -29,11 +28,11 @@ Feature: Private Dataset API
             """
             [
                 {
-                    "id": "helloworld"
+                    "id": "ageing-population-estimates"
                 }
             ]
             """
-        When I POST to "/datasets/helloworld" with body:
+        When I POST to "/datasets/ageing-population-estimates" with body:
             """
             {
                 "title": "Hello"
