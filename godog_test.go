@@ -5,14 +5,15 @@ import (
 	"log"
 
 	steps_test "github.com/ONSdigital/dp-dataset-api/features/steps"
+	featuretest "github.com/armakuni/dp-go-featuretest"
 	"github.com/cucumber/godog"
 )
 
 func InitializeScenario(ctx *godog.ScenarioContext) {
-	mongoCapability := steps_test.NewMongoCapability(steps_test.MongoOptions{27017, "4.0.5", log.New(ioutil.Discard, "", 0)})
+	mongoCapability := featuretest.NewMongoCapability(featuretest.MongoOptions{27017, "4.0.5", log.New(ioutil.Discard, "", 0)})
 	datasetFeature := steps_test.NewDatasetFeature(mongoCapability)
-	apiFeature := steps_test.NewAPIFeature(datasetFeature.HTTPServer)
-	apiFeature.BeforeRequestHook = datasetFeature.BeforeRequestHook
+
+	apiFeature := featuretest.NewAPIFeature(datasetFeature.InitialiseService)
 
 	ctx.BeforeScenario(func(*godog.Scenario) {
 		apiFeature.Reset()

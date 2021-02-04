@@ -17,6 +17,7 @@ import (
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka/v2"
 	"github.com/ONSdigital/dp-kafka/v2/kafkatest"
+	featuretest "github.com/armakuni/dp-go-featuretest"
 	"github.com/benweissmann/memongo"
 	"github.com/cucumber/godog"
 	"github.com/globalsign/mgo"
@@ -26,7 +27,7 @@ import (
 )
 
 type DatasetFeature struct {
-	ErrorFeature
+	ErrorFeature    featuretest.ErrorFeature
 	svc             *service.Service
 	errorChan       chan error
 	Datasets        []*models.Dataset
@@ -37,7 +38,7 @@ type DatasetFeature struct {
 	ServiceRunning  bool
 }
 
-func NewDatasetFeature(mongoCapability *MongoCapability) *DatasetFeature {
+func NewDatasetFeature(mongoCapability *featuretest.MongoCapability) *DatasetFeature {
 
 	f := &DatasetFeature{
 		HTTPServer:      &http.Server{},
@@ -109,6 +110,14 @@ func (f *DatasetFeature) Close() error {
 	return nil
 }
 
+func (f *DatasetFeature) InitialiseService() (http.Handler, error) {
+	if err := f.svc.Run(context.Background(), "1", "", "", f.errorChan); err != nil {
+		return nil, err
+	}
+	f.ServiceRunning = true
+	return f.HTTPServer.Handler, nil
+}
+
 func funcClose(ctx context.Context) error {
 	return nil
 }
@@ -143,14 +152,6 @@ func (f *DatasetFeature) DoGetKafkaProducerOk(ctx context.Context, cfg *config.C
 		},
 		CloseFunc: funcClose,
 	}, nil
-}
-
-func (f *DatasetFeature) BeforeRequestHook() error {
-	if err := f.svc.Run(context.Background(), "1", "", "", f.errorChan); err != nil {
-		return err
-	}
-	f.ServiceRunning = true
-	return nil
 }
 
 func (f *DatasetFeature) IHaveTheseDatasets(datasetsJson *godog.DocString) error {
@@ -224,7 +225,7 @@ func (f *DatasetFeature) TheDocumentInTheDatabaseForIdShouldBe(documentId string
 		return err
 	}
 
-	assert.Equal(f, documentId, link.ID)
+	assert.Equal(&f.ErrorFeature, documentId, link.ID)
 
 	document := link.Next
 	output, _ := json.MarshalIndent(document, "", "\t")
@@ -232,8 +233,8 @@ func (f *DatasetFeature) TheDocumentInTheDatabaseForIdShouldBe(documentId string
 	fmt.Println(string(output))
 
 	// FIXME: either test the intersection of the 2 JSONs, or use a table for the expected
-	assert.Equal(f, expectedDataset.Title, document.Title)
-	assert.Equal(f, "created", document.State)
+	assert.Equal(&f.ErrorFeature, expectedDataset.Title, document.Title)
+	assert.Equal(&f.ErrorFeature, "created", document.State)
 
-	return f.StepError()
+	return f.ErrorFeature.StepError()
 }

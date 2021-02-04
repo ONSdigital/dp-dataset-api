@@ -7,7 +7,7 @@ Feature: Access should not be given for private end-points unless identity is ve
 
         Given I am not identified
         And I am not authorised
-        When I POST to "/datasets/income-by-age" with body:
+        When I POST "/datasets/income-by-age"
             """
             {
                 "title": "CID"
@@ -18,7 +18,7 @@ Feature: Access should not be given for private end-points unless identity is ve
     Scenario: Being allowed access to a private end point when id provided
         Given I am identified as "user@ons.gov.uk"
         And I am authorised
-        When I POST to "/datasets/income-by-age" with body:
+        When I POST "/datasets/income-by-age"
             """
             {
                 "title": "CID"

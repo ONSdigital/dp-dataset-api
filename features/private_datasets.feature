@@ -6,7 +6,7 @@ Feature: Private Dataset API
         And I am authorised
 
     Scenario: Successfully creating a new dataset document
-        When I POST to "/datasets/ageing-population-estimates" with body:
+        When I POST "/datasets/ageing-population-estimates"
             """
             {
                 "title": "CID"
@@ -32,7 +32,7 @@ Feature: Private Dataset API
                 }
             ]
             """
-        When I POST to "/datasets/ageing-population-estimates" with body:
+        When I POST "/datasets/ageing-population-estimates"
             """
             {
                 "title": "Hello"
