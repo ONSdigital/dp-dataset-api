@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -169,40 +170,6 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		})
 	})
 
-	Convey("When a negative limit and offset query parameters are provided, then return datasets information with offset and limit equal to zero", t, func() {
-
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets?offset=-2&limit=-7", nil)
-		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) (*models.DatasetUpdateResults, error) {
-				return &models.DatasetUpdateResults{
-					Items:      []models.DatasetUpdate{},
-					Count:      2,
-					Offset:     offset,
-					Limit:      limit,
-					TotalCount: 5,
-				}, nil
-			},
-		}
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
-
-		Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
-			expectedResponse := models.DatasetUpdateResults{
-				Items:      []models.DatasetUpdate{},
-				Count:      2,
-				Offset:     0,
-				Limit:      0,
-				TotalCount: 5,
-			}
-
-			So(w.Code, ShouldEqual, http.StatusOK)
-			validateBody(w.Body.Bytes(), expectedResponse)
-		})
-	})
 }
 
 func TestGetDatasetsReturnsError(t *testing.T) {
@@ -225,6 +192,23 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 		So(permissions.Required.Calls, ShouldEqual, 1)
+	})
+
+	Convey("When a negative limit and offset query parameters are provided, then return datasets information with offset and limit equal to zero", t, func() {
+
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets?offset=-2&limit=-7", nil)
+		w := httptest.NewRecorder()
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(&storetest.StorerMock{}, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 1)
+		So(strings.TrimSpace(w.Body.String()), ShouldEqual, errs.ErrInvalidQueryParameter.Error())
+
 	})
 }
 

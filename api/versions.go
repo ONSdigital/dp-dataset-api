@@ -61,21 +61,31 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition}
+	offsetParameter := r.URL.Query().Get("offset")
+	limitParameter := r.URL.Query().Get("limit")
+	var err error
 
-	// get limit from query parameters, or default value
-	limit, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "limit", api.defaultLimit)
-	if err != nil {
-		log.Event(ctx, "failed to obtain limit from request query parameters", log.ERROR)
-		handleDatasetAPIErr(ctx, err, w, nil)
-		return
+	offset := api.defaultOffset
+	limit := api.defaultLimit
+
+	if offsetParameter != "" {
+		logData["offset"] = offsetParameter
+		offset, err = utils.ValidatePositiveInt(offsetParameter)
+		if err != nil {
+			log.Event(ctx, "failed to obtain offset from request query parameters", log.ERROR)
+			handleDatasetAPIErr(ctx, err, w, nil)
+			return
+		}
 	}
 
-	// get offset from query parameters, or default value
-	offset, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "offset", api.defaultOffset)
-	if err != nil {
-		log.Event(ctx, "failed to obtain offset from request query parameters", log.ERROR)
-		handleDatasetAPIErr(ctx, err, w, nil)
-		return
+	if limitParameter != "" {
+		logData["limit"] = limitParameter
+		limit, err = utils.ValidatePositiveInt(limitParameter)
+		if err != nil {
+			log.Event(ctx, "failed to obtain limit from request query parameters", log.ERROR)
+			handleDatasetAPIErr(ctx, err, w, nil)
+			return
+		}
 	}
 
 	b, err := func() ([]byte, error) {

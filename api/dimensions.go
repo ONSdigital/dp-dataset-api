@@ -30,20 +30,31 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	version := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "func": "getDimensions"}
 
-	// get limit from query parameters, or default value
-	limit, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "limit", api.defaultLimit)
-	if err != nil {
-		log.Event(ctx, "failed to obtain limit from request query parameters", log.ERROR)
-		handleDatasetAPIErr(ctx, err, w, logData)
-		return
+	offsetParameter := r.URL.Query().Get("offset")
+	limitParameter := r.URL.Query().Get("limit")
+
+	offset := api.defaultOffset
+	limit := api.defaultLimit
+	var err error
+
+	if offsetParameter != "" {
+		logData["offset"] = offsetParameter
+		offset, err = utils.ValidatePositiveInt(offsetParameter)
+		if err != nil {
+			log.Event(ctx, "failed to obtain offset from request query parameters", log.ERROR)
+			handleDatasetAPIErr(ctx, err, w, logData)
+			return
+		}
 	}
 
-	// get offset from query parameters, or default value
-	offset, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "offset", api.defaultOffset)
-	if err != nil {
-		log.Event(ctx, "failed to obtain offset from request query parameters", log.ERROR)
-		handleDatasetAPIErr(ctx, err, w, logData)
-		return
+	if limitParameter != "" {
+		logData["limit"] = limitParameter
+		limit, err = utils.ValidatePositiveInt(limitParameter)
+		if err != nil {
+			log.Event(ctx, "failed to obtain limit from request query parameters", log.ERROR)
+			handleDatasetAPIErr(ctx, err, w, logData)
+			return
+		}
 	}
 
 	b, err := func() ([]byte, error) {
@@ -72,8 +83,6 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		totalCount := len(dimensions)
-
 		results, err := api.createListOfDimensions(versionDoc, dimensions)
 		if err != nil {
 			log.Event(ctx, "failed to convert bson to dimension", log.ERROR, log.Error(err), logData)
@@ -91,7 +100,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 			Offset:     offset,
 			Limit:      limit,
 			Count:      len(slicedResults),
-			TotalCount: totalCount,
+			TotalCount: len(dimensions),
 		}
 
 		b, err := json.Marshal(listOfDimensions)
@@ -169,6 +178,11 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	edition := vars["edition"]
 	versionID := vars["version"]
 	dimension := vars["dimension"]
+	offsetParameter := r.URL.Query().Get("offset")
+	limitParameter := r.URL.Query().Get("limit")
+
+	offset := api.defaultOffset
+	limit := api.defaultLimit
 
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension, "func": "getDimensionOptions"}
 	authorised := api.authenticate(r, logData)
@@ -184,23 +198,24 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		logData["query_params"] = r.URL.RawQuery
 		handleDimensionsErr(ctx, w, "failed to obtain list of IDs from request query parameters", err, logData)
 		return
+
 	}
 
-	// if no list of IDs is provided, get offset and limit
-	var offset, limit int
-	if len(ids) == 0 {
-		// get limit from query parameters, or default value
-		limit, err = utils.GetPositiveIntQueryParameter(r.URL.Query(), "limit", api.defaultLimit)
+	if offsetParameter != "" {
+		logData["offset"] = offsetParameter
+		offset, err = utils.ValidatePositiveInt(offsetParameter)
 		if err != nil {
-			logData["query_params"] = r.URL.RawQuery
+			log.Event(ctx, "failed to obtain offset from request query parameters", log.ERROR)
 			handleDimensionsErr(ctx, w, "failed to obtain limit from request query parameters", err, logData)
 			return
 		}
+	}
 
-		// get offset from query parameters, or default value
-		offset, err = utils.GetPositiveIntQueryParameter(r.URL.Query(), "offset", api.defaultOffset)
+	if limitParameter != "" {
+		logData["limit"] = limitParameter
+		limit, err = utils.ValidatePositiveInt(limitParameter)
 		if err != nil {
-			logData["query_params"] = r.URL.RawQuery
+			log.Event(ctx, "failed to obtain limit from request query parameters", log.ERROR)
 			handleDimensionsErr(ctx, w, "failed to obtain offset from request query parameters", err, logData)
 			return
 		}

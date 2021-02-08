@@ -15,22 +15,34 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
-	logData := log.Data{"dataset_id": datasetID}
+	offsetParam := r.URL.Query().Get("offset")
+	limitParam := r.URL.Query().Get("limit")
+	logData := log.Data{"dataset_id": datasetID, "offset": offsetParam, "limit": limitParam}
+	offsetParameter := r.URL.Query().Get("offset")
+	limitParameter := r.URL.Query().Get("limit")
+	var err error
 
-	// get limit from query parameters, or default value
-	limit, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "limit", api.defaultLimit)
-	if err != nil {
-		log.Event(ctx, "failed to obtain limit from request query parameters", log.ERROR)
-		handleDatasetAPIErr(ctx, err, w, logData)
-		return
+	offset := api.defaultOffset
+	limit := api.defaultLimit
+
+	if offsetParameter != "" {
+		logData["offset"] = offsetParameter
+		offset, err = utils.ValidatePositiveInt(offsetParameter)
+		if err != nil {
+			log.Event(ctx, "failed to obtain offset from request query parameters", log.ERROR)
+			handleDatasetAPIErr(ctx, err, w, nil)
+			return
+		}
 	}
 
-	// get offset from query parameters, or default value
-	offset, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "offset", api.defaultOffset)
-	if err != nil {
-		log.Event(ctx, "failed to obtain offset from request query parameters", log.ERROR)
-		handleDatasetAPIErr(ctx, err, w, logData)
-		return
+	if limitParameter != "" {
+		logData["limit"] = limitParameter
+		limit, err = utils.ValidatePositiveInt(limitParameter)
+		if err != nil {
+			log.Event(ctx, "failed to obtain limit from request query parameters", log.ERROR)
+			handleDatasetAPIErr(ctx, err, w, nil)
+			return
+		}
 	}
 
 	b, err := func() ([]byte, error) {

@@ -33,6 +33,7 @@ github.com/ONSdigital/go-ns v0.0.0-20191104121206-f144c4ec2e58/go.mod h1:iWos35i
 github.com/ONSdigital/go-ns v0.0.0-20200205115900-a11716f93bad/go.mod h1:uHT6LaUlRbJsJRrIlN31t+QLUB80tAbk6ZR9sfoHL8Y=
 github.com/ONSdigital/go-ns v0.0.0-20200511161740-afc39066ee62 h1:DyGIxcRIEEHGGb/FuvrWoYXvpbR0WDbnvEn9kBF4tvM=
 github.com/ONSdigital/go-ns v0.0.0-20200511161740-afc39066ee62/go.mod h1:uHT6LaUlRbJsJRrIlN31t+QLUB80tAbk6ZR9sfoHL8Y=
+github.com/ONSdigital/go-ns v0.0.0-20200902154605-290c8b5ba5eb h1:JQyVnHu+gr8NL+QTd2Dt+/03WRs21UWoU3HqOmTKnJE=
 github.com/ONSdigital/golang-neo4j-bolt-driver v0.0.0-20190228153339-da534111531d h1:Z0FsB7q0SG3tG4O/WGv0hh1MyxScyZ5JWjECEgVCIzM=
 github.com/ONSdigital/golang-neo4j-bolt-driver v0.0.0-20190228153339-da534111531d/go.mod h1:75Sxr59AMz2RiPskqSymLFxdeaIEhnkNaJE5lonMS3M=
 github.com/ONSdigital/graphson v0.0.0-20190718134034-c13ceacd109d h1:yrCtEGlohmA3OnXtke0nOOp/m9O83orpSnTGOfYOw1Q=

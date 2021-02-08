@@ -143,51 +143,6 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		})
 	})
 
-	Convey("When a negative limit and offset query parameters are provided, then return editions information with offset and limit equal to zero", t, func() {
-
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions?offset=-2&limit=-7", nil)
-		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(datasetID, state string) error {
-				return nil
-			},
-			GetEditionsFunc: func(ctx context.Context, id string, state string, offset, limit int, authorised bool) (*models.EditionUpdateResults, error) {
-				return &models.EditionUpdateResults{
-					Items: []*models.EditionUpdate{
-						{ID: "id1",
-							Current: &models.Edition{
-								ID: "id2",
-							}},
-					},
-					Count:      1,
-					Offset:     offset,
-					Limit:      limit,
-					TotalCount: 3,
-				}, nil
-			},
-		}
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
-
-		Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
-			expectedResponse := models.EditionUpdateResults{
-				Items: []*models.EditionUpdate{
-					{ID: "id2"},
-				},
-				Count:      1,
-				Offset:     0,
-				Limit:      0,
-				TotalCount: 3,
-			}
-
-			So(w.Code, ShouldEqual, http.StatusOK)
-			validateBody(w.Body.Bytes(), expectedResponse)
-		})
-	})
-
 }
 
 func TestGetEditionsReturnsError(t *testing.T) {
@@ -212,6 +167,23 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When a negative limit and offset query parameters are provided, then return a 400 error", t, func() {
+
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions?offset=-2&limit=-7", nil)
+		w := httptest.NewRecorder()
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(&storetest.StorerMock{}, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidQueryParameter.Error())
+
 	})
 
 	Convey("When the dataset does not exist return status not found", t, func() {

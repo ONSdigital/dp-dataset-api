@@ -32,6 +32,7 @@ var (
 		errs.ErrAddUpdateDatasetBadRequest: true,
 		errs.ErrTypeMismatch:               true,
 		errs.ErrDatasetTypeInvalid:         true,
+		errs.ErrInvalidQueryParameter:      true,
 	}
 
 	// errors that should return a 404 status
@@ -43,21 +44,33 @@ var (
 
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	logData := log.Data{}
+	offsetParameter := r.URL.Query().Get("offset")
+	limitParameter := r.URL.Query().Get("limit")
 
-	// get limit from query parameters, or default value
-	limit, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "limit", api.defaultLimit)
-	if err != nil {
-		log.Event(ctx, "failed to obtain limit from request query parameters", log.ERROR)
-		handleDatasetAPIErr(ctx, err, w, nil)
-		return
+	offset := api.defaultOffset
+	limit := api.defaultLimit
+
+	var err error
+
+	if offsetParameter != "" {
+		logData["offset"] = offsetParameter
+		offset, err = utils.ValidatePositiveInt(offsetParameter)
+		if err != nil {
+			log.Event(ctx, "failed to obtain offset from request query parameters", log.ERROR)
+			handleDatasetAPIErr(ctx, err, w, nil)
+			return
+		}
 	}
 
-	// get offset from query parameters, or default value
-	offset, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "offset", api.defaultOffset)
-	if err != nil {
-		log.Event(ctx, "failed to obtain offset from request query parameters", log.ERROR)
-		handleDatasetAPIErr(ctx, err, w, nil)
-		return
+	if limitParameter != "" {
+		logData["limit"] = limitParameter
+		limit, err = utils.ValidatePositiveInt(limitParameter)
+		if err != nil {
+			log.Event(ctx, "failed to obtain limit from request query parameters", log.ERROR)
+			handleDatasetAPIErr(ctx, err, w, nil)
+			return
+		}
 	}
 
 	b, err := func() ([]byte, error) {
