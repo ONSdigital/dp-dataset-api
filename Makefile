@@ -40,4 +40,10 @@ acceptance-web: build
 test:
 	go test -race -cover ./...
 
-.PHONEY: test build debug
+.PHONY: nomis
+nomis:
+	go run NOMIS/nomis.go -mongo-url=localhost:27017
+
+.PHONY: test build debug
+
+
