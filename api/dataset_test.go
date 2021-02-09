@@ -194,7 +194,7 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 		So(permissions.Required.Calls, ShouldEqual, 1)
 	})
 
-	Convey("When a negative limit and offset query parameters are provided, then return datasets information with offset and limit equal to zero", t, func() {
+	Convey("When a negative limit and offset query parameters are provided, return a 400 error", t, func() {
 
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets?offset=-2&limit=-7", nil)
 		w := httptest.NewRecorder()
