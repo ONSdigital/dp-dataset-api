@@ -41,8 +41,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 		logData["offset"] = offsetParameter
 		offset, err = utils.ValidatePositiveInt(offsetParameter)
 		if err != nil {
-			log.Event(ctx, "failed to obtain offset from request query parameters", log.ERROR)
-			handleDatasetAPIErr(ctx, err, w, logData)
+			handleDimensionsErr(ctx, w, "failed to obtain a positive integer value for offsetquery parameter", err, logData)
 			return
 		}
 	}
@@ -51,8 +50,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 		logData["limit"] = limitParameter
 		limit, err = utils.ValidatePositiveInt(limitParameter)
 		if err != nil {
-			log.Event(ctx, "failed to obtain limit from request query parameters", log.ERROR)
-			handleDatasetAPIErr(ctx, err, w, logData)
+			handleDimensionsErr(ctx, w, "failed to obtain a positive integer value for limit query parameter", err, logData)
 			return
 		}
 	}
@@ -213,8 +211,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		logData["offset"] = offsetParameter
 		offset, err = utils.ValidatePositiveInt(offsetParameter)
 		if err != nil {
-			log.Event(ctx, "failed to obtain offset from request query parameters", log.ERROR)
-			handleDimensionsErr(ctx, w, "failed to obtain limit from request query parameters", err, logData)
+			handleDimensionsErr(ctx, w, "failed to obtain a positive integer value for offsetquery parameter", err, logData)
 			return
 		}
 	}
@@ -223,8 +220,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		logData["limit"] = limitParameter
 		limit, err = utils.ValidatePositiveInt(limitParameter)
 		if err != nil {
-			log.Event(ctx, "failed to obtain limit from request query parameters", log.ERROR)
-			handleDimensionsErr(ctx, w, "failed to obtain offset from request query parameters", err, logData)
+			handleDimensionsErr(ctx, w, "failed to obtain a positive integer value for limit query parameter", err, logData)
 			return
 		}
 	}

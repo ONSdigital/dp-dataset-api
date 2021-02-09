@@ -35,22 +35,24 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if limitParameter != "" {
-		logData["limit"] = limitParameter
-		limit, err = utils.ValidatePositiveInt(limitParameter)
+	if offsetParameter != "" {
+		logData["offset"] = offsetParameter
+		offset, err = utils.ValidatePositiveInt(offsetParameter)
 		if err != nil {
-			log.Event(ctx, "failed to obtain limit from request query parameters", log.ERROR)
+			log.Event(ctx, "failed to obtain a positive integer value for offset query parameter", log.ERROR)
 			handleDatasetAPIErr(ctx, err, w, nil)
 			return
 		}
 	}
 
-	if limit > api.maxLimit {
-		logData["max_limit"] = api.maxLimit
-		err = errs.ErrInvalidQueryParameter
-		log.Event(ctx, "limit is greater than the maximum allowed", log.ERROR, logData)
-		handleDatasetAPIErr(ctx, err, w, nil)
-		return
+	if limitParameter != "" {
+		logData["limit"] = limitParameter
+		limit, err = utils.ValidatePositiveInt(limitParameter)
+		if err != nil {
+			log.Event(ctx, "failed to obtain a positive integer value for limit query parameter", log.ERROR)
+			handleDatasetAPIErr(ctx, err, w, nil)
+			return
+		}
 	}
 
 	b, err := func() ([]byte, error) {
