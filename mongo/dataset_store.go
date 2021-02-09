@@ -99,7 +99,13 @@ func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised b
 	if err != nil {
 		log.Event(ctx, "error counting items", log.ERROR, log.Error(err))
 		if err == mgo.ErrNotFound {
-			return nil, errs.ErrDatasetNotFound
+			return &models.DatasetUpdateResults{
+				Items:      []models.DatasetUpdate{},
+				Count:      0,
+				TotalCount: 0,
+				Offset:     offset,
+				Limit:      limit,
+			}, nil
 		}
 		return nil, err
 	}
@@ -109,7 +115,13 @@ func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised b
 	if limit > 0 {
 		if err := iter.All(&values); err != nil {
 			if err == mgo.ErrNotFound {
-				return nil, errs.ErrDatasetNotFound
+				return &models.DatasetUpdateResults{
+					Items:      values,
+					Count:      0,
+					TotalCount: totalCount,
+					Offset:     offset,
+					Limit:      limit,
+				}, nil
 			}
 			return nil, err
 		}
@@ -159,7 +171,13 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 	if err != nil {
 		log.Event(ctx, "error counting items", log.ERROR, log.Error(err))
 		if err == mgo.ErrNotFound {
-			return nil, errs.ErrDatasetNotFound
+			return &models.EditionUpdateResults{
+				Items:      []*models.EditionUpdate{},
+				Count:      0,
+				TotalCount: 0,
+				Offset:     offset,
+				Limit:      limit,
+			}, nil
 		}
 		return nil, err
 	}
@@ -177,7 +195,13 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 	if limit > 0 {
 		if err := iter.All(&results); err != nil {
 			if err == mgo.ErrNotFound {
-				return nil, errs.ErrEditionNotFound
+				return &models.EditionUpdateResults{
+					Items:      []*models.EditionUpdate{},
+					Count:      0,
+					TotalCount: totalCount,
+					Offset:     offset,
+					Limit:      limit,
+				}, nil
 			}
 			return nil, err
 		}
@@ -287,7 +311,13 @@ func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string, of
 	if err != nil {
 		log.Event(ctx, "error counting items", log.ERROR, log.Error(err))
 		if err == mgo.ErrNotFound {
-			return nil, errs.ErrDatasetNotFound
+			return &models.VersionResults{
+				Items:      []models.Version{},
+				Count:      0,
+				TotalCount: 0,
+				Offset:     offset,
+				Limit:      limit,
+			}, nil
 		}
 		return nil, err
 	}
@@ -305,7 +335,13 @@ func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string, of
 	if limit > 0 {
 		if err := iter.All(&results); err != nil {
 			if err == mgo.ErrNotFound {
-				return nil, errs.ErrVersionNotFound
+				return &models.VersionResults{
+					Items:      results,
+					Count:      0,
+					TotalCount: totalCount,
+					Offset:     offset,
+					Limit:      limit,
+				}, nil
 			}
 			return nil, err
 		}

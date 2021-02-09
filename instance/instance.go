@@ -71,7 +71,7 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 		logData["offset"] = offsetParameter
 		offset, err = utils.ValidatePositiveInt(offsetParameter)
 		if err != nil {
-			log.Event(ctx, "failed to obtain offset from request query parameters", log.ERROR)
+			log.Event(ctx, "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
 			handleInstanceErr(ctx, err, w, nil)
 			return
 		}
@@ -81,7 +81,7 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 		logData["limit"] = limitParameter
 		limit, err = utils.ValidatePositiveInt(limitParameter)
 		if err != nil {
-			log.Event(ctx, "failed to obtain limit from request query parameters", log.ERROR)
+			log.Event(ctx, "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
 			handleInstanceErr(ctx, err, w, nil)
 			return
 		}

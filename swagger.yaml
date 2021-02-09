@@ -162,7 +162,7 @@ parameters:
       $ref: '#/definitions/UpdateVersion'
   limit:
     name: limit
-    description: "Maximum number of items that will be returned. A value of zero will return zero items. The default value is 20."
+    description: "Maximum number of items that will be returned. A value of zero will return zero items. The default value is 20, and the maximum limit allowed is 1000"
     in: query
     required: false
     type: integer

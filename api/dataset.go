@@ -57,7 +57,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 		logData["offset"] = offsetParameter
 		offset, err = utils.ValidatePositiveInt(offsetParameter)
 		if err != nil {
-			log.Event(ctx, "failed to obtain a positive integer value for offset query parameter", log.ERROR)
+			log.Event(ctx, "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
 			handleDatasetAPIErr(ctx, err, w, nil)
 			return
 		}
@@ -67,7 +67,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 		logData["limit"] = limitParameter
 		limit, err = utils.ValidatePositiveInt(limitParameter)
 		if err != nil {
-			log.Event(ctx, "failed to obtain a positive integer value for limit query parameter", log.ERROR)
+			log.Event(ctx, "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
 			handleDatasetAPIErr(ctx, err, w, nil)
 			return
 		}
