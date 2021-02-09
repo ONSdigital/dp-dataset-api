@@ -88,6 +88,14 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if limit > api.maxLimit {
+		logData["max_limit"] = api.maxLimit
+		err = errs.ErrInvalidQueryParameter
+		log.Event(ctx, "limit is greater than the maximum allowed", log.ERROR, logData)
+		handleDatasetAPIErr(ctx, err, w, nil)
+		return
+	}
+
 	b, err := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
 

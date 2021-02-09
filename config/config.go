@@ -26,6 +26,7 @@ type Configuration struct {
 	EnablePermissionsAuth      bool          `envconfig:"ENABLE_PERMISSIONS_AUTH"`
 	EnableObservationEndpoint  bool          `envconfig:"ENABLE_OBSERVATION_ENDPOINT"`
 	KafkaVersion               string        `envconfig:"KAFKA_VERSION"`
+	DefaultMaxLimit            int           `envconfig:"DEFAULT_MAXIMUM_LIMIT"`
 	MongoConfig                MongoConfig
 }
 
@@ -64,6 +65,7 @@ func Get() (*Configuration, error) {
 		EnablePermissionsAuth:      false,
 		EnableObservationEndpoint:  true,
 		KafkaVersion:               "1.0.2",
+		DefaultMaxLimit:            1000,
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",

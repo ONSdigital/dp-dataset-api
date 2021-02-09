@@ -57,6 +57,14 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if limit > api.maxLimit {
+		logData["max_limit"] = api.maxLimit
+		err = errs.ErrInvalidQueryParameter
+		log.Event(ctx, "limit is greater than the maximum allowed", log.ERROR, logData)
+		handleDimensionsErr(ctx, w, "unpublished version has an invalid state", err, logData)
+		return
+	}
+
 	b, err := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
 
@@ -219,6 +227,14 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 			handleDimensionsErr(ctx, w, "failed to obtain offset from request query parameters", err, logData)
 			return
 		}
+	}
+
+	if limit > api.maxLimit {
+		logData["max_limit"] = api.maxLimit
+		err = errs.ErrInvalidQueryParameter
+		log.Event(ctx, "limit is greater than the maximum allowed", log.ERROR, logData)
+		handleDimensionsErr(ctx, w, "unpublished version has an invalid state", err, logData)
+		return
 	}
 
 	// ger version for provided dataset, edition and versionID
