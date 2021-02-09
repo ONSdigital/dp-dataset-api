@@ -40,6 +40,12 @@ acceptance-web: build
 test:
 	go test -race -cover ./...
 
+
+.PHONY: test-component
+test-component:
+	go test -race -cover -component | grep -v created_at
+
+
 .PHONY: nomis
 nomis:
 	go run NOMIS/nomis.go -mongo-url=localhost:27017

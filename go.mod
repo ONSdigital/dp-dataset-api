@@ -12,7 +12,7 @@ require (
 	github.com/ONSdigital/dp-net v1.0.11
 	github.com/ONSdigital/go-ns v0.0.0-20200902154605-290c8b5ba5eb
 	github.com/ONSdigital/log.go v1.0.1
-	github.com/armakuni/dp-go-featuretest v0.0.0-20210204114305-987fb2db1886
+	github.com/armakuni/dp-go-featuretest v0.0.0-20210209160250-f1ee327454d6
 	github.com/benweissmann/memongo v0.1.1
 	github.com/cucumber/godog v0.11.0
 	github.com/cucumber/messages-go/v10 v10.0.3
@@ -30,7 +30,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/stretchr/testify v1.6.1
-	go.mongodb.org/mongo-driver v1.0.3
+	go.mongodb.org/mongo-driver v1.4.6
 	gopkg.in/avro.v0 v0.0.0-20171217001914-a730b5802183 // indirect
 	gopkg.in/jcmturner/gokrb5.v7 v7.5.0
 )

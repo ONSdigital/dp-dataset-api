@@ -1,9 +1,8 @@
-package steps_test
+package feature
 
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -21,31 +20,28 @@ import (
 	"github.com/benweissmann/memongo"
 	"github.com/cucumber/godog"
 	"github.com/globalsign/mgo"
-	"github.com/maxcnunes/httpfake"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
 type DatasetFeature struct {
-	ErrorFeature    featuretest.ErrorFeature
-	svc             *service.Service
-	errorChan       chan error
-	Datasets        []*models.Dataset
-	MongoClient     *mongo.Mongo
-	Config          *config.Configuration
-	HTTPServer      *http.Server
-	FakeAuthService *httpfake.HTTPFake
-	ServiceRunning  bool
+	ErrorFeature   featuretest.ErrorFeature
+	svc            *service.Service
+	errorChan      chan error
+	Datasets       []*models.Dataset
+	MongoClient    *mongo.Mongo
+	Config         *config.Configuration
+	HTTPServer     *http.Server
+	ServiceRunning bool
 }
 
-func NewDatasetFeature(mongoCapability *featuretest.MongoCapability) *DatasetFeature {
+func NewDatasetFeature(mongoCapability *featuretest.MongoCapability, zebedeeURL string) *DatasetFeature {
 
 	f := &DatasetFeature{
-		HTTPServer:      &http.Server{},
-		errorChan:       make(chan error),
-		Datasets:        make([]*models.Dataset, 0),
-		FakeAuthService: httpfake.New(),
-		ServiceRunning:  false,
+		HTTPServer:     &http.Server{},
+		errorChan:      make(chan error),
+		Datasets:       make([]*models.Dataset, 0),
+		ServiceRunning: false,
 	}
 
 	var err error
@@ -55,7 +51,7 @@ func NewDatasetFeature(mongoCapability *featuretest.MongoCapability) *DatasetFea
 		panic(err)
 	}
 
-	f.Config.ZebedeeURL = f.FakeAuthService.ResolveURL("")
+	f.Config.ZebedeeURL = zebedeeURL
 
 	mongodb := &mongo.Mongo{
 		CodeListURL: "",
@@ -86,8 +82,6 @@ func NewDatasetFeature(mongoCapability *featuretest.MongoCapability) *DatasetFea
 
 func (f *DatasetFeature) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^private endpoints are enabled$`, f.PrivateEndpointsAreEnabled)
-	ctx.Step(`^I am not identified$`, f.IAmNotIdentified)
-	ctx.Step(`^I am identified as "([^"]*)"$`, f.IAmIdentifiedAs)
 	ctx.Step(`^I have these datasets:$`, f.IHaveTheseDatasets)
 	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, f.TheDocumentInTheDatabaseForIdShouldBe)
 }
@@ -97,7 +91,6 @@ func (f *DatasetFeature) Reset() *DatasetFeature {
 	f.MongoClient.Database = memongo.RandomDatabase()
 	f.MongoClient.Init()
 	f.Config.EnablePrivateEndpoints = false
-	f.FakeAuthService.Reset()
 	return f
 }
 
@@ -106,7 +99,6 @@ func (f *DatasetFeature) Close() error {
 		f.svc.Close(context.Background())
 		f.ServiceRunning = false
 	}
-	f.FakeAuthService.Close()
 	return nil
 }
 
@@ -194,16 +186,6 @@ func (f *DatasetFeature) putDatasetInDatabase(s *mgo.Session, datasetDoc models.
 	}
 }
 
-func (f *DatasetFeature) IAmNotIdentified() error {
-	f.FakeAuthService.NewHandler().Get("/identity").Reply(401)
-	return nil
-}
-
-func (f *DatasetFeature) IAmIdentifiedAs(username string) error {
-	f.FakeAuthService.NewHandler().Get("/identity").Reply(200).BodyString(`{ "identifier": "` + username + `"}`)
-	return nil
-}
-
 func (f *DatasetFeature) PrivateEndpointsAreEnabled() error {
 	f.Config.EnablePrivateEndpoints = true
 	return nil
@@ -228,11 +210,7 @@ func (f *DatasetFeature) TheDocumentInTheDatabaseForIdShouldBe(documentId string
 	assert.Equal(&f.ErrorFeature, documentId, link.ID)
 
 	document := link.Next
-	output, _ := json.MarshalIndent(document, "", "\t")
 
-	fmt.Println(string(output))
-
-	// FIXME: either test the intersection of the 2 JSONs, or use a table for the expected
 	assert.Equal(&f.ErrorFeature, expectedDataset.Title, document.Title)
 	assert.Equal(&f.ErrorFeature, "created", document.State)
 
