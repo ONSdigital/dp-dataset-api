@@ -47,9 +47,15 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	stateFilterQuery := r.URL.Query().Get("state")
 	datasetFilterQuery := r.URL.Query().Get("dataset")
+	offsetParameter := r.URL.Query().Get("offset")
+	limitParameter := r.URL.Query().Get("limit")
 	var stateFilterList []string
 	var datasetFilterList []string
 	logData := log.Data{}
+	var err error
+
+	offset := s.DefaultOffset
+	limit := s.DefaultLimit
 
 	if stateFilterQuery != "" {
 		logData["state_query"] = stateFilterQuery
@@ -61,20 +67,24 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 		datasetFilterList = strings.Split(datasetFilterQuery, ",")
 	}
 
-	// get limit from query parameters, or default value
-	limit, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "limit", s.DefaultLimit)
-	if err != nil {
-		logData["query_params"] = r.URL.RawQuery
-		handleInstanceErr(ctx, err, w, logData)
-		return
+	if offsetParameter != "" {
+		logData["offset"] = offsetParameter
+		offset, err = utils.ValidatePositiveInt(offsetParameter)
+		if err != nil {
+			log.Event(ctx, "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
+			handleInstanceErr(ctx, err, w, nil)
+			return
+		}
 	}
 
-	// get offset from query parameters, or default value
-	offset, err := utils.GetPositiveIntQueryParameter(r.URL.Query(), "offset", s.DefaultOffset)
-	if err != nil {
-		logData["query_params"] = r.URL.RawQuery
-		handleInstanceErr(ctx, err, w, logData)
-		return
+	if limitParameter != "" {
+		logData["limit"] = limitParameter
+		limit, err = utils.ValidatePositiveInt(limitParameter)
+		if err != nil {
+			log.Event(ctx, "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
+			handleInstanceErr(ctx, err, w, nil)
+			return
+		}
 	}
 
 	log.Event(ctx, "get list of instances", log.INFO, logData)

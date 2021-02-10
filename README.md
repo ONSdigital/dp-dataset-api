@@ -78,6 +78,9 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | DOWNLOAD_SERVICE_SECRET_KEY  | QB0108EZ-825D-412C-9B1D-41EF7747F462   | A key specific for the download service to access public/private links
 | ZEBEDEE_URL                  | http://localhost:8082                  | The host name for Zebedee
 | ENABLE_PERMISSIONS_AUTH      | false                                  | Enable/disable user/service permissions checking for private endpoints
+| DEFAULT_MAXIMUM_LIMIT        | 1000                                   | Default maximum limit for pagination
+| DEFAULT_LIMIT                | 20                                     | Default limit for pagination
+| DEFAULT_OFFSET               | 0                                      | Default offset for pagination
 
 ### Contributing
 

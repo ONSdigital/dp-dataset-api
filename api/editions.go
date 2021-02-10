@@ -6,6 +6,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 )
@@ -15,6 +16,42 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	logData := log.Data{"dataset_id": datasetID}
+	offsetParameter := r.URL.Query().Get("offset")
+	limitParameter := r.URL.Query().Get("limit")
+	var err error
+
+	offset := api.defaultOffset
+	limit := api.defaultLimit
+
+	if offsetParameter != "" {
+		logData["offset"] = offsetParameter
+		offset, err = utils.ValidatePositiveInt(offsetParameter)
+		if err != nil {
+			log.Event(ctx, "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
+			handleDatasetAPIErr(ctx, err, w, nil)
+			return
+		}
+	}
+
+	if limitParameter != "" {
+		logData["limit"] = limitParameter
+		limit, err = utils.ValidatePositiveInt(limitParameter)
+		if err != nil {
+			log.Event(ctx, "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
+			handleDatasetAPIErr(ctx, err, w, nil)
+			return
+		}
+	}
+
+	if limitParameter != "" {
+		logData["limit"] = limitParameter
+		limit, err = utils.ValidatePositiveInt(limitParameter)
+		if err != nil {
+			log.Event(ctx, "failed to obtain a positive integer value for limit query parameter", log.ERROR)
+			handleDatasetAPIErr(ctx, err, w, nil)
+			return
+		}
+	}
 
 	b, err := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
@@ -31,7 +68,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		results, err := api.dataStore.Backend.GetEditions(ctx, datasetID, state)
+		results, err := api.dataStore.Backend.GetEditions(ctx, datasetID, state, offset, limit, authorised)
 		if err != nil {
 			log.Event(ctx, "getEditions endpoint: unable to find editions for dataset", log.ERROR, log.Error(err), logData)
 			return nil, err
@@ -56,7 +93,13 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
 				publicResults = append(publicResults, results.Items[i].Current)
 			}
 
-			editionBytes, err = json.Marshal(&models.EditionResults{Items: publicResults})
+			editionBytes, err = json.Marshal(&models.EditionResults{
+				Items:      publicResults,
+				Offset:     offset,
+				Limit:      limit,
+				Count:      results.Count,
+				TotalCount: results.TotalCount,
+			})
 			if err != nil {
 				log.Event(ctx, "getEditions endpoint: failed to marshal a list of edition resources into bytes", log.ERROR, log.Error(err), logData)
 				return nil, err

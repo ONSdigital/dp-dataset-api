@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -28,6 +29,41 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	edition := vars["edition"]
 	version := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "func": "getDimensions"}
+
+	offsetParameter := r.URL.Query().Get("offset")
+	limitParameter := r.URL.Query().Get("limit")
+
+	offset := api.defaultOffset
+	limit := api.defaultLimit
+	var err error
+
+	if offsetParameter != "" {
+		logData["offset"] = offsetParameter
+		offset, err = utils.ValidatePositiveInt(offsetParameter)
+		if err != nil {
+			log.Event(ctx, "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
+			handleDimensionsErr(ctx, w, "invalid query parameter: limit", err, logData)
+			return
+		}
+	}
+
+	if limitParameter != "" {
+		logData["limit"] = limitParameter
+		limit, err = utils.ValidatePositiveInt(limitParameter)
+		if err != nil {
+			log.Event(ctx, "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
+			handleDimensionsErr(ctx, w, "invalid query parameter: limit", err, logData)
+			return
+		}
+	}
+
+	if limit > api.maxLimit {
+		logData["max_limit"] = api.maxLimit
+		err = errs.ErrInvalidQueryParameter
+		log.Event(ctx, "limit is greater than the maximum allowed", log.ERROR, logData)
+		handleDimensionsErr(ctx, w, "unpublished version has an invalid state", err, logData)
+		return
+	}
 
 	b, err := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
@@ -61,7 +97,19 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		listOfDimensions := &models.DatasetDimensionResults{Items: results}
+		sort.Slice(results, func(i, j int) bool {
+			return results[i].Name < results[j].Name
+		})
+
+		slicedResults := utils.Slice(results, offset, limit)
+
+		listOfDimensions := &models.DatasetDimensionResults{
+			Items:      slicedResults,
+			Offset:     offset,
+			Limit:      limit,
+			Count:      len(slicedResults),
+			TotalCount: len(dimensions),
+		}
 
 		b, err := json.Marshal(listOfDimensions)
 		if err != nil {
@@ -138,6 +186,11 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	edition := vars["edition"]
 	versionID := vars["version"]
 	dimension := vars["dimension"]
+	offsetParameter := r.URL.Query().Get("offset")
+	limitParameter := r.URL.Query().Get("limit")
+
+	offset := api.defaultOffset
+	limit := api.defaultLimit
 
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension, "func": "getDimensionOptions"}
 	authorised := api.authenticate(r, logData)
@@ -153,26 +206,35 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		logData["query_params"] = r.URL.RawQuery
 		handleDimensionsErr(ctx, w, "failed to obtain list of IDs from request query parameters", err, logData)
 		return
+
 	}
 
-	// if no list of IDs is provided, get offset and limit
-	var offset, limit int
-	if len(ids) == 0 {
-		// get limit from query parameters, or default value
-		limit, err = utils.GetPositiveIntQueryParameter(r.URL.Query(), "limit", api.defaultLimit)
+	if offsetParameter != "" {
+		logData["offset"] = offsetParameter
+		offset, err = utils.ValidatePositiveInt(offsetParameter)
 		if err != nil {
-			logData["query_params"] = r.URL.RawQuery
-			handleDimensionsErr(ctx, w, "failed to obtain limit from request query parameters", err, logData)
+			log.Event(ctx, "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
+			handleDimensionsErr(ctx, w, "invalid query parameter: limit", err, logData)
 			return
 		}
+	}
 
-		// get offset from query parameters, or default value
-		offset, err = utils.GetPositiveIntQueryParameter(r.URL.Query(), "offset", api.defaultOffset)
+	if limitParameter != "" {
+		logData["limit"] = limitParameter
+		limit, err = utils.ValidatePositiveInt(limitParameter)
 		if err != nil {
-			logData["query_params"] = r.URL.RawQuery
-			handleDimensionsErr(ctx, w, "failed to obtain offset from request query parameters", err, logData)
+			log.Event(ctx, "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
+			handleDimensionsErr(ctx, w, "invalid query parameter: limit", err, logData)
 			return
 		}
+	}
+
+	if limit > api.maxLimit {
+		logData["max_limit"] = api.maxLimit
+		err = errs.ErrInvalidQueryParameter
+		log.Event(ctx, "limit is greater than the maximum allowed", log.ERROR, logData)
+		handleDimensionsErr(ctx, w, "unpublished version has an invalid state", err, logData)
+		return
 	}
 
 	// ger version for provided dataset, edition and versionID

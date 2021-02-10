@@ -6,20 +6,18 @@ import (
 	"strings"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/models"
 )
 
-// GetPositiveIntQueryParameter obtains the positive int value of query var defined by the provided varKey
-func GetPositiveIntQueryParameter(queryVars url.Values, varKey string, defaultValue int) (val int, err error) {
-	strVal, found := queryVars[varKey]
-	if !found {
-		return defaultValue, nil
-	}
-	val, err = strconv.Atoi(strVal[0])
+// ValidatePositiveInt obtains the positive int value of query var defined by the provided varKey
+func ValidatePositiveInt(parameter string) (val int, err error) {
+
+	val, err = strconv.Atoi(parameter)
 	if err != nil {
 		return -1, errs.ErrInvalidQueryParameter
 	}
 	if val < 0 {
-		return 0, nil
+		return -1, errs.ErrInvalidQueryParameter
 	}
 	return val, nil
 }
@@ -42,4 +40,17 @@ func GetQueryParamListValues(queryVars url.Values, varKey string, maxNumItems in
 		}
 	}
 	return items, nil
+}
+
+// utility function to cut a slice according to the provided offset and limit.
+func Slice(full []models.Dimension, offset, limit int) (sliced []models.Dimension) {
+	end := offset + limit
+	if limit == 0 || end > len(full) {
+		end = len(full)
+	}
+
+	if offset > len(full) {
+		return []models.Dimension{}
+	}
+	return full[offset:end]
 }
