@@ -86,6 +86,7 @@ func (f *DatasetFeature) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^private endpoints are enabled$`, f.PrivateEndpointsAreEnabled)
 	ctx.Step(`^I have these datasets:$`, f.IHaveTheseDatasets)
 	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, f.TheDocumentInTheDatabaseForIdShouldBe)
+	ctx.Step(`^there are no datasets$`, f.thereAreNoDatasets)
 }
 
 func (f *DatasetFeature) Reset() *DatasetFeature {
@@ -165,6 +166,10 @@ func (f *DatasetFeature) IHaveTheseDatasets(datasetsJson *godog.DocString) error
 	}
 
 	return nil
+}
+
+func (f *DatasetFeature) thereAreNoDatasets() error {
+	return f.MongoClient.Session.Copy().DB(f.MongoClient.Database).DropDatabase()
 }
 
 func (f *DatasetFeature) putDatasetInDatabase(s *mgo.Session, datasetDoc models.Dataset) {

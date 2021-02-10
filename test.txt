@@ -1,0 +1,408 @@
+[memongo] [INFO]  Starting MongoDB with options &memongo.Options{Port:27017, CachePath:"/Users/andreurbani/Library/Caches/memongo", MongoVersion:"4.0.5", DownloadURL:"https://fastdl.mongodb.org/osx/mongodb-osx-ssl-x86_64-4.0.5.tgz", MongodBin:"", Logger:(*log.Logger)(nil), LogLevel:0, StartupTimeout:10000000000}
+[1;37mFeature:[0m Access should not be given for private end-points unless identity is verified
+
+  [1;37mBackground:[0m
+    [32mGiven[0m [32mprivate endpoints are enabled[0m                                         [1;30m# dataset_feature.go:196 -> *DatasetFeature[0m
+
+  [1;37mScenario:[0m Not being allowed access to a private end point when no id provided [1;30m# features/access.feature:6[0m
+    [32mGiven[0m [32mI am not identified[0m                                                   [1;30m# authorization_feature.go:29 -> *AuthorizationFeature[0m
+    [32mAnd[0m [32mI am not authorised[0m                                                     [1;30m# api_feature.go:77 -> *APIFeature[0m
+{"created_at":"2021-02-10T16:43:10.601096Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"adding graph db health check as the private or observation endpoints are enabled","severity":3}
+{"created_at":"2021-02-10T16:43:10.601268Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"feature flag not enabled defaulting to nop auth impl","severity":3,"data":{"feature":"ENABLE_PERMISSIONS_AUTH"}}
+{"created_at":"2021-02-10T16:43:10.601285Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling private endpoints for dataset api","severity":3}
+{"created_at":"2021-02-10T16:43:10.601503Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling observations endpoint","severity":3}
+{"created_at":"2021-02-10T16:43:10.602042Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"executing identity check middleware"}
+{"created_at":"2021-02-10T16:43:10.60206Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"florence access token header not found attempting to find access token cookie"}
+{"created_at":"2021-02-10T16:43:10.602076Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"florence access token cookie not found in request"}
+{"created_at":"2021-02-10T16:43:10.602087Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"service auth token request header is not found"}
+{"created_at":"2021-02-10T16:43:10.602159Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"identity client check request returned an auth error","data":{"auth_status_code":401},"error":{"error":"no headers set on request: unable to determine the user or service making the request","stack_trace":[{"file":"/Users/andreurbani/go/pkg/mod/github.com/!o!n!sdigital/dp-net@v1.0.11/handlers/identity.go","line":71,"function":"github.com/ONSdigital/dp-net/handlers.handleFailedRequest"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/!o!n!sdigital/dp-net@v1.0.11/handlers/identity.go","line":56,"function":"github.com/ONSdigital/dp-net/handlers.identityWithHTTPClient.func1.1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/service/service.go","line":224,"function":"github.com/ONSdigital/dp-dataset-api/service.newMiddleware.func1.1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/armakuni/dp-go-featuretest@v0.0.0-20210209160250-f1ee327454d6/api_feature.go","line":103,"function":"github.com/armakuni/dp-go-featuretest.(*APIFeature).makeRequest"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/armakuni/dp-go-featuretest@v0.0.0-20210209160250-f1ee327454d6/api_feature.go","line":89,"function":"github.com/armakuni/dp-go-featuretest.(*APIFeature).IPostToWithBody"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/reflect/value.go","line":460,"function":"reflect.Value.call"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/reflect/value.go","line":321,"function":"reflect.Value.Call"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/cucumber/godog@v0.11.0/internal/models/stepdef.go","line":159,"function":"github.com/cucumber/godog/internal/models.(*StepDefinition).Run"}],"data":{}}}
+{"created_at":"2021-02-10T16:43:10.602279Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"identity client check request returned an auth error","data":{"auth_status_code":401},"error":{"error":"no headers set on request: unable to determine the user or service making the request","stack_trace":[{"file":"/Users/andreurbani/go/pkg/mod/github.com/!o!n!sdigital/dp-net@v1.0.11/handlers/identity.go","line":57,"function":"github.com/ONSdigital/dp-net/handlers.identityWithHTTPClient.func1.1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/service/service.go","line":224,"function":"github.com/ONSdigital/dp-dataset-api/service.newMiddleware.func1.1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/armakuni/dp-go-featuretest@v0.0.0-20210209160250-f1ee327454d6/api_feature.go","line":103,"function":"github.com/armakuni/dp-go-featuretest.(*APIFeature).makeRequest"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/armakuni/dp-go-featuretest@v0.0.0-20210209160250-f1ee327454d6/api_feature.go","line":89,"function":"github.com/armakuni/dp-go-featuretest.(*APIFeature).IPostToWithBody"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/reflect/value.go","line":460,"function":"reflect.Value.call"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/reflect/value.go","line":321,"function":"reflect.Value.Call"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/cucumber/godog@v0.11.0/internal/models/stepdef.go","line":159,"function":"github.com/cucumber/godog/internal/models.(*StepDefinition).Run"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/cucumber/godog@v0.11.0/suite.go","line":138,"function":"github.com/cucumber/godog.(*suite).runStep"}],"data":{}}}
+    [32mWhen[0m [32mI POST "/datasets/income-by-age"[0m                                       [1;30m# api_feature.go:88 -> *APIFeature[0m
+      [36m"""[0m
+      [36m{[0m
+      [36m    "title": "CID"[0m
+      [36m}[0m
+      [36m"""[0m
+    [32mThen[0m [32mthe HTTP status code should be "401"[0m                                   [1;30m# api_feature.go:130 -> *APIFeature[0m
+{"created_at":"2021-02-10T16:43:10.602439Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"commencing graceful shutdown","severity":3,"data":{"graceful_shutdown_timeout":5000000000}}
+{"created_at":"2021-02-10T16:43:10.602553Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closing generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.602598Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closed generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.60262Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"graceful shutdown was successful","severity":3}
+
+  [1;37mScenario:[0m Being allowed access to a private end point when id provided [1;30m# features/access.feature:18[0m
+    [32mGiven[0m [32mI am identified as "user@ons.gov.uk"[0m                           [1;30m# authorization_feature.go:34 -> *AuthorizationFeature[0m
+    [32mAnd[0m [32mI am authorised[0m                                                  [1;30m# api_feature.go:71 -> *APIFeature[0m
+{"created_at":"2021-02-10T16:43:10.604298Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"adding graph db health check as the private or observation endpoints are enabled","severity":3}
+{"created_at":"2021-02-10T16:43:10.604314Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"feature flag not enabled defaulting to nop auth impl","severity":3,"data":{"feature":"ENABLE_PERMISSIONS_AUTH"}}
+{"created_at":"2021-02-10T16:43:10.604325Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling private endpoints for dataset api","severity":3}
+{"created_at":"2021-02-10T16:43:10.604554Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling observations endpoint","severity":3}
+{"created_at":"2021-02-10T16:43:10.604992Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"executing identity check middleware"}
+{"created_at":"2021-02-10T16:43:10.605006Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"florence access token header not found attempting to find access token cookie"}
+{"created_at":"2021-02-10T16:43:10.605015Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"florence access token cookie not found in request"}
+{"created_at":"2021-02-10T16:43:10.605029Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"calling AuthAPI to authenticate caller identity","severity":3,"data":{"auth_token":{},"is_service_request":true,"is_user_request":false,"url":"http://127.0.0.1:59357/identity"}}
+{"created_at":"2021-02-10T16:43:10.605849Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"caller identity retrieved setting context values","severity":3,"data":{"auth_token":{},"caller_identity":"","is_service_request":true,"is_user_request":false,"url":"http://127.0.0.1:59357/identity","user_identity":""}}
+{"created_at":"2021-02-10T16:43:10.605944Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"identity client check request completed successfully invoking downstream http handler"}
+{"created_at":"2021-02-10T16:43:10.606183Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"identity found in request context, calling downstream handler","http":{"status_code":0,"method":"POST","scheme":"http","host":"foo","path":"/datasets/income-by-age"},"data":{"caller_identity":"user@ons.gov.uk","dataset_id":"income-by-age"}}
+{"created_at":"2021-02-10T16:43:10.606218Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"executing NopHandler.Require","data":{"method":"POST","required_permissions":{"Create":true,"Read":false,"Update":false,"Delete":false},"uri":"/datasets/income-by-age"}}
+{"created_at":"2021-02-10T16:43:10.60754Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"addDataset endpoint: request completed successfully","severity":3,"data":{"dataset_id":"income-by-age"}}
+    [32mWhen[0m [32mI POST "/datasets/income-by-age"[0m                                [1;30m# api_feature.go:88 -> *APIFeature[0m
+      [36m"""[0m
+      [36m{[0m
+      [36m    "title": "CID"[0m
+      [36m}[0m
+      [36m"""[0m
+    [32mThen[0m [32mthe HTTP status code should be "201"[0m                            [1;30m# api_feature.go:130 -> *APIFeature[0m
+{"created_at":"2021-02-10T16:43:10.607761Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"commencing graceful shutdown","severity":3,"data":{"graceful_shutdown_timeout":5000000000}}
+{"created_at":"2021-02-10T16:43:10.607853Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closing generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.607871Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closed generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.607886Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"graceful shutdown was successful","severity":3}
+
+[1;37mFeature:[0m Dataset Pagination
+
+  [1;37mBackground:[0m
+    [32mGiven[0m [32mI have these datasets:[0m                                         [1;30m# dataset_feature.go:152 -> *DatasetFeature[0m
+      [36m"""[0m
+      [36m[[0m
+      [36m    {[0m
+      [36m        "id": "population-estimates"[0m
+      [36m    },[0m
+      [36m    {[0m
+      [36m        "id": "income"[0m
+      [36m    },[0m
+      [36m    {[0m
+      [36m        "id": "age"[0m
+      [36m    }[0m
+      [36m][0m
+      [36m"""[0m
+{"created_at":"2021-02-10T16:43:10.610734Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"adding graph db health check as the private or observation endpoints are enabled","severity":3}
+{"created_at":"2021-02-10T16:43:10.610754Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"feature flag not enabled defaulting to nop auth impl","severity":3,"data":{"feature":"ENABLE_PERMISSIONS_AUTH"}}
+{"created_at":"2021-02-10T16:43:10.610765Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling only public endpoints for dataset api","severity":3}
+{"created_at":"2021-02-10T16:43:10.61104Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling observations endpoint","severity":3}
+{"created_at":"2021-02-10T16:43:10.611725Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"api endpoint getDatasets request successful","severity":3}
+
+  [1;37mScenario:[0m Offset skips first result of datasets when set to 1          [1;30m# features/pagination.feature:18[0m
+    [32mWhen[0m [32mI GET "/datasets?offset=1"[0m                                      [1;30m# api_feature.go:83 -> *APIFeature[0m
+    [32mThen[0m [32mI should receive the following JSON response with status "200":[0m [1;30m# api_feature.go:146 -> *APIFeature[0m
+      [36m"""[0m
+      [36m{[0m
+      [36m    "count":2,[0m
+      [36m    "items": [[0m
+      [36m        {[0m
+      [36m            "id": "income"[0m
+      [36m        },[0m
+      [36m        {[0m
+      [36m            "id": "age"[0m
+      [36m        }[0m
+      [36m    ],[0m
+      [36m    "limit":20, [0m
+      [36m    "offset":1, [0m
+      [36m    "total_count":3[0m
+      [36m}[0m
+      [36m"""[0m
+{"created_at":"2021-02-10T16:43:10.611967Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"commencing graceful shutdown","severity":3,"data":{"graceful_shutdown_timeout":5000000000}}
+{"created_at":"2021-02-10T16:43:10.612039Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closing generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.612082Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closed generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.612095Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"graceful shutdown was successful","severity":3}
+{"created_at":"2021-02-10T16:43:10.61451Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"adding graph db health check as the private or observation endpoints are enabled","severity":3}
+{"created_at":"2021-02-10T16:43:10.614552Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"feature flag not enabled defaulting to nop auth impl","severity":3,"data":{"feature":"ENABLE_PERMISSIONS_AUTH"}}
+{"created_at":"2021-02-10T16:43:10.614577Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling only public endpoints for dataset api","severity":3}
+{"created_at":"2021-02-10T16:43:10.614921Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling observations endpoint","severity":3}
+{"created_at":"2021-02-10T16:43:10.615399Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"api endpoint getDatasets request successful","severity":3}
+
+  [1;37mScenario:[0m Results limited to 1 when limit set to 1                     [1;30m# features/pagination.feature:38[0m
+    [32mWhen[0m [32mI GET "/datasets?offset=0&limit=1"[0m                              [1;30m# api_feature.go:83 -> *APIFeature[0m
+    [32mThen[0m [32mI should receive the following JSON response with status "200":[0m [1;30m# api_feature.go:146 -> *APIFeature[0m
+      [36m"""[0m
+      [36m{[0m
+      [36m    "count":1,[0m
+      [36m    "items": [[0m
+      [36m        {[0m
+      [36m            "id": "population-estimates"[0m
+      [36m        }[0m
+      [36m    ],[0m
+      [36m    "limit":1, [0m
+      [36m    "offset":0, [0m
+      [36m    "total_count":3[0m
+      [36m}[0m
+      [36m"""[0m
+{"created_at":"2021-02-10T16:43:10.615696Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"commencing graceful shutdown","severity":3,"data":{"graceful_shutdown_timeout":5000000000}}
+{"created_at":"2021-02-10T16:43:10.615777Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closing generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.615798Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closed generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.615816Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"graceful shutdown was successful","severity":3}
+{"created_at":"2021-02-10T16:43:10.620761Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"adding graph db health check as the private or observation endpoints are enabled","severity":3}
+{"created_at":"2021-02-10T16:43:10.620817Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"feature flag not enabled defaulting to nop auth impl","severity":3,"data":{"feature":"ENABLE_PERMISSIONS_AUTH"}}
+{"created_at":"2021-02-10T16:43:10.620866Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling only public endpoints for dataset api","severity":3}
+{"created_at":"2021-02-10T16:43:10.621277Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling observations endpoint","severity":3}
+{"created_at":"2021-02-10T16:43:10.622322Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"api endpoint getDatasets request successful","severity":3}
+
+  [1;37mScenario:[0m Second dataset returned when offset and limit set to 1       [1;30m# features/pagination.feature:54[0m
+    [32mWhen[0m [32mI GET "/datasets?offset=1&limit=1"[0m                              [1;30m# api_feature.go:83 -> *APIFeature[0m
+    [32mThen[0m [32mI should receive the following JSON response with status "200":[0m [1;30m# api_feature.go:146 -> *APIFeature[0m
+      [36m"""[0m
+      [36m{[0m
+      [36m    "count":1,[0m
+      [36m    "items": [[0m
+      [36m        {[0m
+      [36m            "id": "income"[0m
+      [36m        }[0m
+      [36m    ],[0m
+      [36m    "limit":1, [0m
+      [36m    "offset":1, [0m
+      [36m    "total_count":3[0m
+      [36m}[0m
+      [36m"""[0m
+{"created_at":"2021-02-10T16:43:10.622722Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"commencing graceful shutdown","severity":3,"data":{"graceful_shutdown_timeout":5000000000}}
+{"created_at":"2021-02-10T16:43:10.622861Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closing generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.622893Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closed generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.622912Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"graceful shutdown was successful","severity":3}
+{"created_at":"2021-02-10T16:43:10.626178Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"adding graph db health check as the private or observation endpoints are enabled","severity":3}
+{"created_at":"2021-02-10T16:43:10.626237Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"feature flag not enabled defaulting to nop auth impl","severity":3,"data":{"feature":"ENABLE_PERMISSIONS_AUTH"}}
+{"created_at":"2021-02-10T16:43:10.626259Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling only public endpoints for dataset api","severity":3}
+{"created_at":"2021-02-10T16:43:10.626663Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling observations endpoint","severity":3}
+{"created_at":"2021-02-10T16:43:10.627297Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"api endpoint getDatasets request successful","severity":3}
+
+  [1;37mScenario:[0m Empty list when offset greater than existing number of datasets [1;30m# features/pagination.feature:71[0m
+    [32mWhen[0m [32mI GET "/datasets?offset=4&limit=1"[0m                                 [1;30m# api_feature.go:83 -> *APIFeature[0m
+    [32mThen[0m [32mI should receive the following JSON response with status "200":[0m    [1;30m# api_feature.go:146 -> *APIFeature[0m
+      [36m"""[0m
+      [36m{[0m
+      [36m    "count":0,[0m
+      [36m    "items": [],[0m
+      [36m    "limit":1, [0m
+      [36m    "offset":4, [0m
+      [36m    "total_count":3[0m
+      [36m}[0m
+      [36m"""[0m
+{"created_at":"2021-02-10T16:43:10.627559Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"commencing graceful shutdown","severity":3,"data":{"graceful_shutdown_timeout":5000000000}}
+{"created_at":"2021-02-10T16:43:10.627637Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closing generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.627668Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closed generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.627685Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"graceful shutdown was successful","severity":3}
+{"created_at":"2021-02-10T16:43:10.630857Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"adding graph db health check as the private or observation endpoints are enabled","severity":3}
+{"created_at":"2021-02-10T16:43:10.630936Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"feature flag not enabled defaulting to nop auth impl","severity":3,"data":{"feature":"ENABLE_PERMISSIONS_AUTH"}}
+{"created_at":"2021-02-10T16:43:10.630971Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling only public endpoints for dataset api","severity":3}
+{"created_at":"2021-02-10T16:43:10.631275Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling observations endpoint","severity":3}
+{"created_at":"2021-02-10T16:43:10.631389Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"limit is greater than the maximum allowed","severity":1,"data":{"limit":"1001","max_limit":1000,"offset":"4"}}
+{"created_at":"2021-02-10T16:43:10.631464Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"request unsuccessful","severity":1,"data":{"responseStatus":400},"error":{"error":"invalid query parameter","stack_trace":[{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/api/dataset.go","line":483,"function":"github.com/ONSdigital/dp-dataset-api/api.handleDatasetAPIErr"},{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/api/dataset.go","line":80,"function":"github.com/ONSdigital/dp-dataset-api/api.(*DatasetAPI).getDatasets"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/gorilla/mux@v1.8.0/mux.go","line":210,"function":"github.com/gorilla/mux.(*Router).ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/!o!n!sdigital/dp-net@v1.0.11/handlers/handlers.go","line":27,"function":"github.com/ONSdigital/dp-net/handlers.DoCheckHeader.func1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/service/service.go","line":224,"function":"github.com/ONSdigital/dp-dataset-api/service.newMiddleware.func1.1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/armakuni/dp-go-featuretest@v0.0.0-20210209160250-f1ee327454d6/api_feature.go","line":103,"function":"github.com/armakuni/dp-go-featuretest.(*APIFeature).makeRequest"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/armakuni/dp-go-featuretest@v0.0.0-20210209160250-f1ee327454d6/api_feature.go","line":84,"function":"github.com/armakuni/dp-go-featuretest.(*APIFeature).IGet"}],"data":{}}}
+
+  [1;37mScenario:[0m 400 error returned when limit set to greater than maximum limit [1;30m# features/pagination.feature:84[0m
+    [32mWhen[0m [32mI GET "/datasets?offset=4&limit=1001"[0m                              [1;30m# api_feature.go:83 -> *APIFeature[0m
+    [32mThen[0m [32mthe HTTP status code should be "400"[0m                               [1;30m# api_feature.go:130 -> *APIFeature[0m
+    [32mAnd[0m [32mI should receive the following response:[0m                            [1;30m# api_feature.go:110 -> *APIFeature[0m
+      [36m"""[0m
+      [36minvalid query parameter[0m
+      [36m"""[0m
+{"created_at":"2021-02-10T16:43:10.632186Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"commencing graceful shutdown","severity":3,"data":{"graceful_shutdown_timeout":5000000000}}
+{"created_at":"2021-02-10T16:43:10.632308Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closing generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.632343Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closed generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.63237Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"graceful shutdown was successful","severity":3}
+{"created_at":"2021-02-10T16:43:10.636047Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"adding graph db health check as the private or observation endpoints are enabled","severity":3}
+{"created_at":"2021-02-10T16:43:10.636119Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"feature flag not enabled defaulting to nop auth impl","severity":3,"data":{"feature":"ENABLE_PERMISSIONS_AUTH"}}
+{"created_at":"2021-02-10T16:43:10.63614Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling only public endpoints for dataset api","severity":3}
+{"created_at":"2021-02-10T16:43:10.636469Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling observations endpoint","severity":3}
+{"created_at":"2021-02-10T16:43:10.636601Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"invalid query parameter: offset","severity":1,"data":{"offset":"-1"},"error":{"error":"invalid query parameter","stack_trace":[{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/api/dataset.go","line":60,"function":"github.com/ONSdigital/dp-dataset-api/api.(*DatasetAPI).getDatasets"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/gorilla/mux@v1.8.0/mux.go","line":210,"function":"github.com/gorilla/mux.(*Router).ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/!o!n!sdigital/dp-net@v1.0.11/handlers/handlers.go","line":27,"function":"github.com/ONSdigital/dp-net/handlers.DoCheckHeader.func1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/service/service.go","line":224,"function":"github.com/ONSdigital/dp-dataset-api/service.newMiddleware.func1.1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/armakuni/dp-go-featuretest@v0.0.0-20210209160250-f1ee327454d6/api_feature.go","line":103,"function":"github.com/armakuni/dp-go-featuretest.(*APIFeature).makeRequest"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/armakuni/dp-go-featuretest@v0.0.0-20210209160250-f1ee327454d6/api_feature.go","line":84,"function":"github.com/armakuni/dp-go-featuretest.(*APIFeature).IGet"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/reflect/value.go","line":460,"function":"reflect.Value.call"}],"data":{}}}
+{"created_at":"2021-02-10T16:43:10.636681Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"request unsuccessful","severity":1,"data":{"responseStatus":400},"error":{"error":"invalid query parameter","stack_trace":[{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/api/dataset.go","line":483,"function":"github.com/ONSdigital/dp-dataset-api/api.handleDatasetAPIErr"},{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/api/dataset.go","line":61,"function":"github.com/ONSdigital/dp-dataset-api/api.(*DatasetAPI).getDatasets"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/gorilla/mux@v1.8.0/mux.go","line":210,"function":"github.com/gorilla/mux.(*Router).ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/!o!n!sdigital/dp-net@v1.0.11/handlers/handlers.go","line":27,"function":"github.com/ONSdigital/dp-net/handlers.DoCheckHeader.func1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/service/service.go","line":224,"function":"github.com/ONSdigital/dp-dataset-api/service.newMiddleware.func1.1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/armakuni/dp-go-featuretest@v0.0.0-20210209160250-f1ee327454d6/api_feature.go","line":103,"function":"github.com/armakuni/dp-go-featuretest.(*APIFeature).makeRequest"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/armakuni/dp-go-featuretest@v0.0.0-20210209160250-f1ee327454d6/api_feature.go","line":84,"function":"github.com/armakuni/dp-go-featuretest.(*APIFeature).IGet"}],"data":{}}}
+
+  [1;37mScenario:[0m 400 error returned when offset set to minus value [1;30m# features/pagination.feature:93[0m
+    [32mWhen[0m [32mI GET "/datasets?offset=-1"[0m                          [1;30m# api_feature.go:83 -> *APIFeature[0m
+    [32mThen[0m [32mthe HTTP status code should be "400"[0m                 [1;30m# api_feature.go:130 -> *APIFeature[0m
+    [32mAnd[0m [32mI should receive the following response:[0m              [1;30m# api_feature.go:110 -> *APIFeature[0m
+      [36m"""[0m
+      [36minvalid query parameter[0m
+      [36m"""[0m
+{"created_at":"2021-02-10T16:43:10.636967Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"commencing graceful shutdown","severity":3,"data":{"graceful_shutdown_timeout":5000000000}}
+{"created_at":"2021-02-10T16:43:10.637111Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closing generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.637147Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closed generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.637169Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"graceful shutdown was successful","severity":3}
+{"created_at":"2021-02-10T16:43:10.641246Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"adding graph db health check as the private or observation endpoints are enabled","severity":3}
+{"created_at":"2021-02-10T16:43:10.64131Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"feature flag not enabled defaulting to nop auth impl","severity":3,"data":{"feature":"ENABLE_PERMISSIONS_AUTH"}}
+{"created_at":"2021-02-10T16:43:10.641326Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling only public endpoints for dataset api","severity":3}
+{"created_at":"2021-02-10T16:43:10.641634Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling observations endpoint","severity":3}
+{"created_at":"2021-02-10T16:43:10.641733Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"invalid query parameter: limit","severity":1,"data":{"limit":"-1"},"error":{"error":"invalid query parameter","stack_trace":[{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/api/dataset.go","line":70,"function":"github.com/ONSdigital/dp-dataset-api/api.(*DatasetAPI).getDatasets"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/gorilla/mux@v1.8.0/mux.go","line":210,"function":"github.com/gorilla/mux.(*Router).ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/!o!n!sdigital/dp-net@v1.0.11/handlers/handlers.go","line":27,"function":"github.com/ONSdigital/dp-net/handlers.DoCheckHeader.func1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/service/service.go","line":224,"function":"github.com/ONSdigital/dp-dataset-api/service.newMiddleware.func1.1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/armakuni/dp-go-featuretest@v0.0.0-20210209160250-f1ee327454d6/api_feature.go","line":103,"function":"github.com/armakuni/dp-go-featuretest.(*APIFeature).makeRequest"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/armakuni/dp-go-featuretest@v0.0.0-20210209160250-f1ee327454d6/api_feature.go","line":84,"function":"github.com/armakuni/dp-go-featuretest.(*APIFeature).IGet"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/reflect/value.go","line":460,"function":"reflect.Value.call"}],"data":{}}}
+{"created_at":"2021-02-10T16:43:10.641771Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"request unsuccessful","severity":1,"data":{"responseStatus":400},"error":{"error":"invalid query parameter","stack_trace":[{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/api/dataset.go","line":483,"function":"github.com/ONSdigital/dp-dataset-api/api.handleDatasetAPIErr"},{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/api/dataset.go","line":71,"function":"github.com/ONSdigital/dp-dataset-api/api.(*DatasetAPI).getDatasets"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/gorilla/mux@v1.8.0/mux.go","line":210,"function":"github.com/gorilla/mux.(*Router).ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/!o!n!sdigital/dp-net@v1.0.11/handlers/handlers.go","line":27,"function":"github.com/ONSdigital/dp-net/handlers.DoCheckHeader.func1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/service/service.go","line":224,"function":"github.com/ONSdigital/dp-dataset-api/service.newMiddleware.func1.1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/armakuni/dp-go-featuretest@v0.0.0-20210209160250-f1ee327454d6/api_feature.go","line":103,"function":"github.com/armakuni/dp-go-featuretest.(*APIFeature).makeRequest"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/armakuni/dp-go-featuretest@v0.0.0-20210209160250-f1ee327454d6/api_feature.go","line":84,"function":"github.com/armakuni/dp-go-featuretest.(*APIFeature).IGet"}],"data":{}}}
+
+  [1;37mScenario:[0m 400 error returned when limit set to minus value [1;30m# features/pagination.feature:101[0m
+    [32mWhen[0m [32mI GET "/datasets?limit=-1"[0m                          [1;30m# api_feature.go:83 -> *APIFeature[0m
+    [32mThen[0m [32mthe HTTP status code should be "400"[0m                [1;30m# api_feature.go:130 -> *APIFeature[0m
+    [32mAnd[0m [32mI should receive the following response:[0m             [1;30m# api_feature.go:110 -> *APIFeature[0m
+      [36m"""[0m
+      [36minvalid query parameter[0m
+      [36m"""[0m
+{"created_at":"2021-02-10T16:43:10.642149Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"commencing graceful shutdown","severity":3,"data":{"graceful_shutdown_timeout":5000000000}}
+{"created_at":"2021-02-10T16:43:10.642264Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closing generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.642284Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closed generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.642299Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"graceful shutdown was successful","severity":3}
+
+  [1;37mScenario:[0m Returning metadata when there are no datasets                [1;30m# features/pagination.feature:109[0m
+    [32mGiven[0m [32mthere are no datasets[0m                                          [1;30m# dataset_feature.go:171 -> *DatasetFeature[0m
+{"created_at":"2021-02-10T16:43:10.645529Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"adding graph db health check as the private or observation endpoints are enabled","severity":3}
+{"created_at":"2021-02-10T16:43:10.645553Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"feature flag not enabled defaulting to nop auth impl","severity":3,"data":{"feature":"ENABLE_PERMISSIONS_AUTH"}}
+{"created_at":"2021-02-10T16:43:10.645566Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling only public endpoints for dataset api","severity":3}
+{"created_at":"2021-02-10T16:43:10.645855Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling observations endpoint","severity":3}
+{"created_at":"2021-02-10T16:43:10.646653Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"api endpoint getDatasets request successful","severity":3}
+    [32mWhen[0m [32mI GET "/datasets?offset=1&limit=1"[0m                              [1;30m# api_feature.go:83 -> *APIFeature[0m
+    [32mThen[0m [32mI should receive the following JSON response with status "200":[0m [1;30m# api_feature.go:146 -> *APIFeature[0m
+      [36m"""[0m
+      [36m{[0m
+      [36m    "count":0,[0m
+      [36m    "items": [],[0m
+      [36m    "limit":1, [0m
+      [36m    "offset":1, [0m
+      [36m    "total_count":0[0m
+      [36m}[0m
+      [36m"""[0m
+{"created_at":"2021-02-10T16:43:10.646875Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"commencing graceful shutdown","severity":3,"data":{"graceful_shutdown_timeout":5000000000}}
+{"created_at":"2021-02-10T16:43:10.646946Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closing generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.64697Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closed generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.646985Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"graceful shutdown was successful","severity":3}
+
+[1;37mFeature:[0m Private Dataset API
+
+  [1;37mBackground:[0m
+    [32mGiven[0m [32mprivate endpoints are enabled[0m                                              [1;30m# dataset_feature.go:196 -> *DatasetFeature[0m
+    [32mAnd[0m [32mI am identified as "user@ons.gov.uk"[0m                                         [1;30m# authorization_feature.go:34 -> *AuthorizationFeature[0m
+    [32mAnd[0m [32mI am authorised[0m                                                              [1;30m# api_feature.go:71 -> *APIFeature[0m
+{"created_at":"2021-02-10T16:43:10.648705Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"adding graph db health check as the private or observation endpoints are enabled","severity":3}
+{"created_at":"2021-02-10T16:43:10.648723Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"feature flag not enabled defaulting to nop auth impl","severity":3,"data":{"feature":"ENABLE_PERMISSIONS_AUTH"}}
+{"created_at":"2021-02-10T16:43:10.648741Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling private endpoints for dataset api","severity":3}
+{"created_at":"2021-02-10T16:43:10.648966Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling observations endpoint","severity":3}
+{"created_at":"2021-02-10T16:43:10.650642Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"executing identity check middleware"}
+{"created_at":"2021-02-10T16:43:10.650681Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"florence access token header not found attempting to find access token cookie"}
+{"created_at":"2021-02-10T16:43:10.650695Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"florence access token cookie not found in request"}
+{"created_at":"2021-02-10T16:43:10.650707Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"calling AuthAPI to authenticate caller identity","severity":3,"data":{"auth_token":{},"is_service_request":true,"is_user_request":false,"url":"http://127.0.0.1:59377/identity"}}
+{"created_at":"2021-02-10T16:43:10.651122Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"caller identity retrieved setting context values","severity":3,"data":{"auth_token":{},"caller_identity":"","is_service_request":true,"is_user_request":false,"url":"http://127.0.0.1:59377/identity","user_identity":""}}
+{"created_at":"2021-02-10T16:43:10.651178Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"identity client check request completed successfully invoking downstream http handler"}
+{"created_at":"2021-02-10T16:43:10.651214Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"identity found in request context, calling downstream handler","http":{"status_code":0,"method":"POST","scheme":"http","host":"foo","path":"/datasets/ageing-population-estimates"},"data":{"caller_identity":"user@ons.gov.uk","dataset_id":"ageing-population-estimates"}}
+{"created_at":"2021-02-10T16:43:10.651262Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"executing NopHandler.Require","data":{"method":"POST","required_permissions":{"Create":true,"Read":false,"Update":false,"Delete":false},"uri":"/datasets/ageing-population-estimates"}}
+{"created_at":"2021-02-10T16:43:10.652227Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"addDataset endpoint: request completed successfully","severity":3,"data":{"dataset_id":"ageing-population-estimates"}}
+
+  [1;37mScenario:[0m Successfully creating a new dataset document                             [1;30m# features/private_datasets.feature:8[0m
+    [32mWhen[0m [32mI POST "/datasets/ageing-population-estimates"[0m                              [1;30m# api_feature.go:88 -> *APIFeature[0m
+      [36m"""[0m
+      [36m{[0m
+      [36m    "title": "CID"[0m
+      [36m}[0m
+      [36m"""[0m
+    [32mThen[0m [32mthe HTTP status code should be "201"[0m                                        [1;30m# api_feature.go:130 -> *APIFeature[0m
+    [32mAnd[0m [32mthe document in the database for id "ageing-population-estimates" should be:[0m [1;30m# dataset_feature.go:201 -> *DatasetFeature[0m
+      [36m"""[0m
+      [36m{[0m
+      [36m    "id": "ageing-population-estimates",[0m
+      [36m    "state": "created",[0m
+      [36m    "title": "CID",[0m
+      [36m    "type": "filterable"[0m
+      [36m}[0m
+      [36m"""[0m
+{"created_at":"2021-02-10T16:43:10.652859Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"commencing graceful shutdown","severity":3,"data":{"graceful_shutdown_timeout":5000000000}}
+{"created_at":"2021-02-10T16:43:10.652954Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closing generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.652987Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closed generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.653005Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"graceful shutdown was successful","severity":3}
+
+  [1;37mScenario:[0m A document with the same ID already exists in the database [1;30m# features/private_datasets.feature:26[0m
+    [32mGiven[0m [32mI have these datasets:[0m                                       [1;30m# dataset_feature.go:152 -> *DatasetFeature[0m
+      [36m"""[0m
+      [36m[[0m
+      [36m    {[0m
+      [36m        "id": "ageing-population-estimates"[0m
+      [36m    }[0m
+      [36m][0m
+      [36m"""[0m
+{"created_at":"2021-02-10T16:43:10.656005Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"adding graph db health check as the private or observation endpoints are enabled","severity":3}
+{"created_at":"2021-02-10T16:43:10.656048Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"feature flag not enabled defaulting to nop auth impl","severity":3,"data":{"feature":"ENABLE_PERMISSIONS_AUTH"}}
+{"created_at":"2021-02-10T16:43:10.656063Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling private endpoints for dataset api","severity":3}
+{"created_at":"2021-02-10T16:43:10.656258Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling observations endpoint","severity":3}
+{"created_at":"2021-02-10T16:43:10.656714Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"executing identity check middleware"}
+{"created_at":"2021-02-10T16:43:10.65673Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"florence access token header not found attempting to find access token cookie"}
+{"created_at":"2021-02-10T16:43:10.656739Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"florence access token cookie not found in request"}
+{"created_at":"2021-02-10T16:43:10.65675Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"calling AuthAPI to authenticate caller identity","severity":3,"data":{"auth_token":{},"is_service_request":true,"is_user_request":false,"url":"http://127.0.0.1:59380/identity"}}
+{"created_at":"2021-02-10T16:43:10.657189Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"caller identity retrieved setting context values","severity":3,"data":{"auth_token":{},"caller_identity":"","is_service_request":true,"is_user_request":false,"url":"http://127.0.0.1:59380/identity","user_identity":""}}
+{"created_at":"2021-02-10T16:43:10.657221Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"identity client check request completed successfully invoking downstream http handler"}
+{"created_at":"2021-02-10T16:43:10.657252Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"identity found in request context, calling downstream handler","http":{"status_code":0,"method":"POST","scheme":"http","host":"foo","path":"/datasets/ageing-population-estimates"},"data":{"caller_identity":"user@ons.gov.uk","dataset_id":"ageing-population-estimates"}}
+{"created_at":"2021-02-10T16:43:10.657267Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"executing NopHandler.Require","data":{"method":"POST","required_permissions":{"Create":true,"Read":false,"Update":false,"Delete":false},"uri":"/datasets/ageing-population-estimates"}}
+{"created_at":"2021-02-10T16:43:10.657595Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"addDataset endpoint: unable to create a dataset that already exists","severity":1,"data":{"dataset_id":"ageing-population-estimates"},"error":{"error":"forbidden - dataset already exists","stack_trace":[{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/api/dataset.go","line":217,"function":"github.com/ONSdigital/dp-dataset-api/api.(*DatasetAPI).addDataset.func1"},{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/api/dataset.go","line":277,"function":"github.com/ONSdigital/dp-dataset-api/api.(*DatasetAPI).addDataset"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/!o!n!sdigital/dp-authorisation@v0.1.0/auth/nop.go","line":19,"function":"github.com/ONSdigital/dp-authorisation/auth.(*NopHandler).Require.func1"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/!o!n!sdigital/dp-net@v1.0.11/handlers/authentication.go","line":40,"function":"github.com/ONSdigital/dp-net/handlers.CheckIdentity.func1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/gorilla/mux@v1.8.0/mux.go","line":210,"function":"github.com/gorilla/mux.(*Router).ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/!o!n!sdigital/dp-net@v1.0.11/handlers/handlers.go","line":27,"function":"github.com/ONSdigital/dp-net/handlers.DoCheckHeader.func1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/!o!n!sdigital/dp-net@v1.0.11/handlers/identity.go","line":64,"function":"github.com/ONSdigital/dp-net/handlers.identityWithHTTPClient.func1.1"}],"data":{}}}
+{"created_at":"2021-02-10T16:43:10.657651Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"request unsuccessful","severity":1,"data":{"dataset_id":"ageing-population-estimates","responseStatus":403},"error":{"error":"forbidden - dataset already exists","stack_trace":[{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/api/dataset.go","line":483,"function":"github.com/ONSdigital/dp-dataset-api/api.handleDatasetAPIErr"},{"file":"/Users/andreurbani/Development/ons/dp-dataset-api/api/dataset.go","line":280,"function":"github.com/ONSdigital/dp-dataset-api/api.(*DatasetAPI).addDataset"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/!o!n!sdigital/dp-authorisation@v0.1.0/auth/nop.go","line":19,"function":"github.com/ONSdigital/dp-authorisation/auth.(*NopHandler).Require.func1"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/!o!n!sdigital/dp-net@v1.0.11/handlers/authentication.go","line":40,"function":"github.com/ONSdigital/dp-net/handlers.CheckIdentity.func1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/gorilla/mux@v1.8.0/mux.go","line":210,"function":"github.com/gorilla/mux.(*Router).ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/!o!n!sdigital/dp-net@v1.0.11/handlers/handlers.go","line":27,"function":"github.com/ONSdigital/dp-net/handlers.DoCheckHeader.func1"},{"file":"/usr/local/Cellar/go/1.14.5/libexec/src/net/http/server.go","line":2041,"function":"net/http.HandlerFunc.ServeHTTP"},{"file":"/Users/andreurbani/go/pkg/mod/github.com/!o!n!sdigital/dp-net@v1.0.11/handlers/identity.go","line":64,"function":"github.com/ONSdigital/dp-net/handlers.identityWithHTTPClient.func1.1"}],"data":{}}}
+    [32mWhen[0m [32mI POST "/datasets/ageing-population-estimates"[0m                [1;30m# api_feature.go:88 -> *APIFeature[0m
+      [36m"""[0m
+      [36m{[0m
+      [36m    "title": "Hello"[0m
+      [36m}[0m
+      [36m"""[0m
+    [32mThen[0m [32mthe HTTP status code should be "403"[0m                          [1;30m# api_feature.go:130 -> *APIFeature[0m
+    [32mAnd[0m [32mI should receive the following response:[0m                       [1;30m# api_feature.go:110 -> *APIFeature[0m
+      [36m"""[0m
+      [36mforbidden - dataset already exists[0m
+      [36m"""[0m
+{"created_at":"2021-02-10T16:43:10.657947Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"commencing graceful shutdown","severity":3,"data":{"graceful_shutdown_timeout":5000000000}}
+{"created_at":"2021-02-10T16:43:10.658033Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closing generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.65806Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closed generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.658075Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"graceful shutdown was successful","severity":3}
+
+[1;37mFeature:[0m Dataset API
+
+  [1;37mScenario:[0m GET /datasets                                                [1;30m# features/public_datasets.feature:3[0m
+    [32mGiven[0m [32mI have these datasets:[0m                                         [1;30m# dataset_feature.go:152 -> *DatasetFeature[0m
+      [36m"""[0m
+      [36m[[0m
+      [36m    {[0m
+      [36m        "id": "population-estimates"[0m
+      [36m    }[0m
+      [36m][0m
+      [36m"""[0m
+{"created_at":"2021-02-10T16:43:10.660768Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"adding graph db health check as the private or observation endpoints are enabled","severity":3}
+{"created_at":"2021-02-10T16:43:10.660795Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"feature flag not enabled defaulting to nop auth impl","severity":3,"data":{"feature":"ENABLE_PERMISSIONS_AUTH"}}
+{"created_at":"2021-02-10T16:43:10.66081Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling only public endpoints for dataset api","severity":3}
+{"created_at":"2021-02-10T16:43:10.661122Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling observations endpoint","severity":3}
+{"created_at":"2021-02-10T16:43:10.661667Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"api endpoint getDatasets request successful","severity":3}
+    [32mWhen[0m [32mI GET "/datasets"[0m                                               [1;30m# api_feature.go:83 -> *APIFeature[0m
+    [32mThen[0m [32mI should receive the following JSON response with status "200":[0m [1;30m# api_feature.go:146 -> *APIFeature[0m
+      [36m"""[0m
+      [36m{[0m
+      [36m    "count":1,[0m
+      [36m    "items": [[0m
+      [36m        {[0m
+      [36m            "id": "population-estimates"[0m
+      [36m        }[0m
+      [36m    ],[0m
+      [36m    "limit":20, [0m
+      [36m    "offset":0, [0m
+      [36m    "total_count":1[0m
+      [36m}[0m
+      [36m"""[0m
+{"created_at":"2021-02-10T16:43:10.661931Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"commencing graceful shutdown","severity":3,"data":{"graceful_shutdown_timeout":5000000000}}
+{"created_at":"2021-02-10T16:43:10.66204Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closing generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.662064Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closed generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.662084Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"graceful shutdown was successful","severity":3}
+
+  [1;37mScenario:[0m GET a specific dataset                                       [1;30m# features/public_datasets.feature:28[0m
+    [32mGiven[0m [32mI have these datasets:[0m                                         [1;30m# dataset_feature.go:152 -> *DatasetFeature[0m
+      [36m"""[0m
+      [36m[[0m
+      [36m    {[0m
+      [36m        "id": "population-estimates"[0m
+      [36m    },[0m
+      [36m    {[0m
+      [36m        "id": "income-by-age"[0m
+      [36m    }[0m
+      [36m][0m
+      [36m"""[0m
+{"created_at":"2021-02-10T16:43:10.664794Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"adding graph db health check as the private or observation endpoints are enabled","severity":3}
+{"created_at":"2021-02-10T16:43:10.664816Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"feature flag not enabled defaulting to nop auth impl","severity":3,"data":{"feature":"ENABLE_PERMISSIONS_AUTH"}}
+{"created_at":"2021-02-10T16:43:10.664848Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling only public endpoints for dataset api","severity":3}
+{"created_at":"2021-02-10T16:43:10.665152Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"enabling observations endpoint","severity":3}
+{"created_at":"2021-02-10T16:43:10.665472Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"getDataset endpoint: caller authorised returning dataset current sub document","severity":3,"data":{"dataset_id":"income-by-age"}}
+{"created_at":"2021-02-10T16:43:10.665506Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"getDataset endpoint: request successful","severity":3,"data":{"dataset_id":"income-by-age"}}
+    [32mWhen[0m [32mI GET "/datasets/income-by-age"[0m                                 [1;30m# api_feature.go:83 -> *APIFeature[0m
+    [32mThen[0m [32mI should receive the following JSON response with status "200":[0m [1;30m# api_feature.go:146 -> *APIFeature[0m
+      [36m"""[0m
+      [36m{[0m
+      [36m    "id": "income-by-age"[0m
+      [36m}[0m
+      [36m"""[0m
+{"created_at":"2021-02-10T16:43:10.665704Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"commencing graceful shutdown","severity":3,"data":{"graceful_shutdown_timeout":5000000000}}
+{"created_at":"2021-02-10T16:43:10.665789Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closing generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.66581Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"closed generated downloads kafka producer","severity":3,"data":{"producer":"DimensionExtracted"}}
+{"created_at":"2021-02-10T16:43:10.665827Z","namespace":"/var/folders/gb/jygx8wpn0ss8ctnzp0w67wdm0000gq/T/go-build967649320/b001/dp-dataset-api.test","event":"graceful shutdown was successful","severity":3}
+
+14 scenarios ([32m14 passed[0m)
+57 steps ([32m57 passed[0m)
+103.88243ms
+ok  	github.com/ONSdigital/dp-dataset-api	0.372s
