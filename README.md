@@ -65,6 +65,8 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | MONGODB_BIND_ADDR            | localhost:27017                        | The MongoDB bind address
 | MONGODB_DATABASE             | datasets                               | The MongoDB dataset database
 | MONGODB_COLLECTION           | datasets                               | MongoDB collection
+| MONGODB_LIMIT                | 20                                     | Default limit for pagination
+| MONGODB_OFFSET               | 0                                      | Default offset for pagination
 | SECRET_KEY                   | FD0108EA-825D-411C-9B1D-41EF7727F465   | A secret key used authentication
 | CODE_LIST_API_URL            | http://localhost:22400                 | The host name for the CodeList API
 | DATASET_API_URL              | http://localhost:22000                 | The host name for the Dataset API
@@ -78,6 +80,7 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | DOWNLOAD_SERVICE_SECRET_KEY  | QB0108EZ-825D-412C-9B1D-41EF7747F462   | A key specific for the download service to access public/private links
 | ZEBEDEE_URL                  | http://localhost:8082                  | The host name for Zebedee
 | ENABLE_PERMISSIONS_AUTH      | false                                  | Enable/disable user/service permissions checking for private endpoints
+| DEFAULT_MAXIMUM_LIMIT        | 1000                                   | Default maximum limit for pagination
 
 ### Contributing
 
