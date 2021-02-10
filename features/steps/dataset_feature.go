@@ -53,6 +53,8 @@ func NewDatasetFeature(mongoCapability *featuretest.MongoCapability, zebedeeURL 
 
 	f.Config.ZebedeeURL = zebedeeURL
 
+	f.Config.EnablePermissionsAuth = false
+
 	mongodb := &mongo.Mongo{
 		CodeListURL: "",
 		Collection:  "datasets",

@@ -13,11 +13,15 @@ Feature: Dataset API
         Then I should receive the following JSON response with status "200":
             """
             {
+                "count":1,
                 "items": [
                     {
                         "id": "population-estimates"
                     }
-                ]
+                ],
+                "limit":20, 
+                "offset":0, 
+                "total_count":1
             }
             """
 
