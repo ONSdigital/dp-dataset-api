@@ -88,8 +88,8 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		permissions:               permissions,
 		versionPublishedChecker:   nil,
 		instancePublishedChecker:  nil,
-		defaultLimit:              cfg.MongoConfig.Limit,
-		defaultOffset:             cfg.MongoConfig.Offset,
+		defaultLimit:              cfg.DefaultLimit,
+		defaultOffset:             cfg.DefaultOffset,
 		maxLimit:                  cfg.DefaultMaxLimit,
 	}
 

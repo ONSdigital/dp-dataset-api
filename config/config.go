@@ -27,6 +27,8 @@ type Configuration struct {
 	EnableObservationEndpoint  bool          `envconfig:"ENABLE_OBSERVATION_ENDPOINT"`
 	KafkaVersion               string        `envconfig:"KAFKA_VERSION"`
 	DefaultMaxLimit            int           `envconfig:"DEFAULT_MAXIMUM_LIMIT"`
+	DefaultLimit               int           `envconfig:"DEFAULT_LIMIT"`
+	DefaultOffset              int           `envconfig:"DEFAULT_OFFSET"`
 	MongoConfig                MongoConfig
 }
 
@@ -35,8 +37,6 @@ type MongoConfig struct {
 	BindAddr   string `envconfig:"MONGODB_BIND_ADDR"   json:"-"`
 	Collection string `envconfig:"MONGODB_COLLECTION"`
 	Database   string `envconfig:"MONGODB_DATABASE"`
-	Limit      int    `envconfig:"MONGODB_LIMIT"`
-	Offset     int    `envconfig:"MONGODB_OFFSET"`
 }
 
 var cfg *Configuration
@@ -66,12 +66,12 @@ func Get() (*Configuration, error) {
 		EnableObservationEndpoint:  true,
 		KafkaVersion:               "1.0.2",
 		DefaultMaxLimit:            1000,
+		DefaultLimit:               20,
+		DefaultOffset:              0,
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",
 			Database:   "datasets",
-			Limit:      20,
-			Offset:     0,
 		},
 	}
 

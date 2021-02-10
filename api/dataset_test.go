@@ -55,8 +55,8 @@ func GetAPIWithMocks(mockedDataStore store.Storer, mockedGeneratedDownloads Down
 	cfg.ServiceAuthToken = authToken
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEndpoints = true
-	cfg.MongoConfig.Limit = 0
-	cfg.MongoConfig.Offset = 0
+	cfg.DefaultLimit = 0
+	cfg.DefaultOffset = 0
 
 	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, datasetPermissions, permissions)
 }
