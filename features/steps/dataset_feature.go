@@ -35,7 +35,7 @@ type DatasetFeature struct {
 	ServiceRunning bool
 }
 
-func NewDatasetFeature(mongoCapability *featuretest.MongoCapability, zebedeeURL string) *DatasetFeature {
+func NewDatasetFeature(mongoCapability *featuretest.MongoCapability, zebedeeURL string) (*DatasetFeature, error) {
 
 	f := &DatasetFeature{
 		HTTPServer:     &http.Server{},
@@ -48,7 +48,7 @@ func NewDatasetFeature(mongoCapability *featuretest.MongoCapability, zebedeeURL 
 
 	f.Config, err = config.Get()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	f.Config.ZebedeeURL = zebedeeURL
@@ -64,7 +64,7 @@ func NewDatasetFeature(mongoCapability *featuretest.MongoCapability, zebedeeURL 
 	}
 
 	if err := mongodb.Init(); err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	f.MongoClient = mongodb
@@ -79,7 +79,7 @@ func NewDatasetFeature(mongoCapability *featuretest.MongoCapability, zebedeeURL 
 
 	f.svc = service.New(f.Config, service.NewServiceList(initMock))
 
-	return f
+	return f, nil
 }
 
 func (f *DatasetFeature) RegisterSteps(ctx *godog.ScenarioContext) {
@@ -162,7 +162,9 @@ func (f *DatasetFeature) IHaveTheseDatasets(datasetsJson *godog.DocString) error
 	defer s.Close()
 
 	for _, datasetDoc := range datasets {
-		f.putDatasetInDatabase(s, datasetDoc)
+		if err := f.putDatasetInDatabase(s, datasetDoc); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -172,7 +174,7 @@ func (f *DatasetFeature) thereAreNoDatasets() error {
 	return f.MongoClient.Session.Copy().DB(f.MongoClient.Database).DropDatabase()
 }
 
-func (f *DatasetFeature) putDatasetInDatabase(s *mgo.Session, datasetDoc models.Dataset) {
+func (f *DatasetFeature) putDatasetInDatabase(s *mgo.Session, datasetDoc models.Dataset) error {
 	datasetID := datasetDoc.ID
 
 	datasetUp := models.DatasetUpdate{
@@ -189,8 +191,9 @@ func (f *DatasetFeature) putDatasetInDatabase(s *mgo.Session, datasetDoc models.
 	}
 	_, err := s.DB(f.MongoClient.Database).C("datasets").UpsertId(datasetID, update)
 	if err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }
 
 func (f *DatasetFeature) PrivateEndpointsAreEnabled() error {

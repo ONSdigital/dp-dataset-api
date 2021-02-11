@@ -19,17 +19,23 @@ type FeatureTest struct {
 
 func (f *FeatureTest) InitializeScenario(ctx *godog.ScenarioContext) {
 	authorizationFeature := featuretest.NewAuthorizationFeature()
-	datasetFeature := steps_test.NewDatasetFeature(f.Mongo, authorizationFeature.FakeAuthService.ResolveURL(""))
+	datasetFeature, err := steps_test.NewDatasetFeature(f.Mongo, authorizationFeature.FakeAuthService.ResolveURL(""))
+	if err != nil {
+		panic(err)
+	}
+
 	apiFeature := featuretest.NewAPIFeature(datasetFeature.InitialiseService)
 
 	ctx.BeforeScenario(func(*godog.Scenario) {
 		apiFeature.Reset()
 		datasetFeature.Reset()
 		f.Mongo.Reset()
+		authorizationFeature.Reset()
 	})
 
 	ctx.AfterScenario(func(*godog.Scenario, error) {
 		datasetFeature.Close()
+		authorizationFeature.Close()
 	})
 
 	datasetFeature.RegisterSteps(ctx)
