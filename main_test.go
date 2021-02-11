@@ -49,9 +49,11 @@ func (f *FeatureTest) InitializeTestSuite(ctx *godog.TestSuiteContext) {
 func TestMain(t *testing.T) {
 	if *componentFlag {
 		status := 0
+
 		var opts = godog.Options{
 			Output: colors.Colored(os.Stdout),
 			Format: "pretty",
+			Paths:  flag.Args(),
 		}
 
 		f := &FeatureTest{}
