@@ -33,20 +33,23 @@ func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []st
 		return nil, err
 	}
 
-	iter := s.DB(m.Database).C(instanceCollection).Find(filter).Sort("-last_updated").Skip(offset).Limit(limit).Iter()
-	defer func() {
-		err := iter.Close()
-		if err != nil {
-			log.Event(ctx, "error closing iterator", log.ERROR, log.Error(err), log.Data{"state_query": states, "dataset_query": datasets})
-		}
-	}()
-
 	results := []models.Instance{}
-	if err := iter.All(&results); err != nil {
-		if err == mgo.ErrNotFound {
-			return nil, errs.ErrDatasetNotFound
+
+	if limit > 0 {
+		iter := s.DB(m.Database).C(instanceCollection).Find(filter).Sort("-last_updated").Skip(offset).Limit(limit).Iter()
+		defer func() {
+			err := iter.Close()
+			if err != nil {
+				log.Event(ctx, "error closing iterator", log.ERROR, log.Error(err), log.Data{"state_query": states, "dataset_query": datasets})
+			}
+		}()
+
+		if err := iter.All(&results); err != nil {
+			if err == mgo.ErrNotFound {
+				return nil, errs.ErrDatasetNotFound
+			}
+			return nil, err
 		}
-		return nil, err
 	}
 
 	return &models.InstanceResults{

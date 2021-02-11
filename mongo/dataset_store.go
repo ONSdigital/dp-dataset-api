@@ -182,6 +182,10 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 		return nil, err
 	}
 
+	if totalCount < 1 {
+		return nil, errs.ErrEditionNotFound
+	}
+
 	iter := q.Sort().Skip(offset).Limit(limit).Iter()
 	defer func() {
 		err := iter.Close()
@@ -207,9 +211,6 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 		}
 	}
 
-	if len(results) < 1 {
-		return nil, errs.ErrEditionNotFound
-	}
 	return &models.EditionUpdateResults{
 		Items:      results,
 		Count:      len(results),
