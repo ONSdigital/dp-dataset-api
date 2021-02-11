@@ -14,12 +14,12 @@ import (
 var componentFlag = flag.Bool("component", false, "perform component tests")
 
 type FeatureTest struct {
-	Mongo *featuretest.MongoCapability
+	MongoFeature *featuretest.MongoFeature
 }
 
 func (f *FeatureTest) InitializeScenario(ctx *godog.ScenarioContext) {
 	authorizationFeature := featuretest.NewAuthorizationFeature()
-	datasetFeature, err := steps_test.NewDatasetFeature(f.Mongo, authorizationFeature.FakeAuthService.ResolveURL(""))
+	datasetFeature, err := steps_test.NewDatasetFeature(f.MongoFeature, authorizationFeature.FakeAuthService.ResolveURL(""))
 	if err != nil {
 		panic(err)
 	}
@@ -29,7 +29,7 @@ func (f *FeatureTest) InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(*godog.Scenario) {
 		apiFeature.Reset()
 		datasetFeature.Reset()
-		f.Mongo.Reset()
+		f.MongoFeature.Reset()
 		authorizationFeature.Reset()
 	})
 
@@ -45,10 +45,10 @@ func (f *FeatureTest) InitializeScenario(ctx *godog.ScenarioContext) {
 
 func (f *FeatureTest) InitializeTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
-		f.Mongo = featuretest.NewMongoCapability(featuretest.MongoOptions{Port: 27017, MongoVersion: "4.0.5", DatabaseName: "testing"})
+		f.MongoFeature = featuretest.NewMongoFeature(featuretest.MongoOptions{Port: 27017, MongoVersion: "4.0.5", DatabaseName: "testing"})
 	})
 	ctx.AfterSuite(func() {
-		f.Mongo.Close()
+		f.MongoFeature.Close()
 	})
 }
 

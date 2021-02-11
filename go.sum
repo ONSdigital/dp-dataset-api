@@ -56,6 +56,8 @@ github.com/acobaugh/osrelease v0.0.0-20181218015638-a93a0a55a249 h1:fMi9ZZ/it4or
 github.com/acobaugh/osrelease v0.0.0-20181218015638-a93a0a55a249/go.mod h1:iU1PxQMQwoHZZWmMKrMkrNlY+3+p9vxIjpZOVyxWa0g=
 github.com/armakuni/dp-go-featuretest v0.0.0-20210211115457-6586e232612a h1:XdGBzEwI/Xlv8/hjrj39fibegM2F1rPSupVkNwj5qzY=
 github.com/armakuni/dp-go-featuretest v0.0.0-20210211115457-6586e232612a/go.mod h1:2zcapQgxd9Fuuf66ROP8aAWUBcMcrBpOezrs+jlpEkA=
+github.com/armakuni/dp-go-featuretest v0.0.0-20210211154136-f4f263cb8559 h1:Ksv2/TqVQabwkh4E3sZl7nA1S/CGhUM/Tri9Vq6Z9vE=
+github.com/armakuni/dp-go-featuretest v0.0.0-20210211154136-f4f263cb8559/go.mod h1:8PwfFu2YQNB3/if9L2VrrXyfEYf2NKOB6JInDYJKM/s=
 github.com/aslakhellesoy/gox v1.0.100/go.mod h1:AJl542QsKKG96COVsv0N74HHzVQgDIQPceVUh1aeU2M=
 github.com/aws/aws-sdk-go v1.34.28 h1:sscPpn/Ns3i0F4HPEWAVcwdIRaZZCuL7llJ2/60yPIk=
 github.com/aws/aws-sdk-go v1.34.28/go.mod h1:H7NKnBqNVzoTJpGfLrQkkD+ytBA93eiDYi/+8rV9s48=

@@ -35,7 +35,7 @@ type DatasetFeature struct {
 	ServiceRunning bool
 }
 
-func NewDatasetFeature(mongoCapability *featuretest.MongoCapability, zebedeeURL string) (*DatasetFeature, error) {
+func NewDatasetFeature(mongoFeature *featuretest.MongoFeature, zebedeeURL string) (*DatasetFeature, error) {
 
 	f := &DatasetFeature{
 		HTTPServer:     &http.Server{},
@@ -60,7 +60,7 @@ func NewDatasetFeature(mongoCapability *featuretest.MongoCapability, zebedeeURL 
 		Collection:  "datasets",
 		Database:    memongo.RandomDatabase(),
 		DatasetURL:  "datasets",
-		URI:         mongoCapability.Server.URI(),
+		URI:         mongoFeature.Server.URI(),
 	}
 
 	if err := mongodb.Init(); err != nil {
