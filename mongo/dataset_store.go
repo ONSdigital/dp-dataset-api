@@ -157,15 +157,8 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 	s := m.Session.Copy()
 	defer s.Close()
 
-	selector := buildEditionsQuery(id, state)
-
-	var q *mgo.Query
-
-	if authorised {
-		q = s.DB(m.Database).C(editionsCollection).Find(selector)
-	} else {
-		q = s.DB(m.Database).C(editionsCollection).Find(bson.M{"current": bson.M{"$exists": true}})
-	}
+	selector := buildEditionsQuery(id, state, authorised)
+	q := s.DB(m.Database).C(editionsCollection).Find(selector)
 
 	totalCount, err := q.Count()
 	if err != nil {
@@ -220,17 +213,21 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 	}, nil
 }
 
-func buildEditionsQuery(id, state string) bson.M {
-	var selector bson.M
+func buildEditionsQuery(id, state string, authorised bool) bson.M {
+
+	// all queries must get the dataset by id
+	selector := bson.M{
+		"next.links.dataset.id": id,
+	}
+
+	// non-authorised queries require that the current edition must exist
+	if !authorised {
+		selector["current"] = bson.M{"$exists": true}
+	}
+
+	// if state is required, then we need to query by state
 	if state != "" {
-		selector = bson.M{
-			"current.links.dataset.id": id,
-			"current.state":            state,
-		}
-	} else {
-		selector = bson.M{
-			"next.links.dataset.id": id,
-		}
+		selector["current.state"] = state
 	}
 
 	return selector
