@@ -91,17 +91,21 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		results, err := api.createListOfDimensions(versionDoc, dimensions)
-		if err != nil {
-			log.Event(ctx, "failed to convert bson to dimension", log.ERROR, log.Error(err), logData)
-			return nil, err
+		slicedResults := []models.Dimension{}
+
+		if limit > 0 {
+			results, err := api.createListOfDimensions(versionDoc, dimensions)
+			if err != nil {
+				log.Event(ctx, "failed to convert bson to dimension", log.ERROR, log.Error(err), logData)
+				return nil, err
+			}
+
+			sort.Slice(results, func(i, j int) bool {
+				return results[i].Name < results[j].Name
+			})
+
+			slicedResults = utils.Slice(results, offset, limit)
 		}
-
-		sort.Slice(results, func(i, j int) bool {
-			return results[i].Name < results[j].Name
-		})
-
-		slicedResults := utils.Slice(results, offset, limit)
 
 		listOfDimensions := &models.DatasetDimensionResults{
 			Items:      slicedResults,
