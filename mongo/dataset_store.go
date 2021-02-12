@@ -86,15 +86,6 @@ func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised b
 		q = s.DB(m.Database).C("datasets").Find(bson.M{"current": bson.M{"$exists": true}})
 	}
 
-	iter := q.Sort().Skip(offset).Limit(limit).Iter()
-
-	defer func() {
-		err := iter.Close()
-		if err != nil {
-			log.Event(ctx, "error closing iterator", log.ERROR, log.Error(err))
-		}
-	}()
-
 	totalCount, err := q.Count()
 	if err != nil {
 		log.Event(ctx, "error counting items", log.ERROR, log.Error(err))
@@ -113,6 +104,14 @@ func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised b
 	values := []models.DatasetUpdate{}
 
 	if limit > 0 {
+		iter := q.Sort().Skip(offset).Limit(limit).Iter()
+		defer func() {
+			err := iter.Close()
+			if err != nil {
+				log.Event(ctx, "error closing iterator", log.ERROR, log.Error(err))
+			}
+		}()
+
 		if err := iter.All(&values); err != nil {
 			if err == mgo.ErrNotFound {
 				return &models.DatasetUpdateResults{
@@ -179,17 +178,17 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 		return nil, errs.ErrEditionNotFound
 	}
 
-	iter := q.Sort().Skip(offset).Limit(limit).Iter()
-	defer func() {
-		err := iter.Close()
-		if err != nil {
-			log.Event(ctx, "error closing edition iterator", log.ERROR, log.Error(err), log.Data{"selector": selector})
-		}
-	}()
-
 	var results []*models.EditionUpdate
 
 	if limit > 0 {
+		iter := q.Sort().Skip(offset).Limit(limit).Iter()
+		defer func() {
+			err := iter.Close()
+			if err != nil {
+				log.Event(ctx, "error closing edition iterator", log.ERROR, log.Error(err), log.Data{"selector": selector})
+			}
+		}()
+
 		if err := iter.All(&results); err != nil {
 			if err == mgo.ErrNotFound {
 				return &models.EditionUpdateResults{
@@ -320,17 +319,21 @@ func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string, of
 		return nil, err
 	}
 
-	iter := q.Sort("-last_updated").Skip(offset).Limit(limit).Iter()
-	defer func() {
-		err := iter.Close()
-		if err != nil {
-			log.Event(ctx, "error closing instance iterator", log.ERROR, log.Error(err), log.Data{"selector": selector})
-		}
-	}()
+	if totalCount < 1 {
+		return nil, errs.ErrVersionNotFound
+	}
 
 	var results []models.Version
 
 	if limit > 0 {
+		iter := q.Sort("-last_updated").Skip(offset).Limit(limit).Iter()
+		defer func() {
+			err := iter.Close()
+			if err != nil {
+				log.Event(ctx, "error closing instance iterator", log.ERROR, log.Error(err), log.Data{"selector": selector})
+			}
+		}()
+
 		if err := iter.All(&results); err != nil {
 			if err == mgo.ErrNotFound {
 				return &models.VersionResults{
@@ -345,12 +348,7 @@ func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string, of
 		}
 	}
 
-	if len(results) < 1 {
-		return nil, errs.ErrVersionNotFound
-	}
-
 	for i := 0; i < len(results); i++ {
-
 		results[i].Links.Self.HRef = results[i].Links.Version.HRef
 	}
 
