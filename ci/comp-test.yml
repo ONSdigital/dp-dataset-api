@@ -1,0 +1,18 @@
+---
+
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: golang
+    tag: 1.15
+
+inputs:
+  - name: dp-dataset-api
+
+outputs:
+  - name: build
+
+run:
+  path: dp-dataset-api/ci/scripts/build.sh
