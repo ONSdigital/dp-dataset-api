@@ -83,9 +83,9 @@ func NewDatasetFeature(mongoFeature *featuretest.MongoFeature, zebedeeURL string
 }
 
 func (f *DatasetFeature) RegisterSteps(ctx *godog.ScenarioContext) {
-	ctx.Step(`^private endpoints are enabled$`, f.PrivateEndpointsAreEnabled)
-	ctx.Step(`^I have these datasets:$`, f.IHaveTheseDatasets)
-	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, f.TheDocumentInTheDatabaseForIdShouldBe)
+	ctx.Step(`^private endpoints are enabled$`, f.privateEndpointsAreEnabled)
+	ctx.Step(`^I have these datasets:$`, f.iHaveTheseDatasets)
+	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, f.theDocumentInTheDatabaseForIdShouldBe)
 	ctx.Step(`^there are no datasets$`, f.thereAreNoDatasets)
 }
 
@@ -149,7 +149,7 @@ func (f *DatasetFeature) DoGetKafkaProducerOk(ctx context.Context, cfg *config.C
 	}, nil
 }
 
-func (f *DatasetFeature) IHaveTheseDatasets(datasetsJson *godog.DocString) error {
+func (f *DatasetFeature) iHaveTheseDatasets(datasetsJson *godog.DocString) error {
 
 	datasets := []models.Dataset{}
 	m := f.MongoClient
@@ -196,12 +196,12 @@ func (f *DatasetFeature) putDatasetInDatabase(s *mgo.Session, datasetDoc models.
 	return nil
 }
 
-func (f *DatasetFeature) PrivateEndpointsAreEnabled() error {
+func (f *DatasetFeature) privateEndpointsAreEnabled() error {
 	f.Config.EnablePrivateEndpoints = true
 	return nil
 }
 
-func (f *DatasetFeature) TheDocumentInTheDatabaseForIdShouldBe(documentId string, documentJson *godog.DocString) error {
+func (f *DatasetFeature) theDocumentInTheDatabaseForIdShouldBe(documentId string, documentJson *godog.DocString) error {
 	s := f.MongoClient.Session.Copy()
 	defer s.Close()
 
