@@ -11,6 +11,10 @@ import (
 	"github.com/cucumber/godog/colors"
 )
 
+const MongoVersion = "4.0.5"
+const MongoPort = 27017
+const DatabaseName = "testing"
+
 var componentFlag = flag.Bool("component", false, "perform component tests")
 
 type FeatureTest struct {
@@ -45,7 +49,7 @@ func (f *FeatureTest) InitializeScenario(ctx *godog.ScenarioContext) {
 
 func (f *FeatureTest) InitializeTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
-		f.MongoFeature = featuretest.NewMongoFeature(featuretest.MongoOptions{Port: 27017, MongoVersion: "4.0.5", DatabaseName: "testing"})
+		f.MongoFeature = featuretest.NewMongoFeature(featuretest.MongoOptions{Port: MongoPort, MongoVersion: MongoVersion, DatabaseName: DatabaseName})
 	})
 	ctx.AfterSuite(func() {
 		f.MongoFeature.Close()
