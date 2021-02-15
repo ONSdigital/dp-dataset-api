@@ -101,6 +101,15 @@ func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised b
 		return nil, err
 	}
 
+	iter := q.Sort().Skip(offset).Limit(limit).Iter()
+
+	defer func() {
+		err := iter.Close()
+		if err != nil {
+			log.Event(ctx, "error closing iterator", log.ERROR, log.Error(err))
+		}
+	}()
+
 	values := []models.DatasetUpdate{}
 
 	if limit > 0 {
