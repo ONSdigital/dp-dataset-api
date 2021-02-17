@@ -11,8 +11,5 @@ image_resource:
 inputs:
   - name: dp-dataset-api
 
-outputs:
-  - name: build
-
 run:
-  path: dp-dataset-api/ci/scripts/build.sh
+  path: dp-dataset-api/ci/scripts/component.sh
