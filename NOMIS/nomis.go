@@ -215,8 +215,8 @@ func main() {
 
 			case "FirstReleased":
 				releaseDt := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string)
-				rd, _ := time.Parse("2006-01-02 15:04:05", releaseDt)
-				censusInstances.ReleaseDate = rd.String()
+				rd, _ := time.Parse("2006-01-02T15:04:05.000Z", releaseDt)
+				censusInstances.ReleaseDate = rd.Format("2006-01-02T15:04:05.000Z")
 			}
 
 			if strings.HasPrefix(str, "MetadataText") {
