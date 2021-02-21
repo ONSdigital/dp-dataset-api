@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -109,6 +110,7 @@ func main() {
 	}
 
 	for index0, _ := range res.Structure.Keyfamilies.Keyfamily {
+
 		censusEditionData := models.EditionUpdate{}
 		mapData := models.Dataset{}
 		cenId := res.Structure.Keyfamilies.Keyfamily[index0].ID
@@ -187,6 +189,7 @@ func main() {
 		}
 
 		for indx := range res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation {
+			var example string
 
 			str := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Title
 
@@ -220,17 +223,18 @@ func main() {
 			}
 
 			if strings.HasPrefix(str, "MetadataText") {
-				splitMetaData := strings.Split(str, "MetadataText")
+				example= checkSubString( res,index0,indx)
+					splitMetaData := strings.Split(str, "MetadataText")
 				txtNumber, _ := strconv.Atoi(splitMetaData[1])
 				if splitMetaData[1] == "" && splitMetaData[1] != "0" {
 					*censusInstances.UsageNotes = append(*censusInstances.UsageNotes, models.UsageNote{
-						Note:  res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string),
+						Note:  example,
 						Title: metaTitleInfo[0],
 					})
 
 				} else if splitMetaData[1] != "0" {
 					*censusInstances.UsageNotes = append(*censusInstances.UsageNotes, models.UsageNote{
-						Note:  res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string),
+						Note: example,
 						Title: metaTitleInfo[txtNumber+1],
 					})
 				}
@@ -249,6 +253,8 @@ func main() {
 	}
 	fmt.Println("\ndatasets, instances and editions have been added to datasets db")
 }
+
+
 
 //Inserts a document in the specific collection
 func createDocument(ctx context.Context, class interface{}, session *mgo.Session, document string) {
@@ -300,4 +306,26 @@ func downloadFile() {
 	defer file.Close()
 
 	fmt.Printf("Downloaded a file %s with size %d", fileName, size)
+}
+
+func checkSubString (res CenStructure, index0, indx int)  string {
+	var strArray []string
+	var result string
+	value :=strings.Contains(res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string), "http")
+	if value{
+		str1:=strings.Split(res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string), "http")
+		var valueCheck = regexp.MustCompile("html|.aspx")
+		strMatch:=valueCheck.MatchString(str1[1])
+		if strMatch{
+			if strings.Contains( str1[1],"html") {
+				strArray = strings.SplitAfter(str1[1], "html")
+			} else if strings.Contains( str1[1],"aspx") {
+				strArray = strings.SplitAfter(str1[1], "aspx")
+			}
+			result=fmt.Sprintf("%s%s%s%s%s", str1[0],"(http", strArray[0], ")",strArray[1])
+		}
+	} else {
+		result=res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string)
+	}
+	return result
 }
