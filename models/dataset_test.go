@@ -17,7 +17,23 @@ func createDataset() Dataset {
 	return Dataset{
 		ID:  "123",
 		URI: "http://localhost:22000/datasets/123",
+		Publications: []GeneralDetails{
+			{Description: "some publication description"},
+			{HRef: "http://localhost:22000//datasets/publications"},
+			{Title: "some publication title"},
+		},
+		Methodologies: []GeneralDetails{
+			{Description: "some methodologies description"},
+			{HRef: "http://localhost:22000//datasets/methodologies"},
+			{Title: "some methodology title"},
+		},
+		RelatedDatasets: []GeneralDetails{
+			{Description: "some related datasets description"},
+			{HRef: "http://localhost:22000//datasets/relateddatasets"},
+			{Title: "some related datasets title"},
+		},
 	}
+
 }
 
 var testContext = context.Background()
@@ -213,22 +229,6 @@ func TestValidateDataset(t *testing.T) {
 			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
 		})
 
-		Convey("when dataset.URI does not contain 'datasets' path", func() {
-			dataset := createDataset()
-			dataset.URI = "/123"
-			validationErr := ValidateDataset(testContext, &dataset)
-			So(validationErr, ShouldNotBeNil)
-			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
-		})
-
-		Convey("when dataset.URI does not contain 'id' path", func() {
-			dataset := createDataset()
-			dataset.URI = "http://localhost:22000/datasets"
-			validationErr := ValidateDataset(testContext, &dataset)
-			So(validationErr, ShouldNotBeNil)
-			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
-		})
-
 	})
 
 	Convey("Successful validation (true) returned", t, func() {
@@ -251,6 +251,45 @@ func TestValidateDataset(t *testing.T) {
 			validationErr := ValidateDataset(testContext, &dataset)
 			So(validationErr, ShouldBeNil)
 			So(dataset.URI, ShouldEqual, "http://localhost:22000/datasets/123/breadcrumbs")
+		})
+	})
+
+	Convey("Successful validation (true) returned", t, func() {
+
+		Convey("when publications href contains whitespace it should not return an error ", func() {
+			dataset := createDataset()
+			dataset.ID = "123"
+			generalDetails := &dataset.Publications[1]
+			generalDetails.HRef = "  http://localhost:22000//datasets/publications  "
+			validationErr := ValidateDataset(testContext, &dataset)
+			So(validationErr, ShouldBeNil)
+			So(generalDetails.HRef, ShouldEqual, "http://localhost:22000//datasets/publications")
+		})
+	})
+
+	Convey("Successful validation (true) returned", t, func() {
+
+		Convey("when methodologies href contains whitespace it should not return an error ", func() {
+			dataset := createDataset()
+			dataset.ID = "123"
+			generalDetails := &dataset.Methodologies[1]
+			generalDetails.HRef = "  http://localhost:22000//datasets/methodologies  "
+			validationErr := ValidateDataset(testContext, &dataset)
+			So(validationErr, ShouldBeNil)
+			So(generalDetails.HRef, ShouldEqual, "http://localhost:22000//datasets/methodologies")
+		})
+	})
+
+	Convey("Successful validation (true) returned", t, func() {
+
+		Convey("when related datasets href contains whitespace it should not return an error ", func() {
+			dataset := createDataset()
+			dataset.ID = "123"
+			generalDetails := &dataset.RelatedDatasets[1]
+			generalDetails.HRef = "  http://localhost:22000//datasets/relateddatasets  "
+			validationErr := ValidateDataset(testContext, &dataset)
+			So(validationErr, ShouldBeNil)
+			So(generalDetails.HRef, ShouldEqual, "http://localhost:22000//datasets/relateddatasets")
 		})
 	})
 

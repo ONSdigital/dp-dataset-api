@@ -457,21 +457,54 @@ func ValidateDataset(ctx context.Context, dataset *Dataset) error {
 	var invalidFields []string
 	if dataset.URI != "" {
 		dataset.URI = strings.TrimSpace(dataset.URI)
-		datasetURI, err := url.Parse(dataset.URI)
+		_, err := url.Parse(dataset.URI)
 		if err != nil {
 			invalidFields = append(invalidFields, "URI")
 			log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
-		} else {
-			if !strings.Contains(datasetURI.Path, "/datasets") || !strings.Contains(datasetURI.Path, dataset.ID) {
-				fmt.Println("hello")
-				invalidFields = append(invalidFields, "URI")
+		}
+	}
+
+	for i := range dataset.Publications {
+		generalDetails := &dataset.Publications[i]
+		if generalDetails != nil {
+			generalDetails.HRef = strings.TrimSpace(generalDetails.HRef)
+			_, err := url.Parse(generalDetails.HRef)
+			if err != nil {
+				invalidFields = append(invalidFields, "href")
+				log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
 			}
 		}
 	}
+
+	for i := range dataset.Methodologies {
+		generalDetails := &dataset.Methodologies[i]
+		if generalDetails != nil {
+			generalDetails.HRef = strings.TrimSpace(generalDetails.HRef)
+			_, err := url.Parse(generalDetails.HRef)
+			if err != nil {
+				invalidFields = append(invalidFields, "href")
+				log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
+			}
+		}
+	}
+
+	for i := range dataset.RelatedDatasets {
+		generalDetails := &dataset.RelatedDatasets[i]
+		if generalDetails != nil {
+			generalDetails.HRef = strings.TrimSpace(generalDetails.HRef)
+			_, err := url.Parse(generalDetails.HRef)
+			if err != nil {
+				invalidFields = append(invalidFields, "href")
+				log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
+			}
+		}
+	}
+
 	if invalidFields != nil {
 		return fmt.Errorf("invalid fields: %v", invalidFields)
 	}
 	return nil
+
 }
 
 // ValidateDatasetType checks the dataset.type field has valid type
@@ -483,6 +516,18 @@ func ValidateDatasetType(ctx context.Context, datasetType string) (*DatasetType,
 	}
 	return &dataType, nil
 }
+
+// func trimHref(ctx context.Context, generalDetails *GeneralDetails) (*GeneralDetails, error) {
+// 	var invalidFields []string
+// 	generalDetails.HRef = strings.TrimSpace(generalDetails.HRef)
+// 	_, err := url.Parse(generalDetails.HRef)
+// 	if err != nil {
+// 		invalidFields = append(invalidFields, "href")
+// 		log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
+// 	}
+
+// 	return generalDetails, nil
+// }
 
 // ValidateNomisURL checks for the nomis type when the dataset has nomis URL
 func ValidateNomisURL(ctx context.Context, datasetType string, nomisURL string) (string, error) {
