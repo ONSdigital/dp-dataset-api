@@ -22,16 +22,6 @@ func createDataset() Dataset {
 			{HRef: "http://localhost:22000//datasets/publications"},
 			{Title: "some publication title"},
 		},
-		// Methodologies: []GeneralDetails{
-		// 	{Description: "some methodologies description"},
-		// 	{HRef: "http://localhost:22000//datasets/methodologies"},
-		// 	{Title: "some methodology title"},
-		// },
-		// RelatedDatasets: []GeneralDetails{
-		// 	{Description: "some related datasets description"},
-		// 	{HRef: "http://localhost:22000//datasets/relateddatasets"},
-		// 	{Title: "some related datasets title"},
-		// },
 	}
 
 }
@@ -256,7 +246,7 @@ func TestValidateDataset(t *testing.T) {
 
 	Convey("Successful validation (true) returned", t, func() {
 
-		Convey("when publications href contains whitespace it should not return an error ", func() {
+		Convey("when GeneralDetails.href contains whitespace it should not return an error ", func() {
 			dataset := createDataset()
 			dataset.ID = "123"
 			generalDetails := &dataset.Publications[1]
@@ -266,32 +256,6 @@ func TestValidateDataset(t *testing.T) {
 			So(generalDetails.HRef, ShouldEqual, "http://localhost:22000//datasets/publications")
 		})
 	})
-
-	// Convey("Successful validation (true) returned", t, func() {
-
-	// 	Convey("when methodologies href contains whitespace it should not return an error ", func() {
-	// 		dataset := createDataset()
-	// 		dataset.ID = "123"
-	// 		generalDetails := &dataset.Methodologies[1]
-	// 		generalDetails.HRef = "  http://localhost:22000//datasets/methodologies  "
-	// 		validationErr := ValidateDataset(testContext, &dataset)
-	// 		So(validationErr, ShouldBeNil)
-	// 		So(generalDetails.HRef, ShouldEqual, "http://localhost:22000//datasets/methodologies")
-	// 	})
-	// })
-
-	// Convey("Successful validation (true) returned", t, func() {
-
-	// 	Convey("when related datasets href contains whitespace it should not return an error ", func() {
-	// 		dataset := createDataset()
-	// 		dataset.ID = "123"
-	// 		generalDetails := &dataset.RelatedDatasets[1]
-	// 		generalDetails.HRef = "  http://localhost:22000//datasets/relateddatasets  "
-	// 		validationErr := ValidateDataset(testContext, &dataset)
-	// 		So(validationErr, ShouldBeNil)
-	// 		So(generalDetails.HRef, ShouldEqual, "http://localhost:22000//datasets/relateddatasets")
-	// 	})
-	// })
 
 }
 
