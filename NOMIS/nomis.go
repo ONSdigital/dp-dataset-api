@@ -204,7 +204,11 @@ func main() {
 
 			case "LastUpdated":
 				tt := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string)
-				t, _ := time.Parse("2006-01-02 15:04:05", tt)
+				t, parseErr := time.Parse("2006-01-02 15:04:05", tt)
+				if parseErr!=nil{
+					log.Event(ctx, "error parsing date", log.ERROR, log.Error(err))
+					os.Exit(1)
+				}
 				mapData.LastUpdated = t
 				generalModel.LastUpdated = mapData.LastUpdated
 
@@ -218,7 +222,11 @@ func main() {
 
 			case "FirstReleased":
 				releaseDt := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string)
-				rd, _ := time.Parse("2006-01-02T15:04:05.000Z", releaseDt)
+				rd, err:= time.Parse("2006-01-02 15:04:05", releaseDt)
+				if err!=nil{
+					log.Event(ctx, "failed to parse date correctly", log.ERROR, log.Error(err))
+					os.Exit(1)
+				}
 				censusInstances.ReleaseDate = rd.Format("2006-01-02T15:04:05.000Z")
 			}
 
