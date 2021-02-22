@@ -2,6 +2,8 @@ module github.com/ONSdigital/dp-dataset-api
 
 go 1.15
 
+replace github.com/coreos/etcd => github.com/coreos/etcd v3.3.24+incompatible
+
 require (
 	github.com/ONSdigital/dp-api-clients-go v1.33.6
 	github.com/ONSdigital/dp-authorisation v0.1.0
@@ -38,3 +40,5 @@ require (
 	golang.org/x/sys v0.0.0-20210220050731-9a76102bfb43 // indirect
 	gopkg.in/avro.v0 v0.0.0-20171217001914-a730b5802183 // indirect
 )
+
+
