@@ -110,7 +110,6 @@ func main() {
 	}
 
 	for index0, _ := range res.Structure.Keyfamilies.Keyfamily {
-
 		censusEditionData := models.EditionUpdate{}
 		mapData := models.Dataset{}
 		cenId := res.Structure.Keyfamilies.Keyfamily[index0].ID
@@ -173,10 +172,10 @@ func main() {
 			UsageNotes: &[]models.UsageNote{},
 		}
 		var metaTitleInfo [5]string
-		for indx1 := range res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation {
-			str1 := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx1].Title
+		for index1 := range res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation {
+			str1 := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index1].Title
 			if strings.HasPrefix(str1, "MetadataTitle") {
-				title = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx1].Text.(string)
+				title = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index1].Text.(string)
 				splitTitle := strings.Split(str1, "MetadataTitle")
 				if splitTitle[1] == "" {
 					num = 0
@@ -188,24 +187,24 @@ func main() {
 			}
 		}
 
-		for indx := range res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation {
+		for index := range res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation {
 			var example string
 
-			str := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Title
+			str := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index].Title
 
 			switch str {
 			case "MetadataText0":
-				mapData.Description = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string)
+				mapData.Description = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index].Text.(string)
 
 			case "Keywords":
-				keywrd := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string)
+				keywrd := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index].Text.(string)
 				var split = strings.Split(keywrd, ",")
 				mapData.Keywords = split
 
 			case "LastUpdated":
-				tt := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string)
+				tt := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index].Text.(string)
 				t, parseErr := time.Parse("2006-01-02 15:04:05", tt)
-				if parseErr!=nil{
+				if parseErr != nil {
 					log.Event(ctx, "error parsing date", log.ERROR, log.Error(err))
 					os.Exit(1)
 				}
@@ -213,17 +212,17 @@ func main() {
 				generalModel.LastUpdated = mapData.LastUpdated
 
 			case "Units":
-				mapData.UnitOfMeasure = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string)
+				mapData.UnitOfMeasure = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index].Text.(string)
 
 			case "Mnemonic":
-				ref := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string)
+				ref := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index].Text.(string)
 				param := strings.Split(ref, "c2011")
 				mapData.NomisReferenceURL = "https://www.nomisweb.co.uk/census/2011/" + param[1]
 
 			case "FirstReleased":
-				releaseDt := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string)
-				rd, err:= time.Parse("2006-01-02 15:04:05", releaseDt)
-				if err!=nil{
+				releaseDt := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index].Text.(string)
+				rd, err := time.Parse("2006-01-02 15:04:05", releaseDt)
+				if err != nil {
 					log.Event(ctx, "failed to parse date correctly", log.ERROR, log.Error(err))
 					os.Exit(1)
 				}
@@ -231,8 +230,10 @@ func main() {
 			}
 
 			if strings.HasPrefix(str, "MetadataText") {
-				example= checkSubString( res,index0,indx)
-					splitMetaData := strings.Split(str, "MetadataText")
+				if str != "MetadataText0" {
+					example = CheckSubString(res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index].Text.(string))
+				}
+				splitMetaData := strings.Split(str, "MetadataText")
 				txtNumber, _ := strconv.Atoi(splitMetaData[1])
 				if splitMetaData[1] == "" && splitMetaData[1] != "0" {
 					*censusInstances.UsageNotes = append(*censusInstances.UsageNotes, models.UsageNote{
@@ -242,7 +243,7 @@ func main() {
 
 				} else if splitMetaData[1] != "0" {
 					*censusInstances.UsageNotes = append(*censusInstances.UsageNotes, models.UsageNote{
-						Note: example,
+						Note:  example,
 						Title: metaTitleInfo[txtNumber+1],
 					})
 				}
@@ -261,8 +262,6 @@ func main() {
 	}
 	fmt.Println("\ndatasets, instances and editions have been added to datasets db")
 }
-
-
 
 //Inserts a document in the specific collection
 func createDocument(ctx context.Context, class interface{}, session *mgo.Session, document string) {
@@ -316,24 +315,18 @@ func downloadFile() {
 	fmt.Printf("Downloaded a file %s with size %d", fileName, size)
 }
 
-func checkSubString (res CenStructure, index0, indx int)  string {
-	var strArray []string
+//checkSubString checks if the string has substrings http and [Statistical Disclosure Control]. If both the substrings exists then
+// it adds parenthesis where necessary and swaps the pattern (url)[text] to [text](url) so it can be displayed correctly.
+//If substrings does not exists then it returns the original string
+func CheckSubString(existingStr string) string {
+
 	var result string
-	value :=strings.Contains(res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string), "http")
-	if value{
-		str1:=strings.Split(res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string), "http")
-		var valueCheck = regexp.MustCompile("html|.aspx")
-		strMatch:=valueCheck.MatchString(str1[1])
-		if strMatch{
-			if strings.Contains( str1[1],"html") {
-				strArray = strings.SplitAfter(str1[1], "html")
-			} else if strings.Contains( str1[1],"aspx") {
-				strArray = strings.SplitAfter(str1[1], "aspx")
-			}
-			result=fmt.Sprintf("%s%s%s%s%s", str1[0],"(http", strArray[0], ")",strArray[1])
-		}
-	} else {
-		result=res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[indx].Text.(string)
+	valueCheck,err:= regexp.Compile(`(http.*)(\[(.*)\])`)
+	s := valueCheck.ReplaceAllString(existingStr, `$2($1)`)
+	if err!=nil{
+		result = existingStr
+		return result
 	}
-	return result
+	return s
 }
+
