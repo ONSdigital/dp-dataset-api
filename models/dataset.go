@@ -454,7 +454,7 @@ func (ed *EditionUpdate) PublishLinks(ctx context.Context, host string, versionL
 
 // ValidateDataset checks the dataset has invalid fields
 func ValidateDataset(ctx context.Context, dataset *Dataset) error {
-	var generalDetails = []*GeneralDetails{}
+
 	var invalidFields []string
 	if dataset.URI != "" {
 		dataset.URI = strings.TrimSpace(dataset.URI)
@@ -465,10 +465,13 @@ func ValidateDataset(ctx context.Context, dataset *Dataset) error {
 		}
 	}
 
-	err := trimHref(ctx, generalDetails)
-	if err != nil {
-		invalidFields = append(invalidFields, "URI")
-		log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
+	// checks relevant fields within Dataset to ensure all HRef fields are valid
+	for _, list := range [][]GeneralDetails{dataset.Publications, dataset.RelatedDatasets, dataset.Methodologies} {
+		err := trimHref(ctx, list)
+		if err != nil {
+			invalidFields = append(invalidFields, "URI")
+			log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
+		}
 	}
 
 	if invalidFields != nil {
@@ -478,17 +481,18 @@ func ValidateDataset(ctx context.Context, dataset *Dataset) error {
 
 }
 
-func trimHref(ctx context.Context, generalDetails []*GeneralDetails) error {
+func trimHref(ctx context.Context, generalDetails []GeneralDetails) error {
 	var invalidFields []string
 	for i := range generalDetails {
-		if generalDetails[i] != nil {
-			generalDetails[i].HRef = strings.TrimSpace(generalDetails[i].HRef)
-			_, err := url.Parse(generalDetails[i].HRef)
-			if err != nil {
-				invalidFields = append(invalidFields, "URI")
-				log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
-			}
+		details := &generalDetails[i]
+		details.HRef = strings.TrimSpace(details.HRef)
+		generalDetails[i] = *details
+		_, err := url.Parse(generalDetails[i].HRef)
+		if err != nil {
+			invalidFields = append(invalidFields, "URI")
+			log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
 		}
+
 	}
 	return nil
 }
