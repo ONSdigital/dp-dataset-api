@@ -454,6 +454,7 @@ func (ed *EditionUpdate) PublishLinks(ctx context.Context, host string, versionL
 
 // ValidateDataset checks the dataset has invalid fields
 func ValidateDataset(ctx context.Context, dataset *Dataset) error {
+	var generalDetails = []*GeneralDetails{}
 	var invalidFields []string
 	if dataset.URI != "" {
 		dataset.URI = strings.TrimSpace(dataset.URI)
@@ -464,25 +465,10 @@ func ValidateDataset(ctx context.Context, dataset *Dataset) error {
 		}
 	}
 
-	for i := range dataset.Publications {
-		generalDetails := &dataset.Publications[i]
-		if generalDetails != nil {
-			trimHref(ctx, generalDetails)
-		}
-	}
-
-	for i := range dataset.Methodologies {
-		generalDetails := &dataset.Methodologies[i]
-		if generalDetails != nil {
-			trimHref(ctx, generalDetails)
-		}
-	}
-
-	for i := range dataset.RelatedDatasets {
-		generalDetails := &dataset.RelatedDatasets[i]
-		if generalDetails != nil {
-			trimHref(ctx, generalDetails)
-		}
+	err := trimHref(ctx, generalDetails)
+	if err != nil {
+		invalidFields = append(invalidFields, "URI")
+		log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
 	}
 
 	if invalidFields != nil {
@@ -492,16 +478,17 @@ func ValidateDataset(ctx context.Context, dataset *Dataset) error {
 
 }
 
-func trimHref(ctx context.Context, generalDetails *GeneralDetails) error {
+func trimHref(ctx context.Context, generalDetails []*GeneralDetails) error {
 	var invalidFields []string
-	generalDetails.HRef = strings.TrimSpace(generalDetails.HRef)
-	_, err := url.Parse(generalDetails.HRef)
-	if err != nil {
-		invalidFields = append(invalidFields, "href")
-		log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
-	}
-	if invalidFields != nil {
-		return fmt.Errorf("invalid fields: %v", invalidFields)
+	for i := range generalDetails {
+		if generalDetails[i] != nil {
+			generalDetails[i].HRef = strings.TrimSpace(generalDetails[i].HRef)
+			_, err := url.Parse(generalDetails[i].HRef)
+			if err != nil {
+				invalidFields = append(invalidFields, "URI")
+				log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
+			}
+		}
 	}
 	return nil
 }
