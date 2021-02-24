@@ -43,7 +43,7 @@ test:
 
 .PHONY: test-component
 test-component:
-	go test -race -cover -component | grep -v created_at
+	go test -race -cover -component
 
 
 .PHONY: nomis
