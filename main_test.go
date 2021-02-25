@@ -12,9 +12,8 @@ import (
 	"github.com/cucumber/godog/colors"
 )
 
-const MongoURL = "https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1804-4.0.23.tgz"
-
-// const MongoVersion = "4.0.5"
+// Mongo version here is overridden in the pipeline by the URL provided in the component.sh
+const MongoVersion = "4.0.23"
 const MongoPort = 27017
 const DatabaseName = "testing"
 const Timeout = 10 * time.Second
@@ -53,7 +52,7 @@ func (f *FeatureTest) InitializeScenario(ctx *godog.ScenarioContext) {
 
 func (f *FeatureTest) InitializeTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
-		f.MongoFeature = featuretest.NewMongoFeature(featuretest.MongoOptions{Port: MongoPort, DownloadURL: MongoURL, DatabaseName: DatabaseName, StartupTimeout: Timeout})
+		f.MongoFeature = featuretest.NewMongoFeature(featuretest.MongoOptions{Port: MongoPort, MongoVersion: MongoVersion, DatabaseName: DatabaseName, StartupTimeout: Timeout})
 	})
 	ctx.AfterSuite(func() {
 		f.MongoFeature.Close()
