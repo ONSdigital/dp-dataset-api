@@ -172,10 +172,11 @@ func main() {
 			UsageNotes: &[]models.UsageNote{},
 		}
 		var metaTitleInfo [5]string
-		for index1 := range res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation {
-			str1 := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index1].Title
+		var annotations = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation
+		for index1 := range annotations {
+			str1 := annotations[index1].Title
 			if strings.HasPrefix(str1, "MetadataTitle") {
-				title = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index1].Text.(string)
+				title = annotations[index1].Text.(string)
 				splitTitle := strings.Split(str1, "MetadataTitle")
 				if splitTitle[1] == "" {
 					num = 0
@@ -187,22 +188,23 @@ func main() {
 			}
 		}
 
-		for index := range res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation {
+		for index := range annotations {
 			var example string
+			var annotation = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index]
 
-			str := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index].Title
+			str := annotation.Title
 
 			switch str {
 			case "MetadataText0":
-				mapData.Description = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index].Text.(string)
+				mapData.Description = annotation.Text.(string)
 
 			case "Keywords":
-				keywrd := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index].Text.(string)
+				keywrd := annotation.Text.(string)
 				var split = strings.Split(keywrd, ",")
 				mapData.Keywords = split
 
 			case "LastUpdated":
-				tt := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index].Text.(string)
+				tt := annotation.Text.(string)
 				t, parseErr := time.Parse("2006-01-02 15:04:05", tt)
 				if parseErr != nil {
 					log.Event(ctx, "error parsing date", log.ERROR, log.Error(err))
@@ -212,15 +214,19 @@ func main() {
 				generalModel.LastUpdated = mapData.LastUpdated
 
 			case "Units":
-				mapData.UnitOfMeasure = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index].Text.(string)
+				mapData.UnitOfMeasure = annotation.Text.(string)
 
 			case "Mnemonic":
-				ref := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index].Text.(string)
+				ref := annotation.Text.(string)
 				param := strings.Split(ref, "c2011")
+				if len(param)<2{
+					log.Event(nil, "error Mnemonic length invalid", log.ERROR)
+					os.Exit(1)
+				}
 				mapData.NomisReferenceURL = "https://www.nomisweb.co.uk/census/2011/" + param[1]
 
 			case "FirstReleased":
-				releaseDt := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index].Text.(string)
+				releaseDt := annotation.Text.(string)
 				rd, err := time.Parse("2006-01-02 15:04:05", releaseDt)
 				if err != nil {
 					log.Event(ctx, "failed to parse date correctly", log.ERROR, log.Error(err))
@@ -231,7 +237,11 @@ func main() {
 
 			if strings.HasPrefix(str, "MetadataText") {
 				if str != "MetadataText0" {
-					example = CheckSubString(res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index].Text.(string))
+					example, err = CheckSubString(annotation.Text.(string))
+					if err != nil {
+						log.Event(nil, "failed to get metadatatext", log.ERROR, log.Error(err))
+						os.Exit(1)
+					}
 				}
 				splitMetaData := strings.Split(str, "MetadataText")
 				txtNumber, _ := strconv.Atoi(splitMetaData[1])
@@ -280,7 +290,7 @@ func downloadFile() {
 	// Build fileName from fullPath
 	fileURL, err := url.Parse(fullURLFile)
 	if err != nil {
-		fmt.Println(("error Parsing"))
+		fmt.Println("error Parsing")
 		os.Exit(1)
 	}
 	path := fileURL.Path
@@ -291,7 +301,7 @@ func downloadFile() {
 	// Create blank file
 	file, err := os.Create(newFileName)
 	if err != nil {
-		fmt.Println(("error creating the file"))
+		fmt.Println("error creating the file")
 		os.Exit(1)
 	}
 	client := http.Client{
@@ -305,7 +315,7 @@ func downloadFile() {
 	resp, err := client.Get(fullURLFile)
 
 	if err != nil {
-		fmt.Println(("error writing the file"))
+		fmt.Println("error writing the file")
 		os.Exit(1)
 	}
 	defer resp.Body.Close()
@@ -315,18 +325,15 @@ func downloadFile() {
 	fmt.Printf("Downloaded a file %s with size %d", fileName, size)
 }
 
-//checkSubString checks if the string has substrings http and [Statistical Disclosure Control]. If both the substrings exists then
-// it adds parenthesis where necessary and swaps the pattern (url)[text] to [text](url) so it can be displayed correctly.
-//If substrings does not exists then it returns the original string
-func CheckSubString(existingStr string) string {
+/*checkSubString checks if the string has substrings http and [Statistical Disclosure Control].
+If both the substrings exists then it adds parenthesis where necessary and swaps the pattern (url)[text] to [text](url)
+so it can be displayed correctly. If substrings does not exists then it returns the original string*/
+func CheckSubString(existingStr string) (string, error) {
 
-	var result string
-	valueCheck,err:= regexp.Compile(`(http.*)(\[(.*)\])`)
-	s := valueCheck.ReplaceAllString(existingStr, `$2($1)`)
-	if err!=nil{
-		result = existingStr
-		return result
+	valueCheck, err := regexp.Compile(`(http[^\[]*)(\[[^\[]*\])`)
+	if err != nil {
+		return "", err
 	}
-	return s
-}
 
+	return valueCheck.ReplaceAllString(existingStr, `$2($1)`), nil
+}
