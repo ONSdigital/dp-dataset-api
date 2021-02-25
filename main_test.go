@@ -11,7 +11,7 @@ import (
 	"github.com/cucumber/godog/colors"
 )
 
-const MongoVersion = "4.0.5"
+const MongoURL = "http://downloads.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1804-v4.4-latest.tgz"
 const MongoPort = 27017
 const DatabaseName = "testing"
 
@@ -49,7 +49,7 @@ func (f *FeatureTest) InitializeScenario(ctx *godog.ScenarioContext) {
 
 func (f *FeatureTest) InitializeTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
-		f.MongoFeature = featuretest.NewMongoFeature(featuretest.MongoOptions{Port: MongoPort, MongoVersion: MongoVersion, DatabaseName: DatabaseName})
+		f.MongoFeature = featuretest.NewMongoFeature(featuretest.MongoOptions{Port: MongoPort, DownloadURL: MongoURL, DatabaseName: DatabaseName})
 	})
 	ctx.AfterSuite(func() {
 		f.MongoFeature.Close()

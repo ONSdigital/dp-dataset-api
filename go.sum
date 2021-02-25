@@ -62,6 +62,12 @@ github.com/armakuni/dp-go-featuretest v0.0.0-20210224140700-cd836ea37b55 h1:drD5
 github.com/armakuni/dp-go-featuretest v0.0.0-20210224140700-cd836ea37b55/go.mod h1:8PwfFu2YQNB3/if9L2VrrXyfEYf2NKOB6JInDYJKM/s=
 github.com/armakuni/dp-go-featuretest v0.0.0-20210224151445-bad7f19ef149 h1:C74as5SNjq12/fOuvkucQrMvh47Uvnmll9bqh6MZ4WA=
 github.com/armakuni/dp-go-featuretest v0.0.0-20210224151445-bad7f19ef149/go.mod h1:8PwfFu2YQNB3/if9L2VrrXyfEYf2NKOB6JInDYJKM/s=
+github.com/armakuni/dp-go-featuretest v0.0.0-20210225101523-97879f1158a1 h1:tOOZWXi5fgsZuCFjz7vLDq/wRs4OSm7Et+Sp9zxdljE=
+github.com/armakuni/dp-go-featuretest v0.0.0-20210225101523-97879f1158a1/go.mod h1:8PwfFu2YQNB3/if9L2VrrXyfEYf2NKOB6JInDYJKM/s=
+github.com/armakuni/dp-go-featuretest v0.0.0-20210225102321-edff7c2e2da0 h1:Pt5cgGrju7mkrlsj3NKFDrqkJnbhHgOhHvFKx4m4cOo=
+github.com/armakuni/dp-go-featuretest v0.0.0-20210225102321-edff7c2e2da0/go.mod h1:8PwfFu2YQNB3/if9L2VrrXyfEYf2NKOB6JInDYJKM/s=
+github.com/armakuni/dp-go-featuretest v0.0.0-20210225112107-b49719db54ff h1:t1zqTZPJsSkNp9JFPDs2kjyilvFrFR7hamUE+qoTyt0=
+github.com/armakuni/dp-go-featuretest v0.0.0-20210225112107-b49719db54ff/go.mod h1:8PwfFu2YQNB3/if9L2VrrXyfEYf2NKOB6JInDYJKM/s=
 github.com/aslakhellesoy/gox v1.0.100/go.mod h1:AJl542QsKKG96COVsv0N74HHzVQgDIQPceVUh1aeU2M=
 github.com/aws/aws-sdk-go v1.34.28 h1:sscPpn/Ns3i0F4HPEWAVcwdIRaZZCuL7llJ2/60yPIk=
 github.com/aws/aws-sdk-go v1.34.28/go.mod h1:H7NKnBqNVzoTJpGfLrQkkD+ytBA93eiDYi/+8rV9s48=
