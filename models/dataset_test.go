@@ -250,10 +250,11 @@ func TestValidateDataset(t *testing.T) {
 			dataset := createDataset()
 			dataset.ID = "123"
 			generalDetails := &dataset.Publications[1]
-			generalDetails.HRef = "  http://localhost:22000//datasets/publications  "
+			generalDetails.HRef = "  http://localhost:22000//datasets/publications  " // duplicate for each field being validated.
 			validationErr := ValidateDataset(testContext, &dataset)
 			So(validationErr, ShouldBeNil)
-			So(generalDetails.HRef, ShouldEqual, "http://localhost:22000//datasets/publications")
+			So(dataset.Publications[1].HRef, ShouldResemble, "http://localhost:22000//datasets/publications") //validate the entire Publication object not just the URI.
+			// validate the expected number of publications == expected count
 		})
 	})
 

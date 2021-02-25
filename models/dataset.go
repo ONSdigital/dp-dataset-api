@@ -465,20 +465,74 @@ func ValidateDataset(ctx context.Context, dataset *Dataset) error {
 		}
 	}
 
+	if invalidFields != nil {
+		return fmt.Errorf("invalid fields: %v", invalidFields)
+	}
+
+	sanitisedPublications, publicationErrs := santisedGeneralDetails(dataset.Publications)
+	if len(publicationErrs) > 0 {
+		invalidFields = append(invalidFields, publicationErrs...)
+	}
+
+	dataset.Publications = sanitisedPublications
+
+	sanitisedRelatedDatasets, relatedDatasetsErr := santisedGeneralDetails(dataset.RelatedDatasets)
+	if len(relatedDatasetsErr) > 0 {
+		invalidFields = append(invalidFields, relatedDatasetsErr...)
+	}
+
+	dataset.RelatedDatasets = sanitisedRelatedDatasets
+
+	sanitisedMethodologies, methodologyErrs := santisedGeneralDetails(dataset.Methodologies)
+	if len(methodologyErrs) > 0 {
+		invalidFields = append(invalidFields, methodologyErrs...)
+	}
+
+	dataset.Methodologies = sanitisedMethodologies
+
 	// checks relevant fields within Dataset to ensure all HRef fields are valid
-	for _, list := range [][]GeneralDetails{dataset.Publications, dataset.RelatedDatasets, dataset.Methodologies} {
+/*	for _, list := range [][]GeneralDetails{dataset.Publications, dataset.RelatedDatasets, dataset.Methodologies} {
 		err := trimHref(ctx, list)
 		if err != nil {
 			invalidFields = append(invalidFields, "URI")
 			log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
 		}
-	}
+	}*/
 
 	if invalidFields != nil {
 		return fmt.Errorf("invalid fields: %v", invalidFields)
 	}
+
 	return nil
 
+}
+
+func santisedGeneralDetails(input []GeneralDetails) ([]GeneralDetails, []string) {
+	sanitisedDetails := make([]GeneralDetails, 0)
+	invalidFields := make([]string, 0)
+
+	for _, original := range input {
+		cleanHref := strings.TrimSpace(original.HRef)
+		_, err := url.Parse(cleanHref)
+		if err != nil {
+			invalidFields = append(invalidFields, "Href")
+			continue
+		}
+
+		cleanDetails := GeneralDetails{
+			Description: original.Description,
+			HRef:        cleanHref,
+			Title:       original.Title,
+		}
+
+		sanitisedDetails = append(sanitisedDetails, cleanDetails)
+	}
+
+	if len(invalidFields) > 0 {
+		return input, invalidFields
+	}
+
+	return sanitisedDetails, nil
 }
 
 func trimHref(ctx context.Context, generalDetails []GeneralDetails) error {
