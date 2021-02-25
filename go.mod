@@ -16,7 +16,6 @@ require (
 	github.com/benweissmann/memongo v0.1.1
 	github.com/cucumber/godog v0.10.0
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
-	github.com/go-delve/delve v1.6.0 // indirect
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/gorilla/mux v1.8.0
@@ -29,7 +28,6 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/smartystreets/goconvey v1.6.4
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.6.1
 	go.mongodb.org/mongo-driver v1.4.6
 	gopkg.in/avro.v0 v0.0.0-20171217001914-a730b5802183 // indirect

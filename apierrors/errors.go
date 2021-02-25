@@ -26,6 +26,7 @@ var (
 	ErrInternalServer                    = errors.New("internal error")
 	ErrInsertedObservationsInvalidSyntax = errors.New("inserted observation request parameter not an integer")
 	ErrInvalidQueryParameter             = errors.New("invalid query parameter")
+	ErrInvalidBody                       = errors.New("invalid request body")
 	ErrTooManyQueryParameters            = errors.New("too many query parameters have been provided")
 	ErrMetadataVersionNotFound           = errors.New("version not found")
 	ErrMissingJobProperties              = errors.New("missing job properties")
@@ -63,6 +64,7 @@ var (
 
 	BadRequestMap = map[error]bool{
 		ErrInsertedObservationsInvalidSyntax: true,
+		ErrInvalidBody:                       true,
 		ErrInvalidQueryParameter:             true,
 		ErrTooManyQueryParameters:            true,
 		ErrMissingJobProperties:              true,

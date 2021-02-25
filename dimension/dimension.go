@@ -3,8 +3,10 @@ package dimension
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
+	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	dphttp "github.com/ONSdigital/dp-net/http"
@@ -168,9 +170,8 @@ func (s *Store) add(ctx context.Context, instanceID string, option *models.Cache
 	return nil
 }
 
-// AddNodeIDHandler against a specific option for dimension
-func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
-
+// AddNodeIDAndOrderHandler against a specific option for dimension
+func (s *Store) AddNodeIDAndOrderHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
@@ -179,9 +180,38 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 	nodeID := vars["node_id"]
 	logData := log.Data{"instance_id": instanceID, "dimension": dimensionName, "option": option, "node_id": nodeID, "action": UpdateNodeIDAction}
 
-	dim := models.DimensionOption{Name: dimensionName, Option: option, NodeID: nodeID, InstanceID: instanceID}
+	var dim models.DimensionOption
+	var err error
 
-	if err := s.addNodeID(ctx, dim, logData); err != nil {
+	// read body bytes
+	b := []byte{}
+	if r.Body != nil {
+		b, err = ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Event(ctx, "failed to read request body", log.ERROR, log.Error(err), logData)
+			handleDimensionErr(ctx, w, err, logData)
+			return
+		}
+	}
+
+	// unmarshal body (if provided) to DimensionOption struct
+	if len(b) > 0 {
+		err = json.Unmarshal(b, &dim)
+		if err != nil {
+			log.Event(ctx, "failed to unmarshal request body to a DimensionOption struct", log.ERROR, log.Error(err), logData)
+			handleDimensionErr(ctx, w, apierrors.ErrInvalidBody, logData)
+			return
+		}
+	}
+
+	// override values that are provided as path parameters
+	dim.Name = dimensionName
+	dim.Option = option
+	dim.NodeID = nodeID
+	dim.InstanceID = instanceID
+
+	// update values in database
+	if err := s.addNodeIDAndOrder(ctx, dim, logData); err != nil {
 		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
@@ -190,7 +220,7 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 	log.Event(ctx, "added node id to dimension of an instance resource", log.INFO, logData)
 }
 
-func (s *Store) addNodeID(ctx context.Context, dim models.DimensionOption, logData log.Data) error {
+func (s *Store) addNodeIDAndOrder(ctx context.Context, dim models.DimensionOption, logData log.Data) error {
 	// Get instance
 	instance, err := s.GetInstance(dim.InstanceID)
 	if err != nil {
@@ -205,7 +235,7 @@ func (s *Store) addNodeID(ctx context.Context, dim models.DimensionOption, logDa
 		return err
 	}
 
-	if err := s.UpdateDimensionNodeID(&dim); err != nil {
+	if err := s.UpdateDimensionNodeIDAndOrder(&dim); err != nil {
 		log.Event(ctx, "failed to update a dimension of that instance", log.ERROR, log.Error(err), logData)
 		return err
 	}

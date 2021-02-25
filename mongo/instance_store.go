@@ -265,13 +265,19 @@ func (m *Mongo) AddEventToInstance(instanceID string, event *models.Event) error
 	return nil
 }
 
-// UpdateDimensionNodeID to cache the id for other import processes
-func (m *Mongo) UpdateDimensionNodeID(dimension *models.DimensionOption) error {
+// UpdateDimensionNodeIDAndOrder to cache the id and order (optional) for other import processes
+func (m *Mongo) UpdateDimensionNodeIDAndOrder(dimension *models.DimensionOption) error {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	err := s.DB(m.Database).C(dimensionOptions).Update(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name,
-		"option": dimension.Option}, bson.M{"$set": bson.M{"node_id": &dimension.NodeID, "last_updated": time.Now().UTC()}})
+	selector := bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name, "option": dimension.Option}
+
+	update := bson.M{"node_id": &dimension.NodeID, "last_updated": time.Now().UTC()}
+	if dimension.Order != nil {
+		update["order"] = &dimension.Order
+	}
+
+	err := s.DB(m.Database).C(dimensionOptions).Update(selector, bson.M{"$set": update})
 	if err == mgo.ErrNotFound {
 		return errs.ErrDimensionOptionNotFound
 	}

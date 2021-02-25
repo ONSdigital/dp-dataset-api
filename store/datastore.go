@@ -41,7 +41,7 @@ type dataMongoDB interface {
 	GetVersions(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error)
 	UpdateDataset(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
 	UpdateDatasetWithAssociation(ID, state string, version *models.Version) error
-	UpdateDimensionNodeID(dimension *models.DimensionOption) error
+	UpdateDimensionNodeIDAndOrder(dimension *models.DimensionOption) error
 	UpdateInstance(ctx context.Context, ID string, instance *models.Instance) error
 	UpdateObservationInserted(ID string, observationInserted int64) error
 	UpdateImportObservationsTaskState(id, state string) error

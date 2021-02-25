@@ -11,6 +11,14 @@ import (
 	"sync"
 )
 
+var (
+	lockGraphDBMockAddVersionDetailsToInstance sync.RWMutex
+	lockGraphDBMockChecker                     sync.RWMutex
+	lockGraphDBMockClose                       sync.RWMutex
+	lockGraphDBMockSetInstanceIsPublished      sync.RWMutex
+	lockGraphDBMockStreamCSVRows               sync.RWMutex
+)
+
 // Ensure, that GraphDBMock does implement store.GraphDB.
 // If this is not the case, regenerate this file with moq.
 var _ store.GraphDB = &GraphDBMock{}
@@ -106,11 +114,6 @@ type GraphDBMock struct {
 			Limit *int
 		}
 	}
-	lockAddVersionDetailsToInstance sync.RWMutex
-	lockChecker                     sync.RWMutex
-	lockClose                       sync.RWMutex
-	lockSetInstanceIsPublished      sync.RWMutex
-	lockStreamCSVRows               sync.RWMutex
 }
 
 // AddVersionDetailsToInstance calls AddVersionDetailsToInstanceFunc.
@@ -131,9 +134,9 @@ func (mock *GraphDBMock) AddVersionDetailsToInstance(ctx context.Context, instan
 		Edition:    edition,
 		Version:    version,
 	}
-	mock.lockAddVersionDetailsToInstance.Lock()
+	lockGraphDBMockAddVersionDetailsToInstance.Lock()
 	mock.calls.AddVersionDetailsToInstance = append(mock.calls.AddVersionDetailsToInstance, callInfo)
-	mock.lockAddVersionDetailsToInstance.Unlock()
+	lockGraphDBMockAddVersionDetailsToInstance.Unlock()
 	return mock.AddVersionDetailsToInstanceFunc(ctx, instanceID, datasetID, edition, version)
 }
 
@@ -154,9 +157,9 @@ func (mock *GraphDBMock) AddVersionDetailsToInstanceCalls() []struct {
 		Edition    string
 		Version    int
 	}
-	mock.lockAddVersionDetailsToInstance.RLock()
+	lockGraphDBMockAddVersionDetailsToInstance.RLock()
 	calls = mock.calls.AddVersionDetailsToInstance
-	mock.lockAddVersionDetailsToInstance.RUnlock()
+	lockGraphDBMockAddVersionDetailsToInstance.RUnlock()
 	return calls
 }
 
@@ -172,9 +175,9 @@ func (mock *GraphDBMock) Checker(in1 context.Context, in2 *healthcheck.CheckStat
 		In1: in1,
 		In2: in2,
 	}
-	mock.lockChecker.Lock()
+	lockGraphDBMockChecker.Lock()
 	mock.calls.Checker = append(mock.calls.Checker, callInfo)
-	mock.lockChecker.Unlock()
+	lockGraphDBMockChecker.Unlock()
 	return mock.CheckerFunc(in1, in2)
 }
 
@@ -189,9 +192,9 @@ func (mock *GraphDBMock) CheckerCalls() []struct {
 		In1 context.Context
 		In2 *healthcheck.CheckState
 	}
-	mock.lockChecker.RLock()
+	lockGraphDBMockChecker.RLock()
 	calls = mock.calls.Checker
-	mock.lockChecker.RUnlock()
+	lockGraphDBMockChecker.RUnlock()
 	return calls
 }
 
@@ -205,9 +208,9 @@ func (mock *GraphDBMock) Close(ctx context.Context) error {
 	}{
 		Ctx: ctx,
 	}
-	mock.lockClose.Lock()
+	lockGraphDBMockClose.Lock()
 	mock.calls.Close = append(mock.calls.Close, callInfo)
-	mock.lockClose.Unlock()
+	lockGraphDBMockClose.Unlock()
 	return mock.CloseFunc(ctx)
 }
 
@@ -220,9 +223,9 @@ func (mock *GraphDBMock) CloseCalls() []struct {
 	var calls []struct {
 		Ctx context.Context
 	}
-	mock.lockClose.RLock()
+	lockGraphDBMockClose.RLock()
 	calls = mock.calls.Close
-	mock.lockClose.RUnlock()
+	lockGraphDBMockClose.RUnlock()
 	return calls
 }
 
@@ -238,9 +241,9 @@ func (mock *GraphDBMock) SetInstanceIsPublished(ctx context.Context, instanceID 
 		Ctx:        ctx,
 		InstanceID: instanceID,
 	}
-	mock.lockSetInstanceIsPublished.Lock()
+	lockGraphDBMockSetInstanceIsPublished.Lock()
 	mock.calls.SetInstanceIsPublished = append(mock.calls.SetInstanceIsPublished, callInfo)
-	mock.lockSetInstanceIsPublished.Unlock()
+	lockGraphDBMockSetInstanceIsPublished.Unlock()
 	return mock.SetInstanceIsPublishedFunc(ctx, instanceID)
 }
 
@@ -255,9 +258,9 @@ func (mock *GraphDBMock) SetInstanceIsPublishedCalls() []struct {
 		Ctx        context.Context
 		InstanceID string
 	}
-	mock.lockSetInstanceIsPublished.RLock()
+	lockGraphDBMockSetInstanceIsPublished.RLock()
 	calls = mock.calls.SetInstanceIsPublished
-	mock.lockSetInstanceIsPublished.RUnlock()
+	lockGraphDBMockSetInstanceIsPublished.RUnlock()
 	return calls
 }
 
@@ -279,9 +282,9 @@ func (mock *GraphDBMock) StreamCSVRows(ctx context.Context, instanceID string, f
 		Filters:    filters,
 		Limit:      limit,
 	}
-	mock.lockStreamCSVRows.Lock()
+	lockGraphDBMockStreamCSVRows.Lock()
 	mock.calls.StreamCSVRows = append(mock.calls.StreamCSVRows, callInfo)
-	mock.lockStreamCSVRows.Unlock()
+	lockGraphDBMockStreamCSVRows.Unlock()
 	return mock.StreamCSVRowsFunc(ctx, instanceID, filterID, filters, limit)
 }
 
@@ -302,8 +305,8 @@ func (mock *GraphDBMock) StreamCSVRowsCalls() []struct {
 		Filters    *observation.DimensionFilters
 		Limit      *int
 	}
-	mock.lockStreamCSVRows.RLock()
+	lockGraphDBMockStreamCSVRows.RLock()
 	calls = mock.calls.StreamCSVRows
-	mock.lockStreamCSVRows.RUnlock()
+	lockGraphDBMockStreamCSVRows.RUnlock()
 	return calls
 }

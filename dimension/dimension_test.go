@@ -36,59 +36,134 @@ func createRequestWithToken(method, url string, body io.Reader) (*http.Request, 
 	return r, err
 }
 
+func validateDimensionUpdate(mockedDataStore *storetest.StorerMock, expected *models.DimensionOption) {
+	// Gets called twice as there is a check wrapper around this route which
+	// checks the instance is not published before entering handler
+	So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
+	So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, expected.InstanceID)
+	So(mockedDataStore.GetInstanceCalls()[1].ID, ShouldEqual, expected.InstanceID)
+
+	So(mockedDataStore.UpdateDimensionNodeIDAndOrderCalls(), ShouldHaveLength, 1)
+	So(mockedDataStore.UpdateDimensionNodeIDAndOrderCalls()[0].Dimension, ShouldResemble, expected)
+}
+
 func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 	t.Parallel()
-	Convey("Add node id to a dimension returns ok", t, func() {
-		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
-		So(err, ShouldBeNil)
 
+	Convey("Given a mocked Dataset API", t, func() {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{State: models.CreatedState}, nil
 			},
-			UpdateDimensionNodeIDFunc: func(event *models.DimensionOption) error {
+			UpdateDimensionNodeIDAndOrderFunc: func(event *models.DimensionOption) error {
 				return nil
 			},
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
-		datasetAPI.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusOK)
-		// Gets called twice as there is a check wrapper around this route which
-		// checks the instance is not published before entering handler
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 1)
+		Convey("Add node id without body returns ok", func() {
+			r, err := createRequestWithToken(http.MethodPut, "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
+			So(err, ShouldBeNil)
+
+			datasetAPI.Router.ServeHTTP(w, r)
+			So(w.Code, ShouldEqual, http.StatusOK)
+
+			Convey("And the expected database calls are performed to update nodeID", func() {
+				validateDimensionUpdate(mockedDataStore, &models.DimensionOption{
+					InstanceID: "123",
+					Name:       "age",
+					NodeID:     "11",
+					Option:     "55",
+					Order:      nil,
+				})
+			})
+		})
+
+		Convey("Add node id with order to a dimension (provided in request body) returns ok", func() {
+			body := strings.NewReader(`{"order": 0}`)
+			r, err := createRequestWithToken(http.MethodPut, "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", body)
+			So(err, ShouldBeNil)
+
+			datasetAPI.Router.ServeHTTP(w, r)
+			So(w.Code, ShouldEqual, http.StatusOK)
+
+			Convey("And the expected database calls are performed to update nodeID and order", func() {
+				expectedOrder := 0
+				validateDimensionUpdate(mockedDataStore, &models.DimensionOption{
+					InstanceID: "123",
+					Name:       "age",
+					NodeID:     "11",
+					Option:     "55",
+					Order:      &expectedOrder,
+				})
+			})
+		})
 	})
 }
 
-func TestAddNodeIDToDimensionReturnsBadRequest(t *testing.T) {
+func TestAddNodeIDToDimensionReturnsNotFound(t *testing.T) {
 	t.Parallel()
-	Convey("Add node id to a dimension returns bad request", t, func() {
-		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
-		So(err, ShouldBeNil)
 
+	Convey("Given a mocked Dataset API that fails to update dimension node ID due to DimensionNodeNotFound error", t, func() {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{State: models.CreatedState}, nil
 			},
-			UpdateDimensionNodeIDFunc: func(event *models.DimensionOption) error {
+			UpdateDimensionNodeIDAndOrderFunc: func(event *models.DimensionOption) error {
 				return errs.ErrDimensionNodeNotFound
 			},
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
-		datasetAPI.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		// Gets called twice as there is a check wrapper around this route which
-		// checks the instance is not published before entering handler
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 1)
+		Convey("Add node id to a dimension returns bad request", func() {
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
+			So(err, ShouldBeNil)
+
+			datasetAPI.Router.ServeHTTP(w, r)
+			So(w.Code, ShouldEqual, http.StatusNotFound)
+
+			Convey("And the expected database calls are performed to update nodeID", func() {
+				validateDimensionUpdate(mockedDataStore, &models.DimensionOption{
+					InstanceID: "123",
+					Name:       "age",
+					NodeID:     "11",
+					Option:     "55",
+					Order:      nil,
+				})
+			})
+		})
+	})
+}
+
+func TestAddNodeIDToDimensionReturnsBadRequest(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given an empty mocked Dataset API", t, func() {
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(ID string) (*models.Instance, error) {
+				return &models.Instance{State: models.CreatedState}, nil
+			},
+		}
+
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+
+		Convey("Add node id to a dimension with an invalid body returns bad request", func() {
+			body := strings.NewReader(`wrong`)
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", body)
+			So(err, ShouldBeNil)
+
+			datasetAPI.Router.ServeHTTP(w, r)
+			So(w.Code, ShouldEqual, http.StatusBadRequest)
+			So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		})
 	})
 }
 
@@ -111,7 +186,6 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 0)
 	})
 
 	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
@@ -133,7 +207,7 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateDimensionNodeIDAndOrderCalls()), ShouldEqual, 0)
 	})
 }
 
@@ -156,7 +230,7 @@ func TestAddNodeIDToDimensionReturnsForbidden(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateDimensionNodeIDAndOrderCalls()), ShouldEqual, 0)
 	})
 }
 
@@ -179,7 +253,7 @@ func TestAddNodeIDToDimensionReturnsUnauthorized(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpdateDimensionNodeIDCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateDimensionNodeIDAndOrderCalls()), ShouldEqual, 0)
 	})
 }
 

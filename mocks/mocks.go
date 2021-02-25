@@ -8,6 +8,10 @@ import (
 	"sync"
 )
 
+var (
+	lockDownloadsGeneratorMockGenerate sync.RWMutex
+)
+
 // DownloadsGeneratorMock is a mock implementation of api.DownloadsGenerator.
 //
 //     func TestSomethingThatUsesDownloadsGenerator(t *testing.T) {
@@ -43,7 +47,6 @@ type DownloadsGeneratorMock struct {
 			Version string
 		}
 	}
-	lockGenerate sync.RWMutex
 }
 
 // Generate calls GenerateFunc.
@@ -64,9 +67,9 @@ func (mock *DownloadsGeneratorMock) Generate(ctx context.Context, datasetID stri
 		Edition:    edition,
 		Version:    version,
 	}
-	mock.lockGenerate.Lock()
+	lockDownloadsGeneratorMockGenerate.Lock()
 	mock.calls.Generate = append(mock.calls.Generate, callInfo)
-	mock.lockGenerate.Unlock()
+	lockDownloadsGeneratorMockGenerate.Unlock()
 	return mock.GenerateFunc(ctx, datasetID, instanceID, edition, version)
 }
 
@@ -87,8 +90,8 @@ func (mock *DownloadsGeneratorMock) GenerateCalls() []struct {
 		Edition    string
 		Version    string
 	}
-	mock.lockGenerate.RLock()
+	lockDownloadsGeneratorMockGenerate.RLock()
 	calls = mock.calls.Generate
-	mock.lockGenerate.RUnlock()
+	lockDownloadsGeneratorMockGenerate.RUnlock()
 	return calls
 }
