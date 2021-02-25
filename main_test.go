@@ -4,7 +4,6 @@ import (
 	"flag"
 	"os"
 	"testing"
-	"time"
 
 	steps_test "github.com/ONSdigital/dp-dataset-api/features/steps"
 	featuretest "github.com/armakuni/dp-go-featuretest"
@@ -16,7 +15,6 @@ import (
 const MongoVersion = "4.0.23"
 const MongoPort = 27017
 const DatabaseName = "testing"
-const Timeout = 10 * time.Second
 
 var componentFlag = flag.Bool("component", false, "perform component tests")
 
@@ -52,7 +50,7 @@ func (f *FeatureTest) InitializeScenario(ctx *godog.ScenarioContext) {
 
 func (f *FeatureTest) InitializeTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
-		f.MongoFeature = featuretest.NewMongoFeature(featuretest.MongoOptions{Port: MongoPort, MongoVersion: MongoVersion, DatabaseName: DatabaseName, StartupTimeout: Timeout})
+		f.MongoFeature = featuretest.NewMongoFeature(featuretest.MongoOptions{Port: MongoPort, MongoVersion: MongoVersion, DatabaseName: DatabaseName})
 	})
 	ctx.AfterSuite(func() {
 		f.MongoFeature.Close()
