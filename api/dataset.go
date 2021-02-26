@@ -327,6 +327,14 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 				return err
 			}
 		} else {
+			if err := models.CleanDataset(dataset); err != nil {
+				log.Event(ctx, "could not clean dataset", log.ERROR, log.Error(err))
+				return nil
+			}
+			if err := models.ValidateDataset(dataset); err != nil {
+				log.Event(ctx, "failed validation check to update dataset", log.ERROR, log.Error(err))
+				return nil
+			}
 			if err := api.dataStore.Backend.UpdateDataset(ctx, datasetID, dataset, currentDataset.Next.State); err != nil {
 				log.Event(ctx, "putDataset endpoint: failed to update dataset resource", log.ERROR, log.Error(err), data)
 				return err

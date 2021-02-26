@@ -13,15 +13,30 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+const (
+	validURI  = "http://localhost:22000/datasets/123"
+	validHref = "http://localhost:22000//datasets/href"
+)
+
 func createDataset() Dataset {
 	return Dataset{
 		ID:  "123",
-		URI: "http://localhost:22000/datasets/123",
-		Publications: []GeneralDetails{
-			{Description: "some publication description"},
-			{HRef: "http://localhost:22000//datasets/publications"},
-			{Title: "some publication title"},
-		},
+		URI: validURI,
+		Publications: []GeneralDetails{{
+			Description: "some publication description",
+			HRef:        validHref,
+			Title:       "some publication title",
+		}},
+		Methodologies: []GeneralDetails{{
+			Description: "some methodologies description",
+			HRef:        validHref,
+			Title:       "some publication title",
+		}},
+		RelatedDatasets: []GeneralDetails{{
+			Description: "some related datasets description",
+			HRef:        validHref,
+			Title:       "some publication title",
+		}},
 	}
 
 }
@@ -205,8 +220,119 @@ func TestCreateVersion(t *testing.T) {
 	})
 }
 
+func TestCleanDataset(t *testing.T) {
+	t.Parallel()
+
+	Convey("A clean dataset stays unmodified", t, func() {
+		Convey("When a clean dataset is cleaned, the URI and hrefs stay the same", func() {
+			dataset := createDataset()
+			cleanErr := CleanDataset(&dataset)
+			So(cleanErr, ShouldBeNil)
+			So(dataset.URI, ShouldEqual, validURI)
+			So(dataset.Publications, ShouldHaveLength, 1)
+			So(dataset.Publications[0].HRef, ShouldEqual, validHref)
+		})
+	})
+
+	Convey("A dirty dataset is cleaned", t, func() {
+		Convey("When a dataset URI has leading space it is trimmed", func() {
+			dataset := createDataset()
+			dataset.URI = "    " + validURI
+			cleanErr := CleanDataset(&dataset)
+			So(cleanErr, ShouldBeNil)
+			So(dataset.URI, ShouldEqual, validURI)
+		})
+
+		Convey("When a dataset URI has trailing space it is trimmed", func() {
+			dataset := createDataset()
+			dataset.URI = validURI + "     "
+			cleanErr := CleanDataset(&dataset)
+			So(cleanErr, ShouldBeNil)
+			So(dataset.URI, ShouldEqual, validURI)
+		})
+
+		Convey("When a Publications HRef has whitespace it is trimmed", func() {
+			dataset := createDataset()
+			dataset.Publications[0].HRef = "    " + validHref
+			cleanErr := CleanDataset(&dataset)
+			So(cleanErr, ShouldBeNil)
+			So(dataset.Publications, ShouldHaveLength, 1)
+			So(dataset.Publications[0].HRef, ShouldEqual, validHref)
+		})
+
+		Convey("When two Publications HRef's have whitespace they are trimmed", func() {
+			dataset := createDataset()
+			dataset.Publications[0].HRef = "    " + validHref
+			dataset.Publications = append(dataset.Publications, GeneralDetails{HRef: validHref + "    "})
+			cleanErr := CleanDataset(&dataset)
+			So(cleanErr, ShouldBeNil)
+			So(dataset.Publications, ShouldHaveLength, 2)
+			So(dataset.Publications[0].HRef, ShouldEqual, validHref)
+			So(dataset.Publications[1].HRef, ShouldEqual, validHref)
+		})
+
+		Convey("When a Methodologies HRef has whitespace it is trimmed", func() {
+			dataset := createDataset()
+			dataset.Methodologies[0].HRef = "    " + validHref
+			cleanErr := CleanDataset(&dataset)
+			So(cleanErr, ShouldBeNil)
+			So(dataset.Methodologies, ShouldHaveLength, 1)
+			So(dataset.Methodologies[0].HRef, ShouldEqual, validHref)
+		})
+
+		Convey("When two Methodologies HRef's have whitespace they are trimmed", func() {
+			dataset := createDataset()
+			dataset.Methodologies[0].HRef = "    " + validHref
+			dataset.Methodologies = append(dataset.Methodologies, GeneralDetails{HRef: validHref + "    "})
+			cleanErr := CleanDataset(&dataset)
+			So(cleanErr, ShouldBeNil)
+			So(dataset.Methodologies, ShouldHaveLength, 2)
+			So(dataset.Methodologies[0].HRef, ShouldEqual, validHref)
+			So(dataset.Methodologies[1].HRef, ShouldEqual, validHref)
+		})
+
+		Convey("When a RelatedDatasets HRef has whitespace it is trimmed", func() {
+			dataset := createDataset()
+			dataset.RelatedDatasets[0].HRef = "    " + validHref
+			cleanErr := CleanDataset(&dataset)
+			So(cleanErr, ShouldBeNil)
+			So(dataset.RelatedDatasets, ShouldHaveLength, 1)
+			So(dataset.RelatedDatasets[0].HRef, ShouldEqual, validHref)
+		})
+
+		Convey("When two RelatedDatasets HRef's have whitespace they are trimmed", func() {
+			dataset := createDataset()
+			dataset.RelatedDatasets[0].HRef = "    " + validHref
+			dataset.RelatedDatasets = append(dataset.RelatedDatasets, GeneralDetails{HRef: validHref + "    "})
+			cleanErr := CleanDataset(&dataset)
+			So(cleanErr, ShouldBeNil)
+			So(dataset.RelatedDatasets, ShouldHaveLength, 2)
+			So(dataset.RelatedDatasets[0].HRef, ShouldEqual, validHref)
+			So(dataset.RelatedDatasets[1].HRef, ShouldEqual, validHref)
+		})
+
+	})
+
+	Convey("A nil dataset errors when cleaned", t, func() {
+		Convey("A nil dataset returns an error", func() {
+			cleanErr := CleanDataset(nil)
+			So(cleanErr, ShouldNotBeNil)
+			So(cleanErr.Error(), ShouldResemble, errors.New("clean dataset called without a valid dataset").Error())
+		})
+	})
+}
+
 func TestValidateDataset(t *testing.T) {
 	t.Parallel()
+
+	Convey("Successful validation (true) returned", t, func() {
+
+		Convey("when dataset.URI contains its path in appropriate url format ", func() {
+			dataset := createDataset()
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldBeNil)
+		})
+	})
 
 	Convey("Unsuccessful validation (false) returned", t, func() {
 
@@ -214,48 +340,11 @@ func TestValidateDataset(t *testing.T) {
 			dataset := createDataset()
 			dataset.URI = ":foo"
 			fmt.Println(dataset.URI)
-			validationErr := ValidateDataset(testContext, &dataset)
+			validationErr := ValidateDataset(&dataset)
 			So(validationErr, ShouldNotBeNil)
 			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
 		})
 
-	})
-
-	Convey("Successful validation (true) returned", t, func() {
-
-		Convey("when dataset.URI contains its path in appropriate url format ", func() {
-			dataset := createDataset()
-			dataset.ID = "123"
-			dataset.URI = "http://localhost:22000/datasets/123/breadcrumbs"
-			validationErr := ValidateDataset(testContext, &dataset)
-			So(validationErr, ShouldBeNil)
-		})
-	})
-
-	Convey("Successful validation (true) returned", t, func() {
-
-		Convey("when dataset.URI contains whitespace it should not return an error ", func() {
-			dataset := createDataset()
-			dataset.ID = "123"
-			dataset.URI = "  http://localhost:22000/datasets/123/breadcrumbs  "
-			validationErr := ValidateDataset(testContext, &dataset)
-			So(validationErr, ShouldBeNil)
-			So(dataset.URI, ShouldEqual, "http://localhost:22000/datasets/123/breadcrumbs")
-		})
-	})
-
-	Convey("Successful validation (true) returned", t, func() {
-
-		Convey("when GeneralDetails.href contains whitespace it should not return an error ", func() {
-			dataset := createDataset()
-			dataset.ID = "123"
-			generalDetails := &dataset.Publications[1]
-			generalDetails.HRef = "  http://localhost:22000//datasets/publications  " // duplicate for each field being validated.
-			validationErr := ValidateDataset(testContext, &dataset)
-			So(validationErr, ShouldBeNil)
-			So(dataset.Publications[1].HRef, ShouldResemble, "http://localhost:22000//datasets/publications") //validate the entire Publication object not just the URI.
-			// validate the expected number of publications == expected count
-		})
 	})
 
 }

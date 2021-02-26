@@ -452,52 +452,43 @@ func (ed *EditionUpdate) PublishLinks(ctx context.Context, host string, versionL
 	return nil
 }
 
+// CleanDataset trims any hrefs contained in the database
+func CleanDataset(dataset *Dataset) error {
+	if dataset == nil {
+		return errors.New("clean dataset called without a valid dataset")
+	}
+	dataset.URI = strings.TrimSpace(dataset.URI)
+
+	for i := range dataset.Publications {
+		dataset.Publications[i].HRef = strings.TrimSpace(dataset.Publications[i].HRef)
+	}
+
+	for i := range dataset.Methodologies {
+		dataset.Methodologies[i].HRef = strings.TrimSpace(dataset.Methodologies[i].HRef)
+	}
+
+	for i := range dataset.RelatedDatasets {
+		dataset.RelatedDatasets[i].HRef = strings.TrimSpace(dataset.RelatedDatasets[i].HRef)
+	}
+	return nil
+}
+
 // ValidateDataset checks the dataset has invalid fields
-func ValidateDataset(ctx context.Context, dataset *Dataset) error {
+func ValidateDataset(dataset *Dataset) error {
 
 	var invalidFields []string
 	if dataset.URI != "" {
-		dataset.URI = strings.TrimSpace(dataset.URI)
 		_, err := url.Parse(dataset.URI)
 		if err != nil {
 			invalidFields = append(invalidFields, "URI")
-			log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
 		}
 	}
 
-	if invalidFields != nil {
-		return fmt.Errorf("invalid fields: %v", invalidFields)
-	}
+	invalidFields = append(invalidFields, validateGeneralDetails(dataset.Publications, "Publications")...)
 
-	sanitisedPublications, publicationErrs := santisedGeneralDetails(dataset.Publications)
-	if len(publicationErrs) > 0 {
-		invalidFields = append(invalidFields, publicationErrs...)
-	}
+	invalidFields = append(invalidFields, validateGeneralDetails(dataset.RelatedDatasets, "RelatedDatasets")...)
 
-	dataset.Publications = sanitisedPublications
-
-	sanitisedRelatedDatasets, relatedDatasetsErr := santisedGeneralDetails(dataset.RelatedDatasets)
-	if len(relatedDatasetsErr) > 0 {
-		invalidFields = append(invalidFields, relatedDatasetsErr...)
-	}
-
-	dataset.RelatedDatasets = sanitisedRelatedDatasets
-
-	sanitisedMethodologies, methodologyErrs := santisedGeneralDetails(dataset.Methodologies)
-	if len(methodologyErrs) > 0 {
-		invalidFields = append(invalidFields, methodologyErrs...)
-	}
-
-	dataset.Methodologies = sanitisedMethodologies
-
-	// checks relevant fields within Dataset to ensure all HRef fields are valid
-/*	for _, list := range [][]GeneralDetails{dataset.Publications, dataset.RelatedDatasets, dataset.Methodologies} {
-		err := trimHref(ctx, list)
-		if err != nil {
-			invalidFields = append(invalidFields, "URI")
-			log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
-		}
-	}*/
+	invalidFields = append(invalidFields, validateGeneralDetails(dataset.Methodologies, "Methodologies")...)
 
 	if invalidFields != nil {
 		return fmt.Errorf("invalid fields: %v", invalidFields)
@@ -507,32 +498,15 @@ func ValidateDataset(ctx context.Context, dataset *Dataset) error {
 
 }
 
-func santisedGeneralDetails(input []GeneralDetails) ([]GeneralDetails, []string) {
-	sanitisedDetails := make([]GeneralDetails, 0)
-	invalidFields := make([]string, 0)
-
-	for _, original := range input {
-		cleanHref := strings.TrimSpace(original.HRef)
-		_, err := url.Parse(cleanHref)
+func validateGeneralDetails(generalDetails []GeneralDetails, identifier string) (invalidFields []string) {
+	for i, gd := range generalDetails {
+		_, err := url.Parse(gd.HRef)
 		if err != nil {
-			invalidFields = append(invalidFields, "Href")
+			invalidFields = append(invalidFields, fmt.Sprintf("%s[%d].HRef", identifier, i))
 			continue
 		}
-
-		cleanDetails := GeneralDetails{
-			Description: original.Description,
-			HRef:        cleanHref,
-			Title:       original.Title,
-		}
-
-		sanitisedDetails = append(sanitisedDetails, cleanDetails)
 	}
-
-	if len(invalidFields) > 0 {
-		return input, invalidFields
-	}
-
-	return sanitisedDetails, nil
+	return
 }
 
 func trimHref(ctx context.Context, generalDetails []GeneralDetails) error {
