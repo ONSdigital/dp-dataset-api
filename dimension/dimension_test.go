@@ -207,7 +207,6 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateDimensionNodeIDAndOrderCalls()), ShouldEqual, 0)
 	})
 }
 
@@ -230,7 +229,6 @@ func TestAddNodeIDToDimensionReturnsForbidden(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateDimensionNodeIDAndOrderCalls()), ShouldEqual, 0)
 	})
 }
 
@@ -253,7 +251,6 @@ func TestAddNodeIDToDimensionReturnsUnauthorized(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpdateDimensionNodeIDAndOrderCalls()), ShouldEqual, 0)
 	})
 }
 
