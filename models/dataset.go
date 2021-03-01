@@ -452,7 +452,7 @@ func (ed *EditionUpdate) PublishLinks(ctx context.Context, host string, versionL
 	return nil
 }
 
-// CleanDataset trims any hrefs contained in the database
+// CleanDataset trims URI and any hrefs contained in the database
 func CleanDataset(dataset *Dataset) error {
 	if dataset == nil {
 		return errors.New("clean dataset called without a valid dataset")
@@ -503,26 +503,9 @@ func validateGeneralDetails(generalDetails []GeneralDetails, identifier string) 
 		_, err := url.Parse(gd.HRef)
 		if err != nil {
 			invalidFields = append(invalidFields, fmt.Sprintf("%s[%d].HRef", identifier, i))
-			continue
 		}
 	}
 	return
-}
-
-func trimHref(ctx context.Context, generalDetails []GeneralDetails) error {
-	var invalidFields []string
-	for i := range generalDetails {
-		details := &generalDetails[i]
-		details.HRef = strings.TrimSpace(details.HRef)
-		generalDetails[i] = *details
-		_, err := url.Parse(generalDetails[i].HRef)
-		if err != nil {
-			invalidFields = append(invalidFields, "URI")
-			log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
-		}
-
-	}
-	return nil
 }
 
 // ValidateDatasetType checks the dataset.type field has valid type

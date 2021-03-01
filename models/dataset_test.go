@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	validURI  = "http://localhost:22000/datasets/123"
-	validHref = "http://localhost:22000//datasets/href"
+	validURI    = "http://localhost:22000/datasets/123"
+	validHref   = "http://localhost:22000//datasets/href"
+	invalidHref = ":invalid"
 )
 
 func createDataset() Dataset {
@@ -313,7 +314,7 @@ func TestCleanDataset(t *testing.T) {
 
 	})
 
-	Convey("A nil dataset errors when cleaned", t, func() {
+	Convey("A nil dataset returns an error when cleaned", t, func() {
 		Convey("A nil dataset returns an error", func() {
 			cleanErr := CleanDataset(nil)
 			So(cleanErr, ShouldNotBeNil)
@@ -343,6 +344,41 @@ func TestValidateDataset(t *testing.T) {
 			validationErr := ValidateDataset(&dataset)
 			So(validationErr, ShouldNotBeNil)
 			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
+		})
+
+		Convey("when Publications href is unable to be parsed into url format", func() {
+			dataset := createDataset()
+			dataset.Publications[0].HRef = invalidHref
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldNotBeNil)
+			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [Publications[0].HRef]").Error())
+		})
+
+		Convey("when Methodologies href is unable to be parsed into url format", func() {
+			dataset := createDataset()
+			dataset.Methodologies[0].HRef = invalidHref
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldNotBeNil)
+			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [Methodologies[0].HRef]").Error())
+		})
+
+		Convey("when RelatedDatasets href is unable to be parsed into url format", func() {
+			dataset := createDataset()
+			dataset.RelatedDatasets[0].HRef = invalidHref
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldNotBeNil)
+			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [RelatedDatasets[0].HRef]").Error())
+		})
+
+		Convey("when all href and URI fields are unable to be parsed into url format", func() {
+			dataset := createDataset()
+			dataset.URI = invalidHref
+			dataset.Publications[0].HRef = invalidHref
+			dataset.Methodologies[0].HRef = invalidHref
+			dataset.RelatedDatasets[0].HRef = invalidHref
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldNotBeNil)
+			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI Publications[0].HRef RelatedDatasets[0].HRef Methodologies[0].HRef]").Error())
 		})
 
 	})
