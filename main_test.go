@@ -11,7 +11,8 @@ import (
 	"github.com/cucumber/godog/colors"
 )
 
-const MongoVersion = "4.0.5"
+// Mongo version here is overridden in the pipeline by the URL provided in the component.sh
+const MongoVersion = "4.0.23"
 const MongoPort = 27017
 const DatabaseName = "testing"
 
