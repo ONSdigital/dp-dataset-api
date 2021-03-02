@@ -12,7 +12,7 @@ require (
 	github.com/ONSdigital/dp-net v1.0.11
 	github.com/ONSdigital/go-ns v0.0.0-20200902154605-290c8b5ba5eb
 	github.com/ONSdigital/log.go v1.0.1
-	github.com/armakuni/dp-go-featuretest v0.0.0-20210211154136-f4f263cb8559
+	github.com/armakuni/dp-go-featuretest v0.0.0-20210225121618-47aebd5e92b6
 	github.com/benweissmann/memongo v0.1.1
 	github.com/cucumber/godog v0.10.0
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
