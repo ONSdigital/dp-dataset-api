@@ -20,27 +20,37 @@ var (
 
 func TestBuildEditionsQuery(t *testing.T) {
 	t.Parallel()
-	Convey("When no state was set", t, func() {
-
-		expectedSelector := bson.M{
-			"next.links.dataset.id": id,
-		}
-
-		selector := buildEditionsQuery(id, "")
+	Convey("When no state was set and the request is authorised then the selector only queries by id", t, func() {
+		selector := buildEditionsQuery(id, "", true)
 		So(selector, ShouldNotBeNil)
-		So(selector, ShouldResemble, expectedSelector)
+		So(selector, ShouldHaveLength, 1)
+		So(selector["next.links.dataset.id"], ShouldEqual, id)
 	})
 
-	Convey("When state was set to published", t, func() {
-
-		expectedSelector := bson.M{
-			"current.links.dataset.id": id,
-			"current.state":            state,
-		}
-
-		selector := buildEditionsQuery(id, state)
+	Convey("When no state was set and the request is not authorised then the selector queries by id and current must exist", t, func() {
+		selector := buildEditionsQuery(id, "", false)
 		So(selector, ShouldNotBeNil)
-		So(selector, ShouldResemble, expectedSelector)
+		So(selector, ShouldHaveLength, 2)
+		So(selector["next.links.dataset.id"], ShouldEqual, id)
+		So(selector["current"], ShouldResemble, bson.M{"$exists": true})
+
+	})
+
+	Convey("When state was set to published and request is authorised then the selector queries by id and state", t, func() {
+		selector := buildEditionsQuery(id, state, true)
+		So(selector, ShouldNotBeNil)
+		So(selector, ShouldHaveLength, 2)
+		So(selector["next.links.dataset.id"], ShouldEqual, id)
+		So(selector["current.state"], ShouldEqual, state)
+	})
+
+	Convey("When state was set to published and request is not authorised then the selector queries by id, state and current must exist", t, func() {
+		selector := buildEditionsQuery(id, state, false)
+		So(selector, ShouldNotBeNil)
+		So(selector, ShouldHaveLength, 3)
+		So(selector["next.links.dataset.id"], ShouldEqual, id)
+		So(selector["current.state"], ShouldEqual, state)
+		So(selector["current"], ShouldResemble, bson.M{"$exists": true})
 	})
 }
 

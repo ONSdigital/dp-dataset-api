@@ -5,18 +5,8 @@ package mock
 
 import (
 	"context"
-	"github.com/ONSdigital/dp-dataset-api/service"
 	"sync"
 )
-
-var (
-	lockHTTPServerMockListenAndServe sync.RWMutex
-	lockHTTPServerMockShutdown       sync.RWMutex
-)
-
-// Ensure, that HTTPServerMock does implement service.HTTPServer.
-// If this is not the case, regenerate this file with moq.
-var _ service.HTTPServer = &HTTPServerMock{}
 
 // HTTPServerMock is a mock implementation of service.HTTPServer.
 //
@@ -54,6 +44,8 @@ type HTTPServerMock struct {
 			Ctx context.Context
 		}
 	}
+	lockListenAndServe sync.RWMutex
+	lockShutdown       sync.RWMutex
 }
 
 // ListenAndServe calls ListenAndServeFunc.
@@ -63,9 +55,9 @@ func (mock *HTTPServerMock) ListenAndServe() error {
 	}
 	callInfo := struct {
 	}{}
-	lockHTTPServerMockListenAndServe.Lock()
+	mock.lockListenAndServe.Lock()
 	mock.calls.ListenAndServe = append(mock.calls.ListenAndServe, callInfo)
-	lockHTTPServerMockListenAndServe.Unlock()
+	mock.lockListenAndServe.Unlock()
 	return mock.ListenAndServeFunc()
 }
 
@@ -76,9 +68,9 @@ func (mock *HTTPServerMock) ListenAndServeCalls() []struct {
 } {
 	var calls []struct {
 	}
-	lockHTTPServerMockListenAndServe.RLock()
+	mock.lockListenAndServe.RLock()
 	calls = mock.calls.ListenAndServe
-	lockHTTPServerMockListenAndServe.RUnlock()
+	mock.lockListenAndServe.RUnlock()
 	return calls
 }
 
@@ -92,9 +84,9 @@ func (mock *HTTPServerMock) Shutdown(ctx context.Context) error {
 	}{
 		Ctx: ctx,
 	}
-	lockHTTPServerMockShutdown.Lock()
+	mock.lockShutdown.Lock()
 	mock.calls.Shutdown = append(mock.calls.Shutdown, callInfo)
-	lockHTTPServerMockShutdown.Unlock()
+	mock.lockShutdown.Unlock()
 	return mock.ShutdownFunc(ctx)
 }
 
@@ -107,8 +99,8 @@ func (mock *HTTPServerMock) ShutdownCalls() []struct {
 	var calls []struct {
 		Ctx context.Context
 	}
-	lockHTTPServerMockShutdown.RLock()
+	mock.lockShutdown.RLock()
 	calls = mock.calls.Shutdown
-	lockHTTPServerMockShutdown.RUnlock()
+	mock.lockShutdown.RUnlock()
 	return calls
 }

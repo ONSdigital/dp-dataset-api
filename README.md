@@ -45,11 +45,13 @@ the path to get to `completed` is longer than the `submitted` one.
 
 ### Healthcheck
 
-The endpoint `/healthcheck` checks the connection to the database and returns
+The endpoint `/health` checks the connection to the database and returns
 one of:
 
 * success (200, JSON "status": "OK")
 * failure (500, JSON "status": "error").
+
+The `/health` endpoint replaces `/healthcheck`, which now returns a `404 Not Found` response.
 
 ### Kafka scripts
 
@@ -76,6 +78,9 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | DOWNLOAD_SERVICE_SECRET_KEY  | QB0108EZ-825D-412C-9B1D-41EF7747F462   | A key specific for the download service to access public/private links
 | ZEBEDEE_URL                  | http://localhost:8082                  | The host name for Zebedee
 | ENABLE_PERMISSIONS_AUTH      | false                                  | Enable/disable user/service permissions checking for private endpoints
+| DEFAULT_MAXIMUM_LIMIT        | 1000                                   | Default maximum limit for pagination
+| DEFAULT_LIMIT                | 20                                     | Default limit for pagination
+| DEFAULT_OFFSET               | 0                                      | Default offset for pagination
 
 ### Contributing
 
@@ -83,6 +88,6 @@ See [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 ### License
 
-Copyright © 2016-2018, Office for National Statistics (https://www.ons.gov.uk)
+Copyright © 2016-2021, Office for National Statistics (https://www.ons.gov.uk)
 
 Released under MIT license, see [LICENSE](LICENSE.md) for details

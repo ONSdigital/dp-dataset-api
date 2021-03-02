@@ -26,19 +26,19 @@ type dataMongoDB interface {
 	CheckDatasetExists(ID, state string) error
 	CheckEditionExists(ID, editionID, state string) error
 	GetDataset(ID string) (*models.DatasetUpdate, error)
-	GetDatasets(ctx context.Context) ([]models.DatasetUpdate, error)
+	GetDatasets(ctx context.Context, offset, limit int, authorised bool) (*models.DatasetUpdateResults, error)
 	GetDimensionsFromInstance(ID string) (*models.DimensionNodeResults, error)
 	GetDimensions(datasetID, versionID string) ([]bson.M, error)
 	GetDimensionOptions(version *models.Version, dimension string, offset, limit int) (*models.DimensionOptionResults, error)
 	GetDimensionOptionsFromIDs(version *models.Version, dimension string, ids []string) (*models.DimensionOptionResults, error)
 	GetEdition(ID, editionID, state string) (*models.EditionUpdate, error)
-	GetEditions(ctx context.Context, ID, state string) (*models.EditionUpdateResults, error)
-	GetInstances(ctx context.Context, states []string, datasets []string) (*models.InstanceResults, error)
+	GetEditions(ctx context.Context, ID, state string, offset, limit int, authorised bool) (*models.EditionUpdateResults, error)
+	GetInstances(ctx context.Context, states []string, datasets []string, offset, limit int) (*models.InstanceResults, error)
 	GetInstance(ID string) (*models.Instance, error)
 	GetNextVersion(datasetID, editionID string) (int, error)
 	GetUniqueDimensionAndOptions(ID, dimension string) (*models.DimensionValues, error)
 	GetVersion(datasetID, editionID, version, state string) (*models.Version, error)
-	GetVersions(ctx context.Context, datasetID, editionID, state string) (*models.VersionResults, error)
+	GetVersions(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error)
 	UpdateDataset(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
 	UpdateDatasetWithAssociation(ID, state string, version *models.Version) error
 	UpdateDimensionNodeID(dimension *models.DimensionOption) error

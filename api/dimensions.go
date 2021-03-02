@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
-	"strings"
+	"sort"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/mux"
@@ -30,6 +29,41 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 	edition := vars["edition"]
 	version := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "func": "getDimensions"}
+
+	offsetParameter := r.URL.Query().Get("offset")
+	limitParameter := r.URL.Query().Get("limit")
+
+	offset := api.defaultOffset
+	limit := api.defaultLimit
+	var err error
+
+	if offsetParameter != "" {
+		logData["offset"] = offsetParameter
+		offset, err = utils.ValidatePositiveInt(offsetParameter)
+		if err != nil {
+			log.Event(ctx, "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
+			handleDimensionsErr(ctx, w, "invalid query parameter: limit", err, logData)
+			return
+		}
+	}
+
+	if limitParameter != "" {
+		logData["limit"] = limitParameter
+		limit, err = utils.ValidatePositiveInt(limitParameter)
+		if err != nil {
+			log.Event(ctx, "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
+			handleDimensionsErr(ctx, w, "invalid query parameter: limit", err, logData)
+			return
+		}
+	}
+
+	if limit > api.maxLimit {
+		logData["max_limit"] = api.maxLimit
+		err = errs.ErrInvalidQueryParameter
+		log.Event(ctx, "limit is greater than the maximum allowed", log.ERROR, logData)
+		handleDimensionsErr(ctx, w, "unpublished version has an invalid state", err, logData)
+		return
+	}
 
 	b, err := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
@@ -57,13 +91,29 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		results, err := api.createListOfDimensions(versionDoc, dimensions)
-		if err != nil {
-			log.Event(ctx, "failed to convert bson to dimension", log.ERROR, log.Error(err), logData)
-			return nil, err
+		slicedResults := []models.Dimension{}
+
+		if limit > 0 {
+			results, err := api.createListOfDimensions(versionDoc, dimensions)
+			if err != nil {
+				log.Event(ctx, "failed to convert bson to dimension", log.ERROR, log.Error(err), logData)
+				return nil, err
+			}
+
+			sort.Slice(results, func(i, j int) bool {
+				return results[i].Name < results[j].Name
+			})
+
+			slicedResults = utils.Slice(results, offset, limit)
 		}
 
-		listOfDimensions := &models.DatasetDimensionResults{Items: results}
+		listOfDimensions := &models.DatasetDimensionResults{
+			Items:      slicedResults,
+			Offset:     offset,
+			Limit:      limit,
+			Count:      len(slicedResults),
+			TotalCount: len(dimensions),
+		}
 
 		b, err := json.Marshal(listOfDimensions)
 		if err != nil {
@@ -133,42 +183,6 @@ func convertBSONToDimensionOption(data interface{}) (*models.DimensionOption, er
 	return &dim, nil
 }
 
-// getPositiveIntQueryParameter obtains the positive int value of query var defined by the provided varKey
-func getPositiveIntQueryParameter(queryVars url.Values, varKey string, defaultValue int) (val int, err error) {
-	strVal, found := queryVars[varKey]
-	if !found {
-		return defaultValue, nil
-	}
-	val, err = strconv.Atoi(strVal[0])
-	if err != nil {
-		return -1, errs.ErrInvalidQueryParameter
-	}
-	if val < 0 {
-		return 0, nil
-	}
-	return val, nil
-}
-
-// getQueryParamListValues obtains a list of strings from the provided queryVars,
-// by parsing all values with key 'varKey' and splitting the values by commas, if they contain commas.
-// Up to maxNumItems values are allowed in total.
-func getQueryParamListValues(queryVars url.Values, varKey string, maxNumItems int) (items []string, err error) {
-	// get query parameters values for the provided key
-	values, found := queryVars[varKey]
-	if !found {
-		return []string{}, nil
-	}
-
-	// each value may contain a simple value or a list of values, in a comma-separated format
-	for _, value := range values {
-		items = append(items, strings.Split(value, ",")...)
-		if len(items) > maxNumItems {
-			return []string{}, errs.ErrTooManyQueryParameters
-		}
-	}
-	return items, nil
-}
-
 func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -176,6 +190,11 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	edition := vars["edition"]
 	versionID := vars["version"]
 	dimension := vars["dimension"]
+	offsetParameter := r.URL.Query().Get("offset")
+	limitParameter := r.URL.Query().Get("limit")
+
+	offset := api.defaultOffset
+	limit := api.defaultLimit
 
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension, "func": "getDimensionOptions"}
 	authorised := api.authenticate(r, logData)
@@ -186,31 +205,40 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	}
 
 	// get list of option IDs that we want to get
-	ids, err := getQueryParamListValues(r.URL.Query(), "id", MaxIDs())
+	ids, err := utils.GetQueryParamListValues(r.URL.Query(), "id", MaxIDs())
 	if err != nil {
 		logData["query_params"] = r.URL.RawQuery
 		handleDimensionsErr(ctx, w, "failed to obtain list of IDs from request query parameters", err, logData)
 		return
+
 	}
 
-	// if no list of IDs is provided, get offset and limit
-	var offset, limit int
-	if len(ids) == 0 {
-		// get limit from query parameters, or default value
-		limit, err = getPositiveIntQueryParameter(r.URL.Query(), "limit", api.defaultLimit)
+	if offsetParameter != "" {
+		logData["offset"] = offsetParameter
+		offset, err = utils.ValidatePositiveInt(offsetParameter)
 		if err != nil {
-			logData["query_params"] = r.URL.RawQuery
-			handleDimensionsErr(ctx, w, "failed to obtain limit from request query parameters", err, logData)
+			log.Event(ctx, "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
+			handleDimensionsErr(ctx, w, "invalid query parameter: limit", err, logData)
 			return
 		}
+	}
 
-		// get offset from query parameters, or default value
-		offset, err = getPositiveIntQueryParameter(r.URL.Query(), "offset", api.defaultOffset)
+	if limitParameter != "" {
+		logData["limit"] = limitParameter
+		limit, err = utils.ValidatePositiveInt(limitParameter)
 		if err != nil {
-			logData["query_params"] = r.URL.RawQuery
-			handleDimensionsErr(ctx, w, "failed to obtain offset from request query parameters", err, logData)
+			log.Event(ctx, "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
+			handleDimensionsErr(ctx, w, "invalid query parameter: limit", err, logData)
 			return
 		}
+	}
+
+	if limit > api.maxLimit {
+		logData["max_limit"] = api.maxLimit
+		err = errs.ErrInvalidQueryParameter
+		log.Event(ctx, "limit is greater than the maximum allowed", log.ERROR, logData)
+		handleDimensionsErr(ctx, w, "unpublished version has an invalid state", err, logData)
+		return
 	}
 
 	// ger version for provided dataset, edition and versionID

@@ -13,6 +13,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
@@ -25,6 +26,8 @@ type Store struct {
 	store.Storer
 	Host                string
 	EnableDetachDataset bool
+	DefaultOffset       int
+	DefaultLimit        int
 }
 
 type taskError struct {
@@ -44,9 +47,15 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	stateFilterQuery := r.URL.Query().Get("state")
 	datasetFilterQuery := r.URL.Query().Get("dataset")
+	offsetParameter := r.URL.Query().Get("offset")
+	limitParameter := r.URL.Query().Get("limit")
 	var stateFilterList []string
 	var datasetFilterList []string
 	logData := log.Data{}
+	var err error
+
+	offset := s.DefaultOffset
+	limit := s.DefaultLimit
 
 	if stateFilterQuery != "" {
 		logData["state_query"] = stateFilterQuery
@@ -56,6 +65,26 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 	if datasetFilterQuery != "" {
 		logData["dataset_query"] = datasetFilterQuery
 		datasetFilterList = strings.Split(datasetFilterQuery, ",")
+	}
+
+	if offsetParameter != "" {
+		logData["offset"] = offsetParameter
+		offset, err = utils.ValidatePositiveInt(offsetParameter)
+		if err != nil {
+			log.Event(ctx, "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
+			handleInstanceErr(ctx, err, w, nil)
+			return
+		}
+	}
+
+	if limitParameter != "" {
+		logData["limit"] = limitParameter
+		limit, err = utils.ValidatePositiveInt(limitParameter)
+		if err != nil {
+			log.Event(ctx, "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
+			handleInstanceErr(ctx, err, w, nil)
+			return
+		}
 	}
 
 	log.Event(ctx, "get list of instances", log.INFO, logData)
@@ -68,7 +97,7 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		results, err := s.GetInstances(ctx, stateFilterList, datasetFilterList)
+		results, err := s.GetInstances(ctx, stateFilterList, datasetFilterList, offset, limit)
 		if err != nil {
 			log.Event(ctx, "get instances: store.GetInstances returned and error", log.ERROR, log.Error(err), logData)
 			return nil, err

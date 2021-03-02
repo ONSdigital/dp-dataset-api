@@ -47,7 +47,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func(context.Context, []string, []string) (*models.InstanceResults, error) {
+					GetInstancesFunc: func(context.Context, []string, []string, int, int) (*models.InstanceResults, error) {
 						return &models.InstanceResults{}, nil
 					},
 				}
@@ -64,6 +64,32 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 			})
 		})
 
+		Convey("When the request includes offset and limit", func() {
+			Convey("Then return status ok (200)", func() {
+				r, err := createRequestWithToken("GET", "http://localhost:21800/instances?offset=1&limit=2", nil)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string, offset, limit int) (*models.InstanceResults, error) {
+						return &models.InstanceResults{}, nil
+					},
+				}
+
+				datasetPermissions := mocks.NewAuthHandlerMock()
+				permissions := mocks.NewAuthHandlerMock()
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+				So(permissions.Required.Calls, ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
+				So(mockedDataStore.GetInstancesCalls()[0].Limit, ShouldEqual, 2)
+				So(mockedDataStore.GetInstancesCalls()[0].Offset, ShouldEqual, 1)
+			})
+		})
+
 		Convey("When the request includes a filter by state of 'completed'", func() {
 			Convey("Then return status ok (200)", func() {
 				r, err := createRequestWithToken("GET", "http://localhost:21800/instances?state=completed", nil)
@@ -72,7 +98,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				var result []string
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string) (*models.InstanceResults, error) {
+					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string, offset, limit int) (*models.InstanceResults, error) {
 						result = state
 						return &models.InstanceResults{}, nil
 					},
@@ -99,7 +125,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				var result []string
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string) (*models.InstanceResults, error) {
+					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string, offset, limit int) (*models.InstanceResults, error) {
 						result = dataset
 						return &models.InstanceResults{}, nil
 					},
@@ -126,7 +152,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				var result []string
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string) (*models.InstanceResults, error) {
+					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string, offset, limit int) (*models.InstanceResults, error) {
 						result = state
 						return &models.InstanceResults{}, nil
 					},
@@ -153,7 +179,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				var result []string
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string) (*models.InstanceResults, error) {
+					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string, offset, limit int) (*models.InstanceResults, error) {
 						result = append(result, state...)
 						result = append(result, dataset...)
 						return &models.InstanceResults{}, nil
@@ -185,7 +211,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string) (*models.InstanceResults, error) {
+					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string, offset, limit int) (*models.InstanceResults, error) {
 						return nil, errs.ErrInternalServer
 					},
 				}
@@ -200,6 +226,40 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
+			})
+		})
+
+		Convey("When the request includes invalid offset and limit", func() {
+
+			mockedDataStore := &storetest.StorerMock{}
+			datasetPermissions := mocks.NewAuthHandlerMock()
+			permissions := mocks.NewAuthHandlerMock()
+			datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+			Convey("Then return status bad request (400) invalid offset", func() {
+				r, err := createRequestWithToken("GET", "http://localhost:21800/instances?offset=g", nil)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusBadRequest)
+				So(w.Body.String(), ShouldContainSubstring, "invalid query parameter")
+				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+				So(permissions.Required.Calls, ShouldEqual, 1)
+
+			})
+
+			Convey("Then return status bad request (400) invalid limit", func() {
+				r, err := createRequestWithToken("GET", "http://localhost:21800/instances?limit=o", nil)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusBadRequest)
+				So(w.Body.String(), ShouldContainSubstring, "invalid query parameter")
+				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+				So(permissions.Required.Calls, ShouldEqual, 1)
+
 			})
 		})
 

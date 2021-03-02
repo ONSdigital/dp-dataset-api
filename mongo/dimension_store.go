@@ -104,13 +104,16 @@ func (m *Mongo) GetDimensionOptions(version *models.Version, dimension string, o
 	}
 
 	var values []models.PublicDimensionOption
-	iter := q.Sort("option").Skip(offset).Limit(limit).Iter()
-	if err := iter.All(&values); err != nil {
-		return nil, err
-	}
 
-	for i := 0; i < len(values); i++ {
-		values[i].Links.Version = *version.Links.Self
+	if limit > 0 {
+		iter := q.Sort("option").Skip(offset).Limit(limit).Iter()
+		if err := iter.All(&values); err != nil {
+			return nil, err
+		}
+
+		for i := 0; i < len(values); i++ {
+			values[i].Links.Version = *version.Links.Self
+		}
 	}
 
 	return &models.DimensionOptionResults{
