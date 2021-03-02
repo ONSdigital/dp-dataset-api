@@ -332,10 +332,18 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.
 	)
 
 	api.put(
+		"/instances/{instance_id}/dimensions/{dimension}/options/{option}",
+		api.isAuthenticated(
+			api.isAuthorised(updatePermission,
+				api.isInstancePublished(dimensionAPI.PutOptionHandler))),
+	)
+
+	// Deprecated
+	api.put(
 		"/instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}",
 		api.isAuthenticated(
 			api.isAuthorised(updatePermission,
-				api.isInstancePublished(dimensionAPI.AddNodeIDAndOrderHandler))),
+				api.isInstancePublished(dimensionAPI.AddNodeIDHandler))),
 	)
 }
 

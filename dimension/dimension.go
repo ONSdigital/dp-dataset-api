@@ -170,48 +170,42 @@ func (s *Store) add(ctx context.Context, instanceID string, option *models.Cache
 	return nil
 }
 
-// AddNodeIDAndOrderHandler against a specific option for dimension
-func (s *Store) AddNodeIDAndOrderHandler(w http.ResponseWriter, r *http.Request) {
+// PutOptionHandler updates a dimension option according to the provided body
+func (s *Store) PutOptionHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
 	dimensionName := vars["dimension"]
 	option := vars["option"]
-	nodeID := vars["node_id"]
-	logData := log.Data{"instance_id": instanceID, "dimension": dimensionName, "option": option, "node_id": nodeID, "action": UpdateNodeIDAction}
+	logData := log.Data{"instance_id": instanceID, "dimension": dimensionName, "option": option}
 
-	var dim models.DimensionOption
+	var dimOption models.DimensionOption
 	var err error
 
 	// read body bytes
-	b := []byte{}
-	if r.Body != nil {
-		b, err = ioutil.ReadAll(r.Body)
-		if err != nil {
-			log.Event(ctx, "failed to read request body", log.ERROR, log.Error(err), logData)
-			handleDimensionErr(ctx, w, err, logData)
-			return
-		}
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Event(ctx, "failed to read request body", log.ERROR, log.Error(err), logData)
+		handleDimensionErr(ctx, w, err, logData)
+		return
 	}
 
-	// unmarshal body (if provided) to DimensionOption struct
-	if len(b) > 0 {
-		err = json.Unmarshal(b, &dim)
-		if err != nil {
-			log.Event(ctx, "failed to unmarshal request body to a DimensionOption struct", log.ERROR, log.Error(err), logData)
-			handleDimensionErr(ctx, w, apierrors.ErrInvalidBody, logData)
-			return
-		}
+	// unmarshal body to DimensionOption struct
+	err = json.Unmarshal(b, &dimOption)
+	if err != nil {
+		log.Event(ctx, "failed to unmarshal request body to a DimensionOption struct", log.ERROR, log.Error(err), logData)
+		handleDimensionErr(ctx, w, apierrors.ErrInvalidBody, logData)
+		return
 	}
 
 	// override values that are provided as path parameters
-	dim.Name = dimensionName
-	dim.Option = option
-	dim.NodeID = nodeID
-	dim.InstanceID = instanceID
+	dimOption.Name = dimensionName
+	dimOption.Option = option
+	dimOption.InstanceID = instanceID
+	logData["option"] = dimOption
 
 	// update values in database
-	if err := s.addNodeIDAndOrder(ctx, dim, logData); err != nil {
+	if err := s.updateOption(ctx, dimOption, logData); err != nil {
 		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
@@ -220,9 +214,33 @@ func (s *Store) AddNodeIDAndOrderHandler(w http.ResponseWriter, r *http.Request)
 	log.Event(ctx, "added node id to dimension of an instance resource", log.INFO, logData)
 }
 
-func (s *Store) addNodeIDAndOrder(ctx context.Context, dim models.DimensionOption, logData log.Data) error {
+// AddNodeIDHandler against a specific option for dimension
+// Deprecated: this method is superseded by PutOptionHandler
+func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	vars := mux.Vars(r)
+	instanceID := vars["instance_id"]
+	dimensionName := vars["dimension"]
+	option := vars["option"]
+	nodeID := vars["node_id"]
+	logData := log.Data{"instance_id": instanceID, "dimension": dimensionName, "option": option, "node_id": nodeID, "action": UpdateNodeIDAction}
+
+	dimOption := models.DimensionOption{Name: dimensionName, Option: option, NodeID: nodeID, InstanceID: instanceID}
+
+	if err := s.updateOption(ctx, dimOption, logData); err != nil {
+		handleDimensionErr(ctx, w, err, logData)
+		return
+	}
+
+	logData["action"] = AddDimensionAction
+	log.Event(ctx, "added node id to dimension of an instance resource", log.INFO, logData)
+}
+
+// updateOption checks that the instance is in a valid state
+// and then updates nodeID and order (if provided) to the provided dimension option
+func (s *Store) updateOption(ctx context.Context, dimOption models.DimensionOption, logData log.Data) error {
 	// Get instance
-	instance, err := s.GetInstance(dim.InstanceID)
+	instance, err := s.GetInstance(dimOption.InstanceID)
 	if err != nil {
 		log.Event(ctx, "failed to get instance", log.ERROR, log.Error(err), logData)
 		return err
@@ -235,7 +253,7 @@ func (s *Store) addNodeIDAndOrder(ctx context.Context, dim models.DimensionOptio
 		return err
 	}
 
-	if err := s.UpdateDimensionNodeIDAndOrder(&dim); err != nil {
+	if err := s.UpdateDimensionNodeIDAndOrder(&dimOption); err != nil {
 		log.Event(ctx, "failed to update a dimension of that instance", log.ERROR, log.Error(err), logData)
 		return err
 	}
