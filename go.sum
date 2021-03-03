@@ -20,6 +20,8 @@ github.com/ONSdigital/dp-api-clients-go v1.33.6 h1:RsVZ7a5Z8tpUpe6ARA2+XmdbG8BAY
 github.com/ONSdigital/dp-api-clients-go v1.33.6/go.mod h1:0pUK3MN1v7DTjq0JSAD+DqbsZ8AVTodrXSXgJecg9Pw=
 github.com/ONSdigital/dp-authorisation v0.1.0 h1:HzYwJdvk7ZAeB56KMAH6MP5+5uZuuJnEyGq6CViDoCg=
 github.com/ONSdigital/dp-authorisation v0.1.0/go.mod h1:rT81tcvWto5/cUWUFd0Q6gTqBoRfQmD6Qp0sq7FyiMg=
+github.com/ONSdigital/dp-component-test v0.2.0 h1:lg1oc9k/xS7QgYhYi5cKBKmgqqDkHBae9xi05RzzaZQ=
+github.com/ONSdigital/dp-component-test v0.2.0/go.mod h1:Y2TANFmqH9mk8ZERD22jWncSJyTxU0WmfnMp9EWPJb4=
 github.com/ONSdigital/dp-frontend-models v1.1.0/go.mod h1:TT96P7Mi69N3Tc/jFNdbjiwG4GAaMjP26HLotFQ6BPw=
 github.com/ONSdigital/dp-graph/v2 v2.7.1 h1:ImT0XxDiAcyXlfj+AnBQ4tFnhfZ/svmSiTEgvA0iNic=
 github.com/ONSdigital/dp-graph/v2 v2.7.1/go.mod h1:rblOFvTT+lMas8Y2DvoQdDL/6/EyfLLjnvL1rJnpPgg=
