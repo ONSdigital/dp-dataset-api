@@ -48,6 +48,7 @@ type CachedDimensionOption struct {
 	Name       string `bson:"name,omitempty"           json:"dimension"`
 	NodeID     string `bson:"node_id,omitempty"        json:"node_id"`
 	Option     string `bson:"option,omitempty"         json:"option"`
+	Order      *int   `bson:"order,omitempty"          json:"order"`
 }
 
 // DimensionOption contains unique information and metadata used when processing the data

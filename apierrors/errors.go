@@ -4,6 +4,15 @@ import (
 	"errors"
 )
 
+// ErrInvalidPatch represents an error due to an invalid HTTP PATCH request
+type ErrInvalidPatch struct {
+	Msg string
+}
+
+func (e ErrInvalidPatch) Error() string {
+	return e.Msg
+}
+
 // A list of error messages for Dataset API
 var (
 	ErrAddDatasetAlreadyExists           = errors.New("forbidden - dataset already exists")

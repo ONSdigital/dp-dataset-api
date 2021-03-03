@@ -331,11 +331,11 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.
 				dimensionAPI.GetUniqueDimensionAndOptionsHandler)),
 	)
 
-	api.put(
+	api.patch(
 		"/instances/{instance_id}/dimensions/{dimension}/options/{option}",
 		api.isAuthenticated(
 			api.isAuthorised(updatePermission,
-				api.isInstancePublished(dimensionAPI.PutOptionHandler))),
+				api.isInstancePublished(dimensionAPI.PatchOptionHandler))),
 	)
 
 	// Deprecated
@@ -381,22 +381,27 @@ func (api *DatasetAPI) isVersionPublished(action string, handler http.HandlerFun
 	return api.versionPublishedChecker.Check(handler, action)
 }
 
-// get register a GET http.HandlerFunc.
+// get registers a GET http.HandlerFunc.
 func (api *DatasetAPI) get(path string, handler http.HandlerFunc) {
 	api.Router.HandleFunc(path, handler).Methods("GET")
 }
 
-// get register a PUT http.HandlerFunc.
+// put registers a PUT http.HandlerFunc.
 func (api *DatasetAPI) put(path string, handler http.HandlerFunc) {
 	api.Router.HandleFunc(path, handler).Methods("PUT")
 }
 
-// get register a POST http.HandlerFunc.
+// patch registers a PATCH http.HandlerFunc
+func (api *DatasetAPI) patch(path string, handler http.HandlerFunc) {
+	api.Router.HandleFunc(path, handler).Methods("PATCH")
+}
+
+// post registers a POST http.HandlerFunc.
 func (api *DatasetAPI) post(path string, handler http.HandlerFunc) {
 	api.Router.HandleFunc(path, handler).Methods("POST")
 }
 
-// get register a DELETE http.HandlerFunc.
+// delete registers a DELETE http.HandlerFunc.
 func (api *DatasetAPI) delete(path string, handler http.HandlerFunc) {
 	api.Router.HandleFunc(path, handler).Methods("DELETE")
 }

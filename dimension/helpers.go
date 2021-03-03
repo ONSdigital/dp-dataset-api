@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dprequest "github.com/ONSdigital/dp-net/request"
@@ -44,14 +45,22 @@ func handleDimensionErr(ctx context.Context, w http.ResponseWriter, err error, d
 	}
 
 	var status int
-	switch {
-	case errs.NotFoundMap[err]:
-		status = http.StatusNotFound
-	case errs.BadRequestMap[err]:
+
+	// Switch by error type
+	switch err.(type) {
+	case apierrors.ErrInvalidPatch:
 		status = http.StatusBadRequest
 	default:
-		status = http.StatusInternalServerError
-		err = errs.ErrInternalServer
+		// Switch by error message
+		switch {
+		case errs.NotFoundMap[err]:
+			status = http.StatusNotFound
+		case errs.BadRequestMap[err]:
+			status = http.StatusBadRequest
+		default:
+			status = http.StatusInternalServerError
+			err = errs.ErrInternalServer
+		}
 	}
 
 	data["response_status"] = status

@@ -3,6 +3,8 @@ package dimension
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 
@@ -10,6 +12,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	dphttp "github.com/ONSdigital/dp-net/http"
+	dprequest "github.com/ONSdigital/dp-net/request"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 )
@@ -170,8 +173,30 @@ func (s *Store) add(ctx context.Context, instanceID string, option *models.Cache
 	return nil
 }
 
-// PutOptionHandler updates a dimension option according to the provided body
-func (s *Store) PutOptionHandler(w http.ResponseWriter, r *http.Request) {
+// createPatches manages the creation of an array of patch structs from the provided reader, and validates them
+func createPatches(reader io.Reader) ([]dprequest.Patch, error) {
+	patches := []dprequest.Patch{}
+
+	bytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return []dprequest.Patch{}, apierrors.ErrInvalidBody
+	}
+
+	err = json.Unmarshal(bytes, &patches)
+	if err != nil {
+		return []dprequest.Patch{}, apierrors.ErrInvalidBody
+	}
+
+	for _, patch := range patches {
+		if err := patch.Validate(dprequest.OpAdd); err != nil {
+			return []dprequest.Patch{}, err
+		}
+	}
+	return patches, nil
+}
+
+// PatchOptionHandler updates a dimension option according to the provided patch array body
+func (s *Store) PatchOptionHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
@@ -179,39 +204,59 @@ func (s *Store) PutOptionHandler(w http.ResponseWriter, r *http.Request) {
 	option := vars["option"]
 	logData := log.Data{"instance_id": instanceID, "dimension": dimensionName, "option": option}
 
-	var dimOption models.DimensionOption
-	var err error
-
-	// read body bytes
-	b, err := ioutil.ReadAll(r.Body)
+	// unmarshal and validate the patch array
+	patches, err := createPatches(r.Body)
 	if err != nil {
-		log.Event(ctx, "failed to read request body", log.ERROR, log.Error(err), logData)
-		handleDimensionErr(ctx, w, err, logData)
+		log.Event(ctx, "error obtaining patch from request body", log.ERROR, log.Error(err), logData)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	logData["patch_list"] = patches
 
-	// unmarshal body to DimensionOption struct
-	err = json.Unmarshal(b, &dimOption)
+	// apply the patches to the filter blueprint dimension options
+	successfulPatches, err := s.patchOption(ctx, instanceID, dimensionName, option, patches, logData)
 	if err != nil {
-		log.Event(ctx, "failed to unmarshal request body to a DimensionOption struct", log.ERROR, log.Error(err), logData)
-		handleDimensionErr(ctx, w, apierrors.ErrInvalidBody, logData)
-		return
-	}
-
-	// override values that are provided as path parameters
-	dimOption.Name = dimensionName
-	dimOption.Option = option
-	dimOption.InstanceID = instanceID
-	logData["option"] = dimOption
-
-	// update values in database
-	if err := s.updateOption(ctx, dimOption, logData); err != nil {
+		logData["successful_patches"] = successfulPatches
 		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
 
 	logData["action"] = AddDimensionAction
 	log.Event(ctx, "added node id to dimension of an instance resource", log.INFO, logData)
+}
+
+func (s *Store) patchOption(ctx context.Context, instanceID, dimensionName, option string, patches []dprequest.Patch, logData log.Data) (successful []dprequest.Patch, err error) {
+	// apply patch operations sequentially, stop processing if one patch fails, and return a list of successful patches operations
+	for _, patch := range patches {
+		dimOption := models.DimensionOption{Name: dimensionName, Option: option, InstanceID: instanceID}
+
+		// populate the field from the patch path
+		switch patch.Path {
+		case "/node_id":
+			val, ok := patch.Value.(string)
+			if !ok {
+				return successful, apierrors.ErrInvalidPatch{Msg: "wrong value type for /node_id, expected string"}
+			}
+			dimOption.NodeID = val
+		case "/order":
+			// json numeric values are always float64
+			v, ok := patch.Value.(float64)
+			if !ok {
+				return successful, apierrors.ErrInvalidPatch{Msg: "wrong value type for /order, expected numeric value (float64)"}
+			}
+			val := int(v)
+			dimOption.Order = &val
+		default:
+			return successful, apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("wrong path: %s", patch.Path)}
+		}
+
+		// update values in database
+		if err := s.updateOption(ctx, dimOption, logData); err != nil {
+			return successful, err
+		}
+		successful = append(successful, patch)
+	}
+	return successful, nil
 }
 
 // AddNodeIDHandler against a specific option for dimension
