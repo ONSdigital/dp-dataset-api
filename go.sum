@@ -73,8 +73,6 @@ github.com/acobaugh/osrelease v0.0.0-20181218015638-a93a0a55a249 h1:fMi9ZZ/it4or
 github.com/acobaugh/osrelease v0.0.0-20181218015638-a93a0a55a249/go.mod h1:iU1PxQMQwoHZZWmMKrMkrNlY+3+p9vxIjpZOVyxWa0g=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
-github.com/armakuni/dp-go-featuretest v0.0.0-20210225121618-47aebd5e92b6 h1:vbXjUtv6nagDev06BNtx5RWLRDPU1bUle3QQfJ2en08=
-github.com/armakuni/dp-go-featuretest v0.0.0-20210225121618-47aebd5e92b6/go.mod h1:8PwfFu2YQNB3/if9L2VrrXyfEYf2NKOB6JInDYJKM/s=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
 github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmVTwzkszR9V5SSuryQ31EELlFMUz1kKyl939pY=
 github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=

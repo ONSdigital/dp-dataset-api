@@ -7,7 +7,6 @@ import (
 
 	componenttest "github.com/ONSdigital/dp-component-test"
 	steps_test "github.com/ONSdigital/dp-dataset-api/features/steps"
-	featuretest "github.com/armakuni/dp-go-featuretest"
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 )
@@ -24,13 +23,13 @@ type ComponentTest struct {
 }
 
 func (f *ComponentTest) InitializeScenario(ctx *godog.ScenarioContext) {
-	authorizationFeature := featuretest.NewAuthorizationFeature()
+	authorizationFeature := componenttest.NewAuthorizationFeature()
 	datasetFeature, err := steps_test.NewDatasetFeature(f.MongoFeature, authorizationFeature.FakeAuthService.ResolveURL(""))
 	if err != nil {
 		panic(err)
 	}
 
-	apiFeature := featuretest.NewAPIFeature(datasetFeature.InitialiseService)
+	apiFeature := componenttest.NewAPIFeature(datasetFeature.InitialiseService)
 
 	ctx.BeforeScenario(func(*godog.Scenario) {
 		apiFeature.Reset()
