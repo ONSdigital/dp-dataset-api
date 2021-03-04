@@ -379,6 +379,28 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 		// checks the instance is not published before entering handler
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 	})
+
+	Convey("Given an internal error is returned from mongo GetInstance on the second call, then response returns an internal error", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+		mockedDataStore.GetInstanceFunc = func(ID string) (*models.Instance, error) {
+			if len(mockedDataStore.GetInstanceCalls()) == 1 {
+				return &models.Instance{State: models.CreatedState}, nil
+			}
+			return nil, errs.ErrInternalServer
+		}
+
+		r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+	})
+
 }
 
 // Deprecated
@@ -482,7 +504,7 @@ func TestPatchOptionReturnsUnauthorized(t *testing.T) {
 func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("Add a dimension to an instance returns ok", t, func() {
-		json := strings.NewReader(`{"value":"24", "code_list":"123-456", "dimension": "test"}`)
+		json := strings.NewReader(`{"value":"24", "code_list":"123-456", "dimension": "test", "order": 1}`)
 		r, err := createRequestWithToken("POST", "http://localhost:22000/instances/123/dimensions", json)
 		So(err, ShouldBeNil)
 
@@ -503,7 +525,13 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
 		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+		So(mockedDataStore.GetInstanceCalls()[1].ID, ShouldEqual, "123")
+
 		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
+		So(mockedDataStore.AddDimensionToInstanceCalls()[0].Dimension.CodeList, ShouldEqual, "123-456")
+		So(mockedDataStore.AddDimensionToInstanceCalls()[0].Dimension.Name, ShouldEqual, "test")
+		So(*mockedDataStore.AddDimensionToInstanceCalls()[0].Dimension.Order, ShouldEqual, 1)
 	})
 }
 
@@ -591,7 +619,8 @@ func TestAddDimensionToInstanceReturnsUnauthorized(t *testing.T) {
 
 func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 	t.Parallel()
-	Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
+
+	Convey("Given an internal error is returned from mongo GetInstance, then response returns an internal error", t, func() {
 		json := strings.NewReader(`{"value":"24", "code_list":"123-456", "dimension": "test"}`)
 		r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/dimensions", json)
 		So(err, ShouldBeNil)

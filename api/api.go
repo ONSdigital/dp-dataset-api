@@ -383,27 +383,27 @@ func (api *DatasetAPI) isVersionPublished(action string, handler http.HandlerFun
 
 // get registers a GET http.HandlerFunc.
 func (api *DatasetAPI) get(path string, handler http.HandlerFunc) {
-	api.Router.HandleFunc(path, handler).Methods("GET")
+	api.Router.HandleFunc(path, handler).Methods(http.MethodGet)
 }
 
 // put registers a PUT http.HandlerFunc.
 func (api *DatasetAPI) put(path string, handler http.HandlerFunc) {
-	api.Router.HandleFunc(path, handler).Methods("PUT")
+	api.Router.HandleFunc(path, handler).Methods(http.MethodPut)
 }
 
 // patch registers a PATCH http.HandlerFunc
 func (api *DatasetAPI) patch(path string, handler http.HandlerFunc) {
-	api.Router.HandleFunc(path, handler).Methods("PATCH")
+	api.Router.HandleFunc(path, handler).Methods(http.MethodPatch)
 }
 
 // post registers a POST http.HandlerFunc.
 func (api *DatasetAPI) post(path string, handler http.HandlerFunc) {
-	api.Router.HandleFunc(path, handler).Methods("POST")
+	api.Router.HandleFunc(path, handler).Methods(http.MethodPost)
 }
 
 // delete registers a DELETE http.HandlerFunc.
 func (api *DatasetAPI) delete(path string, handler http.HandlerFunc) {
-	api.Router.HandleFunc(path, handler).Methods("DELETE")
+	api.Router.HandleFunc(path, handler).Methods(http.MethodDelete)
 }
 
 func (api *DatasetAPI) authenticate(r *http.Request, logData log.Data) bool {

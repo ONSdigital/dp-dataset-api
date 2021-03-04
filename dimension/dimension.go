@@ -43,6 +43,7 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request) {
 		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
+	setJSONContentType(w)
 	writeBody(ctx, w, b, logData)
 	log.Event(ctx, "successfully get dimensions for an instance resource", log.INFO, logData)
 }
@@ -90,6 +91,7 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
+	setJSONContentType(w)
 	writeBody(ctx, w, b, logData)
 	log.Event(ctx, "successfully get unique dimension options for an instance resource", log.INFO, logData)
 }
@@ -213,7 +215,7 @@ func (s *Store) PatchOptionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	logData["patch_list"] = patches
 
-	// apply the patches to the filter blueprint dimension options
+	// apply the patches to the dimension option
 	successfulPatches, err := s.patchOption(ctx, instanceID, dimensionName, option, patches, logData)
 	if err != nil {
 		logData["successful_patches"] = successfulPatches
@@ -221,8 +223,17 @@ func (s *Store) PatchOptionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logData["action"] = AddDimensionAction
-	log.Event(ctx, "added node id to dimension of an instance resource", log.INFO, logData)
+	// Marshal provided model
+	b, err := json.Marshal(successfulPatches)
+	if err != nil {
+		handleDimensionErr(ctx, w, err, logData)
+		return
+	}
+
+	// set content type and write response body
+	setJSONPatchContentType(w)
+	writeBody(ctx, w, b, logData)
+	log.Event(ctx, "successfully patched dimension option of an instance resource", log.INFO, logData)
 }
 
 func (s *Store) patchOption(ctx context.Context, instanceID, dimensionName, option string, patches []dprequest.Patch, logData log.Data) (successful []dprequest.Patch, err error) {
@@ -260,7 +271,7 @@ func (s *Store) patchOption(ctx context.Context, instanceID, dimensionName, opti
 }
 
 // AddNodeIDHandler against a specific option for dimension
-// Deprecated: this method is superseded by PutOptionHandler
+// Deprecated: this method is superseded by PatchOptionHandler
 func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -306,9 +317,15 @@ func (s *Store) updateOption(ctx context.Context, dimOption models.DimensionOpti
 	return nil
 }
 
-func writeBody(ctx context.Context, w http.ResponseWriter, b []byte, data log.Data) {
-
+func setJSONContentType(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
+}
+
+func setJSONPatchContentType(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json-patch+json")
+}
+
+func writeBody(ctx context.Context, w http.ResponseWriter, b []byte, data log.Data) {
 	if _, err := w.Write(b); err != nil {
 		log.Event(ctx, "failed to write response body", log.ERROR, log.Error(err), data)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
