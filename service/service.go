@@ -95,10 +95,9 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	}
 
 	// Get graphDB connection for observation store
-	if !svc.config.EnableObservationEndpoint && !svc.config.EnablePrivateEndpoints {
+	if !svc.config.EnablePrivateEndpoints {
 		log.Event(ctx, "skipping graph DB client creation, because it is not required by the enabled endpoints", log.INFO, log.Data{
-			"EnableObservationEndpoint": svc.config.EnableObservationEndpoint,
-			"EnablePrivateEndpoints":    svc.config.EnablePrivateEndpoints,
+			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
 		})
 	} else {
 		svc.graphDB, svc.graphDBErrorConsumer, err = svc.serviceList.GetGraphDB(ctx)
@@ -318,8 +317,8 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 		log.Event(ctx, "error adding check for mongo db", log.ERROR, log.Error(err))
 	}
 
-	if svc.config.EnablePrivateEndpoints || svc.config.EnableObservationEndpoint {
-		log.Event(ctx, "adding graph db health check as the private or observation endpoints are enabled", log.INFO)
+	if svc.config.EnablePrivateEndpoints {
+		log.Event(ctx, "adding graph db health check as the private endpoints are enabled", log.INFO)
 		if err = svc.healthCheck.AddCheck("Graph DB", svc.graphDB.Checker); err != nil {
 			hasErrors = true
 			log.Event(ctx, "error adding check for graph db", log.ERROR, log.Error(err))

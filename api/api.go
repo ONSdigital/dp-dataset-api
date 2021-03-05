@@ -51,46 +51,44 @@ type AuthHandler interface {
 
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
-	Router                    *mux.Router
-	dataStore                 store.DataStore
-	urlBuilder                *url.Builder
-	host                      string
-	downloadServiceToken      string
-	EnablePrePublishView      bool
-	downloadGenerator         DownloadsGenerator
-	enablePrivateEndpoints    bool
-	enableDetachDataset       bool
-	enableObservationEndpoint bool
-	datasetPermissions        AuthHandler
-	permissions               AuthHandler
-	instancePublishedChecker  *instance.PublishCheck
-	versionPublishedChecker   *PublishCheck
-	defaultLimit              int
-	defaultOffset             int
-	maxLimit                  int
+	Router                   *mux.Router
+	dataStore                store.DataStore
+	urlBuilder               *url.Builder
+	host                     string
+	downloadServiceToken     string
+	EnablePrePublishView     bool
+	downloadGenerator        DownloadsGenerator
+	enablePrivateEndpoints   bool
+	enableDetachDataset      bool
+	datasetPermissions       AuthHandler
+	permissions              AuthHandler
+	instancePublishedChecker *instance.PublishCheck
+	versionPublishedChecker  *PublishCheck
+	defaultLimit             int
+	defaultOffset            int
+	maxLimit                 int
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
 func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
 
 	api := &DatasetAPI{
-		dataStore:                 dataStore,
-		host:                      cfg.DatasetAPIURL,
-		downloadServiceToken:      cfg.DownloadServiceSecretKey,
-		EnablePrePublishView:      cfg.EnablePrivateEndpoints,
-		Router:                    router,
-		urlBuilder:                urlBuilder,
-		downloadGenerator:         downloadGenerator,
-		enablePrivateEndpoints:    cfg.EnablePrivateEndpoints,
-		enableDetachDataset:       cfg.EnableDetachDataset,
-		enableObservationEndpoint: cfg.EnableObservationEndpoint,
-		datasetPermissions:        datasetPermissions,
-		permissions:               permissions,
-		versionPublishedChecker:   nil,
-		instancePublishedChecker:  nil,
-		defaultLimit:              cfg.DefaultLimit,
-		defaultOffset:             cfg.DefaultOffset,
-		maxLimit:                  cfg.DefaultMaxLimit,
+		dataStore:                dataStore,
+		host:                     cfg.DatasetAPIURL,
+		downloadServiceToken:     cfg.DownloadServiceSecretKey,
+		EnablePrePublishView:     cfg.EnablePrivateEndpoints,
+		Router:                   router,
+		urlBuilder:               urlBuilder,
+		downloadGenerator:        downloadGenerator,
+		enablePrivateEndpoints:   cfg.EnablePrivateEndpoints,
+		enableDetachDataset:      cfg.EnableDetachDataset,
+		datasetPermissions:       datasetPermissions,
+		permissions:              permissions,
+		versionPublishedChecker:  nil,
+		instancePublishedChecker: nil,
+		defaultLimit:             cfg.DefaultLimit,
+		defaultOffset:            cfg.DefaultOffset,
+		maxLimit:                 cfg.DefaultMaxLimit,
 	}
 
 	if api.enablePrivateEndpoints {
