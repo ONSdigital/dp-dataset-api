@@ -138,10 +138,6 @@ func (api *DatasetAPI) enablePublicEndpoints(ctx context.Context) {
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", api.getDimensions)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", api.getDimensionOptions)
 
-	if api.enableObservationEndpoint {
-		log.Event(ctx, "enabling observations endpoint", log.INFO)
-		api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/observations", api.getObservations)
-	}
 }
 
 // enablePrivateDatasetEndpoints register the datasets endpoints with the appropriate authentication and authorisation
@@ -186,15 +182,6 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context) {
 		api.isAuthorisedForDatasets(readPermission,
 			api.getMetadata),
 	)
-
-	if api.enableObservationEndpoint {
-		log.Event(ctx, "enabling observations endpoint", log.INFO)
-		api.get(
-			"/datasets/{dataset_id}/editions/{edition}/versions/{version}/observations",
-			api.isAuthorisedForDatasets(readPermission,
-				api.getObservations),
-		)
-	}
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions",
