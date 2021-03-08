@@ -1260,7 +1260,7 @@ definitions:
           type: string
           enum: [add]
         path:
-          description: "Path to value that needs to be operated on. The special"
+          description: "Path to value that needs to be operated on."
           type: string
           example: "/node_id"
           enum: [/node_id, /order]
