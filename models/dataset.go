@@ -452,26 +452,60 @@ func (ed *EditionUpdate) PublishLinks(ctx context.Context, host string, versionL
 	return nil
 }
 
+// CleanDataset trims URI and any hrefs contained in the database
+func CleanDataset(dataset *Dataset) error {
+	if dataset == nil {
+		return errors.New("clean dataset called without a valid dataset")
+	}
+	dataset.URI = strings.TrimSpace(dataset.URI)
+
+	for i := range dataset.Publications {
+		dataset.Publications[i].HRef = strings.TrimSpace(dataset.Publications[i].HRef)
+	}
+
+	for i := range dataset.Methodologies {
+		dataset.Methodologies[i].HRef = strings.TrimSpace(dataset.Methodologies[i].HRef)
+	}
+
+	for i := range dataset.RelatedDatasets {
+		dataset.RelatedDatasets[i].HRef = strings.TrimSpace(dataset.RelatedDatasets[i].HRef)
+	}
+	return nil
+}
+
 // ValidateDataset checks the dataset has invalid fields
-func ValidateDataset(ctx context.Context, dataset *Dataset) error {
+func ValidateDataset(dataset *Dataset) error {
+
 	var invalidFields []string
 	if dataset.URI != "" {
-		dataset.URI = strings.TrimSpace(dataset.URI)
-		datasetURI, err := url.Parse(dataset.URI)
+		_, err := url.Parse(dataset.URI)
 		if err != nil {
 			invalidFields = append(invalidFields, "URI")
-			log.Event(ctx, "error parsing URI", log.ERROR, log.Error(err))
-		} else {
-			if !strings.Contains(datasetURI.Path, "/datasets") || !strings.Contains(datasetURI.Path, dataset.ID) {
-				fmt.Println("hello")
-				invalidFields = append(invalidFields, "URI")
-			}
 		}
 	}
+
+	invalidFields = append(invalidFields, validateGeneralDetails(dataset.Publications, "Publications")...)
+
+	invalidFields = append(invalidFields, validateGeneralDetails(dataset.RelatedDatasets, "RelatedDatasets")...)
+
+	invalidFields = append(invalidFields, validateGeneralDetails(dataset.Methodologies, "Methodologies")...)
+
 	if invalidFields != nil {
 		return fmt.Errorf("invalid fields: %v", invalidFields)
 	}
+
 	return nil
+
+}
+
+func validateGeneralDetails(generalDetails []GeneralDetails, identifier string) (invalidFields []string) {
+	for i, gd := range generalDetails {
+		_, err := url.Parse(gd.HRef)
+		if err != nil {
+			invalidFields = append(invalidFields, fmt.Sprintf("%s[%d].HRef", identifier, i))
+		}
+	}
+	return
 }
 
 // ValidateDatasetType checks the dataset.type field has valid type

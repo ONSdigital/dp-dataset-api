@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	componenttest "github.com/ONSdigital/dp-component-test"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
@@ -16,7 +17,6 @@ import (
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka/v2"
 	"github.com/ONSdigital/dp-kafka/v2/kafkatest"
-	featuretest "github.com/armakuni/dp-go-featuretest"
 	"github.com/benweissmann/memongo"
 	"github.com/cucumber/godog"
 	"github.com/globalsign/mgo"
@@ -25,7 +25,7 @@ import (
 )
 
 type DatasetFeature struct {
-	ErrorFeature   featuretest.ErrorFeature
+	ErrorFeature   componenttest.ErrorFeature
 	svc            *service.Service
 	errorChan      chan error
 	Datasets       []*models.Dataset
@@ -35,7 +35,7 @@ type DatasetFeature struct {
 	ServiceRunning bool
 }
 
-func NewDatasetFeature(mongoFeature *featuretest.MongoFeature, zebedeeURL string) (*DatasetFeature, error) {
+func NewDatasetFeature(mongoFeature *componenttest.MongoFeature, zebedeeURL string) (*DatasetFeature, error) {
 
 	f := &DatasetFeature{
 		HTTPServer:     &http.Server{},
