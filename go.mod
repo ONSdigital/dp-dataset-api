@@ -7,6 +7,7 @@ replace github.com/coreos/etcd => github.com/coreos/etcd v3.3.24+incompatible
 require (
 	github.com/ONSdigital/dp-api-clients-go v1.33.6
 	github.com/ONSdigital/dp-authorisation v0.1.0
+	github.com/ONSdigital/dp-component-test v0.2.0
 	github.com/ONSdigital/dp-graph/v2 v2.7.1
 	github.com/ONSdigital/dp-healthcheck v1.0.5
 	github.com/ONSdigital/dp-kafka/v2 v2.1.2
@@ -14,7 +15,6 @@ require (
 	github.com/ONSdigital/dp-net v1.0.12
 	github.com/ONSdigital/go-ns v0.0.0-20200902154605-290c8b5ba5eb
 	github.com/ONSdigital/log.go v1.0.1
-	github.com/armakuni/dp-go-featuretest v0.0.0-20210225121618-47aebd5e92b6
 	github.com/benweissmann/memongo v0.1.1
 	github.com/cucumber/godog v0.11.0
 	github.com/fatih/color v1.10.0 // indirect

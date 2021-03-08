@@ -264,8 +264,7 @@ func TestRun(t *testing.T) {
 			})
 		})
 
-		Convey("Given that all dependencies are successfully initialised, observation and private endpoints are disabled", func() {
-			cfg.EnableObservationEndpoint = false
+		Convey("Given that all dependencies are successfully initialised, private endpoints are disabled", func() {
 			cfg.EnablePrivateEndpoints = false
 			initMock := &serviceMock.InitialiserMock{
 				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
