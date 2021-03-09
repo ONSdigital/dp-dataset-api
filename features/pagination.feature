@@ -68,6 +68,19 @@ Feature: Dataset Pagination
             }
             """
 
+    Scenario: No datasets returned when  limit set to 0
+        When I GET "/datasets?limit=0"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "count": 0,
+                "items": [],
+                "limit": 0,
+                "offset": 0,
+                "total_count": 3
+            }
+            """
+
     Scenario: Empty list when offset greater than existing number of datasets
         When I GET "/datasets?offset=4&limit=1"
         Then I should receive the following JSON response with status "200":

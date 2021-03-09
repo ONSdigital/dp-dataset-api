@@ -6,7 +6,6 @@ package storetest
 import (
 	"context"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/ONSdigital/dp-graph/v2/observation"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"sync"
 )
@@ -17,46 +16,40 @@ var _ store.GraphDB = &GraphDBMock{}
 
 // GraphDBMock is a mock implementation of store.GraphDB.
 //
-//     func TestSomethingThatUsesGraphDB(t *testing.T) {
+// 	func TestSomethingThatUsesGraphDB(t *testing.T) {
 //
-//         // make and configure a mocked store.GraphDB
-//         mockedGraphDB := &GraphDBMock{
-//             AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
-// 	               panic("mock out the AddVersionDetailsToInstance method")
-//             },
-//             CheckerFunc: func(in1 context.Context, in2 *healthcheck.CheckState) error {
-// 	               panic("mock out the Checker method")
-//             },
-//             CloseFunc: func(ctx context.Context) error {
-// 	               panic("mock out the Close method")
-//             },
-//             SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
-// 	               panic("mock out the SetInstanceIsPublished method")
-//             },
-//             StreamCSVRowsFunc: func(ctx context.Context, instanceID string, filterID string, filters *observation.DimensionFilters, limit *int) (observation.StreamRowReader, error) {
-// 	               panic("mock out the StreamCSVRows method")
-//             },
-//         }
+// 		// make and configure a mocked store.GraphDB
+// 		mockedGraphDB := &GraphDBMock{
+// 			AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
+// 				panic("mock out the AddVersionDetailsToInstance method")
+// 			},
+// 			CheckerFunc: func(contextMoqParam context.Context, checkState *healthcheck.CheckState) error {
+// 				panic("mock out the Checker method")
+// 			},
+// 			CloseFunc: func(ctx context.Context) error {
+// 				panic("mock out the Close method")
+// 			},
+// 			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
+// 				panic("mock out the SetInstanceIsPublished method")
+// 			},
+// 		}
 //
-//         // use mockedGraphDB in code that requires store.GraphDB
-//         // and then make assertions.
+// 		// use mockedGraphDB in code that requires store.GraphDB
+// 		// and then make assertions.
 //
-//     }
+// 	}
 type GraphDBMock struct {
 	// AddVersionDetailsToInstanceFunc mocks the AddVersionDetailsToInstance method.
 	AddVersionDetailsToInstanceFunc func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error
 
 	// CheckerFunc mocks the Checker method.
-	CheckerFunc func(in1 context.Context, in2 *healthcheck.CheckState) error
+	CheckerFunc func(contextMoqParam context.Context, checkState *healthcheck.CheckState) error
 
 	// CloseFunc mocks the Close method.
 	CloseFunc func(ctx context.Context) error
 
 	// SetInstanceIsPublishedFunc mocks the SetInstanceIsPublished method.
 	SetInstanceIsPublishedFunc func(ctx context.Context, instanceID string) error
-
-	// StreamCSVRowsFunc mocks the StreamCSVRows method.
-	StreamCSVRowsFunc func(ctx context.Context, instanceID string, filterID string, filters *observation.DimensionFilters, limit *int) (observation.StreamRowReader, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -75,10 +68,10 @@ type GraphDBMock struct {
 		}
 		// Checker holds details about calls to the Checker method.
 		Checker []struct {
-			// In1 is the in1 argument value.
-			In1 context.Context
-			// In2 is the in2 argument value.
-			In2 *healthcheck.CheckState
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// CheckState is the checkState argument value.
+			CheckState *healthcheck.CheckState
 		}
 		// Close holds details about calls to the Close method.
 		Close []struct {
@@ -92,25 +85,11 @@ type GraphDBMock struct {
 			// InstanceID is the instanceID argument value.
 			InstanceID string
 		}
-		// StreamCSVRows holds details about calls to the StreamCSVRows method.
-		StreamCSVRows []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// InstanceID is the instanceID argument value.
-			InstanceID string
-			// FilterID is the filterID argument value.
-			FilterID string
-			// Filters is the filters argument value.
-			Filters *observation.DimensionFilters
-			// Limit is the limit argument value.
-			Limit *int
-		}
 	}
 	lockAddVersionDetailsToInstance sync.RWMutex
 	lockChecker                     sync.RWMutex
 	lockClose                       sync.RWMutex
 	lockSetInstanceIsPublished      sync.RWMutex
-	lockStreamCSVRows               sync.RWMutex
 }
 
 // AddVersionDetailsToInstance calls AddVersionDetailsToInstanceFunc.
@@ -161,33 +140,33 @@ func (mock *GraphDBMock) AddVersionDetailsToInstanceCalls() []struct {
 }
 
 // Checker calls CheckerFunc.
-func (mock *GraphDBMock) Checker(in1 context.Context, in2 *healthcheck.CheckState) error {
+func (mock *GraphDBMock) Checker(contextMoqParam context.Context, checkState *healthcheck.CheckState) error {
 	if mock.CheckerFunc == nil {
 		panic("GraphDBMock.CheckerFunc: method is nil but GraphDB.Checker was just called")
 	}
 	callInfo := struct {
-		In1 context.Context
-		In2 *healthcheck.CheckState
+		ContextMoqParam context.Context
+		CheckState      *healthcheck.CheckState
 	}{
-		In1: in1,
-		In2: in2,
+		ContextMoqParam: contextMoqParam,
+		CheckState:      checkState,
 	}
 	mock.lockChecker.Lock()
 	mock.calls.Checker = append(mock.calls.Checker, callInfo)
 	mock.lockChecker.Unlock()
-	return mock.CheckerFunc(in1, in2)
+	return mock.CheckerFunc(contextMoqParam, checkState)
 }
 
 // CheckerCalls gets all the calls that were made to Checker.
 // Check the length with:
 //     len(mockedGraphDB.CheckerCalls())
 func (mock *GraphDBMock) CheckerCalls() []struct {
-	In1 context.Context
-	In2 *healthcheck.CheckState
+	ContextMoqParam context.Context
+	CheckState      *healthcheck.CheckState
 } {
 	var calls []struct {
-		In1 context.Context
-		In2 *healthcheck.CheckState
+		ContextMoqParam context.Context
+		CheckState      *healthcheck.CheckState
 	}
 	mock.lockChecker.RLock()
 	calls = mock.calls.Checker
@@ -258,52 +237,5 @@ func (mock *GraphDBMock) SetInstanceIsPublishedCalls() []struct {
 	mock.lockSetInstanceIsPublished.RLock()
 	calls = mock.calls.SetInstanceIsPublished
 	mock.lockSetInstanceIsPublished.RUnlock()
-	return calls
-}
-
-// StreamCSVRows calls StreamCSVRowsFunc.
-func (mock *GraphDBMock) StreamCSVRows(ctx context.Context, instanceID string, filterID string, filters *observation.DimensionFilters, limit *int) (observation.StreamRowReader, error) {
-	if mock.StreamCSVRowsFunc == nil {
-		panic("GraphDBMock.StreamCSVRowsFunc: method is nil but GraphDB.StreamCSVRows was just called")
-	}
-	callInfo := struct {
-		Ctx        context.Context
-		InstanceID string
-		FilterID   string
-		Filters    *observation.DimensionFilters
-		Limit      *int
-	}{
-		Ctx:        ctx,
-		InstanceID: instanceID,
-		FilterID:   filterID,
-		Filters:    filters,
-		Limit:      limit,
-	}
-	mock.lockStreamCSVRows.Lock()
-	mock.calls.StreamCSVRows = append(mock.calls.StreamCSVRows, callInfo)
-	mock.lockStreamCSVRows.Unlock()
-	return mock.StreamCSVRowsFunc(ctx, instanceID, filterID, filters, limit)
-}
-
-// StreamCSVRowsCalls gets all the calls that were made to StreamCSVRows.
-// Check the length with:
-//     len(mockedGraphDB.StreamCSVRowsCalls())
-func (mock *GraphDBMock) StreamCSVRowsCalls() []struct {
-	Ctx        context.Context
-	InstanceID string
-	FilterID   string
-	Filters    *observation.DimensionFilters
-	Limit      *int
-} {
-	var calls []struct {
-		Ctx        context.Context
-		InstanceID string
-		FilterID   string
-		Filters    *observation.DimensionFilters
-		Limit      *int
-	}
-	mock.lockStreamCSVRows.RLock()
-	calls = mock.calls.StreamCSVRows
-	mock.lockStreamCSVRows.RUnlock()
 	return calls
 }

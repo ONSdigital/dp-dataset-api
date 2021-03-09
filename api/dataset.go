@@ -9,7 +9,6 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/pagination"
 	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
@@ -42,51 +41,24 @@ var (
 	}
 )
 
-func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
+func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
 	ctx := r.Context()
-
-	offset, limit, err := pagination.GetPaginationParameters(w, r)
-	if err != nil {
-		handleDatasetAPIErr(ctx, err, w, nil)
-		return
-	}
 
 	logData := log.Data{}
 
 	authorised := api.authenticate(r, logData)
 
-	datasets, err := api.dataStore.Backend.GetDatasets(ctx, offset, limit, authorised)
+	datasets, totalCount, err := api.dataStore.Backend.GetDatasets(ctx, offset, limit, authorised)
 	if err != nil {
 		log.Event(ctx, "api endpoint getDatasets datastore.GetDatasets returned an error", log.ERROR, log.Error(err))
-		handleDatasetAPIErr(ctx, err, w, nil)
-		return
+		return nil, 0, err
 	}
-
-	var b []byte
-
-	var datasetsResponse interface{}
 
 	if authorised {
-		datasetsResponse = datasets
+		return datasets, totalCount, nil
 	} else {
-		datasetsResponse = pagination.RenderPage(mapResults(datasets.Items), offset, limit, datasets.TotalCount)
+		return mapResults(datasets), totalCount, nil
 	}
-
-	b, err = json.Marshal(datasetsResponse)
-
-	if err != nil {
-		log.Event(ctx, "api endpoint getDatasets failed to marshal dataset resource into bytes", log.ERROR, log.Error(err), logData)
-		handleDatasetAPIErr(ctx, err, w, nil)
-		return
-	}
-
-	setJSONContentType(w)
-	if _, err = w.Write(b); err != nil {
-		log.Event(ctx, "api endpoint getDatasets error writing response body", log.ERROR, log.Error(err))
-		handleDatasetAPIErr(ctx, err, w, nil)
-		return
-	}
-	log.Event(ctx, "api endpoint getDatasets request successful", log.INFO)
 }
 
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
@@ -365,15 +337,15 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Find any editions associated with this dataset
-		editionDocs, err := api.dataStore.Backend.GetEditions(ctx, currentDataset.ID, "", 0, 0, true)
+		editionDocs, _, err := api.dataStore.Backend.GetEditions(ctx, currentDataset.ID, "", 0, 0, true)
 		if err != nil {
 			log.Event(ctx, "unable to find the dataset editions", log.ERROR, log.Error(errs.ErrEditionsNotFound), logData)
 			return errs.ErrEditionsNotFound
 		}
 
 		// Then delete them
-		for i := range editionDocs.Items {
-			if err := api.dataStore.Backend.DeleteEdition(editionDocs.Items[i].ID); err != nil {
+		for i := range editionDocs {
+			if err := api.dataStore.Backend.DeleteEdition(editionDocs[i].ID); err != nil {
 				log.Event(ctx, "failed to delete edition", log.ERROR, log.Error(err), logData)
 				return err
 			}

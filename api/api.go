@@ -11,6 +11,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
 	"github.com/ONSdigital/dp-dataset-api/instance"
+	"github.com/ONSdigital/dp-dataset-api/pagination"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	dphandlers "github.com/ONSdigital/dp-net/handlers"
@@ -126,9 +127,9 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 
 // enablePublicEndpoints register only the public GET endpoints.
 func (api *DatasetAPI) enablePublicEndpoints(ctx context.Context) {
-	api.get("/datasets", api.getDatasets)
+	api.get("/datasets", pagination.Paginated(api.getDatasets))
 	api.get("/datasets/{dataset_id}", api.getDataset)
-	api.get("/datasets/{dataset_id}/editions", api.getEditions)
+	api.get("/datasets/{dataset_id}/editions", pagination.Paginated(api.getEditions))
 	api.get("/datasets/{dataset_id}/editions/{edition}", api.getEdition)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions", api.getVersions)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}", api.getVersion)
@@ -143,7 +144,7 @@ func (api *DatasetAPI) enablePublicEndpoints(ctx context.Context) {
 func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context) {
 	api.get(
 		"/datasets",
-		api.isAuthorised(readPermission, api.getDatasets),
+		api.isAuthorised(readPermission, pagination.Paginated(api.getDatasets)),
 	)
 
 	api.get(
@@ -154,7 +155,7 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context) {
 
 	api.get(
 		"/datasets/{dataset_id}/editions",
-		api.isAuthorisedForDatasets(readPermission, api.getEditions),
+		api.isAuthorisedForDatasets(readPermission, pagination.Paginated(api.getEditions)),
 	)
 
 	api.get(

@@ -74,7 +74,7 @@ func (m *Mongo) Checker(ctx context.Context, state *healthcheck.CheckState) erro
 }
 
 // GetDatasets retrieves all dataset documents
-func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised bool) (*models.DatasetUpdateResults, error) {
+func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised bool) ([]models.DatasetUpdate, int, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -90,30 +90,15 @@ func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised b
 	if err != nil {
 		log.Event(ctx, "error counting items", log.ERROR, log.Error(err))
 		if err == mgo.ErrNotFound {
-			return &models.DatasetUpdateResults{
-				Items:      []models.DatasetUpdate{},
-				Count:      0,
-				TotalCount: 0,
-				Offset:     offset,
-				Limit:      limit,
-			}, nil
+			return []models.DatasetUpdate{}, totalCount, nil
 		}
-		return nil, err
+		return nil, 0, err
 	}
-
-	iter := q.Sort().Skip(offset).Limit(limit).Iter()
-
-	defer func() {
-		err := iter.Close()
-		if err != nil {
-			log.Event(ctx, "error closing iterator", log.ERROR, log.Error(err))
-		}
-	}()
 
 	values := []models.DatasetUpdate{}
 
 	if limit > 0 {
-		iter := q.Sort().Skip(offset).Limit(limit).Iter()
+		iter := q.Skip(offset).Limit(limit).Iter()
 		defer func() {
 			err := iter.Close()
 			if err != nil {
@@ -123,25 +108,13 @@ func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised b
 
 		if err := iter.All(&values); err != nil {
 			if err == mgo.ErrNotFound {
-				return &models.DatasetUpdateResults{
-					Items:      values,
-					Count:      0,
-					TotalCount: totalCount,
-					Offset:     offset,
-					Limit:      limit,
-				}, nil
+				return values, totalCount, nil
 			}
-			return nil, err
+			return nil, 0, err
 		}
 	}
 
-	return &models.DatasetUpdateResults{
-		Items:      values,
-		Count:      len(values),
-		TotalCount: totalCount,
-		Offset:     offset,
-		Limit:      limit,
-	}, nil
+	return values, totalCount, nil
 }
 
 // GetDataset retrieves a dataset document
@@ -161,7 +134,7 @@ func (m *Mongo) GetDataset(id string) (*models.DatasetUpdate, error) {
 }
 
 // GetEditions retrieves all edition documents for a dataset
-func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit int, authorised bool) (*models.EditionUpdateResults, error) {
+func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -172,25 +145,19 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 	if err != nil {
 		log.Event(ctx, "error counting items", log.ERROR, log.Error(err))
 		if err == mgo.ErrNotFound {
-			return &models.EditionUpdateResults{
-				Items:      []*models.EditionUpdate{},
-				Count:      0,
-				TotalCount: 0,
-				Offset:     offset,
-				Limit:      limit,
-			}, nil
+			return []models.EditionUpdate{}, 0, nil
 		}
-		return nil, err
+		return nil, 0, err
 	}
 
 	if totalCount < 1 {
-		return nil, errs.ErrEditionNotFound
+		return nil, 0, errs.ErrEditionNotFound
 	}
 
-	var results []*models.EditionUpdate
+	var results []models.EditionUpdate
 
 	if limit > 0 {
-		iter := q.Sort().Skip(offset).Limit(limit).Iter()
+		iter := q.Skip(offset).Limit(limit).Iter()
 		defer func() {
 			err := iter.Close()
 			if err != nil {
@@ -200,25 +167,13 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 
 		if err := iter.All(&results); err != nil {
 			if err == mgo.ErrNotFound {
-				return &models.EditionUpdateResults{
-					Items:      []*models.EditionUpdate{},
-					Count:      0,
-					TotalCount: totalCount,
-					Offset:     offset,
-					Limit:      limit,
-				}, nil
+				return []models.EditionUpdate{}, 0, err
 			}
-			return nil, err
+			return nil, 0, err
 		}
 	}
 
-	return &models.EditionUpdateResults{
-		Items:      results,
-		Count:      len(results),
-		TotalCount: totalCount,
-		Offset:     offset,
-		Limit:      limit,
-	}, nil
+	return results, totalCount, nil
 }
 
 func buildEditionsQuery(id, state string, authorised bool) bson.M {
