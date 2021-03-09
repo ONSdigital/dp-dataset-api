@@ -29,7 +29,7 @@ Feature: Dataset API
         Then I should receive the following JSON response with status "200":
             """
             {
-                "count":1,
+                "count": 1,
                 "items": [
                     {
                         "id": "population-estimates",
@@ -42,13 +42,13 @@ Feature: Dataset API
                         }
                     }
                 ],
-                "limit":20, 
-                "offset":0, 
-                "total_count":1
+                "limit": 20,
+                "offset": 0,
+                "total_count": 1
             }
             """
 
-        Scenario: GET a dataset with two editions
+    Scenario: GET a dataset with two editions
         Given I have these datasets:
             """
             [
@@ -87,7 +87,7 @@ Feature: Dataset API
         Then I should receive the following JSON response with status "200":
             """
             {
-                "count":2,
+                "count": 2,
                 "items": [
                     {
                         "id": "1",
@@ -110,11 +110,11 @@ Feature: Dataset API
                         }
                     }
                 ],
-                "limit":20,
-                "offset":0,
-                "total_count":2
+                "limit": 20,
+                "offset": 0,
+                "total_count": 2
             }
             """
 
-        
+
 

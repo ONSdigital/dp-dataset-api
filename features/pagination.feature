@@ -1,5 +1,5 @@
 Feature: Dataset Pagination
-    Background: 
+    Background:
         Given I have these datasets:
             """
             [
@@ -14,13 +14,13 @@ Feature: Dataset Pagination
                 }
             ]
             """
-    
+
     Scenario: Offset skips first result of datasets when set to 1
         When I GET "/datasets?offset=1"
         Then I should receive the following JSON response with status "200":
             """
             {
-                "count":2,
+                "count": 2,
                 "items": [
                     {
                         "id": "income"
@@ -29,26 +29,26 @@ Feature: Dataset Pagination
                         "id": "age"
                     }
                 ],
-                "limit":20, 
-                "offset":1, 
-                "total_count":3
+                "limit": 20,
+                "offset": 1,
+                "total_count": 3
             }
             """
-    
+
     Scenario: Results limited to 1 when limit set to 1
         When I GET "/datasets?offset=0&limit=1"
         Then I should receive the following JSON response with status "200":
             """
             {
-                "count":1,
+                "count": 1,
                 "items": [
                     {
                         "id": "population-estimates"
                     }
                 ],
-                "limit":1, 
-                "offset":0, 
-                "total_count":3
+                "limit": 1,
+                "offset": 0,
+                "total_count": 3
             }
             """
     Scenario: Second dataset returned when offset and limit set to 1
@@ -56,15 +56,15 @@ Feature: Dataset Pagination
         Then I should receive the following JSON response with status "200":
             """
             {
-                "count":1,
+                "count": 1,
                 "items": [
                     {
                         "id": "income"
                     }
                 ],
-                "limit":1, 
-                "offset":1, 
-                "total_count":3
+                "limit": 1,
+                "offset": 1,
+                "total_count": 3
             }
             """
 
@@ -73,11 +73,11 @@ Feature: Dataset Pagination
         Then I should receive the following JSON response with status "200":
             """
             {
-                "count":0,
+                "count": 0,
                 "items": [],
-                "limit":1, 
-                "offset":4, 
-                "total_count":3
+                "limit": 1,
+                "offset": 4,
+                "total_count": 3
             }
             """
 
@@ -105,22 +105,22 @@ Feature: Dataset Pagination
             """
             invalid query parameter
             """
-    
+
     Scenario: Returning metadata when there are no datasets
         Given there are no datasets
         When I GET "/datasets?offset=1&limit=1"
         Then I should receive the following JSON response with status "200":
             """
             {
-                "count":0,
+                "count": 0,
                 "items": [],
-                "limit":1, 
-                "offset":1, 
-                "total_count":0
+                "limit": 1,
+                "offset": 1,
+                "total_count": 0
             }
             """
 
-        Scenario: GET a dataset with two editions with offset
+    Scenario: GET a dataset with two editions with offset
         Given I have these datasets:
             """
             [
@@ -159,7 +159,7 @@ Feature: Dataset Pagination
         Then I should receive the following JSON response with status "200":
             """
             {
-                "count":1,
+                "count": 1,
                 "items": [
                     {
                         "id": "2",
@@ -172,13 +172,13 @@ Feature: Dataset Pagination
                         }
                     }
                 ],
-                "limit":20,
-                "offset":1,
-                "total_count":2
+                "limit": 20,
+                "offset": 1,
+                "total_count": 2
             }
             """
 
-Scenario: GET a dataset with two editions with limit
+    Scenario: GET a dataset with two editions with limit
         Given I have these datasets:
             """
             [
@@ -217,7 +217,7 @@ Scenario: GET a dataset with two editions with limit
         Then I should receive the following JSON response with status "200":
             """
             {
-                "count":1,
+                "count": 1,
                 "items": [
                     {
                         "id": "1",
@@ -230,8 +230,8 @@ Scenario: GET a dataset with two editions with limit
                         }
                     }
                 ],
-                "limit":1,
-                "offset":0,
-                "total_count":2
+                "limit": 1,
+                "offset": 0,
+                "total_count": 2
             }
             """
