@@ -9,7 +9,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/utils"
+	"github.com/ONSdigital/dp-dataset-api/pagination"
 	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
@@ -44,83 +44,38 @@ var (
 
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	logData := log.Data{}
-	offsetParameter := r.URL.Query().Get("offset")
-	limitParameter := r.URL.Query().Get("limit")
 
-	offset := api.defaultOffset
-	limit := api.defaultLimit
-
-	var err error
-
-	if offsetParameter != "" {
-		logData["offset"] = offsetParameter
-		offset, err = utils.ValidatePositiveInt(offsetParameter)
-		if err != nil {
-			log.Event(ctx, "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
-			handleDatasetAPIErr(ctx, err, w, nil)
-			return
-		}
-	}
-
-	if limitParameter != "" {
-		logData["limit"] = limitParameter
-		limit, err = utils.ValidatePositiveInt(limitParameter)
-		if err != nil {
-			log.Event(ctx, "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
-			handleDatasetAPIErr(ctx, err, w, nil)
-			return
-		}
-	}
-
-	if limit > api.maxLimit {
-		logData["max_limit"] = api.maxLimit
-		err = errs.ErrInvalidQueryParameter
-		log.Event(ctx, "limit is greater than the maximum allowed", log.ERROR, logData)
+	offset, limit, err := pagination.GetPaginationParameters(w, r)
+	if err != nil {
 		handleDatasetAPIErr(ctx, err, w, nil)
 		return
 	}
 
-	b, err := func() ([]byte, error) {
+	logData := log.Data{}
 
-		logData := log.Data{}
+	authorised := api.authenticate(r, logData)
 
-		authorised := api.authenticate(r, logData)
+	datasets, err := api.dataStore.Backend.GetDatasets(ctx, offset, limit, authorised)
+	if err != nil {
+		log.Event(ctx, "api endpoint getDatasets datastore.GetDatasets returned an error", log.ERROR, log.Error(err))
+		handleDatasetAPIErr(ctx, err, w, nil)
+		return
+	}
 
-		datasets, err := api.dataStore.Backend.GetDatasets(ctx, offset, limit, authorised)
-		if err != nil {
-			log.Event(ctx, "api endpoint getDatasets datastore.GetDatasets returned an error", log.ERROR, log.Error(err))
-			return nil, err
-		}
+	var b []byte
 
-		var b []byte
+	var datasetsResponse interface{}
 
-		var datasetsResponse interface{}
+	if authorised {
+		datasetsResponse = datasets
+	} else {
+		datasetsResponse = pagination.RenderPage(mapResults(datasets.Items), offset, limit, datasets.TotalCount)
+	}
 
-		if authorised {
-			datasetsResponse = datasets
-		} else {
-			datasetsResponse = &models.DatasetResults{
-				Items:      mapResults(datasets.Items),
-				Offset:     offset,
-				Limit:      limit,
-				Count:      datasets.Count,
-				TotalCount: datasets.TotalCount,
-			}
-
-		}
-
-		b, err = json.Marshal(datasetsResponse)
-
-		if err != nil {
-			log.Event(ctx, "api endpoint getDatasets failed to marshal dataset resource into bytes", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		return b, nil
-	}()
+	b, err = json.Marshal(datasetsResponse)
 
 	if err != nil {
+		log.Event(ctx, "api endpoint getDatasets failed to marshal dataset resource into bytes", log.ERROR, log.Error(err), logData)
 		handleDatasetAPIErr(ctx, err, w, nil)
 		return
 	}
