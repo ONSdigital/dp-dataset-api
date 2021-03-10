@@ -6,12 +6,14 @@ import (
 	"reflect"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
-	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/utils"
 	"github.com/ONSdigital/log.go/log"
 )
 
-type Page struct {
+// ListFetcher is an interface for an endpoint that returns a list of values that we want to paginate
+type ListFetcher func(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error)
+
+type page struct {
 	Items      interface{} `json:"items"`
 	Count      int         `json:"count"`
 	Offset     int         `json:"offset"`
@@ -19,16 +21,29 @@ type Page struct {
 	TotalCount int         `json:"total_count"`
 }
 
-func getPaginationParameters(w http.ResponseWriter, r *http.Request) (offset int, limit int, err error) {
+type Paginator struct {
+	DefaultLimit    int
+	DefaultOffset   int
+	DefaultMaxLimit int
+}
 
-	cfg, _ := config.Get()
+func NewPaginator(defaultLimit, defaultOffset, defaultMaxLimit int) *Paginator {
+
+	return &Paginator{
+		DefaultLimit:    defaultLimit,
+		DefaultOffset:   defaultOffset,
+		DefaultMaxLimit: defaultMaxLimit,
+	}
+}
+
+func (p *Paginator) getPaginationParameters(w http.ResponseWriter, r *http.Request) (offset int, limit int, err error) {
 
 	logData := log.Data{}
 	offsetParameter := r.URL.Query().Get("offset")
 	limitParameter := r.URL.Query().Get("limit")
 
-	offset = cfg.DefaultOffset
-	limit = cfg.DefaultLimit
+	offset = p.DefaultOffset
+	limit = p.DefaultLimit
 
 	if offsetParameter != "" {
 		logData["offset"] = offsetParameter
@@ -48,8 +63,8 @@ func getPaginationParameters(w http.ResponseWriter, r *http.Request) (offset int
 		}
 	}
 
-	if limit > cfg.DefaultMaxLimit {
-		logData["max_limit"] = cfg.DefaultMaxLimit
+	if limit > p.DefaultMaxLimit {
+		logData["max_limit"] = p.DefaultMaxLimit
 		err = errs.ErrInvalidQueryParameter
 		log.Event(r.Context(), "limit is greater than the maximum allowed", log.ERROR, logData)
 		return 0, 0, err
@@ -57,9 +72,9 @@ func getPaginationParameters(w http.ResponseWriter, r *http.Request) (offset int
 	return
 }
 
-func renderPage(list interface{}, offset int, limit int, totalCount int) Page {
+func renderPage(list interface{}, offset int, limit int, totalCount int) page {
 
-	return Page{
+	return page{
 		Items:      list,
 		Count:      listLength(list),
 		Offset:     offset,
@@ -73,11 +88,11 @@ func listLength(list interface{}) int {
 	return l.Len()
 }
 
-//Paginated is a function that
-func Paginated(listFetcher func(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error)) func(w http.ResponseWriter, r *http.Request) {
+// Paginated wraps a http endpoint to return a paginated list from the list returned by the provided function
+func (p *Paginator) Paginated(listFetcher ListFetcher) func(w http.ResponseWriter, r *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		offset, limit, err := getPaginationParameters(w, r)
+		offset, limit, err := p.getPaginationParameters(w, r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -90,7 +105,7 @@ func Paginated(listFetcher func(w http.ResponseWriter, r *http.Request, limit in
 	}
 }
 
-func returnPaginatedResults(w http.ResponseWriter, r *http.Request, list Page) {
+func returnPaginatedResults(w http.ResponseWriter, r *http.Request, list page) {
 
 	logData := log.Data{}
 
