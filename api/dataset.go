@@ -41,26 +41,20 @@ var (
 	}
 )
 
-func (api *DatasetAPI) getPublicDatasets(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
+func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
 	ctx := r.Context()
-	datasets, totalCount, err := api.dataStore.Backend.GetDatasets(ctx, offset, limit, false)
+	logData := log.Data{}
+	authorised := api.authenticate(r, logData)
+	datasets, totalCount, err := api.dataStore.Backend.GetDatasets(ctx, offset, limit, authorised)
 	if err != nil {
 		log.Event(ctx, "api endpoint getDatasets datastore.GetDatasets returned an error", log.ERROR, log.Error(err))
+		handleDatasetAPIErr(ctx, err, w, logData)
 		return nil, 0, err
 	}
-
+	if authorised {
+		return datasets, totalCount, nil
+	}
 	return mapResults(datasets), totalCount, nil
-}
-
-func (api *DatasetAPI) getPrivateDatasets(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
-	ctx := r.Context()
-	datasets, totalCount, err := api.dataStore.Backend.GetDatasets(ctx, offset, limit, true)
-	if err != nil {
-		log.Event(ctx, "api endpoint getDatasets datastore.GetDatasets returned an error", log.ERROR, log.Error(err))
-		return nil, 0, err
-	}
-
-	return datasets, totalCount, nil
 }
 
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {

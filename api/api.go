@@ -129,9 +129,9 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 
 // enablePublicEndpoints register only the public GET endpoints.
 func (api *DatasetAPI) enablePublicEndpoints(ctx context.Context, paginator *pagination.Paginator) {
-	api.get("/datasets", paginator.Paginated(api.getPublicDatasets))
+	api.get("/datasets", paginator.Paginate(api.getDatasets))
 	api.get("/datasets/{dataset_id}", api.getDataset)
-	api.get("/datasets/{dataset_id}/editions", paginator.Paginated(api.getEditions))
+	api.get("/datasets/{dataset_id}/editions", paginator.Paginate(api.getEditions))
 	api.get("/datasets/{dataset_id}/editions/{edition}", api.getEdition)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions", api.getVersions)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}", api.getVersion)
@@ -146,7 +146,7 @@ func (api *DatasetAPI) enablePublicEndpoints(ctx context.Context, paginator *pag
 func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context, paginator *pagination.Paginator) {
 	api.get(
 		"/datasets",
-		api.isAuthorised(readPermission, paginator.Paginated(api.getPrivateDatasets)),
+		api.isAuthorised(readPermission, paginator.Paginate(api.getDatasets)),
 	)
 
 	api.get(
@@ -157,7 +157,7 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context, pagina
 
 	api.get(
 		"/datasets/{dataset_id}/editions",
-		api.isAuthorisedForDatasets(readPermission, paginator.Paginated(api.getEditions)),
+		api.isAuthorisedForDatasets(readPermission, paginator.Paginate(api.getEditions)),
 	)
 
 	api.get(

@@ -2,11 +2,11 @@ package pagination
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"reflect"
+	"strconv"
 
-	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
-	"github.com/ONSdigital/dp-dataset-api/utils"
 	"github.com/ONSdigital/log.go/log"
 )
 
@@ -47,8 +47,9 @@ func (p *Paginator) getPaginationParameters(w http.ResponseWriter, r *http.Reque
 
 	if offsetParameter != "" {
 		logData["offset"] = offsetParameter
-		offset, err = utils.ValidatePositiveInt(offsetParameter)
-		if err != nil {
+		offset, err = strconv.Atoi(offsetParameter)
+		if err != nil || offset < 0 {
+			err = errors.New("invalid query parameter")
 			log.Event(r.Context(), "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
 			return 0, 0, err
 		}
@@ -56,8 +57,9 @@ func (p *Paginator) getPaginationParameters(w http.ResponseWriter, r *http.Reque
 
 	if limitParameter != "" {
 		logData["limit"] = limitParameter
-		limit, err = utils.ValidatePositiveInt(limitParameter)
-		if err != nil {
+		limit, err = strconv.Atoi(limitParameter)
+		if err != nil || limit < 0 {
+			err = errors.New("invalid query parameter")
 			log.Event(r.Context(), "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
 			return 0, 0, err
 		}
@@ -65,7 +67,7 @@ func (p *Paginator) getPaginationParameters(w http.ResponseWriter, r *http.Reque
 
 	if limit > p.DefaultMaxLimit {
 		logData["max_limit"] = p.DefaultMaxLimit
-		err = errs.ErrInvalidQueryParameter
+		err = errors.New("invalid query parameter")
 		log.Event(r.Context(), "limit is greater than the maximum allowed", log.ERROR, logData)
 		return 0, 0, err
 	}
@@ -88,8 +90,8 @@ func listLength(list interface{}) int {
 	return l.Len()
 }
 
-// Paginated wraps a http endpoint to return a paginated list from the list returned by the provided function
-func (p *Paginator) Paginated(listFetcher ListFetcher) func(w http.ResponseWriter, r *http.Request) {
+// Paginate wraps a http endpoint to return a paginated list from the list returned by the provided function
+func (p *Paginator) Paginate(listFetcher ListFetcher) func(w http.ResponseWriter, r *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		offset, limit, err := p.getPaginationParameters(w, r)
@@ -98,6 +100,9 @@ func (p *Paginator) Paginated(listFetcher ListFetcher) func(w http.ResponseWrite
 			return
 		}
 		list, totalCount, err := listFetcher(w, r, limit, offset)
+		if err != nil {
+			return
+		}
 
 		page := renderPage(list, offset, limit, totalCount)
 
@@ -113,7 +118,7 @@ func returnPaginatedResults(w http.ResponseWriter, r *http.Request, list page) {
 
 	if err != nil {
 		log.Event(r.Context(), "api endpoint failed to marshal resource into bytes", log.ERROR, log.Error(err), logData)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 

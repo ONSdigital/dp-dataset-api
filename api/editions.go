@@ -27,12 +27,22 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 
 	if err := api.dataStore.Backend.CheckDatasetExists(datasetID, state); err != nil {
 		log.Event(ctx, "getEditions endpoint: unable to find dataset", log.ERROR, log.Error(err), logData)
+		if err == errs.ErrDatasetNotFound {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+		}
 		return nil, 0, err
 	}
 
 	results, totalCount, err := api.dataStore.Backend.GetEditions(ctx, datasetID, state, offset, limit, authorised)
 	if err != nil {
 		log.Event(ctx, "getEditions endpoint: unable to find editions for dataset", log.ERROR, log.Error(err), logData)
+		if err == errs.ErrEditionNotFound {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+		}
 		return nil, 0, err
 	}
 
