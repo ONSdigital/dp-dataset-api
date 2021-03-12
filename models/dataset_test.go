@@ -191,7 +191,7 @@ func TestCreateVersion(t *testing.T) {
 				t.FailNow()
 			}
 			r := bytes.NewReader(b)
-			version, err := CreateVersion(r)
+			version, err := CreateVersion(r, "")
 			So(err, ShouldBeNil)
 			So(version.CollectionID, ShouldEqual, collectionID)
 			So(version.Dimensions, ShouldResemble, []Dimension{dimension})
@@ -214,7 +214,7 @@ func TestCreateVersion(t *testing.T) {
 			t.FailNow()
 		}
 		r := bytes.NewReader(b)
-		version, err := CreateVersion(r)
+		version, err := CreateVersion(r, "")
 		So(version, ShouldBeNil)
 		So(err, ShouldNotBeNil)
 		So(err, ShouldResemble, errs.ErrUnableToParseJSON)

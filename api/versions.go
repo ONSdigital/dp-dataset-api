@@ -393,7 +393,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 
 	// attempt to update the version
 	currentDataset, currentVersion, versionUpdate, err := func() (*models.DatasetUpdate, *models.Version, *models.Version, error) {
-		versionUpdate, err := models.CreateVersion(body)
+		versionUpdate, err := models.CreateVersion(body, versionDetails.datasetID)
 		if err != nil {
 			log.Event(ctx, "putVersion endpoint: failed to model version resource based on request", log.ERROR, log.Error(err), data)
 			return nil, nil, nil, errs.ErrUnableToParseJSON

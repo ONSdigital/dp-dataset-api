@@ -55,7 +55,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 				// TODO Logic here might require it's own endpoint,
 				// possibly /datasets/.../versions/<version>/downloads
 				if action == updateVersionAction {
-					versionDoc, err := models.CreateVersion(r.Body)
+					versionDoc, err := models.CreateVersion(r.Body, datasetID)
 					if err != nil {
 						log.Event(ctx, "failed to model version resource based on request", log.ERROR, log.Error(err), data)
 						dphttp.DrainBody(r)
