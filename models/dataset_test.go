@@ -193,13 +193,14 @@ func TestCreateVersion(t *testing.T) {
 	t.Parallel()
 	Convey("Successfully return without any errors", t, func() {
 		Convey("when the version has all fields", func() {
+			testDatasetID := "test-dataset-id"
 			b, err := json.Marshal(associatedVersion)
 			if err != nil {
 				t.Logf("failed to marshal test data into bytes, error: %v", err)
 				t.FailNow()
 			}
 			r := bytes.NewReader(b)
-			version, err := CreateVersion(r, "")
+			version, err := CreateVersion(r, testDatasetID)
 			So(err, ShouldBeNil)
 			So(version.CollectionID, ShouldEqual, collectionID)
 			So(version.Dimensions, ShouldResemble, []Dimension{dimension})
@@ -212,17 +213,19 @@ func TestCreateVersion(t *testing.T) {
 			So(version.State, ShouldEqual, AssociatedState)
 			So(version.Temporal, ShouldResemble, &[]TemporalFrequency{temporal})
 			So(version.Version, ShouldEqual, 1)
+			So(version.ID, ShouldEqual, testDatasetID)
 		})
 	})
 
 	Convey("Return with error when the request body contains the correct fields but of the wrong type", t, func() {
+		testDatasetID := "test-dataset-id"
 		b, err := json.Marshal(badInputData)
 		if err != nil {
 			t.Logf("failed to marshal test data into bytes, error: %v", err)
 			t.FailNow()
 		}
 		r := bytes.NewReader(b)
-		version, err := CreateVersion(r, "")
+		version, err := CreateVersion(r, testDatasetID)
 		So(version, ShouldBeNil)
 		So(err, ShouldNotBeNil)
 		So(err, ShouldResemble, errs.ErrUnableToParseJSON)
