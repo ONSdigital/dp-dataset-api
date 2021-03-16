@@ -28,6 +28,9 @@ func createDataset() Dataset {
 			HRef: validHref,
 			Title: "some qmi title",
 		},
+		Publisher: &Publisher {
+			HRef: validHref,
+		},
 		Publications: []GeneralDetails{{
 			Description: "some publication description",
 			HRef:        validHref,
@@ -261,6 +264,13 @@ func TestCleanDataset(t *testing.T) {
 			So(dataset.QMI.HRef, ShouldEqual, validHref)
 		})
 
+		Convey("When a Publisher HRef has whitespace it is trimmed", func() {
+			dataset := createDataset()
+			dataset.Publisher.HRef = "    " + validHref
+			CleanDataset(&dataset)
+			So(dataset.Publisher.HRef, ShouldEqual, validHref)
+		})
+
 		Convey("When a Publications HRef has whitespace it is trimmed", func() {
 			dataset := createDataset()
 			dataset.Publications[0].HRef = "    " + validHref
@@ -348,6 +358,15 @@ func TestValidateDataset(t *testing.T) {
 			validationErr := ValidateDataset(&dataset)
 			So(validationErr, ShouldNotBeNil)
 			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [QMI]").Error())
+		})
+
+		Convey("when dataset.Publisher.Href is unable to be parsed into url format", func() {
+			dataset := createDataset()
+			dataset.Publisher.HRef = ":foo"
+			fmt.Println(dataset.Publisher.HRef)
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldNotBeNil)
+			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [Publisher]").Error())
 		})
 
 		Convey("when Publications href is unable to be parsed into url format", func() {
