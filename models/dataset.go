@@ -514,7 +514,7 @@ func validateGeneralDetails(generalDetails []GeneralDetails, identifier string) 
 
 func validateUrlString(urlString string, identifier string) (invalidFields []string) {
 	url, err := url.Parse(urlString)
-	if err != nil || (url.Host == "" && url.Path == ""){
+	if err != nil || (url.Scheme != "" && url.Host == "" && url.Path == "") || (url.Scheme != "" && url.Host == "" && url.Path != "") {
 		invalidFields = append(invalidFields, identifier)
 	}
 	return

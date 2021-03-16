@@ -15,7 +15,7 @@ import (
 
 const (
 	validURI    = "http://localhost:22000/datasets/123"
-	validHref   = "http://localhost:22000//datasets/href"
+	validHref   = "http://localhost:22000/datasets/href"
 	invalidHref = ":invalid"
 )
 
@@ -333,8 +333,36 @@ func TestValidateDataset(t *testing.T) {
 
 	Convey("Successful validation (true) returned", t, func() {
 
-		Convey("when dataset.URI contains its path in appropriate url format ", func() {
+		Convey("when dataset.URI contains its path in appropriate url format", func() {
 			dataset := createDataset()
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldBeNil)
+		})
+
+		Convey("when dataset.URI is empty", func() {
+			dataset := createDataset()
+			dataset.URI =""
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldBeNil)
+		})
+
+		Convey("when dataset.URI is a relative path", func() {
+			dataset := createDataset()
+			dataset.URI = "/relative_path"
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldBeNil)
+		})
+
+		Convey("when dataset.URI has a valid host but an empty path", func() {
+			dataset := createDataset()
+			dataset.URI = "http://domain.com/"
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldBeNil)
+		})
+
+		Convey("when dataset.URI is only a valid domain", func() {
+			dataset := createDataset()
+			dataset.URI = "domain.com"
 			validationErr := ValidateDataset(&dataset)
 			So(validationErr, ShouldBeNil)
 		})
@@ -345,7 +373,22 @@ func TestValidateDataset(t *testing.T) {
 		Convey("when dataset.URI is unable to be parsed into url format", func() {
 			dataset := createDataset()
 			dataset.URI = ":foo"
-			fmt.Println(dataset.URI)
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldNotBeNil)
+			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
+		})
+
+		Convey("when dataset.URI has an empty host and path", func() {
+			dataset := createDataset()
+			dataset.URI = "http://"
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldNotBeNil)
+			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
+		})
+
+		Convey("when dataset.URI has an empty host but a none empty path", func() {
+			dataset := createDataset()
+			dataset.URI = "http:///path"
 			validationErr := ValidateDataset(&dataset)
 			So(validationErr, ShouldNotBeNil)
 			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
@@ -354,7 +397,6 @@ func TestValidateDataset(t *testing.T) {
 		Convey("when dataset.QMI.Href is unable to be parsed into url format", func() {
 			dataset := createDataset()
 			dataset.QMI.HRef = ":foo"
-			fmt.Println(dataset.QMI.HRef)
 			validationErr := ValidateDataset(&dataset)
 			So(validationErr, ShouldNotBeNil)
 			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [QMI]").Error())
@@ -363,7 +405,6 @@ func TestValidateDataset(t *testing.T) {
 		Convey("when dataset.Publisher.Href is unable to be parsed into url format", func() {
 			dataset := createDataset()
 			dataset.Publisher.HRef = ":foo"
-			fmt.Println(dataset.Publisher.HRef)
 			validationErr := ValidateDataset(&dataset)
 			So(validationErr, ShouldNotBeNil)
 			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [Publisher]").Error())
