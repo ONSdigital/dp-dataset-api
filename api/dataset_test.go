@@ -324,7 +324,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 
 func TestPostDatasetsReturnsCreated(t *testing.T) {
 	t.Parallel()
-	Convey("A successful request to post dataset returns 200 OK response", t, func() {
+	Convey("A successful request to post dataset returns 201 OK response", t, func() {
 		var b string
 		b = datasetPayload
 		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
@@ -358,7 +358,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		})
 	})
 
-	Convey("When updating the dataset with an empty QMI url returns 200 success", t, func() {
+	Convey("When creating the dataset with an empty QMI url returns 201 success", t, func() {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "", "title": "test"}}`
 
@@ -393,7 +393,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		})
 	})
 
-	Convey("When updating the dataset with a valid QMI url (path in appropriate url format) returns 200 success", t, func() {
+	Convey("When creating the dataset with a valid QMI url (path in appropriate url format) returns 201 success", t, func() {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://domain.com/path", "title": "test"}}`
 
@@ -428,7 +428,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		})
 	})
 
-	Convey("When updating the dataset with a valid QMI url (relative path) returns 200 success", t, func() {
+	Convey("When creating the dataset with a valid QMI url (relative path) returns 201 success", t, func() {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "/path", "title": "test"}}`
 
@@ -463,7 +463,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		})
 	})
 
-	Convey("When updating the dataset with a valid QMI url (valid host but an empty path) returns 200 success", t, func() {
+	Convey("When creating the dataset with a valid QMI url (valid host but an empty path) returns 201 success", t, func() {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://domain.com/", "title": "test"}}`
 
@@ -498,7 +498,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		})
 	})
 
-	Convey("When updating the dataset with a valid QMI url (only a valid domain) returns 200 success", t, func() {
+	Convey("When creating the dataset with a valid QMI url (only a valid domain) returns 201 success", t, func() {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "domain.com", "title": "test"}}`
 
@@ -705,7 +705,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		})
 	})
 
-	Convey("When updating the dataset with invalid QMI url (invalid character) returns bad request", t, func() {
+	Convey("When creating the dataset with invalid QMI url (invalid character) returns bad request", t, func() {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": ":not a link", "title": "test"}}`
 
@@ -738,7 +738,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		})
 	})
 
-	Convey("When updating the dataset with invalid QMI url (scheme only) returns bad request", t, func() {
+	Convey("When creating the dataset with invalid QMI url (scheme only) returns bad request", t, func() {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://", "title": "test"}}`
 
@@ -771,40 +771,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		})
 	})
 
-	Convey("When updating the dataset with invalid QMI url (scheme only) returns bad request", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://", "title": "test"}}`
-
-		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
-
-		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
-			},
-			UpsertDatasetFunc: func(string, *models.DatasetUpdate) error {
-				return nil
-			},
-		}
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
-
-		So(w.Body.String(), ShouldResemble, "invalid fields: [QMI]\n")
-		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 0)
-
-		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
-			So(err, ShouldEqual, io.EOF)
-		})
-	})
-
-	Convey("When updating the dataset with invalid QMI url (scheme and path only) returns bad request", t, func() {
+	Convey("When creating the dataset with invalid QMI url (scheme and path only) returns bad request", t, func() {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http:///path", "title": "test"}}`
 
@@ -1306,41 +1273,6 @@ func TestPutDatasetReturnsError(t *testing.T) {
 	Convey("When updating the dataset with invalid QMI url (invalid character) returns bad request", t, func() {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": ":not a link", "title": "test"}}`
-
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
-
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{Type: "nomis"}}, nil
-			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
-				return nil
-			},
-		}
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-
-		api.Router.ServeHTTP(w, r)
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(w.Body.String(), ShouldResemble, "invalid fields: [QMI]\n")
-		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
-
-		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
-			So(err, ShouldEqual, io.EOF)
-		})
-	})
-
-	Convey("When updating the dataset with invalid QMI url (scheme only) returns bad request", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://", "title": "test"}}`
 
 		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
