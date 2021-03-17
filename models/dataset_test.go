@@ -386,7 +386,7 @@ func TestValidateDataset(t *testing.T) {
 			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
 		})
 
-		Convey("when dataset.URI has an empty host but a none empty path", func() {
+		Convey("when dataset.URI has an empty host but a non empty path", func() {
 			dataset := createDataset()
 			dataset.URI = "http:///path"
 			validationErr := ValidateDataset(&dataset)
