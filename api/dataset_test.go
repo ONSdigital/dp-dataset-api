@@ -92,37 +92,12 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		So(mockedDataStore.GetDatasetsCalls()[0].Limit, ShouldEqual, 11)
 		So(mockedDataStore.GetDatasetsCalls()[0].Offset, ShouldEqual, 12)
 	})
-
-	Convey("When valid limit above maximum and offset query parameters are provided, then return datasets information according to the offset and limit", t, func() {
-
-		r := &http.Request{}
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
-				return []*models.DatasetUpdate{}, 5, nil
-			},
-		}
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-
-		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 6, 7)
-
-		So(actualResponse, ShouldResemble, []*models.Dataset{})
-		So(actualTotalCount, ShouldEqual, 5)
-		So(err, ShouldEqual, nil)
-		So(mockedDataStore.GetDatasetsCalls()[0].Limit, ShouldEqual, 6)
-		So(mockedDataStore.GetDatasetsCalls()[0].Offset, ShouldEqual, 7)
-	})
-
 }
 
 func TestGetDatasetsReturnsError(t *testing.T) {
 	t.Parallel()
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
+		r := &http.Request{}
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
@@ -133,12 +108,17 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
+		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 6, 7)
 
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-		So(permissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(actualResponse, ShouldResemble, nil)
+		So(actualTotalCount, ShouldEqual, 0)
+		So(err, ShouldEqual, errs.ErrInternalServer)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(string(w.Body.Bytes()), ShouldEqual, "internal error\n")
 	})
 }
 
