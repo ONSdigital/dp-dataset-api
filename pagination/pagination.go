@@ -11,7 +11,7 @@ import (
 )
 
 // ListFetcher is an interface for an endpoint that returns a list of values that we want to paginate
-type ListFetcher func(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error)
+type ListFetcher func(w http.ResponseWriter, r *http.Request, limit int, offset int) (list interface{}, totalCount int, err error)
 
 type page struct {
 	Items      interface{} `json:"items"`
@@ -112,7 +112,7 @@ func (p *Paginator) Paginate(listFetcher ListFetcher) func(w http.ResponseWriter
 
 func returnPaginatedResults(w http.ResponseWriter, r *http.Request, list page) {
 
-	logData := log.Data{}
+	logData := log.Data{"path": r.URL.Path, "method": r.Method}
 
 	b, err := json.Marshal(list)
 
@@ -125,9 +125,9 @@ func returnPaginatedResults(w http.ResponseWriter, r *http.Request, list page) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if _, err = w.Write(b); err != nil {
-		log.Event(r.Context(), "api endpoint error writing response body", log.ERROR, log.Error(err))
+		log.Event(r.Context(), "api endpoint error writing response body", log.ERROR, log.Error(err), logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.Event(r.Context(), "api endpoint request successful", log.INFO)
+	log.Event(r.Context(), "api endpoint request successful", log.INFO, logData)
 }
