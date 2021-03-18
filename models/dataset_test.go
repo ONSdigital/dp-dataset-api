@@ -15,7 +15,7 @@ import (
 
 const (
 	validURI    = "http://localhost:22000/datasets/123"
-	validHref   = "http://localhost:22000//datasets/href"
+	validHref   = "http://localhost:22000/datasets/href"
 	invalidHref = ":invalid"
 )
 
@@ -23,6 +23,14 @@ func createDataset() Dataset {
 	return Dataset{
 		ID:  "123",
 		URI: validURI,
+		QMI: &GeneralDetails {
+			Description: "some qmi description",
+			HRef: validHref,
+			Title: "some qmi title",
+		},
+		Publisher: &Publisher {
+			HRef: validHref,
+		},
 		Publications: []GeneralDetails{{
 			Description: "some publication description",
 			HRef:        validHref,
@@ -227,8 +235,7 @@ func TestCleanDataset(t *testing.T) {
 	Convey("A clean dataset stays unmodified", t, func() {
 		Convey("When a clean dataset is cleaned, the URI and hrefs stay the same", func() {
 			dataset := createDataset()
-			cleanErr := CleanDataset(&dataset)
-			So(cleanErr, ShouldBeNil)
+			CleanDataset(&dataset)
 			So(dataset.URI, ShouldEqual, validURI)
 			So(dataset.Publications, ShouldHaveLength, 1)
 			So(dataset.Publications[0].HRef, ShouldEqual, validHref)
@@ -239,24 +246,35 @@ func TestCleanDataset(t *testing.T) {
 		Convey("When a dataset URI has leading space it is trimmed", func() {
 			dataset := createDataset()
 			dataset.URI = "    " + validURI
-			cleanErr := CleanDataset(&dataset)
-			So(cleanErr, ShouldBeNil)
+			CleanDataset(&dataset)
 			So(dataset.URI, ShouldEqual, validURI)
 		})
 
 		Convey("When a dataset URI has trailing space it is trimmed", func() {
 			dataset := createDataset()
 			dataset.URI = validURI + "     "
-			cleanErr := CleanDataset(&dataset)
-			So(cleanErr, ShouldBeNil)
+			CleanDataset(&dataset)
 			So(dataset.URI, ShouldEqual, validURI)
+		})
+
+		Convey("When a QMI HRef has whitespace it is trimmed", func() {
+			dataset := createDataset()
+			dataset.QMI.HRef = "    " + validHref
+			CleanDataset(&dataset)
+			So(dataset.QMI.HRef, ShouldEqual, validHref)
+		})
+
+		Convey("When a Publisher HRef has whitespace it is trimmed", func() {
+			dataset := createDataset()
+			dataset.Publisher.HRef = "    " + validHref
+			CleanDataset(&dataset)
+			So(dataset.Publisher.HRef, ShouldEqual, validHref)
 		})
 
 		Convey("When a Publications HRef has whitespace it is trimmed", func() {
 			dataset := createDataset()
 			dataset.Publications[0].HRef = "    " + validHref
-			cleanErr := CleanDataset(&dataset)
-			So(cleanErr, ShouldBeNil)
+			CleanDataset(&dataset)
 			So(dataset.Publications, ShouldHaveLength, 1)
 			So(dataset.Publications[0].HRef, ShouldEqual, validHref)
 		})
@@ -265,8 +283,7 @@ func TestCleanDataset(t *testing.T) {
 			dataset := createDataset()
 			dataset.Publications[0].HRef = "    " + validHref
 			dataset.Publications = append(dataset.Publications, GeneralDetails{HRef: validHref + "    "})
-			cleanErr := CleanDataset(&dataset)
-			So(cleanErr, ShouldBeNil)
+			CleanDataset(&dataset)
 			So(dataset.Publications, ShouldHaveLength, 2)
 			So(dataset.Publications[0].HRef, ShouldEqual, validHref)
 			So(dataset.Publications[1].HRef, ShouldEqual, validHref)
@@ -275,8 +292,7 @@ func TestCleanDataset(t *testing.T) {
 		Convey("When a Methodologies HRef has whitespace it is trimmed", func() {
 			dataset := createDataset()
 			dataset.Methodologies[0].HRef = "    " + validHref
-			cleanErr := CleanDataset(&dataset)
-			So(cleanErr, ShouldBeNil)
+			CleanDataset(&dataset)
 			So(dataset.Methodologies, ShouldHaveLength, 1)
 			So(dataset.Methodologies[0].HRef, ShouldEqual, validHref)
 		})
@@ -285,8 +301,7 @@ func TestCleanDataset(t *testing.T) {
 			dataset := createDataset()
 			dataset.Methodologies[0].HRef = "    " + validHref
 			dataset.Methodologies = append(dataset.Methodologies, GeneralDetails{HRef: validHref + "    "})
-			cleanErr := CleanDataset(&dataset)
-			So(cleanErr, ShouldBeNil)
+			CleanDataset(&dataset)
 			So(dataset.Methodologies, ShouldHaveLength, 2)
 			So(dataset.Methodologies[0].HRef, ShouldEqual, validHref)
 			So(dataset.Methodologies[1].HRef, ShouldEqual, validHref)
@@ -295,8 +310,7 @@ func TestCleanDataset(t *testing.T) {
 		Convey("When a RelatedDatasets HRef has whitespace it is trimmed", func() {
 			dataset := createDataset()
 			dataset.RelatedDatasets[0].HRef = "    " + validHref
-			cleanErr := CleanDataset(&dataset)
-			So(cleanErr, ShouldBeNil)
+			CleanDataset(&dataset)
 			So(dataset.RelatedDatasets, ShouldHaveLength, 1)
 			So(dataset.RelatedDatasets[0].HRef, ShouldEqual, validHref)
 		})
@@ -305,21 +319,12 @@ func TestCleanDataset(t *testing.T) {
 			dataset := createDataset()
 			dataset.RelatedDatasets[0].HRef = "    " + validHref
 			dataset.RelatedDatasets = append(dataset.RelatedDatasets, GeneralDetails{HRef: validHref + "    "})
-			cleanErr := CleanDataset(&dataset)
-			So(cleanErr, ShouldBeNil)
+			CleanDataset(&dataset)
 			So(dataset.RelatedDatasets, ShouldHaveLength, 2)
 			So(dataset.RelatedDatasets[0].HRef, ShouldEqual, validHref)
 			So(dataset.RelatedDatasets[1].HRef, ShouldEqual, validHref)
 		})
 
-	})
-
-	Convey("A nil dataset returns an error when cleaned", t, func() {
-		Convey("A nil dataset returns an error", func() {
-			cleanErr := CleanDataset(nil)
-			So(cleanErr, ShouldNotBeNil)
-			So(cleanErr.Error(), ShouldResemble, errors.New("clean dataset called without a valid dataset").Error())
-		})
 	})
 }
 
@@ -328,8 +333,36 @@ func TestValidateDataset(t *testing.T) {
 
 	Convey("Successful validation (true) returned", t, func() {
 
-		Convey("when dataset.URI contains its path in appropriate url format ", func() {
+		Convey("when dataset.URI contains its path in appropriate url format", func() {
 			dataset := createDataset()
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldBeNil)
+		})
+
+		Convey("when dataset.URI is empty", func() {
+			dataset := createDataset()
+			dataset.URI =""
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldBeNil)
+		})
+
+		Convey("when dataset.URI is a relative path", func() {
+			dataset := createDataset()
+			dataset.URI = "/relative_path"
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldBeNil)
+		})
+
+		Convey("when dataset.URI has a valid host but an empty path", func() {
+			dataset := createDataset()
+			dataset.URI = "http://domain.com/"
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldBeNil)
+		})
+
+		Convey("when dataset.URI is only a valid domain", func() {
+			dataset := createDataset()
+			dataset.URI = "domain.com"
 			validationErr := ValidateDataset(&dataset)
 			So(validationErr, ShouldBeNil)
 		})
@@ -340,10 +373,41 @@ func TestValidateDataset(t *testing.T) {
 		Convey("when dataset.URI is unable to be parsed into url format", func() {
 			dataset := createDataset()
 			dataset.URI = ":foo"
-			fmt.Println(dataset.URI)
 			validationErr := ValidateDataset(&dataset)
 			So(validationErr, ShouldNotBeNil)
 			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
+		})
+
+		Convey("when dataset.URI has an empty host and path", func() {
+			dataset := createDataset()
+			dataset.URI = "http://"
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldNotBeNil)
+			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
+		})
+
+		Convey("when dataset.URI has an empty host but a non empty path", func() {
+			dataset := createDataset()
+			dataset.URI = "http:///path"
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldNotBeNil)
+			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
+		})
+
+		Convey("when dataset.QMI.Href is unable to be parsed into url format", func() {
+			dataset := createDataset()
+			dataset.QMI.HRef = ":foo"
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldNotBeNil)
+			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [QMI]").Error())
+		})
+
+		Convey("when dataset.Publisher.Href is unable to be parsed into url format", func() {
+			dataset := createDataset()
+			dataset.Publisher.HRef = ":foo"
+			validationErr := ValidateDataset(&dataset)
+			So(validationErr, ShouldNotBeNil)
+			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [Publisher]").Error())
 		})
 
 		Convey("when Publications href is unable to be parsed into url format", func() {

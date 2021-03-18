@@ -7,6 +7,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 )
 
@@ -34,8 +35,13 @@ func (m *Mongo) GetUniqueDimensionAndOptions(id, dimension string) (*models.Dime
 	s := m.Session.Copy()
 	defer s.Close()
 
+	q, err := m.sortedQuery(s, bson.M{"instance_id": id, "name": dimension})
+	if err != nil {
+		return nil, err
+	}
+
 	var values []string
-	err := s.DB(m.Database).C(dimensionOptions).Find(bson.M{"instance_id": id, "name": dimension}).Distinct("option", &values)
+	err = q.Distinct("option", &values)
 	if err != nil {
 		return nil, err
 	}
@@ -53,6 +59,7 @@ func (m *Mongo) AddDimensionToInstance(opt *models.CachedDimensionOption) error 
 	defer s.Close()
 
 	option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name, Label: opt.Label}
+	option.Order = opt.Order
 	option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/code-lists/%s", m.CodeListURL, opt.CodeList)}
 	option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.CodeListURL, opt.CodeList, opt.Code)}
 
@@ -97,20 +104,32 @@ func (m *Mongo) GetDimensionOptions(version *models.Version, dimension string, o
 	s := m.Session.Copy()
 	defer s.Close()
 
-	q := s.DB(m.Database).C(dimensionOptions).Find(bson.M{"instance_id": version.ID, "name": dimension})
-	totalCount, err := q.Count()
+	// define selector to obtain all the dimension options for an instance
+	selector := bson.M{"instance_id": version.ID, "name": dimension}
+
+	// get total count of items
+	totalCount, err := s.DB(m.Database).C(dimensionOptions).Find(selector).Count()
 	if err != nil {
 		return nil, err
 	}
 
 	var values []models.PublicDimensionOption
 
-	if limit > 0 {
-		iter := q.Sort("option").Skip(offset).Limit(limit).Iter()
+	if limit > 0 && totalCount > 0 {
+
+		// obtain query defining the order
+		q, err := m.sortedQuery(s, selector)
+		if err != nil {
+			return nil, err
+		}
+
+		// obtain only the necessary items according to offset and limit
+		iter := q.Skip(offset).Limit(limit).Iter()
 		if err := iter.All(&values); err != nil {
 			return nil, err
 		}
 
+		// update links for returned values
 		for i := 0; i < len(values); i++ {
 			values[i].Links.Version = *version.Links.Self
 		}
@@ -138,23 +157,31 @@ func (m *Mongo) GetDimensionOptionsFromIDs(version *models.Version, dimension st
 	selectorInList := bson.M{"instance_id": version.ID, "name": dimension, "option": bson.M{"$in": IDs}}
 
 	// count total number of options in dimension
-	q := s.DB(m.Database).C(dimensionOptions).Find(selectorAll)
-	totalCount, err := q.Count()
+	totalCount, err := s.DB(m.Database).C(dimensionOptions).Find(selectorAll).Count()
 	if err != nil {
 		return nil, err
 	}
 
-	// obtain only options matching the provided IDs
-	q = s.DB(m.Database).C(dimensionOptions).Find(selectorInList)
-
 	var values []models.PublicDimensionOption
-	iter := q.Sort("option").Iter()
-	if err := iter.All(&values); err != nil {
-		return nil, err
-	}
 
-	for i := 0; i < len(values); i++ {
-		values[i].Links.Version = *version.Links.Self
+	if totalCount > 0 {
+
+		// obtain query defining the order for the provided IDs only
+		q, err := m.sortedQuery(s, selectorInList)
+		if err != nil {
+			return nil, err
+		}
+
+		// obtain all required options in order
+		iter := q.Iter()
+		if err := iter.All(&values); err != nil {
+			return nil, err
+		}
+
+		// update links for returned values
+		for i := 0; i < len(values); i++ {
+			values[i].Links.Version = *version.Links.Self
+		}
 	}
 
 	return &models.DimensionOptionResults{
@@ -164,4 +191,23 @@ func (m *Mongo) GetDimensionOptionsFromIDs(version *models.Version, dimension st
 		Offset:     0,
 		Limit:      0,
 	}, nil
+}
+
+// sortedQuery generates a sorted mongoDB query from the provided bson.M selector
+// if order property exists, it will be used to determine the order
+// otherwise, the items will be sorted alphabetically by option
+func (m *Mongo) sortedQuery(s *mgo.Session, selector bson.M) (*mgo.Query, error) {
+	q := s.DB(m.Database).C(dimensionOptions).Find(selector)
+
+	selector["order"] = bson.M{"$exists": true}
+	orderCount, err := s.DB(m.Database).C(dimensionOptions).Find(selector).Count()
+	if err != nil {
+		return nil, err
+	}
+	delete(selector, "order")
+
+	if orderCount > 0 {
+		return q.Sort("order"), nil
+	}
+	return q.Sort("option"), nil
 }

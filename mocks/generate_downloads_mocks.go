@@ -7,6 +7,10 @@ import (
 	"sync"
 )
 
+var (
+	lockKafkaProducerMockOutput sync.RWMutex
+)
+
 // KafkaProducerMock is a mock implementation of download.KafkaProducer.
 //
 //     func TestSomethingThatUsesKafkaProducer(t *testing.T) {
@@ -32,7 +36,6 @@ type KafkaProducerMock struct {
 		Output []struct {
 		}
 	}
-	lockOutput sync.RWMutex
 }
 
 // Output calls OutputFunc.
@@ -42,9 +45,9 @@ func (mock *KafkaProducerMock) Output() chan []byte {
 	}
 	callInfo := struct {
 	}{}
-	mock.lockOutput.Lock()
+	lockKafkaProducerMockOutput.Lock()
 	mock.calls.Output = append(mock.calls.Output, callInfo)
-	mock.lockOutput.Unlock()
+	lockKafkaProducerMockOutput.Unlock()
 	return mock.OutputFunc()
 }
 
@@ -55,11 +58,15 @@ func (mock *KafkaProducerMock) OutputCalls() []struct {
 } {
 	var calls []struct {
 	}
-	mock.lockOutput.RLock()
+	lockKafkaProducerMockOutput.RLock()
 	calls = mock.calls.Output
-	mock.lockOutput.RUnlock()
+	lockKafkaProducerMockOutput.RUnlock()
 	return calls
 }
+
+var (
+	lockGenerateDownloadsEventMockMarshal sync.RWMutex
+)
 
 // GenerateDownloadsEventMock is a mock implementation of download.GenerateDownloadsEvent.
 //
@@ -88,7 +95,6 @@ type GenerateDownloadsEventMock struct {
 			S interface{}
 		}
 	}
-	lockMarshal sync.RWMutex
 }
 
 // Marshal calls MarshalFunc.
@@ -101,9 +107,9 @@ func (mock *GenerateDownloadsEventMock) Marshal(s interface{}) ([]byte, error) {
 	}{
 		S: s,
 	}
-	mock.lockMarshal.Lock()
+	lockGenerateDownloadsEventMockMarshal.Lock()
 	mock.calls.Marshal = append(mock.calls.Marshal, callInfo)
-	mock.lockMarshal.Unlock()
+	lockGenerateDownloadsEventMockMarshal.Unlock()
 	return mock.MarshalFunc(s)
 }
 
@@ -116,8 +122,8 @@ func (mock *GenerateDownloadsEventMock) MarshalCalls() []struct {
 	var calls []struct {
 		S interface{}
 	}
-	mock.lockMarshal.RLock()
+	lockGenerateDownloadsEventMockMarshal.RLock()
 	calls = mock.calls.Marshal
-	mock.lockMarshal.RUnlock()
+	lockGenerateDownloadsEventMockMarshal.RUnlock()
 	return calls
 }

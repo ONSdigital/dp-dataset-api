@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -159,6 +160,13 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
+		models.CleanDataset(dataset)
+
+		if err = models.ValidateDataset(dataset); err != nil {
+			log.Event(ctx, "addDataset endpoint: dataset failed validation checks", log.ERROR, log.Error(err))
+			return nil, err
+		}
+
 		dataset.Type = datasetType
 		dataset.State = models.CreatedState
 		dataset.ID = datasetID
@@ -244,20 +252,19 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
+		models.CleanDataset(dataset)
+
+		if err = models.ValidateDataset(dataset); err != nil {
+			log.Event(ctx, "putDataset endpoint: failed validation check to update dataset", log.ERROR, log.Error(err), data)
+			return err
+		}
+
 		if dataset.State == models.PublishedState {
 			if err := api.publishDataset(ctx, currentDataset, nil); err != nil {
 				log.Event(ctx, "putDataset endpoint: failed to update dataset document to published", log.ERROR, log.Error(err), data)
 				return err
 			}
 		} else {
-			if err := models.CleanDataset(dataset); err != nil {
-				log.Event(ctx, "could not clean dataset", log.ERROR, log.Error(err))
-				return nil
-			}
-			if err := models.ValidateDataset(dataset); err != nil {
-				log.Event(ctx, "failed validation check to update dataset", log.ERROR, log.Error(err))
-				return nil
-			}
 			if err := api.dataStore.Backend.UpdateDataset(ctx, datasetID, dataset, currentDataset.Next.State); err != nil {
 				log.Event(ctx, "putDataset endpoint: failed to update dataset resource", log.ERROR, log.Error(err), data)
 				return err
@@ -401,7 +408,7 @@ func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 		status = http.StatusForbidden
 	case datasetsNoContent[err]:
 		status = http.StatusNoContent
-	case datasetsBadRequest[err]:
+	case datasetsBadRequest[err], strings.HasPrefix(err.Error(), "invalid fields:"):
 		status = http.StatusBadRequest
 	case resourcesNotFound[err]:
 		status = http.StatusNotFound

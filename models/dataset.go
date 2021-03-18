@@ -443,11 +443,16 @@ func (ed *EditionUpdate) PublishLinks(ctx context.Context, host string, versionL
 }
 
 // CleanDataset trims URI and any hrefs contained in the database
-func CleanDataset(dataset *Dataset) error {
-	if dataset == nil {
-		return errors.New("clean dataset called without a valid dataset")
-	}
+func CleanDataset(dataset *Dataset) {
 	dataset.URI = strings.TrimSpace(dataset.URI)
+
+	if dataset.QMI != nil {
+		dataset.QMI.HRef = strings.TrimSpace(dataset.QMI.HRef)
+	}
+
+	if dataset.Publisher != nil {
+		dataset.Publisher.HRef = strings.TrimSpace(dataset.Publisher.HRef)
+	}
 
 	for i := range dataset.Publications {
 		dataset.Publications[i].HRef = strings.TrimSpace(dataset.Publications[i].HRef)
@@ -460,18 +465,21 @@ func CleanDataset(dataset *Dataset) error {
 	for i := range dataset.RelatedDatasets {
 		dataset.RelatedDatasets[i].HRef = strings.TrimSpace(dataset.RelatedDatasets[i].HRef)
 	}
-	return nil
 }
 
 // ValidateDataset checks the dataset has invalid fields
 func ValidateDataset(dataset *Dataset) error {
-
 	var invalidFields []string
 	if dataset.URI != "" {
-		_, err := url.Parse(dataset.URI)
-		if err != nil {
-			invalidFields = append(invalidFields, "URI")
-		}
+		invalidFields = append(invalidFields, validateUrlString(dataset.URI, "URI")...)
+	}
+
+	if dataset.QMI != nil && dataset.QMI.HRef != "" {
+		invalidFields = append(invalidFields, validateUrlString(dataset.QMI.HRef, "QMI")...)
+	}
+
+	if dataset.Publisher != nil && dataset.Publisher.HRef != "" {
+		invalidFields = append(invalidFields, validateUrlString(dataset.Publisher.HRef, "Publisher")...)
 	}
 
 	invalidFields = append(invalidFields, validateGeneralDetails(dataset.Publications, "Publications")...)
@@ -480,20 +488,24 @@ func ValidateDataset(dataset *Dataset) error {
 
 	invalidFields = append(invalidFields, validateGeneralDetails(dataset.Methodologies, "Methodologies")...)
 
-	if invalidFields != nil {
+	if len(invalidFields) > 0 {
 		return fmt.Errorf("invalid fields: %v", invalidFields)
 	}
 
 	return nil
-
 }
 
 func validateGeneralDetails(generalDetails []GeneralDetails, identifier string) (invalidFields []string) {
 	for i, gd := range generalDetails {
-		_, err := url.Parse(gd.HRef)
-		if err != nil {
-			invalidFields = append(invalidFields, fmt.Sprintf("%s[%d].HRef", identifier, i))
-		}
+		invalidFields = append(invalidFields, validateUrlString(gd.HRef, fmt.Sprintf("%s[%d].HRef", identifier, i))...)
+	}
+	return
+}
+
+func validateUrlString(urlString string, identifier string) (invalidFields []string) {
+	url, err := url.Parse(urlString)
+	if err != nil || (url.Scheme != "" && url.Host == "" && url.Path == "") || (url.Scheme != "" && url.Host == "" && url.Path != "") {
+		invalidFields = append(invalidFields, identifier)
 	}
 	return
 }
