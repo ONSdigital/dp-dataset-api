@@ -52,7 +52,7 @@ var _ store.MongoDB = &MongoDBMock{}
 // 			GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
 // 				panic("mock out the GetDataset method")
 // 			},
-// 			GetDatasetsFunc: func(ctx context.Context, offset int, limit int, authorised bool) ([]models.DatasetUpdate, int, error) {
+// 			GetDatasetsFunc: func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 // 				panic("mock out the GetDatasets method")
 // 			},
 // 			GetDimensionOptionsFunc: func(version *models.Version, dimension string, offset int, limit int) (*models.DimensionOptionResults, error) {
@@ -70,7 +70,7 @@ var _ store.MongoDB = &MongoDBMock{}
 // 			GetEditionFunc: func(ID string, editionID string, state string) (*models.EditionUpdate, error) {
 // 				panic("mock out the GetEdition method")
 // 			},
-// 			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
+// 			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
 // 				panic("mock out the GetEditions method")
 // 			},
 // 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
@@ -168,7 +168,7 @@ type MongoDBMock struct {
 	GetDatasetFunc func(ID string) (*models.DatasetUpdate, error)
 
 	// GetDatasetsFunc mocks the GetDatasets method.
-	GetDatasetsFunc func(ctx context.Context, offset int, limit int, authorised bool) ([]models.DatasetUpdate, int, error)
+	GetDatasetsFunc func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 
 	// GetDimensionOptionsFunc mocks the GetDimensionOptions method.
 	GetDimensionOptionsFunc func(version *models.Version, dimension string, offset int, limit int) (*models.DimensionOptionResults, error)
@@ -186,7 +186,7 @@ type MongoDBMock struct {
 	GetEditionFunc func(ID string, editionID string, state string) (*models.EditionUpdate, error)
 
 	// GetEditionsFunc mocks the GetEditions method.
-	GetEditionsFunc func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]models.EditionUpdate, int, error)
+	GetEditionsFunc func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]*models.EditionUpdate, int, error)
 
 	// GetInstanceFunc mocks the GetInstance method.
 	GetInstanceFunc func(ID string) (*models.Instance, error)
@@ -905,7 +905,7 @@ func (mock *MongoDBMock) GetDatasetCalls() []struct {
 }
 
 // GetDatasets calls GetDatasetsFunc.
-func (mock *MongoDBMock) GetDatasets(ctx context.Context, offset int, limit int, authorised bool) ([]models.DatasetUpdate, int, error) {
+func (mock *MongoDBMock) GetDatasets(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 	if mock.GetDatasetsFunc == nil {
 		panic("MongoDBMock.GetDatasetsFunc: method is nil but MongoDB.GetDatasets was just called")
 	}
@@ -1135,7 +1135,7 @@ func (mock *MongoDBMock) GetEditionCalls() []struct {
 }
 
 // GetEditions calls GetEditionsFunc.
-func (mock *MongoDBMock) GetEditions(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
+func (mock *MongoDBMock) GetEditions(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
 	if mock.GetEditionsFunc == nil {
 		panic("MongoDBMock.GetEditionsFunc: method is nil but MongoDB.GetEditions was just called")
 	}

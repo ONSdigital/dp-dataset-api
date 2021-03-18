@@ -34,8 +34,8 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]models.DatasetUpdate, int, error) {
-				return []models.DatasetUpdate{
+			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+				return []*models.DatasetUpdate{
 					{
 						Current: current,
 						Next:    next,
@@ -106,9 +106,9 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 				datasetSearchState = state
 				return nil
 			},
-			GetEditionsFunc: func(ctx context.Context, ID, state string, offset, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(ctx context.Context, ID, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
 				editionSearchState = state
-				return []models.EditionUpdate{edition}, 0, nil
+				return []*models.EditionUpdate{&edition}, 0, nil
 			},
 		}
 		Convey("Calling the editions endpoint should allow only published items", func() {

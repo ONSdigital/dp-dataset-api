@@ -378,7 +378,7 @@ func slice(full []string, offset, limit int) (sliced []string) {
 	return full[offset:end]
 }
 
-func mapResults(results []models.DatasetUpdate) []*models.Dataset {
+func mapResults(results []*models.DatasetUpdate) []*models.Dataset {
 	items := []*models.Dataset{}
 	for _, item := range results {
 		if item.Current == nil {

@@ -28,8 +28,8 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(ctx context.Context, id string, state string, offset, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
-				return []models.EditionUpdate{}, 0, nil
+			GetEditionsFunc: func(ctx context.Context, id string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{}, 0, nil
 			},
 		}
 
@@ -61,8 +61,8 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(ctx context.Context, id string, state string, offset, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
-				return []models.EditionUpdate{
+			GetEditionsFunc: func(ctx context.Context, id string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{
 					{ID: "id1",
 						Current: &models.Edition{
 							ID: "id2",
@@ -101,8 +101,8 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(ctx context.Context, id string, state string, offset, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
-				return []models.EditionUpdate{
+			GetEditionsFunc: func(ctx context.Context, id string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{
 					{ID: "id1",
 						Current: &models.Edition{
 							ID: "id2",
@@ -206,7 +206,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(ctx context.Context, id string, state string, offset, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(ctx context.Context, id string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
 				return nil, 0, errs.ErrEditionNotFound
 			},
 		}
@@ -231,7 +231,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
 			},
-			GetEditionsFunc: func(ctx context.Context, id string, state string, offset, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(ctx context.Context, id string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
 				return nil, 0, errs.ErrEditionNotFound
 			},
 		}

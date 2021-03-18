@@ -75,8 +75,8 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]models.DatasetUpdate, int, error) {
-				return []models.DatasetUpdate{}, 15, nil
+			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+				return []*models.DatasetUpdate{}, 15, nil
 			},
 		}
 
@@ -99,8 +99,8 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]models.DatasetUpdate, int, error) {
-				return []models.DatasetUpdate{}, 5, nil
+			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+				return []*models.DatasetUpdate{}, 5, nil
 			},
 		}
 
@@ -125,7 +125,7 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]models.DatasetUpdate, int, error) {
+			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 				return nil, 0, errs.ErrInternalServer
 			},
 		}
@@ -803,8 +803,8 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
-				return []models.EditionUpdate{}, 0, nil
+			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(string) error {
 				return nil
@@ -833,9 +833,9 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
-				var items []models.EditionUpdate
-				items = append(items, models.EditionUpdate{})
+			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+				var items []*models.EditionUpdate
+				items = append(items, &models.EditionUpdate{})
 				return items, 0, nil
 			},
 			DeleteEditionFunc: func(ID string) error {
@@ -872,8 +872,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
-				return []models.EditionUpdate{}, 0, nil
+			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(string) error {
 				return nil
@@ -904,8 +904,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
-				return []models.EditionUpdate{}, 0, nil
+			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(string) error {
 				return errs.ErrInternalServer
@@ -935,8 +935,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
-				return []models.EditionUpdate{}, 0, nil
+			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(string) error {
 				return nil
@@ -967,8 +967,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return nil, errors.New("database is broken")
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
-				return []models.EditionUpdate{}, 0, nil
+			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(string) error {
 				return nil

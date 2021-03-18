@@ -48,7 +48,7 @@ var _ store.Storer = &StorerMock{}
 // 			GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
 // 				panic("mock out the GetDataset method")
 // 			},
-// 			GetDatasetsFunc: func(ctx context.Context, offset int, limit int, authorised bool) ([]models.DatasetUpdate, int, error) {
+// 			GetDatasetsFunc: func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 // 				panic("mock out the GetDatasets method")
 // 			},
 // 			GetDimensionOptionsFunc: func(version *models.Version, dimension string, offset int, limit int) (*models.DimensionOptionResults, error) {
@@ -66,7 +66,7 @@ var _ store.Storer = &StorerMock{}
 // 			GetEditionFunc: func(ID string, editionID string, state string) (*models.EditionUpdate, error) {
 // 				panic("mock out the GetEdition method")
 // 			},
-// 			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
+// 			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
 // 				panic("mock out the GetEditions method")
 // 			},
 // 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
@@ -164,7 +164,7 @@ type StorerMock struct {
 	GetDatasetFunc func(ID string) (*models.DatasetUpdate, error)
 
 	// GetDatasetsFunc mocks the GetDatasets method.
-	GetDatasetsFunc func(ctx context.Context, offset int, limit int, authorised bool) ([]models.DatasetUpdate, int, error)
+	GetDatasetsFunc func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 
 	// GetDimensionOptionsFunc mocks the GetDimensionOptions method.
 	GetDimensionOptionsFunc func(version *models.Version, dimension string, offset int, limit int) (*models.DimensionOptionResults, error)
@@ -182,7 +182,7 @@ type StorerMock struct {
 	GetEditionFunc func(ID string, editionID string, state string) (*models.EditionUpdate, error)
 
 	// GetEditionsFunc mocks the GetEditions method.
-	GetEditionsFunc func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]models.EditionUpdate, int, error)
+	GetEditionsFunc func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]*models.EditionUpdate, int, error)
 
 	// GetInstanceFunc mocks the GetInstance method.
 	GetInstanceFunc func(ID string) (*models.Instance, error)
@@ -893,7 +893,7 @@ func (mock *StorerMock) GetDatasetCalls() []struct {
 }
 
 // GetDatasets calls GetDatasetsFunc.
-func (mock *StorerMock) GetDatasets(ctx context.Context, offset int, limit int, authorised bool) ([]models.DatasetUpdate, int, error) {
+func (mock *StorerMock) GetDatasets(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 	if mock.GetDatasetsFunc == nil {
 		panic("StorerMock.GetDatasetsFunc: method is nil but Storer.GetDatasets was just called")
 	}
@@ -1123,7 +1123,7 @@ func (mock *StorerMock) GetEditionCalls() []struct {
 }
 
 // GetEditions calls GetEditionsFunc.
-func (mock *StorerMock) GetEditions(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]models.EditionUpdate, int, error) {
+func (mock *StorerMock) GetEditions(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
 	if mock.GetEditionsFunc == nil {
 		panic("StorerMock.GetEditionsFunc: method is nil but Storer.GetEditions was just called")
 	}
