@@ -157,7 +157,7 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 	var results []*models.EditionUpdate
 
 	if limit > 0 {
-		iter := q.Skip(offset).Limit(limit).Iter()
+		iter := q.Sort().Skip(offset).Limit(limit).Iter()
 		defer func() {
 			err := iter.Close()
 			if err != nil {
