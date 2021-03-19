@@ -2039,6 +2039,9 @@ definitions:
       id:
         description: "The identifier for this version of an edition for a dataset"
         type: string
+      dataset_id:
+        description: "The identifier for the dataset."
+        type: string
       latest_changes:
         description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
         type: array
