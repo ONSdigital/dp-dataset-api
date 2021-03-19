@@ -182,47 +182,47 @@ func TestCreateDataset(t *testing.T) {
 }
 
 func TestCreateVersion(t *testing.T) {
-	t.Parallel()
-	Convey("Successfully return without any errors", t, func() {
-		Convey("when the version has all fields", func() {
+		t.Parallel()
+		Convey("Successfully return without any errors", t, func() {
+			Convey("when the version has all fields", func() {
+				testDatasetID := "test-dataset-id"
+				b, err := json.Marshal(associatedVersion)
+				if err != nil {
+					t.Logf("failed to marshal test data into bytes, error: %v", err)
+					t.FailNow()
+				}
+				r := bytes.NewReader(b)
+				version, err := CreateVersion(r, testDatasetID)
+				So(err, ShouldBeNil)
+				So(version.CollectionID, ShouldEqual, collectionID)
+				So(version.Dimensions, ShouldResemble, []Dimension{dimension})
+				So(version.Downloads, ShouldResemble, &downloads)
+				So(version.Edition, ShouldEqual, "2017")
+				So(version.ID, ShouldNotBeNil)
+				So(version.ReleaseDate, ShouldEqual, "2017-10-12")
+				So(version.LatestChanges, ShouldResemble, &[]LatestChange{latestChange})
+				So(version.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/geographylist")
+				So(version.State, ShouldEqual, AssociatedState)
+				So(version.Temporal, ShouldResemble, &[]TemporalFrequency{temporal})
+				So(version.Version, ShouldEqual, 1)
+				So(version.DatasetID, ShouldEqual, testDatasetID)
+			})
+		})
+
+		Convey("Return with error when the request body contains the correct fields but of the wrong type", t, func() {
 			testDatasetID := "test-dataset-id"
-			b, err := json.Marshal(associatedVersion)
+			b, err := json.Marshal(badInputData)
 			if err != nil {
 				t.Logf("failed to marshal test data into bytes, error: %v", err)
 				t.FailNow()
 			}
 			r := bytes.NewReader(b)
 			version, err := CreateVersion(r, testDatasetID)
-			So(err, ShouldBeNil)
-			So(version.CollectionID, ShouldEqual, collectionID)
-			So(version.Dimensions, ShouldResemble, []Dimension{dimension})
-			So(version.Downloads, ShouldResemble, &downloads)
-			So(version.Edition, ShouldEqual, "2017")
-			So(version.ID, ShouldNotBeNil)
-			So(version.ReleaseDate, ShouldEqual, "2017-10-12")
-			So(version.LatestChanges, ShouldResemble, &[]LatestChange{latestChange})
-			So(version.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/geographylist")
-			So(version.State, ShouldEqual, AssociatedState)
-			So(version.Temporal, ShouldResemble, &[]TemporalFrequency{temporal})
-			So(version.Version, ShouldEqual, 1)
-			So(version.ID, ShouldEqual, testDatasetID)
+			So(version, ShouldBeNil)
+			So(err, ShouldNotBeNil)
+			So(err, ShouldResemble, errs.ErrUnableToParseJSON)
 		})
-	})
-
-	Convey("Return with error when the request body contains the correct fields but of the wrong type", t, func() {
-		testDatasetID := "test-dataset-id"
-		b, err := json.Marshal(badInputData)
-		if err != nil {
-			t.Logf("failed to marshal test data into bytes, error: %v", err)
-			t.FailNow()
-		}
-		r := bytes.NewReader(b)
-		version, err := CreateVersion(r, testDatasetID)
-		So(version, ShouldBeNil)
-		So(err, ShouldNotBeNil)
-		So(err, ShouldResemble, errs.ErrUnableToParseJSON)
-	})
-}
+	}
 
 func TestCleanDataset(t *testing.T) {
 	t.Parallel()

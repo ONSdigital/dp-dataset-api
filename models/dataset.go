@@ -207,6 +207,7 @@ type Publisher struct {
 type Version struct {
 	Alerts        *[]Alert             `bson:"alerts,omitempty"         json:"alerts,omitempty"`
 	CollectionID  string               `bson:"collection_id,omitempty"  json:"collection_id,omitempty"`
+	DatasetID     string               `bson:"-"                        json:"dataset_id,omitempty"`
 	Dimensions    []Dimension          `bson:"dimensions,omitempty"     json:"dimensions,omitempty"`
 	Downloads     *DownloadList        `bson:"downloads,omitempty"      json:"downloads,omitempty"`
 	Edition       string               `bson:"edition,omitempty"        json:"edition,omitempty"`
@@ -304,6 +305,11 @@ func CreateVersion(reader io.Reader, datasetID string) (*Version, error) {
 
 	var version Version
 	version.ID = datasetID
+	// Create unique id
+	id := uuid.NewV4()
+
+	version.ID = id.String()
+	version.DatasetID = datasetID
 
 	err = json.Unmarshal(b, &version)
 	if err != nil {

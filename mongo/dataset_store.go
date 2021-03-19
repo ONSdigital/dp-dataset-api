@@ -304,13 +304,13 @@ func (m *Mongo) GetNextVersion(datasetID, edition string) (int, error) {
 }
 
 // GetVersions retrieves all version documents for a dataset edition
-func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string, offset, limit int) (*models.VersionResults, error) {
+func (m *Mongo) GetVersions(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
 	var q *mgo.Query
 
-	selector := buildVersionsQuery(id, editionID, state)
+	selector := buildVersionsQuery(datasetID, editionID, state)
 
 	q = s.DB(m.Database).C("instances").Find(selector)
 	totalCount, err := q.Count()
@@ -359,6 +359,7 @@ func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string, of
 
 	for i := 0; i < len(results); i++ {
 		results[i].Links.Self.HRef = results[i].Links.Version.HRef
+		results[i].DatasetID = datasetID
 	}
 
 	return &models.VersionResults{
@@ -370,11 +371,11 @@ func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string, of
 	}, nil
 }
 
-func buildVersionsQuery(id, editionID, state string) bson.M {
+func buildVersionsQuery(datasetID, editionID, state string) bson.M {
 	var selector bson.M
 	if state == "" {
 		selector = bson.M{
-			"links.dataset.id": id,
+			"links.dataset.id": datasetID,
 			"edition":          editionID,
 			"$or": []interface{}{
 				bson.M{"state": models.EditionConfirmedState},
@@ -384,7 +385,7 @@ func buildVersionsQuery(id, editionID, state string) bson.M {
 		}
 	} else {
 		selector = bson.M{
-			"links.dataset.id": id,
+			"links.dataset.id": datasetID,
 			"edition":          editionID,
 			"state":            state,
 		}
