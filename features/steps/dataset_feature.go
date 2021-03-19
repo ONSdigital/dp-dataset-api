@@ -87,6 +87,7 @@ func (f *DatasetFeature) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I have these datasets:$`, f.iHaveTheseDatasets)
 	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, f.theDocumentInTheDatabaseForIdShouldBe)
 	ctx.Step(`^there are no datasets$`, f.thereAreNoDatasets)
+	ctx.Step(`^I have these editions:$`, f.iHaveTheseEditions)
 }
 
 func (f *DatasetFeature) Reset() *DatasetFeature {
@@ -225,4 +226,40 @@ func (f *DatasetFeature) theDocumentInTheDatabaseForIdShouldBe(documentId string
 	assert.Equal(&f.ErrorFeature, "created", document.State)
 
 	return f.ErrorFeature.StepError()
+}
+
+func (f *DatasetFeature) iHaveTheseEditions(editionsJson *godog.DocString) error {
+
+	editions := []models.Edition{}
+	m := f.MongoClient
+
+	err := json.Unmarshal([]byte(editionsJson.Content), &editions)
+	if err != nil {
+		return err
+	}
+	s := m.Session.Copy()
+	defer s.Close()
+
+	for _, editionDoc := range editions {
+		editionID := editionDoc.ID
+
+		editionUp := models.EditionUpdate{
+			ID:      editionID,
+			Next:    &editionDoc,
+			Current: &editionDoc,
+		}
+
+		update := bson.M{
+			"$set": editionUp,
+			"$setOnInsert": bson.M{
+				"last_updated": time.Now(),
+			},
+		}
+		_, err := s.DB(f.MongoClient.Database).C("editions").UpsertId(editionID, update)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

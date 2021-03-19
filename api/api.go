@@ -11,6 +11,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
 	"github.com/ONSdigital/dp-dataset-api/instance"
+	"github.com/ONSdigital/dp-dataset-api/pagination"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	dphandlers "github.com/ONSdigital/dp-net/handlers"
@@ -91,6 +92,8 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		maxLimit:                 cfg.DefaultMaxLimit,
 	}
 
+	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)
+
 	if api.enablePrivateEndpoints {
 		log.Event(ctx, "enabling private endpoints for dataset api", log.INFO)
 
@@ -114,21 +117,21 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 			Storer: api.dataStore.Backend,
 		}
 
-		api.enablePrivateDatasetEndpoints(ctx)
+		api.enablePrivateDatasetEndpoints(ctx, paginator)
 		api.enablePrivateInstancesEndpoints(instanceAPI)
 		api.enablePrivateDimensionsEndpoints(dimensionAPI)
 	} else {
 		log.Event(ctx, "enabling only public endpoints for dataset api", log.INFO)
-		api.enablePublicEndpoints(ctx)
+		api.enablePublicEndpoints(ctx, paginator)
 	}
 	return api
 }
 
 // enablePublicEndpoints register only the public GET endpoints.
-func (api *DatasetAPI) enablePublicEndpoints(ctx context.Context) {
-	api.get("/datasets", api.getDatasets)
+func (api *DatasetAPI) enablePublicEndpoints(ctx context.Context, paginator *pagination.Paginator) {
+	api.get("/datasets", paginator.Paginate(api.getDatasets))
 	api.get("/datasets/{dataset_id}", api.getDataset)
-	api.get("/datasets/{dataset_id}/editions", api.getEditions)
+	api.get("/datasets/{dataset_id}/editions", paginator.Paginate(api.getEditions))
 	api.get("/datasets/{dataset_id}/editions/{edition}", api.getEdition)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions", api.getVersions)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}", api.getVersion)
@@ -140,10 +143,10 @@ func (api *DatasetAPI) enablePublicEndpoints(ctx context.Context) {
 
 // enablePrivateDatasetEndpoints register the datasets endpoints with the appropriate authentication and authorisation
 // checks required when running the dataset API in publishing (private) mode.
-func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context) {
+func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context, paginator *pagination.Paginator) {
 	api.get(
 		"/datasets",
-		api.isAuthorised(readPermission, api.getDatasets),
+		api.isAuthorised(readPermission, paginator.Paginate(api.getDatasets)),
 	)
 
 	api.get(
@@ -154,7 +157,7 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context) {
 
 	api.get(
 		"/datasets/{dataset_id}/editions",
-		api.isAuthorisedForDatasets(readPermission, api.getEditions),
+		api.isAuthorisedForDatasets(readPermission, paginator.Paginate(api.getEditions)),
 	)
 
 	api.get(

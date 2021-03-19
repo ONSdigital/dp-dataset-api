@@ -3,12 +3,10 @@ package api
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -71,144 +69,56 @@ func createRequestWithAuth(method, URL string, body io.Reader) (*http.Request, e
 
 func TestGetDatasetsReturnsOK(t *testing.T) {
 	t.Parallel()
-	Convey("A successful request to get dataset returns 200 OK response", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
+
+	Convey("A successful request to get dataset returns 200 OK response, and limit and offset are delegated to the datastore", t, func() {
+		r := &http.Request{}
 		w := httptest.NewRecorder()
+
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) (*models.DatasetUpdateResults, error) {
-				return &models.DatasetUpdateResults{}, nil
-			},
-		}
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-		So(permissions.Required.Calls, ShouldEqual, 1)
-	})
-
-	// func to unmarshal and validate body bytes
-	validateBody := func(bytes []byte, expected models.DatasetUpdateResults) {
-		var response models.DatasetUpdateResults
-		err := json.Unmarshal(bytes, &response)
-		So(err, ShouldBeNil)
-		So(response, ShouldResemble, expected)
-	}
-
-	Convey("When valid limit and offset query parameters are provided, then return datasets information according to the offset and limit", t, func() {
-
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets?offset=2&limit=2", nil)
-		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) (*models.DatasetUpdateResults, error) {
-				return &models.DatasetUpdateResults{
-					Items:      []models.DatasetUpdate{},
-					Count:      2,
-					Offset:     offset,
-					Limit:      limit,
-					TotalCount: 5,
-				}, nil
+			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+				return []*models.DatasetUpdate{}, 15, nil
 			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
 
-		Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
-			expectedResponse := models.DatasetUpdateResults{
-				Items:      []models.DatasetUpdate{},
-				Count:      2,
-				Offset:     2,
-				Limit:      2,
-				TotalCount: 5,
-			}
+		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 11, 12)
 
-			So(w.Code, ShouldEqual, http.StatusOK)
-			validateBody(w.Body.Bytes(), expectedResponse)
-		})
+		So(actualResponse, ShouldResemble, []*models.Dataset{})
+		So(actualTotalCount, ShouldEqual, 15)
+		So(err, ShouldEqual, nil)
+		So(mockedDataStore.GetDatasetsCalls()[0].Limit, ShouldEqual, 11)
+		So(mockedDataStore.GetDatasetsCalls()[0].Offset, ShouldEqual, 12)
 	})
-
-	Convey("When valid limit above maximum and offset query parameters are provided, then return datasets information according to the offset and limit", t, func() {
-
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets?offset=2&limit=7", nil)
-		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) (*models.DatasetUpdateResults, error) {
-				return &models.DatasetUpdateResults{
-					Items:      []models.DatasetUpdate{},
-					Count:      2,
-					Offset:     offset,
-					Limit:      limit,
-					TotalCount: 5,
-				}, nil
-			},
-		}
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
-
-		Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
-			expectedResponse := models.DatasetUpdateResults{
-				Items:      []models.DatasetUpdate{},
-				Count:      2,
-				Offset:     2,
-				Limit:      7,
-				TotalCount: 5,
-			}
-
-			So(w.Code, ShouldEqual, http.StatusOK)
-			validateBody(w.Body.Bytes(), expectedResponse)
-		})
-	})
-
 }
 
 func TestGetDatasetsReturnsError(t *testing.T) {
 	t.Parallel()
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets", nil)
+		r := &http.Request{}
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) (*models.DatasetUpdateResults, error) {
-				return nil, errs.ErrInternalServer
+			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+				return nil, 0, errs.ErrInternalServer
 			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
+		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 6, 7)
 
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-		So(permissions.Required.Calls, ShouldEqual, 1)
-	})
-
-	Convey("When a negative limit and offset query parameters are provided, then return a 400 error", t, func() {
-
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets?offset=-2&limit=-7", nil)
-		w := httptest.NewRecorder()
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(&storetest.StorerMock{}, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-		So(permissions.Required.Calls, ShouldEqual, 1)
-		So(strings.TrimSpace(w.Body.String()), ShouldEqual, errs.ErrInvalidQueryParameter.Error())
-
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(actualResponse, ShouldResemble, nil)
+		So(actualTotalCount, ShouldEqual, 0)
+		So(err, ShouldEqual, errs.ErrInternalServer)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(string(w.Body.Bytes()), ShouldEqual, "internal error\n")
 	})
 }
 
@@ -1422,8 +1332,8 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) (*models.EditionUpdateResults, error) {
-				return &models.EditionUpdateResults{}, nil
+			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(string) error {
 				return nil
@@ -1452,10 +1362,10 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) (*models.EditionUpdateResults, error) {
+			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
 				var items []*models.EditionUpdate
 				items = append(items, &models.EditionUpdate{})
-				return &models.EditionUpdateResults{Items: items}, nil
+				return items, 0, nil
 			},
 			DeleteEditionFunc: func(ID string) error {
 				return nil
@@ -1491,8 +1401,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) (*models.EditionUpdateResults, error) {
-				return &models.EditionUpdateResults{}, nil
+			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(string) error {
 				return nil
@@ -1523,8 +1433,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) (*models.EditionUpdateResults, error) {
-				return &models.EditionUpdateResults{}, nil
+			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(string) error {
 				return errs.ErrInternalServer
@@ -1554,8 +1464,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) (*models.EditionUpdateResults, error) {
-				return &models.EditionUpdateResults{}, nil
+			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(string) error {
 				return nil
@@ -1586,8 +1496,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(string) (*models.DatasetUpdate, error) {
 				return nil, errors.New("database is broken")
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) (*models.EditionUpdateResults, error) {
-				return &models.EditionUpdateResults{}, nil
+			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(string) error {
 				return nil

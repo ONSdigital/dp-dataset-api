@@ -6,123 +6,57 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/utils"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 )
 
-func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request) {
+func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	logData := log.Data{"dataset_id": datasetID}
-	offsetParameter := r.URL.Query().Get("offset")
-	limitParameter := r.URL.Query().Get("limit")
-	var err error
 
-	offset := api.defaultOffset
-	limit := api.defaultLimit
+	authorised := api.authenticate(r, logData)
 
-	if offsetParameter != "" {
-		logData["offset"] = offsetParameter
-		offset, err = utils.ValidatePositiveInt(offsetParameter)
-		if err != nil {
-			log.Event(ctx, "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
-			handleDatasetAPIErr(ctx, err, w, nil)
-			return
-		}
+	var state string
+	if !authorised {
+		state = models.PublishedState
 	}
 
-	if limitParameter != "" {
-		logData["limit"] = limitParameter
-		limit, err = utils.ValidatePositiveInt(limitParameter)
-		if err != nil {
-			log.Event(ctx, "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
-			handleDatasetAPIErr(ctx, err, w, nil)
-			return
-		}
-	}
+	logData["state"] = state
 
-	if limit > api.maxLimit {
-		logData["max_limit"] = api.maxLimit
-		err = errs.ErrInvalidQueryParameter
-		log.Event(ctx, "limit is greater than the maximum allowed", log.ERROR, logData)
-		handleDimensionsErr(ctx, w, "unpublished version has an invalid state", err, logData)
-		return
-	}
-
-	b, err := func() ([]byte, error) {
-		authorised := api.authenticate(r, logData)
-
-		var state string
-		if !authorised {
-			state = models.PublishedState
-		}
-
-		logData["state"] = state
-
-		if err := api.dataStore.Backend.CheckDatasetExists(datasetID, state); err != nil {
-			log.Event(ctx, "getEditions endpoint: unable to find dataset", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		results, err := api.dataStore.Backend.GetEditions(ctx, datasetID, state, offset, limit, authorised)
-		if err != nil {
-			log.Event(ctx, "getEditions endpoint: unable to find editions for dataset", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		var editionBytes []byte
-
-		if authorised {
-
-			// User has valid authentication to get raw edition document
-			editionBytes, err = json.Marshal(results)
-			if err != nil {
-				log.Event(ctx, "getEditions endpoint: failed to marshal a list of edition resources into bytes", log.ERROR, log.Error(err), logData)
-				return nil, err
-			}
-			log.Event(ctx, "getEditions endpoint: get all edition with auth", log.INFO, logData)
-
-		} else {
-			// User is not authenticated and hence has only access to current sub document
-			var publicResults []*models.Edition
-			for i := range results.Items {
-				publicResults = append(publicResults, results.Items[i].Current)
-			}
-
-			editionBytes, err = json.Marshal(&models.EditionResults{
-				Items:      publicResults,
-				Offset:     offset,
-				Limit:      limit,
-				Count:      results.Count,
-				TotalCount: results.TotalCount,
-			})
-			if err != nil {
-				log.Event(ctx, "getEditions endpoint: failed to marshal a list of edition resources into bytes", log.ERROR, log.Error(err), logData)
-				return nil, err
-			}
-			log.Event(ctx, "getEditions endpoint: get all edition without auth", log.INFO, logData)
-		}
-		return editionBytes, nil
-	}()
-
-	if err != nil {
-		if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound {
+	if err := api.dataStore.Backend.CheckDatasetExists(datasetID, state); err != nil {
+		log.Event(ctx, "getEditions endpoint: unable to find dataset", log.ERROR, log.Error(err), logData)
+		if err == errs.ErrDatasetNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 		}
-		return
+		return nil, 0, err
 	}
 
-	setJSONContentType(w)
-	_, err = w.Write(b)
+	results, totalCount, err := api.dataStore.Backend.GetEditions(ctx, datasetID, state, offset, limit, authorised)
 	if err != nil {
-		log.Event(ctx, "getEditions endpoint: failed writing bytes to response", log.ERROR, log.Error(err), logData)
-		http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+		log.Event(ctx, "getEditions endpoint: unable to find editions for dataset", log.ERROR, log.Error(err), logData)
+		if err == errs.ErrEditionNotFound {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+		}
+		return nil, 0, err
 	}
-	log.Event(ctx, "getEditions endpoint: request successful", log.INFO, logData)
+
+	if authorised {
+		log.Event(ctx, "getEditions endpoint: get all edition with auth", log.INFO, logData)
+		return results, totalCount, nil
+	}
+
+	var publicResults []*models.Edition
+	for i := range results {
+		publicResults = append(publicResults, results[i].Current)
+	}
+	log.Event(ctx, "getEditions endpoint: get all edition without auth", log.INFO, logData)
+	return publicResults, totalCount, nil
 }
 
 func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
