@@ -144,6 +144,9 @@ func (f *DatasetComponent) iHaveTheseVersions(versionsJson *godog.DocString) err
 
 	for _, version := range versions {
 		versionID := version.ID
+		version.Links.Version = &models.LinkObject{
+			HRef: version.Links.Self.HRef,
+		}
 
 		f.putDocumentInDatabase(version, versionID, "instances")
 	}

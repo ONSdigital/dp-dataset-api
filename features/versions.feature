@@ -1,6 +1,6 @@
 Feature: Dataset API
 
-    Scenario: GET /datasets/{id}/editions/{edition}/versions
+    Scenario: GET /datasets/{id}/editions/{edition}/versions in public mode returns published versions
         Given I have these datasets:
             """
             [
@@ -29,14 +29,28 @@ Feature: Dataset API
             """
             [
                 {
-                    "id": "population-estimates",
+                    "id": "test-item-1",
                     "version": 1,
                     "state": "published",
                     "links": {
                         "dataset": {
                             "id": "population-estimates"
                         },
-                        "version": {
+                        "self": {
+                            "href": "someurl"
+                        }
+                    },
+                    "edition": "hello"
+                },
+                {
+                    "id": "test-item-2",
+                    "version": 2,
+                    "state": "created",
+                    "links": {
+                        "dataset": {
+                            "id": "population-estimates"
+                        },
+                        "self": {
                             "href": "someurl"
                         }
                     },
@@ -51,9 +65,18 @@ Feature: Dataset API
                 "count": 1,
                 "items": [
                     {
-                        "id": "population-estimates",
+                        "id": "test-item-1",
                         "version": 1,
-                        "state": "published"
+                        "edition": "hello",
+                        "state": "published",
+                        "links": {
+                            "dataset": {
+                                "id": "population-estimates"
+                            },
+                            "self": {
+                                "href": "someurl"
+                            }
+                        }
                     }
                 ],
                 "limit": 20,
