@@ -9,7 +9,6 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/utils"
 	dphttp "github.com/ONSdigital/dp-net/http"
 	dprequest "github.com/ONSdigital/dp-net/request"
 	"github.com/ONSdigital/log.go/log"
@@ -55,48 +54,15 @@ func (v VersionDetails) baseLogData() log.Data {
 	return log.Data{"dataset_id": v.datasetID, "edition": v.edition, "version": v.version}
 }
 
-func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
+func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition}
-	offsetParameter := r.URL.Query().Get("offset")
-	limitParameter := r.URL.Query().Get("limit")
 	var err error
 
-	offset := api.defaultOffset
-	limit := api.defaultLimit
-
-	if offsetParameter != "" {
-		logData["offset"] = offsetParameter
-		offset, err = utils.ValidatePositiveInt(offsetParameter)
-		if err != nil {
-			log.Event(ctx, "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
-			handleDatasetAPIErr(ctx, err, w, nil)
-			return
-		}
-	}
-
-	if limitParameter != "" {
-		logData["limit"] = limitParameter
-		limit, err = utils.ValidatePositiveInt(limitParameter)
-		if err != nil {
-			log.Event(ctx, "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
-			handleDatasetAPIErr(ctx, err, w, nil)
-			return
-		}
-	}
-
-	if limit > api.maxLimit {
-		logData["max_limit"] = api.maxLimit
-		err = errs.ErrInvalidQueryParameter
-		log.Event(ctx, "limit is greater than the maximum allowed", log.ERROR, logData)
-		handleDatasetAPIErr(ctx, err, w, nil)
-		return
-	}
-
-	b, err := func() ([]byte, error) {
+	list, totalCount, err := func() ([]models.Version, int, error) {
 		authorised := api.authenticate(r, logData)
 
 		var state string
@@ -106,22 +72,22 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 
 		if err := api.dataStore.Backend.CheckDatasetExists(datasetID, state); err != nil {
 			log.Event(ctx, "failed to find dataset for list of versions", log.ERROR, log.Error(err), logData)
-			return nil, err
+			return nil, 0, err
 		}
 
 		if err := api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
 			log.Event(ctx, "failed to find edition for list of versions", log.ERROR, log.Error(err), logData)
-			return nil, err
+			return nil, 0, err
 		}
 
-		results, err := api.dataStore.Backend.GetVersions(ctx, datasetID, edition, state, offset, limit)
+		results, totalCount, err := api.dataStore.Backend.GetVersions(ctx, datasetID, edition, state, offset, limit)
 		if err != nil {
 			log.Event(ctx, "failed to find any versions for dataset edition", log.ERROR, log.Error(err), logData)
-			return nil, err
+			return nil, 0, err
 		}
 
 		var hasInvalidState bool
-		for _, item := range results.Items {
+		for _, item := range results {
 			if err = models.CheckState("version", item.State); err != nil {
 				hasInvalidState = true
 				log.Event(ctx, "unpublished version has an invalid state", log.ERROR, log.Error(err), log.Data{"state": item.State})
@@ -148,29 +114,18 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if hasInvalidState {
-			return nil, err
+			return nil, 0, err
 		}
 
-		b, err := json.Marshal(results)
-		if err != nil {
-			log.Event(ctx, "failed to marshal list of version resources into bytes", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-		return b, nil
+		return results, totalCount, nil
 	}()
 
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, logData)
-		return
+		return nil, 0, err
 	}
 
-	setJSONContentType(w)
-	_, err = w.Write(b)
-	if err != nil {
-		log.Event(ctx, "error writing bytes to response", log.ERROR, log.Error(err), logData)
-		handleVersionAPIErr(ctx, err, w, logData)
-	}
-	log.Event(ctx, "getVersions endpoint: request successful", log.INFO, logData)
+	return list, totalCount, nil
 }
 
 func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {

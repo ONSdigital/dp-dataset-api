@@ -88,7 +88,7 @@ var _ store.MongoDB = &MongoDBMock{}
 // 			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
 // 				panic("mock out the GetVersion method")
 // 			},
-// 			GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) (*models.VersionResults, error) {
+// 			GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error) {
 // 				panic("mock out the GetVersions method")
 // 			},
 // 			UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
@@ -204,7 +204,7 @@ type MongoDBMock struct {
 	GetVersionFunc func(datasetID string, editionID string, version string, state string) (*models.Version, error)
 
 	// GetVersionsFunc mocks the GetVersions method.
-	GetVersionsFunc func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) (*models.VersionResults, error)
+	GetVersionsFunc func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error)
 
 	// UpdateBuildHierarchyTaskStateFunc mocks the UpdateBuildHierarchyTaskState method.
 	UpdateBuildHierarchyTaskStateFunc func(id string, dimension string, state string) error
@@ -1377,7 +1377,7 @@ func (mock *MongoDBMock) GetVersionCalls() []struct {
 }
 
 // GetVersions calls GetVersionsFunc.
-func (mock *MongoDBMock) GetVersions(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) (*models.VersionResults, error) {
+func (mock *MongoDBMock) GetVersions(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error) {
 	if mock.GetVersionsFunc == nil {
 		panic("MongoDBMock.GetVersionsFunc: method is nil but MongoDB.GetVersions was just called")
 	}

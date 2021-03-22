@@ -41,8 +41,8 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
-				return &models.VersionResults{}, nil
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
+				return []models.Version{}, 0, nil
 			},
 		}
 
@@ -80,14 +80,8 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 				return nil
 			},
 
-			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
-				return &models.VersionResults{
-					Items:      []models.Version{},
-					Count:      1,
-					Offset:     offset,
-					Limit:      limit,
-					TotalCount: 3,
-				}, nil
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
+				return []models.Version{}, 3, nil
 			},
 		}
 
@@ -99,7 +93,7 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 		Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
 			expectedResponse := models.VersionResults{
 				Items:      []models.Version{},
-				Count:      1,
+				Count:      0,
 				Offset:     2,
 				Limit:      2,
 				TotalCount: 3,
@@ -123,14 +117,8 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 				return nil
 			},
 
-			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
-				return &models.VersionResults{
-					Items:      []models.Version{},
-					Count:      1,
-					Offset:     offset,
-					Limit:      limit,
-					TotalCount: 3,
-				}, nil
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
+				return []models.Version{}, 3, nil
 			},
 		}
 
@@ -142,7 +130,7 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 		Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
 			expectedResponse := models.VersionResults{
 				Items:      []models.Version{},
-				Count:      1,
+				Count:      0,
 				Offset:     2,
 				Limit:      7,
 				TotalCount: 3,
@@ -259,8 +247,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
-				return nil, errs.ErrVersionNotFound
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
+				return nil, 0, errs.ErrVersionNotFound
 			},
 		}
 
@@ -289,8 +277,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
-				return nil, errs.ErrVersionNotFound
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
+				return nil, 0, errs.ErrVersionNotFound
 			},
 		}
 
@@ -322,8 +310,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
-				return &models.VersionResults{Items: items}, nil
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
+				return items, len(items), nil
 			},
 		}
 

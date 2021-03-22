@@ -84,7 +84,7 @@ var _ store.Storer = &StorerMock{}
 // 			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
 // 				panic("mock out the GetVersion method")
 // 			},
-// 			GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) (*models.VersionResults, error) {
+// 			GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error) {
 // 				panic("mock out the GetVersions method")
 // 			},
 // 			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
@@ -200,7 +200,7 @@ type StorerMock struct {
 	GetVersionFunc func(datasetID string, editionID string, version string, state string) (*models.Version, error)
 
 	// GetVersionsFunc mocks the GetVersions method.
-	GetVersionsFunc func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) (*models.VersionResults, error)
+	GetVersionsFunc func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error)
 
 	// SetInstanceIsPublishedFunc mocks the SetInstanceIsPublished method.
 	SetInstanceIsPublishedFunc func(ctx context.Context, instanceID string) error
@@ -1365,7 +1365,7 @@ func (mock *StorerMock) GetVersionCalls() []struct {
 }
 
 // GetVersions calls GetVersionsFunc.
-func (mock *StorerMock) GetVersions(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) (*models.VersionResults, error) {
+func (mock *StorerMock) GetVersions(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error) {
 	if mock.GetVersionsFunc == nil {
 		panic("StorerMock.GetVersionsFunc: method is nil but Storer.GetVersions was just called")
 	}

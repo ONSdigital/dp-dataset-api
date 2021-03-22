@@ -14,8 +14,18 @@ Feature: Dataset API
             """
             [
                 {
-                    "id": "population-estimates",
+                    "id": "test-edition-1",
                     "edition": "hello",
+                    "state": "published",
+                    "links": {
+                        "dataset": {
+                            "id": "population-estimates"
+                        }
+                    }
+                },
+                {
+                    "id": "test-edition-2",
+                    "edition": "edition-with-no-versions",
                     "state": "published",
                     "links": {
                         "dataset": {
@@ -186,4 +196,28 @@ Feature: Dataset API
                 "offset": 0,
                 "total_count": 3
             }
+            """
+
+    Scenario: GET versions for unknown dataset returns not found error
+        When I GET "/datasets/unknown-dataset/editions/hello/versions"
+        Then the HTTP status code should be "404"
+        And I should receive the following response:
+            """
+            dataset not found
+            """
+
+    Scenario: GET versions for unknown edition returns not found error
+        When I GET "/datasets/population-estimates/editions/unknown/versions"
+        Then the HTTP status code should be "404"
+        And I should receive the following response:
+            """
+            edition not found
+            """
+
+    Scenario: GET versions for unknown edition returns not found error
+        When I GET "/datasets/population-estimates/editions/edition-with-no-versions/versions"
+        Then the HTTP status code should be "404"
+        And I should receive the following response:
+            """
+            version not found
             """

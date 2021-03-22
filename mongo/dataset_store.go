@@ -259,7 +259,7 @@ func (m *Mongo) GetNextVersion(datasetID, edition string) (int, error) {
 }
 
 // GetVersions retrieves all version documents for a dataset edition
-func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string, offset, limit int) (*models.VersionResults, error) {
+func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string, offset, limit int) ([]models.Version, int, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -272,19 +272,13 @@ func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string, of
 	if err != nil {
 		log.Event(ctx, "error counting items", log.ERROR, log.Error(err))
 		if err == mgo.ErrNotFound {
-			return &models.VersionResults{
-				Items:      []models.Version{},
-				Count:      0,
-				TotalCount: 0,
-				Offset:     offset,
-				Limit:      limit,
-			}, nil
+			return []models.Version{}, 0, nil
 		}
-		return nil, err
+		return nil, 0, err
 	}
 
 	if totalCount < 1 {
-		return nil, errs.ErrVersionNotFound
+		return nil, 0, errs.ErrVersionNotFound
 	}
 
 	var results []models.Version
@@ -300,15 +294,9 @@ func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string, of
 
 		if err := iter.All(&results); err != nil {
 			if err == mgo.ErrNotFound {
-				return &models.VersionResults{
-					Items:      results,
-					Count:      0,
-					TotalCount: totalCount,
-					Offset:     offset,
-					Limit:      limit,
-				}, nil
+				return results, 0, nil
 			}
-			return nil, err
+			return nil, 0, err
 		}
 	}
 
@@ -316,13 +304,7 @@ func (m *Mongo) GetVersions(ctx context.Context, id, editionID, state string, of
 		results[i].Links.Self.HRef = results[i].Links.Version.HRef
 	}
 
-	return &models.VersionResults{
-		Items:      results,
-		Count:      len(results),
-		TotalCount: totalCount,
-		Offset:     offset,
-		Limit:      limit,
-	}, nil
+	return results, totalCount, nil
 }
 
 func buildVersionsQuery(id, editionID, state string) bson.M {

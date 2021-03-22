@@ -170,11 +170,9 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 				editionSearchState = state
 				return nil
 			},
-			GetVersionsFunc: func(ctx context.Context, id string, editionID string, state string, offset, limit int) (*models.VersionResults, error) {
+			GetVersionsFunc: func(ctx context.Context, id string, editionID string, state string, offset, limit int) ([]models.Version, int, error) {
 				versionSearchState = state
-				return &models.VersionResults{
-					Items: []models.Version{{ID: "124", State: models.PublishedState}},
-				}, nil
+				return []models.Version{{ID: "124", State: models.PublishedState}}, 1, nil
 			},
 		}
 		Convey("Calling the versions endpoint should allow only published items", func() {
