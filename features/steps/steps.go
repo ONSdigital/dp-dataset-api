@@ -2,69 +2,24 @@ package steps
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/cucumber/godog"
-	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/stretchr/testify/assert"
 )
 
 func (f *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^private endpoints are enabled$`, f.privateEndpointsAreEnabled)
-	ctx.Step(`^I have these datasets:$`, f.iHaveTheseDatasets)
 	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, f.theDocumentInTheDatabaseForIdShouldBe)
 	ctx.Step(`^there are no datasets$`, f.thereAreNoDatasets)
+	ctx.Step(`^I have these datasets:$`, f.iHaveTheseDatasets)
 	ctx.Step(`^I have these editions:$`, f.iHaveTheseEditions)
 	ctx.Step(`^I have these versions:$`, f.iHaveTheseVersions)
 }
 
-func (f *DatasetComponent) iHaveTheseDatasets(datasetsJson *godog.DocString) error {
-
-	datasets := []models.Dataset{}
-	m := f.MongoClient
-
-	err := json.Unmarshal([]byte(datasetsJson.Content), &datasets)
-	if err != nil {
-		return err
-	}
-	s := m.Session.Copy()
-	defer s.Close()
-
-	for _, datasetDoc := range datasets {
-		if err := f.putDatasetInDatabase(s, datasetDoc); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (f *DatasetComponent) thereAreNoDatasets() error {
 	return f.MongoClient.Session.Copy().DB(f.MongoClient.Database).DropDatabase()
-}
-
-func (f *DatasetComponent) putDatasetInDatabase(s *mgo.Session, datasetDoc models.Dataset) error {
-	datasetID := datasetDoc.ID
-
-	datasetUp := models.DatasetUpdate{
-		ID:      datasetID,
-		Next:    &datasetDoc,
-		Current: &datasetDoc,
-	}
-
-	update := bson.M{
-		"$set": datasetUp,
-		"$setOnInsert": bson.M{
-			"last_updated": time.Now(),
-		},
-	}
-	_, err := s.DB(f.MongoClient.Database).C("datasets").UpsertId(datasetID, update)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (f *DatasetComponent) privateEndpointsAreEnabled() error {
@@ -101,16 +56,13 @@ func (f *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId stri
 func (f *DatasetComponent) iHaveTheseEditions(editionsJson *godog.DocString) error {
 
 	editions := []models.Edition{}
-	m := f.MongoClient
 
 	err := json.Unmarshal([]byte(editionsJson.Content), &editions)
 	if err != nil {
 		return err
 	}
-	s := m.Session.Copy()
-	defer s.Close()
 
-	for _, editionDoc := range editions {
+	for time, editionDoc := range editions {
 		editionID := editionDoc.ID
 
 		editionUp := models.EditionUpdate{
@@ -119,14 +71,33 @@ func (f *DatasetComponent) iHaveTheseEditions(editionsJson *godog.DocString) err
 			Current: &editionDoc,
 		}
 
-		update := bson.M{
-			"$set": editionUp,
-			"$setOnInsert": bson.M{
-				"last_updated": time.Now(),
-			},
-		}
-		_, err := s.DB(f.MongoClient.Database).C("editions").UpsertId(editionID, update)
+		err = f.putDocumentInDatabase(editionUp, editionID, "editions", time)
 		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (f *DatasetComponent) iHaveTheseDatasets(datasetsJson *godog.DocString) error {
+
+	datasets := []models.Dataset{}
+
+	err := json.Unmarshal([]byte(datasetsJson.Content), &datasets)
+	if err != nil {
+		return err
+	}
+
+	for time, datasetDoc := range datasets {
+		datasetID := datasetDoc.ID
+
+		datasetUp := models.DatasetUpdate{
+			ID:      datasetID,
+			Next:    &datasetDoc,
+			Current: &datasetDoc,
+		}
+		if err := f.putDocumentInDatabase(datasetUp, datasetID, "datasets", time); err != nil {
 			return err
 		}
 	}
@@ -142,27 +113,26 @@ func (f *DatasetComponent) iHaveTheseVersions(versionsJson *godog.DocString) err
 		return err
 	}
 
-	for _, version := range versions {
+	for time, version := range versions {
 		versionID := version.ID
 		version.Links.Version = &models.LinkObject{
 			HRef: version.Links.Self.HRef,
 		}
 
-		f.putDocumentInDatabase(version, versionID, "instances")
+		f.putDocumentInDatabase(version, versionID, "instances", time)
 	}
 
 	return nil
 }
 
-func (f *DatasetComponent) putDocumentInDatabase(document interface{}, id, collectionName string) error {
-
+func (f *DatasetComponent) putDocumentInDatabase(document interface{}, id, collectionName string, time int) error {
 	s := f.MongoClient.Session.Copy()
 	defer s.Close()
 
 	update := bson.M{
 		"$set": document,
 		"$setOnInsert": bson.M{
-			"last_updated": time.Now(),
+			"last_updated": time,
 		},
 	}
 	_, err := s.DB(f.MongoClient.Database).C(collectionName).UpsertId(id, update)

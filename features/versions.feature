@@ -1,6 +1,6 @@
 Feature: Dataset API
 
-    Scenario: GET /datasets/{id}/editions/{edition}/versions in public mode returns published versions
+    Background: we have a dataset which has an edition with a variety of versions
         Given I have these datasets:
             """
             [
@@ -45,7 +45,7 @@ Feature: Dataset API
                 {
                     "id": "test-item-2",
                     "version": 2,
-                    "state": "created",
+                    "state": "associated",
                     "links": {
                         "dataset": {
                             "id": "population-estimates"
@@ -86,6 +86,8 @@ Feature: Dataset API
                 }
             ]
             """
+
+    Scenario: GET /datasets/{id}/editions/{edition}/versions in public mode returns published versions
         When I GET "/datasets/population-estimates/editions/hello/versions"
         Then I should receive the following JSON response with status "200":
             """
@@ -124,5 +126,64 @@ Feature: Dataset API
                 "limit": 20,
                 "offset": 0,
                 "total_count": 2
+            }
+            """
+
+    Scenario: GET /datasets/{id}/editions/{edition}/versions in private mode returns all versions
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I GET "/datasets/population-estimates/editions/hello/versions"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "count": 3,
+                "items": [
+                    {
+                        "id": "test-item-4",
+                        "version": 4,
+                        "state": "published",
+                        "links": {
+                            "dataset": {
+                                "id": "population-estimates"
+                            },
+                            "self": {
+                                "href": "someurl"
+                            }
+                        },
+                        "edition": "hello"
+                    },
+                    {
+                        "id": "test-item-2",
+                        "version": 2,
+                        "state": "associated",
+                        "links": {
+                            "dataset": {
+                                "id": "population-estimates"
+                            },
+                            "self": {
+                                "href": "someurl"
+                            }
+                        },
+                        "edition": "hello"
+                    },
+                    {
+                        "id": "test-item-1",
+                        "version": 1,
+                        "state": "published",
+                        "links": {
+                            "dataset": {
+                                "id": "population-estimates"
+                            },
+                            "self": {
+                                "href": "someurl"
+                            }
+                        },
+                        "edition": "hello"
+                    }
+                ],
+                "limit": 20,
+                "offset": 0,
+                "total_count": 3
             }
             """
