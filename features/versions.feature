@@ -55,6 +55,34 @@ Feature: Dataset API
                         }
                     },
                     "edition": "hello"
+                },
+                {
+                    "id": "test-item-3",
+                    "version": 3,
+                    "state": "created",
+                    "links": {
+                        "dataset": {
+                            "id": "population-estimates"
+                        },
+                        "self": {
+                            "href": "someurl"
+                        }
+                    },
+                    "edition": "hellov2"
+                },
+                {
+                    "id": "test-item-4",
+                    "version": 4,
+                    "state": "published",
+                    "links": {
+                        "dataset": {
+                            "id": "population-estimates"
+                        },
+                        "self": {
+                            "href": "someurl"
+                        }
+                    },
+                    "edition": "hello"
                 }
             ]
             """
@@ -62,8 +90,22 @@ Feature: Dataset API
         Then I should receive the following JSON response with status "200":
             """
             {
-                "count": 1,
+                "count": 2,
                 "items": [
+                    {
+                        "id": "test-item-4",
+                        "version": 4,
+                        "edition": "hello",
+                        "state": "published",
+                        "links": {
+                            "dataset": {
+                                "id": "population-estimates"
+                            },
+                            "self": {
+                                "href": "someurl"
+                            }
+                        }
+                    },
                     {
                         "id": "test-item-1",
                         "version": 1,
@@ -81,6 +123,6 @@ Feature: Dataset API
                 ],
                 "limit": 20,
                 "offset": 0,
-                "total_count": 1
+                "total_count": 2
             }
             """
