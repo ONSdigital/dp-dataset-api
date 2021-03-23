@@ -136,7 +136,7 @@ func (api *DatasetAPI) enablePublicEndpoints(ctx context.Context, paginator *pag
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions", paginator.Paginate(api.getVersions))
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}", api.getVersion)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata", api.getMetadata)
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", api.getDimensions)
+	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", paginator.Paginate(api.getDimensions))
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", api.getDimensionOptions)
 
 }
@@ -187,7 +187,7 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context, pagina
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions",
 		api.isAuthorisedForDatasets(readPermission,
-			api.getDimensions),
+			paginator.Paginate(api.getDimensions)),
 	)
 
 	api.get(

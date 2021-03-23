@@ -16,6 +16,7 @@ func (f *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I have these datasets:$`, f.iHaveTheseDatasets)
 	ctx.Step(`^I have these editions:$`, f.iHaveTheseEditions)
 	ctx.Step(`^I have these versions:$`, f.iHaveTheseVersions)
+	ctx.Step(`^I have these dimensions:$`, f.iHaveTheseDimensions)
 }
 
 func (f *DatasetComponent) thereAreNoDatasets() error {
@@ -120,6 +121,23 @@ func (f *DatasetComponent) iHaveTheseVersions(versionsJson *godog.DocString) err
 		}
 
 		f.putDocumentInDatabase(version, versionID, "instances", time)
+	}
+
+	return nil
+}
+
+func (f *DatasetComponent) iHaveTheseDimensions(dimensionsJson *godog.DocString) error {
+	dimensions := []models.DimensionOption{}
+
+	err := json.Unmarshal([]byte(dimensionsJson.Content), &dimensions)
+	if err != nil {
+		return err
+	}
+
+	for time, dimension := range dimensions {
+		dimensionID := ""
+
+		f.putDocumentInDatabase(dimension, dimensionID, "dimension.options", time)
 	}
 
 	return nil
