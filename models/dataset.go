@@ -62,34 +62,6 @@ type DatasetResults struct {
 	TotalCount int        `json:"total_count"`
 }
 
-// EditionResults represents a structure for a list of editions for a dataset
-type EditionResults struct {
-	Items      []*Edition `json:"items"`
-	Count      int        `json:"count"`
-	Offset     int        `json:"offset"`
-	Limit      int        `json:"limit"`
-	TotalCount int        `json:"total_count"`
-}
-
-// EditionUpdateResults represents a structure for a list of evolving dataset
-// with the current dataset and the updated dataset
-type EditionUpdateResults struct {
-	Items      []*EditionUpdate `json:"items"`
-	Count      int              `json:"count"`
-	Offset     int              `json:"offset"`
-	Limit      int              `json:"limit"`
-	TotalCount int              `json:"total_count"`
-}
-
-// VersionResults represents a structure for a list of versions for an edition of a dataset
-type VersionResults struct {
-	Items      []Version `json:"items"`
-	Count      int       `json:"count"`
-	Offset     int       `json:"offset"`
-	Limit      int       `json:"limit"`
-	TotalCount int       `json:"total_count"`
-}
-
 // DatasetUpdate represents an evolving dataset with the current dataset and the updated dataset
 type DatasetUpdate struct {
 	ID      string   `bson:"_id,omitempty"         json:"id,omitempty"`
