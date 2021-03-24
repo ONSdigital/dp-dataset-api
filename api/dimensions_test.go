@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -15,14 +14,6 @@ import (
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-// func to unmarshal and validate body bytes
-var validateBody = func(bytes []byte, expected models.DatasetDimensionResults) {
-	var response models.DatasetDimensionResults
-	err := json.Unmarshal(bytes, &response)
-	So(err, ShouldBeNil)
-	So(response, ShouldResemble, expected)
-}
 
 func initAPIWithMockedStore(mockedStore *storetest.StorerMock) *DatasetAPI {
 	datasetPermissions := getAuthorisationHandlerMock()
