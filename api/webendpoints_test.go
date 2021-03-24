@@ -230,7 +230,6 @@ func TestWebSubnetDimensionsEndpoint(t *testing.T) {
 	Convey("When the API is started with private endpoints disabled", t, func() {
 		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234/dimensions", nil)
 		So(err, ShouldBeNil)
-
 		var versionSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -271,8 +270,8 @@ func TestWebSubnetDimensionOptionsEndpoint(t *testing.T) {
 						Version: &models.LinkObject{},
 						Self:    &models.LinkObject{}}}, nil
 			},
-			GetDimensionOptionsFunc: func(version *models.Version, dimension string, offset, limit int) (*models.DimensionOptionResults, error) {
-				return &models.DimensionOptionResults{Items: []models.PublicDimensionOption{}}, nil
+			GetDimensionOptionsFunc: func(version *models.Version, dimension string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
+				return []*models.PublicDimensionOption{}, 0, nil
 			},
 		}
 

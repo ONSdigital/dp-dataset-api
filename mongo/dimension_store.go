@@ -96,10 +96,7 @@ func (m *Mongo) GetDimensions(datasetID, versionID string) ([]bson.M, error) {
 
 // GetDimensionOptions returns dimension options for a dimensions within a dataset, according to the provided limit and offest.
 // Offset and limit need to be positive or zero. Zero limit is equivalent to no limit (all items starting at offset will be returned)
-func (m *Mongo) GetDimensionOptions(version *models.Version, dimension string, offset, limit int) (*models.DimensionOptionResults, error) {
-	if offset < 0 || limit < 0 {
-		return nil, errors.New("offset and limit must be positive or zero")
-	}
+func (m *Mongo) GetDimensionOptions(version *models.Version, dimension string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
 
 	s := m.Session.Copy()
 	defer s.Close()
@@ -110,23 +107,23 @@ func (m *Mongo) GetDimensionOptions(version *models.Version, dimension string, o
 	// get total count of items
 	totalCount, err := s.DB(m.Database).C(dimensionOptions).Find(selector).Count()
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	var values []models.PublicDimensionOption
+	var values []*models.PublicDimensionOption
 
 	if limit > 0 && totalCount > 0 {
 
 		// obtain query defining the order
 		q, err := m.sortedQuery(s, selector)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		// obtain only the necessary items according to offset and limit
 		iter := q.Skip(offset).Limit(limit).Iter()
 		if err := iter.All(&values); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		// update links for returned values
@@ -135,19 +132,13 @@ func (m *Mongo) GetDimensionOptions(version *models.Version, dimension string, o
 		}
 	}
 
-	return &models.DimensionOptionResults{
-		Items:      values,
-		Count:      len(values),
-		TotalCount: totalCount,
-		Offset:     offset,
-		Limit:      limit,
-	}, nil
+	return values, totalCount, nil
 }
 
 // GetDimensionOptionsFromIDs returns dimension options for a dimension within a dataset, whose IDs match the provided list of IDs
-func (m *Mongo) GetDimensionOptionsFromIDs(version *models.Version, dimension string, IDs []string) (*models.DimensionOptionResults, error) {
+func (m *Mongo) GetDimensionOptionsFromIDs(version *models.Version, dimension string, IDs []string) ([]*models.PublicDimensionOption, int, error) {
 	if len(IDs) > maxIDs {
-		return nil, errors.New("too many IDs provided")
+		return nil, 0, errors.New("too many IDs provided")
 	}
 
 	s := m.Session.Copy()
@@ -159,23 +150,23 @@ func (m *Mongo) GetDimensionOptionsFromIDs(version *models.Version, dimension st
 	// count total number of options in dimension
 	totalCount, err := s.DB(m.Database).C(dimensionOptions).Find(selectorAll).Count()
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	var values []models.PublicDimensionOption
+	var values []*models.PublicDimensionOption
 
 	if totalCount > 0 {
 
 		// obtain query defining the order for the provided IDs only
 		q, err := m.sortedQuery(s, selectorInList)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		// obtain all required options in order
 		iter := q.Iter()
 		if err := iter.All(&values); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		// update links for returned values
@@ -184,13 +175,7 @@ func (m *Mongo) GetDimensionOptionsFromIDs(version *models.Version, dimension st
 		}
 	}
 
-	return &models.DimensionOptionResults{
-		Items:      values,
-		Count:      len(values),
-		TotalCount: totalCount,
-		Offset:     0,
-		Limit:      0,
-	}, nil
+	return values, totalCount, nil
 }
 
 // sortedQuery generates a sorted mongoDB query from the provided bson.M selector

@@ -55,6 +55,20 @@ Feature: Dataset API
                         }
                     },
                     "edition": "hello"
+                },
+                {
+                    "id": "test-item-3",
+                    "version": 3,
+                    "state": "associated",
+                    "links": {
+                        "dataset": {
+                            "id": "population-estimates"
+                        },
+                        "self": {
+                            "href": "someurl"
+                        }
+                    },
+                    "edition": "hello"
                 }
             ]
             """
@@ -63,7 +77,13 @@ Feature: Dataset API
             [
                 {
                     "instance_id": "test-item-1",
-                    "name": "geography"
+                    "dimension": "geography",
+                    "option": "K02000001"
+                },
+                {
+                    "instance_id": "test-item-1",
+                    "dimension": "geography",
+                    "option": "K02000002"
                 }
             ]
             """
@@ -76,10 +96,12 @@ Feature: Dataset API
                 "count": 1,
                 "items": [
                     {
+                        "name": "geography",
                         "links": {
                             "code_list": {},
                             "options": {
-                                "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions//dimensions//options"
+                                "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions//dimensions/geography/options",
+                                "id": "geography"
                             },
                             "version": {
                                 "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions/"
@@ -112,3 +134,59 @@ Feature: Dataset API
             version not found
             """
 
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options in public mode
+        When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions/geography/options"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "count": 2,
+                "items": [
+                    {
+                        "dimension": "geography",
+                        "label": "",
+                        "option": "K02000001",
+                        "links": {
+                            "code": {},
+                            "code_list": {},
+                            "version": {
+                                "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions/1",
+                                "id": "1"
+                            }
+                        }
+                    },
+                    {
+                        "dimension": "geography",
+                        "label": "",
+                        "option": "K02000002",
+                        "links": {
+                            "code": {},
+                            "code_list": {},
+                            "version": {
+                                "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions/1",
+                                "id": "1"
+                            }
+                        }
+                    }
+                ],
+                "limit": 20,
+                "offset": 0,
+                "total_count": 2
+            }
+            """
+
+    Scenario: GET dimensions with no options in private mode
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I GET "/datasets/population-estimates/editions/hello/versions/2/dimensions/age/options"
+        Then the HTTP status code should be "200"
+        And I should receive the following JSON response:
+            """
+            {
+                "count": 0,
+                "items": null,
+                "limit": 20,
+                "offset": 0,
+                "total_count": 0
+            }
+            """

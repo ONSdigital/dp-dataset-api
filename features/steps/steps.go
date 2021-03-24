@@ -135,7 +135,7 @@ func (f *DatasetComponent) iHaveTheseDimensions(dimensionsJson *godog.DocString)
 	}
 
 	for time, dimension := range dimensions {
-		dimensionID := ""
+		dimensionID := dimension.Option
 
 		f.putDocumentInDatabase(dimension, dimensionID, "dimension.options", time)
 	}

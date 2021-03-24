@@ -51,10 +51,10 @@ var _ store.Storer = &StorerMock{}
 // 			GetDatasetsFunc: func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 // 				panic("mock out the GetDatasets method")
 // 			},
-// 			GetDimensionOptionsFunc: func(version *models.Version, dimension string, offset int, limit int) (*models.DimensionOptionResults, error) {
+// 			GetDimensionOptionsFunc: func(version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error) {
 // 				panic("mock out the GetDimensionOptions method")
 // 			},
-// 			GetDimensionOptionsFromIDsFunc: func(version *models.Version, dimension string, ids []string) (*models.DimensionOptionResults, error) {
+// 			GetDimensionOptionsFromIDsFunc: func(version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 // 				panic("mock out the GetDimensionOptionsFromIDs method")
 // 			},
 // 			GetDimensionsFunc: func(datasetID string, versionID string) ([]bson.M, error) {
@@ -167,10 +167,10 @@ type StorerMock struct {
 	GetDatasetsFunc func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 
 	// GetDimensionOptionsFunc mocks the GetDimensionOptions method.
-	GetDimensionOptionsFunc func(version *models.Version, dimension string, offset int, limit int) (*models.DimensionOptionResults, error)
+	GetDimensionOptionsFunc func(version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error)
 
 	// GetDimensionOptionsFromIDsFunc mocks the GetDimensionOptionsFromIDs method.
-	GetDimensionOptionsFromIDsFunc func(version *models.Version, dimension string, ids []string) (*models.DimensionOptionResults, error)
+	GetDimensionOptionsFromIDsFunc func(version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
 	GetDimensionsFunc func(datasetID string, versionID string) ([]bson.M, error)
@@ -936,7 +936,7 @@ func (mock *StorerMock) GetDatasetsCalls() []struct {
 }
 
 // GetDimensionOptions calls GetDimensionOptionsFunc.
-func (mock *StorerMock) GetDimensionOptions(version *models.Version, dimension string, offset int, limit int) (*models.DimensionOptionResults, error) {
+func (mock *StorerMock) GetDimensionOptions(version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error) {
 	if mock.GetDimensionOptionsFunc == nil {
 		panic("StorerMock.GetDimensionOptionsFunc: method is nil but Storer.GetDimensionOptions was just called")
 	}
@@ -979,7 +979,7 @@ func (mock *StorerMock) GetDimensionOptionsCalls() []struct {
 }
 
 // GetDimensionOptionsFromIDs calls GetDimensionOptionsFromIDsFunc.
-func (mock *StorerMock) GetDimensionOptionsFromIDs(version *models.Version, dimension string, ids []string) (*models.DimensionOptionResults, error) {
+func (mock *StorerMock) GetDimensionOptionsFromIDs(version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 	if mock.GetDimensionOptionsFromIDsFunc == nil {
 		panic("StorerMock.GetDimensionOptionsFromIDsFunc: method is nil but Storer.GetDimensionOptionsFromIDs was just called")
 	}
