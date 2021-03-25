@@ -201,7 +201,7 @@ Feature: Dataset API
             }
             """
 
-    Scenario: GET /instances in public mode returns not found
+    Scenario: GET /instances in private mode with no auth returns not authorized
         Given private endpoints are enabled
         When I GET "/instances"
         Then the HTTP status code should be "401"

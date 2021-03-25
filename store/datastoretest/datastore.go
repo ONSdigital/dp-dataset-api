@@ -72,7 +72,7 @@ var _ store.Storer = &StorerMock{}
 // 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 // 				panic("mock out the GetInstance method")
 // 			},
-// 			GetInstancesFunc: func(ctx context.Context, states []string, datasets []string, offset int, limit int) (*models.InstanceResults, error) {
+// 			GetInstancesFunc: func(ctx context.Context, states []string, datasets []string, offset int, limit int) ([]*models.Instance, int, error) {
 // 				panic("mock out the GetInstances method")
 // 			},
 // 			GetNextVersionFunc: func(datasetID string, editionID string) (int, error) {
@@ -188,7 +188,7 @@ type StorerMock struct {
 	GetInstanceFunc func(ID string) (*models.Instance, error)
 
 	// GetInstancesFunc mocks the GetInstances method.
-	GetInstancesFunc func(ctx context.Context, states []string, datasets []string, offset int, limit int) (*models.InstanceResults, error)
+	GetInstancesFunc func(ctx context.Context, states []string, datasets []string, offset int, limit int) ([]*models.Instance, int, error)
 
 	// GetNextVersionFunc mocks the GetNextVersion method.
 	GetNextVersionFunc func(datasetID string, editionID string) (int, error)
@@ -1205,7 +1205,7 @@ func (mock *StorerMock) GetInstanceCalls() []struct {
 }
 
 // GetInstances calls GetInstancesFunc.
-func (mock *StorerMock) GetInstances(ctx context.Context, states []string, datasets []string, offset int, limit int) (*models.InstanceResults, error) {
+func (mock *StorerMock) GetInstances(ctx context.Context, states []string, datasets []string, offset int, limit int) ([]*models.Instance, int, error) {
 	if mock.GetInstancesFunc == nil {
 		panic("StorerMock.GetInstancesFunc: method is nil but Storer.GetInstances was just called")
 	}

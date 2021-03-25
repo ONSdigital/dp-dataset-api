@@ -32,7 +32,7 @@ type dataMongoDB interface {
 	GetDimensionOptionsFromIDs(version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 	GetEdition(ID, editionID, state string) (*models.EditionUpdate, error)
 	GetEditions(ctx context.Context, ID, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error)
-	GetInstances(ctx context.Context, states []string, datasets []string, offset, limit int) (*models.InstanceResults, error)
+	GetInstances(ctx context.Context, states []string, datasets []string, offset, limit int) ([]*models.Instance, int, error)
 	GetInstance(ID string) (*models.Instance, error)
 	GetNextVersion(datasetID, editionID string) (int, error)
 	GetUniqueDimensionAndOptions(ID, dimension string) (*models.DimensionValues, error)

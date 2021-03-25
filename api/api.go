@@ -118,7 +118,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		}
 
 		api.enablePrivateDatasetEndpoints(ctx, paginator)
-		api.enablePrivateInstancesEndpoints(instanceAPI)
+		api.enablePrivateInstancesEndpoints(instanceAPI, paginator)
 		api.enablePrivateDimensionsEndpoints(dimensionAPI)
 	} else {
 		log.Event(ctx, "enabling only public endpoints for dataset api", log.INFO)
@@ -237,12 +237,12 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context, pagina
 
 // enablePrivateInstancesEndpoints register the instance endpoints with the appropriate authentication and authorisation
 // checks required when running the dataset API in publishing (private) mode.
-func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI *instance.Store) {
+func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI *instance.Store, paginator *pagination.Paginator) {
 	api.get(
 		"/instances",
 		api.isAuthenticated(
 			api.isAuthorised(readPermission,
-				instanceAPI.GetList)),
+				paginator.Paginate(instanceAPI.GetList))),
 	)
 
 	api.post(
