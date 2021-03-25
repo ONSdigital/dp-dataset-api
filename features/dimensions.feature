@@ -1,6 +1,6 @@
 Feature: Dataset API
 
-    Background: we have a dataset which has an edition with a vareiety of versions and a dimension option
+    Background: we have a dataset which has an edition with a variety of versions and a dimension option
         Given I have these datasets:
             """
             [

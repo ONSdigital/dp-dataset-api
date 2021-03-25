@@ -214,7 +214,7 @@ Feature: Dataset API
             edition not found
             """
 
-    Scenario: GET versions for unknown edition returns not found error
+    Scenario: GET versions for edition with no versions returns not found error
         When I GET "/datasets/population-estimates/editions/edition-with-no-versions/versions"
         Then the HTTP status code should be "404"
         And I should receive the following response:

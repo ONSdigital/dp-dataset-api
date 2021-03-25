@@ -192,8 +192,6 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		results[i].Links.Version.ID = versionID
 	}
 
-	log.Event(ctx, "get dimension options", log.INFO, logData)
-
 	return results, totalCount, nil
 }
 
