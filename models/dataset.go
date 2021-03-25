@@ -53,15 +53,6 @@ var (
 	ErrEditionLinksInvalid                  = errors.New("editions links do not exist")
 )
 
-// DatasetResults represents a structure for a list of datasets
-type DatasetResults struct {
-	Items      []*Dataset `json:"items"`
-	Count      int        `json:"count"`
-	Offset     int        `json:"offset"`
-	Limit      int        `json:"limit"`
-	TotalCount int        `json:"total_count"`
-}
-
 // DatasetUpdate represents an evolving dataset with the current dataset and the updated dataset
 type DatasetUpdate struct {
 	ID      string   `bson:"_id,omitempty"         json:"id,omitempty"`

@@ -25,8 +25,6 @@ type Store struct {
 	store.Storer
 	Host                string
 	EnableDetachDataset bool
-	DefaultOffset       int
-	DefaultLimit        int
 }
 
 type taskError struct {

@@ -51,7 +51,14 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 			a, _ := ioutil.ReadAll(w.Body)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
-			var results models.DatasetResults
+			type datasetResults struct {
+				Items      []*models.Dataset `json:"items"`
+				Count      int               `json:"count"`
+				Offset     int               `json:"offset"`
+				Limit      int               `json:"limit"`
+				TotalCount int               `json:"total_count"`
+			}
+			var results datasetResults
 			json.Unmarshal(a, &results)
 			// Only a single dataset should be returned in a web subnet
 			So(len(results.Items), ShouldEqual, 1)
