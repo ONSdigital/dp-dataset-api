@@ -294,11 +294,7 @@ func CreateVersion(reader io.Reader, datasetID string) (*Version, error) {
 	}
 
 	var version Version
-	version.ID = datasetID
-	// Create unique id
-	id := uuid.NewV4()
-
-	version.ID = id.String()
+	version.ID = uuid.NewV4().String()
 	version.DatasetID = datasetID
 
 	err = json.Unmarshal(b, &version)
