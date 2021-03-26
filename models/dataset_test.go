@@ -196,6 +196,7 @@ func TestCreateVersion(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(version.CollectionID, ShouldEqual, collectionID)
 				So(version.Dimensions, ShouldResemble, []Dimension{dimension})
+				So(version.DatasetID, ShouldEqual, testDatasetID)
 				So(version.Downloads, ShouldResemble, &downloads)
 				So(version.Edition, ShouldEqual, "2017")
 				So(version.ID, ShouldNotBeNil)
@@ -205,7 +206,6 @@ func TestCreateVersion(t *testing.T) {
 				So(version.State, ShouldEqual, AssociatedState)
 				So(version.Temporal, ShouldResemble, &[]TemporalFrequency{temporal})
 				So(version.Version, ShouldEqual, 1)
-				So(version.DatasetID, ShouldEqual, testDatasetID)
 			})
 		})
 
