@@ -109,10 +109,16 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	store := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB}}
 
 	// Get GenerateDownloads Kafka Producer
-	svc.generateDownloadsProducer, err = svc.serviceList.GetProducer(ctx, svc.config)
-	if err != nil {
-		log.Event(ctx, "could not obtain generate downloads producer", log.FATAL, log.Error(err))
-		return err
+	if !svc.config.EnablePrivateEndpoints {
+		log.Event(ctx, "skipping kafka producer creation, because it is not required by the enabled endpoints", log.INFO, log.Data{
+			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
+		})
+	} else {
+		svc.generateDownloadsProducer, err = svc.serviceList.GetProducer(ctx, svc.config)
+		if err != nil {
+			log.Event(ctx, "could not obtain generate downloads producer", log.FATAL, log.Error(err))
+			return err
+		}
 	}
 
 	downloadGenerator := &download.Generator{
@@ -148,7 +154,9 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	svc.healthCheck.Start(ctx)
 
 	// Log kafka producer errors in parallel go-routine
-	svc.generateDownloadsProducer.Channels().LogErrors(ctx, "generate downloads producer error")
+	if svc.config.EnablePrivateEndpoints {
+		svc.generateDownloadsProducer.Channels().LogErrors(ctx, "generate downloads producer error")
+	}
 
 	// Run the http server in a new go-routine
 	go func() {
@@ -301,28 +309,25 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 	hasErrors := false
 
 	if svc.config.EnablePrivateEndpoints {
+		log.Event(ctx, "adding kafka, zebedee and graph db health check as the private endpoints are enabled", log.INFO)
 		if err = svc.healthCheck.AddCheck("Zebedee", svc.identityClient.Checker); err != nil {
 			hasErrors = true
 			log.Event(ctx, "error adding check for zebedeee", log.ERROR, log.Error(err))
 		}
-	}
+		if err = svc.healthCheck.AddCheck("Kafka Generate Downloads Producer", svc.generateDownloadsProducer.Checker); err != nil {
+			hasErrors = true
+			log.Event(ctx, "error adding check for kafka downloads producer", log.ERROR, log.Error(err))
+		}
 
-	if err = svc.healthCheck.AddCheck("Kafka Generate Downloads Producer", svc.generateDownloadsProducer.Checker); err != nil {
-		hasErrors = true
-		log.Event(ctx, "error adding check for kafka downloads producer", log.ERROR, log.Error(err))
+		if err = svc.healthCheck.AddCheck("Graph DB", svc.graphDB.Checker); err != nil {
+			hasErrors = true
+			log.Event(ctx, "error adding check for graph db", log.ERROR, log.Error(err))
+		}
 	}
 
 	if err = svc.healthCheck.AddCheck("Mongo DB", svc.mongoDB.Checker); err != nil {
 		hasErrors = true
 		log.Event(ctx, "error adding check for mongo db", log.ERROR, log.Error(err))
-	}
-
-	if svc.config.EnablePrivateEndpoints {
-		log.Event(ctx, "adding graph db health check as the private endpoints are enabled", log.INFO)
-		if err = svc.healthCheck.AddCheck("Graph DB", svc.graphDB.Checker); err != nil {
-			hasErrors = true
-			log.Event(ctx, "error adding check for graph db", log.ERROR, log.Error(err))
-		}
 	}
 
 	if hasErrors {
