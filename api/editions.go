@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
+//This function returns a list of editions, the total count of editions that match the query parameters and an error
 func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)

@@ -39,7 +39,7 @@ func (e taskError) Error() string {
 	return ""
 }
 
-//GetList a list of all instances
+//GetList returns a list of instances, the total count of instances that match the query parameters and an error
 func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	stateFilterQuery := r.URL.Query().Get("state")

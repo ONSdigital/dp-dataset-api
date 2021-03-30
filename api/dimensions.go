@@ -22,6 +22,7 @@ var MaxIDs = func() int {
 	return maxIDs
 }
 
+//getDimensions returns a list of dimensions, the total count of dimensions that match the query parameters and an error
 func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -128,6 +129,7 @@ func convertBSONToDimensionOption(data interface{}) (*models.DimensionOption, er
 	return &dim, nil
 }
 
+//getDimensionOptions returns a list of options, the total count of options that match the query parameters and an error
 func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
