@@ -62,16 +62,6 @@ type DatasetResults struct {
 	TotalCount int        `json:"total_count"`
 }
 
-// DatasetUpdateResults represents a structure for a list of evolving dataset
-// with the current dataset and the updated dataset
-type DatasetUpdateResults struct {
-	Items      []DatasetUpdate `json:"items"`
-	Count      int             `json:"count"`
-	Offset     int             `json:"offset"`
-	Limit      int             `json:"limit"`
-	TotalCount int             `json:"total_count"`
-}
-
 // EditionResults represents a structure for a list of editions for a dataset
 type EditionResults struct {
 	Items      []*Edition `json:"items"`
@@ -207,6 +197,7 @@ type Publisher struct {
 type Version struct {
 	Alerts        *[]Alert             `bson:"alerts,omitempty"         json:"alerts,omitempty"`
 	CollectionID  string               `bson:"collection_id,omitempty"  json:"collection_id,omitempty"`
+	DatasetID     string               `bson:"-"                        json:"dataset_id,omitempty"`
 	Dimensions    []Dimension          `bson:"dimensions,omitempty"     json:"dimensions,omitempty"`
 	Downloads     *DownloadList        `bson:"downloads,omitempty"      json:"downloads,omitempty"`
 	Edition       string               `bson:"edition,omitempty"        json:"edition,omitempty"`
@@ -296,17 +287,15 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 }
 
 // CreateVersion manages the creation of a version from a reader
-func CreateVersion(reader io.Reader) (*Version, error) {
+func CreateVersion(reader io.Reader, datasetID string) (*Version, error) {
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errs.ErrUnableToReadMessage
 	}
 
-	// Create unique id
-	id := uuid.NewV4()
-
 	var version Version
-	version.ID = id.String()
+	version.ID = uuid.NewV4().String()
+	version.DatasetID = datasetID
 
 	err = json.Unmarshal(b, &version)
 	if err != nil {
@@ -453,11 +442,16 @@ func (ed *EditionUpdate) PublishLinks(ctx context.Context, host string, versionL
 }
 
 // CleanDataset trims URI and any hrefs contained in the database
-func CleanDataset(dataset *Dataset) error {
-	if dataset == nil {
-		return errors.New("clean dataset called without a valid dataset")
-	}
+func CleanDataset(dataset *Dataset) {
 	dataset.URI = strings.TrimSpace(dataset.URI)
+
+	if dataset.QMI != nil {
+		dataset.QMI.HRef = strings.TrimSpace(dataset.QMI.HRef)
+	}
+
+	if dataset.Publisher != nil {
+		dataset.Publisher.HRef = strings.TrimSpace(dataset.Publisher.HRef)
+	}
 
 	for i := range dataset.Publications {
 		dataset.Publications[i].HRef = strings.TrimSpace(dataset.Publications[i].HRef)
@@ -470,18 +464,21 @@ func CleanDataset(dataset *Dataset) error {
 	for i := range dataset.RelatedDatasets {
 		dataset.RelatedDatasets[i].HRef = strings.TrimSpace(dataset.RelatedDatasets[i].HRef)
 	}
-	return nil
 }
 
 // ValidateDataset checks the dataset has invalid fields
 func ValidateDataset(dataset *Dataset) error {
-
 	var invalidFields []string
 	if dataset.URI != "" {
-		_, err := url.Parse(dataset.URI)
-		if err != nil {
-			invalidFields = append(invalidFields, "URI")
-		}
+		invalidFields = append(invalidFields, validateUrlString(dataset.URI, "URI")...)
+	}
+
+	if dataset.QMI != nil && dataset.QMI.HRef != "" {
+		invalidFields = append(invalidFields, validateUrlString(dataset.QMI.HRef, "QMI")...)
+	}
+
+	if dataset.Publisher != nil && dataset.Publisher.HRef != "" {
+		invalidFields = append(invalidFields, validateUrlString(dataset.Publisher.HRef, "Publisher")...)
 	}
 
 	invalidFields = append(invalidFields, validateGeneralDetails(dataset.Publications, "Publications")...)
@@ -490,20 +487,24 @@ func ValidateDataset(dataset *Dataset) error {
 
 	invalidFields = append(invalidFields, validateGeneralDetails(dataset.Methodologies, "Methodologies")...)
 
-	if invalidFields != nil {
+	if len(invalidFields) > 0 {
 		return fmt.Errorf("invalid fields: %v", invalidFields)
 	}
 
 	return nil
-
 }
 
 func validateGeneralDetails(generalDetails []GeneralDetails, identifier string) (invalidFields []string) {
 	for i, gd := range generalDetails {
-		_, err := url.Parse(gd.HRef)
-		if err != nil {
-			invalidFields = append(invalidFields, fmt.Sprintf("%s[%d].HRef", identifier, i))
-		}
+		invalidFields = append(invalidFields, validateUrlString(gd.HRef, fmt.Sprintf("%s[%d].HRef", identifier, i))...)
+	}
+	return
+}
+
+func validateUrlString(urlString string, identifier string) (invalidFields []string) {
+	url, err := url.Parse(urlString)
+	if err != nil || (url.Scheme != "" && url.Host == "" && url.Path == "") || (url.Scheme != "" && url.Host == "" && url.Path != "") {
+		invalidFields = append(invalidFields, identifier)
 	}
 	return
 }

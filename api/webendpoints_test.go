@@ -34,14 +34,13 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) (*models.DatasetUpdateResults, error) {
-				return &models.DatasetUpdateResults{
-					Items: []models.DatasetUpdate{
-						{
-							Current: current,
-							Next:    next,
-						}},
-				}, nil
+			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+				return []*models.DatasetUpdate{
+					{
+						Current: current,
+						Next:    next,
+					},
+				}, 0, nil
 			},
 		}
 		Convey("Calling the datasets endpoint should allow only published items", func() {
@@ -98,7 +97,7 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions", nil)
 		So(err, ShouldBeNil)
 
-		edition := &models.EditionUpdate{ID: "1234", Current: &models.Edition{State: models.PublishedState}}
+		edition := models.EditionUpdate{ID: "1234", Current: &models.Edition{State: models.PublishedState}}
 		var editionSearchState, datasetSearchState string
 
 		w := httptest.NewRecorder()
@@ -107,11 +106,9 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 				datasetSearchState = state
 				return nil
 			},
-			GetEditionsFunc: func(ctx context.Context, ID, state string, offset, limit int, authorised bool) (*models.EditionUpdateResults, error) {
+			GetEditionsFunc: func(ctx context.Context, ID, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
 				editionSearchState = state
-				return &models.EditionUpdateResults{
-					Items: []*models.EditionUpdate{edition},
-				}, nil
+				return []*models.EditionUpdate{&edition}, 0, nil
 			},
 		}
 		Convey("Calling the editions endpoint should allow only published items", func() {

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 
+	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
@@ -302,22 +303,31 @@ func handleDimensionsErr(ctx context.Context, w http.ResponseWriter, msg string,
 		data = log.Data{}
 	}
 
-	switch {
-	case errs.BadRequestMap[err]:
+	// Switch by error type
+	switch err.(type) {
+	case apierrors.ErrInvalidPatch:
 		data["response_status"] = http.StatusBadRequest
 		data["user_error"] = err.Error()
 		log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, data)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-	case errs.NotFoundMap[err]:
-		data["response_status"] = http.StatusNotFound
-		data["user_error"] = err.Error()
-		log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, data)
-		http.Error(w, err.Error(), http.StatusNotFound)
 	default:
-		// a stack trace is added for Non User errors
-		data["response_status"] = http.StatusInternalServerError
-		log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, log.Error(err), data)
-		http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+		// Switch by error message
+		switch {
+		case errs.BadRequestMap[err]:
+			data["response_status"] = http.StatusBadRequest
+			data["user_error"] = err.Error()
+			log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, data)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errs.NotFoundMap[err]:
+			data["response_status"] = http.StatusNotFound
+			data["user_error"] = err.Error()
+			log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, data)
+			http.Error(w, err.Error(), http.StatusNotFound)
+		default:
+			// a stack trace is added for Non User errors
+			data["response_status"] = http.StatusInternalServerError
+			log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, log.Error(err), data)
+			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+		}
 	}
-
 }

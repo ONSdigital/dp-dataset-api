@@ -11,6 +11,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
 	"github.com/ONSdigital/dp-dataset-api/instance"
+	"github.com/ONSdigital/dp-dataset-api/pagination"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	dphandlers "github.com/ONSdigital/dp-net/handlers"
@@ -91,6 +92,8 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		maxLimit:                 cfg.DefaultMaxLimit,
 	}
 
+	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)
+
 	if api.enablePrivateEndpoints {
 		log.Event(ctx, "enabling private endpoints for dataset api", log.INFO)
 
@@ -114,21 +117,21 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 			Storer: api.dataStore.Backend,
 		}
 
-		api.enablePrivateDatasetEndpoints(ctx)
+		api.enablePrivateDatasetEndpoints(ctx, paginator)
 		api.enablePrivateInstancesEndpoints(instanceAPI)
 		api.enablePrivateDimensionsEndpoints(dimensionAPI)
 	} else {
 		log.Event(ctx, "enabling only public endpoints for dataset api", log.INFO)
-		api.enablePublicEndpoints(ctx)
+		api.enablePublicEndpoints(ctx, paginator)
 	}
 	return api
 }
 
 // enablePublicEndpoints register only the public GET endpoints.
-func (api *DatasetAPI) enablePublicEndpoints(ctx context.Context) {
-	api.get("/datasets", api.getDatasets)
+func (api *DatasetAPI) enablePublicEndpoints(ctx context.Context, paginator *pagination.Paginator) {
+	api.get("/datasets", paginator.Paginate(api.getDatasets))
 	api.get("/datasets/{dataset_id}", api.getDataset)
-	api.get("/datasets/{dataset_id}/editions", api.getEditions)
+	api.get("/datasets/{dataset_id}/editions", paginator.Paginate(api.getEditions))
 	api.get("/datasets/{dataset_id}/editions/{edition}", api.getEdition)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions", api.getVersions)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}", api.getVersion)
@@ -140,10 +143,10 @@ func (api *DatasetAPI) enablePublicEndpoints(ctx context.Context) {
 
 // enablePrivateDatasetEndpoints register the datasets endpoints with the appropriate authentication and authorisation
 // checks required when running the dataset API in publishing (private) mode.
-func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context) {
+func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context, paginator *pagination.Paginator) {
 	api.get(
 		"/datasets",
-		api.isAuthorised(readPermission, api.getDatasets),
+		api.isAuthorised(readPermission, paginator.Paginate(api.getDatasets)),
 	)
 
 	api.get(
@@ -154,7 +157,7 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context) {
 
 	api.get(
 		"/datasets/{dataset_id}/editions",
-		api.isAuthorisedForDatasets(readPermission, api.getEditions),
+		api.isAuthorisedForDatasets(readPermission, paginator.Paginate(api.getEditions)),
 	)
 
 	api.get(
@@ -316,6 +319,14 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.
 				dimensionAPI.GetUniqueDimensionAndOptionsHandler)),
 	)
 
+	api.patch(
+		"/instances/{instance_id}/dimensions/{dimension}/options/{option}",
+		api.isAuthenticated(
+			api.isAuthorised(updatePermission,
+				api.isInstancePublished(dimensionAPI.PatchOptionHandler))),
+	)
+
+	// Deprecated
 	api.put(
 		"/instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}",
 		api.isAuthenticated(
@@ -358,24 +369,29 @@ func (api *DatasetAPI) isVersionPublished(action string, handler http.HandlerFun
 	return api.versionPublishedChecker.Check(handler, action)
 }
 
-// get register a GET http.HandlerFunc.
+// get registers a GET http.HandlerFunc.
 func (api *DatasetAPI) get(path string, handler http.HandlerFunc) {
-	api.Router.HandleFunc(path, handler).Methods("GET")
+	api.Router.HandleFunc(path, handler).Methods(http.MethodGet)
 }
 
-// get register a PUT http.HandlerFunc.
+// put registers a PUT http.HandlerFunc.
 func (api *DatasetAPI) put(path string, handler http.HandlerFunc) {
-	api.Router.HandleFunc(path, handler).Methods("PUT")
+	api.Router.HandleFunc(path, handler).Methods(http.MethodPut)
 }
 
-// get register a POST http.HandlerFunc.
+// patch registers a PATCH http.HandlerFunc
+func (api *DatasetAPI) patch(path string, handler http.HandlerFunc) {
+	api.Router.HandleFunc(path, handler).Methods(http.MethodPatch)
+}
+
+// post registers a POST http.HandlerFunc.
 func (api *DatasetAPI) post(path string, handler http.HandlerFunc) {
-	api.Router.HandleFunc(path, handler).Methods("POST")
+	api.Router.HandleFunc(path, handler).Methods(http.MethodPost)
 }
 
-// get register a DELETE http.HandlerFunc.
+// delete registers a DELETE http.HandlerFunc.
 func (api *DatasetAPI) delete(path string, handler http.HandlerFunc) {
-	api.Router.HandleFunc(path, handler).Methods("DELETE")
+	api.Router.HandleFunc(path, handler).Methods(http.MethodDelete)
 }
 
 func (api *DatasetAPI) authenticate(r *http.Request, logData log.Data) bool {

@@ -34,6 +34,13 @@ parameters:
     in: query
     required: true
     type: string
+  patch_options:
+    required: true
+    name: patch
+    schema:
+      $ref: '#/definitions/PatchOptions'
+    description: "A list of patch operations for a dimension option"
+    in: body
   edition:
     name: edition
     description: "An edition of a dataset"
@@ -834,23 +841,26 @@ paths:
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}/dimensions/{dimension}/options/{option}:
-    put:
+    patch:
       tags:
       - "Private"
-      summary: "Add an option to an instance dimension"
+      summary: "Modify a dimension option for an instance"
       description: |
-        Add a option to a dimension which has been found in the V4 data
+        Modify a dimension option for an instance by setting values for node_id or order
       parameters:
       - $ref: '#/parameters/instance_id'
       - $ref: '#/parameters/dimension'
       - $ref: '#/parameters/option'
+      - $ref: '#/parameters/patch_options'
       produces:
-      - "application/json"
+      - "application/json-patch+json"
       security:
       - InternalAPIKey: []
       responses:
         200:
-          description: "The dimension was added"
+          description: "The dimension option was modified and the successfully applied patch operations are returned"
+          schema:
+            $ref: '#/definitions/PatchOptions'
         400:
           $ref: '#/responses/InvalidRequestError'
         401:
@@ -863,6 +873,7 @@ paths:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}:
     put:
+      deprecated: true
       tags:
       - "Private"
       summary: "Update a dimension with the node_id"
@@ -1235,6 +1246,27 @@ definitions:
       option:
         description: "An option for a dimension"
         type: string
+  PatchOptions:
+    description: "A list of operations to patch a dimension option. Can only handle adding values for /node_id and /order. Each element in the array is processed in sequential order."
+    type: array
+    items:
+      type: object
+      description: "Item containing all necessary information to make a single operation on the resource."
+      properties:
+        op:
+          description: |
+            The operation to be made on path.
+            * add - Sets the value for the provided path
+          type: string
+          enum: [add]
+        path:
+          description: "Path to value that needs to be operated on."
+          type: string
+          example: "/node_id"
+          enum: [/node_id, /order]
+        value:
+          description: "A value that will be set for the provided path. /node_id accepts string values, and /order accepts integer values."
+          example: "node_123"
   DownloadObject:
     description: "Object containing information of a downloadable file"
     type: object
@@ -1904,6 +1936,9 @@ definitions:
       option:
         description: "The option of the dimension"
         type: string
+      order:
+        description: "The numerical order for the dimension option"
+        type: integer
   UpdateDownloadObject:
     description: "Object containing information of a downloadable file"
     type: object
@@ -2038,6 +2073,9 @@ definitions:
         type: string
       id:
         description: "The identifier for this version of an edition for a dataset"
+        type: string
+      dataset_id:
+        description: "The identifier for the dataset."
         type: string
       latest_changes:
         description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
