@@ -105,6 +105,7 @@ Feature: Dataset API
                 "count": 2,
                 "items": [
                     {
+                        "dataset_id": "population-estimates",
                         "id": "test-item-4",
                         "version": 4,
                         "edition": "hello",
@@ -119,6 +120,7 @@ Feature: Dataset API
                         }
                     },
                     {
+                        "dataset_id": "population-estimates",
                         "id": "test-item-1",
                         "version": 1,
                         "edition": "hello",
@@ -150,6 +152,7 @@ Feature: Dataset API
                 "count": 3,
                 "items": [
                     {
+                        "dataset_id": "population-estimates",
                         "id": "test-item-4",
                         "version": 4,
                         "state": "published",
@@ -164,6 +167,7 @@ Feature: Dataset API
                         "edition": "hello"
                     },
                     {
+                        "dataset_id": "population-estimates",
                         "id": "test-item-2",
                         "version": 2,
                         "state": "associated",
@@ -178,6 +182,7 @@ Feature: Dataset API
                         "edition": "hello"
                     },
                     {
+                        "dataset_id": "population-estimates",
                         "id": "test-item-1",
                         "version": 1,
                         "state": "published",
