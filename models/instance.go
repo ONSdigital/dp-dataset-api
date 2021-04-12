@@ -78,15 +78,6 @@ type Event struct {
 	Type          string     `bson:"type,omitempty"           json:"type"`
 }
 
-// InstanceResults wraps instances objects for pagination
-type InstanceResults struct {
-	Items      []Instance `json:"items"`
-	Count      int        `json:"count"`
-	Offset     int        `json:"offset"`
-	Limit      int        `json:"limit"`
-	TotalCount int        `json:"total_count"`
-}
-
 // Validate the event structure
 func (e *Event) Validate() error {
 	if e.Message == "" || e.MessageOffset == "" || e.Time == nil || e.Type == "" {

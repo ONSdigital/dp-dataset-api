@@ -2,24 +2,6 @@ package models
 
 import "time"
 
-// DatasetDimensionResults represents a structure for a list of dimensions
-type DatasetDimensionResults struct {
-	Items      []Dimension `json:"items"`
-	Count      int         `json:"count"`
-	Offset     int         `json:"offset"`
-	Limit      int         `json:"limit"`
-	TotalCount int         `json:"total_count"`
-}
-
-// DimensionOptionResults represents a structure for a list of dimension options
-type DimensionOptionResults struct {
-	Items      []PublicDimensionOption `json:"items"`
-	Count      int                     `json:"count"`
-	Offset     int                     `json:"offset"`
-	Limit      int                     `json:"limit"`
-	TotalCount int                     `json:"total_count"`
-}
-
 // Dimension represents an overview for a single dimension. This includes a link to the code list API
 // which provides metadata about the dimension and all possible values.
 type Dimension struct {

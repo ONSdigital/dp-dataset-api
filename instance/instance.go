@@ -13,7 +13,6 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/ONSdigital/dp-dataset-api/utils"
 	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
@@ -26,8 +25,6 @@ type Store struct {
 	store.Storer
 	Host                string
 	EnableDetachDataset bool
-	DefaultOffset       int
-	DefaultLimit        int
 }
 
 type taskError struct {
@@ -42,20 +39,15 @@ func (e taskError) Error() string {
 	return ""
 }
 
-//GetList a list of all instances
-func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
+//GetList returns a list of instances, the total count of instances that match the query parameters and an error
+func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	stateFilterQuery := r.URL.Query().Get("state")
 	datasetFilterQuery := r.URL.Query().Get("dataset")
-	offsetParameter := r.URL.Query().Get("offset")
-	limitParameter := r.URL.Query().Get("limit")
 	var stateFilterList []string
 	var datasetFilterList []string
 	logData := log.Data{}
 	var err error
-
-	offset := s.DefaultOffset
-	limit := s.DefaultLimit
 
 	if stateFilterQuery != "" {
 		logData["state_query"] = stateFilterQuery
@@ -67,57 +59,32 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request) {
 		datasetFilterList = strings.Split(datasetFilterQuery, ",")
 	}
 
-	if offsetParameter != "" {
-		logData["offset"] = offsetParameter
-		offset, err = utils.ValidatePositiveInt(offsetParameter)
-		if err != nil {
-			log.Event(ctx, "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
-			handleInstanceErr(ctx, err, w, nil)
-			return
-		}
-	}
-
-	if limitParameter != "" {
-		logData["limit"] = limitParameter
-		limit, err = utils.ValidatePositiveInt(limitParameter)
-		if err != nil {
-			log.Event(ctx, "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
-			handleInstanceErr(ctx, err, w, nil)
-			return
-		}
-	}
-
 	log.Event(ctx, "get list of instances", log.INFO, logData)
 
-	b, err := func() ([]byte, error) {
+	results, totalCount, err := func() ([]*models.Instance, int, error) {
 		if len(stateFilterList) > 0 {
 			if err := models.ValidateStateFilter(stateFilterList); err != nil {
 				log.Event(ctx, "get instances: filter state invalid", log.ERROR, log.Error(err), logData)
-				return nil, taskError{error: err, status: http.StatusBadRequest}
+				return nil, 0, taskError{error: err, status: http.StatusBadRequest}
 			}
 		}
 
-		results, err := s.GetInstances(ctx, stateFilterList, datasetFilterList, offset, limit)
+		results, totalCount, err := s.GetInstances(ctx, stateFilterList, datasetFilterList, offset, limit)
 		if err != nil {
-			log.Event(ctx, "get instances: store.GetInstances returned and error", log.ERROR, log.Error(err), logData)
-			return nil, err
+			log.Event(ctx, "get instances: store.GetInstances returned an error", log.ERROR, log.Error(err), logData)
+			return nil, 0, err
 		}
 
-		b, err := json.Marshal(results)
-		if err != nil {
-			log.Event(ctx, "get instances: failed to marshal results to json", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-		return b, nil
+		return results, totalCount, nil
 	}()
 
 	if err != nil {
 		handleInstanceErr(ctx, err, w, logData)
-		return
+		return nil, 0, err
 	}
 
-	writeBody(ctx, w, b, logData)
 	log.Event(ctx, "get instances: request successful", log.INFO, logData)
+	return results, totalCount, nil
 }
 
 //Get a single instance by id

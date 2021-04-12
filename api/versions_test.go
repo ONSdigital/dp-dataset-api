@@ -31,9 +31,10 @@ const (
 
 func TestGetVersionsReturnsOK(t *testing.T) {
 	t.Parallel()
-	Convey("A successful request to get version returns 200 OK response", t, func() {
+	Convey("get versions delegates offset and limit to db func and returns results list", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
 		w := httptest.NewRecorder()
+		results := []models.Version{}
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(datasetID, state string) error {
 				return nil
@@ -41,118 +42,26 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
-				return &models.VersionResults{}, nil
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
+				return results, 2, nil
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+		list, totalCount, err := api.getVersions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetVersionsCalls()[0].Limit, ShouldEqual, 20)
+		So(mockedDataStore.GetVersionsCalls()[0].Offset, ShouldEqual, 0)
+		So(list, ShouldResemble, results)
+		So(totalCount, ShouldEqual, 2)
+		So(err, ShouldEqual, nil)
+
 	})
-
-	// func to unmarshal and validate body bytes
-	validateBody := func(bytes []byte, expected models.VersionResults) {
-		var response models.VersionResults
-		err := json.Unmarshal(bytes, &response)
-		So(err, ShouldBeNil)
-		So(response, ShouldResemble, expected)
-	}
-
-	Convey("When valid limit and offset query parameters are provided, then return versions information according to the offset and limit", t, func() {
-
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions?offset=2&limit=2", nil)
-		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(datasetID, state string) error {
-				return nil
-			},
-
-			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
-				return nil
-			},
-
-			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
-				return &models.VersionResults{
-					Items:      []models.Version{},
-					Count:      1,
-					Offset:     offset,
-					Limit:      limit,
-					TotalCount: 3,
-				}, nil
-			},
-		}
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
-
-		Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
-			expectedResponse := models.VersionResults{
-				Items:      []models.Version{},
-				Count:      1,
-				Offset:     2,
-				Limit:      2,
-				TotalCount: 3,
-			}
-
-			So(w.Code, ShouldEqual, http.StatusOK)
-			validateBody(w.Body.Bytes(), expectedResponse)
-		})
-	})
-
-	Convey("When valid limit above maximum and offset query parameters are provided, then return versions information according to the offset and limit", t, func() {
-
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions?offset=2&limit=7", nil)
-		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(datasetID, state string) error {
-				return nil
-			},
-
-			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
-				return nil
-			},
-
-			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
-				return &models.VersionResults{
-					Items:      []models.Version{},
-					Count:      1,
-					Offset:     offset,
-					Limit:      limit,
-					TotalCount: 3,
-				}, nil
-			},
-		}
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
-
-		Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
-			expectedResponse := models.VersionResults{
-				Items:      []models.Version{},
-				Count:      1,
-				Offset:     2,
-				Limit:      7,
-				TotalCount: 3,
-			}
-
-			So(w.Code, ShouldEqual, http.StatusOK)
-			validateBody(w.Body.Bytes(), expectedResponse)
-		})
-	})
-
 }
 
 func TestGetVersionsReturnsError(t *testing.T) {
@@ -167,34 +76,15 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+		api.getVersions(w, r, 20, 0)
 
 		assertInternalServerErr(w)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
-	})
-
-	Convey("When a negative limit and offset query parameters are provided, then return a 400 error", t, func() {
-
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions?offset=-2&limit=-7", nil)
-		w := httptest.NewRecorder()
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(&storetest.StorerMock{}, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
-		So(strings.TrimSpace(w.Body.String()), ShouldEqual, errs.ErrInvalidQueryParameter.Error())
-
 	})
 
 	Convey("When the dataset does not exist return status not found", t, func() {
@@ -206,16 +96,13 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+		api.getVersions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
 
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -233,16 +120,13 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+		api.getVersions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 0)
@@ -259,21 +143,18 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
-				return nil, errs.ErrVersionNotFound
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
+				return nil, 0, errs.ErrVersionNotFound
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+		api.getVersions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -289,21 +170,18 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
-				return nil, errs.ErrVersionNotFound
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
+				return nil, 0, errs.ErrVersionNotFound
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+		api.getVersions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
@@ -322,8 +200,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) (*models.VersionResults, error) {
-				return &models.VersionResults{Items: items}, nil
+			GetVersionsFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
+				return items, len(items), nil
 			},
 		}
 

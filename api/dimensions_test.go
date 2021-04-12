@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -12,41 +11,18 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/globalsign/mgo/bson"
+	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// func to unmarshal and validate body bytes
-var validateBody = func(bytes []byte, expected models.DatasetDimensionResults) {
-	var response models.DatasetDimensionResults
-	err := json.Unmarshal(bytes, &response)
-	So(err, ShouldBeNil)
-	So(response, ShouldResemble, expected)
+func initAPIWithMockedStore(mockedStore *storetest.StorerMock) *DatasetAPI {
+	datasetPermissions := getAuthorisationHandlerMock()
+	permissions := getAuthorisationHandlerMock()
+	return GetAPIWithMocks(mockedStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 }
 
 func TestGetDimensionsReturnsOk(t *testing.T) {
 	t.Parallel()
-
-	mongoData := []bson.M{
-		{"doc": bson.M{}},
-		{"doc": bson.M{
-			"links": bson.M{
-				"code_list": bson.M{},
-			},
-		}},
-	}
-
-	mongoVersion := &models.Version{
-		State:      models.AssociatedState,
-		Dimensions: []models.Dimension{},
-		Links: &models.VersionLinks{
-			Dataset: &models.LinkObject{
-				ID: "version_dataset_id",
-			},
-			Version: &models.LinkObject{
-				ID: "version_ID",
-			},
-		},
-	}
 
 	Convey("When the request contain valid ids return dimension information", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
@@ -71,127 +47,10 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
 	})
-
-	Convey("When valid limit and offset query parameters are provided", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions?offset=1&limit=2", nil)
-		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
-				return mongoVersion, nil
-			},
-			GetDimensionsFunc: func(datasetID, versionID string) ([]bson.M, error) {
-				return mongoData, nil
-			},
-		}
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
-
-		Convey("then return dimensions information according to the offset and limit", func() {
-			expectedResponse := models.DatasetDimensionResults{
-				Items: []models.Dimension{
-					{
-						Links: models.DimensionLink{
-							Options: models.LinkObject{
-								HRef: "http://localhost:22000/datasets/version_dataset_id/editions//versions/version_ID/dimensions//options",
-							},
-							CodeList: models.LinkObject{},
-							Version: models.LinkObject{
-								HRef: "http://localhost:22000/datasets/version_dataset_id/editions//versions/version_ID",
-							},
-						},
-					},
-				},
-				Count:      1,
-				Offset:     1,
-				Limit:      2,
-				TotalCount: 2,
-			}
-
-			So(w.Code, ShouldEqual, http.StatusOK)
-			validateBody(w.Body.Bytes(), expectedResponse)
-		})
-
-		Convey("then the expected calls are performed against the database", func() {
-			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-			So(permissions.Required.Calls, ShouldEqual, 0)
-			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-			So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
-		})
-	})
-
-	Convey("When valid limit above maximum and offset query parameters are provided", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions?offset=1&limit=7", nil)
-		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
-				return mongoVersion, nil
-			},
-			GetDimensionsFunc: func(datasetID, versionID string) ([]bson.M, error) {
-				return mongoData, nil
-			},
-		}
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
-
-		Convey("then return editions information according to the offset and limit", func() {
-			expectedResponse := models.DatasetDimensionResults{
-				Items: []models.Dimension{
-					{
-						Links: models.DimensionLink{
-							Options: models.LinkObject{
-								HRef: "http://localhost:22000/datasets/version_dataset_id/editions//versions/version_ID/dimensions//options",
-							},
-							CodeList: models.LinkObject{},
-							Version: models.LinkObject{
-								HRef: "http://localhost:22000/datasets/version_dataset_id/editions//versions/version_ID",
-							},
-						},
-					},
-				},
-				Count:      1,
-				Offset:     1,
-				Limit:      7,
-				TotalCount: 2,
-			}
-
-			So(w.Code, ShouldEqual, http.StatusOK)
-			validateBody(w.Body.Bytes(), expectedResponse)
-		})
-
-		Convey("then the expected calls are performed against the database", func() {
-			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-			So(permissions.Required.Calls, ShouldEqual, 0)
-			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-			So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
-		})
-	})
-
 }
 
 func TestGetDimensionsReturnsErrors(t *testing.T) {
 	t.Parallel()
-
-	Convey("When a negative limit and offset query parameters are provided, then return a 400 error", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions?offset=-1&limit=-7", nil)
-		w := httptest.NewRecorder()
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(&storetest.StorerMock{}, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidQueryParameter.Error())
-
-	})
 
 	Convey("When the api cannot connect to datastore to get dimension resource return an internal server error", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
@@ -202,14 +61,10 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
+		api := initAPIWithMockedStore(mockedDataStore)
+		api.getDimensions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
@@ -224,14 +79,10 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
+		api := initAPIWithMockedStore(mockedDataStore)
+		api.getDimensions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
@@ -249,14 +100,10 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
+		api := initAPIWithMockedStore(mockedDataStore)
+		api.getDimensions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDimensionsNotFound.Error())
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
@@ -271,14 +118,10 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
+		api := initAPIWithMockedStore(mockedDataStore)
+		api.getDimensions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
@@ -295,73 +138,61 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
 				return &models.Version{State: models.AssociatedState, ID: "v1"}, nil
 			},
-			GetDimensionOptionsFunc: func(version *models.Version, dimensions string, offset, limit int) (*models.DimensionOptionResults, error) {
-				if offset > 4 {
-					return &models.DimensionOptionResults{
-						Items:      []models.PublicDimensionOption{},
-						Count:      0,
-						TotalCount: 5,
-						Limit:      limit,
-						Offset:     offset,
-					}, nil
-				}
-				effectiveLimit := limit
-				if limit == 0 {
-					effectiveLimit = 5
-				}
-				allItems := []models.PublicDimensionOption{
+			GetDimensionOptionsFunc: func(version *models.Version, dimensions string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
+				allItems := []*models.PublicDimensionOption{
 					{Option: "op1"},
 					{Option: "op2"},
 					{Option: "op3"},
 					{Option: "op4"},
 					{Option: "op5"}}
-				items := allItems[offset:min(5, offset+effectiveLimit)]
-				return &models.DimensionOptionResults{
-					Items:      items,
-					Count:      len(items),
-					TotalCount: 5,
-					Limit:      limit,
-					Offset:     offset,
-				}, nil
+				return allItems, 5, nil
 			},
-			GetDimensionOptionsFromIDsFunc: func(version *models.Version, dimension string, ids []string) (*models.DimensionOptionResults, error) {
-				ret := &models.DimensionOptionResults{TotalCount: 5}
+			GetDimensionOptionsFromIDsFunc: func(version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
+				ret := []*models.PublicDimensionOption{}
 				sort.Strings(ids)
 				for _, id := range ids {
 					switch id {
 					case "op1":
-						ret.Items = append(ret.Items, models.PublicDimensionOption{Option: "op1"})
+						ret = append(ret, &models.PublicDimensionOption{Option: "op1"})
 					case "op2":
-						ret.Items = append(ret.Items, models.PublicDimensionOption{Option: "op2"})
+						ret = append(ret, &models.PublicDimensionOption{Option: "op2"})
 					case "op3":
-						ret.Items = append(ret.Items, models.PublicDimensionOption{Option: "op3"})
+						ret = append(ret, &models.PublicDimensionOption{Option: "op3"})
 					case "op4":
-						ret.Items = append(ret.Items, models.PublicDimensionOption{Option: "op4"})
+						ret = append(ret, &models.PublicDimensionOption{Option: "op4"})
 					case "op5":
-						ret.Items = append(ret.Items, models.PublicDimensionOption{Option: "op5"})
+						ret = append(ret, &models.PublicDimensionOption{Option: "op5"})
 					}
 				}
-				ret.Count = len(ret.Items)
-				return ret, nil
+				return ret, 5, nil
 			},
 		}
 
-		// permissions mocks
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-
 		// func to perform a call
-		call := func(r *http.Request) *httptest.ResponseRecorder {
+		callOptions := func(r *http.Request) (interface{}, int, error) {
 			w := httptest.NewRecorder()
-			api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-			api.Router.ServeHTTP(w, r)
-			return w
+			api := initAPIWithMockedStore(mockedDataStore)
+			return api.getDimensionOptions(w, r, 20, 0)
+		}
+
+		callOptionsWithIDs := func(r *http.Request) (interface{}, int, error) {
+			w := httptest.NewRecorder()
+			api := initAPIWithMockedStore(mockedDataStore)
+			return api.getDimensionOptions(w, r, 20, 0)
+		}
+
+		setExpectedUrlVars := func(r *http.Request) *http.Request {
+			return mux.SetURLVars(r,
+				map[string]string{
+					"dataset_id": "123",
+					"edition":    "2017",
+					"version":    "1",
+					"dimension":  "age",
+				})
 		}
 
 		// func to validate expected calls
 		validateCalls := func(expectedIDs *[]string) {
-			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-			So(permissions.Required.Calls, ShouldEqual, 0)
 			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 			if expectedIDs == nil {
 				So(mockedDataStore.GetDimensionOptionsCalls(), ShouldHaveLength, 1)
@@ -382,125 +213,62 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 			Version: models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1", ID: "1"},
 		}
 
-		// func to unmarshal and validate body bytes
-		validateBody := func(bytes []byte, expected models.DimensionOptionResults) {
-			var response models.DimensionOptionResults
-			err := json.Unmarshal(bytes, &response)
-			So(err, ShouldBeNil)
-			So(response, ShouldResemble, expected)
-		}
-
 		Convey("When a valid dimension is provided without any query parameters", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
-			w := call(r)
+			r = setExpectedUrlVars(r)
+			list, totalCount, err := callOptions(r)
 
 			Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
-				expectedResponse := models.DimensionOptionResults{
-					Items: []models.PublicDimensionOption{
-						{Option: "op1", Links: expectedLinks},
-						{Option: "op2", Links: expectedLinks},
-						{Option: "op3", Links: expectedLinks},
-						{Option: "op4", Links: expectedLinks},
-						{Option: "op5", Links: expectedLinks},
-					},
-					Count:      5,
-					Offset:     0,
-					Limit:      0,
-					TotalCount: 5,
+				expectedList := []*models.PublicDimensionOption{
+					{Option: "op1", Links: expectedLinks},
+					{Option: "op2", Links: expectedLinks},
+					{Option: "op3", Links: expectedLinks},
+					{Option: "op4", Links: expectedLinks},
+					{Option: "op5", Links: expectedLinks},
 				}
-				So(w.Code, ShouldEqual, http.StatusOK)
-				validateBody(w.Body.Bytes(), expectedResponse)
-				validateCalls(nil)
-			})
-		})
-
-		Convey("When a valid dimension, limit and offset query parameters are provided, then return dimension information according to the offset and limit", func() {
-			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?offset=2&limit=2", nil)
-			w := call(r)
-
-			Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
-				expectedResponse := models.DimensionOptionResults{
-					Items: []models.PublicDimensionOption{
-						{Option: "op3", Links: expectedLinks},
-						{Option: "op4", Links: expectedLinks},
-					},
-					Count:      2,
-					Offset:     2,
-					Limit:      2,
-					TotalCount: 5,
-				}
-				So(w.Code, ShouldEqual, http.StatusOK)
-				validateBody(w.Body.Bytes(), expectedResponse)
-				validateCalls(nil)
-			})
-		})
-
-		Convey("When a valid dimension, limit above maximum and offset query parameters are provided, then return dimension information according to the offset and limit", func() {
-			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?offset=2&limit=7", nil)
-			w := call(r)
-
-			Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
-				expectedResponse := models.DimensionOptionResults{
-					Items: []models.PublicDimensionOption{
-						{Option: "op3", Links: expectedLinks},
-						{Option: "op4", Links: expectedLinks},
-						{Option: "op5", Links: expectedLinks},
-					},
-					Count:      3,
-					Offset:     2,
-					Limit:      7,
-					TotalCount: 5,
-				}
-				So(w.Code, ShouldEqual, http.StatusOK)
-				validateBody(w.Body.Bytes(), expectedResponse)
+				So(list, ShouldResemble, expectedList)
+				So(totalCount, ShouldEqual, 5)
+				So(err, ShouldBeNil)
 				validateCalls(nil)
 			})
 		})
 
 		Convey("When a valid dimension and list of existing IDs is provided in more than one parameter, in comma-separated format", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=op1,op3&id=op5", nil)
-			w := call(r)
+			r = setExpectedUrlVars(r)
+			list, totalCount, err := callOptionsWithIDs(r)
 
 			Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
-				expectedResponse := models.DimensionOptionResults{
-					Items: []models.PublicDimensionOption{
-						{Option: "op1", Links: expectedLinks},
-						{Option: "op3", Links: expectedLinks},
-						{Option: "op5", Links: expectedLinks},
-					},
-					Count:      3,
-					Offset:     0,
-					Limit:      0,
-					TotalCount: 5,
+				expectedList := []*models.PublicDimensionOption{
+					{Option: "op1", Links: expectedLinks},
+					{Option: "op3", Links: expectedLinks},
+					{Option: "op5", Links: expectedLinks},
 				}
-				So(w.Code, ShouldEqual, http.StatusOK)
-				validateBody(w.Body.Bytes(), expectedResponse)
+				So(list, ShouldResemble, expectedList)
+				So(totalCount, ShouldEqual, 5)
+				So(err, ShouldBeNil)
 				validateCalls(&[]string{"op1", "op3", "op5"})
 			})
 		})
 
 		Convey("When a valid offset, limit and dimension and list of existing IDs are provided", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=op1,op3&offset=0&limit=1", nil)
-			w := call(r)
+			r = setExpectedUrlVars(r)
+			list, totalCount, err := callOptionsWithIDs(r)
 
 			Convey("Then the call succeeds with 200 OK code, the list of IDs take precedence (offset and limit are ignored), and the expected body and calls are performed", func() {
-				expectedResponse := models.DimensionOptionResults{
-					Items: []models.PublicDimensionOption{
-						{Option: "op1", Links: expectedLinks},
-						{Option: "op3", Links: expectedLinks},
-					},
-					Count:      2,
-					Offset:     0,
-					Limit:      0,
-					TotalCount: 5,
+				expectedList := []*models.PublicDimensionOption{
+					{Option: "op1", Links: expectedLinks},
+					{Option: "op3", Links: expectedLinks},
 				}
-				So(w.Code, ShouldEqual, http.StatusOK)
-				validateBody(w.Body.Bytes(), expectedResponse)
+
+				So(list, ShouldResemble, expectedList)
+				So(totalCount, ShouldEqual, 5)
+				So(err, ShouldBeNil)
 				validateCalls(&[]string{"op1", "op3"})
 			})
 		})
 	})
-
 }
 
 func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
@@ -510,57 +278,15 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 
 	Convey("Given a set of mocked dependencies", t, func() {
 
-		// permissions mocks
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-
-		// func to perform a call
-		call := func(r *http.Request) *httptest.ResponseRecorder {
-			w := httptest.NewRecorder()
-			api := GetAPIWithMocks(&storetest.StorerMock{}, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-			api.Router.ServeHTTP(w, r)
-			return w
-		}
-
-		Convey("When a valid dimension and negative limit and offset query parameters are provided, then return dimension information with limit and offset equal to zero", func() {
-			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?offset=-2&limit=-7", nil)
-			w := call(r)
-
-			So(w.Code, ShouldEqual, http.StatusBadRequest)
-			So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidQueryParameter.Error())
-			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-			So(permissions.Required.Calls, ShouldEqual, 0)
-
-		})
-
-		Convey("Then providing wrong value for offset query parameter results in 400 BadRequest response", func() {
-			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?offset=a", nil)
-			w := call(r)
-
-			So(w.Code, ShouldEqual, http.StatusBadRequest)
-			So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidQueryParameter.Error())
-			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-			So(permissions.Required.Calls, ShouldEqual, 0)
-		})
-
-		Convey("Then providing wrong value for limit query parameter results in 400 BadRequest response", func() {
-			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?limit=a", nil)
-			w := call(r)
-
-			So(w.Code, ShouldEqual, http.StatusBadRequest)
-			So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidQueryParameter.Error())
-			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-			So(permissions.Required.Calls, ShouldEqual, 0)
-		})
-
 		Convey("Then providing more IDs than the maximum allowed results in 400 BadRequest response", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=id1,id2,id3&id=id4,id5,id6", nil)
-			w := call(r)
+			w := httptest.NewRecorder()
+
+			api := initAPIWithMockedStore(&storetest.StorerMock{})
+			api.getDimensionOptions(w, r, 20, 0)
 
 			So(w.Code, ShouldEqual, http.StatusBadRequest)
 			So(w.Body.String(), ShouldContainSubstring, errs.ErrTooManyQueryParameters.Error())
-			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-			So(permissions.Required.Calls, ShouldEqual, 0)
 		})
 	})
 
@@ -573,15 +299,11 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
+		api := initAPIWithMockedStore(mockedDataStore)
+		api.getDimensionOptions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
 
@@ -592,20 +314,16 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
 				return &models.Version{State: models.AssociatedState}, nil
 			},
-			GetDimensionOptionsFunc: func(version *models.Version, dimensions string, offset, limit int) (*models.DimensionOptionResults, error) {
-				return nil, errs.ErrInternalServer
+			GetDimensionOptionsFunc: func(version *models.Version, dimensions string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
+				return nil, 0, errs.ErrInternalServer
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
+		api := initAPIWithMockedStore(mockedDataStore)
+		api.getDimensionOptions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionOptionsCalls()), ShouldEqual, 1)
 	})
@@ -617,20 +335,16 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
 				return &models.Version{State: models.AssociatedState}, nil
 			},
-			GetDimensionOptionsFromIDsFunc: func(version *models.Version, dimension string, ids []string) (*models.DimensionOptionResults, error) {
-				return nil, errs.ErrInternalServer
+			GetDimensionOptionsFromIDsFunc: func(version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
+				return nil, 0, errs.ErrInternalServer
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
+		api := initAPIWithMockedStore(mockedDataStore)
+		api.getDimensionOptions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionOptionsFromIDsCalls()), ShouldEqual, 1)
 	})
@@ -644,29 +358,11 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
+		api := initAPIWithMockedStore(mockedDataStore)
+		api.getDimensionOptions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
-}
-
-func min(x, y int) int {
-	if x < y {
-		return x
-	}
-	return y
-}
-
-func max(x, y int) int {
-	if x > y {
-		return x
-	}
-	return y
 }
