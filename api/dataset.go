@@ -42,6 +42,7 @@ var (
 	}
 )
 
+//getDatasets returns a list of datasets, the total count of datasets and an error
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	logData := log.Data{}

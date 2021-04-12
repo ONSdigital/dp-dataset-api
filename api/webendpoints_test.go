@@ -51,7 +51,14 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 			a, _ := ioutil.ReadAll(w.Body)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
-			var results models.DatasetResults
+			type datasetResults struct {
+				Items      []*models.Dataset `json:"items"`
+				Count      int               `json:"count"`
+				Offset     int               `json:"offset"`
+				Limit      int               `json:"limit"`
+				TotalCount int               `json:"total_count"`
+			}
+			var results datasetResults
 			json.Unmarshal(a, &results)
 			// Only a single dataset should be returned in a web subnet
 			So(len(results.Items), ShouldEqual, 1)
@@ -170,11 +177,9 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 				editionSearchState = state
 				return nil
 			},
-			GetVersionsFunc: func(ctx context.Context, id string, editionID string, state string, offset, limit int) (*models.VersionResults, error) {
+			GetVersionsFunc: func(ctx context.Context, id string, editionID string, state string, offset, limit int) ([]models.Version, int, error) {
 				versionSearchState = state
-				return &models.VersionResults{
-					Items: []models.Version{{ID: "124", State: models.PublishedState}},
-				}, nil
+				return []models.Version{{ID: "124", State: models.PublishedState}}, 1, nil
 			},
 		}
 		Convey("Calling the versions endpoint should allow only published items", func() {
@@ -232,7 +237,6 @@ func TestWebSubnetDimensionsEndpoint(t *testing.T) {
 	Convey("When the API is started with private endpoints disabled", t, func() {
 		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234/dimensions", nil)
 		So(err, ShouldBeNil)
-
 		var versionSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -273,8 +277,8 @@ func TestWebSubnetDimensionOptionsEndpoint(t *testing.T) {
 						Version: &models.LinkObject{},
 						Self:    &models.LinkObject{}}}, nil
 			},
-			GetDimensionOptionsFunc: func(version *models.Version, dimension string, offset, limit int) (*models.DimensionOptionResults, error) {
-				return &models.DimensionOptionResults{Items: []models.PublicDimensionOption{}}, nil
+			GetDimensionOptionsFunc: func(version *models.Version, dimension string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
+				return []*models.PublicDimensionOption{}, 0, nil
 			},
 		}
 

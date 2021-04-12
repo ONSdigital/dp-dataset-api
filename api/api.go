@@ -65,9 +65,6 @@ type DatasetAPI struct {
 	permissions              AuthHandler
 	instancePublishedChecker *instance.PublishCheck
 	versionPublishedChecker  *PublishCheck
-	defaultLimit             int
-	defaultOffset            int
-	maxLimit                 int
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
@@ -87,9 +84,6 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		permissions:              permissions,
 		versionPublishedChecker:  nil,
 		instancePublishedChecker: nil,
-		defaultLimit:             cfg.DefaultLimit,
-		defaultOffset:            cfg.DefaultOffset,
-		maxLimit:                 cfg.DefaultMaxLimit,
 	}
 
 	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)
@@ -109,8 +103,6 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 			Host:                api.host,
 			Storer:              api.dataStore.Backend,
 			EnableDetachDataset: api.enableDetachDataset,
-			DefaultOffset:       api.defaultOffset,
-			DefaultLimit:        api.defaultLimit,
 		}
 
 		dimensionAPI := &dimension.Store{
@@ -118,7 +110,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		}
 
 		api.enablePrivateDatasetEndpoints(ctx, paginator)
-		api.enablePrivateInstancesEndpoints(instanceAPI)
+		api.enablePrivateInstancesEndpoints(instanceAPI, paginator)
 		api.enablePrivateDimensionsEndpoints(dimensionAPI)
 	} else {
 		log.Event(ctx, "enabling only public endpoints for dataset api", log.INFO)
@@ -133,11 +125,11 @@ func (api *DatasetAPI) enablePublicEndpoints(ctx context.Context, paginator *pag
 	api.get("/datasets/{dataset_id}", api.getDataset)
 	api.get("/datasets/{dataset_id}/editions", paginator.Paginate(api.getEditions))
 	api.get("/datasets/{dataset_id}/editions/{edition}", api.getEdition)
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions", api.getVersions)
+	api.get("/datasets/{dataset_id}/editions/{edition}/versions", paginator.Paginate(api.getVersions))
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}", api.getVersion)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata", api.getMetadata)
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", api.getDimensions)
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", api.getDimensionOptions)
+	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", paginator.Paginate(api.getDimensions))
+	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", paginator.Paginate(api.getDimensionOptions))
 
 }
 
@@ -169,7 +161,7 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context, pagina
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions",
 		api.isAuthorisedForDatasets(readPermission,
-			api.getVersions),
+			paginator.Paginate(api.getVersions)),
 	)
 
 	api.get(
@@ -187,13 +179,13 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context, pagina
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions",
 		api.isAuthorisedForDatasets(readPermission,
-			api.getDimensions),
+			paginator.Paginate(api.getDimensions)),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options",
 		api.isAuthorisedForDatasets(readPermission,
-			api.getDimensionOptions),
+			paginator.Paginate(api.getDimensionOptions)),
 	)
 
 	api.post(
@@ -237,12 +229,12 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context, pagina
 
 // enablePrivateInstancesEndpoints register the instance endpoints with the appropriate authentication and authorisation
 // checks required when running the dataset API in publishing (private) mode.
-func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI *instance.Store) {
+func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI *instance.Store, paginator *pagination.Paginator) {
 	api.get(
 		"/instances",
 		api.isAuthenticated(
 			api.isAuthorised(readPermission,
-				instanceAPI.GetList)),
+				paginator.Paginate(instanceAPI.GetList))),
 	)
 
 	api.post(

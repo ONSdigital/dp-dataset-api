@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"sort"
@@ -23,50 +22,17 @@ var MaxIDs = func() int {
 	return maxIDs
 }
 
-func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
+//getDimensions returns a list of dimensions, the total count of dimensions that match the query parameters and an error
+func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	version := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "func": "getDimensions"}
-
-	offsetParameter := r.URL.Query().Get("offset")
-	limitParameter := r.URL.Query().Get("limit")
-
-	offset := api.defaultOffset
-	limit := api.defaultLimit
 	var err error
 
-	if offsetParameter != "" {
-		logData["offset"] = offsetParameter
-		offset, err = utils.ValidatePositiveInt(offsetParameter)
-		if err != nil {
-			log.Event(ctx, "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
-			handleDimensionsErr(ctx, w, "invalid query parameter: limit", err, logData)
-			return
-		}
-	}
-
-	if limitParameter != "" {
-		logData["limit"] = limitParameter
-		limit, err = utils.ValidatePositiveInt(limitParameter)
-		if err != nil {
-			log.Event(ctx, "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
-			handleDimensionsErr(ctx, w, "invalid query parameter: limit", err, logData)
-			return
-		}
-	}
-
-	if limit > api.maxLimit {
-		logData["max_limit"] = api.maxLimit
-		err = errs.ErrInvalidQueryParameter
-		log.Event(ctx, "limit is greater than the maximum allowed", log.ERROR, logData)
-		handleDimensionsErr(ctx, w, "unpublished version has an invalid state", err, logData)
-		return
-	}
-
-	b, err := func() ([]byte, error) {
+	list, totalCount, err := func() ([]models.Dimension, int, error) {
 		authorised := api.authenticate(r, logData)
 
 		var state string
@@ -77,19 +43,19 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
 		if err != nil {
 			log.Event(ctx, "datastore.getversion returned an error", log.ERROR, log.Error(err), logData)
-			return nil, err
+			return nil, 0, err
 		}
 
 		if err = models.CheckState("version", versionDoc.State); err != nil {
 			logData["state"] = versionDoc.State
 			log.Event(ctx, "unpublished version has an invalid state", log.ERROR, log.Error(err), logData)
-			return nil, err
+			return nil, 0, err
 		}
 
 		dimensions, err := api.dataStore.Backend.GetDimensions(datasetID, versionDoc.ID)
 		if err != nil {
 			log.Event(ctx, "failed to get version dimensions", log.ERROR, log.Error(err), logData)
-			return nil, err
+			return nil, 0, err
 		}
 
 		slicedResults := []models.Dimension{}
@@ -98,7 +64,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 			results, err := api.createListOfDimensions(versionDoc, dimensions)
 			if err != nil {
 				log.Event(ctx, "failed to convert bson to dimension", log.ERROR, log.Error(err), logData)
-				return nil, err
+				return nil, 0, err
 			}
 
 			sort.Slice(results, func(i, j int) bool {
@@ -108,34 +74,13 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request) {
 			slicedResults = utils.Slice(results, offset, limit)
 		}
 
-		listOfDimensions := &models.DatasetDimensionResults{
-			Items:      slicedResults,
-			Offset:     offset,
-			Limit:      limit,
-			Count:      len(slicedResults),
-			TotalCount: len(dimensions),
-		}
-
-		b, err := json.Marshal(listOfDimensions)
-		if err != nil {
-			log.Event(ctx, "failed to marshal list of dimension resources into bytes", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-		return b, nil
+		return slicedResults, len(dimensions), nil
 	}()
 	if err != nil {
 		handleDimensionsErr(ctx, w, "", err, logData)
-		return
+		return nil, 0, err
 	}
-
-	setJSONContentType(w)
-	_, err = w.Write(b)
-	if err != nil {
-		log.Event(ctx, "error writing bytes to response", log.ERROR, log.Error(err), logData)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	log.Event(ctx, "getDimensions endpoint: request successful", log.INFO, logData)
+	return list, totalCount, nil
 }
 
 func (api *DatasetAPI) createListOfDimensions(versionDoc *models.Version, dimensions []bson.M) ([]models.Dimension, error) {
@@ -184,18 +129,14 @@ func convertBSONToDimensionOption(data interface{}) (*models.DimensionOption, er
 	return &dim, nil
 }
 
-func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Request) {
+//getDimensionOptions returns a list of options, the total count of options that match the query parameters and an error
+func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	versionID := vars["version"]
 	dimension := vars["dimension"]
-	offsetParameter := r.URL.Query().Get("offset")
-	limitParameter := r.URL.Query().Get("limit")
-
-	offset := api.defaultOffset
-	limit := api.defaultLimit
 
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension, "func": "getDimensionOptions"}
 	authorised := api.authenticate(r, logData)
@@ -210,90 +151,50 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		logData["query_params"] = r.URL.RawQuery
 		handleDimensionsErr(ctx, w, "failed to obtain list of IDs from request query parameters", err, logData)
-		return
+		return nil, 0, err
 
-	}
-
-	if offsetParameter != "" {
-		logData["offset"] = offsetParameter
-		offset, err = utils.ValidatePositiveInt(offsetParameter)
-		if err != nil {
-			log.Event(ctx, "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
-			handleDimensionsErr(ctx, w, "invalid query parameter: limit", err, logData)
-			return
-		}
-	}
-
-	if limitParameter != "" {
-		logData["limit"] = limitParameter
-		limit, err = utils.ValidatePositiveInt(limitParameter)
-		if err != nil {
-			log.Event(ctx, "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
-			handleDimensionsErr(ctx, w, "invalid query parameter: limit", err, logData)
-			return
-		}
-	}
-
-	if limit > api.maxLimit {
-		logData["max_limit"] = api.maxLimit
-		err = errs.ErrInvalidQueryParameter
-		log.Event(ctx, "limit is greater than the maximum allowed", log.ERROR, logData)
-		handleDimensionsErr(ctx, w, "unpublished version has an invalid state", err, logData)
-		return
 	}
 
 	// ger version for provided dataset, edition and versionID
 	version, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionID, state)
 	if err != nil {
 		handleDimensionsErr(ctx, w, "failed to get version", err, logData)
-		return
+		return nil, 0, err
 	}
 
 	// vaidate state
 	if err = models.CheckState("version", version.State); err != nil {
 		logData["version_state"] = version.State
 		handleDimensionsErr(ctx, w, "unpublished version has an invalid state", err, logData)
-		return
+		return nil, 0, err
 	}
 
-	var results *models.DimensionOptionResults
+	var results []*models.PublicDimensionOption
+	var totalCount int
 	if len(ids) == 0 {
 		// get sorted dimension options, starting at offset index, with a limit on the number of items
-		results, err = api.dataStore.Backend.GetDimensionOptions(version, dimension, offset, limit)
+		results, totalCount, err = api.dataStore.Backend.GetDimensionOptions(version, dimension, offset, limit)
 		if err != nil {
 			handleDimensionsErr(ctx, w, "failed to get a list of dimension options", err, logData)
-			return
+			return nil, 0, err
 		}
 	} else {
 		// get dimension options from the provided list of IDs, sorted by option
-		results, err = api.dataStore.Backend.GetDimensionOptionsFromIDs(version, dimension, ids)
+		results, totalCount, err = api.dataStore.Backend.GetDimensionOptionsFromIDs(version, dimension, ids)
 		if err != nil {
 			handleDimensionsErr(ctx, w, "failed to get a list of dimension options", err, logData)
-			return
+			return nil, 0, err
 		}
 	}
 
 	// populate links
 	versionHref := fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", api.host, datasetID, edition, versionID)
-	for i := range results.Items {
-		results.Items[i].Links.Version.HRef = versionHref
-		results.Items[i].Links.Version.ID = versionID
+	for i := range results {
+		results[i].Links.Version.HRef = versionHref
+		results[i].Links.Version.ID = versionID
 	}
 
-	b, err := json.Marshal(results)
-	if err != nil {
-		handleDimensionsErr(ctx, w, "failed to marshal list of dimension option resources into bytes", err, logData)
-		return
-	}
-
-	setJSONContentType(w)
-	_, err = w.Write(b)
-	if err != nil {
-		log.Event(ctx, "error writing bytes to response", log.ERROR, log.Error(err), logData)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	log.Event(ctx, "get dimension options", log.INFO, logData)
+	return results, totalCount, nil
 }
 
 // handleDimensionsErr maps the provided error to its corresponding status code.

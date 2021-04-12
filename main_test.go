@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	componenttest "github.com/ONSdigital/dp-component-test"
-	steps_test "github.com/ONSdigital/dp-dataset-api/features/steps"
+	"github.com/ONSdigital/dp-dataset-api/features/steps"
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 )
@@ -25,7 +25,7 @@ type ComponentTest struct {
 
 func (f *ComponentTest) InitializeScenario(ctx *godog.ScenarioContext) {
 	authorizationFeature := componenttest.NewAuthorizationFeature()
-	datasetFeature, err := steps_test.NewDatasetFeature(f.MongoFeature, authorizationFeature.FakeAuthService.ResolveURL(""))
+	datasetFeature, err := steps.NewDatasetComponent(f.MongoFeature, authorizationFeature.FakeAuthService.ResolveURL(""))
 	if err != nil {
 		panic(err)
 	}
@@ -81,7 +81,9 @@ func TestMain(t *testing.T) {
 		fmt.Printf("Component test coverage: %.2f%%\n", testing.Coverage()*100)
 		fmt.Println("=================================")
 
-		os.Exit(status)
+		if status > 0 {
+			t.Fail()
+		}
 	} else {
 		t.Skip("component flag required to run component tests")
 	}
