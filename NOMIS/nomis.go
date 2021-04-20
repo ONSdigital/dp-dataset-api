@@ -51,11 +51,10 @@ type NameDetails struct {
 }
 
 var (
-	censusNationalStatistic = false
+	censusNationalStatistic = true
 	fileName                string
 	fullURLFile             string
 	title                   string
-	metaTitle               []int
 	num                     int
 )
 
@@ -67,9 +66,9 @@ const (
 //CensusContactDetails returns the default values for contact details
 func CensusContactDetails() models.ContactDetails {
 	return models.ContactDetails{
-		Email:     "support@nomisweb.co.uk",
+		Email:     "Census.customerservices@ons.gov.uk",
 		Name:      "Nomis",
-		Telephone: "+44(0) 191 3342680",
+		Telephone: "01329 444972",
 	}
 }
 
@@ -109,13 +108,17 @@ func main() {
 		return
 	}
 
-	for index0, _ := range res.Structure.Keyfamilies.Keyfamily {
+	for index0 := range res.Structure.Keyfamilies.Keyfamily {
 		censusEditionData := models.EditionUpdate{}
 		mapData := models.Dataset{}
 		cenId := res.Structure.Keyfamilies.Keyfamily[index0].ID
-		mapData.Title = res.Structure.Keyfamilies.Keyfamily[index0].Name.Value
-		mapData.ID = cenId
+		title := res.Structure.Keyfamilies.Keyfamily[index0].Name.Value
 
+		mapData.Title, err = CheckTitle(title)
+		if err != nil {
+			log.Event(ctx, "error getting the title", log.ERROR, log.Error(err))
+			os.Exit(1)
+		}
 		datasetUrl := "http://127.0.0.1:12345/datasets/"
 		instanceUrl := "http://127.0.0.1:12345/instances/"
 		editionUrl := "/editions"
@@ -219,11 +222,12 @@ func main() {
 			case "Mnemonic":
 				ref := annotation.Text.(string)
 				param := strings.Split(ref, "c2011")
-				if len(param)<2{
-					log.Event(nil, "error Mnemonic length invalid", log.ERROR)
+				if len(param) < 2 {
+					log.Event(ctx, "error Mnemonic length invalid", log.ERROR)
 					os.Exit(1)
 				}
 				mapData.NomisReferenceURL = "https://www.nomisweb.co.uk/census/2011/" + param[1]
+				mapData.ID = param[1]
 
 			case "FirstReleased":
 				releaseDt := annotation.Text.(string)
@@ -239,7 +243,7 @@ func main() {
 				if str != "MetadataText0" {
 					example, err = CheckSubString(annotation.Text.(string))
 					if err != nil {
-						log.Event(nil, "failed to get metadatatext", log.ERROR, log.Error(err))
+						log.Event(ctx, "failed to get metadatatext", log.ERROR, log.Error(err))
 						os.Exit(1)
 					}
 				}
@@ -266,7 +270,7 @@ func main() {
 			Next:    &mapData,
 		}
 
-		createDocument(ctx, datasetDoc, session, "datasets")
+		createDocument(ctx, datasetDoc, session, "datasets")q
 		createDocument(ctx, censusEditionData, session, "editions")
 		createDocument(ctx, censusInstances, session, "instances")
 	}
@@ -320,8 +324,11 @@ func downloadFile() {
 	}
 	defer resp.Body.Close()
 	size, err := io.Copy(file, resp.Body)
+	if err != nil {
+		fmt.Printf("Error copying a file %s", err)
+		os.Exit(1)
+	}
 	defer file.Close()
-
 	fmt.Printf("Downloaded a file %s with size %d", fileName, size)
 }
 
@@ -336,4 +343,12 @@ func CheckSubString(existingStr string) (string, error) {
 	}
 
 	return valueCheck.ReplaceAllString(existingStr, `$2($1)`), nil
+}
+
+func CheckTitle(sourceStr string) (string, error) {
+	valueCheck, err := regexp.Compile(`^[\d|\D].*?\-\s([\d|\D].*)$`)
+	if err != nil {
+		return "", err
+	}
+	return valueCheck.ReplaceAllString(sourceStr, `$1`), err
 }
