@@ -82,6 +82,9 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | DEFAULT_LIMIT                | 20                                     | Default limit for pagination
 | DEFAULT_OFFSET               | 0                                      | Default offset for pagination
 
+
+### Audit vulnerability
+The current version of jwt-go (4.0.0-preview1) is a preview release. This is a known vulnerability which has been excluded using the CVE-ID when running the audit command and should be updated when a stable version of the library is released.
 ### Contributing
 
 See [CONTRIBUTING](CONTRIBUTING.md) for details.
