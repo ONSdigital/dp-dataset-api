@@ -270,7 +270,7 @@ func main() {
 			Next:    &mapData,
 		}
 
-		createDocument(ctx, datasetDoc, session, "datasets")q
+		createDocument(ctx, datasetDoc, session, "datasets")
 		createDocument(ctx, censusEditionData, session, "editions")
 		createDocument(ctx, censusInstances, session, "instances")
 	}
@@ -346,7 +346,7 @@ func CheckSubString(existingStr string) (string, error) {
 }
 
 func CheckTitle(sourceStr string) (string, error) {
-	valueCheck, err := regexp.Compile(`^[\d|\D].*?\-\s([\d|\D].*)$`)
+	valueCheck, err := regexp.Compile(`^[\d|\D].*?\-\s*([\d|\D].*)$`)
 	if err != nil {
 		return "", err
 	}
