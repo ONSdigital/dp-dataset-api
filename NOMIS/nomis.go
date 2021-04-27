@@ -59,8 +59,16 @@ var (
 )
 
 const (
-	censusYear    string = "2011"
-	censusVersion string = "1"
+	censusYear         string = "2011"
+	censusVersion      string = "1"
+	censusPersonalData string = "Sometimes we need to make changes to data if it is possible to identify individuals. This is known as 'statistical disclosure control'. In the 2011 Census, we:\u000a\u000a" +
+
+		"- swapped records (targeted record swapping), for example if a household could be identified because it has unusual characteristics, the record was swapped with a similar one from the same local area" +
+		"(in specific cases the household was swapped with one in a nearby local authority) \u000a" +
+		"- reduced the detail included for areas where fewer people lived and could be identified, such as electoral wards\u000a\u000a" +
+
+		"Read more about these [methods and why we chose them for the 2011 Census.]" +
+		"(https://webarchive.nationalarchives.gov.uk/20160129174312/http:/www.ons.gov.uk/ons/guide-method/census/2011/the-2011-census/processing-the-information/statistical-methodology/statistical-disclosure-control-for-2011-census.pdf)"
 )
 
 //CensusContactDetails returns the default values for contact details
@@ -109,9 +117,24 @@ func main() {
 	}
 
 	for index0 := range res.Structure.Keyfamilies.Keyfamily {
+		var annotations = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation
 		censusEditionData := models.EditionUpdate{}
+		censusInstances := models.Version{}
 		mapData := models.Dataset{}
-		cenId := res.Structure.Keyfamilies.Keyfamily[index0].ID
+		var cenId string
+		for censusId := range annotations {
+			annoIndex := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[censusId]
+			switch annoIndex.Title {
+			case "Mnemonic":
+				ref := annoIndex.Text.(string)
+				cenParam := strings.Split(ref, "c2011")
+				if len(cenParam) < 2 {
+					log.Event(ctx, "error Mnemonic length invalid", log.ERROR)
+					os.Exit(1)
+				}
+				cenId = cenParam[1]
+			}
+		}
 		title := res.Structure.Keyfamilies.Keyfamily[index0].Name.Value
 
 		mapData.Title, err = CheckTitle(title)
@@ -160,7 +183,7 @@ func main() {
 
 		//Model to generate instances documents in mongodb
 		generateId := uuid.NewV4().String()
-		censusInstances := models.Version{
+		censusInstances = models.Version{
 			Edition:     censusYear,
 			ID:          generateId,
 			LastUpdated: mapData.LastUpdated,
@@ -175,7 +198,7 @@ func main() {
 			UsageNotes: &[]models.UsageNote{},
 		}
 		var metaTitleInfo [5]string
-		var annotations = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation
+
 		for index1 := range annotations {
 			str1 := annotations[index1].Title
 			if strings.HasPrefix(str1, "MetadataTitle") {
@@ -190,22 +213,17 @@ func main() {
 				metaTitleInfo[num] = title
 			}
 		}
-
 		for index := range annotations {
 			var example string
 			var annotation = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index]
-
 			str := annotation.Title
-
 			switch str {
 			case "MetadataText0":
 				mapData.Description = annotation.Text.(string)
-
 			case "Keywords":
 				keywrd := annotation.Text.(string)
 				var split = strings.Split(keywrd, ",")
 				mapData.Keywords = split
-
 			case "LastUpdated":
 				tt := annotation.Text.(string)
 				t, parseErr := time.Parse("2006-01-02 15:04:05", tt)
@@ -215,20 +233,11 @@ func main() {
 				}
 				mapData.LastUpdated = t
 				generalModel.LastUpdated = mapData.LastUpdated
-
 			case "Units":
 				mapData.UnitOfMeasure = annotation.Text.(string)
-
 			case "Mnemonic":
-				ref := annotation.Text.(string)
-				param := strings.Split(ref, "c2011")
-				if len(param) < 2 {
-					log.Event(ctx, "error Mnemonic length invalid", log.ERROR)
-					os.Exit(1)
-				}
-				mapData.NomisReferenceURL = "https://www.nomisweb.co.uk/census/2011/" + param[1]
-				mapData.ID = param[1]
-
+				mapData.NomisReferenceURL = "https://www.nomisweb.co.uk/census/2011/" + cenId
+				mapData.ID = cenId
 			case "FirstReleased":
 				releaseDt := annotation.Text.(string)
 				rd, err := time.Parse("2006-01-02 15:04:05", releaseDt)
@@ -238,7 +247,6 @@ func main() {
 				}
 				censusInstances.ReleaseDate = rd.Format("2006-01-02T15:04:05.000Z")
 			}
-
 			if strings.HasPrefix(str, "MetadataText") {
 				if str != "MetadataText0" {
 					example, err = CheckSubString(annotation.Text.(string))
@@ -250,20 +258,21 @@ func main() {
 				splitMetaData := strings.Split(str, "MetadataText")
 				txtNumber, _ := strconv.Atoi(splitMetaData[1])
 				if splitMetaData[1] == "" && splitMetaData[1] != "0" {
+					note, title := ReplaceStatDis(example, metaTitleInfo[0])
 					*censusInstances.UsageNotes = append(*censusInstances.UsageNotes, models.UsageNote{
-						Note:  example,
-						Title: metaTitleInfo[0],
+						Note:  note,
+						Title: title,
 					})
-
 				} else if splitMetaData[1] != "0" {
+					note1, title1 := ReplaceStatDis(example, metaTitleInfo[txtNumber+1])
 					*censusInstances.UsageNotes = append(*censusInstances.UsageNotes, models.UsageNote{
-						Note:  example,
-						Title: metaTitleInfo[txtNumber+1],
+						Note:  note1,
+						Title: title1,
 					})
 				}
-
 			}
 		}
+
 		datasetDoc := &models.DatasetUpdate{
 			ID:      mapData.ID,
 			Current: &mapData,
@@ -351,4 +360,12 @@ func CheckTitle(sourceStr string) (string, error) {
 		return "", err
 	}
 	return valueCheck.ReplaceAllString(sourceStr, `$1`), err
+}
+
+func ReplaceStatDis(note string, title string) (string, string) {
+	if title == "Statistical Disclosure Control" {
+		note = censusPersonalData
+		title = "Protecting personal data"
+	}
+	return note, title
 }
