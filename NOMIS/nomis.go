@@ -59,6 +59,7 @@ var (
 )
 
 const (
+	census2011         string = "c2011"
 	censusYear         string = "2011"
 	censusVersion      string = "1"
 	censusPersonalData string = "Sometimes we need to make changes to data if it is possible to identify individuals. This is known as 'statistical disclosure control'. In the 2011 Census, we:\u000a\u000a" +
@@ -74,9 +75,9 @@ const (
 //CensusContactDetails returns the default values for contact details
 func CensusContactDetails() models.ContactDetails {
 	return models.ContactDetails{
-		Email:     "Census.customerservices@ons.gov.uk",
+		Email:     "census.customerservices@ons.gov.uk",
 		Name:      "Nomis",
-		Telephone: "01329 444972",
+		Telephone: "+44(0) 132 9444972",
 	}
 }
 
@@ -86,8 +87,9 @@ func main() {
 	flag.StringVar(&mongoURL, "mongo-url", "localhost:27017", "mongoDB URL")
 	flag.Parse()
 
-	downloadFile()
 	ctx := context.Background()
+	downloadFile(ctx)
+
 	session, err := mgo.Dial(mongoURL)
 	if err != nil {
 		log.Event(ctx, "failed to initialise mongo", log.FATAL, log.Error(err))
@@ -116,28 +118,27 @@ func main() {
 		return
 	}
 
-	for index0 := range res.Structure.Keyfamilies.Keyfamily {
-		var annotations = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation
+	for keyIndex := range res.Structure.Keyfamilies.Keyfamily {
+		var annotations = res.Structure.Keyfamilies.Keyfamily[keyIndex].Annotations.Annotation
 		censusEditionData := models.EditionUpdate{}
 		censusInstances := models.Version{}
 		mapData := models.Dataset{}
 		var cenId string
 		for censusId := range annotations {
-			annoIndex := res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[censusId]
-			switch annoIndex.Title {
-			case "Mnemonic":
+			annoIndex := res.Structure.Keyfamilies.Keyfamily[keyIndex].Annotations.Annotation[censusId]
+			if annoIndex.Title == "Mnemonic" {
 				ref := annoIndex.Text.(string)
-				cenParam := strings.Split(ref, "c2011")
-				if len(cenParam) < 2 {
-					log.Event(ctx, "error Mnemonic length invalid", log.ERROR)
+				extractId := strings.Split(ref, census2011)
+				if len(extractId) < 2 {
+					log.Event(ctx, "error mnemonic length invalid", log.ERROR)
 					os.Exit(1)
 				}
-				cenId = cenParam[1]
+				cenId = extractId[1]
 			}
 		}
-		title := res.Structure.Keyfamilies.Keyfamily[index0].Name.Value
+		title := res.Structure.Keyfamilies.Keyfamily[keyIndex].Name.Value
 
-		mapData.Title, err = CheckTitle(title)
+		mapData.Title, err = CheckTitle(title, ctx)
 		if err != nil {
 			log.Event(ctx, "error getting the title", log.ERROR, log.Error(err))
 			os.Exit(1)
@@ -215,7 +216,7 @@ func main() {
 		}
 		for index := range annotations {
 			var example string
-			var annotation = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index]
+			var annotation = res.Structure.Keyfamilies.Keyfamily[keyIndex].Annotations.Annotation[index]
 			str := annotation.Title
 			switch str {
 			case "MetadataText0":
@@ -249,7 +250,7 @@ func main() {
 			}
 			if strings.HasPrefix(str, "MetadataText") {
 				if str != "MetadataText0" {
-					example, err = CheckSubString(annotation.Text.(string))
+					example, err = CheckSubString(annotation.Text.(string), ctx)
 					if err != nil {
 						log.Event(ctx, "failed to get metadatatext", log.ERROR, log.Error(err))
 						os.Exit(1)
@@ -257,18 +258,13 @@ func main() {
 				}
 				splitMetaData := strings.Split(str, "MetadataText")
 				txtNumber, _ := strconv.Atoi(splitMetaData[1])
+				var note, title string
 				if splitMetaData[1] == "" && splitMetaData[1] != "0" {
-					note, title := ReplaceStatDis(example, metaTitleInfo[0])
-					*censusInstances.UsageNotes = append(*censusInstances.UsageNotes, models.UsageNote{
-						Note:  note,
-						Title: title,
-					})
+					note, title = ReplaceStatDis(example, metaTitleInfo[0])
+					appendUsageNote(censusInstances.UsageNotes, note, title)
 				} else if splitMetaData[1] != "0" {
-					note1, title1 := ReplaceStatDis(example, metaTitleInfo[txtNumber+1])
-					*censusInstances.UsageNotes = append(*censusInstances.UsageNotes, models.UsageNote{
-						Note:  note1,
-						Title: title1,
-					})
+					note, title = ReplaceStatDis(example, metaTitleInfo[txtNumber+1])
+					appendUsageNote(censusInstances.UsageNotes, note, title)
 				}
 			}
 		}
@@ -297,13 +293,13 @@ func createDocument(ctx context.Context, class interface{}, session *mgo.Session
 }
 
 //Download a file from nomis website for census 2011 data
-func downloadFile() {
+func downloadFile(ctx context.Context) {
 	fullURLFile = "https://www.nomisweb.co.uk/api/v01/dataset/def.sdmx.json?search=*c2011*"
 
 	// Build fileName from fullPath
 	fileURL, err := url.Parse(fullURLFile)
 	if err != nil {
-		fmt.Println("error Parsing")
+		log.Event(ctx, "error parsing the file", log.ERROR, log.Error(err))
 		os.Exit(1)
 	}
 	path := fileURL.Path
@@ -314,7 +310,7 @@ func downloadFile() {
 	// Create blank file
 	file, err := os.Create(newFileName)
 	if err != nil {
-		fmt.Println("error creating the file")
+		log.Event(ctx, "error creating the file", log.ERROR, log.Error(err))
 		os.Exit(1)
 	}
 	client := http.Client{
@@ -328,13 +324,13 @@ func downloadFile() {
 	resp, err := client.Get(fullURLFile)
 
 	if err != nil {
-		fmt.Println("error writing the file")
+		log.Event(ctx, "error writing the file", log.ERROR, log.Error(err))
 		os.Exit(1)
 	}
 	defer resp.Body.Close()
 	size, err := io.Copy(file, resp.Body)
 	if err != nil {
-		fmt.Printf("Error copying a file %s", err)
+		log.Event(ctx, "error copying a file", log.ERROR, log.Error(err))
 		os.Exit(1)
 	}
 	defer file.Close()
@@ -344,19 +340,21 @@ func downloadFile() {
 /*checkSubString checks if the string has substrings http and [Statistical Disclosure Control].
 If both the substrings exists then it adds parenthesis where necessary and swaps the pattern (url)[text] to [text](url)
 so it can be displayed correctly. If substrings does not exists then it returns the original string*/
-func CheckSubString(existingStr string) (string, error) {
+func CheckSubString(existingStr string, ctx context.Context) (string, error) {
 
 	valueCheck, err := regexp.Compile(`(http[^\[]*)(\[[^\[]*\])`)
 	if err != nil {
+		log.Event(ctx, "error checking substring", log.ERROR, log.Error(err))
 		return "", err
 	}
 
 	return valueCheck.ReplaceAllString(existingStr, `$2($1)`), nil
 }
 
-func CheckTitle(sourceStr string) (string, error) {
+func CheckTitle(sourceStr string, ctx context.Context) (string, error) {
 	valueCheck, err := regexp.Compile(`^[\d|\D].*?\-\s*([\d|\D].*)$`)
 	if err != nil {
+		log.Event(ctx, "error checking title", log.ERROR, log.Error(err))
 		return "", err
 	}
 	return valueCheck.ReplaceAllString(sourceStr, `$1`), err
@@ -368,4 +366,11 @@ func ReplaceStatDis(note string, title string) (string, string) {
 		title = "Protecting personal data"
 	}
 	return note, title
+}
+func appendUsageNote(cenInst *[]models.UsageNote, note string, title string) *[]models.UsageNote {
+	*cenInst = append(*cenInst, models.UsageNote{
+		Note:  note,
+		Title: title,
+	})
+	return cenInst
 }
