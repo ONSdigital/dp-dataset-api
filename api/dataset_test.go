@@ -60,11 +60,11 @@ func GetAPIWithMocks(mockedDataStore store.Storer, mockedGeneratedDownloads Down
 }
 
 func createRequestWithAuth(method, URL string, body io.Reader) (*http.Request, error) {
-	r, err := http.NewRequest(method, URL, body)
+	r := httptest.NewRequest(method, URL, body)
 	ctx := r.Context()
 	ctx = dprequest.SetCaller(ctx, "someone@ons.gov.uk")
 	r = r.WithContext(ctx)
-	return r, err
+	return r, nil
 }
 
 func TestGetDatasetsReturnsOK(t *testing.T) {
