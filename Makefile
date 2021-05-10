@@ -17,7 +17,7 @@ all: audit test build
 
 .PHONY: audit
 audit:
-	go list -m all | nancy sleuth --exclude-vulnerability CVE-2020-26160
+	go list -m all | nancy sleuth
 
 .PHONY: build
 build:
