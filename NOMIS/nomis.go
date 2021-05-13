@@ -18,6 +18,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -54,7 +55,6 @@ var (
 	censusNationalStatistic = true
 	fileName                string
 	fullURLFile             string
-	title                   string
 	num                     int
 )
 
@@ -68,8 +68,8 @@ const (
 		"(in specific cases the household was swapped with one in a nearby local authority) \u000a" +
 		"- reduced the detail included for areas where fewer people lived and could be identified, such as electoral wards\u000a\u000a" +
 
-		"Read more about these [methods and why we chose them for the 2011 Census.]" +
-		"(https://webarchive.nationalarchives.gov.uk/20160129174312/http:/www.ons.gov.uk/ons/guide-method/census/2011/the-2011-census/processing-the-information/statistical-methodology/statistical-disclosure-control-for-2011-census.pdf)"
+		"Read more about these [methods and why we chose them for the 2011 Census (PDF, 185KB)]" +
+		"(https://webarchive.nationalarchives.gov.uk/20160129174312/http:/www.ons.gov.uk/ons/guide-method/census/2011/the-2011-census/processing-the-information/statistical-methodology/statistical-disclosure-control-for-2011-census.pdf)."
 )
 
 //CensusContactDetails returns the default values for contact details
@@ -275,21 +275,55 @@ func main() {
 			Next:    &mapData,
 		}
 
-		createDocument(ctx, datasetDoc, session, "datasets")
-		createDocument(ctx, censusEditionData, session, "editions")
-		createDocument(ctx, censusInstances, session, "instances")
+		createDocument(ctx, cenId, datasetDoc, session, "datasets")
+		createDocument(ctx, cenId, censusEditionData, session, "editions")
+		createDocument(ctx, cenId, censusInstances, session, "instances")
 	}
 	fmt.Println("\ndatasets, instances and editions have been added to datasets db")
 }
 
 //Inserts a document in the specific collection
-func createDocument(ctx context.Context, class interface{}, session *mgo.Session, document string) {
+func createDocument(ctx context.Context, id string, class interface{}, session *mgo.Session, document string) {
 	var err error
 	logData := log.Data{"data": class}
-	if err = session.DB("datasets").C(document).Insert(class); err != nil {
-		log.Event(ctx, "failed to insert data in collection", log.ERROR, log.Error(err), logData)
+
+	switch document {
+	case "datasets":
+		if _, err = session.DB("datasets").C(document).UpsertId(id, class); err != nil {
+			log.Event(ctx, "failed to upsert data in dataset collection", log.ERROR, log.Error(err), logData)
+			os.Exit(1)
+		}
+	case "editions":
+		selector := bson.M{
+			"current.links.dataset.id": id,
+		}
+		if err = upsertData(ctx, selector, class, session, document, logData); err != nil {
+			log.Event(ctx, " failed to insert data in collection", log.ERROR, log.Error(err), logData)
+			os.Exit(1)
+		}
+	case "instances":
+		InstanceSelector := bson.M{
+			"links.dataset.id": id,
+		}
+		if err = upsertData(ctx, InstanceSelector, class, session, document, logData); err != nil {
+			log.Event(ctx, " failed to insert data in collection", log.ERROR, log.Error(err), logData)
+			os.Exit(1)
+		}
+	default:
+		log.Event(ctx, "failed to create document", log.ERROR, log.Error(err), logData)
 		os.Exit(1)
 	}
+}
+
+//Updates document in the specific collection
+func upsertData(ctx context.Context, selector bson.M, class interface{}, session *mgo.Session, document string, logData log.Data) error {
+	var err error
+	if _, err = session.DB("datasets").C(document).Upsert(selector, class); err != nil {
+		log.Event(ctx, "failed to upsert data in collection", log.ERROR, log.Error(err), logData)
+		return err
+	}
+	err = nil
+	return err
 }
 
 //Download a file from nomis website for census 2011 data
