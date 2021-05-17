@@ -275,42 +275,45 @@ func main() {
 			Next:    &mapData,
 		}
 
-		createDocument(ctx, cenId, datasetDoc, session, "datasets")
-		createDocument(ctx, cenId, censusEditionData, session, "editions")
-		createDocument(ctx, cenId, censusInstances, session, "instances")
+		createDatasetsDocument(ctx, cenId, datasetDoc, session)
+		createEditionsDocument(ctx, cenId, censusEditionData, session)
+		createInstancesDocument(ctx, cenId, censusInstances, session)
 	}
 	fmt.Println("\ndatasets, instances and editions have been added to datasets db")
 }
 
-//Inserts a document in the specific collection
-func createDocument(ctx context.Context, id string, class interface{}, session *mgo.Session, document string) {
+//Inserts a document in the datasets collection
+func createDatasetsDocument(ctx context.Context, id string, class interface{}, session *mgo.Session) {
 	var err error
 	logData := log.Data{"data": class}
+	if _, err = session.DB("datasets").C("datasets").UpsertId(id, class); err != nil {
+		log.Event(ctx, "failed to upsert data in dataset collection", log.ERROR, log.Error(err), logData)
+		os.Exit(1)
+	}
+}
 
-	switch document {
-	case "datasets":
-		if _, err = session.DB("datasets").C(document).UpsertId(id, class); err != nil {
-			log.Event(ctx, "failed to upsert data in dataset collection", log.ERROR, log.Error(err), logData)
-			os.Exit(1)
-		}
-	case "editions":
-		selector := bson.M{
-			"current.links.dataset.id": id,
-		}
-		if err = upsertData(ctx, selector, class, session, document, logData); err != nil {
-			log.Event(ctx, " failed to insert data in collection", log.ERROR, log.Error(err), logData)
-			os.Exit(1)
-		}
-	case "instances":
-		InstanceSelector := bson.M{
-			"links.dataset.id": id,
-		}
-		if err = upsertData(ctx, InstanceSelector, class, session, document, logData); err != nil {
-			log.Event(ctx, " failed to insert data in collection", log.ERROR, log.Error(err), logData)
-			os.Exit(1)
-		}
-	default:
-		log.Event(ctx, "failed to create document", log.ERROR, log.Error(err), logData)
+//Inserts a document in the editions collection
+func createEditionsDocument(ctx context.Context, id string, class interface{}, session *mgo.Session) {
+	var err error
+	logData := log.Data{"data": class}
+	selector := bson.M{
+		"current.links.dataset.id": id,
+	}
+	if err = upsertData(ctx, selector, class, session, "editions", logData); err != nil {
+		log.Event(ctx, " failed to insert data in collection", log.ERROR, log.Error(err), logData)
+		os.Exit(1)
+	}
+}
+
+//Inserts a document in the instances collection
+func createInstancesDocument(ctx context.Context, id string, class interface{}, session *mgo.Session) {
+	var err error
+	logData := log.Data{"data": class}
+	selector := bson.M{
+		"links.dataset.id": id,
+	}
+	if err = upsertData(ctx, selector, class, session, "instances", logData); err != nil {
+		log.Event(ctx, " failed to insert data in collection", log.ERROR, log.Error(err), logData)
 		os.Exit(1)
 	}
 }
