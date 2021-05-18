@@ -68,7 +68,7 @@ const (
 		"(in specific cases the household was swapped with one in a nearby local authority) \u000a" +
 		"- reduced the detail included for areas where fewer people lived and could be identified, such as electoral wards\u000a\u000a" +
 
-		"Read more about these [methods and why we chose them for the 2011 Census (PDF, 185KB)]" +
+		"Read more about these [methods and why we chose them for the 2011 Census (PDF, 189KB)]" +
 		"(https://webarchive.nationalarchives.gov.uk/20160129174312/http:/www.ons.gov.uk/ons/guide-method/census/2011/the-2011-census/processing-the-information/statistical-methodology/statistical-disclosure-control-for-2011-census.pdf)."
 )
 
