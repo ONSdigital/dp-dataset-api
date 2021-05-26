@@ -234,7 +234,7 @@ func TestGetVersionReturnsOK(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, editionID string, version int, state string) (*models.Version, error) {
 				return &models.Version{
 					State: models.EditionConfirmedState,
 					Links: &models.VersionLinks{
@@ -348,7 +348,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, editionID string, version int, state string) (*models.Version, error) {
 				return nil, errs.ErrVersionNotFound
 			},
 		}
@@ -378,7 +378,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, editionID string, version int, state string) (*models.Version, error) {
 				return nil, errs.ErrVersionNotFound
 			},
 		}
@@ -410,7 +410,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, editionID string, version int, state string) (*models.Version, error) {
 				return &models.Version{
 					State: "gobbly-gook",
 					Links: &models.VersionLinks{
@@ -462,7 +462,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			CheckEditionExistsFunc: func(string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+			GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
 				return &models.Version{
 					ID: "789",
 					Links: &models.VersionLinks{
@@ -535,7 +535,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			CheckEditionExistsFunc: func(string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+			GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
 				return &models.Version{
 					State: models.AssociatedState,
 				}, nil
@@ -596,7 +596,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			CheckEditionExistsFunc: func(string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+			GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
 				return &models.Version{
 					State: models.EditionConfirmedState,
 				}, nil
@@ -661,7 +661,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			CheckEditionExistsFunc: func(string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+			GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
 				return &models.Version{
 					ID: "789",
 					Links: &models.VersionLinks{
@@ -809,7 +809,7 @@ func updateVersionDownloadTest(r *http.Request) {
 		CheckEditionExistsFunc: func(string, string, string) error {
 			return nil
 		},
-		GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+		GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
 			return &models.Version{
 				ID: "789",
 				Links: &models.VersionLinks{
@@ -883,7 +883,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 		v.State = models.EditionConfirmedState
 
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID string, editionID string, version int, state string) (*models.Version, error) {
 				return &v, nil
 			},
 			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
@@ -941,7 +941,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 				So(mockedDataStore.GetVersionCalls()[0].DatasetID, ShouldEqual, "123")
 				So(mockedDataStore.GetVersionCalls()[0].EditionID, ShouldEqual, "2017")
-				So(mockedDataStore.GetVersionCalls()[0].Version, ShouldEqual, "1")
+				So(mockedDataStore.GetVersionCalls()[0].Version, ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 
 				So(len(genCalls), ShouldEqual, 1)
@@ -966,7 +966,7 @@ func TestPutEmptyVersion(t *testing.T) {
 
 	Convey("given an existing version with empty downloads", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID string, editionID string, version int, state string) (*models.Version, error) {
 				return &v, nil
 			},
 			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
@@ -1007,7 +1007,7 @@ func TestPutEmptyVersion(t *testing.T) {
 
 	Convey("given an existing version with a xls download already exists", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID string, editionID string, version int, state string) (*models.Version, error) {
 				v.Downloads = xlsDownload
 				return &v, nil
 			},
@@ -1057,7 +1057,7 @@ func TestPutEmptyVersion(t *testing.T) {
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 				So(mockedDataStore.GetVersionCalls()[0].DatasetID, ShouldEqual, "123")
 				So(mockedDataStore.GetVersionCalls()[0].EditionID, ShouldEqual, "2017")
-				So(mockedDataStore.GetVersionCalls()[0].Version, ShouldEqual, "1")
+				So(mockedDataStore.GetVersionCalls()[0].Version, ShouldEqual, 1)
 				So(mockedDataStore.GetVersionCalls()[0].State, ShouldEqual, "")
 
 				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
@@ -1084,7 +1084,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+			GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
 				return &models.Version{State: models.AssociatedState}, nil
 			},
 			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
@@ -1126,7 +1126,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+			GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
 				return nil, errs.ErrInternalServer
 			},
 			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
@@ -1168,7 +1168,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+			GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
 				return &models.Version{}, errs.ErrVersionNotFound
 			},
 			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
@@ -1214,7 +1214,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+			GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
 				return &models.Version{}, errs.ErrVersionNotFound
 			},
 			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
@@ -1260,7 +1260,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+			GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
 				return &models.Version{}, errs.ErrVersionNotFound
 			},
 			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
@@ -1309,7 +1309,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+			GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
 				return &models.Version{
 					State: "associated",
 				}, nil
@@ -1349,7 +1349,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+			GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
 				return &models.Version{
 					State: models.PublishedState,
 				}, nil
@@ -1392,7 +1392,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+			GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
 				return &models.Version{State: "associated"}, nil
 			},
 			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
@@ -1446,7 +1446,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(string, string, string, string) (*models.Version, error) {
+			GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
 				return &models.Version{
 					ID: "789",
 					Links: &models.VersionLinks{
@@ -1520,7 +1520,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		mockedDataStore.GetVersion("789", "2017", "1", "")
+		mockedDataStore.GetVersion("789", "2017", 1, "")
 		mockedDataStore.GetEdition("123", "2017", "")
 		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
 		mockedDataStore.GetDataset("123")
@@ -1702,7 +1702,7 @@ func TestDetachVersionReturnOK(t *testing.T) {
 							LatestVersion: &models.LinkObject{
 								ID: "1"}}}}, nil
 			},
-			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID string, editionID string, version int, state string) (*models.Version, error) {
 				return &models.Version{}, nil
 			},
 			GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
@@ -1761,7 +1761,7 @@ func TestDetachVersionReturnOK(t *testing.T) {
 							LatestVersion: &models.LinkObject{
 								ID: "1"}}}}, nil
 			},
-			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID string, editionID string, version int, state string) (*models.Version, error) {
 				return &models.Version{}, nil
 			},
 			GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
@@ -1929,7 +1929,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 						State: models.PublishedState,
 						Links: &models.EditionUpdateLinks{LatestVersion: &models.LinkObject{ID: "1"}}}}, nil
 			},
-			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, editionID string, version int, state string) (*models.Version, error) {
 				return &models.Version{}, nil
 			},
 		}
@@ -1968,7 +1968,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 						State: models.EditionConfirmedState,
 						Links: &models.EditionUpdateLinks{LatestVersion: &models.LinkObject{ID: "1"}}}}, nil
 			},
-			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, editionID string, version int, state string) (*models.Version, error) {
 				return nil, errs.ErrVersionNotFound
 			},
 		}
@@ -2012,7 +2012,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 				return &models.DatasetUpdate{}, nil
 			},
 
-			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, editionID string, version int, state string) (*models.Version, error) {
 				return &models.Version{}, nil
 			},
 			UpdateVersionFunc: func(ID string, version *models.Version) error {
@@ -2055,7 +2055,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 						State: models.EditionConfirmedState,
 						Links: &models.EditionUpdateLinks{LatestVersion: &models.LinkObject{ID: "1"}}}}, nil
 			},
-			GetVersionFunc: func(datasetID, editionID, version, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, editionID string, version int, state string) (*models.Version, error) {
 				return &models.Version{}, nil
 			},
 

@@ -16,34 +16,34 @@ var _ store.GraphDB = &GraphDBMock{}
 
 // GraphDBMock is a mock implementation of store.GraphDB.
 //
-// 	func TestSomethingThatUsesGraphDB(t *testing.T) {
+//     func TestSomethingThatUsesGraphDB(t *testing.T) {
 //
-// 		// make and configure a mocked store.GraphDB
-// 		mockedGraphDB := &GraphDBMock{
-// 			AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
-// 				panic("mock out the AddVersionDetailsToInstance method")
-// 			},
-// 			CheckerFunc: func(contextMoqParam context.Context, checkState *healthcheck.CheckState) error {
-// 				panic("mock out the Checker method")
-// 			},
-// 			CloseFunc: func(ctx context.Context) error {
-// 				panic("mock out the Close method")
-// 			},
-// 			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
-// 				panic("mock out the SetInstanceIsPublished method")
-// 			},
-// 		}
+//         // make and configure a mocked store.GraphDB
+//         mockedGraphDB := &GraphDBMock{
+//             AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
+// 	               panic("mock out the AddVersionDetailsToInstance method")
+//             },
+//             CheckerFunc: func(in1 context.Context, in2 *healthcheck.CheckState) error {
+// 	               panic("mock out the Checker method")
+//             },
+//             CloseFunc: func(ctx context.Context) error {
+// 	               panic("mock out the Close method")
+//             },
+//             SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
+// 	               panic("mock out the SetInstanceIsPublished method")
+//             },
+//         }
 //
-// 		// use mockedGraphDB in code that requires store.GraphDB
-// 		// and then make assertions.
+//         // use mockedGraphDB in code that requires store.GraphDB
+//         // and then make assertions.
 //
-// 	}
+//     }
 type GraphDBMock struct {
 	// AddVersionDetailsToInstanceFunc mocks the AddVersionDetailsToInstance method.
 	AddVersionDetailsToInstanceFunc func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error
 
 	// CheckerFunc mocks the Checker method.
-	CheckerFunc func(contextMoqParam context.Context, checkState *healthcheck.CheckState) error
+	CheckerFunc func(in1 context.Context, in2 *healthcheck.CheckState) error
 
 	// CloseFunc mocks the Close method.
 	CloseFunc func(ctx context.Context) error
@@ -68,10 +68,10 @@ type GraphDBMock struct {
 		}
 		// Checker holds details about calls to the Checker method.
 		Checker []struct {
-			// ContextMoqParam is the contextMoqParam argument value.
-			ContextMoqParam context.Context
-			// CheckState is the checkState argument value.
-			CheckState *healthcheck.CheckState
+			// In1 is the in1 argument value.
+			In1 context.Context
+			// In2 is the in2 argument value.
+			In2 *healthcheck.CheckState
 		}
 		// Close holds details about calls to the Close method.
 		Close []struct {
@@ -140,33 +140,33 @@ func (mock *GraphDBMock) AddVersionDetailsToInstanceCalls() []struct {
 }
 
 // Checker calls CheckerFunc.
-func (mock *GraphDBMock) Checker(contextMoqParam context.Context, checkState *healthcheck.CheckState) error {
+func (mock *GraphDBMock) Checker(in1 context.Context, in2 *healthcheck.CheckState) error {
 	if mock.CheckerFunc == nil {
 		panic("GraphDBMock.CheckerFunc: method is nil but GraphDB.Checker was just called")
 	}
 	callInfo := struct {
-		ContextMoqParam context.Context
-		CheckState      *healthcheck.CheckState
+		In1 context.Context
+		In2 *healthcheck.CheckState
 	}{
-		ContextMoqParam: contextMoqParam,
-		CheckState:      checkState,
+		In1: in1,
+		In2: in2,
 	}
 	mock.lockChecker.Lock()
 	mock.calls.Checker = append(mock.calls.Checker, callInfo)
 	mock.lockChecker.Unlock()
-	return mock.CheckerFunc(contextMoqParam, checkState)
+	return mock.CheckerFunc(in1, in2)
 }
 
 // CheckerCalls gets all the calls that were made to Checker.
 // Check the length with:
 //     len(mockedGraphDB.CheckerCalls())
 func (mock *GraphDBMock) CheckerCalls() []struct {
-	ContextMoqParam context.Context
-	CheckState      *healthcheck.CheckState
+	In1 context.Context
+	In2 *healthcheck.CheckState
 } {
 	var calls []struct {
-		ContextMoqParam context.Context
-		CheckState      *healthcheck.CheckState
+		In1 context.Context
+		In2 *healthcheck.CheckState
 	}
 	mock.lockChecker.RLock()
 	calls = mock.calls.Checker

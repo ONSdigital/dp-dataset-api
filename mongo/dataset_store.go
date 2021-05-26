@@ -3,7 +3,7 @@ package mongo
 import (
 	"context"
 	"errors"
-	"strconv"
+
 	"sync"
 	"time"
 
@@ -332,18 +332,14 @@ func buildVersionsQuery(datasetID, editionID, state string) bson.M {
 }
 
 // GetVersion retrieves a version document for a dataset edition
-func (m *Mongo) GetVersion(id, editionID, versionID, state string) (*models.Version, error) {
+func (m *Mongo) GetVersion(id, editionID string, versionID int, state string) (*models.Version, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	versionNumber, err := strconv.Atoi(versionID)
-	if err != nil {
-		return nil, err
-	}
-	selector := buildVersionQuery(id, editionID, state, versionNumber)
+	selector := buildVersionQuery(id, editionID, state, versionID)
 
 	var version models.Version
-	err = s.DB(m.Database).C("instances").Find(selector).One(&version)
+	err := s.DB(m.Database).C("instances").Find(selector).One(&version)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, errs.ErrVersionNotFound

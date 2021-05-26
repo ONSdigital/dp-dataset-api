@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -31,7 +32,19 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 		version := vars["version"]
 		data := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
-		currentVersion, err := d.Datastore.GetVersion(datasetID, edition, version, "")
+		versionId, err := strconv.Atoi(version)
+		if err != nil {
+			log.Event(ctx, "failed due to invalid version request", log.ERROR, log.Error(err), data)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if !(versionId > 0) {
+			log.Event(ctx, "version is not a positive integer", log.ERROR, log.Error(err), data)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		currentVersion, err := d.Datastore.GetVersion(datasetID, edition, versionId, "")
 		if err != nil {
 			if err != errs.ErrVersionNotFound {
 				log.Event(ctx, "errored whilst retrieving version resource", log.ERROR, log.Error(err), data)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
 
 	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -32,6 +33,16 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "func": "getDimensions"}
 	var err error
 
+	versionId, err := strconv.Atoi(version)
+	if err != nil {
+		log.Event(ctx, "invalid version request", log.ERROR, log.Error(err), logData)
+		return nil, 0, errs.ErrInvalidVersion
+	}
+	if !(versionId > 0) {
+		log.Event(ctx, "version is not a positive integer", log.ERROR, log.Error(err), logData)
+		return nil, 0, errs.ErrInvalidVersion
+	}
+
 	list, totalCount, err := func() ([]models.Dimension, int, error) {
 		authorised := api.authenticate(r, logData)
 
@@ -40,7 +51,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 			state = models.PublishedState
 		}
 
-		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
+		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionId, state)
 		if err != nil {
 			log.Event(ctx, "datastore.getversion returned an error", log.ERROR, log.Error(err), logData)
 			return nil, 0, err
@@ -141,6 +152,18 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension, "func": "getDimensionOptions"}
 	authorised := api.authenticate(r, logData)
 
+	versionId, err := strconv.Atoi(versionID)
+	if err != nil {
+		log.Event(ctx, "invalid version requested", log.ERROR, log.Error(err), logData)
+		handleDimensionsErr(ctx, w, "invalid version", errs.ErrInvalidVersion, logData)
+		return nil, 0, err
+	}
+	if !(versionId > 0) {
+		log.Event(ctx, "version is not a positive integer", log.ERROR, log.Error(err), logData)
+		handleDimensionsErr(ctx, w, "failed due to version not a positive integer", errs.ErrInvalidVersion, logData)
+		return nil, 0, err
+	}
+
 	var state string
 	if !authorised {
 		state = models.PublishedState
@@ -156,7 +179,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	}
 
 	// ger version for provided dataset, edition and versionID
-	version, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionID, state)
+	version, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionId, state)
 	if err != nil {
 		handleDimensionsErr(ctx, w, "failed to get version", err, logData)
 		return nil, 0, err

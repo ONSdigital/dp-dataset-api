@@ -211,7 +211,7 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 				editionSearchState = state
 				return nil
 			},
-			GetVersionFunc: func(id string, editionID, version string, state string) (*models.Version, error) {
+			GetVersionFunc: func(id string, editionID string, version int, state string) (*models.Version, error) {
 				versionSearchState = state
 				return &models.Version{ID: "124", State: models.PublishedState,
 					Links: &models.VersionLinks{
@@ -240,7 +240,7 @@ func TestWebSubnetDimensionsEndpoint(t *testing.T) {
 		var versionSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(id string, editionID, version string, state string) (*models.Version, error) {
+			GetVersionFunc: func(id string, editionID string, version int, state string) (*models.Version, error) {
 				versionSearchState = state
 				return &models.Version{ID: "124", State: models.PublishedState,
 					Links: &models.VersionLinks{
@@ -270,7 +270,7 @@ func TestWebSubnetDimensionOptionsEndpoint(t *testing.T) {
 		var versionSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(id string, editionID, version string, state string) (*models.Version, error) {
+			GetVersionFunc: func(id string, editionID string, version int, state string) (*models.Version, error) {
 				versionSearchState = state
 				return &models.Version{ID: "124", State: models.PublishedState,
 					Links: &models.VersionLinks{
