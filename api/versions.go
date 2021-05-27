@@ -142,14 +142,10 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	b, getVersionErr := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
 
-		versionId, err := strconv.Atoi(version)
+		versionId, err := checkVersion(ctx, version)
 		if err != nil {
-			log.Event(ctx, "invalid version provided", log.ERROR, log.Error(err), logData)
-			return nil, errs.ErrInvalidVersion
-		}
-		if !(versionId > 0) {
-			log.Event(ctx, "version is not a positive integer", log.ERROR, log.Error(err), logData)
-			return nil, errs.ErrInvalidVersion
+			log.Event(ctx, "getVersion endpoint: invalid version", log.ERROR, log.Error(err), logData)
+			return nil, err
 		}
 
 		var state string
@@ -289,15 +285,12 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrNotFound
 		}
 
-		versionId, err := strconv.Atoi(version)
+		versionId, err := checkVersion(ctx, version)
 		if err != nil {
 			log.Event(ctx, "detachVersion endpoint: invalid version request", log.ERROR, log.Error(err), logData)
-			return errs.ErrInvalidVersion
+			return err
 		}
-		if !(versionId > 0) {
-			log.Event(ctx, "detachVersion endpoint: version is not a positive integer", log.ERROR, log.Error(err), logData)
-			return errs.ErrInvalidVersion
-		}
+
 		editionDoc, err := api.dataStore.Backend.GetEdition(datasetID, edition, "")
 		if err != nil {
 			log.Event(ctx, "detachVersion endpoint: Cannot find the specified edition", log.ERROR, log.Error(errs.ErrEditionNotFound), logData)
@@ -382,14 +375,10 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 			return nil, nil, nil, err
 		}
 
-		version, err := strconv.Atoi(versionDetails.version)
+		version, err := checkVersion(ctx, versionDetails.version)
 		if err != nil {
 			log.Event(ctx, "putVersion endpoint: invalid version request", log.ERROR, log.Error(err), data)
-			return nil, nil, nil, errs.ErrInvalidVersion
-		}
-		if !(version > 0) {
-			log.Event(ctx, "putVersion endpoint: version is not a positive integer", log.ERROR, log.Error(err), data)
-			return nil, nil, nil, errs.ErrInvalidVersion
+			return nil, nil, nil, err
 		}
 
 		if err = api.dataStore.Backend.CheckEditionExists(versionDetails.datasetID, versionDetails.edition, ""); err != nil {
@@ -653,7 +642,7 @@ func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 		status = http.StatusBadRequest
 	case strings.HasPrefix(err.Error(), "invalid fields:"):
 		status = http.StatusBadRequest
-	case strings.HasPrefix(err.Error(), "strconv.Atoi"):
+	case strings.HasPrefix(err.Error(), "invalid version requested"):
 		status = http.StatusBadRequest
 	default:
 		err = errs.ErrInternalServer
@@ -666,4 +655,17 @@ func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 
 	log.Event(ctx, "request unsuccessful", log.ERROR, log.Error(err), data)
 	http.Error(w, err.Error(), status)
+}
+
+func checkVersion(ctx context.Context, version string) (int, error) {
+	versionId, err := strconv.Atoi(version)
+	if !(versionId > 0) {
+		log.Event(ctx, "version is not a positive integer", log.ERROR, log.Error(errs.ErrInvalidVersion), log.Data{"version": version})
+		return versionId, errs.ErrInvalidVersion
+	}
+	if err != nil {
+		log.Event(ctx, "invalid version provided", log.ERROR, log.Error(err), log.Data{"version": version})
+		return versionId, errs.ErrInvalidVersion
+	}
+	return versionId, nil
 }

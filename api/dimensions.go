@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-	"strconv"
 
 	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -33,14 +32,10 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "func": "getDimensions"}
 	var err error
 
-	versionId, err := strconv.Atoi(version)
+	versionId, err := checkVersion(ctx, version)
 	if err != nil {
 		log.Event(ctx, "invalid version request", log.ERROR, log.Error(err), logData)
-		return nil, 0, errs.ErrInvalidVersion
-	}
-	if !(versionId > 0) {
-		log.Event(ctx, "version is not a positive integer", log.ERROR, log.Error(err), logData)
-		return nil, 0, errs.ErrInvalidVersion
+		return nil, 0, err
 	}
 
 	list, totalCount, err := func() ([]models.Dimension, int, error) {
@@ -152,15 +147,10 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension, "func": "getDimensionOptions"}
 	authorised := api.authenticate(r, logData)
 
-	versionId, err := strconv.Atoi(versionID)
+	versionId, err := checkVersion(ctx, versionID)
 	if err != nil {
 		log.Event(ctx, "invalid version requested", log.ERROR, log.Error(err), logData)
-		handleDimensionsErr(ctx, w, "invalid version", errs.ErrInvalidVersion, logData)
-		return nil, 0, err
-	}
-	if !(versionId > 0) {
-		log.Event(ctx, "version is not a positive integer", log.ERROR, log.Error(err), logData)
-		handleDimensionsErr(ctx, w, "failed due to version not a positive integer", errs.ErrInvalidVersion, logData)
+		handleDimensionsErr(ctx, w, "invalid version", err, logData)
 		return nil, 0, err
 	}
 

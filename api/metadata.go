@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -21,15 +20,11 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	b, err := func() ([]byte, error) {
-		versionId, err := strconv.Atoi(version)
+
+		versionId, err := checkVersion(ctx, version)
 		if err != nil {
 			log.Event(ctx, "failed due to invalid version request", log.ERROR, log.Error(err), logData)
-			return nil, errs.ErrInvalidVersion
-		}
-		if !(versionId > 0) {
-			log.Event(ctx, "version is not a positive integer", log.ERROR, log.Error(err), logData)
-			return nil, errs.ErrInvalidVersion
-
+			return nil, err
 		}
 
 		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionId, "")
