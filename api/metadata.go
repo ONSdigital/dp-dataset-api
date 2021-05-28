@@ -117,6 +117,8 @@ func handleMetadataErr(w http.ResponseWriter, err error) {
 		responseStatus = http.StatusNotFound
 	case err == errs.ErrDatasetNotFound:
 		responseStatus = http.StatusNotFound
+	case err == errs.ErrInvalidVersion:
+		responseStatus = http.StatusBadRequest
 	default:
 		err = errs.ErrInternalServer
 		responseStatus = http.StatusInternalServerError

@@ -363,6 +363,13 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 
 	// attempt to update the version
 	currentDataset, currentVersion, versionUpdate, err := func() (*models.DatasetUpdate, *models.Version, *models.Version, error) {
+
+		version, err := checkVersion(ctx, versionDetails.version)
+		if err != nil {
+			log.Event(ctx, "putVersion endpoint: invalid version request", log.ERROR, log.Error(err), data)
+			return nil, nil, nil, err
+		}
+
 		versionUpdate, err := models.CreateVersion(body, versionDetails.datasetID)
 		if err != nil {
 			log.Event(ctx, "putVersion endpoint: failed to model version resource based on request", log.ERROR, log.Error(err), data)
@@ -372,12 +379,6 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		currentDataset, err := api.dataStore.Backend.GetDataset(versionDetails.datasetID)
 		if err != nil {
 			log.Event(ctx, "putVersion endpoint: datastore.getDataset returned an error", log.ERROR, log.Error(err), data)
-			return nil, nil, nil, err
-		}
-
-		version, err := checkVersion(ctx, versionDetails.version)
-		if err != nil {
-			log.Event(ctx, "putVersion endpoint: invalid version request", log.ERROR, log.Error(err), data)
 			return nil, nil, nil, err
 		}
 

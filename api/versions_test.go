@@ -398,7 +398,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
 
-	Convey("When an invalid version is requested", t, func() {
+	Convey("When an invalid version is requested return invalid version error", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/jjj", nil)
 		r.Header.Add("internal_token", "coffee")
 		w := httptest.NewRecorder()
@@ -419,7 +419,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 	})
 
-	Convey("A request to get version zero returns an error response", t, func() {
+	Convey("A request to get version zero returns an invalid version error response", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/-1", nil)
 
 		w := httptest.NewRecorder()
@@ -1129,137 +1129,91 @@ func TestPutEmptyVersion(t *testing.T) {
 
 func TestPutVersionReturnsError(t *testing.T) {
 	t.Parallel()
-	// Convey("When the request contain malformed json a bad request status is returned", t, func() {
-	// 	generatorMock := &mocks.DownloadsGeneratorMock{
-	// 		GenerateFunc: func(context.Context, string, string, string, string) error {
-	// 			return nil
-	// 		},
-	// 	}
+	Convey("When the request contain malformed json a bad request status is returned", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
 
-	// 	var b string
-	// 	b = "{"
-	// 	r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-	// 	So(err, ShouldBeNil)
+		var b string
+		b = "{"
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
 
-	// 	w := httptest.NewRecorder()
-	// 	mockedDataStore := &storetest.StorerMock{
-	// 		GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
-	// 			return &models.Version{State: models.AssociatedState}, nil
-	// 		},
-	// 		GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
-	// 			return &models.DatasetUpdate{}, nil
-	// 		},
-	// 	}
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
+				return &models.Version{State: models.AssociatedState}, nil
+			},
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
+			},
+		}
 
-	// 	datasetPermissions := getAuthorisationHandlerMock()
-	// 	permissions := getAuthorisationHandlerMock()
-	// 	api := GetAPIWithMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
 
-	// 	api.Router.ServeHTTP(w, r)
-	// 	So(w.Code, ShouldEqual, http.StatusBadRequest)
-	// 	So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
+		api.Router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
 
-	// 	So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-	// 	So(permissions.Required.Calls, ShouldEqual, 0)
-	// 	So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-	// 	So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
-	// 	So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
-	// 	Convey("then the request body has been drained", func() {
-	// 		_, err = r.Body.Read(make([]byte, 1))
-	// 		So(err, ShouldEqual, io.EOF)
-	// 	})
-	// })
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
 
-	// Convey("When the api cannot connect to datastore return an internal server error", t, func() {
-	// 	generatorMock := &mocks.DownloadsGeneratorMock{
-	// 		GenerateFunc: func(context.Context, string, string, string, string) error {
-	// 			return nil
-	// 		},
-	// 	}
+	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
 
-	// 	var b string
-	// 	b = versionPayload
-	// 	r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-	// 	So(err, ShouldBeNil)
+		var b string
+		b = versionPayload
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
 
-	// 	w := httptest.NewRecorder()
-	// 	mockedDataStore := &storetest.StorerMock{
-	// 		GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
-	// 			return nil, errs.ErrInternalServer
-	// 		},
-	// 		GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
-	// 			return &models.DatasetUpdate{}, nil
-	// 		},
-	// 	}
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
+				return nil, errs.ErrInternalServer
+			},
+			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
+			},
+		}
 
-	// 	datasetPermissions := getAuthorisationHandlerMock()
-	// 	permissions := getAuthorisationHandlerMock()
-	// 	api := GetAPIWithMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
-	// 	api.Router.ServeHTTP(w, r)
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
 
-	// 	So(w.Code, ShouldEqual, http.StatusInternalServerError)
-	// 	So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-	// 	So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-	// 	So(permissions.Required.Calls, ShouldEqual, 0)
-	// 	So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-	// 	So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
-	// 	So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
-	// 	Convey("then the request body has been drained", func() {
-	// 		_, err = r.Body.Read(make([]byte, 1))
-	// 		So(err, ShouldEqual, io.EOF)
-	// 	})
-	// })
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
 
-	// Convey("When a negative version is requested return invalid version error", t, func() {
-	// 	generatorMock := &mocks.DownloadsGeneratorMock{
-	// 		GenerateFunc: func(ctx context.Context, datasetID string, edition string, versionID string, version string) error {
-	// 			return nil
-	// 		},
-	// 	}
-
-	// 	var b string
-	// 	b = versionPayload
-	// 	r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/-1", bytes.NewBufferString(b))
-	// 	So(err, ShouldBeNil)
-
-	// 	w := httptest.NewRecorder()
-	// 	mockedDataStore := &storetest.StorerMock{
-	// 		GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
-	// 			return &models.Version{}, errs.ErrInvalidVersion
-	// 		},
-	// 		GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
-	// 			return nil, errs.ErrDatasetNotFound
-	// 		},
-	// 		CheckEditionExistsFunc: func(string, string, string) error {
-	// 			return nil
-	// 		},
-	// 	}
-
-	// 	datasetPermissions := getAuthorisationHandlerMock()
-	// 	permissions := getAuthorisationHandlerMock()
-	// 	api := GetAPIWithMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
-	// 	api.Router.ServeHTTP(w, r)
-
-	// 	So(w.Code, ShouldEqual, http.StatusBadRequest)
-	// 	So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidVersion.Error())
-
-	// 	So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-	// 	So(permissions.Required.Calls, ShouldEqual, 0)
-	// 	So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-	// 	So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-	// 	So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
-	// 	So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
-
-	// 	Convey("then the request body has been drained", func() {
-	// 		_, err = r.Body.Read(make([]byte, 1))
-	// 		So(err, ShouldEqual, io.EOF)
-	// 	})
-	// })
-
-	Convey("When a version zero is requested return invalid version error", t, func() {
+	Convey("When the request has negative version return invalid version error", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
 			GenerateFunc: func(ctx context.Context, datasetID string, edition string, versionID string, version string) error {
 				return nil
@@ -1268,7 +1222,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = versionPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/0", bytes.NewBufferString(b))
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/-1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
@@ -1294,8 +1248,80 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
+
+	Convey("When the request has zero version return invalid version error", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(ctx context.Context, datasetID string, edition string, versionID string, version string) error {
+				return nil
+			},
+		}
+
+		var b string
+		b = versionPayload
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/0", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidVersion.Error())
+
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		Convey("then the request body has been drained", func() {
+			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
+
+	Convey("When an request has invalid version return invalid version error", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(ctx context.Context, datasetID string, edition string, versionID string, version string) error {
+				return nil
+			},
+		}
+
+		var b string
+		b = versionPayload
+		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/kkk", bytes.NewBufferString(b))
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidVersion.Error())
+
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
@@ -2240,7 +2266,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 	})
 
-	Convey("When the requested version is invalid, return an error", t, func() {
+	Convey("When detached endpoint is called against an invalid version, return an invalid version error", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
 			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
@@ -2279,7 +2305,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 	})
 
-	Convey("When a negative version is requested , return an error", t, func() {
+	Convey("When detached endpoint is called against a negative version, return an invalid version error", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
 			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
@@ -2308,7 +2334,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 	})
 
-	Convey("When a version zero is requested , return an error", t, func() {
+	Convey("When detached endpoint is called against zeroq version, return an invalid version error", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
 			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
