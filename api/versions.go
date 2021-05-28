@@ -296,16 +296,16 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrIncorrectStateToDetach
 		}
 
-		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, editionDoc.Next.State)
-		if err != nil {
-			log.Event(ctx, "detachVersion endpoint: Cannot find the specified version", log.ERROR, log.Error(errs.ErrVersionNotFound), logData)
-			return errs.ErrVersionNotFound
-		}
-
 		datasetDoc, err := api.dataStore.Backend.GetDataset(datasetID)
 		if err != nil {
 			log.Event(ctx, "detachVersion endpoint: datastore.GetDatasets returned an error", log.ERROR, log.Error(err), logData)
 			return err
+		}
+
+		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, editionDoc.Next.State)
+		if err != nil {
+			log.Event(ctx, "detachVersion endpoint: Cannot find the specified version", log.ERROR, log.Error(errs.ErrVersionNotFound), logData)
+			return errs.ErrVersionNotFound
 		}
 
 		// Detach the version
@@ -315,8 +315,9 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		// Only rollback dataset & edition if there's a "Current" sub-document to roll back to (i.e if a version has been published).
-		if datasetDoc.Current != nil {
+		// Only rollback dataset & edition if there's a "Current" sub-document to roll back to (i.e if a version has been published)
+		// and is not the first version
+		if datasetDoc.Current != nil && versionDoc.Version > 1 {
 			// Rollback the edition
 			editionDoc.Next = editionDoc.Current
 			if err = api.dataStore.Backend.UpsertEdition(datasetID, edition, editionDoc); err != nil {
@@ -324,7 +325,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 				return err
 			}
 
-			// Rollback the dataset
+			// Rollback the datasetV
 			datasetDoc.Next = datasetDoc.Current
 			if err = api.dataStore.Backend.UpsertDataset(datasetID, datasetDoc); err != nil {
 				log.Event(ctx, "detachVersion endpoint: failed to update dataset document", log.ERROR, log.Error(err), logData)
