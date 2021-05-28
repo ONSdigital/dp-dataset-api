@@ -325,7 +325,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 				return err
 			}
 
-			// Rollback the datasetV
+			// Rollback the dataset
 			datasetDoc.Next = datasetDoc.Current
 			if err = api.dataStore.Backend.UpsertDataset(datasetID, datasetDoc); err != nil {
 				log.Event(ctx, "detachVersion endpoint: failed to update dataset document", log.ERROR, log.Error(err), logData)
