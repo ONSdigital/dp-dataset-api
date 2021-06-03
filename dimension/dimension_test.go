@@ -307,7 +307,7 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 
 	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
@@ -328,7 +328,7 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 }
 
@@ -356,7 +356,7 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 
 	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
@@ -377,7 +377,7 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 
 	Convey("Given an internal error is returned from mongo GetInstance on the second call, then response returns an internal error", t, func() {
@@ -398,7 +398,7 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
 	})
 
 }
@@ -422,7 +422,7 @@ func TestAddNodeIDToDimensionReturnsForbidden(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 }
 
@@ -448,7 +448,7 @@ func TestPatchOptionReturnsForbidden(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 }
 
@@ -461,17 +461,12 @@ func TestAddNodeIDToDimensionReturnsUnauthorized(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ID string) (*models.Instance, error) {
-				return &models.Instance{State: models.PublishedState}, nil
-			},
-		}
+		mockedDataStore := &storetest.StorerMock{}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
 	})
 }
 
@@ -487,17 +482,12 @@ func TestPatchOptionReturnsUnauthorized(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ID string) (*models.Instance, error) {
-				return &models.Instance{State: models.PublishedState}, nil
-			},
-		}
+		mockedDataStore := &storetest.StorerMock{}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
 	})
 }
 
@@ -524,11 +514,11 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
 		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 		So(mockedDataStore.GetInstanceCalls()[1].ID, ShouldEqual, "123")
 
-		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
+		So(mockedDataStore.AddDimensionToInstanceCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.AddDimensionToInstanceCalls()[0].Dimension.CodeList, ShouldEqual, "123-456")
 		So(mockedDataStore.AddDimensionToInstanceCalls()[0].Dimension.Name, ShouldEqual, "test")
 		So(*mockedDataStore.AddDimensionToInstanceCalls()[0].Dimension.Order, ShouldEqual, 1)
@@ -560,8 +550,8 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDimensionNodeNotFound.Error())
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
+		So(mockedDataStore.AddDimensionToInstanceCalls(), ShouldHaveLength, 1)
 	})
 }
 
@@ -578,9 +568,6 @@ func TestAddDimensionToInstanceReturnsForbidden(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{State: models.PublishedState}, nil
 			},
-			AddDimensionToInstanceFunc: func(event *models.CachedDimensionOption) error {
-				return nil
-			},
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -588,8 +575,7 @@ func TestAddDimensionToInstanceReturnsForbidden(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrResourcePublished.Error())
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 0)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 }
 
@@ -602,18 +588,13 @@ func TestAddDimensionToInstanceReturnsUnauthorized(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ID string) (*models.Instance, error) {
-				return &models.Instance{State: models.CreatedState}, nil
-			},
-		}
+		mockedDataStore := &storetest.StorerMock{}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
 		So(w.Body.String(), ShouldContainSubstring, "unauthenticated request")
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
 	})
 }
 
@@ -631,9 +612,6 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return nil, errs.ErrInternalServer
 			},
-			AddDimensionToInstanceFunc: func(event *models.CachedDimensionOption) error {
-				return nil
-			},
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -642,8 +620,7 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 0)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 
 	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
@@ -657,9 +634,6 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{State: "gobbledygook"}, nil
 			},
-			AddDimensionToInstanceFunc: func(event *models.CachedDimensionOption) error {
-				return nil
-			},
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -669,8 +643,7 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.AddDimensionToInstanceCalls()), ShouldEqual, 0)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 }
 
@@ -686,8 +659,8 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{State: models.CreatedState}, nil
 			},
-			GetDimensionsFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
-				return &models.DimensionNodeResults{}, nil
+			GetDimensionsFromInstanceFunc: func(ctx context.Context, id string, offset, limit int) ([]*models.DimensionOption, int, error) {
+				return []*models.DimensionOption{}, 0, nil
 			},
 		}
 
@@ -695,8 +668,8 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDimensionsFromInstanceCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetDimensionsFromInstanceCalls(), ShouldHaveLength, 1)
 	})
 }
 
@@ -712,8 +685,8 @@ func TestGetDimensionsReturnsNotFound(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{State: models.CreatedState}, nil
 			},
-			GetDimensionsFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
-				return nil, errs.ErrDimensionNodeNotFound
+			GetDimensionsFromInstanceFunc: func(ctx context.Context, id string, offset, limit int) ([]*models.DimensionOption, int, error) {
+				return nil, 0, errs.ErrDimensionNodeNotFound
 			},
 		}
 
@@ -722,8 +695,8 @@ func TestGetDimensionsReturnsNotFound(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDimensionNodeNotFound.Error())
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDimensionsFromInstanceCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetDimensionsFromInstanceCalls(), ShouldHaveLength, 1)
 	})
 }
 
@@ -739,9 +712,6 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return nil, errs.ErrInternalServer
 			},
-			GetDimensionsFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
-				return &models.DimensionNodeResults{}, nil
-			},
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -749,8 +719,7 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDimensionsFromInstanceCalls()), ShouldEqual, 0)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 
 	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
@@ -763,9 +732,6 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{State: "gobbly gook"}, nil
 			},
-			GetDimensionsFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
-				return &models.DimensionNodeResults{}, nil
-			},
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -773,8 +739,7 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDimensionsFromInstanceCalls()), ShouldEqual, 0)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 }
 
@@ -790,8 +755,8 @@ func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{State: models.CreatedState}, nil
 			},
-			GetUniqueDimensionAndOptionsFunc: func(id, dimension string) (*models.DimensionValues, error) {
-				return &models.DimensionValues{}, nil
+			GetUniqueDimensionAndOptionsFunc: func(ctx context.Context, ID string, dimension string, offset int, limit int) ([]*string, int, error) {
+				return []*string{}, 0, nil
 			},
 		}
 
@@ -799,8 +764,8 @@ func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetUniqueDimensionAndOptionsCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetUniqueDimensionAndOptionsCalls(), ShouldHaveLength, 1)
 	})
 }
 
@@ -815,8 +780,8 @@ func TestGetUniqueDimensionAndOptionsReturnsNotFound(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{State: models.CreatedState}, nil
 			},
-			GetUniqueDimensionAndOptionsFunc: func(id, dimension string) (*models.DimensionValues, error) {
-				return nil, errs.ErrInstanceNotFound
+			GetUniqueDimensionAndOptionsFunc: func(ctx context.Context, ID string, dimension string, offset int, limit int) ([]*string, int, error) {
+				return nil, 0, errs.ErrInstanceNotFound
 			},
 		}
 
@@ -825,8 +790,8 @@ func TestGetUniqueDimensionAndOptionsReturnsNotFound(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetUniqueDimensionAndOptionsCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetUniqueDimensionAndOptionsCalls(), ShouldHaveLength, 1)
 	})
 }
 
@@ -841,9 +806,6 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return nil, errs.ErrInternalServer
 			},
-			GetDimensionsFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
-				return &models.DimensionNodeResults{}, nil
-			},
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -851,8 +813,7 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetUniqueDimensionAndOptionsCalls()), ShouldEqual, 0)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 
 	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
@@ -864,9 +825,6 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
 				return &models.Instance{State: "gobbly gook"}, nil
 			},
-			GetDimensionsFromInstanceFunc: func(id string) (*models.DimensionNodeResults, error) {
-				return &models.DimensionNodeResults{}, nil
-			},
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -874,8 +832,7 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-		So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetUniqueDimensionAndOptionsCalls()), ShouldEqual, 0)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 }
 

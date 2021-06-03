@@ -6,7 +6,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	mongo "github.com/ONSdigital/dp-mongodb"
+	dpmongo "github.com/ONSdigital/dp-mongodb"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -96,12 +96,12 @@ func (m *Mongo) UpdateInstance(ctx context.Context, instanceID string, instance 
 
 	updates := createInstanceUpdateQuery(ctx, instanceID, instance)
 	update := bson.M{"$set": updates}
-	updateWithTimestamps, err := mongo.WithUpdates(update)
+	updateWithTimestamps, err := dpmongo.WithUpdates(update)
 	if err != nil {
 		return err
 	}
 
-	if err = s.DB(m.Database).C(instanceCollection).Update(bson.M{"id": instanceID, mongo.UniqueTimestampKey: instance.UniqueTimestamp}, updateWithTimestamps); err != nil {
+	if err = s.DB(m.Database).C(instanceCollection).Update(bson.M{"id": instanceID, dpmongo.UniqueTimestampKey: instance.UniqueTimestamp}, updateWithTimestamps); err != nil {
 		if err != mgo.ErrNotFound {
 			return err
 		}

@@ -31,54 +31,45 @@ const (
 )
 
 // GetDimensionsHandler returns a list of all dimensions and their options for an instance resource
-func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
+
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
 	logData := log.Data{"instance_id": instanceID}
 	logData["action"] = GetDimensions
 
-	b, err := s.getDimensions(ctx, instanceID, logData)
-	if err != nil {
-		handleDimensionErr(ctx, w, err, logData)
-		return
-	}
-	setJSONContentType(w)
-	writeBody(ctx, w, b, logData)
-	log.Event(ctx, "successfully get dimensions for an instance resource", log.INFO, logData)
-}
-
-func (s *Store) getDimensions(ctx context.Context, instanceID string, logData log.Data) ([]byte, error) {
+	// Get instance from MongoDB
 	instance, err := s.GetInstance(instanceID)
 	if err != nil {
 		log.Event(ctx, "failed to get instance", log.ERROR, log.Error(err), logData)
-		return nil, err
+		handleDimensionErr(ctx, w, err, logData)
+		return nil, 0, err
 	}
 
 	// Early return if instance state is invalid
 	if err = models.CheckState("instance", instance.State); err != nil {
 		logData["state"] = instance.State
 		log.Event(ctx, "current instance has an invalid state", log.ERROR, log.Error(err), logData)
-		return nil, err
+		handleDimensionErr(ctx, w, err, logData)
+		return nil, 0, err
 	}
 
-	results, err := s.GetDimensionsFromInstance(instanceID)
+	// Get dimensions corresponding to the instance in the right state
+	dimensions, totalCount, err := s.GetDimensionsFromInstance(ctx, instanceID, offset, limit)
 	if err != nil {
 		log.Event(ctx, "failed to get dimension options for instance", log.ERROR, log.Error(err), logData)
-		return nil, err
+		handleDimensionErr(ctx, w, err, logData)
+		return nil, 0, err
 	}
 
-	b, err := json.Marshal(results)
-	if err != nil {
-		log.Event(ctx, "failed to marshal dimension nodes to json", log.ERROR, log.Error(err), logData)
-		return nil, err
-	}
-
-	return b, nil
+	log.Event(ctx, "successfully get dimensions for an instance resource", log.INFO, logData)
+	return dimensions, totalCount, nil
 }
 
 // GetUniqueDimensionAndOptionsHandler returns a list of dimension options for a dimension of an instance
-func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
+
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
@@ -86,43 +77,32 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	logData := log.Data{"instance_id": instanceID, "dimension": dimension}
 	logData["action"] = GetUniqueDimensionAndOptionsAction
 
-	b, err := s.getUniqueDimensionAndOptions(ctx, instanceID, dimension, logData)
-	if err != nil {
-		handleDimensionErr(ctx, w, err, logData)
-		return
-	}
-	setJSONContentType(w)
-	writeBody(ctx, w, b, logData)
-	log.Event(ctx, "successfully get unique dimension options for an instance resource", log.INFO, logData)
-}
-
-func (s *Store) getUniqueDimensionAndOptions(ctx context.Context, instanceID, dimension string, logData log.Data) ([]byte, error) {
+	// Get instance from MongoDB
 	instance, err := s.GetInstance(instanceID)
 	if err != nil {
 		log.Event(ctx, "failed to get instance", log.ERROR, log.Error(err), logData)
-		return nil, err
+		handleDimensionErr(ctx, w, err, logData)
+		return nil, 0, err
 	}
 
 	// Early return if instance state is invalid
 	if err = models.CheckState("instance", instance.State); err != nil {
 		logData["state"] = instance.State
 		log.Event(ctx, "current instance has an invalid state", log.ERROR, log.Error(err), logData)
-		return nil, err
+		handleDimensionErr(ctx, w, err, logData)
+		return nil, 0, err
 	}
 
-	options, err := s.GetUniqueDimensionAndOptions(instanceID, dimension)
+	// Get dimension options corresponding to the instance in the right state
+	options, totalCount, err := s.GetUniqueDimensionAndOptions(ctx, instanceID, dimension, offset, limit)
 	if err != nil {
 		log.Event(ctx, "failed to get unique dimension options for instance", log.ERROR, log.Error(err), logData)
-		return nil, err
+		handleDimensionErr(ctx, w, err, logData)
+		return nil, 0, err
 	}
 
-	b, err := json.Marshal(options)
-	if err != nil {
-		log.Event(ctx, "failed to marshal dimension options to json", log.ERROR, log.Error(err), logData)
-		return nil, err
-	}
-
-	return b, nil
+	log.Event(ctx, "successfully get unique dimension options for an instance resource", log.INFO, logData)
+	return options, totalCount, nil
 }
 
 // AddHandler represents adding a dimension to a specific instance
@@ -315,10 +295,6 @@ func (s *Store) updateOption(ctx context.Context, dimOption models.DimensionOpti
 	}
 
 	return nil
-}
-
-func setJSONContentType(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json")
 }
 
 func setJSONPatchContentType(w http.ResponseWriter) {

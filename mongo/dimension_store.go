@@ -1,12 +1,14 @@
 package mongo
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	dpmongo "github.com/ONSdigital/dp-mongodb"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 )
@@ -15,42 +17,41 @@ const dimensionOptions = "dimension.options"
 const maxIDs = 1000
 
 // GetDimensionsFromInstance returns a list of dimensions and their options for an instance resource
-func (m *Mongo) GetDimensionsFromInstance(id string) (*models.DimensionNodeResults, error) {
+func (m *Mongo) GetDimensionsFromInstance(ctx context.Context, id string, offset, limit int) ([]*models.DimensionOption, int, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	var dimensions []models.DimensionOption
-	iter := s.DB(m.Database).C(dimensionOptions).Find(bson.M{"instance_id": id}).Select(bson.M{"id": 0, "last_updated": 0, "instance_id": 0}).Iter()
+	q := s.DB(m.Database).C(dimensionOptions).
+		Find(bson.M{"instance_id": id}).
+		Select(bson.M{"id": 0, "last_updated": 0, "instance_id": 0})
 
-	err := iter.All(&dimensions)
-	if err != nil {
-		return nil, err
-	}
-
-	return &models.DimensionNodeResults{Items: dimensions}, nil
+	dimensions := []*models.DimensionOption{}
+	totalCount, err := dpmongo.QueryPage(ctx, q, offset, limit, dimensions)
+	return dimensions, totalCount, err
 }
 
 // GetUniqueDimensionAndOptions returns a list of dimension options for an instance resource
-func (m *Mongo) GetUniqueDimensionAndOptions(id, dimension string) (*models.DimensionValues, error) {
+func (m *Mongo) GetUniqueDimensionAndOptions(ctx context.Context, id, dimension string, offset, limit int) ([]*string, int, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
 	q, err := m.sortedQuery(s, bson.M{"instance_id": id, "name": dimension})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	var values []string
+	// TODO implement pagination with distinct? Is Disctinct necessary?
+	values := []*string{}
 	err = q.Distinct("option", &values)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	if len(values) == 0 {
-		return nil, errs.ErrDimensionNodeNotFound
+		return nil, 0, errs.ErrDimensionNodeNotFound
 	}
 
-	return &models.DimensionValues{Name: dimension, Options: values}, nil
+	return values, len(values), nil
 }
 
 // AddDimensionToInstance to the dimension collection
