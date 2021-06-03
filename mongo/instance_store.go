@@ -19,37 +19,25 @@ func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []st
 	s := m.Session.Copy()
 	defer s.Close()
 
-	filter := bson.M{}
+	selector := bson.M{}
 	if len(states) > 0 {
-		filter["state"] = bson.M{"$in": states}
+		selector["state"] = bson.M{"$in": states}
 	}
 
 	if len(datasets) > 0 {
-		filter["links.dataset.id"] = bson.M{"$in": datasets}
+		selector["links.dataset.id"] = bson.M{"$in": datasets}
 	}
 
-	totalCount, err := s.DB(m.Database).C(instanceCollection).Find(filter).Count()
-	if err != nil {
-		return nil, 0, err
-	}
+	q := s.DB(m.Database).C(instanceCollection).Find(selector).Sort("-last_updated")
 
+	// get total count and paginated values according to provided offset and limit
 	results := []*models.Instance{}
-
-	if limit > 0 {
-		iter := s.DB(m.Database).C(instanceCollection).Find(filter).Sort("-last_updated").Skip(offset).Limit(limit).Iter()
-		defer func() {
-			err := iter.Close()
-			if err != nil {
-				log.Event(ctx, "error closing iterator", log.ERROR, log.Error(err), log.Data{"state_query": states, "dataset_query": datasets})
-			}
-		}()
-
-		if err := iter.All(&results); err != nil {
-			if err == mgo.ErrNotFound {
-				return nil, 0, errs.ErrDatasetNotFound
-			}
-			return nil, 0, err
+	totalCount, err := dpmongo.QueryPage(ctx, q, offset, limit, &results)
+	if err != nil {
+		if err == mgo.ErrNotFound {
+			return results, 0, errs.ErrDatasetNotFound
 		}
+		return results, 0, err
 	}
 
 	return results, totalCount, nil

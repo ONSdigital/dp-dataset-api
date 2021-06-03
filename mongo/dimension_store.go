@@ -25,9 +25,14 @@ func (m *Mongo) GetDimensionsFromInstance(ctx context.Context, id string, offset
 		Find(bson.M{"instance_id": id}).
 		Select(bson.M{"id": 0, "last_updated": 0, "instance_id": 0})
 
+	// get total count and paginated values according to provided offset and limit
 	dimensions := []*models.DimensionOption{}
-	totalCount, err := dpmongo.QueryPage(ctx, q, offset, limit, dimensions)
-	return dimensions, totalCount, err
+	totalCount, err := dpmongo.QueryPage(ctx, q, offset, limit, &dimensions)
+	if err != nil {
+		return dimensions, 0, err
+	}
+
+	return dimensions, totalCount, nil
 }
 
 // GetUniqueDimensionAndOptions returns a list of dimension options for an instance resource
@@ -96,8 +101,8 @@ func (m *Mongo) GetDimensions(datasetID, versionID string) ([]bson.M, error) {
 }
 
 // GetDimensionOptions returns dimension options for a dimensions within a dataset, according to the provided limit and offest.
-// Offset and limit need to be positive or zero. Zero limit is equivalent to no limit (all items starting at offset will be returned)
-func (m *Mongo) GetDimensionOptions(version *models.Version, dimension string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
+// Offset and limit need to be positive or zero
+func (m *Mongo) GetDimensionOptions(ctx context.Context, version *models.Version, dimension string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
 
 	s := m.Session.Copy()
 	defer s.Close()
@@ -105,32 +110,22 @@ func (m *Mongo) GetDimensionOptions(version *models.Version, dimension string, o
 	// define selector to obtain all the dimension options for an instance
 	selector := bson.M{"instance_id": version.ID, "name": dimension}
 
-	// get total count of items
-	totalCount, err := s.DB(m.Database).C(dimensionOptions).Find(selector).Count()
+	// obtain query defining the order
+	q, err := m.sortedQuery(s, selector)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	var values []*models.PublicDimensionOption
+	// get total count and paginated values according to provided offset and limit
+	values := []*models.PublicDimensionOption{}
+	totalCount, err := dpmongo.QueryPage(ctx, q, offset, limit, &values)
+	if err != nil {
+		return values, 0, err
+	}
 
-	if limit > 0 && totalCount > 0 {
-
-		// obtain query defining the order
-		q, err := m.sortedQuery(s, selector)
-		if err != nil {
-			return nil, 0, err
-		}
-
-		// obtain only the necessary items according to offset and limit
-		iter := q.Skip(offset).Limit(limit).Iter()
-		if err := iter.All(&values); err != nil {
-			return nil, 0, err
-		}
-
-		// update links for returned values
-		for i := 0; i < len(values); i++ {
-			values[i].Links.Version = *version.Links.Self
-		}
+	// update links for returned values
+	for i := 0; i < len(values); i++ {
+		values[i].Links.Version = *version.Links.Self
 	}
 
 	return values, totalCount, nil

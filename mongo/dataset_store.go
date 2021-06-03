@@ -79,39 +79,20 @@ func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised b
 	defer s.Close()
 
 	var q *mgo.Query
-
 	if authorised {
-		q = s.DB(m.Database).C("datasets").Find(nil)
+		q = s.DB(m.Database).C("datasets").Find(nil).Sort()
 	} else {
-		q = s.DB(m.Database).C("datasets").Find(bson.M{"current": bson.M{"$exists": true}})
+		q = s.DB(m.Database).C("datasets").Find(bson.M{"current": bson.M{"$exists": true}}).Sort()
 	}
 
-	totalCount, err := q.Count()
-	if err != nil {
-		log.Event(ctx, "error counting items", log.ERROR, log.Error(err))
-		if err == mgo.ErrNotFound {
-			return []*models.DatasetUpdate{}, totalCount, nil
-		}
-		return nil, 0, err
-	}
-
+	// get total count and paginated values according to provided offset and limit
 	values := []*models.DatasetUpdate{}
-
-	if limit > 0 {
-		iter := q.Sort().Skip(offset).Limit(limit).Iter()
-		defer func() {
-			err := iter.Close()
-			if err != nil {
-				log.Event(ctx, "error closing iterator", log.ERROR, log.Error(err))
-			}
-		}()
-
-		if err := iter.All(&values); err != nil {
-			if err == mgo.ErrNotFound {
-				return values, totalCount, nil
-			}
-			return nil, 0, err
+	totalCount, err := dpmongo.QueryPage(ctx, q, offset, limit, &values)
+	if err != nil {
+		if err == mgo.ErrNotFound { // ignore ErrNotFound errors
+			return values, totalCount, nil
 		}
+		return values, 0, err
 	}
 
 	return values, totalCount, nil
@@ -139,38 +120,17 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 	defer s.Close()
 
 	selector := buildEditionsQuery(id, state, authorised)
-	q := s.DB(m.Database).C(editionsCollection).Find(selector)
+	q := s.DB(m.Database).C(editionsCollection).Find(selector).Sort()
 
-	totalCount, err := q.Count()
+	// get total count and paginated values according to provided offset and limit
+	results := []*models.EditionUpdate{}
+	totalCount, err := dpmongo.QueryPage(ctx, q, offset, limit, &results)
 	if err != nil {
-		log.Event(ctx, "error counting items", log.ERROR, log.Error(err))
-		if err == mgo.ErrNotFound {
-			return []*models.EditionUpdate{}, 0, nil
-		}
-		return nil, 0, err
+		return results, 0, err
 	}
 
 	if totalCount < 1 {
 		return nil, 0, errs.ErrEditionNotFound
-	}
-
-	var results []*models.EditionUpdate
-
-	if limit > 0 {
-		iter := q.Sort().Skip(offset).Limit(limit).Iter()
-		defer func() {
-			err := iter.Close()
-			if err != nil {
-				log.Event(ctx, "error closing edition iterator", log.ERROR, log.Error(err), log.Data{"selector": selector})
-			}
-		}()
-
-		if err := iter.All(&results); err != nil {
-			if err == mgo.ErrNotFound {
-				return []*models.EditionUpdate{}, 0, err
-			}
-			return nil, 0, err
-		}
 	}
 
 	return results, totalCount, nil
@@ -267,37 +227,17 @@ func (m *Mongo) GetVersions(ctx context.Context, datasetID, editionID, state str
 
 	selector := buildVersionsQuery(datasetID, editionID, state)
 
-	q = s.DB(m.Database).C("instances").Find(selector)
-	totalCount, err := q.Count()
+	q = s.DB(m.Database).C("instances").Find(selector).Sort("-last_updated")
+
+	// get total count and paginated values according to provided offset and limit
+	results := []models.Version{}
+	totalCount, err := dpmongo.QueryPage(ctx, q, offset, limit, &results)
 	if err != nil {
-		log.Event(ctx, "error counting items", log.ERROR, log.Error(err))
-		if err == mgo.ErrNotFound {
-			return []models.Version{}, 0, nil
-		}
-		return nil, 0, err
+		return results, 0, err
 	}
 
 	if totalCount < 1 {
 		return nil, 0, errs.ErrVersionNotFound
-	}
-
-	var results []models.Version
-
-	if limit > 0 {
-		iter := q.Sort("-last_updated").Skip(offset).Limit(limit).Iter()
-		defer func() {
-			err := iter.Close()
-			if err != nil {
-				log.Event(ctx, "error closing instance iterator", log.ERROR, log.Error(err), log.Data{"selector": selector})
-			}
-		}()
-
-		if err := iter.All(&results); err != nil {
-			if err == mgo.ErrNotFound {
-				return results, 0, nil
-			}
-			return nil, 0, err
-		}
 	}
 
 	for i := 0; i < len(results); i++ {

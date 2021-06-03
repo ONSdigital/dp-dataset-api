@@ -963,7 +963,7 @@ func (mock *MongoDBMock) GetDatasetsCalls() []struct {
 }
 
 // GetDimensionOptions calls GetDimensionOptionsFunc.
-func (mock *MongoDBMock) GetDimensionOptions(version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error) {
+func (mock *MongoDBMock) GetDimensionOptions(ctx context.Context, version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error) {
 	if mock.GetDimensionOptionsFunc == nil {
 		panic("MongoDBMock.GetDimensionOptionsFunc: method is nil but MongoDB.GetDimensionOptions was just called")
 	}

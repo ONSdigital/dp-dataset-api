@@ -173,7 +173,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	var totalCount int
 	if len(ids) == 0 {
 		// get sorted dimension options, starting at offset index, with a limit on the number of items
-		results, totalCount, err = api.dataStore.Backend.GetDimensionOptions(version, dimension, offset, limit)
+		results, totalCount, err = api.dataStore.Backend.GetDimensionOptions(ctx, version, dimension, offset, limit)
 		if err != nil {
 			handleDimensionsErr(ctx, w, "failed to get a list of dimension options", err, logData)
 			return nil, 0, err
