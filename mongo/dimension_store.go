@@ -8,7 +8,6 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	dpmongo "github.com/ONSdigital/dp-mongodb"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 )
@@ -27,7 +26,7 @@ func (m *Mongo) GetDimensionsFromInstance(ctx context.Context, id string, offset
 
 	// get total count and paginated values according to provided offset and limit
 	dimensions := []*models.DimensionOption{}
-	totalCount, err := dpmongo.QueryPage(ctx, q, offset, limit, &dimensions)
+	totalCount, err := QueryPage(ctx, q, offset, limit, &dimensions)
 	if err != nil {
 		return dimensions, 0, err
 	}
@@ -120,7 +119,7 @@ func (m *Mongo) GetDimensionOptions(ctx context.Context, version *models.Version
 
 	// get total count and paginated values according to provided offset and limit
 	values := []*models.PublicDimensionOption{}
-	totalCount, err := dpmongo.QueryPage(ctx, q, offset, limit, &values)
+	totalCount, err := QueryPage(ctx, q, offset, limit, &values)
 	if err != nil {
 		return values, 0, err
 	}

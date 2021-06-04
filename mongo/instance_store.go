@@ -32,7 +32,7 @@ func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []st
 
 	// get total count and paginated values according to provided offset and limit
 	results := []*models.Instance{}
-	totalCount, err := dpmongo.QueryPage(ctx, q, offset, limit, &results)
+	totalCount, err := QueryPage(ctx, q, offset, limit, &results)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return results, 0, errs.ErrDatasetNotFound

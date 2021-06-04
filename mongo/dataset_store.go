@@ -87,7 +87,7 @@ func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised b
 
 	// get total count and paginated values according to provided offset and limit
 	values := []*models.DatasetUpdate{}
-	totalCount, err := dpmongo.QueryPage(ctx, q, offset, limit, &values)
+	totalCount, err := QueryPage(ctx, q, offset, limit, &values)
 	if err != nil {
 		if err == mgo.ErrNotFound { // ignore ErrNotFound errors
 			return values, totalCount, nil
@@ -124,7 +124,7 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 
 	// get total count and paginated values according to provided offset and limit
 	results := []*models.EditionUpdate{}
-	totalCount, err := dpmongo.QueryPage(ctx, q, offset, limit, &results)
+	totalCount, err := QueryPage(ctx, q, offset, limit, &results)
 	if err != nil {
 		return results, 0, err
 	}
@@ -231,7 +231,7 @@ func (m *Mongo) GetVersions(ctx context.Context, datasetID, editionID, state str
 
 	// get total count and paginated values according to provided offset and limit
 	results := []models.Version{}
-	totalCount, err := dpmongo.QueryPage(ctx, q, offset, limit, &results)
+	totalCount, err := QueryPage(ctx, q, offset, limit, &results)
 	if err != nil {
 		return results, 0, err
 	}
