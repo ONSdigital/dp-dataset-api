@@ -45,7 +45,9 @@ func (m *Mongo) GetUniqueDimensionAndOptions(ctx context.Context, id, dimension 
 		return nil, 0, err
 	}
 
-	// TODO implement pagination with distinct? Is Disctinct necessary?
+	// Is Disctinct necessary?
+	// If we can guarantee that all options will be different for a dimension and instance
+	// then we could create an iterator and get only the necessary items from the DB
 	values := []*string{}
 	err = q.Distinct("option", &values)
 	if err != nil {

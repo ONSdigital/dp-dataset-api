@@ -11,6 +11,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	dphttp "github.com/ONSdigital/dp-net/http"
 	dprequest "github.com/ONSdigital/dp-net/request"
 	"github.com/ONSdigital/log.go/log"
@@ -94,6 +95,7 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	}
 
 	// Get dimension options corresponding to the instance in the right state
+	// Note: GetUniqueDimensionAndOptions does not implement pagination at query level
 	options, totalCount, err := s.GetUniqueDimensionAndOptions(ctx, instanceID, dimension, offset, limit)
 	if err != nil {
 		log.Event(ctx, "failed to get unique dimension options for instance", log.ERROR, log.Error(err), logData)
@@ -101,8 +103,14 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 		return nil, 0, err
 	}
 
+	// create the paginated result by cutting the slice
+	slicedOptions := []*string{}
+	if limit > 0 {
+		slicedOptions = utils.SliceStr(options, offset, limit)
+	}
+
 	log.Event(ctx, "successfully get unique dimension options for an instance resource", log.INFO, logData)
-	return options, totalCount, nil
+	return slicedOptions, totalCount, nil
 }
 
 // AddHandler represents adding a dimension to a specific instance
