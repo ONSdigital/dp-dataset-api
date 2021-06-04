@@ -15,7 +15,9 @@ import (
 const dimensionOptions = "dimension.options"
 const maxIDs = 1000
 
-// GetDimensionsFromInstance returns a list of dimensions and their options for an instance resource
+// GetDimensionsFromInstance returns a list of dimensions and their options for an instance resource.
+// Note that all dimension options for all dimensions are returned as high level items, hence there can be duplicate dimension names,
+// which correspond to different options.
 func (m *Mongo) GetDimensionsFromInstance(ctx context.Context, id string, offset, limit int) ([]*models.DimensionOption, int, error) {
 	s := m.Session.Copy()
 	defer s.Close()
