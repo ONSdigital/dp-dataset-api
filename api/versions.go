@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"strconv"
-
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dphttp "github.com/ONSdigital/dp-net/http"
@@ -142,7 +140,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	b, getVersionErr := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
 
-		versionId, err := checkVersion(ctx, version)
+		versionId, err := models.ValidateVersionNumber(ctx, version)
 		if err != nil {
 			log.Event(ctx, "getVersion endpoint: invalid version", log.ERROR, log.Error(err), logData)
 			return nil, err
@@ -285,7 +283,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrNotFound
 		}
 
-		versionId, err := checkVersion(ctx, version)
+		versionId, err := models.ValidateVersionNumber(ctx, version)
 		if err != nil {
 			log.Event(ctx, "detachVersion endpoint: invalid version request", log.ERROR, log.Error(err), logData)
 			return err
@@ -364,7 +362,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	// attempt to update the version
 	currentDataset, currentVersion, versionUpdate, err := func() (*models.DatasetUpdate, *models.Version, *models.Version, error) {
 
-		version, err := checkVersion(ctx, versionDetails.version)
+		version, err := models.ValidateVersionNumber(ctx, versionDetails.version)
 		if err != nil {
 			log.Event(ctx, "putVersion endpoint: invalid version request", log.ERROR, log.Error(err), data)
 			return nil, nil, nil, err
@@ -656,17 +654,4 @@ func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 
 	log.Event(ctx, "request unsuccessful", log.ERROR, log.Error(err), data)
 	http.Error(w, err.Error(), status)
-}
-
-func checkVersion(ctx context.Context, version string) (int, error) {
-	versionId, err := strconv.Atoi(version)
-	if !(versionId > 0) {
-		log.Event(ctx, "version is not a positive integer", log.ERROR, log.Error(errs.ErrInvalidVersion), log.Data{"version": version})
-		return versionId, errs.ErrInvalidVersion
-	}
-	if err != nil {
-		log.Event(ctx, "invalid version provided", log.ERROR, log.Error(err), log.Data{"version": version})
-		return versionId, errs.ErrInvalidVersion
-	}
-	return versionId, nil
 }

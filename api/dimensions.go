@@ -32,7 +32,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "func": "getDimensions"}
 	var err error
 
-	versionId, err := checkVersion(ctx, version)
+	versionNumber, err := models.ValidateVersionNumber(ctx, version)
 	if err != nil {
 		log.Event(ctx, "invalid version request", log.ERROR, log.Error(err), logData)
 		return nil, 0, err
@@ -46,7 +46,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 			state = models.PublishedState
 		}
 
-		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionId, state)
+		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionNumber, state)
 		if err != nil {
 			log.Event(ctx, "datastore.getversion returned an error", log.ERROR, log.Error(err), logData)
 			return nil, 0, err
@@ -147,7 +147,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension, "func": "getDimensionOptions"}
 	authorised := api.authenticate(r, logData)
 
-	versionId, err := checkVersion(ctx, versionID)
+	versionName, err := models.ValidateVersionNumber(ctx, versionID)
 	if err != nil {
 		log.Event(ctx, "invalid version requested", log.ERROR, log.Error(err), logData)
 		handleDimensionsErr(ctx, w, "invalid version", err, logData)
@@ -169,7 +169,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	}
 
 	// ger version for provided dataset, edition and versionID
-	version, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionId, state)
+	version, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionName, state)
 	if err != nil {
 		handleDimensionsErr(ctx, w, "failed to get version", err, logData)
 		return nil, 0, err

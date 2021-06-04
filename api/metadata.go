@@ -21,7 +21,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 	b, err := func() ([]byte, error) {
 
-		versionId, err := checkVersion(ctx, version)
+		versionId, err := models.ValidateVersionNumber(ctx, version)
 		if err != nil {
 			log.Event(ctx, "failed due to invalid version request", log.ERROR, log.Error(err), logData)
 			return nil, err

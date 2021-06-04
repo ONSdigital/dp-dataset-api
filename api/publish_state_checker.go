@@ -30,7 +30,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 		edition := vars["edition"]
 		version := vars["version"]
 		data := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
-		versionId, err := checkVersion(ctx, version)
+		versionId, err := models.ValidateVersionNumber(ctx, version)
 		if err != nil {
 			log.Event(ctx, "failed due to invalid version request", log.ERROR, log.Error(err), data)
 			dphttp.DrainBody(r)

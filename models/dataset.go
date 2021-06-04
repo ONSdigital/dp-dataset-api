@@ -566,3 +566,19 @@ func ValidateVersion(version *Version) error {
 
 	return nil
 }
+
+// ValidateVersionNumber checks the version is a positive integer above 0
+func ValidateVersionNumber(ctx context.Context, version string) (int, error) {
+	versionNumber, err := strconv.Atoi(version)
+	if err != nil {
+		log.Event(ctx, "invalid version provided", log.ERROR, log.Error(err), log.Data{"version": version})
+		return versionNumber, errs.ErrInvalidVersion
+	}
+
+	if !(versionNumber > 0) {
+		log.Event(ctx, "version is not a positive integer", log.ERROR, log.Error(errs.ErrInvalidVersion), log.Data{"version": version})
+		return versionNumber, errs.ErrInvalidVersion
+	}
+
+	return versionNumber, nil
+}
