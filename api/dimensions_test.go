@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -138,7 +139,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
 				return &models.Version{State: models.AssociatedState, ID: "v1"}, nil
 			},
-			GetDimensionOptionsFunc: func(version *models.Version, dimensions string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
+			GetDimensionOptionsFunc: func(ctx context.Context, version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error) {
 				allItems := []*models.PublicDimensionOption{
 					{Option: "op1"},
 					{Option: "op2"},
@@ -314,7 +315,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
 				return &models.Version{State: models.AssociatedState}, nil
 			},
-			GetDimensionOptionsFunc: func(version *models.Version, dimensions string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
+			GetDimensionOptionsFunc: func(ctx context.Context, version *models.Version, dimensions string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
 				return nil, 0, errs.ErrInternalServer
 			},
 		}

@@ -277,7 +277,7 @@ func TestWebSubnetDimensionOptionsEndpoint(t *testing.T) {
 						Version: &models.LinkObject{},
 						Self:    &models.LinkObject{}}}, nil
 			},
-			GetDimensionOptionsFunc: func(version *models.Version, dimension string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
+			GetDimensionOptionsFunc: func(ctx context.Context, version *models.Version, dimension string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
 				return []*models.PublicDimensionOption{}, 0, nil
 			},
 		}
