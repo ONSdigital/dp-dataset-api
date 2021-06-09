@@ -18,6 +18,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -51,25 +52,32 @@ type NameDetails struct {
 }
 
 var (
-	censusNationalStatistic = false
+	censusNationalStatistic = true
 	fileName                string
 	fullURLFile             string
-	title                   string
-	metaTitle               []int
 	num                     int
 )
 
 const (
-	censusYear    string = "2011"
-	censusVersion string = "1"
+	census2011         string = "c2011"
+	censusYear         string = "2011"
+	censusVersion      string = "1"
+	censusPersonalData string = "Sometimes we need to make changes to data if it is possible to identify individuals. This is known as 'statistical disclosure control'. In the 2011 Census, we:\u000a\u000a" +
+
+		"- swapped records (targeted record swapping), for example if a household could be identified because it has unusual characteristics, the record was swapped with a similar one from the same local area" +
+		"(in specific cases the household was swapped with one in a nearby local authority) \u000a" +
+		"- reduced the detail included for areas where fewer people lived and could be identified, such as electoral wards\u000a\u000a" +
+
+		"Read more about these [methods and why we chose them for the 2011 Census (PDF, 189KB)]" +
+		"(https://webarchive.nationalarchives.gov.uk/20160129174312/http:/www.ons.gov.uk/ons/guide-method/census/2011/the-2011-census/processing-the-information/statistical-methodology/statistical-disclosure-control-for-2011-census.pdf)."
 )
 
 //CensusContactDetails returns the default values for contact details
 func CensusContactDetails() models.ContactDetails {
 	return models.ContactDetails{
-		Email:     "support@nomisweb.co.uk",
+		Email:     "census.customerservices@ons.gov.uk",
 		Name:      "Nomis",
-		Telephone: "+44(0) 191 3342680",
+		Telephone: "+44(0) 132 9444972",
 	}
 }
 
@@ -79,8 +87,9 @@ func main() {
 	flag.StringVar(&mongoURL, "mongo-url", "localhost:27017", "mongoDB URL")
 	flag.Parse()
 
-	downloadFile()
 	ctx := context.Background()
+	downloadFile(ctx)
+
 	session, err := mgo.Dial(mongoURL)
 	if err != nil {
 		log.Event(ctx, "failed to initialise mongo", log.FATAL, log.Error(err))
@@ -109,13 +118,31 @@ func main() {
 		return
 	}
 
-	for index0, _ := range res.Structure.Keyfamilies.Keyfamily {
+	for keyIndex := range res.Structure.Keyfamilies.Keyfamily {
+		var annotations = res.Structure.Keyfamilies.Keyfamily[keyIndex].Annotations.Annotation
 		censusEditionData := models.EditionUpdate{}
+		censusInstances := models.Version{}
 		mapData := models.Dataset{}
-		cenId := res.Structure.Keyfamilies.Keyfamily[index0].ID
-		mapData.Title = res.Structure.Keyfamilies.Keyfamily[index0].Name.Value
-		mapData.ID = cenId
+		var cenId string
+		for censusId := range annotations {
+			annoIndex := res.Structure.Keyfamilies.Keyfamily[keyIndex].Annotations.Annotation[censusId]
+			if annoIndex.Title == "Mnemonic" {
+				ref := annoIndex.Text.(string)
+				extractId := strings.Split(ref, census2011)
+				if len(extractId) < 2 {
+					log.Event(ctx, "error mnemonic length invalid", log.ERROR)
+					os.Exit(1)
+				}
+				cenId = extractId[1]
+			}
+		}
+		title := res.Structure.Keyfamilies.Keyfamily[keyIndex].Name.Value
 
+		mapData.Title, err = CheckTitle(title, ctx)
+		if err != nil {
+			log.Event(ctx, "error getting the title", log.ERROR, log.Error(err))
+			os.Exit(1)
+		}
 		datasetUrl := "http://127.0.0.1:12345/datasets/"
 		instanceUrl := "http://127.0.0.1:12345/instances/"
 		editionUrl := "/editions"
@@ -157,7 +184,7 @@ func main() {
 
 		//Model to generate instances documents in mongodb
 		generateId := uuid.NewV4().String()
-		censusInstances := models.Version{
+		censusInstances = models.Version{
 			Edition:     censusYear,
 			ID:          generateId,
 			LastUpdated: mapData.LastUpdated,
@@ -172,7 +199,7 @@ func main() {
 			UsageNotes: &[]models.UsageNote{},
 		}
 		var metaTitleInfo [5]string
-		var annotations = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation
+
 		for index1 := range annotations {
 			str1 := annotations[index1].Title
 			if strings.HasPrefix(str1, "MetadataTitle") {
@@ -187,22 +214,17 @@ func main() {
 				metaTitleInfo[num] = title
 			}
 		}
-
 		for index := range annotations {
 			var example string
-			var annotation = res.Structure.Keyfamilies.Keyfamily[index0].Annotations.Annotation[index]
-
+			var annotation = res.Structure.Keyfamilies.Keyfamily[keyIndex].Annotations.Annotation[index]
 			str := annotation.Title
-
 			switch str {
 			case "MetadataText0":
 				mapData.Description = annotation.Text.(string)
-
 			case "Keywords":
 				keywrd := annotation.Text.(string)
 				var split = strings.Split(keywrd, ",")
 				mapData.Keywords = split
-
 			case "LastUpdated":
 				tt := annotation.Text.(string)
 				t, parseErr := time.Parse("2006-01-02 15:04:05", tt)
@@ -212,19 +234,11 @@ func main() {
 				}
 				mapData.LastUpdated = t
 				generalModel.LastUpdated = mapData.LastUpdated
-
 			case "Units":
 				mapData.UnitOfMeasure = annotation.Text.(string)
-
 			case "Mnemonic":
-				ref := annotation.Text.(string)
-				param := strings.Split(ref, "c2011")
-				if len(param)<2{
-					log.Event(nil, "error Mnemonic length invalid", log.ERROR)
-					os.Exit(1)
-				}
-				mapData.NomisReferenceURL = "https://www.nomisweb.co.uk/census/2011/" + param[1]
-
+				mapData.NomisReferenceURL = "https://www.nomisweb.co.uk/census/2011/" + cenId
+				mapData.ID = cenId
 			case "FirstReleased":
 				releaseDt := annotation.Text.(string)
 				rd, err := time.Parse("2006-01-02 15:04:05", releaseDt)
@@ -234,63 +248,95 @@ func main() {
 				}
 				censusInstances.ReleaseDate = rd.Format("2006-01-02T15:04:05.000Z")
 			}
-
 			if strings.HasPrefix(str, "MetadataText") {
 				if str != "MetadataText0" {
-					example, err = CheckSubString(annotation.Text.(string))
+					example, err = CheckSubString(annotation.Text.(string), ctx)
 					if err != nil {
-						log.Event(nil, "failed to get metadatatext", log.ERROR, log.Error(err))
+						log.Event(ctx, "failed to get metadatatext", log.ERROR, log.Error(err))
 						os.Exit(1)
 					}
 				}
 				splitMetaData := strings.Split(str, "MetadataText")
 				txtNumber, _ := strconv.Atoi(splitMetaData[1])
+				var note, title string
 				if splitMetaData[1] == "" && splitMetaData[1] != "0" {
-					*censusInstances.UsageNotes = append(*censusInstances.UsageNotes, models.UsageNote{
-						Note:  example,
-						Title: metaTitleInfo[0],
-					})
-
+					note, title = ReplaceStatDis(example, metaTitleInfo[0])
+					appendUsageNote(censusInstances.UsageNotes, note, title)
 				} else if splitMetaData[1] != "0" {
-					*censusInstances.UsageNotes = append(*censusInstances.UsageNotes, models.UsageNote{
-						Note:  example,
-						Title: metaTitleInfo[txtNumber+1],
-					})
+					note, title = ReplaceStatDis(example, metaTitleInfo[txtNumber+1])
+					appendUsageNote(censusInstances.UsageNotes, note, title)
 				}
-
 			}
 		}
+
 		datasetDoc := &models.DatasetUpdate{
 			ID:      mapData.ID,
 			Current: &mapData,
 			Next:    &mapData,
 		}
 
-		createDocument(ctx, datasetDoc, session, "datasets")
-		createDocument(ctx, censusEditionData, session, "editions")
-		createDocument(ctx, censusInstances, session, "instances")
+		createDatasetsDocument(ctx, cenId, datasetDoc, session)
+		createEditionsDocument(ctx, cenId, censusEditionData, session)
+		createInstancesDocument(ctx, cenId, censusInstances, session)
 	}
 	fmt.Println("\ndatasets, instances and editions have been added to datasets db")
 }
 
-//Inserts a document in the specific collection
-func createDocument(ctx context.Context, class interface{}, session *mgo.Session, document string) {
+//Inserts a document in the datasets collection
+func createDatasetsDocument(ctx context.Context, id string, class interface{}, session *mgo.Session) {
 	var err error
 	logData := log.Data{"data": class}
-	if err = session.DB("datasets").C(document).Insert(class); err != nil {
-		log.Event(ctx, "failed to insert data in collection", log.ERROR, log.Error(err), logData)
+	if _, err = session.DB("datasets").C("datasets").UpsertId(id, class); err != nil {
+		log.Event(ctx, "failed to upsert data in dataset collection", log.ERROR, log.Error(err), logData)
 		os.Exit(1)
 	}
 }
 
+//Inserts a document in the editions collection
+func createEditionsDocument(ctx context.Context, id string, class interface{}, session *mgo.Session) {
+	var err error
+	logData := log.Data{"data": class}
+	selector := bson.M{
+		"current.links.dataset.id": id,
+	}
+	if err = upsertData(ctx, selector, class, session, "editions", logData); err != nil {
+		log.Event(ctx, " failed to insert data in collection", log.ERROR, log.Error(err), logData)
+		os.Exit(1)
+	}
+}
+
+//Inserts a document in the instances collection
+func createInstancesDocument(ctx context.Context, id string, class interface{}, session *mgo.Session) {
+	var err error
+	logData := log.Data{"data": class}
+	selector := bson.M{
+		"links.dataset.id": id,
+	}
+	if err = upsertData(ctx, selector, class, session, "instances", logData); err != nil {
+		log.Event(ctx, " failed to insert data in collection", log.ERROR, log.Error(err), logData)
+		os.Exit(1)
+	}
+}
+
+//Updates document in the specific collection
+func upsertData(ctx context.Context, selector bson.M, class interface{}, session *mgo.Session, document string, logData log.Data) error {
+	var err error
+	if _, err = session.DB("datasets").C(document).Upsert(selector, class); err != nil {
+		log.Event(ctx, "failed to upsert data in collection", log.ERROR, log.Error(err), logData)
+		return err
+	}
+	err = nil
+	return err
+}
+
 //Download a file from nomis website for census 2011 data
-func downloadFile() {
+func downloadFile(ctx context.Context) {
 	fullURLFile = "https://www.nomisweb.co.uk/api/v01/dataset/def.sdmx.json?search=*c2011*"
 
 	// Build fileName from fullPath
 	fileURL, err := url.Parse(fullURLFile)
 	if err != nil {
-		fmt.Println("error Parsing")
+		log.Event(ctx, "error parsing the file", log.ERROR, log.Error(err))
 		os.Exit(1)
 	}
 	path := fileURL.Path
@@ -301,7 +347,7 @@ func downloadFile() {
 	// Create blank file
 	file, err := os.Create(newFileName)
 	if err != nil {
-		fmt.Println("error creating the file")
+		log.Event(ctx, "error creating the file", log.ERROR, log.Error(err))
 		os.Exit(1)
 	}
 	client := http.Client{
@@ -315,25 +361,53 @@ func downloadFile() {
 	resp, err := client.Get(fullURLFile)
 
 	if err != nil {
-		fmt.Println("error writing the file")
+		log.Event(ctx, "error writing the file", log.ERROR, log.Error(err))
 		os.Exit(1)
 	}
 	defer resp.Body.Close()
 	size, err := io.Copy(file, resp.Body)
+	if err != nil {
+		log.Event(ctx, "error copying a file", log.ERROR, log.Error(err))
+		os.Exit(1)
+	}
 	defer file.Close()
-
 	fmt.Printf("Downloaded a file %s with size %d", fileName, size)
 }
 
 /*checkSubString checks if the string has substrings http and [Statistical Disclosure Control].
 If both the substrings exists then it adds parenthesis where necessary and swaps the pattern (url)[text] to [text](url)
 so it can be displayed correctly. If substrings does not exists then it returns the original string*/
-func CheckSubString(existingStr string) (string, error) {
+func CheckSubString(existingStr string, ctx context.Context) (string, error) {
 
 	valueCheck, err := regexp.Compile(`(http[^\[]*)(\[[^\[]*\])`)
 	if err != nil {
+		log.Event(ctx, "error checking substring", log.ERROR, log.Error(err))
 		return "", err
 	}
 
 	return valueCheck.ReplaceAllString(existingStr, `$2($1)`), nil
+}
+
+func CheckTitle(sourceStr string, ctx context.Context) (string, error) {
+	valueCheck, err := regexp.Compile(`^[\d|\D].*?\-\s*([\d|\D].*)$`)
+	if err != nil {
+		log.Event(ctx, "error checking title", log.ERROR, log.Error(err))
+		return "", err
+	}
+	return valueCheck.ReplaceAllString(sourceStr, `$1`), err
+}
+
+func ReplaceStatDis(note string, title string) (string, string) {
+	if title == "Statistical Disclosure Control" {
+		note = censusPersonalData
+		title = "Protecting personal data"
+	}
+	return note, title
+}
+func appendUsageNote(cenInst *[]models.UsageNote, note string, title string) *[]models.UsageNote {
+	*cenInst = append(*cenInst, models.UsageNote{
+		Note:  note,
+		Title: title,
+	})
+	return cenInst
 }
