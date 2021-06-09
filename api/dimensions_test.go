@@ -89,6 +89,22 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
 	})
 
+	Convey("When the request contains an invalid, non-numeric version, return 400 bad request", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/abcd/dimensions", nil)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+				return nil, errs.ErrVersionNotFound
+			},
+		}
+
+		api := initAPIWithMockedStore(mockedDataStore)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidVersion.Error())
+	})
+
 	Convey("When there are no dimensions then return not found error", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
 		w := httptest.NewRecorder()

@@ -34,7 +34,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 
 	versionNumber, err := models.ValidateVersionNumber(ctx, version)
 	if err != nil {
-		log.Event(ctx, "invalid version request", log.ERROR, log.Error(err), logData)
+		handleDimensionsErr(ctx, w, "invalid version request", err, logData)
 		return nil, 0, err
 	}
 
