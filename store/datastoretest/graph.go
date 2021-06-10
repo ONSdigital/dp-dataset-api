@@ -10,13 +10,6 @@ import (
 	"sync"
 )
 
-var (
-	lockGraphDBMockAddVersionDetailsToInstance sync.RWMutex
-	lockGraphDBMockChecker                     sync.RWMutex
-	lockGraphDBMockClose                       sync.RWMutex
-	lockGraphDBMockSetInstanceIsPublished      sync.RWMutex
-)
-
 // Ensure, that GraphDBMock does implement store.GraphDB.
 // If this is not the case, regenerate this file with moq.
 var _ store.GraphDB = &GraphDBMock{}
@@ -93,6 +86,10 @@ type GraphDBMock struct {
 			InstanceID string
 		}
 	}
+	lockAddVersionDetailsToInstance sync.RWMutex
+	lockChecker                     sync.RWMutex
+	lockClose                       sync.RWMutex
+	lockSetInstanceIsPublished      sync.RWMutex
 }
 
 // AddVersionDetailsToInstance calls AddVersionDetailsToInstanceFunc.
@@ -113,9 +110,9 @@ func (mock *GraphDBMock) AddVersionDetailsToInstance(ctx context.Context, instan
 		Edition:    edition,
 		Version:    version,
 	}
-	lockGraphDBMockAddVersionDetailsToInstance.Lock()
+	mock.lockAddVersionDetailsToInstance.Lock()
 	mock.calls.AddVersionDetailsToInstance = append(mock.calls.AddVersionDetailsToInstance, callInfo)
-	lockGraphDBMockAddVersionDetailsToInstance.Unlock()
+	mock.lockAddVersionDetailsToInstance.Unlock()
 	return mock.AddVersionDetailsToInstanceFunc(ctx, instanceID, datasetID, edition, version)
 }
 
@@ -136,9 +133,9 @@ func (mock *GraphDBMock) AddVersionDetailsToInstanceCalls() []struct {
 		Edition    string
 		Version    int
 	}
-	lockGraphDBMockAddVersionDetailsToInstance.RLock()
+	mock.lockAddVersionDetailsToInstance.RLock()
 	calls = mock.calls.AddVersionDetailsToInstance
-	lockGraphDBMockAddVersionDetailsToInstance.RUnlock()
+	mock.lockAddVersionDetailsToInstance.RUnlock()
 	return calls
 }
 
@@ -154,9 +151,9 @@ func (mock *GraphDBMock) Checker(in1 context.Context, in2 *healthcheck.CheckStat
 		In1: in1,
 		In2: in2,
 	}
-	lockGraphDBMockChecker.Lock()
+	mock.lockChecker.Lock()
 	mock.calls.Checker = append(mock.calls.Checker, callInfo)
-	lockGraphDBMockChecker.Unlock()
+	mock.lockChecker.Unlock()
 	return mock.CheckerFunc(in1, in2)
 }
 
@@ -171,9 +168,9 @@ func (mock *GraphDBMock) CheckerCalls() []struct {
 		In1 context.Context
 		In2 *healthcheck.CheckState
 	}
-	lockGraphDBMockChecker.RLock()
+	mock.lockChecker.RLock()
 	calls = mock.calls.Checker
-	lockGraphDBMockChecker.RUnlock()
+	mock.lockChecker.RUnlock()
 	return calls
 }
 
@@ -187,9 +184,9 @@ func (mock *GraphDBMock) Close(ctx context.Context) error {
 	}{
 		Ctx: ctx,
 	}
-	lockGraphDBMockClose.Lock()
+	mock.lockClose.Lock()
 	mock.calls.Close = append(mock.calls.Close, callInfo)
-	lockGraphDBMockClose.Unlock()
+	mock.lockClose.Unlock()
 	return mock.CloseFunc(ctx)
 }
 
@@ -202,9 +199,9 @@ func (mock *GraphDBMock) CloseCalls() []struct {
 	var calls []struct {
 		Ctx context.Context
 	}
-	lockGraphDBMockClose.RLock()
+	mock.lockClose.RLock()
 	calls = mock.calls.Close
-	lockGraphDBMockClose.RUnlock()
+	mock.lockClose.RUnlock()
 	return calls
 }
 
@@ -220,9 +217,9 @@ func (mock *GraphDBMock) SetInstanceIsPublished(ctx context.Context, instanceID 
 		Ctx:        ctx,
 		InstanceID: instanceID,
 	}
-	lockGraphDBMockSetInstanceIsPublished.Lock()
+	mock.lockSetInstanceIsPublished.Lock()
 	mock.calls.SetInstanceIsPublished = append(mock.calls.SetInstanceIsPublished, callInfo)
-	lockGraphDBMockSetInstanceIsPublished.Unlock()
+	mock.lockSetInstanceIsPublished.Unlock()
 	return mock.SetInstanceIsPublishedFunc(ctx, instanceID)
 }
 
@@ -237,8 +234,8 @@ func (mock *GraphDBMock) SetInstanceIsPublishedCalls() []struct {
 		Ctx        context.Context
 		InstanceID string
 	}
-	lockGraphDBMockSetInstanceIsPublished.RLock()
+	mock.lockSetInstanceIsPublished.RLock()
 	calls = mock.calls.SetInstanceIsPublished
-	lockGraphDBMockSetInstanceIsPublished.RUnlock()
+	mock.lockSetInstanceIsPublished.RUnlock()
 	return calls
 }

@@ -35,8 +35,8 @@ type dataMongoDB interface {
 	GetInstances(ctx context.Context, states []string, datasets []string, offset, limit int) ([]*models.Instance, int, error)
 	GetInstance(ID string) (*models.Instance, error)
 	GetNextVersion(datasetID, editionID string) (int, error)
+	GetVersion(datasetID, editionID string, version int, state string) (*models.Version, error)
 	GetUniqueDimensionAndOptions(ctx context.Context, ID, dimension string, offset, limit int) ([]*string, int, error)
-	GetVersion(datasetID, editionID, version, state string) (*models.Version, error)
 	GetVersions(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error)
 	UpdateDataset(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
 	UpdateDatasetWithAssociation(ID, state string, version *models.Version) error

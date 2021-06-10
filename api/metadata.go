@@ -21,7 +21,13 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 	b, err := func() ([]byte, error) {
 
-		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, "")
+		versionId, err := models.ValidateVersionNumber(ctx, version)
+		if err != nil {
+			log.Event(ctx, "failed due to invalid version request", log.ERROR, log.Error(err), logData)
+			return nil, err
+		}
+
+		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionId, "")
 		if err != nil {
 			if err == errs.ErrVersionNotFound {
 				log.Event(ctx, "getMetadata endpoint: failed to find version for dataset edition", log.ERROR, log.Error(err), logData)
@@ -111,6 +117,8 @@ func handleMetadataErr(w http.ResponseWriter, err error) {
 		responseStatus = http.StatusNotFound
 	case err == errs.ErrDatasetNotFound:
 		responseStatus = http.StatusNotFound
+	case err == errs.ErrInvalidVersion:
+		responseStatus = http.StatusBadRequest
 	default:
 		err = errs.ErrInternalServer
 		responseStatus = http.StatusInternalServerError

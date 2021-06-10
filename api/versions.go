@@ -140,6 +140,12 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	b, getVersionErr := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
 
+		versionId, err := models.ValidateVersionNumber(ctx, version)
+		if err != nil {
+			log.Event(ctx, "getVersion endpoint: invalid version", log.ERROR, log.Error(err), logData)
+			return nil, err
+		}
+
 		var state string
 		if !authorised {
 			state = models.PublishedState
@@ -155,7 +161,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		results, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
+		results, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionId, state)
 		if err != nil {
 			log.Event(ctx, "failed to find version for dataset edition", log.ERROR, log.Error(err), logData)
 			return nil, err
@@ -277,6 +283,12 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrNotFound
 		}
 
+		versionId, err := models.ValidateVersionNumber(ctx, version)
+		if err != nil {
+			log.Event(ctx, "detachVersion endpoint: invalid version request", log.ERROR, log.Error(err), logData)
+			return err
+		}
+
 		editionDoc, err := api.dataStore.Backend.GetEdition(datasetID, edition, "")
 		if err != nil {
 			log.Event(ctx, "detachVersion endpoint: Cannot find the specified edition", log.ERROR, log.Error(errs.ErrEditionNotFound), logData)
@@ -296,7 +308,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrIncorrectStateToDetach
 		}
 
-		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, editionDoc.Next.State)
+		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionId, editionDoc.Next.State)
 		if err != nil {
 			log.Event(ctx, "detachVersion endpoint: Cannot find the specified version", log.ERROR, log.Error(errs.ErrVersionNotFound), logData)
 			return errs.ErrVersionNotFound
@@ -349,6 +361,13 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 
 	// attempt to update the version
 	currentDataset, currentVersion, versionUpdate, err := func() (*models.DatasetUpdate, *models.Version, *models.Version, error) {
+
+		version, err := models.ValidateVersionNumber(ctx, versionDetails.version)
+		if err != nil {
+			log.Event(ctx, "putVersion endpoint: invalid version request", log.ERROR, log.Error(err), data)
+			return nil, nil, nil, err
+		}
+
 		versionUpdate, err := models.CreateVersion(body, versionDetails.datasetID)
 		if err != nil {
 			log.Event(ctx, "putVersion endpoint: failed to model version resource based on request", log.ERROR, log.Error(err), data)
@@ -366,7 +385,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 			return nil, nil, nil, err
 		}
 
-		currentVersion, err := api.dataStore.Backend.GetVersion(versionDetails.datasetID, versionDetails.edition, versionDetails.version, "")
+		currentVersion, err := api.dataStore.Backend.GetVersion(versionDetails.datasetID, versionDetails.edition, version, "")
 		if err != nil {
 			log.Event(ctx, "putVersion endpoint: datastore.GetVersion returned an error", log.ERROR, log.Error(err), data)
 			return nil, nil, nil, err
@@ -621,6 +640,8 @@ func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	case strings.HasPrefix(err.Error(), "missing mandatory fields:"):
 		status = http.StatusBadRequest
 	case strings.HasPrefix(err.Error(), "invalid fields:"):
+		status = http.StatusBadRequest
+	case strings.HasPrefix(err.Error(), "invalid version requested"):
 		status = http.StatusBadRequest
 	default:
 		err = errs.ErrInternalServer

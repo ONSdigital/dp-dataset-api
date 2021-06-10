@@ -211,7 +211,7 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 				editionSearchState = state
 				return nil
 			},
-			GetVersionFunc: func(id string, editionID, version string, state string) (*models.Version, error) {
+			GetVersionFunc: func(id string, editionID string, version int, state string) (*models.Version, error) {
 				versionSearchState = state
 				return &models.Version{ID: "124", State: models.PublishedState,
 					Links: &models.VersionLinks{
@@ -240,7 +240,7 @@ func TestWebSubnetDimensionsEndpoint(t *testing.T) {
 		var versionSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(id string, editionID, version string, state string) (*models.Version, error) {
+			GetVersionFunc: func(id string, editionID string, version int, state string) (*models.Version, error) {
 				versionSearchState = state
 				return &models.Version{ID: "124", State: models.PublishedState,
 					Links: &models.VersionLinks{
@@ -270,14 +270,14 @@ func TestWebSubnetDimensionOptionsEndpoint(t *testing.T) {
 		var versionSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(id string, editionID, version string, state string) (*models.Version, error) {
+			GetVersionFunc: func(id string, editionID string, version int, state string) (*models.Version, error) {
 				versionSearchState = state
 				return &models.Version{ID: "124", State: models.PublishedState,
 					Links: &models.VersionLinks{
 						Version: &models.LinkObject{},
 						Self:    &models.LinkObject{}}}, nil
 			},
-			GetDimensionOptionsFunc: func(version *models.Version, dimension string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
+			GetDimensionOptionsFunc: func(ctx context.Context, version *models.Version, dimension string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
 				return []*models.PublicDimensionOption{}, 0, nil
 			},
 		}
