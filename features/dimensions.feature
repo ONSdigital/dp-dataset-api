@@ -184,7 +184,7 @@ Feature: Dataset API
             """
             {
                 "count": 0,
-                "items": null,
+                "items": [],
                 "limit": 20,
                 "offset": 0,
                 "total_count": 0

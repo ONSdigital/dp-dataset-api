@@ -32,7 +32,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, edition, state string) error {
 				return nil
 			},
-			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -93,7 +93,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetID, edition, state string) error {
 				return nil
 			},
-			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -144,7 +144,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
 				return nil, errs.ErrInternalServer
 			},
 		}
@@ -173,7 +173,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
 				return nil, nil
 			},
 		}
@@ -208,7 +208,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetId, edition, state string) error {
 				return nil
 			},
-			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -243,7 +243,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetId, edition, state string) error {
 				return errs.ErrEditionNotFound
 			},
-			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -278,7 +278,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetId, edition, state string) error {
 				return nil
 			},
-			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
 				return nil, errs.ErrVersionNotFound
 			},
 		}
@@ -315,7 +315,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(datasetId, edition, state string) error {
 				return nil
 			},
-			GetVersionFunc: func(datasetID, edition, version, state string) (*models.Version, error) {
+			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
 				return &models.Version{State: "gobbly-gook"}, nil
 			},
 		}
@@ -333,6 +333,82 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
+
+	Convey("When an edition document for an invalid version is requested returns invalid version error", t, func() {
+
+		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/jjj/metadata", nil)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidVersion.Error())
+
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When an edition document for version zero is requested return an invalid version error", t, func() {
+
+		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/0/metadata", nil)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidVersion.Error())
+
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When an edition document for a negative version is requested return an invalid version error", t, func() {
+
+		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/-1/metadata", nil)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidVersion.Error())
+
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+	})
+
 }
 
 // createDatasetDoc returns a datasetUpdate doc containing minimal fields but

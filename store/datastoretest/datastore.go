@@ -17,124 +17,124 @@ var _ store.Storer = &StorerMock{}
 
 // StorerMock is a mock implementation of store.Storer.
 //
-// 	func TestSomethingThatUsesStorer(t *testing.T) {
+//     func TestSomethingThatUsesStorer(t *testing.T) {
 //
-// 		// make and configure a mocked store.Storer
-// 		mockedStorer := &StorerMock{
-// 			AddDimensionToInstanceFunc: func(dimension *models.CachedDimensionOption) error {
-// 				panic("mock out the AddDimensionToInstance method")
-// 			},
-// 			AddEventToInstanceFunc: func(instanceID string, event *models.Event) error {
-// 				panic("mock out the AddEventToInstance method")
-// 			},
-// 			AddInstanceFunc: func(instance *models.Instance) (*models.Instance, error) {
-// 				panic("mock out the AddInstance method")
-// 			},
-// 			AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
-// 				panic("mock out the AddVersionDetailsToInstance method")
-// 			},
-// 			CheckDatasetExistsFunc: func(ID string, state string) error {
-// 				panic("mock out the CheckDatasetExists method")
-// 			},
-// 			CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
-// 				panic("mock out the CheckEditionExists method")
-// 			},
-// 			DeleteDatasetFunc: func(ID string) error {
-// 				panic("mock out the DeleteDataset method")
-// 			},
-// 			DeleteEditionFunc: func(ID string) error {
-// 				panic("mock out the DeleteEdition method")
-// 			},
-// 			GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
-// 				panic("mock out the GetDataset method")
-// 			},
-// 			GetDatasetsFunc: func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
-// 				panic("mock out the GetDatasets method")
-// 			},
-// 			GetDimensionOptionsFunc: func(version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error) {
-// 				panic("mock out the GetDimensionOptions method")
-// 			},
-// 			GetDimensionOptionsFromIDsFunc: func(version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
-// 				panic("mock out the GetDimensionOptionsFromIDs method")
-// 			},
-// 			GetDimensionsFunc: func(datasetID string, versionID string) ([]bson.M, error) {
-// 				panic("mock out the GetDimensions method")
-// 			},
-// 			GetDimensionsFromInstanceFunc: func(ID string) (*models.DimensionNodeResults, error) {
-// 				panic("mock out the GetDimensionsFromInstance method")
-// 			},
-// 			GetEditionFunc: func(ID string, editionID string, state string) (*models.EditionUpdate, error) {
-// 				panic("mock out the GetEdition method")
-// 			},
-// 			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
-// 				panic("mock out the GetEditions method")
-// 			},
-// 			GetInstanceFunc: func(ID string) (*models.Instance, error) {
-// 				panic("mock out the GetInstance method")
-// 			},
-// 			GetInstancesFunc: func(ctx context.Context, states []string, datasets []string, offset int, limit int) ([]*models.Instance, int, error) {
-// 				panic("mock out the GetInstances method")
-// 			},
-// 			GetNextVersionFunc: func(datasetID string, editionID string) (int, error) {
-// 				panic("mock out the GetNextVersion method")
-// 			},
-// 			GetUniqueDimensionAndOptionsFunc: func(ID string, dimension string) (*models.DimensionValues, error) {
-// 				panic("mock out the GetUniqueDimensionAndOptions method")
-// 			},
-// 			GetVersionFunc: func(datasetID string, editionID string, version string, state string) (*models.Version, error) {
-// 				panic("mock out the GetVersion method")
-// 			},
-// 			GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error) {
-// 				panic("mock out the GetVersions method")
-// 			},
-// 			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
-// 				panic("mock out the SetInstanceIsPublished method")
-// 			},
-// 			UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
-// 				panic("mock out the UpdateBuildHierarchyTaskState method")
-// 			},
-// 			UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
-// 				panic("mock out the UpdateBuildSearchTaskState method")
-// 			},
-// 			UpdateDatasetFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
-// 				panic("mock out the UpdateDataset method")
-// 			},
-// 			UpdateDatasetWithAssociationFunc: func(ID string, state string, version *models.Version) error {
-// 				panic("mock out the UpdateDatasetWithAssociation method")
-// 			},
-// 			UpdateDimensionNodeIDAndOrderFunc: func(dimension *models.DimensionOption) error {
-// 				panic("mock out the UpdateDimensionNodeIDAndOrder method")
-// 			},
-// 			UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
-// 				panic("mock out the UpdateImportObservationsTaskState method")
-// 			},
-// 			UpdateInstanceFunc: func(ctx context.Context, ID string, instance *models.Instance) error {
-// 				panic("mock out the UpdateInstance method")
-// 			},
-// 			UpdateObservationInsertedFunc: func(ID string, observationInserted int64) error {
-// 				panic("mock out the UpdateObservationInserted method")
-// 			},
-// 			UpdateVersionFunc: func(ID string, version *models.Version) error {
-// 				panic("mock out the UpdateVersion method")
-// 			},
-// 			UpsertContactFunc: func(ID string, update interface{}) error {
-// 				panic("mock out the UpsertContact method")
-// 			},
-// 			UpsertDatasetFunc: func(ID string, datasetDoc *models.DatasetUpdate) error {
-// 				panic("mock out the UpsertDataset method")
-// 			},
-// 			UpsertEditionFunc: func(datasetID string, edition string, editionDoc *models.EditionUpdate) error {
-// 				panic("mock out the UpsertEdition method")
-// 			},
-// 			UpsertVersionFunc: func(ID string, versionDoc *models.Version) error {
-// 				panic("mock out the UpsertVersion method")
-// 			},
-// 		}
+//         // make and configure a mocked store.Storer
+//         mockedStorer := &StorerMock{
+//             AddDimensionToInstanceFunc: func(dimension *models.CachedDimensionOption) error {
+// 	               panic("mock out the AddDimensionToInstance method")
+//             },
+//             AddEventToInstanceFunc: func(instanceID string, event *models.Event) error {
+// 	               panic("mock out the AddEventToInstance method")
+//             },
+//             AddInstanceFunc: func(instance *models.Instance) (*models.Instance, error) {
+// 	               panic("mock out the AddInstance method")
+//             },
+//             AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
+// 	               panic("mock out the AddVersionDetailsToInstance method")
+//             },
+//             CheckDatasetExistsFunc: func(ID string, state string) error {
+// 	               panic("mock out the CheckDatasetExists method")
+//             },
+//             CheckEditionExistsFunc: func(ID string, editionID string, state string) error {
+// 	               panic("mock out the CheckEditionExists method")
+//             },
+//             DeleteDatasetFunc: func(ID string) error {
+// 	               panic("mock out the DeleteDataset method")
+//             },
+//             DeleteEditionFunc: func(ID string) error {
+// 	               panic("mock out the DeleteEdition method")
+//             },
+//             GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
+// 	               panic("mock out the GetDataset method")
+//             },
+//             GetDatasetsFunc: func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+// 	               panic("mock out the GetDatasets method")
+//             },
+//             GetDimensionOptionsFunc: func(ctx context.Context, version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error) {
+// 	               panic("mock out the GetDimensionOptions method")
+//             },
+//             GetDimensionOptionsFromIDsFunc: func(version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
+// 	               panic("mock out the GetDimensionOptionsFromIDs method")
+//             },
+//             GetDimensionsFunc: func(datasetID string, versionID string) ([]bson.M, error) {
+// 	               panic("mock out the GetDimensions method")
+//             },
+//             GetDimensionsFromInstanceFunc: func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error) {
+// 	               panic("mock out the GetDimensionsFromInstance method")
+//             },
+//             GetEditionFunc: func(ID string, editionID string, state string) (*models.EditionUpdate, error) {
+// 	               panic("mock out the GetEdition method")
+//             },
+//             GetEditionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+// 	               panic("mock out the GetEditions method")
+//             },
+//             GetInstanceFunc: func(ID string) (*models.Instance, error) {
+// 	               panic("mock out the GetInstance method")
+//             },
+//             GetInstancesFunc: func(ctx context.Context, states []string, datasets []string, offset int, limit int) ([]*models.Instance, int, error) {
+// 	               panic("mock out the GetInstances method")
+//             },
+//             GetNextVersionFunc: func(datasetID string, editionID string) (int, error) {
+// 	               panic("mock out the GetNextVersion method")
+//             },
+//             GetUniqueDimensionAndOptionsFunc: func(ctx context.Context, ID string, dimension string, offset int, limit int) ([]*string, int, error) {
+// 	               panic("mock out the GetUniqueDimensionAndOptions method")
+//             },
+//             GetVersionFunc: func(datasetID string, editionID string, version int, state string) (*models.Version, error) {
+// 	               panic("mock out the GetVersion method")
+//             },
+//             GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error) {
+// 	               panic("mock out the GetVersions method")
+//             },
+//             SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
+// 	               panic("mock out the SetInstanceIsPublished method")
+//             },
+//             UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
+// 	               panic("mock out the UpdateBuildHierarchyTaskState method")
+//             },
+//             UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
+// 	               panic("mock out the UpdateBuildSearchTaskState method")
+//             },
+//             UpdateDatasetFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
+// 	               panic("mock out the UpdateDataset method")
+//             },
+//             UpdateDatasetWithAssociationFunc: func(ID string, state string, version *models.Version) error {
+// 	               panic("mock out the UpdateDatasetWithAssociation method")
+//             },
+//             UpdateDimensionNodeIDAndOrderFunc: func(dimension *models.DimensionOption) error {
+// 	               panic("mock out the UpdateDimensionNodeIDAndOrder method")
+//             },
+//             UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
+// 	               panic("mock out the UpdateImportObservationsTaskState method")
+//             },
+//             UpdateInstanceFunc: func(ctx context.Context, ID string, instance *models.Instance) error {
+// 	               panic("mock out the UpdateInstance method")
+//             },
+//             UpdateObservationInsertedFunc: func(ID string, observationInserted int64) error {
+// 	               panic("mock out the UpdateObservationInserted method")
+//             },
+//             UpdateVersionFunc: func(ID string, version *models.Version) error {
+// 	               panic("mock out the UpdateVersion method")
+//             },
+//             UpsertContactFunc: func(ID string, update interface{}) error {
+// 	               panic("mock out the UpsertContact method")
+//             },
+//             UpsertDatasetFunc: func(ID string, datasetDoc *models.DatasetUpdate) error {
+// 	               panic("mock out the UpsertDataset method")
+//             },
+//             UpsertEditionFunc: func(datasetID string, edition string, editionDoc *models.EditionUpdate) error {
+// 	               panic("mock out the UpsertEdition method")
+//             },
+//             UpsertVersionFunc: func(ID string, versionDoc *models.Version) error {
+// 	               panic("mock out the UpsertVersion method")
+//             },
+//         }
 //
-// 		// use mockedStorer in code that requires store.Storer
-// 		// and then make assertions.
+//         // use mockedStorer in code that requires store.Storer
+//         // and then make assertions.
 //
-// 	}
+//     }
 type StorerMock struct {
 	// AddDimensionToInstanceFunc mocks the AddDimensionToInstance method.
 	AddDimensionToInstanceFunc func(dimension *models.CachedDimensionOption) error
@@ -167,7 +167,7 @@ type StorerMock struct {
 	GetDatasetsFunc func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 
 	// GetDimensionOptionsFunc mocks the GetDimensionOptions method.
-	GetDimensionOptionsFunc func(version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error)
+	GetDimensionOptionsFunc func(ctx context.Context, version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error)
 
 	// GetDimensionOptionsFromIDsFunc mocks the GetDimensionOptionsFromIDs method.
 	GetDimensionOptionsFromIDsFunc func(version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
@@ -176,7 +176,7 @@ type StorerMock struct {
 	GetDimensionsFunc func(datasetID string, versionID string) ([]bson.M, error)
 
 	// GetDimensionsFromInstanceFunc mocks the GetDimensionsFromInstance method.
-	GetDimensionsFromInstanceFunc func(ID string) (*models.DimensionNodeResults, error)
+	GetDimensionsFromInstanceFunc func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error)
 
 	// GetEditionFunc mocks the GetEdition method.
 	GetEditionFunc func(ID string, editionID string, state string) (*models.EditionUpdate, error)
@@ -194,10 +194,10 @@ type StorerMock struct {
 	GetNextVersionFunc func(datasetID string, editionID string) (int, error)
 
 	// GetUniqueDimensionAndOptionsFunc mocks the GetUniqueDimensionAndOptions method.
-	GetUniqueDimensionAndOptionsFunc func(ID string, dimension string) (*models.DimensionValues, error)
+	GetUniqueDimensionAndOptionsFunc func(ctx context.Context, ID string, dimension string, offset int, limit int) ([]*string, int, error)
 
 	// GetVersionFunc mocks the GetVersion method.
-	GetVersionFunc func(datasetID string, editionID string, version string, state string) (*models.Version, error)
+	GetVersionFunc func(datasetID string, editionID string, version int, state string) (*models.Version, error)
 
 	// GetVersionsFunc mocks the GetVersions method.
 	GetVersionsFunc func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error)
@@ -320,6 +320,8 @@ type StorerMock struct {
 		}
 		// GetDimensionOptions holds details about calls to the GetDimensionOptions method.
 		GetDimensionOptions []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// Version is the version argument value.
 			Version *models.Version
 			// Dimension is the dimension argument value.
@@ -347,8 +349,14 @@ type StorerMock struct {
 		}
 		// GetDimensionsFromInstance holds details about calls to the GetDimensionsFromInstance method.
 		GetDimensionsFromInstance []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// ID is the ID argument value.
 			ID string
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
 		}
 		// GetEdition holds details about calls to the GetEdition method.
 		GetEdition []struct {
@@ -401,10 +409,16 @@ type StorerMock struct {
 		}
 		// GetUniqueDimensionAndOptions holds details about calls to the GetUniqueDimensionAndOptions method.
 		GetUniqueDimensionAndOptions []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// ID is the ID argument value.
 			ID string
 			// Dimension is the dimension argument value.
 			Dimension string
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
 		}
 		// GetVersion holds details about calls to the GetVersion method.
 		GetVersion []struct {
@@ -413,7 +427,7 @@ type StorerMock struct {
 			// EditionID is the editionID argument value.
 			EditionID string
 			// Version is the version argument value.
-			Version string
+			Version int
 			// State is the state argument value.
 			State string
 		}
@@ -936,16 +950,18 @@ func (mock *StorerMock) GetDatasetsCalls() []struct {
 }
 
 // GetDimensionOptions calls GetDimensionOptionsFunc.
-func (mock *StorerMock) GetDimensionOptions(version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error) {
+func (mock *StorerMock) GetDimensionOptions(ctx context.Context, version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error) {
 	if mock.GetDimensionOptionsFunc == nil {
 		panic("StorerMock.GetDimensionOptionsFunc: method is nil but Storer.GetDimensionOptions was just called")
 	}
 	callInfo := struct {
+		Ctx       context.Context
 		Version   *models.Version
 		Dimension string
 		Offset    int
 		Limit     int
 	}{
+		Ctx:       ctx,
 		Version:   version,
 		Dimension: dimension,
 		Offset:    offset,
@@ -954,19 +970,21 @@ func (mock *StorerMock) GetDimensionOptions(version *models.Version, dimension s
 	mock.lockGetDimensionOptions.Lock()
 	mock.calls.GetDimensionOptions = append(mock.calls.GetDimensionOptions, callInfo)
 	mock.lockGetDimensionOptions.Unlock()
-	return mock.GetDimensionOptionsFunc(version, dimension, offset, limit)
+	return mock.GetDimensionOptionsFunc(ctx, version, dimension, offset, limit)
 }
 
 // GetDimensionOptionsCalls gets all the calls that were made to GetDimensionOptions.
 // Check the length with:
 //     len(mockedStorer.GetDimensionOptionsCalls())
 func (mock *StorerMock) GetDimensionOptionsCalls() []struct {
+	Ctx       context.Context
 	Version   *models.Version
 	Dimension string
 	Offset    int
 	Limit     int
 } {
 	var calls []struct {
+		Ctx       context.Context
 		Version   *models.Version
 		Dimension string
 		Offset    int
@@ -1053,29 +1071,41 @@ func (mock *StorerMock) GetDimensionsCalls() []struct {
 }
 
 // GetDimensionsFromInstance calls GetDimensionsFromInstanceFunc.
-func (mock *StorerMock) GetDimensionsFromInstance(ID string) (*models.DimensionNodeResults, error) {
+func (mock *StorerMock) GetDimensionsFromInstance(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error) {
 	if mock.GetDimensionsFromInstanceFunc == nil {
 		panic("StorerMock.GetDimensionsFromInstanceFunc: method is nil but Storer.GetDimensionsFromInstance was just called")
 	}
 	callInfo := struct {
-		ID string
+		Ctx    context.Context
+		ID     string
+		Offset int
+		Limit  int
 	}{
-		ID: ID,
+		Ctx:    ctx,
+		ID:     ID,
+		Offset: offset,
+		Limit:  limit,
 	}
 	mock.lockGetDimensionsFromInstance.Lock()
 	mock.calls.GetDimensionsFromInstance = append(mock.calls.GetDimensionsFromInstance, callInfo)
 	mock.lockGetDimensionsFromInstance.Unlock()
-	return mock.GetDimensionsFromInstanceFunc(ID)
+	return mock.GetDimensionsFromInstanceFunc(ctx, ID, offset, limit)
 }
 
 // GetDimensionsFromInstanceCalls gets all the calls that were made to GetDimensionsFromInstance.
 // Check the length with:
 //     len(mockedStorer.GetDimensionsFromInstanceCalls())
 func (mock *StorerMock) GetDimensionsFromInstanceCalls() []struct {
-	ID string
+	Ctx    context.Context
+	ID     string
+	Offset int
+	Limit  int
 } {
 	var calls []struct {
-		ID string
+		Ctx    context.Context
+		ID     string
+		Offset int
+		Limit  int
 	}
 	mock.lockGetDimensionsFromInstance.RLock()
 	calls = mock.calls.GetDimensionsFromInstance
@@ -1287,33 +1317,45 @@ func (mock *StorerMock) GetNextVersionCalls() []struct {
 }
 
 // GetUniqueDimensionAndOptions calls GetUniqueDimensionAndOptionsFunc.
-func (mock *StorerMock) GetUniqueDimensionAndOptions(ID string, dimension string) (*models.DimensionValues, error) {
+func (mock *StorerMock) GetUniqueDimensionAndOptions(ctx context.Context, ID string, dimension string, offset int, limit int) ([]*string, int, error) {
 	if mock.GetUniqueDimensionAndOptionsFunc == nil {
 		panic("StorerMock.GetUniqueDimensionAndOptionsFunc: method is nil but Storer.GetUniqueDimensionAndOptions was just called")
 	}
 	callInfo := struct {
+		Ctx       context.Context
 		ID        string
 		Dimension string
+		Offset    int
+		Limit     int
 	}{
+		Ctx:       ctx,
 		ID:        ID,
 		Dimension: dimension,
+		Offset:    offset,
+		Limit:     limit,
 	}
 	mock.lockGetUniqueDimensionAndOptions.Lock()
 	mock.calls.GetUniqueDimensionAndOptions = append(mock.calls.GetUniqueDimensionAndOptions, callInfo)
 	mock.lockGetUniqueDimensionAndOptions.Unlock()
-	return mock.GetUniqueDimensionAndOptionsFunc(ID, dimension)
+	return mock.GetUniqueDimensionAndOptionsFunc(ctx, ID, dimension, offset, limit)
 }
 
 // GetUniqueDimensionAndOptionsCalls gets all the calls that were made to GetUniqueDimensionAndOptions.
 // Check the length with:
 //     len(mockedStorer.GetUniqueDimensionAndOptionsCalls())
 func (mock *StorerMock) GetUniqueDimensionAndOptionsCalls() []struct {
+	Ctx       context.Context
 	ID        string
 	Dimension string
+	Offset    int
+	Limit     int
 } {
 	var calls []struct {
+		Ctx       context.Context
 		ID        string
 		Dimension string
+		Offset    int
+		Limit     int
 	}
 	mock.lockGetUniqueDimensionAndOptions.RLock()
 	calls = mock.calls.GetUniqueDimensionAndOptions
@@ -1322,14 +1364,14 @@ func (mock *StorerMock) GetUniqueDimensionAndOptionsCalls() []struct {
 }
 
 // GetVersion calls GetVersionFunc.
-func (mock *StorerMock) GetVersion(datasetID string, editionID string, version string, state string) (*models.Version, error) {
+func (mock *StorerMock) GetVersion(datasetID string, editionID string, version int, state string) (*models.Version, error) {
 	if mock.GetVersionFunc == nil {
 		panic("StorerMock.GetVersionFunc: method is nil but Storer.GetVersion was just called")
 	}
 	callInfo := struct {
 		DatasetID string
 		EditionID string
-		Version   string
+		Version   int
 		State     string
 	}{
 		DatasetID: datasetID,
@@ -1349,13 +1391,13 @@ func (mock *StorerMock) GetVersion(datasetID string, editionID string, version s
 func (mock *StorerMock) GetVersionCalls() []struct {
 	DatasetID string
 	EditionID string
-	Version   string
+	Version   int
 	State     string
 } {
 	var calls []struct {
 		DatasetID string
 		EditionID string
-		Version   string
+		Version   int
 		State     string
 	}
 	mock.lockGetVersion.RLock()

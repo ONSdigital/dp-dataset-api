@@ -1,10 +1,14 @@
 package main_test
 
 import (
+	"context"
+	"testing"
+
 	nomis "github.com/ONSdigital/dp-dataset-api/NOMIS"
 	. "github.com/smartystreets/goconvey/convey"
-	"testing"
 )
+
+var ctx context.Context
 
 func TestCheckSubString(t *testing.T) {
 	cases := []struct {
@@ -53,7 +57,57 @@ func TestCheckSubString(t *testing.T) {
 	for _, test := range cases {
 		Convey(test.Description, t, func() {
 			Convey("Then the CheckSubString function should return the expected string", func() {
-				actualString, err := nomis.CheckSubString(test.GivenString)
+				actualString, err := nomis.CheckSubString(test.GivenString, ctx)
+				So(err, ShouldBeNil)
+				So(actualString, ShouldResemble, test.ExpectedResult)
+			})
+		})
+	}
+}
+func TestCheckTitle(t *testing.T) {
+	cases := []struct {
+		Description    string
+		GivenString    string
+		ExpectedResult string
+	}{
+		{
+			"Given a title ",
+			"QS102EW - Population density",
+			"Population density",
+		},
+		{
+			"Given a title with multiple hyphens",
+			"OT102EW - Population density (Out of term-time population)",
+			"Population density (Out of term-time population)",
+		},
+		{
+			"Given a title with multiple hyphens",
+			"DC6104EWla - Industry by sex by age - Communal establishment residents",
+			"Industry by sex by age - Communal establishment residents",
+		},
+		{
+			"Given a title with multiple hyphens and multiple space",
+			"DC6104EWla to AW1234WE -  Industry by sex by age - Communal establishment residents",
+			"Industry by sex by age - Communal establishment residents",
+		},
+		{
+			"Given a title with no space before the first hyphens",
+			"AW1234WE-  Industry by sex by age - Communal establishment residents",
+			"Industry by sex by age - Communal establishment residents",
+		},
+		{
+			"Given a string no matches",
+			"you can get the information from " +
+				"hello world",
+			"you can get the information from " +
+				"hello world",
+		},
+	}
+
+	for _, test := range cases {
+		Convey(test.Description, t, func() {
+			Convey("Then the CheckTitle function should return the expected string", func() {
+				actualString, err := nomis.CheckTitle(test.GivenString, ctx)
 				So(err, ShouldBeNil)
 				So(actualString, ShouldResemble, test.ExpectedResult)
 			})

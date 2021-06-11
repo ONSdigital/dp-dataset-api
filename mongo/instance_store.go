@@ -6,7 +6,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	mongo "github.com/ONSdigital/dp-mongodb"
+	dpmongo "github.com/ONSdigital/dp-mongodb"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -19,37 +19,25 @@ func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []st
 	s := m.Session.Copy()
 	defer s.Close()
 
-	filter := bson.M{}
+	selector := bson.M{}
 	if len(states) > 0 {
-		filter["state"] = bson.M{"$in": states}
+		selector["state"] = bson.M{"$in": states}
 	}
 
 	if len(datasets) > 0 {
-		filter["links.dataset.id"] = bson.M{"$in": datasets}
+		selector["links.dataset.id"] = bson.M{"$in": datasets}
 	}
 
-	totalCount, err := s.DB(m.Database).C(instanceCollection).Find(filter).Count()
-	if err != nil {
-		return nil, 0, err
-	}
+	q := s.DB(m.Database).C(instanceCollection).Find(selector).Sort("-last_updated")
 
+	// get total count and paginated values according to provided offset and limit
 	results := []*models.Instance{}
-
-	if limit > 0 {
-		iter := s.DB(m.Database).C(instanceCollection).Find(filter).Sort("-last_updated").Skip(offset).Limit(limit).Iter()
-		defer func() {
-			err := iter.Close()
-			if err != nil {
-				log.Event(ctx, "error closing iterator", log.ERROR, log.Error(err), log.Data{"state_query": states, "dataset_query": datasets})
-			}
-		}()
-
-		if err := iter.All(&results); err != nil {
-			if err == mgo.ErrNotFound {
-				return nil, 0, errs.ErrDatasetNotFound
-			}
-			return nil, 0, err
+	totalCount, err := QueryPage(ctx, q, offset, limit, &results)
+	if err != nil {
+		if err == mgo.ErrNotFound {
+			return results, 0, errs.ErrDatasetNotFound
 		}
+		return results, 0, err
 	}
 
 	return results, totalCount, nil
@@ -96,12 +84,12 @@ func (m *Mongo) UpdateInstance(ctx context.Context, instanceID string, instance 
 
 	updates := createInstanceUpdateQuery(ctx, instanceID, instance)
 	update := bson.M{"$set": updates}
-	updateWithTimestamps, err := mongo.WithUpdates(update)
+	updateWithTimestamps, err := dpmongo.WithUpdates(update)
 	if err != nil {
 		return err
 	}
 
-	if err = s.DB(m.Database).C(instanceCollection).Update(bson.M{"id": instanceID, mongo.UniqueTimestampKey: instance.UniqueTimestamp}, updateWithTimestamps); err != nil {
+	if err = s.DB(m.Database).C(instanceCollection).Update(bson.M{"id": instanceID, dpmongo.UniqueTimestampKey: instance.UniqueTimestamp}, updateWithTimestamps); err != nil {
 		if err != mgo.ErrNotFound {
 			return err
 		}

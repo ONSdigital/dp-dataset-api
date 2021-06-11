@@ -32,6 +32,12 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "func": "getDimensions"}
 	var err error
 
+	versionNumber, err := models.ValidateVersionNumber(ctx, version)
+	if err != nil {
+		handleDimensionsErr(ctx, w, "invalid version request", err, logData)
+		return nil, 0, err
+	}
+
 	list, totalCount, err := func() ([]models.Dimension, int, error) {
 		authorised := api.authenticate(r, logData)
 
@@ -40,7 +46,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 			state = models.PublishedState
 		}
 
-		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, version, state)
+		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionNumber, state)
 		if err != nil {
 			log.Event(ctx, "datastore.getversion returned an error", log.ERROR, log.Error(err), logData)
 			return nil, 0, err
@@ -141,6 +147,13 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension, "func": "getDimensionOptions"}
 	authorised := api.authenticate(r, logData)
 
+	versionName, err := models.ValidateVersionNumber(ctx, versionID)
+	if err != nil {
+		log.Event(ctx, "invalid version requested", log.ERROR, log.Error(err), logData)
+		handleDimensionsErr(ctx, w, "invalid version", err, logData)
+		return nil, 0, err
+	}
+
 	var state string
 	if !authorised {
 		state = models.PublishedState
@@ -156,7 +169,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	}
 
 	// ger version for provided dataset, edition and versionID
-	version, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionID, state)
+	version, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionName, state)
 	if err != nil {
 		handleDimensionsErr(ctx, w, "failed to get version", err, logData)
 		return nil, 0, err
@@ -173,7 +186,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	var totalCount int
 	if len(ids) == 0 {
 		// get sorted dimension options, starting at offset index, with a limit on the number of items
-		results, totalCount, err = api.dataStore.Backend.GetDimensionOptions(version, dimension, offset, limit)
+		results, totalCount, err = api.dataStore.Backend.GetDimensionOptions(ctx, version, dimension, offset, limit)
 		if err != nil {
 			handleDimensionsErr(ctx, w, "failed to get a list of dimension options", err, logData)
 			return nil, 0, err
