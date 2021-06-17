@@ -81,8 +81,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		datasetDoc := createDatasetDoc()
 		versionDoc := createUnpublishedVersionDoc()
 
-		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
 
 		w := httptest.NewRecorder()
 
@@ -303,8 +302,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 		datasetDoc := createDatasetDoc()
 
-		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
 
 		w := httptest.NewRecorder()
 
@@ -336,8 +334,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 	Convey("When an edition document for an invalid version is requested returns invalid version error", t, func() {
 
-		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/jjj/metadata", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/jjj/metadata", nil)
 
 		w := httptest.NewRecorder()
 
@@ -361,8 +358,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 	Convey("When an edition document for version zero is requested return an invalid version error", t, func() {
 
-		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/0/metadata", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/0/metadata", nil)
 
 		w := httptest.NewRecorder()
 
@@ -386,8 +382,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 	Convey("When an edition document for a negative version is requested return an invalid version error", t, func() {
 
-		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/-1/metadata", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/-1/metadata", nil)
 
 		w := httptest.NewRecorder()
 

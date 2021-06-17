@@ -509,8 +509,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		var b string
 		b = versionPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -568,7 +567,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -582,8 +581,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		var b string
 		b = versionAssociatedPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -626,7 +624,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -643,8 +641,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		var b string
 		b = versionAssociatedPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -697,7 +694,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -711,8 +708,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		var b string
 		b = versionPublishedPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -812,7 +808,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -821,8 +817,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		Convey("And downloads object contains only a csv object", func() {
 			var b string
 			b = `{"downloads": { "csv": { "public": "http://cmd-dev/test-site/cpih01", "size": "12", "href": "http://localhost:8080/cpih01"}}}`
-			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-			So(err, ShouldBeNil)
+			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 			updateVersionDownloadTest(r)
 
@@ -835,13 +830,12 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		Convey("And downloads object contains only a xls object", func() {
 			var b string
 			b = `{"downloads": { "xls": { "public": "http://cmd-dev/test-site/cpih01", "size": "12", "href": "http://localhost:8080/cpih01"}}}`
-			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-			So(err, ShouldBeNil)
+			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 			updateVersionDownloadTest(r)
 
 			Convey("then the request body has been drained", func() {
-				_, err = r.Body.Read(make([]byte, 1))
+				_, err := r.Body.Read(make([]byte, 1))
 				So(err, ShouldEqual, io.EOF)
 			})
 		})
@@ -966,8 +960,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 		}
 
 		Convey("when put version is called with a valid request", func() {
-			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
-			So(err, ShouldBeNil)
+			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
 
 			w := httptest.NewRecorder()
 			cfg, err := config.Get()
@@ -1040,8 +1033,7 @@ func TestPutEmptyVersion(t *testing.T) {
 		}
 
 		Convey("when put version is called with an associated version with empty downloads", func() {
-			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
-			So(err, ShouldBeNil)
+			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
 
 			w := httptest.NewRecorder()
 
@@ -1084,8 +1076,7 @@ func TestPutEmptyVersion(t *testing.T) {
 		mockDownloadGenerator := &mocks.DownloadsGeneratorMock{}
 
 		Convey("when put version is called with an associated version with empty downloads", func() {
-			r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
-			So(err, ShouldBeNil)
+			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
 			w := httptest.NewRecorder()
 
 			datasetPermissions := getAuthorisationHandlerMock()
@@ -1138,8 +1129,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = "{"
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -1166,7 +1156,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1180,8 +1170,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = versionPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -1208,7 +1197,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1222,8 +1211,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = versionPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/-1", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/-1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -1254,7 +1242,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1268,8 +1256,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = versionPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/0", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/0", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
@@ -1290,7 +1277,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1304,8 +1291,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = versionPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/kkk", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/kkk", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
@@ -1326,7 +1312,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1340,8 +1326,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = versionPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -1372,7 +1357,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1386,8 +1371,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = versionPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -1418,7 +1402,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1432,8 +1416,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = versionPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -1468,7 +1451,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1521,8 +1504,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = versionPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -1550,7 +1532,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(permissions.Required.Calls, ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1564,8 +1546,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"associated"}`
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -1600,7 +1581,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1614,8 +1595,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		var b string
 		b = versionPublishedPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -1723,7 +1703,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1863,8 +1843,7 @@ func TestDetachVersionReturnOK(t *testing.T) {
 			},
 		}
 
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -1922,8 +1901,7 @@ func TestDetachVersionReturnOK(t *testing.T) {
 			},
 		}
 
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -1993,8 +1971,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -2026,8 +2003,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -2059,8 +2035,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -2095,8 +2070,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -2134,8 +2108,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -2173,8 +2146,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -2221,8 +2193,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -2273,8 +2244,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/kkk", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/kkk", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -2312,8 +2282,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/-1", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/-1", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
@@ -2341,8 +2310,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/0", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/0", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}

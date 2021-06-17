@@ -146,7 +146,6 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 }
 
 func TestGetDimensionOptionsReturnsOk(t *testing.T) {
-	t.Parallel()
 
 	Convey("Given a store with a dimension with 5 options", t, func() {
 
