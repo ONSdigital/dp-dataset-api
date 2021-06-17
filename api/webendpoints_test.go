@@ -26,8 +26,7 @@ var testContext = context.Background()
 
 func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 	Convey("When the API is started with private endpoints disabled", t, func() {
-		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets", nil)
 
 		current := &models.Dataset{ID: "1234", Title: "current"}
 		next := &models.Dataset{ID: "4321", Title: "next"}
@@ -69,8 +68,7 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 
 func TestWebSubnetDatasetEndpoint(t *testing.T) {
 	Convey("When the API is started with private endpoints disabled", t, func() {
-		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234", nil)
 
 		current := &models.Dataset{ID: "1234", Title: "current"}
 		next := &models.Dataset{ID: "1234", Title: "next"}
@@ -101,8 +99,7 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 
 func TestWebSubnetEditionsEndpoint(t *testing.T) {
 	Convey("When the API is started with private endpoints disabled", t, func() {
-		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions", nil)
 
 		edition := models.EditionUpdate{ID: "1234", Current: &models.Edition{State: models.PublishedState}}
 		var editionSearchState, datasetSearchState string
@@ -132,8 +129,7 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 
 func TestWebSubnetEditionEndpoint(t *testing.T) {
 	Convey("When the API is started with private endpoints disabled", t, func() {
-		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234", nil)
 
 		edition := &models.EditionUpdate{ID: "1234", Current: &models.Edition{State: models.PublishedState}}
 		var editionSearchState, datasetSearchState string
@@ -163,8 +159,7 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 
 func TestWebSubnetVersionsEndpoint(t *testing.T) {
 	Convey("When the API is started with private endpoints disabled", t, func() {
-		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions", nil)
 
 		var versionSearchState, editionSearchState, datasetSearchState string
 		w := httptest.NewRecorder()
@@ -197,8 +192,7 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 
 func TestWebSubnetVersionEndpoint(t *testing.T) {
 	Convey("When the API is started with private endpoints disabled", t, func() {
-		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234", nil)
 
 		var versionSearchState, editionSearchState, datasetSearchState string
 		w := httptest.NewRecorder()
@@ -235,8 +229,7 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 
 func TestWebSubnetDimensionsEndpoint(t *testing.T) {
 	Convey("When the API is started with private endpoints disabled", t, func() {
-		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234/dimensions", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234/dimensions", nil)
 		var versionSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -264,8 +257,7 @@ func TestWebSubnetDimensionsEndpoint(t *testing.T) {
 
 func TestWebSubnetDimensionOptionsEndpoint(t *testing.T) {
 	Convey("When the API is started with private endpoints disabled", t, func() {
-		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234/dimensions/t/options", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234/dimensions/t/options", nil)
 
 		var versionSearchState string
 		w := httptest.NewRecorder()
@@ -327,8 +319,7 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 
 		for endpoint, expectedStatusCode := range publishSubnetEndpoints {
 			Convey("The following endpoint "+endpoint.URL+"(Method:"+endpoint.Method+") should return 404", func() {
-				r, err := createRequestWithAuth(endpoint.Method, endpoint.URL, nil)
-				So(err, ShouldBeNil)
+				r := createRequestWithAuth(endpoint.Method, endpoint.URL, nil)
 
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{}
