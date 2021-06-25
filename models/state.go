@@ -15,6 +15,7 @@ const (
 	AssociatedState       = "associated"
 	PublishedState        = "published"
 	DetachedState         = "detached"
+	FailedState           = "failed"
 )
 
 var validVersionStates = map[string]int{
@@ -30,6 +31,7 @@ var validStates = map[string]int{
 	EditionConfirmedState: 1,
 	AssociatedState:       1,
 	PublishedState:        1,
+	FailedState:           1,
 }
 
 // ValidateStateFilter checks the list of filter states from a whitelist
@@ -52,15 +54,8 @@ func ValidateStateFilter(filterList []string) error {
 
 // ValidateInstanceState checks the list of instance states from a whitelist
 func ValidateInstanceState(state string) error {
-	var invalidInstantStateValues []string
-
 	if _, ok := validStates[state]; !ok {
-		invalidInstantStateValues = append(invalidInstantStateValues, state)
-	}
-
-	if invalidInstantStateValues != nil {
-		err := fmt.Errorf("bad request - invalid filter state values: %v", invalidInstantStateValues)
-		return err
+		return fmt.Errorf("bad request - invalid instance state: %s", state)
 	}
 
 	return nil

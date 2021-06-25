@@ -191,7 +191,7 @@ func TestValidateInstanceState(t *testing.T) {
 		Convey("Then validation of state fails and returns an error", func() {
 			err := ValidateInstanceState("gobbledygook")
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "bad request - invalid filter state values: [gobbledygook]")
+			So(err.Error(), ShouldEqual, "bad request - invalid instance state: gobbledygook")
 		})
 	})
 }

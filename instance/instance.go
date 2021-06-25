@@ -361,6 +361,8 @@ func validateInstanceStateUpdate(instance, currentInstance *models.Instance) (er
 				return errs.ErrExpectedResourceStateOfAssociated
 			}
 			break
+		case models.FailedState:
+			break
 		default:
 			err = errors.New("instance resource has an invalid state")
 			return err
