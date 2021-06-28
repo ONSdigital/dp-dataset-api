@@ -1,0 +1,1 @@
+-s -r \.go$ -R ^\.go/ -R ^cmd/ -R _test\.go$ make debug

@@ -314,6 +314,7 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 			hasErrors = true
 			log.Event(ctx, "error adding check for zebedeee", log.ERROR, log.Error(err))
 		}
+
 		if err = svc.healthCheck.AddCheck("Kafka Generate Downloads Producer", svc.generateDownloadsProducer.Checker); err != nil {
 			hasErrors = true
 			log.Event(ctx, "error adding check for kafka downloads producer", log.ERROR, log.Error(err))
