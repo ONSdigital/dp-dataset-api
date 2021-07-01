@@ -28,6 +28,8 @@ type Instance struct {
 	TotalObservations *int                 `bson:"total_observations,omitempty"          json:"total_observations,omitempty"`
 	UniqueTimestamp   bson.MongoTimestamp  `bson:"unique_timestamp"                      json:"-"`
 	Version           int                  `bson:"version,omitempty"                     json:"version,omitempty"`
+	Type              string               `bson:"type,omitempty"                        json:"type,omitempty"`
+	IsBasedOn         *IsBasedOn           `bson:"is_based_on,omitempty"                 json:"is_based_on,omitempty"`
 }
 
 // InstanceImportTasks represents all of the tasks required to complete an import job.

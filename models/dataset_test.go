@@ -59,7 +59,9 @@ func TestString(t *testing.T) {
 			So(result, ShouldEqual, "filterable")
 			So(datasetTypes[0], ShouldEqual, "filterable")
 			So(datasetTypes[1], ShouldEqual, "nomis")
-			So(datasetTypes[2], ShouldEqual, "invalid")
+			So(datasetTypes[2], ShouldEqual, "cantabular_table")
+			So(datasetTypes[3], ShouldEqual, "cantabular_blob")
+			So(datasetTypes[4], ShouldEqual, "invalid")
 
 		})
 	})
