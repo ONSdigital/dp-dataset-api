@@ -96,41 +96,37 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 
 	log.Event(ctx, "get instance", log.INFO, logData)
 
-	b, err := func() ([]byte, error) {
-		instance, err := s.GetInstance(instanceID)
-		if err != nil {
-			log.Event(ctx, "get instance: failed to retrieve instance", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		log.Event(ctx, "get instance: checking instance state", log.INFO, logData)
-		// Early return if instance state is invalid
-		if err = models.CheckState("instance", instance.State); err != nil {
-			logData["state"] = instance.State
-			log.Event(ctx, "get instance: instance has an invalid state", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		log.Event(ctx, "get instance: marshalling instance json", log.INFO, logData)
-		b, err := json.Marshal(instance)
-		if err != nil {
-			log.Event(ctx, "get instance: failed to marshal instance to json", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		return b, nil
-	}()
-
+	instance, err := s.GetInstance(instanceID)
 	if err != nil {
+		log.Event(ctx, "get instance: failed to retrieve instance", log.ERROR, log.Error(err), logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
 
+	log.Event(ctx, "get instance: checking instance state", log.INFO, logData)
+	// Early return if instance state is invalid
+	if err = models.CheckState("instance", instance.State); err != nil {
+		logData["state"] = instance.State
+		log.Event(ctx, "get instance: instance has an invalid state", log.ERROR, log.Error(err), logData)
+		handleInstanceErr(ctx, err, w, logData)
+		return
+	}
+
+	log.Event(ctx, "get instance: marshalling instance json", log.INFO, logData)
+	b, err := json.Marshal(instance)
+	if err != nil {
+		log.Event(ctx, "get instance: failed to marshal instance to json", log.ERROR, log.Error(err), logData)
+		handleInstanceErr(ctx, err, w, logData)
+		return
+	}
+
+	setJSONContentType(w)
+	setETag(w, instance.ETag)
 	writeBody(ctx, w, b, logData)
 	log.Event(ctx, "get instance: request successful", log.INFO, logData)
 }
 
-//Add an instance
+// Add an instance
 func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 
 	defer dphttp.DrainBody(r)
@@ -140,45 +136,41 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 
 	log.Event(ctx, "add instance", log.INFO, logData)
 
-	b, err := func() ([]byte, error) {
-		instance, err := unmarshalInstance(ctx, r.Body, true)
-		if err != nil {
-			return nil, err
-		}
-
-		logData["instance_id"] = instance.InstanceID
-
-		instance.Links.Self = &models.LinkObject{
-			HRef: fmt.Sprintf("%s/instances/%s", s.Host, instance.InstanceID),
-		}
-
-		instance, err = s.AddInstance(instance)
-		if err != nil {
-			log.Event(ctx, "add instance: store.AddInstance returned an error", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		b, err := json.Marshal(instance)
-		if err != nil {
-			log.Event(ctx, "add instance: failed to marshal instance to json", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		return b, nil
-	}()
+	instance, err := unmarshalInstance(ctx, r.Body, true)
 	if err != nil {
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	logData["instance_id"] = instance.InstanceID
+
+	instance.Links.Self = &models.LinkObject{
+		HRef: fmt.Sprintf("%s/instances/%s", s.Host, instance.InstanceID),
+	}
+
+	instance, err = s.AddInstance(instance)
+	if err != nil {
+		log.Event(ctx, "add instance: store.AddInstance returned an error", log.ERROR, log.Error(err), logData)
+		handleInstanceErr(ctx, err, w, logData)
+		return
+	}
+
+	b, err := json.Marshal(instance)
+	if err != nil {
+		log.Event(ctx, "add instance: failed to marshal instance to json", log.ERROR, log.Error(err), logData)
+		handleInstanceErr(ctx, err, w, logData)
+		return
+	}
+
+	setJSONContentType(w)
+	setETag(w, instance.ETag)
 	w.WriteHeader(http.StatusCreated)
 	writeBody(ctx, w, b, logData)
 
 	log.Event(ctx, "add instance: request successful", log.INFO, logData)
 }
 
-//Update a specific instance
+// Update a specific instance
 func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 	defer dphttp.DrainBody(r)
@@ -187,100 +179,102 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
 	logData := log.Data{"instance_id": instanceID}
-	var b []byte
-	var err error
 
-	if b, err = func() ([]byte, error) {
-		instance, err := unmarshalInstance(ctx, r.Body, false)
-		if err != nil {
-			log.Event(ctx, "update instance: failed unmarshalling json to model", log.ERROR, log.Error(err), logData)
-			return nil, taskError{error: err, status: 400}
-		}
+	instance, err := unmarshalInstance(ctx, r.Body, false)
+	if err != nil {
+		log.Event(ctx, "update instance: failed unmarshalling json to model", log.ERROR, log.Error(err), logData)
+		handleInstanceErr(ctx, taskError{error: err, status: 400}, w, logData)
+		return
+	}
 
-		if err = validateInstanceUpdate(instance); err != nil {
-			return nil, taskError{error: err, status: 400}
-		}
+	if err = validateInstanceUpdate(instance); err != nil {
+		handleInstanceErr(ctx, taskError{error: err, status: 400}, w, logData)
+		return
+	}
 
-		// Get the current document
-		currentInstance, err := s.GetInstance(instanceID)
-		if err != nil {
-			log.Event(ctx, "update instance: store.GetInstance returned error", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		logData["current_state"] = currentInstance.State
-		logData["requested_state"] = instance.State
-		if instance.State != "" && instance.State != currentInstance.State {
-			if err = validateInstanceStateUpdate(instance, currentInstance); err != nil {
-				log.Event(ctx, "update instance: instance state invalid", log.ERROR, log.Error(err), logData)
-				return nil, err
-			}
-		}
-
-		datasetID := currentInstance.Links.Dataset.ID
-
-		//edition confirmation is a one time process - cannot be editted for an instance once done
-		if instance.State == models.EditionConfirmedState && instance.Version == 0 {
-			if instance.Edition == "" {
-				instance.Edition = currentInstance.Edition
-			}
-
-			edition := instance.Edition
-			editionLogData := log.Data{"instance_id": instanceID, "dataset_id": datasetID, "edition": edition}
-
-			editionDoc, editionConfirmErr := s.confirmEdition(ctx, datasetID, edition, instanceID)
-			if editionConfirmErr != nil {
-				log.Event(ctx, "update instance: store.getEdition returned an error", log.ERROR, log.Error(editionConfirmErr), editionLogData)
-				return nil, editionConfirmErr
-			}
-
-			//update instance with confirmed edition details
-			instance.Links = currentInstance.Links
-			instance.Links.Edition = &models.LinkObject{
-				ID:   instance.Edition,
-				HRef: editionDoc.Next.Links.Self.HRef,
-			}
-
-			instance.Links.Version = editionDoc.Next.Links.LatestVersion
-			instance.Version, editionConfirmErr = strconv.Atoi(editionDoc.Next.Links.LatestVersion.ID)
-			if editionConfirmErr != nil {
-				log.Event(ctx, "update instance: failed to convert edition latestVersion id to instance.version int", log.ERROR, log.Error(editionConfirmErr), editionLogData)
-				return nil, editionConfirmErr
-			}
-
-			if versionErr := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); versionErr != nil {
-				log.Event(ctx, "update instance: datastore.AddVersionDetailsToInstance returned an error", log.ERROR, log.Error(versionErr), editionLogData)
-				return nil, versionErr
-			}
-
-			log.Event(ctx, "update instance: added version details to instance", log.INFO, editionLogData)
-		}
-
-		// Set the current mongo timestamp on instance document
-		instance.UniqueTimestamp = currentInstance.UniqueTimestamp
-		if err = s.UpdateInstance(ctx, instanceID, instance); err != nil {
-			log.Event(ctx, "update instance: store.UpdateInstance returned an error", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		if instance, err = s.GetInstance(instanceID); err != nil {
-			log.Event(ctx, "update instance: store.GetInstance for response returned an error", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		b, err := json.Marshal(instance)
-		if err != nil {
-			log.Event(ctx, "add instance: failed to marshal instance to json", log.ERROR, log.Error(err), logData)
-			return nil, err
-		}
-
-		return b, nil
-	}(); err != nil {
+	// Get the current document
+	currentInstance, err := s.GetInstance(instanceID)
+	if err != nil {
+		log.Event(ctx, "update instance: store.GetInstance returned error", log.ERROR, log.Error(err), logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	logData["current_state"] = currentInstance.State
+	logData["requested_state"] = instance.State
+	if instance.State != "" && instance.State != currentInstance.State {
+		if err = validateInstanceStateUpdate(instance, currentInstance); err != nil {
+			log.Event(ctx, "update instance: instance state invalid", log.ERROR, log.Error(err), logData)
+			handleInstanceErr(ctx, err, w, logData)
+			return
+		}
+	}
+
+	datasetID := currentInstance.Links.Dataset.ID
+
+	//edition confirmation is a one time process - cannot be editted for an instance once done
+	if instance.State == models.EditionConfirmedState && instance.Version == 0 {
+		if instance.Edition == "" {
+			instance.Edition = currentInstance.Edition
+		}
+
+		edition := instance.Edition
+		editionLogData := log.Data{"instance_id": instanceID, "dataset_id": datasetID, "edition": edition}
+
+		editionDoc, editionConfirmErr := s.confirmEdition(ctx, datasetID, edition, instanceID)
+		if editionConfirmErr != nil {
+			log.Event(ctx, "update instance: store.getEdition returned an error", log.ERROR, log.Error(editionConfirmErr), editionLogData)
+			handleInstanceErr(ctx, editionConfirmErr, w, logData)
+			return
+		}
+
+		//update instance with confirmed edition details
+		instance.Links = currentInstance.Links
+		instance.Links.Edition = &models.LinkObject{
+			ID:   instance.Edition,
+			HRef: editionDoc.Next.Links.Self.HRef,
+		}
+
+		instance.Links.Version = editionDoc.Next.Links.LatestVersion
+		instance.Version, editionConfirmErr = strconv.Atoi(editionDoc.Next.Links.LatestVersion.ID)
+		if editionConfirmErr != nil {
+			log.Event(ctx, "update instance: failed to convert edition latestVersion id to instance.version int", log.ERROR, log.Error(editionConfirmErr), editionLogData)
+			handleInstanceErr(ctx, editionConfirmErr, w, logData)
+			return
+		}
+
+		if versionErr := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); versionErr != nil {
+			log.Event(ctx, "update instance: datastore.AddVersionDetailsToInstance returned an error", log.ERROR, log.Error(versionErr), editionLogData)
+			handleInstanceErr(ctx, versionErr, w, logData)
+			return
+		}
+
+		log.Event(ctx, "update instance: added version details to instance", log.INFO, editionLogData)
+	}
+
+	// Set the current mongo timestamp on instance document
+	instance.UniqueTimestamp = currentInstance.UniqueTimestamp
+	if err = s.UpdateInstance(ctx, instanceID, instance); err != nil {
+		log.Event(ctx, "update instance: store.UpdateInstance returned an error", log.ERROR, log.Error(err), logData)
+		handleInstanceErr(ctx, err, w, logData)
+		return
+	}
+
+	if instance, err = s.GetInstance(instanceID); err != nil {
+		log.Event(ctx, "update instance: store.GetInstance for response returned an error", log.ERROR, log.Error(err), logData)
+		handleInstanceErr(ctx, err, w, logData)
+		return
+	}
+
+	b, err := json.Marshal(instance)
+	if err != nil {
+		log.Event(ctx, "add instance: failed to marshal instance to json", log.ERROR, log.Error(err), logData)
+		handleInstanceErr(ctx, err, w, logData)
+		return
+	}
+
+	setJSONContentType(w)
+	setETag(w, instance.ETag)
 	w.WriteHeader(http.StatusOK)
 	writeBody(ctx, w, b, logData)
 
@@ -427,8 +421,15 @@ func internalError(ctx context.Context, w http.ResponseWriter, err error, logDat
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
-func writeBody(ctx context.Context, w http.ResponseWriter, b []byte, logData log.Data) {
+func setJSONContentType(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
+}
+
+func setETag(w http.ResponseWriter, eTag string) {
+	w.Header().Set("ETag", eTag)
+}
+
+func writeBody(ctx context.Context, w http.ResponseWriter, b []byte, logData log.Data) {
 	if _, err := w.Write(b); err != nil {
 		log.Event(ctx, "failed to write http response body", log.FATAL, log.Error(err), logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

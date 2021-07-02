@@ -1,6 +1,7 @@
 package models
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"time"
 
@@ -20,6 +21,7 @@ type Instance struct {
 	ImportTasks       *InstanceImportTasks `bson:"import_tasks,omitempty"                json:"import_tasks"`
 	InstanceID        string               `bson:"id,omitempty"                          json:"id,omitempty"`
 	LastUpdated       time.Time            `bson:"last_updated,omitempty"                json:"last_updated,omitempty"`
+	ETag              string               `bson:"e_tag"                                 json:"-"`
 	LatestChanges     *[]LatestChange      `bson:"latest_changes,omitempty"              json:"latest_changes,omitempty"`
 	Links             *InstanceLinks       `bson:"links,omitempty"                       json:"links,omitempty"`
 	ReleaseDate       string               `bson:"release_date,omitempty"                json:"release_date,omitempty"`
@@ -28,6 +30,30 @@ type Instance struct {
 	TotalObservations *int                 `bson:"total_observations,omitempty"          json:"total_observations,omitempty"`
 	UniqueTimestamp   bson.MongoTimestamp  `bson:"unique_timestamp"                      json:"-"`
 	Version           int                  `bson:"version,omitempty"                     json:"version,omitempty"`
+}
+
+// Hash generates a SHA-1 hash of the instance struct. SHA-1 is not cryptographically safe,
+// but it has been selected for performance as we are only interested in uniqueness.
+// ETag field value is ignored when generating a hash.
+// An optional byte array can be provided to append to the hash.
+// This can be used, for example, to calculate a hash of this filter and an update applied to it.
+func (i *Instance) Hash(extraBytes []byte) (string, error) {
+	h := sha1.New()
+
+	// copy by value to ignore ETag without affecting f
+	i2 := *i
+	i2.ETag = ""
+
+	instanceBytes, err := bson.Marshal(i2)
+	if err != nil {
+		return "", err
+	}
+
+	if _, err := h.Write(append(instanceBytes, extraBytes...)); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
 // InstanceImportTasks represents all of the tasks required to complete an import job.

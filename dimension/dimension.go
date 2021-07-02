@@ -65,6 +65,7 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 	}
 
 	log.Event(ctx, "successfully get dimensions for an instance resource", log.INFO, logData)
+	setETag(w, instance.ETag)
 	return dimensions, totalCount, nil
 }
 
@@ -110,6 +111,7 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	}
 
 	log.Event(ctx, "successfully get unique dimension options for an instance resource", log.INFO, logData)
+	setETag(w, instance.ETag)
 	return slicedOptions, totalCount, nil
 }
 
@@ -136,6 +138,9 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Event(ctx, "added dimension to instance resource", log.INFO, logData)
+
+	// TODO update and get instance ETag
+	setETag(w, instance.ETag)
 }
 
 func (s *Store) add(ctx context.Context, instanceID string, option *models.CachedDimensionOption, logData log.Data) error {
@@ -220,6 +225,7 @@ func (s *Store) PatchOptionHandler(w http.ResponseWriter, r *http.Request) {
 
 	// set content type and write response body
 	setJSONPatchContentType(w)
+	setETag(w, instance.ETag) // TODO update and get instance ETag
 	writeBody(ctx, w, b, logData)
 	log.Event(ctx, "successfully patched dimension option of an instance resource", log.INFO, logData)
 }
@@ -278,6 +284,7 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	logData["action"] = AddDimensionAction
 	log.Event(ctx, "added node id to dimension of an instance resource", log.INFO, logData)
+	setETag(w, instance.ETag) // TODO update and get instance ETag
 }
 
 // updateOption checks that the instance is in a valid state
@@ -307,6 +314,10 @@ func (s *Store) updateOption(ctx context.Context, dimOption models.DimensionOpti
 
 func setJSONPatchContentType(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json-patch+json")
+}
+
+func setETag(w http.ResponseWriter, eTag string) {
+	w.Header().Set("ETag", eTag)
 }
 
 func writeBody(ctx context.Context, w http.ResponseWriter, b []byte, data log.Data) {

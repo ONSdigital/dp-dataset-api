@@ -28,7 +28,7 @@ func unmarshalEvent(reader io.Reader) (*models.Event, error) {
 	return &event, nil
 }
 
-//AddEvent details to an instance
+// AddEvent details to an instance
 func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	defer r.Body.Close()
@@ -37,28 +37,26 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 	instanceID := vars["instance_id"]
 	data := log.Data{"instance_id": instanceID, "action": AddInstanceEventAction}
 
-	if err := func() error {
-		event, err := unmarshalEvent(r.Body)
-		if err != nil {
-			log.Event(ctx, "add instance event: failed to unmarshal request body", log.ERROR, log.Error(err), data)
-			return err
-		}
+	event, err := unmarshalEvent(r.Body)
+	if err != nil {
+		log.Event(ctx, "add instance event: failed to unmarshal request body", log.ERROR, log.Error(err), data)
+		handleInstanceErr(ctx, err, w, data)
+		return
+	}
 
-		if err = event.Validate(); err != nil {
-			log.Event(ctx, "add instance event: failed to validate event object", log.ERROR, log.Error(err), data)
-			return err
-		}
+	if err = event.Validate(); err != nil {
+		log.Event(ctx, "add instance event: failed to validate event object", log.ERROR, log.Error(err), data)
+		handleInstanceErr(ctx, err, w, data)
+		return
+	}
 
-		if err = s.AddEventToInstance(instanceID, event); err != nil {
-			log.Event(ctx, "add instance event: failed to add event to instance in datastore", log.ERROR, log.Error(err), data)
-			return err
-		}
-
-		return nil
-	}(); err != nil {
+	if err = s.AddEventToInstance(instanceID, event); err != nil {
+		log.Event(ctx, "add instance event: failed to add event to instance in datastore", log.ERROR, log.Error(err), data)
 		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
 	log.Event(ctx, "add instance event: request successful", log.INFO, data)
+	// TODO get instance update ETag!
+	setETag(w, instance.ETag)
 }

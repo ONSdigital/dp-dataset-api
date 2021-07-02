@@ -26,76 +26,79 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	log.Event(ctx, "update instance dimension: update instance dimension", log.INFO, logData)
 
-	if err := func() error {
-		instance, err := s.GetInstance(instanceID)
-		if err != nil {
-			log.Event(ctx, "update instance dimension: Failed to GET instance", log.ERROR, log.Error(err), logData)
-			return err
-		}
+	// if err := func() error {
+	instance, err := s.GetInstance(instanceID)
+	if err != nil {
+		log.Event(ctx, "update instance dimension: Failed to GET instance", log.ERROR, log.Error(err), logData)
+		handleInstanceErr(ctx, err, w, logData)
+		return
+	}
 
-		// Early return if instance state is invalid
-		if err = models.CheckState("instance", instance.State); err != nil {
-			logData["state"] = instance.State
-			log.Event(ctx, "update instance dimension: current instance has an invalid state", log.ERROR, log.Error(err), logData)
-			return err
-		}
+	// Early return if instance state is invalid
+	if err = models.CheckState("instance", instance.State); err != nil {
+		logData["state"] = instance.State
+		log.Event(ctx, "update instance dimension: current instance has an invalid state", log.ERROR, log.Error(err), logData)
+		handleInstanceErr(ctx, err, w, logData)
+		return
+	}
 
-		// Read and unmarshal request body
-		b, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			log.Event(ctx, "update instance dimension: error reading request.body", log.ERROR, log.Error(err), logData)
-			return errs.ErrUnableToReadMessage
-		}
+	// Read and unmarshal request body
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Event(ctx, "update instance dimension: error reading request.body", log.ERROR, log.Error(err), logData)
+		handleInstanceErr(ctx, errs.ErrUnableToReadMessage, w, logData)
+		return
+	}
 
-		var dim *models.Dimension
+	var dim *models.Dimension
 
-		err = json.Unmarshal(b, &dim)
-		if err != nil {
-			log.Event(ctx, "update instance dimension: failing to model models.Codelist resource based on request", log.ERROR, log.Error(err), logData)
-			return errs.ErrUnableToParseJSON
-		}
+	err = json.Unmarshal(b, &dim)
+	if err != nil {
+		log.Event(ctx, "update instance dimension: failing to model models.Codelist resource based on request", log.ERROR, log.Error(err), logData)
+		handleInstanceErr(ctx, errs.ErrUnableToParseJSON, w, logData)
+		return
+	}
 
-		// Update instance-dimension
-		notFound := true
-		for i := range instance.Dimensions {
+	// Update instance-dimension
+	notFound := true
+	for i := range instance.Dimensions {
 
-			// For the chosen dimension
-			if instance.Dimensions[i].Name == dimension {
-				notFound = false
-				// Assign update info, conditionals to allow updating
-				// of both or either without blanking other
-				if dim.Label != "" {
-					instance.Dimensions[i].Label = dim.Label
-				}
-				if dim.Description != "" {
-					instance.Dimensions[i].Description = dim.Description
-				}
-				break
+		// For the chosen dimension
+		if instance.Dimensions[i].Name == dimension {
+			notFound = false
+			// Assign update info, conditionals to allow updating
+			// of both or either without blanking other
+			if dim.Label != "" {
+				instance.Dimensions[i].Label = dim.Label
 			}
+			if dim.Description != "" {
+				instance.Dimensions[i].Description = dim.Description
+			}
+			break
 		}
+	}
 
-		if notFound {
-			log.Event(ctx, "update instance dimension: dimension not found", log.ERROR, log.Error(errs.ErrDimensionNotFound), logData)
-			return errs.ErrDimensionNotFound
-		}
+	if notFound {
+		log.Event(ctx, "update instance dimension: dimension not found", log.ERROR, log.Error(errs.ErrDimensionNotFound), logData)
+		handleInstanceErr(ctx, errs.ErrDimensionNotFound, w, logData)
+		return
+	}
 
-		// Only update dimensions of an instance
-		instanceUpdate := &models.Instance{
-			Dimensions:      instance.Dimensions,
-			UniqueTimestamp: instance.UniqueTimestamp,
-		}
+	// Only update dimensions of an instance
+	instanceUpdate := &models.Instance{
+		Dimensions:      instance.Dimensions,
+		UniqueTimestamp: instance.UniqueTimestamp,
+	}
 
-		// Update instance
-		if err = s.UpdateInstance(ctx, instanceID, instanceUpdate); err != nil {
-			log.Event(ctx, "update instance dimension: failed to update instance with new dimension label/description", log.ERROR, log.Error(err), logData)
-			return err
-		}
-
-		return nil
-	}(); err != nil {
+	// Update instance
+	if err = s.UpdateInstance(ctx, instanceID, instanceUpdate); err != nil {
+		log.Event(ctx, "update instance dimension: failed to update instance with new dimension label/description", log.ERROR, log.Error(err), logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
 
 	log.Event(ctx, "updated instance dimension: request successful", log.INFO, logData)
+
+	// TODO set ETag from updated instance!!!
+	setETag(w, instance.ETag)
 }

@@ -12,7 +12,6 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
-const dimensionOptions = "dimension.options"
 const maxIDs = 1000
 
 // GetDimensionsFromInstance returns a list of dimensions and their options for an instance resource.
