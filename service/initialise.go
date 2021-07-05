@@ -129,7 +129,7 @@ func (e *Init) DoGetMongoDB(ctx context.Context, cfg *config.Configuration) (sto
 		DatasetURL:  cfg.DatasetAPIURL,
 		URI:         cfg.MongoConfig.BindAddr,
 	}
-	if err := mongodb.Init(); err != nil {
+	if err := mongodb.Init(ctx); err != nil {
 		return nil, err
 	}
 	log.Event(ctx, "listening to mongo db session", log.INFO, log.Data{"URI": mongodb.URI})

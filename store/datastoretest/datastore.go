@@ -11,6 +11,49 @@ import (
 	"sync"
 )
 
+var (
+	lockStorerMockAcquireInstanceLock               sync.RWMutex
+	lockStorerMockAddDimensionToInstance            sync.RWMutex
+	lockStorerMockAddEventToInstance                sync.RWMutex
+	lockStorerMockAddInstance                       sync.RWMutex
+	lockStorerMockAddVersionDetailsToInstance       sync.RWMutex
+	lockStorerMockCheckDatasetExists                sync.RWMutex
+	lockStorerMockCheckEditionExists                sync.RWMutex
+	lockStorerMockDeleteDataset                     sync.RWMutex
+	lockStorerMockDeleteEdition                     sync.RWMutex
+	lockStorerMockGetDataset                        sync.RWMutex
+	lockStorerMockGetDatasets                       sync.RWMutex
+	lockStorerMockGetDimensionOptions               sync.RWMutex
+	lockStorerMockGetDimensionOptionsFromIDs        sync.RWMutex
+	lockStorerMockGetDimensions                     sync.RWMutex
+	lockStorerMockGetDimensionsFromInstance         sync.RWMutex
+	lockStorerMockGetEdition                        sync.RWMutex
+	lockStorerMockGetEditions                       sync.RWMutex
+	lockStorerMockGetInstance                       sync.RWMutex
+	lockStorerMockGetInstances                      sync.RWMutex
+	lockStorerMockGetNextVersion                    sync.RWMutex
+	lockStorerMockGetUniqueDimensionAndOptions      sync.RWMutex
+	lockStorerMockGetVersion                        sync.RWMutex
+	lockStorerMockGetVersions                       sync.RWMutex
+	lockStorerMockSetInstanceIsPublished            sync.RWMutex
+	lockStorerMockUnlockInstance                    sync.RWMutex
+	lockStorerMockUpdateBuildHierarchyTaskState     sync.RWMutex
+	lockStorerMockUpdateBuildSearchTaskState        sync.RWMutex
+	lockStorerMockUpdateDataset                     sync.RWMutex
+	lockStorerMockUpdateDatasetWithAssociation      sync.RWMutex
+	lockStorerMockUpdateDimensionNodeIDAndOrder     sync.RWMutex
+	lockStorerMockUpdateETagForNodeIDAndOrder       sync.RWMutex
+	lockStorerMockUpdateETagForOptions              sync.RWMutex
+	lockStorerMockUpdateImportObservationsTaskState sync.RWMutex
+	lockStorerMockUpdateInstance                    sync.RWMutex
+	lockStorerMockUpdateObservationInserted         sync.RWMutex
+	lockStorerMockUpdateVersion                     sync.RWMutex
+	lockStorerMockUpsertContact                     sync.RWMutex
+	lockStorerMockUpsertDataset                     sync.RWMutex
+	lockStorerMockUpsertEdition                     sync.RWMutex
+	lockStorerMockUpsertVersion                     sync.RWMutex
+)
+
 // Ensure, that StorerMock does implement store.Storer.
 // If this is not the case, regenerate this file with moq.
 var _ store.Storer = &StorerMock{}
@@ -21,10 +64,13 @@ var _ store.Storer = &StorerMock{}
 //
 //         // make and configure a mocked store.Storer
 //         mockedStorer := &StorerMock{
+//             AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+// 	               panic("mock out the AcquireInstanceLock method")
+//             },
 //             AddDimensionToInstanceFunc: func(dimension *models.CachedDimensionOption) error {
 // 	               panic("mock out the AddDimensionToInstance method")
 //             },
-//             AddEventToInstanceFunc: func(instanceID string, event *models.Event) error {
+//             AddEventToInstanceFunc: func(currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
 // 	               panic("mock out the AddEventToInstance method")
 //             },
 //             AddInstanceFunc: func(instance *models.Instance) (*models.Instance, error) {
@@ -69,7 +115,7 @@ var _ store.Storer = &StorerMock{}
 //             GetEditionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
 // 	               panic("mock out the GetEditions method")
 //             },
-//             GetInstanceFunc: func(ID string) (*models.Instance, error) {
+//             GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 // 	               panic("mock out the GetInstance method")
 //             },
 //             GetInstancesFunc: func(ctx context.Context, states []string, datasets []string, offset int, limit int) ([]*models.Instance, int, error) {
@@ -90,10 +136,13 @@ var _ store.Storer = &StorerMock{}
 //             SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
 // 	               panic("mock out the SetInstanceIsPublished method")
 //             },
-//             UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
+//             UnlockInstanceFunc: func(lockID string) error {
+// 	               panic("mock out the UnlockInstance method")
+//             },
+//             UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
 // 	               panic("mock out the UpdateBuildHierarchyTaskState method")
 //             },
-//             UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
+//             UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
 // 	               panic("mock out the UpdateBuildSearchTaskState method")
 //             },
 //             UpdateDatasetFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
@@ -105,13 +154,19 @@ var _ store.Storer = &StorerMock{}
 //             UpdateDimensionNodeIDAndOrderFunc: func(dimension *models.DimensionOption) error {
 // 	               panic("mock out the UpdateDimensionNodeIDAndOrder method")
 //             },
-//             UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
+//             UpdateETagForNodeIDAndOrderFunc: func(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (string, error) {
+// 	               panic("mock out the UpdateETagForNodeIDAndOrder method")
+//             },
+//             UpdateETagForOptionsFunc: func(currentInstance *models.Instance, option *models.CachedDimensionOption, eTagSelector string) (string, error) {
+// 	               panic("mock out the UpdateETagForOptions method")
+//             },
+//             UpdateImportObservationsTaskStateFunc: func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
 // 	               panic("mock out the UpdateImportObservationsTaskState method")
 //             },
-//             UpdateInstanceFunc: func(ctx context.Context, ID string, instance *models.Instance) error {
+//             UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
 // 	               panic("mock out the UpdateInstance method")
 //             },
-//             UpdateObservationInsertedFunc: func(ID string, observationInserted int64) error {
+//             UpdateObservationInsertedFunc: func(currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error) {
 // 	               panic("mock out the UpdateObservationInserted method")
 //             },
 //             UpdateVersionFunc: func(ID string, version *models.Version) error {
@@ -136,11 +191,14 @@ var _ store.Storer = &StorerMock{}
 //
 //     }
 type StorerMock struct {
+	// AcquireInstanceLockFunc mocks the AcquireInstanceLock method.
+	AcquireInstanceLockFunc func(ctx context.Context, instanceID string) (string, error)
+
 	// AddDimensionToInstanceFunc mocks the AddDimensionToInstance method.
 	AddDimensionToInstanceFunc func(dimension *models.CachedDimensionOption) error
 
 	// AddEventToInstanceFunc mocks the AddEventToInstance method.
-	AddEventToInstanceFunc func(instanceID string, event *models.Event) error
+	AddEventToInstanceFunc func(currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error)
 
 	// AddInstanceFunc mocks the AddInstance method.
 	AddInstanceFunc func(instance *models.Instance) (*models.Instance, error)
@@ -185,7 +243,7 @@ type StorerMock struct {
 	GetEditionsFunc func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]*models.EditionUpdate, int, error)
 
 	// GetInstanceFunc mocks the GetInstance method.
-	GetInstanceFunc func(ID string) (*models.Instance, error)
+	GetInstanceFunc func(ID string, eTagSelector string) (*models.Instance, error)
 
 	// GetInstancesFunc mocks the GetInstances method.
 	GetInstancesFunc func(ctx context.Context, states []string, datasets []string, offset int, limit int) ([]*models.Instance, int, error)
@@ -205,11 +263,14 @@ type StorerMock struct {
 	// SetInstanceIsPublishedFunc mocks the SetInstanceIsPublished method.
 	SetInstanceIsPublishedFunc func(ctx context.Context, instanceID string) error
 
+	// UnlockInstanceFunc mocks the UnlockInstance method.
+	UnlockInstanceFunc func(lockID string) error
+
 	// UpdateBuildHierarchyTaskStateFunc mocks the UpdateBuildHierarchyTaskState method.
-	UpdateBuildHierarchyTaskStateFunc func(id string, dimension string, state string) error
+	UpdateBuildHierarchyTaskStateFunc func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error)
 
 	// UpdateBuildSearchTaskStateFunc mocks the UpdateBuildSearchTaskState method.
-	UpdateBuildSearchTaskStateFunc func(id string, dimension string, state string) error
+	UpdateBuildSearchTaskStateFunc func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error)
 
 	// UpdateDatasetFunc mocks the UpdateDataset method.
 	UpdateDatasetFunc func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
@@ -220,14 +281,20 @@ type StorerMock struct {
 	// UpdateDimensionNodeIDAndOrderFunc mocks the UpdateDimensionNodeIDAndOrder method.
 	UpdateDimensionNodeIDAndOrderFunc func(dimension *models.DimensionOption) error
 
+	// UpdateETagForNodeIDAndOrderFunc mocks the UpdateETagForNodeIDAndOrder method.
+	UpdateETagForNodeIDAndOrderFunc func(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (string, error)
+
+	// UpdateETagForOptionsFunc mocks the UpdateETagForOptions method.
+	UpdateETagForOptionsFunc func(currentInstance *models.Instance, option *models.CachedDimensionOption, eTagSelector string) (string, error)
+
 	// UpdateImportObservationsTaskStateFunc mocks the UpdateImportObservationsTaskState method.
-	UpdateImportObservationsTaskStateFunc func(id string, state string) error
+	UpdateImportObservationsTaskStateFunc func(currentInstance *models.Instance, state string, eTagSelector string) (string, error)
 
 	// UpdateInstanceFunc mocks the UpdateInstance method.
-	UpdateInstanceFunc func(ctx context.Context, ID string, instance *models.Instance) error
+	UpdateInstanceFunc func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error)
 
 	// UpdateObservationInsertedFunc mocks the UpdateObservationInserted method.
-	UpdateObservationInsertedFunc func(ID string, observationInserted int64) error
+	UpdateObservationInsertedFunc func(currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error)
 
 	// UpdateVersionFunc mocks the UpdateVersion method.
 	UpdateVersionFunc func(ID string, version *models.Version) error
@@ -246,6 +313,13 @@ type StorerMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AcquireInstanceLock holds details about calls to the AcquireInstanceLock method.
+		AcquireInstanceLock []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// InstanceID is the instanceID argument value.
+			InstanceID string
+		}
 		// AddDimensionToInstance holds details about calls to the AddDimensionToInstance method.
 		AddDimensionToInstance []struct {
 			// Dimension is the dimension argument value.
@@ -253,10 +327,12 @@ type StorerMock struct {
 		}
 		// AddEventToInstance holds details about calls to the AddEventToInstance method.
 		AddEventToInstance []struct {
-			// InstanceID is the instanceID argument value.
-			InstanceID string
+			// CurrentInstance is the currentInstance argument value.
+			CurrentInstance *models.Instance
 			// Event is the event argument value.
 			Event *models.Event
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
 		}
 		// AddInstance holds details about calls to the AddInstance method.
 		AddInstance []struct {
@@ -386,6 +462,8 @@ type StorerMock struct {
 		GetInstance []struct {
 			// ID is the ID argument value.
 			ID string
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
 		}
 		// GetInstances holds details about calls to the GetInstances method.
 		GetInstances []struct {
@@ -453,23 +531,32 @@ type StorerMock struct {
 			// InstanceID is the instanceID argument value.
 			InstanceID string
 		}
+		// UnlockInstance holds details about calls to the UnlockInstance method.
+		UnlockInstance []struct {
+			// LockID is the lockID argument value.
+			LockID string
+		}
 		// UpdateBuildHierarchyTaskState holds details about calls to the UpdateBuildHierarchyTaskState method.
 		UpdateBuildHierarchyTaskState []struct {
-			// ID is the id argument value.
-			ID string
+			// CurrentInstance is the currentInstance argument value.
+			CurrentInstance *models.Instance
 			// Dimension is the dimension argument value.
 			Dimension string
 			// State is the state argument value.
 			State string
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
 		}
 		// UpdateBuildSearchTaskState holds details about calls to the UpdateBuildSearchTaskState method.
 		UpdateBuildSearchTaskState []struct {
-			// ID is the id argument value.
-			ID string
+			// CurrentInstance is the currentInstance argument value.
+			CurrentInstance *models.Instance
 			// Dimension is the dimension argument value.
 			Dimension string
 			// State is the state argument value.
 			State string
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
 		}
 		// UpdateDataset holds details about calls to the UpdateDataset method.
 		UpdateDataset []struct {
@@ -496,28 +583,54 @@ type StorerMock struct {
 			// Dimension is the dimension argument value.
 			Dimension *models.DimensionOption
 		}
+		// UpdateETagForNodeIDAndOrder holds details about calls to the UpdateETagForNodeIDAndOrder method.
+		UpdateETagForNodeIDAndOrder []struct {
+			// CurrentInstance is the currentInstance argument value.
+			CurrentInstance *models.Instance
+			// NodeID is the nodeID argument value.
+			NodeID string
+			// Order is the order argument value.
+			Order *int
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
+		}
+		// UpdateETagForOptions holds details about calls to the UpdateETagForOptions method.
+		UpdateETagForOptions []struct {
+			// CurrentInstance is the currentInstance argument value.
+			CurrentInstance *models.Instance
+			// Option is the option argument value.
+			Option *models.CachedDimensionOption
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
+		}
 		// UpdateImportObservationsTaskState holds details about calls to the UpdateImportObservationsTaskState method.
 		UpdateImportObservationsTaskState []struct {
-			// ID is the id argument value.
-			ID string
+			// CurrentInstance is the currentInstance argument value.
+			CurrentInstance *models.Instance
 			// State is the state argument value.
 			State string
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
 		}
 		// UpdateInstance holds details about calls to the UpdateInstance method.
 		UpdateInstance []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// ID is the ID argument value.
-			ID string
-			// Instance is the instance argument value.
-			Instance *models.Instance
+			// CurrentInstance is the currentInstance argument value.
+			CurrentInstance *models.Instance
+			// UpdatedInstance is the updatedInstance argument value.
+			UpdatedInstance *models.Instance
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
 		}
 		// UpdateObservationInserted holds details about calls to the UpdateObservationInserted method.
 		UpdateObservationInserted []struct {
-			// ID is the ID argument value.
-			ID string
+			// CurrentInstance is the currentInstance argument value.
+			CurrentInstance *models.Instance
 			// ObservationInserted is the observationInserted argument value.
 			ObservationInserted int64
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
 		}
 		// UpdateVersion holds details about calls to the UpdateVersion method.
 		UpdateVersion []struct {
@@ -557,42 +670,41 @@ type StorerMock struct {
 			VersionDoc *models.Version
 		}
 	}
-	lockAddDimensionToInstance            sync.RWMutex
-	lockAddEventToInstance                sync.RWMutex
-	lockAddInstance                       sync.RWMutex
-	lockAddVersionDetailsToInstance       sync.RWMutex
-	lockCheckDatasetExists                sync.RWMutex
-	lockCheckEditionExists                sync.RWMutex
-	lockDeleteDataset                     sync.RWMutex
-	lockDeleteEdition                     sync.RWMutex
-	lockGetDataset                        sync.RWMutex
-	lockGetDatasets                       sync.RWMutex
-	lockGetDimensionOptions               sync.RWMutex
-	lockGetDimensionOptionsFromIDs        sync.RWMutex
-	lockGetDimensions                     sync.RWMutex
-	lockGetDimensionsFromInstance         sync.RWMutex
-	lockGetEdition                        sync.RWMutex
-	lockGetEditions                       sync.RWMutex
-	lockGetInstance                       sync.RWMutex
-	lockGetInstances                      sync.RWMutex
-	lockGetNextVersion                    sync.RWMutex
-	lockGetUniqueDimensionAndOptions      sync.RWMutex
-	lockGetVersion                        sync.RWMutex
-	lockGetVersions                       sync.RWMutex
-	lockSetInstanceIsPublished            sync.RWMutex
-	lockUpdateBuildHierarchyTaskState     sync.RWMutex
-	lockUpdateBuildSearchTaskState        sync.RWMutex
-	lockUpdateDataset                     sync.RWMutex
-	lockUpdateDatasetWithAssociation      sync.RWMutex
-	lockUpdateDimensionNodeIDAndOrder     sync.RWMutex
-	lockUpdateImportObservationsTaskState sync.RWMutex
-	lockUpdateInstance                    sync.RWMutex
-	lockUpdateObservationInserted         sync.RWMutex
-	lockUpdateVersion                     sync.RWMutex
-	lockUpsertContact                     sync.RWMutex
-	lockUpsertDataset                     sync.RWMutex
-	lockUpsertEdition                     sync.RWMutex
-	lockUpsertVersion                     sync.RWMutex
+}
+
+// AcquireInstanceLock calls AcquireInstanceLockFunc.
+func (mock *StorerMock) AcquireInstanceLock(ctx context.Context, instanceID string) (string, error) {
+	if mock.AcquireInstanceLockFunc == nil {
+		panic("StorerMock.AcquireInstanceLockFunc: method is nil but Storer.AcquireInstanceLock was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		InstanceID string
+	}{
+		Ctx:        ctx,
+		InstanceID: instanceID,
+	}
+	lockStorerMockAcquireInstanceLock.Lock()
+	mock.calls.AcquireInstanceLock = append(mock.calls.AcquireInstanceLock, callInfo)
+	lockStorerMockAcquireInstanceLock.Unlock()
+	return mock.AcquireInstanceLockFunc(ctx, instanceID)
+}
+
+// AcquireInstanceLockCalls gets all the calls that were made to AcquireInstanceLock.
+// Check the length with:
+//     len(mockedStorer.AcquireInstanceLockCalls())
+func (mock *StorerMock) AcquireInstanceLockCalls() []struct {
+	Ctx        context.Context
+	InstanceID string
+} {
+	var calls []struct {
+		Ctx        context.Context
+		InstanceID string
+	}
+	lockStorerMockAcquireInstanceLock.RLock()
+	calls = mock.calls.AcquireInstanceLock
+	lockStorerMockAcquireInstanceLock.RUnlock()
+	return calls
 }
 
 // AddDimensionToInstance calls AddDimensionToInstanceFunc.
@@ -605,9 +717,9 @@ func (mock *StorerMock) AddDimensionToInstance(dimension *models.CachedDimension
 	}{
 		Dimension: dimension,
 	}
-	mock.lockAddDimensionToInstance.Lock()
+	lockStorerMockAddDimensionToInstance.Lock()
 	mock.calls.AddDimensionToInstance = append(mock.calls.AddDimensionToInstance, callInfo)
-	mock.lockAddDimensionToInstance.Unlock()
+	lockStorerMockAddDimensionToInstance.Unlock()
 	return mock.AddDimensionToInstanceFunc(dimension)
 }
 
@@ -620,44 +732,48 @@ func (mock *StorerMock) AddDimensionToInstanceCalls() []struct {
 	var calls []struct {
 		Dimension *models.CachedDimensionOption
 	}
-	mock.lockAddDimensionToInstance.RLock()
+	lockStorerMockAddDimensionToInstance.RLock()
 	calls = mock.calls.AddDimensionToInstance
-	mock.lockAddDimensionToInstance.RUnlock()
+	lockStorerMockAddDimensionToInstance.RUnlock()
 	return calls
 }
 
 // AddEventToInstance calls AddEventToInstanceFunc.
-func (mock *StorerMock) AddEventToInstance(instanceID string, event *models.Event) error {
+func (mock *StorerMock) AddEventToInstance(currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
 	if mock.AddEventToInstanceFunc == nil {
 		panic("StorerMock.AddEventToInstanceFunc: method is nil but Storer.AddEventToInstance was just called")
 	}
 	callInfo := struct {
-		InstanceID string
-		Event      *models.Event
+		CurrentInstance *models.Instance
+		Event           *models.Event
+		ETagSelector    string
 	}{
-		InstanceID: instanceID,
-		Event:      event,
+		CurrentInstance: currentInstance,
+		Event:           event,
+		ETagSelector:    eTagSelector,
 	}
-	mock.lockAddEventToInstance.Lock()
+	lockStorerMockAddEventToInstance.Lock()
 	mock.calls.AddEventToInstance = append(mock.calls.AddEventToInstance, callInfo)
-	mock.lockAddEventToInstance.Unlock()
-	return mock.AddEventToInstanceFunc(instanceID, event)
+	lockStorerMockAddEventToInstance.Unlock()
+	return mock.AddEventToInstanceFunc(currentInstance, event, eTagSelector)
 }
 
 // AddEventToInstanceCalls gets all the calls that were made to AddEventToInstance.
 // Check the length with:
 //     len(mockedStorer.AddEventToInstanceCalls())
 func (mock *StorerMock) AddEventToInstanceCalls() []struct {
-	InstanceID string
-	Event      *models.Event
+	CurrentInstance *models.Instance
+	Event           *models.Event
+	ETagSelector    string
 } {
 	var calls []struct {
-		InstanceID string
-		Event      *models.Event
+		CurrentInstance *models.Instance
+		Event           *models.Event
+		ETagSelector    string
 	}
-	mock.lockAddEventToInstance.RLock()
+	lockStorerMockAddEventToInstance.RLock()
 	calls = mock.calls.AddEventToInstance
-	mock.lockAddEventToInstance.RUnlock()
+	lockStorerMockAddEventToInstance.RUnlock()
 	return calls
 }
 
@@ -671,9 +787,9 @@ func (mock *StorerMock) AddInstance(instance *models.Instance) (*models.Instance
 	}{
 		Instance: instance,
 	}
-	mock.lockAddInstance.Lock()
+	lockStorerMockAddInstance.Lock()
 	mock.calls.AddInstance = append(mock.calls.AddInstance, callInfo)
-	mock.lockAddInstance.Unlock()
+	lockStorerMockAddInstance.Unlock()
 	return mock.AddInstanceFunc(instance)
 }
 
@@ -686,9 +802,9 @@ func (mock *StorerMock) AddInstanceCalls() []struct {
 	var calls []struct {
 		Instance *models.Instance
 	}
-	mock.lockAddInstance.RLock()
+	lockStorerMockAddInstance.RLock()
 	calls = mock.calls.AddInstance
-	mock.lockAddInstance.RUnlock()
+	lockStorerMockAddInstance.RUnlock()
 	return calls
 }
 
@@ -710,9 +826,9 @@ func (mock *StorerMock) AddVersionDetailsToInstance(ctx context.Context, instanc
 		Edition:    edition,
 		Version:    version,
 	}
-	mock.lockAddVersionDetailsToInstance.Lock()
+	lockStorerMockAddVersionDetailsToInstance.Lock()
 	mock.calls.AddVersionDetailsToInstance = append(mock.calls.AddVersionDetailsToInstance, callInfo)
-	mock.lockAddVersionDetailsToInstance.Unlock()
+	lockStorerMockAddVersionDetailsToInstance.Unlock()
 	return mock.AddVersionDetailsToInstanceFunc(ctx, instanceID, datasetID, edition, version)
 }
 
@@ -733,9 +849,9 @@ func (mock *StorerMock) AddVersionDetailsToInstanceCalls() []struct {
 		Edition    string
 		Version    int
 	}
-	mock.lockAddVersionDetailsToInstance.RLock()
+	lockStorerMockAddVersionDetailsToInstance.RLock()
 	calls = mock.calls.AddVersionDetailsToInstance
-	mock.lockAddVersionDetailsToInstance.RUnlock()
+	lockStorerMockAddVersionDetailsToInstance.RUnlock()
 	return calls
 }
 
@@ -751,9 +867,9 @@ func (mock *StorerMock) CheckDatasetExists(ID string, state string) error {
 		ID:    ID,
 		State: state,
 	}
-	mock.lockCheckDatasetExists.Lock()
+	lockStorerMockCheckDatasetExists.Lock()
 	mock.calls.CheckDatasetExists = append(mock.calls.CheckDatasetExists, callInfo)
-	mock.lockCheckDatasetExists.Unlock()
+	lockStorerMockCheckDatasetExists.Unlock()
 	return mock.CheckDatasetExistsFunc(ID, state)
 }
 
@@ -768,9 +884,9 @@ func (mock *StorerMock) CheckDatasetExistsCalls() []struct {
 		ID    string
 		State string
 	}
-	mock.lockCheckDatasetExists.RLock()
+	lockStorerMockCheckDatasetExists.RLock()
 	calls = mock.calls.CheckDatasetExists
-	mock.lockCheckDatasetExists.RUnlock()
+	lockStorerMockCheckDatasetExists.RUnlock()
 	return calls
 }
 
@@ -788,9 +904,9 @@ func (mock *StorerMock) CheckEditionExists(ID string, editionID string, state st
 		EditionID: editionID,
 		State:     state,
 	}
-	mock.lockCheckEditionExists.Lock()
+	lockStorerMockCheckEditionExists.Lock()
 	mock.calls.CheckEditionExists = append(mock.calls.CheckEditionExists, callInfo)
-	mock.lockCheckEditionExists.Unlock()
+	lockStorerMockCheckEditionExists.Unlock()
 	return mock.CheckEditionExistsFunc(ID, editionID, state)
 }
 
@@ -807,9 +923,9 @@ func (mock *StorerMock) CheckEditionExistsCalls() []struct {
 		EditionID string
 		State     string
 	}
-	mock.lockCheckEditionExists.RLock()
+	lockStorerMockCheckEditionExists.RLock()
 	calls = mock.calls.CheckEditionExists
-	mock.lockCheckEditionExists.RUnlock()
+	lockStorerMockCheckEditionExists.RUnlock()
 	return calls
 }
 
@@ -823,9 +939,9 @@ func (mock *StorerMock) DeleteDataset(ID string) error {
 	}{
 		ID: ID,
 	}
-	mock.lockDeleteDataset.Lock()
+	lockStorerMockDeleteDataset.Lock()
 	mock.calls.DeleteDataset = append(mock.calls.DeleteDataset, callInfo)
-	mock.lockDeleteDataset.Unlock()
+	lockStorerMockDeleteDataset.Unlock()
 	return mock.DeleteDatasetFunc(ID)
 }
 
@@ -838,9 +954,9 @@ func (mock *StorerMock) DeleteDatasetCalls() []struct {
 	var calls []struct {
 		ID string
 	}
-	mock.lockDeleteDataset.RLock()
+	lockStorerMockDeleteDataset.RLock()
 	calls = mock.calls.DeleteDataset
-	mock.lockDeleteDataset.RUnlock()
+	lockStorerMockDeleteDataset.RUnlock()
 	return calls
 }
 
@@ -854,9 +970,9 @@ func (mock *StorerMock) DeleteEdition(ID string) error {
 	}{
 		ID: ID,
 	}
-	mock.lockDeleteEdition.Lock()
+	lockStorerMockDeleteEdition.Lock()
 	mock.calls.DeleteEdition = append(mock.calls.DeleteEdition, callInfo)
-	mock.lockDeleteEdition.Unlock()
+	lockStorerMockDeleteEdition.Unlock()
 	return mock.DeleteEditionFunc(ID)
 }
 
@@ -869,9 +985,9 @@ func (mock *StorerMock) DeleteEditionCalls() []struct {
 	var calls []struct {
 		ID string
 	}
-	mock.lockDeleteEdition.RLock()
+	lockStorerMockDeleteEdition.RLock()
 	calls = mock.calls.DeleteEdition
-	mock.lockDeleteEdition.RUnlock()
+	lockStorerMockDeleteEdition.RUnlock()
 	return calls
 }
 
@@ -885,9 +1001,9 @@ func (mock *StorerMock) GetDataset(ID string) (*models.DatasetUpdate, error) {
 	}{
 		ID: ID,
 	}
-	mock.lockGetDataset.Lock()
+	lockStorerMockGetDataset.Lock()
 	mock.calls.GetDataset = append(mock.calls.GetDataset, callInfo)
-	mock.lockGetDataset.Unlock()
+	lockStorerMockGetDataset.Unlock()
 	return mock.GetDatasetFunc(ID)
 }
 
@@ -900,9 +1016,9 @@ func (mock *StorerMock) GetDatasetCalls() []struct {
 	var calls []struct {
 		ID string
 	}
-	mock.lockGetDataset.RLock()
+	lockStorerMockGetDataset.RLock()
 	calls = mock.calls.GetDataset
-	mock.lockGetDataset.RUnlock()
+	lockStorerMockGetDataset.RUnlock()
 	return calls
 }
 
@@ -922,9 +1038,9 @@ func (mock *StorerMock) GetDatasets(ctx context.Context, offset int, limit int, 
 		Limit:      limit,
 		Authorised: authorised,
 	}
-	mock.lockGetDatasets.Lock()
+	lockStorerMockGetDatasets.Lock()
 	mock.calls.GetDatasets = append(mock.calls.GetDatasets, callInfo)
-	mock.lockGetDatasets.Unlock()
+	lockStorerMockGetDatasets.Unlock()
 	return mock.GetDatasetsFunc(ctx, offset, limit, authorised)
 }
 
@@ -943,9 +1059,9 @@ func (mock *StorerMock) GetDatasetsCalls() []struct {
 		Limit      int
 		Authorised bool
 	}
-	mock.lockGetDatasets.RLock()
+	lockStorerMockGetDatasets.RLock()
 	calls = mock.calls.GetDatasets
-	mock.lockGetDatasets.RUnlock()
+	lockStorerMockGetDatasets.RUnlock()
 	return calls
 }
 
@@ -967,9 +1083,9 @@ func (mock *StorerMock) GetDimensionOptions(ctx context.Context, version *models
 		Offset:    offset,
 		Limit:     limit,
 	}
-	mock.lockGetDimensionOptions.Lock()
+	lockStorerMockGetDimensionOptions.Lock()
 	mock.calls.GetDimensionOptions = append(mock.calls.GetDimensionOptions, callInfo)
-	mock.lockGetDimensionOptions.Unlock()
+	lockStorerMockGetDimensionOptions.Unlock()
 	return mock.GetDimensionOptionsFunc(ctx, version, dimension, offset, limit)
 }
 
@@ -990,9 +1106,9 @@ func (mock *StorerMock) GetDimensionOptionsCalls() []struct {
 		Offset    int
 		Limit     int
 	}
-	mock.lockGetDimensionOptions.RLock()
+	lockStorerMockGetDimensionOptions.RLock()
 	calls = mock.calls.GetDimensionOptions
-	mock.lockGetDimensionOptions.RUnlock()
+	lockStorerMockGetDimensionOptions.RUnlock()
 	return calls
 }
 
@@ -1010,9 +1126,9 @@ func (mock *StorerMock) GetDimensionOptionsFromIDs(version *models.Version, dime
 		Dimension: dimension,
 		Ids:       ids,
 	}
-	mock.lockGetDimensionOptionsFromIDs.Lock()
+	lockStorerMockGetDimensionOptionsFromIDs.Lock()
 	mock.calls.GetDimensionOptionsFromIDs = append(mock.calls.GetDimensionOptionsFromIDs, callInfo)
-	mock.lockGetDimensionOptionsFromIDs.Unlock()
+	lockStorerMockGetDimensionOptionsFromIDs.Unlock()
 	return mock.GetDimensionOptionsFromIDsFunc(version, dimension, ids)
 }
 
@@ -1029,9 +1145,9 @@ func (mock *StorerMock) GetDimensionOptionsFromIDsCalls() []struct {
 		Dimension string
 		Ids       []string
 	}
-	mock.lockGetDimensionOptionsFromIDs.RLock()
+	lockStorerMockGetDimensionOptionsFromIDs.RLock()
 	calls = mock.calls.GetDimensionOptionsFromIDs
-	mock.lockGetDimensionOptionsFromIDs.RUnlock()
+	lockStorerMockGetDimensionOptionsFromIDs.RUnlock()
 	return calls
 }
 
@@ -1047,9 +1163,9 @@ func (mock *StorerMock) GetDimensions(datasetID string, versionID string) ([]bso
 		DatasetID: datasetID,
 		VersionID: versionID,
 	}
-	mock.lockGetDimensions.Lock()
+	lockStorerMockGetDimensions.Lock()
 	mock.calls.GetDimensions = append(mock.calls.GetDimensions, callInfo)
-	mock.lockGetDimensions.Unlock()
+	lockStorerMockGetDimensions.Unlock()
 	return mock.GetDimensionsFunc(datasetID, versionID)
 }
 
@@ -1064,9 +1180,9 @@ func (mock *StorerMock) GetDimensionsCalls() []struct {
 		DatasetID string
 		VersionID string
 	}
-	mock.lockGetDimensions.RLock()
+	lockStorerMockGetDimensions.RLock()
 	calls = mock.calls.GetDimensions
-	mock.lockGetDimensions.RUnlock()
+	lockStorerMockGetDimensions.RUnlock()
 	return calls
 }
 
@@ -1086,9 +1202,9 @@ func (mock *StorerMock) GetDimensionsFromInstance(ctx context.Context, ID string
 		Offset: offset,
 		Limit:  limit,
 	}
-	mock.lockGetDimensionsFromInstance.Lock()
+	lockStorerMockGetDimensionsFromInstance.Lock()
 	mock.calls.GetDimensionsFromInstance = append(mock.calls.GetDimensionsFromInstance, callInfo)
-	mock.lockGetDimensionsFromInstance.Unlock()
+	lockStorerMockGetDimensionsFromInstance.Unlock()
 	return mock.GetDimensionsFromInstanceFunc(ctx, ID, offset, limit)
 }
 
@@ -1107,9 +1223,9 @@ func (mock *StorerMock) GetDimensionsFromInstanceCalls() []struct {
 		Offset int
 		Limit  int
 	}
-	mock.lockGetDimensionsFromInstance.RLock()
+	lockStorerMockGetDimensionsFromInstance.RLock()
 	calls = mock.calls.GetDimensionsFromInstance
-	mock.lockGetDimensionsFromInstance.RUnlock()
+	lockStorerMockGetDimensionsFromInstance.RUnlock()
 	return calls
 }
 
@@ -1127,9 +1243,9 @@ func (mock *StorerMock) GetEdition(ID string, editionID string, state string) (*
 		EditionID: editionID,
 		State:     state,
 	}
-	mock.lockGetEdition.Lock()
+	lockStorerMockGetEdition.Lock()
 	mock.calls.GetEdition = append(mock.calls.GetEdition, callInfo)
-	mock.lockGetEdition.Unlock()
+	lockStorerMockGetEdition.Unlock()
 	return mock.GetEditionFunc(ID, editionID, state)
 }
 
@@ -1146,9 +1262,9 @@ func (mock *StorerMock) GetEditionCalls() []struct {
 		EditionID string
 		State     string
 	}
-	mock.lockGetEdition.RLock()
+	lockStorerMockGetEdition.RLock()
 	calls = mock.calls.GetEdition
-	mock.lockGetEdition.RUnlock()
+	lockStorerMockGetEdition.RUnlock()
 	return calls
 }
 
@@ -1172,9 +1288,9 @@ func (mock *StorerMock) GetEditions(ctx context.Context, ID string, state string
 		Limit:      limit,
 		Authorised: authorised,
 	}
-	mock.lockGetEditions.Lock()
+	lockStorerMockGetEditions.Lock()
 	mock.calls.GetEditions = append(mock.calls.GetEditions, callInfo)
-	mock.lockGetEditions.Unlock()
+	lockStorerMockGetEditions.Unlock()
 	return mock.GetEditionsFunc(ctx, ID, state, offset, limit, authorised)
 }
 
@@ -1197,40 +1313,44 @@ func (mock *StorerMock) GetEditionsCalls() []struct {
 		Limit      int
 		Authorised bool
 	}
-	mock.lockGetEditions.RLock()
+	lockStorerMockGetEditions.RLock()
 	calls = mock.calls.GetEditions
-	mock.lockGetEditions.RUnlock()
+	lockStorerMockGetEditions.RUnlock()
 	return calls
 }
 
 // GetInstance calls GetInstanceFunc.
-func (mock *StorerMock) GetInstance(ID string) (*models.Instance, error) {
+func (mock *StorerMock) GetInstance(ID string, eTagSelector string) (*models.Instance, error) {
 	if mock.GetInstanceFunc == nil {
 		panic("StorerMock.GetInstanceFunc: method is nil but Storer.GetInstance was just called")
 	}
 	callInfo := struct {
-		ID string
+		ID           string
+		ETagSelector string
 	}{
-		ID: ID,
+		ID:           ID,
+		ETagSelector: eTagSelector,
 	}
-	mock.lockGetInstance.Lock()
+	lockStorerMockGetInstance.Lock()
 	mock.calls.GetInstance = append(mock.calls.GetInstance, callInfo)
-	mock.lockGetInstance.Unlock()
-	return mock.GetInstanceFunc(ID)
+	lockStorerMockGetInstance.Unlock()
+	return mock.GetInstanceFunc(ID, eTagSelector)
 }
 
 // GetInstanceCalls gets all the calls that were made to GetInstance.
 // Check the length with:
 //     len(mockedStorer.GetInstanceCalls())
 func (mock *StorerMock) GetInstanceCalls() []struct {
-	ID string
+	ID           string
+	ETagSelector string
 } {
 	var calls []struct {
-		ID string
+		ID           string
+		ETagSelector string
 	}
-	mock.lockGetInstance.RLock()
+	lockStorerMockGetInstance.RLock()
 	calls = mock.calls.GetInstance
-	mock.lockGetInstance.RUnlock()
+	lockStorerMockGetInstance.RUnlock()
 	return calls
 }
 
@@ -1252,9 +1372,9 @@ func (mock *StorerMock) GetInstances(ctx context.Context, states []string, datas
 		Offset:   offset,
 		Limit:    limit,
 	}
-	mock.lockGetInstances.Lock()
+	lockStorerMockGetInstances.Lock()
 	mock.calls.GetInstances = append(mock.calls.GetInstances, callInfo)
-	mock.lockGetInstances.Unlock()
+	lockStorerMockGetInstances.Unlock()
 	return mock.GetInstancesFunc(ctx, states, datasets, offset, limit)
 }
 
@@ -1275,9 +1395,9 @@ func (mock *StorerMock) GetInstancesCalls() []struct {
 		Offset   int
 		Limit    int
 	}
-	mock.lockGetInstances.RLock()
+	lockStorerMockGetInstances.RLock()
 	calls = mock.calls.GetInstances
-	mock.lockGetInstances.RUnlock()
+	lockStorerMockGetInstances.RUnlock()
 	return calls
 }
 
@@ -1293,9 +1413,9 @@ func (mock *StorerMock) GetNextVersion(datasetID string, editionID string) (int,
 		DatasetID: datasetID,
 		EditionID: editionID,
 	}
-	mock.lockGetNextVersion.Lock()
+	lockStorerMockGetNextVersion.Lock()
 	mock.calls.GetNextVersion = append(mock.calls.GetNextVersion, callInfo)
-	mock.lockGetNextVersion.Unlock()
+	lockStorerMockGetNextVersion.Unlock()
 	return mock.GetNextVersionFunc(datasetID, editionID)
 }
 
@@ -1310,9 +1430,9 @@ func (mock *StorerMock) GetNextVersionCalls() []struct {
 		DatasetID string
 		EditionID string
 	}
-	mock.lockGetNextVersion.RLock()
+	lockStorerMockGetNextVersion.RLock()
 	calls = mock.calls.GetNextVersion
-	mock.lockGetNextVersion.RUnlock()
+	lockStorerMockGetNextVersion.RUnlock()
 	return calls
 }
 
@@ -1334,9 +1454,9 @@ func (mock *StorerMock) GetUniqueDimensionAndOptions(ctx context.Context, ID str
 		Offset:    offset,
 		Limit:     limit,
 	}
-	mock.lockGetUniqueDimensionAndOptions.Lock()
+	lockStorerMockGetUniqueDimensionAndOptions.Lock()
 	mock.calls.GetUniqueDimensionAndOptions = append(mock.calls.GetUniqueDimensionAndOptions, callInfo)
-	mock.lockGetUniqueDimensionAndOptions.Unlock()
+	lockStorerMockGetUniqueDimensionAndOptions.Unlock()
 	return mock.GetUniqueDimensionAndOptionsFunc(ctx, ID, dimension, offset, limit)
 }
 
@@ -1357,9 +1477,9 @@ func (mock *StorerMock) GetUniqueDimensionAndOptionsCalls() []struct {
 		Offset    int
 		Limit     int
 	}
-	mock.lockGetUniqueDimensionAndOptions.RLock()
+	lockStorerMockGetUniqueDimensionAndOptions.RLock()
 	calls = mock.calls.GetUniqueDimensionAndOptions
-	mock.lockGetUniqueDimensionAndOptions.RUnlock()
+	lockStorerMockGetUniqueDimensionAndOptions.RUnlock()
 	return calls
 }
 
@@ -1379,9 +1499,9 @@ func (mock *StorerMock) GetVersion(datasetID string, editionID string, version i
 		Version:   version,
 		State:     state,
 	}
-	mock.lockGetVersion.Lock()
+	lockStorerMockGetVersion.Lock()
 	mock.calls.GetVersion = append(mock.calls.GetVersion, callInfo)
-	mock.lockGetVersion.Unlock()
+	lockStorerMockGetVersion.Unlock()
 	return mock.GetVersionFunc(datasetID, editionID, version, state)
 }
 
@@ -1400,9 +1520,9 @@ func (mock *StorerMock) GetVersionCalls() []struct {
 		Version   int
 		State     string
 	}
-	mock.lockGetVersion.RLock()
+	lockStorerMockGetVersion.RLock()
 	calls = mock.calls.GetVersion
-	mock.lockGetVersion.RUnlock()
+	lockStorerMockGetVersion.RUnlock()
 	return calls
 }
 
@@ -1426,9 +1546,9 @@ func (mock *StorerMock) GetVersions(ctx context.Context, datasetID string, editi
 		Offset:    offset,
 		Limit:     limit,
 	}
-	mock.lockGetVersions.Lock()
+	lockStorerMockGetVersions.Lock()
 	mock.calls.GetVersions = append(mock.calls.GetVersions, callInfo)
-	mock.lockGetVersions.Unlock()
+	lockStorerMockGetVersions.Unlock()
 	return mock.GetVersionsFunc(ctx, datasetID, editionID, state, offset, limit)
 }
 
@@ -1451,9 +1571,9 @@ func (mock *StorerMock) GetVersionsCalls() []struct {
 		Offset    int
 		Limit     int
 	}
-	mock.lockGetVersions.RLock()
+	lockStorerMockGetVersions.RLock()
 	calls = mock.calls.GetVersions
-	mock.lockGetVersions.RUnlock()
+	lockStorerMockGetVersions.RUnlock()
 	return calls
 }
 
@@ -1469,9 +1589,9 @@ func (mock *StorerMock) SetInstanceIsPublished(ctx context.Context, instanceID s
 		Ctx:        ctx,
 		InstanceID: instanceID,
 	}
-	mock.lockSetInstanceIsPublished.Lock()
+	lockStorerMockSetInstanceIsPublished.Lock()
 	mock.calls.SetInstanceIsPublished = append(mock.calls.SetInstanceIsPublished, callInfo)
-	mock.lockSetInstanceIsPublished.Unlock()
+	lockStorerMockSetInstanceIsPublished.Unlock()
 	return mock.SetInstanceIsPublishedFunc(ctx, instanceID)
 }
 
@@ -1486,87 +1606,126 @@ func (mock *StorerMock) SetInstanceIsPublishedCalls() []struct {
 		Ctx        context.Context
 		InstanceID string
 	}
-	mock.lockSetInstanceIsPublished.RLock()
+	lockStorerMockSetInstanceIsPublished.RLock()
 	calls = mock.calls.SetInstanceIsPublished
-	mock.lockSetInstanceIsPublished.RUnlock()
+	lockStorerMockSetInstanceIsPublished.RUnlock()
+	return calls
+}
+
+// UnlockInstance calls UnlockInstanceFunc.
+func (mock *StorerMock) UnlockInstance(lockID string) error {
+	if mock.UnlockInstanceFunc == nil {
+		panic("StorerMock.UnlockInstanceFunc: method is nil but Storer.UnlockInstance was just called")
+	}
+	callInfo := struct {
+		LockID string
+	}{
+		LockID: lockID,
+	}
+	lockStorerMockUnlockInstance.Lock()
+	mock.calls.UnlockInstance = append(mock.calls.UnlockInstance, callInfo)
+	lockStorerMockUnlockInstance.Unlock()
+	return mock.UnlockInstanceFunc(lockID)
+}
+
+// UnlockInstanceCalls gets all the calls that were made to UnlockInstance.
+// Check the length with:
+//     len(mockedStorer.UnlockInstanceCalls())
+func (mock *StorerMock) UnlockInstanceCalls() []struct {
+	LockID string
+} {
+	var calls []struct {
+		LockID string
+	}
+	lockStorerMockUnlockInstance.RLock()
+	calls = mock.calls.UnlockInstance
+	lockStorerMockUnlockInstance.RUnlock()
 	return calls
 }
 
 // UpdateBuildHierarchyTaskState calls UpdateBuildHierarchyTaskStateFunc.
-func (mock *StorerMock) UpdateBuildHierarchyTaskState(id string, dimension string, state string) error {
+func (mock *StorerMock) UpdateBuildHierarchyTaskState(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
 	if mock.UpdateBuildHierarchyTaskStateFunc == nil {
 		panic("StorerMock.UpdateBuildHierarchyTaskStateFunc: method is nil but Storer.UpdateBuildHierarchyTaskState was just called")
 	}
 	callInfo := struct {
-		ID        string
-		Dimension string
-		State     string
+		CurrentInstance *models.Instance
+		Dimension       string
+		State           string
+		ETagSelector    string
 	}{
-		ID:        id,
-		Dimension: dimension,
-		State:     state,
+		CurrentInstance: currentInstance,
+		Dimension:       dimension,
+		State:           state,
+		ETagSelector:    eTagSelector,
 	}
-	mock.lockUpdateBuildHierarchyTaskState.Lock()
+	lockStorerMockUpdateBuildHierarchyTaskState.Lock()
 	mock.calls.UpdateBuildHierarchyTaskState = append(mock.calls.UpdateBuildHierarchyTaskState, callInfo)
-	mock.lockUpdateBuildHierarchyTaskState.Unlock()
-	return mock.UpdateBuildHierarchyTaskStateFunc(id, dimension, state)
+	lockStorerMockUpdateBuildHierarchyTaskState.Unlock()
+	return mock.UpdateBuildHierarchyTaskStateFunc(currentInstance, dimension, state, eTagSelector)
 }
 
 // UpdateBuildHierarchyTaskStateCalls gets all the calls that were made to UpdateBuildHierarchyTaskState.
 // Check the length with:
 //     len(mockedStorer.UpdateBuildHierarchyTaskStateCalls())
 func (mock *StorerMock) UpdateBuildHierarchyTaskStateCalls() []struct {
-	ID        string
-	Dimension string
-	State     string
+	CurrentInstance *models.Instance
+	Dimension       string
+	State           string
+	ETagSelector    string
 } {
 	var calls []struct {
-		ID        string
-		Dimension string
-		State     string
+		CurrentInstance *models.Instance
+		Dimension       string
+		State           string
+		ETagSelector    string
 	}
-	mock.lockUpdateBuildHierarchyTaskState.RLock()
+	lockStorerMockUpdateBuildHierarchyTaskState.RLock()
 	calls = mock.calls.UpdateBuildHierarchyTaskState
-	mock.lockUpdateBuildHierarchyTaskState.RUnlock()
+	lockStorerMockUpdateBuildHierarchyTaskState.RUnlock()
 	return calls
 }
 
 // UpdateBuildSearchTaskState calls UpdateBuildSearchTaskStateFunc.
-func (mock *StorerMock) UpdateBuildSearchTaskState(id string, dimension string, state string) error {
+func (mock *StorerMock) UpdateBuildSearchTaskState(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
 	if mock.UpdateBuildSearchTaskStateFunc == nil {
 		panic("StorerMock.UpdateBuildSearchTaskStateFunc: method is nil but Storer.UpdateBuildSearchTaskState was just called")
 	}
 	callInfo := struct {
-		ID        string
-		Dimension string
-		State     string
+		CurrentInstance *models.Instance
+		Dimension       string
+		State           string
+		ETagSelector    string
 	}{
-		ID:        id,
-		Dimension: dimension,
-		State:     state,
+		CurrentInstance: currentInstance,
+		Dimension:       dimension,
+		State:           state,
+		ETagSelector:    eTagSelector,
 	}
-	mock.lockUpdateBuildSearchTaskState.Lock()
+	lockStorerMockUpdateBuildSearchTaskState.Lock()
 	mock.calls.UpdateBuildSearchTaskState = append(mock.calls.UpdateBuildSearchTaskState, callInfo)
-	mock.lockUpdateBuildSearchTaskState.Unlock()
-	return mock.UpdateBuildSearchTaskStateFunc(id, dimension, state)
+	lockStorerMockUpdateBuildSearchTaskState.Unlock()
+	return mock.UpdateBuildSearchTaskStateFunc(currentInstance, dimension, state, eTagSelector)
 }
 
 // UpdateBuildSearchTaskStateCalls gets all the calls that were made to UpdateBuildSearchTaskState.
 // Check the length with:
 //     len(mockedStorer.UpdateBuildSearchTaskStateCalls())
 func (mock *StorerMock) UpdateBuildSearchTaskStateCalls() []struct {
-	ID        string
-	Dimension string
-	State     string
+	CurrentInstance *models.Instance
+	Dimension       string
+	State           string
+	ETagSelector    string
 } {
 	var calls []struct {
-		ID        string
-		Dimension string
-		State     string
+		CurrentInstance *models.Instance
+		Dimension       string
+		State           string
+		ETagSelector    string
 	}
-	mock.lockUpdateBuildSearchTaskState.RLock()
+	lockStorerMockUpdateBuildSearchTaskState.RLock()
 	calls = mock.calls.UpdateBuildSearchTaskState
-	mock.lockUpdateBuildSearchTaskState.RUnlock()
+	lockStorerMockUpdateBuildSearchTaskState.RUnlock()
 	return calls
 }
 
@@ -1586,9 +1745,9 @@ func (mock *StorerMock) UpdateDataset(ctx context.Context, ID string, dataset *m
 		Dataset:      dataset,
 		CurrentState: currentState,
 	}
-	mock.lockUpdateDataset.Lock()
+	lockStorerMockUpdateDataset.Lock()
 	mock.calls.UpdateDataset = append(mock.calls.UpdateDataset, callInfo)
-	mock.lockUpdateDataset.Unlock()
+	lockStorerMockUpdateDataset.Unlock()
 	return mock.UpdateDatasetFunc(ctx, ID, dataset, currentState)
 }
 
@@ -1607,9 +1766,9 @@ func (mock *StorerMock) UpdateDatasetCalls() []struct {
 		Dataset      *models.Dataset
 		CurrentState string
 	}
-	mock.lockUpdateDataset.RLock()
+	lockStorerMockUpdateDataset.RLock()
 	calls = mock.calls.UpdateDataset
-	mock.lockUpdateDataset.RUnlock()
+	lockStorerMockUpdateDataset.RUnlock()
 	return calls
 }
 
@@ -1627,9 +1786,9 @@ func (mock *StorerMock) UpdateDatasetWithAssociation(ID string, state string, ve
 		State:   state,
 		Version: version,
 	}
-	mock.lockUpdateDatasetWithAssociation.Lock()
+	lockStorerMockUpdateDatasetWithAssociation.Lock()
 	mock.calls.UpdateDatasetWithAssociation = append(mock.calls.UpdateDatasetWithAssociation, callInfo)
-	mock.lockUpdateDatasetWithAssociation.Unlock()
+	lockStorerMockUpdateDatasetWithAssociation.Unlock()
 	return mock.UpdateDatasetWithAssociationFunc(ID, state, version)
 }
 
@@ -1646,9 +1805,9 @@ func (mock *StorerMock) UpdateDatasetWithAssociationCalls() []struct {
 		State   string
 		Version *models.Version
 	}
-	mock.lockUpdateDatasetWithAssociation.RLock()
+	lockStorerMockUpdateDatasetWithAssociation.RLock()
 	calls = mock.calls.UpdateDatasetWithAssociation
-	mock.lockUpdateDatasetWithAssociation.RUnlock()
+	lockStorerMockUpdateDatasetWithAssociation.RUnlock()
 	return calls
 }
 
@@ -1662,9 +1821,9 @@ func (mock *StorerMock) UpdateDimensionNodeIDAndOrder(dimension *models.Dimensio
 	}{
 		Dimension: dimension,
 	}
-	mock.lockUpdateDimensionNodeIDAndOrder.Lock()
+	lockStorerMockUpdateDimensionNodeIDAndOrder.Lock()
 	mock.calls.UpdateDimensionNodeIDAndOrder = append(mock.calls.UpdateDimensionNodeIDAndOrder, callInfo)
-	mock.lockUpdateDimensionNodeIDAndOrder.Unlock()
+	lockStorerMockUpdateDimensionNodeIDAndOrder.Unlock()
 	return mock.UpdateDimensionNodeIDAndOrderFunc(dimension)
 }
 
@@ -1677,118 +1836,212 @@ func (mock *StorerMock) UpdateDimensionNodeIDAndOrderCalls() []struct {
 	var calls []struct {
 		Dimension *models.DimensionOption
 	}
-	mock.lockUpdateDimensionNodeIDAndOrder.RLock()
+	lockStorerMockUpdateDimensionNodeIDAndOrder.RLock()
 	calls = mock.calls.UpdateDimensionNodeIDAndOrder
-	mock.lockUpdateDimensionNodeIDAndOrder.RUnlock()
+	lockStorerMockUpdateDimensionNodeIDAndOrder.RUnlock()
+	return calls
+}
+
+// UpdateETagForNodeIDAndOrder calls UpdateETagForNodeIDAndOrderFunc.
+func (mock *StorerMock) UpdateETagForNodeIDAndOrder(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (string, error) {
+	if mock.UpdateETagForNodeIDAndOrderFunc == nil {
+		panic("StorerMock.UpdateETagForNodeIDAndOrderFunc: method is nil but Storer.UpdateETagForNodeIDAndOrder was just called")
+	}
+	callInfo := struct {
+		CurrentInstance *models.Instance
+		NodeID          string
+		Order           *int
+		ETagSelector    string
+	}{
+		CurrentInstance: currentInstance,
+		NodeID:          nodeID,
+		Order:           order,
+		ETagSelector:    eTagSelector,
+	}
+	lockStorerMockUpdateETagForNodeIDAndOrder.Lock()
+	mock.calls.UpdateETagForNodeIDAndOrder = append(mock.calls.UpdateETagForNodeIDAndOrder, callInfo)
+	lockStorerMockUpdateETagForNodeIDAndOrder.Unlock()
+	return mock.UpdateETagForNodeIDAndOrderFunc(currentInstance, nodeID, order, eTagSelector)
+}
+
+// UpdateETagForNodeIDAndOrderCalls gets all the calls that were made to UpdateETagForNodeIDAndOrder.
+// Check the length with:
+//     len(mockedStorer.UpdateETagForNodeIDAndOrderCalls())
+func (mock *StorerMock) UpdateETagForNodeIDAndOrderCalls() []struct {
+	CurrentInstance *models.Instance
+	NodeID          string
+	Order           *int
+	ETagSelector    string
+} {
+	var calls []struct {
+		CurrentInstance *models.Instance
+		NodeID          string
+		Order           *int
+		ETagSelector    string
+	}
+	lockStorerMockUpdateETagForNodeIDAndOrder.RLock()
+	calls = mock.calls.UpdateETagForNodeIDAndOrder
+	lockStorerMockUpdateETagForNodeIDAndOrder.RUnlock()
+	return calls
+}
+
+// UpdateETagForOptions calls UpdateETagForOptionsFunc.
+func (mock *StorerMock) UpdateETagForOptions(currentInstance *models.Instance, option *models.CachedDimensionOption, eTagSelector string) (string, error) {
+	if mock.UpdateETagForOptionsFunc == nil {
+		panic("StorerMock.UpdateETagForOptionsFunc: method is nil but Storer.UpdateETagForOptions was just called")
+	}
+	callInfo := struct {
+		CurrentInstance *models.Instance
+		Option          *models.CachedDimensionOption
+		ETagSelector    string
+	}{
+		CurrentInstance: currentInstance,
+		Option:          option,
+		ETagSelector:    eTagSelector,
+	}
+	lockStorerMockUpdateETagForOptions.Lock()
+	mock.calls.UpdateETagForOptions = append(mock.calls.UpdateETagForOptions, callInfo)
+	lockStorerMockUpdateETagForOptions.Unlock()
+	return mock.UpdateETagForOptionsFunc(currentInstance, option, eTagSelector)
+}
+
+// UpdateETagForOptionsCalls gets all the calls that were made to UpdateETagForOptions.
+// Check the length with:
+//     len(mockedStorer.UpdateETagForOptionsCalls())
+func (mock *StorerMock) UpdateETagForOptionsCalls() []struct {
+	CurrentInstance *models.Instance
+	Option          *models.CachedDimensionOption
+	ETagSelector    string
+} {
+	var calls []struct {
+		CurrentInstance *models.Instance
+		Option          *models.CachedDimensionOption
+		ETagSelector    string
+	}
+	lockStorerMockUpdateETagForOptions.RLock()
+	calls = mock.calls.UpdateETagForOptions
+	lockStorerMockUpdateETagForOptions.RUnlock()
 	return calls
 }
 
 // UpdateImportObservationsTaskState calls UpdateImportObservationsTaskStateFunc.
-func (mock *StorerMock) UpdateImportObservationsTaskState(id string, state string) error {
+func (mock *StorerMock) UpdateImportObservationsTaskState(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
 	if mock.UpdateImportObservationsTaskStateFunc == nil {
 		panic("StorerMock.UpdateImportObservationsTaskStateFunc: method is nil but Storer.UpdateImportObservationsTaskState was just called")
 	}
 	callInfo := struct {
-		ID    string
-		State string
+		CurrentInstance *models.Instance
+		State           string
+		ETagSelector    string
 	}{
-		ID:    id,
-		State: state,
+		CurrentInstance: currentInstance,
+		State:           state,
+		ETagSelector:    eTagSelector,
 	}
-	mock.lockUpdateImportObservationsTaskState.Lock()
+	lockStorerMockUpdateImportObservationsTaskState.Lock()
 	mock.calls.UpdateImportObservationsTaskState = append(mock.calls.UpdateImportObservationsTaskState, callInfo)
-	mock.lockUpdateImportObservationsTaskState.Unlock()
-	return mock.UpdateImportObservationsTaskStateFunc(id, state)
+	lockStorerMockUpdateImportObservationsTaskState.Unlock()
+	return mock.UpdateImportObservationsTaskStateFunc(currentInstance, state, eTagSelector)
 }
 
 // UpdateImportObservationsTaskStateCalls gets all the calls that were made to UpdateImportObservationsTaskState.
 // Check the length with:
 //     len(mockedStorer.UpdateImportObservationsTaskStateCalls())
 func (mock *StorerMock) UpdateImportObservationsTaskStateCalls() []struct {
-	ID    string
-	State string
+	CurrentInstance *models.Instance
+	State           string
+	ETagSelector    string
 } {
 	var calls []struct {
-		ID    string
-		State string
+		CurrentInstance *models.Instance
+		State           string
+		ETagSelector    string
 	}
-	mock.lockUpdateImportObservationsTaskState.RLock()
+	lockStorerMockUpdateImportObservationsTaskState.RLock()
 	calls = mock.calls.UpdateImportObservationsTaskState
-	mock.lockUpdateImportObservationsTaskState.RUnlock()
+	lockStorerMockUpdateImportObservationsTaskState.RUnlock()
 	return calls
 }
 
 // UpdateInstance calls UpdateInstanceFunc.
-func (mock *StorerMock) UpdateInstance(ctx context.Context, ID string, instance *models.Instance) error {
+func (mock *StorerMock) UpdateInstance(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
 	if mock.UpdateInstanceFunc == nil {
 		panic("StorerMock.UpdateInstanceFunc: method is nil but Storer.UpdateInstance was just called")
 	}
 	callInfo := struct {
-		Ctx      context.Context
-		ID       string
-		Instance *models.Instance
+		Ctx             context.Context
+		CurrentInstance *models.Instance
+		UpdatedInstance *models.Instance
+		ETagSelector    string
 	}{
-		Ctx:      ctx,
-		ID:       ID,
-		Instance: instance,
+		Ctx:             ctx,
+		CurrentInstance: currentInstance,
+		UpdatedInstance: updatedInstance,
+		ETagSelector:    eTagSelector,
 	}
-	mock.lockUpdateInstance.Lock()
+	lockStorerMockUpdateInstance.Lock()
 	mock.calls.UpdateInstance = append(mock.calls.UpdateInstance, callInfo)
-	mock.lockUpdateInstance.Unlock()
-	return mock.UpdateInstanceFunc(ctx, ID, instance)
+	lockStorerMockUpdateInstance.Unlock()
+	return mock.UpdateInstanceFunc(ctx, currentInstance, updatedInstance, eTagSelector)
 }
 
 // UpdateInstanceCalls gets all the calls that were made to UpdateInstance.
 // Check the length with:
 //     len(mockedStorer.UpdateInstanceCalls())
 func (mock *StorerMock) UpdateInstanceCalls() []struct {
-	Ctx      context.Context
-	ID       string
-	Instance *models.Instance
+	Ctx             context.Context
+	CurrentInstance *models.Instance
+	UpdatedInstance *models.Instance
+	ETagSelector    string
 } {
 	var calls []struct {
-		Ctx      context.Context
-		ID       string
-		Instance *models.Instance
+		Ctx             context.Context
+		CurrentInstance *models.Instance
+		UpdatedInstance *models.Instance
+		ETagSelector    string
 	}
-	mock.lockUpdateInstance.RLock()
+	lockStorerMockUpdateInstance.RLock()
 	calls = mock.calls.UpdateInstance
-	mock.lockUpdateInstance.RUnlock()
+	lockStorerMockUpdateInstance.RUnlock()
 	return calls
 }
 
 // UpdateObservationInserted calls UpdateObservationInsertedFunc.
-func (mock *StorerMock) UpdateObservationInserted(ID string, observationInserted int64) error {
+func (mock *StorerMock) UpdateObservationInserted(currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error) {
 	if mock.UpdateObservationInsertedFunc == nil {
 		panic("StorerMock.UpdateObservationInsertedFunc: method is nil but Storer.UpdateObservationInserted was just called")
 	}
 	callInfo := struct {
-		ID                  string
+		CurrentInstance     *models.Instance
 		ObservationInserted int64
+		ETagSelector        string
 	}{
-		ID:                  ID,
+		CurrentInstance:     currentInstance,
 		ObservationInserted: observationInserted,
+		ETagSelector:        eTagSelector,
 	}
-	mock.lockUpdateObservationInserted.Lock()
+	lockStorerMockUpdateObservationInserted.Lock()
 	mock.calls.UpdateObservationInserted = append(mock.calls.UpdateObservationInserted, callInfo)
-	mock.lockUpdateObservationInserted.Unlock()
-	return mock.UpdateObservationInsertedFunc(ID, observationInserted)
+	lockStorerMockUpdateObservationInserted.Unlock()
+	return mock.UpdateObservationInsertedFunc(currentInstance, observationInserted, eTagSelector)
 }
 
 // UpdateObservationInsertedCalls gets all the calls that were made to UpdateObservationInserted.
 // Check the length with:
 //     len(mockedStorer.UpdateObservationInsertedCalls())
 func (mock *StorerMock) UpdateObservationInsertedCalls() []struct {
-	ID                  string
+	CurrentInstance     *models.Instance
 	ObservationInserted int64
+	ETagSelector        string
 } {
 	var calls []struct {
-		ID                  string
+		CurrentInstance     *models.Instance
 		ObservationInserted int64
+		ETagSelector        string
 	}
-	mock.lockUpdateObservationInserted.RLock()
+	lockStorerMockUpdateObservationInserted.RLock()
 	calls = mock.calls.UpdateObservationInserted
-	mock.lockUpdateObservationInserted.RUnlock()
+	lockStorerMockUpdateObservationInserted.RUnlock()
 	return calls
 }
 
@@ -1804,9 +2057,9 @@ func (mock *StorerMock) UpdateVersion(ID string, version *models.Version) error 
 		ID:      ID,
 		Version: version,
 	}
-	mock.lockUpdateVersion.Lock()
+	lockStorerMockUpdateVersion.Lock()
 	mock.calls.UpdateVersion = append(mock.calls.UpdateVersion, callInfo)
-	mock.lockUpdateVersion.Unlock()
+	lockStorerMockUpdateVersion.Unlock()
 	return mock.UpdateVersionFunc(ID, version)
 }
 
@@ -1821,9 +2074,9 @@ func (mock *StorerMock) UpdateVersionCalls() []struct {
 		ID      string
 		Version *models.Version
 	}
-	mock.lockUpdateVersion.RLock()
+	lockStorerMockUpdateVersion.RLock()
 	calls = mock.calls.UpdateVersion
-	mock.lockUpdateVersion.RUnlock()
+	lockStorerMockUpdateVersion.RUnlock()
 	return calls
 }
 
@@ -1839,9 +2092,9 @@ func (mock *StorerMock) UpsertContact(ID string, update interface{}) error {
 		ID:     ID,
 		Update: update,
 	}
-	mock.lockUpsertContact.Lock()
+	lockStorerMockUpsertContact.Lock()
 	mock.calls.UpsertContact = append(mock.calls.UpsertContact, callInfo)
-	mock.lockUpsertContact.Unlock()
+	lockStorerMockUpsertContact.Unlock()
 	return mock.UpsertContactFunc(ID, update)
 }
 
@@ -1856,9 +2109,9 @@ func (mock *StorerMock) UpsertContactCalls() []struct {
 		ID     string
 		Update interface{}
 	}
-	mock.lockUpsertContact.RLock()
+	lockStorerMockUpsertContact.RLock()
 	calls = mock.calls.UpsertContact
-	mock.lockUpsertContact.RUnlock()
+	lockStorerMockUpsertContact.RUnlock()
 	return calls
 }
 
@@ -1874,9 +2127,9 @@ func (mock *StorerMock) UpsertDataset(ID string, datasetDoc *models.DatasetUpdat
 		ID:         ID,
 		DatasetDoc: datasetDoc,
 	}
-	mock.lockUpsertDataset.Lock()
+	lockStorerMockUpsertDataset.Lock()
 	mock.calls.UpsertDataset = append(mock.calls.UpsertDataset, callInfo)
-	mock.lockUpsertDataset.Unlock()
+	lockStorerMockUpsertDataset.Unlock()
 	return mock.UpsertDatasetFunc(ID, datasetDoc)
 }
 
@@ -1891,9 +2144,9 @@ func (mock *StorerMock) UpsertDatasetCalls() []struct {
 		ID         string
 		DatasetDoc *models.DatasetUpdate
 	}
-	mock.lockUpsertDataset.RLock()
+	lockStorerMockUpsertDataset.RLock()
 	calls = mock.calls.UpsertDataset
-	mock.lockUpsertDataset.RUnlock()
+	lockStorerMockUpsertDataset.RUnlock()
 	return calls
 }
 
@@ -1911,9 +2164,9 @@ func (mock *StorerMock) UpsertEdition(datasetID string, edition string, editionD
 		Edition:    edition,
 		EditionDoc: editionDoc,
 	}
-	mock.lockUpsertEdition.Lock()
+	lockStorerMockUpsertEdition.Lock()
 	mock.calls.UpsertEdition = append(mock.calls.UpsertEdition, callInfo)
-	mock.lockUpsertEdition.Unlock()
+	lockStorerMockUpsertEdition.Unlock()
 	return mock.UpsertEditionFunc(datasetID, edition, editionDoc)
 }
 
@@ -1930,9 +2183,9 @@ func (mock *StorerMock) UpsertEditionCalls() []struct {
 		Edition    string
 		EditionDoc *models.EditionUpdate
 	}
-	mock.lockUpsertEdition.RLock()
+	lockStorerMockUpsertEdition.RLock()
 	calls = mock.calls.UpsertEdition
-	mock.lockUpsertEdition.RUnlock()
+	lockStorerMockUpsertEdition.RUnlock()
 	return calls
 }
 
@@ -1948,9 +2201,9 @@ func (mock *StorerMock) UpsertVersion(ID string, versionDoc *models.Version) err
 		ID:         ID,
 		VersionDoc: versionDoc,
 	}
-	mock.lockUpsertVersion.Lock()
+	lockStorerMockUpsertVersion.Lock()
 	mock.calls.UpsertVersion = append(mock.calls.UpsertVersion, callInfo)
-	mock.lockUpsertVersion.Unlock()
+	lockStorerMockUpsertVersion.Unlock()
 	return mock.UpsertVersionFunc(ID, versionDoc)
 }
 
@@ -1965,8 +2218,8 @@ func (mock *StorerMock) UpsertVersionCalls() []struct {
 		ID         string
 		VersionDoc *models.Version
 	}
-	mock.lockUpsertVersion.RLock()
+	lockStorerMockUpsertVersion.RLock()
 	calls = mock.calls.UpsertVersion
-	mock.lockUpsertVersion.RUnlock()
+	lockStorerMockUpsertVersion.RUnlock()
 	return calls
 }

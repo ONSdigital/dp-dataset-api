@@ -26,8 +26,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	log.Event(ctx, "update instance dimension: update instance dimension", log.INFO, logData)
 
-	// if err := func() error {
-	instance, err := s.GetInstance(instanceID)
+	instance, err := s.GetInstance(instanceID, "*")
 	if err != nil {
 		log.Event(ctx, "update instance dimension: Failed to GET instance", log.ERROR, log.Error(err), logData)
 		handleInstanceErr(ctx, err, w, logData)
@@ -91,7 +90,8 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update instance
-	if err = s.UpdateInstance(ctx, instanceID, instanceUpdate); err != nil {
+	newETag, err := s.UpdateInstance(ctx, instance, instanceUpdate, "*")
+	if err != nil {
 		log.Event(ctx, "update instance dimension: failed to update instance with new dimension label/description", log.ERROR, log.Error(err), logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
@@ -99,6 +99,5 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	log.Event(ctx, "updated instance dimension: request successful", log.INFO, logData)
 
-	// TODO set ETag from updated instance!!!
-	setETag(w, instance.ETag)
+	setETag(w, newETag)
 }

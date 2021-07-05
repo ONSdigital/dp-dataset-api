@@ -50,13 +50,20 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = s.AddEventToInstance(instanceID, event); err != nil {
+	instance, err := s.GetInstance(instanceID, "*")
+	if err != nil {
+		log.Event(ctx, "add instance event: failed to get instance from datastore", log.ERROR, log.Error(err), data)
+		handleInstanceErr(ctx, err, w, data)
+		return
+	}
+
+	newETag, err := s.AddEventToInstance(instance, event, "*")
+	if err != nil {
 		log.Event(ctx, "add instance event: failed to add event to instance in datastore", log.ERROR, log.Error(err), data)
 		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
 	log.Event(ctx, "add instance event: request successful", log.INFO, data)
-	// TODO get instance update ETag!
-	setETag(w, instance.ETag)
+	setETag(w, newETag)
 }

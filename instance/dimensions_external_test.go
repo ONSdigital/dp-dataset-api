@@ -14,6 +14,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+const testETag = "testETag"
+
 func Test_UpdateDimensionReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("Given a PUT request to update a dimension on an instance resource", t, func() {
@@ -25,13 +27,13 @@ func Test_UpdateDimensionReturnsOk(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState,
 							InstanceID: "123",
 							Dimensions: []models.Dimension{{Name: "age", ID: "age"}}}, nil
 					},
-					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
-						return nil
+					UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -61,11 +63,11 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return nil, errs.ErrInternalServer
 					},
-					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
-						return nil
+					UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -93,11 +95,11 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: "gobbly gook"}, nil
 					},
-					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
-						return nil
+					UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -123,7 +125,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.PublishedState}, nil
 					},
 				}
@@ -150,7 +152,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return nil, errs.ErrInstanceNotFound
 					},
 				}
@@ -178,13 +180,13 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState,
 							InstanceID: "123",
 							Dimensions: []models.Dimension{{Name: "age", ID: "age"}}}, nil
 					},
-					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
-						return nil
+					UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -212,7 +214,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.CompletedState}, nil
 					},
 				}

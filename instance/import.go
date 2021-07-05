@@ -32,15 +32,25 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = s.UpdateObservationInserted(instanceID, observations); err != nil {
+	instance, err := s.GetInstance(instanceID, "*")
+	if err != nil {
+		log.Event(ctx, "failed to get instance from database", log.ERROR, log.Error(err), logData)
+		handleInstanceErr(ctx, err, w, logData)
+		return
+	}
+
+	// TODO get value from If-Match
+	eTag := instance.ETag
+
+	newETag, err := s.UpdateObservationInserted(instance, observations, eTag)
+	if err != nil {
 		log.Event(ctx, "update imported observations: store.UpdateObservationInserted returned an error", log.ERROR, log.Error(err), logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
 
 	log.Event(ctx, "update imported observations: request successful", log.INFO, logData)
-	// TODO update and return instance Etag
-	setETag(w, instance.ETag)
+	setETag(w, newETag)
 }
 
 // UpdateImportTask updates any task in the request body against an instance
@@ -66,6 +76,16 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	instance, err := s.GetInstance(instanceID, "*")
+	if err != nil {
+		log.Event(ctx, "failed to get instance from database", log.ERROR, log.Error(err), logData)
+		handleError(&taskError{err, http.StatusInternalServerError})
+		return
+	}
+
+	// TODO get value from If-Match
+	eTag := instance.ETag
+
 	validationErrs := make([]error, 0)
 	var hasImportTasks bool
 
@@ -75,7 +95,8 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 			if tasks.ImportObservations.State != models.CompletedState {
 				validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value for import observations: %v", tasks.ImportObservations.State))
 			} else {
-				if err := s.UpdateImportObservationsTaskState(instanceID, tasks.ImportObservations.State); err != nil {
+				eTag, err = s.UpdateImportObservationsTaskState(instance, tasks.ImportObservations.State, eTag)
+				if err != nil {
 					log.Event(ctx, "failed to update import observations task state", log.ERROR, log.Error(err), logData)
 					handleError(&taskError{err, http.StatusInternalServerError})
 					return
@@ -94,7 +115,8 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 			if err := models.ValidateImportTask(task.GenericTaskDetails); err != nil {
 				validationErrs = append(validationErrs, err)
 			} else {
-				if err := s.UpdateBuildHierarchyTaskState(instanceID, task.DimensionName, task.State); err != nil {
+				eTag, err = s.UpdateBuildHierarchyTaskState(instance, task.DimensionName, task.State, eTag)
+				if err != nil {
 					if err.Error() == errs.ErrNotFound.Error() {
 						notFoundErr := task.DimensionName + " hierarchy import task does not exist"
 						log.Event(ctx, notFoundErr, log.ERROR, log.Error(err), logData)
@@ -120,7 +142,8 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 			if err := models.ValidateImportTask(task.GenericTaskDetails); err != nil {
 				validationErrs = append(validationErrs, err)
 			} else {
-				if err := s.UpdateBuildSearchTaskState(instanceID, task.DimensionName, task.State); err != nil {
+				eTag, err = s.UpdateBuildSearchTaskState(instance, task.DimensionName, task.State, eTag)
+				if err != nil {
 					if err.Error() == "not found" {
 						notFoundErr := task.DimensionName + " search index import task does not exist"
 						log.Event(ctx, notFoundErr, log.ERROR, log.Error(err), logData)
@@ -152,8 +175,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Event(ctx, "updateImportTask endpoint: request successful", log.INFO, logData)
-	// TODO update and return instance ETag
-	setETag(w, instance.ETag)
+	setETag(w, eTag)
 }
 
 func unmarshalImportTasks(reader io.Reader) (*models.InstanceImportTasks, error) {

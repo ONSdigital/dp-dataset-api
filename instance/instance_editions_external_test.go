@@ -43,7 +43,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 				}
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return currentInstanceTest_Data, nil
 					},
 					GetEditionFunc: func(datasetID string, edition string, state string) (*models.EditionUpdate, error) {
@@ -55,8 +55,8 @@ func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 					GetNextVersionFunc: func(string, string) (int, error) {
 						return 1, nil
 					},
-					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
-						return nil
+					UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 					AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
 						return nil
@@ -113,7 +113,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 				}
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return currentInstanceTest_Data, nil
 					},
 					GetEditionFunc: func(datasetID string, edition string, state string) (*models.EditionUpdate, error) {
@@ -125,8 +125,8 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 					GetNextVersionFunc: func(string, string) (int, error) {
 						return 1, nil
 					},
-					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
-						return nil
+					UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 					AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
 						return errors.New("boom")
@@ -168,11 +168,11 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 				}
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return currentInstanceTest_Data, nil
 					},
-					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
-						return nil
+					UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()

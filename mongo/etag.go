@@ -26,14 +26,6 @@ func newETagForAddEvent(currentInstance *models.Instance, event *models.Event) (
 	return currentInstance.Hash(b)
 }
 
-func newETagForNodeIDAndOrder(currentInstance *models.Instance, nodeID string, order *int) (eTag string, err error) {
-	b := []byte(nodeID)
-	if order != nil {
-		b = []byte(fmt.Sprintf("%s%d", nodeID, &order))
-	}
-	return currentInstance.Hash(b)
-}
-
 func newETagForObservationsInserted(currentInstance *models.Instance, observationInserted int64) (eTag string, err error) {
 	b := []byte(fmt.Sprintf("observationInserted%d", observationInserted))
 	return currentInstance.Hash(b)
@@ -52,4 +44,20 @@ func newETagForHierarchyTaskStateUpdate(currentInstance *models.Instance, dimens
 func newETagForBuildSearchTaskStateUpdate(currentInstance *models.Instance, dimension, state string) (eTag string, err error) {
 	b := []byte(fmt.Sprintf("buildSearchTask_dimension%sstate%s", dimension, state))
 	return currentInstance.Hash(b)
+}
+
+func newETagForNodeIDAndOrder(currentInstance *models.Instance, nodeID string, order *int) (eTag string, err error) {
+	b := []byte(nodeID)
+	if order != nil {
+		b = []byte(fmt.Sprintf("%s%d", nodeID, &order))
+	}
+	return currentInstance.Hash(b)
+}
+
+func newETagForAddDimensionOption(currentInstance *models.Instance, option *models.CachedDimensionOption) (eTag string, err error) {
+	optionBytes, err := bson.Marshal(option)
+	if err != nil {
+		return "", err
+	}
+	return currentInstance.Hash(optionBytes)
 }

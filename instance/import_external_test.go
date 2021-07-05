@@ -25,11 +25,11 @@ func Test_InsertedObservationsReturnsOk(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState}, nil
 					},
-					UpdateObservationInsertedFunc: func(id string, ob int64) error {
-						return nil
+					UpdateObservationInsertedFunc: func(id *models.Instance, ob int64, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -42,7 +42,7 @@ func Test_InsertedObservationsReturnsOk(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusOK)
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
 			})
 		})
@@ -59,7 +59,7 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return nil, errs.ErrInternalServer
 					},
 				}
@@ -88,11 +88,11 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState}, nil
 					},
-					UpdateObservationInsertedFunc: func(id string, ob int64) error {
-						return errs.ErrInstanceNotFound
+					UpdateObservationInsertedFunc: func(id *models.Instance, ob int64, eTagSelector string) (string, error) {
+						return "", errs.ErrInstanceNotFound
 					},
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -107,7 +107,7 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
 
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
 			})
 		})
@@ -118,7 +118,7 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.SubmittedState}, nil
 					},
 				}
@@ -153,11 +153,11 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.CreatedState}, nil
 					},
-					UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
-						return nil
+					UpdateImportObservationsTaskStateFunc: func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -170,7 +170,7 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusOK)
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 			})
@@ -189,7 +189,7 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return nil, errs.ErrInternalServer
 					},
 				}
@@ -220,7 +220,7 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return nil, errs.ErrInstanceNotFound
 					},
 				}
@@ -251,11 +251,11 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.PublishedState}, nil
 					},
-					UpdateInstanceFunc: func(ctx context.Context, id string, i *models.Instance) error {
-						return nil
+					UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -288,11 +288,11 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState}, nil
 					},
-					UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
-						return nil
+					UpdateImportObservationsTaskStateFunc: func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -322,11 +322,11 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState}, nil
 					},
-					UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
-						return nil
+					UpdateImportObservationsTaskStateFunc: func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -341,7 +341,7 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 			})
@@ -355,11 +355,11 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState}, nil
 					},
-					UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
-						return nil
+					UpdateImportObservationsTaskStateFunc: func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -373,7 +373,7 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 			})
@@ -387,11 +387,11 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState}, nil
 					},
-					UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
-						return errs.ErrInternalServer
+					UpdateImportObservationsTaskStateFunc: func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+						return "", errs.ErrInternalServer
 					},
 				}
 
@@ -406,7 +406,7 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
 			})
 		})
@@ -424,11 +424,11 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState}, nil
 					},
-					UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
-						return nil
+					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -458,11 +458,11 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState}, nil
 					},
-					UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
-						return nil
+					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -477,7 +477,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
@@ -493,11 +493,11 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState}, nil
 					},
-					UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
-						return nil
+					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -512,7 +512,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
@@ -527,11 +527,11 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState}, nil
 					},
-					UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
-						return nil
+					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -546,7 +546,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
@@ -561,11 +561,11 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState}, nil
 					},
-					UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
-						return nil
+					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -580,7 +580,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
@@ -595,11 +595,11 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState}, nil
 					},
-					UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
-						return nil
+					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -614,7 +614,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
@@ -629,11 +629,11 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState}, nil
 					},
-					UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
-						return errors.New("not found")
+					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return "", errors.New("not found")
 					},
 				}
 
@@ -648,7 +648,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
@@ -663,11 +663,11 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState}, nil
 					},
-					UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
-						return errors.New("internal error")
+					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return "", errors.New("internal error")
 					},
 				}
 
@@ -682,7 +682,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
@@ -702,11 +702,11 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsOk(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.EditionConfirmedState}, nil
 					},
-					UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
-						return nil
+					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -719,7 +719,7 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsOk(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusOK)
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
 			})
@@ -738,11 +738,11 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.CreatedState}, nil
 					},
-					UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
-						return nil
+					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -772,11 +772,11 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.CreatedState}, nil
 					},
-					UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
-						return nil
+					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -791,7 +791,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
@@ -806,11 +806,11 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.CreatedState}, nil
 					},
-					UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
-						return nil
+					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -824,7 +824,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
@@ -839,11 +839,11 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.CreatedState}, nil
 					},
-					UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
-						return nil
+					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -858,7 +858,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
@@ -873,11 +873,11 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.CreatedState}, nil
 					},
-					UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
-						return nil
+					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -892,7 +892,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
@@ -907,11 +907,11 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.CreatedState}, nil
 					},
-					UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
-						return nil
+					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -926,7 +926,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
@@ -941,11 +941,11 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.CreatedState}, nil
 					},
-					UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
-						return errors.New("not found")
+					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return "", errors.New("not found")
 					},
 				}
 
@@ -960,7 +960,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
@@ -975,11 +975,11 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.CreatedState}, nil
 					},
-					UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
-						return errors.New("internal error")
+					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return "", errors.New("internal error")
 					},
 				}
 
@@ -994,7 +994,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
@@ -1014,11 +1014,11 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexReturnsOk(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(id string) (*models.Instance, error) {
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: models.CreatedState}, nil
 					},
-					UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
-						return nil
+					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+						return testETag, nil
 					},
 				}
 
@@ -1031,7 +1031,7 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexReturnsOk(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusOK)
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)

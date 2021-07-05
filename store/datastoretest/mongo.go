@@ -12,6 +12,49 @@ import (
 	"sync"
 )
 
+var (
+	lockMongoDBMockAcquireInstanceLock               sync.RWMutex
+	lockMongoDBMockAddDimensionToInstance            sync.RWMutex
+	lockMongoDBMockAddEventToInstance                sync.RWMutex
+	lockMongoDBMockAddInstance                       sync.RWMutex
+	lockMongoDBMockCheckDatasetExists                sync.RWMutex
+	lockMongoDBMockCheckEditionExists                sync.RWMutex
+	lockMongoDBMockChecker                           sync.RWMutex
+	lockMongoDBMockClose                             sync.RWMutex
+	lockMongoDBMockDeleteDataset                     sync.RWMutex
+	lockMongoDBMockDeleteEdition                     sync.RWMutex
+	lockMongoDBMockGetDataset                        sync.RWMutex
+	lockMongoDBMockGetDatasets                       sync.RWMutex
+	lockMongoDBMockGetDimensionOptions               sync.RWMutex
+	lockMongoDBMockGetDimensionOptionsFromIDs        sync.RWMutex
+	lockMongoDBMockGetDimensions                     sync.RWMutex
+	lockMongoDBMockGetDimensionsFromInstance         sync.RWMutex
+	lockMongoDBMockGetEdition                        sync.RWMutex
+	lockMongoDBMockGetEditions                       sync.RWMutex
+	lockMongoDBMockGetInstance                       sync.RWMutex
+	lockMongoDBMockGetInstances                      sync.RWMutex
+	lockMongoDBMockGetNextVersion                    sync.RWMutex
+	lockMongoDBMockGetUniqueDimensionAndOptions      sync.RWMutex
+	lockMongoDBMockGetVersion                        sync.RWMutex
+	lockMongoDBMockGetVersions                       sync.RWMutex
+	lockMongoDBMockUnlockInstance                    sync.RWMutex
+	lockMongoDBMockUpdateBuildHierarchyTaskState     sync.RWMutex
+	lockMongoDBMockUpdateBuildSearchTaskState        sync.RWMutex
+	lockMongoDBMockUpdateDataset                     sync.RWMutex
+	lockMongoDBMockUpdateDatasetWithAssociation      sync.RWMutex
+	lockMongoDBMockUpdateDimensionNodeIDAndOrder     sync.RWMutex
+	lockMongoDBMockUpdateETagForNodeIDAndOrder       sync.RWMutex
+	lockMongoDBMockUpdateETagForOptions              sync.RWMutex
+	lockMongoDBMockUpdateImportObservationsTaskState sync.RWMutex
+	lockMongoDBMockUpdateInstance                    sync.RWMutex
+	lockMongoDBMockUpdateObservationInserted         sync.RWMutex
+	lockMongoDBMockUpdateVersion                     sync.RWMutex
+	lockMongoDBMockUpsertContact                     sync.RWMutex
+	lockMongoDBMockUpsertDataset                     sync.RWMutex
+	lockMongoDBMockUpsertEdition                     sync.RWMutex
+	lockMongoDBMockUpsertVersion                     sync.RWMutex
+)
+
 // Ensure, that MongoDBMock does implement store.MongoDB.
 // If this is not the case, regenerate this file with moq.
 var _ store.MongoDB = &MongoDBMock{}
@@ -22,10 +65,13 @@ var _ store.MongoDB = &MongoDBMock{}
 //
 //         // make and configure a mocked store.MongoDB
 //         mockedMongoDB := &MongoDBMock{
+//             AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+// 	               panic("mock out the AcquireInstanceLock method")
+//             },
 //             AddDimensionToInstanceFunc: func(dimension *models.CachedDimensionOption) error {
 // 	               panic("mock out the AddDimensionToInstance method")
 //             },
-//             AddEventToInstanceFunc: func(instanceID string, event *models.Event) error {
+//             AddEventToInstanceFunc: func(currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
 // 	               panic("mock out the AddEventToInstance method")
 //             },
 //             AddInstanceFunc: func(instance *models.Instance) (*models.Instance, error) {
@@ -73,7 +119,7 @@ var _ store.MongoDB = &MongoDBMock{}
 //             GetEditionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
 // 	               panic("mock out the GetEditions method")
 //             },
-//             GetInstanceFunc: func(ID string) (*models.Instance, error) {
+//             GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 // 	               panic("mock out the GetInstance method")
 //             },
 //             GetInstancesFunc: func(ctx context.Context, states []string, datasets []string, offset int, limit int) ([]*models.Instance, int, error) {
@@ -91,10 +137,13 @@ var _ store.MongoDB = &MongoDBMock{}
 //             GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error) {
 // 	               panic("mock out the GetVersions method")
 //             },
-//             UpdateBuildHierarchyTaskStateFunc: func(id string, dimension string, state string) error {
+//             UnlockInstanceFunc: func(lockID string) error {
+// 	               panic("mock out the UnlockInstance method")
+//             },
+//             UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
 // 	               panic("mock out the UpdateBuildHierarchyTaskState method")
 //             },
-//             UpdateBuildSearchTaskStateFunc: func(id string, dimension string, state string) error {
+//             UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
 // 	               panic("mock out the UpdateBuildSearchTaskState method")
 //             },
 //             UpdateDatasetFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
@@ -106,13 +155,19 @@ var _ store.MongoDB = &MongoDBMock{}
 //             UpdateDimensionNodeIDAndOrderFunc: func(dimension *models.DimensionOption) error {
 // 	               panic("mock out the UpdateDimensionNodeIDAndOrder method")
 //             },
-//             UpdateImportObservationsTaskStateFunc: func(id string, state string) error {
+//             UpdateETagForNodeIDAndOrderFunc: func(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (string, error) {
+// 	               panic("mock out the UpdateETagForNodeIDAndOrder method")
+//             },
+//             UpdateETagForOptionsFunc: func(currentInstance *models.Instance, option *models.CachedDimensionOption, eTagSelector string) (string, error) {
+// 	               panic("mock out the UpdateETagForOptions method")
+//             },
+//             UpdateImportObservationsTaskStateFunc: func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
 // 	               panic("mock out the UpdateImportObservationsTaskState method")
 //             },
-//             UpdateInstanceFunc: func(ctx context.Context, ID string, instance *models.Instance) error {
+//             UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
 // 	               panic("mock out the UpdateInstance method")
 //             },
-//             UpdateObservationInsertedFunc: func(ID string, observationInserted int64) error {
+//             UpdateObservationInsertedFunc: func(currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error) {
 // 	               panic("mock out the UpdateObservationInserted method")
 //             },
 //             UpdateVersionFunc: func(ID string, version *models.Version) error {
@@ -137,11 +192,14 @@ var _ store.MongoDB = &MongoDBMock{}
 //
 //     }
 type MongoDBMock struct {
+	// AcquireInstanceLockFunc mocks the AcquireInstanceLock method.
+	AcquireInstanceLockFunc func(ctx context.Context, instanceID string) (string, error)
+
 	// AddDimensionToInstanceFunc mocks the AddDimensionToInstance method.
 	AddDimensionToInstanceFunc func(dimension *models.CachedDimensionOption) error
 
 	// AddEventToInstanceFunc mocks the AddEventToInstance method.
-	AddEventToInstanceFunc func(instanceID string, event *models.Event) error
+	AddEventToInstanceFunc func(currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error)
 
 	// AddInstanceFunc mocks the AddInstance method.
 	AddInstanceFunc func(instance *models.Instance) (*models.Instance, error)
@@ -189,7 +247,7 @@ type MongoDBMock struct {
 	GetEditionsFunc func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]*models.EditionUpdate, int, error)
 
 	// GetInstanceFunc mocks the GetInstance method.
-	GetInstanceFunc func(ID string) (*models.Instance, error)
+	GetInstanceFunc func(ID string, eTagSelector string) (*models.Instance, error)
 
 	// GetInstancesFunc mocks the GetInstances method.
 	GetInstancesFunc func(ctx context.Context, states []string, datasets []string, offset int, limit int) ([]*models.Instance, int, error)
@@ -206,11 +264,14 @@ type MongoDBMock struct {
 	// GetVersionsFunc mocks the GetVersions method.
 	GetVersionsFunc func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error)
 
+	// UnlockInstanceFunc mocks the UnlockInstance method.
+	UnlockInstanceFunc func(lockID string) error
+
 	// UpdateBuildHierarchyTaskStateFunc mocks the UpdateBuildHierarchyTaskState method.
-	UpdateBuildHierarchyTaskStateFunc func(id string, dimension string, state string) error
+	UpdateBuildHierarchyTaskStateFunc func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error)
 
 	// UpdateBuildSearchTaskStateFunc mocks the UpdateBuildSearchTaskState method.
-	UpdateBuildSearchTaskStateFunc func(id string, dimension string, state string) error
+	UpdateBuildSearchTaskStateFunc func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error)
 
 	// UpdateDatasetFunc mocks the UpdateDataset method.
 	UpdateDatasetFunc func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
@@ -221,14 +282,20 @@ type MongoDBMock struct {
 	// UpdateDimensionNodeIDAndOrderFunc mocks the UpdateDimensionNodeIDAndOrder method.
 	UpdateDimensionNodeIDAndOrderFunc func(dimension *models.DimensionOption) error
 
+	// UpdateETagForNodeIDAndOrderFunc mocks the UpdateETagForNodeIDAndOrder method.
+	UpdateETagForNodeIDAndOrderFunc func(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (string, error)
+
+	// UpdateETagForOptionsFunc mocks the UpdateETagForOptions method.
+	UpdateETagForOptionsFunc func(currentInstance *models.Instance, option *models.CachedDimensionOption, eTagSelector string) (string, error)
+
 	// UpdateImportObservationsTaskStateFunc mocks the UpdateImportObservationsTaskState method.
-	UpdateImportObservationsTaskStateFunc func(id string, state string) error
+	UpdateImportObservationsTaskStateFunc func(currentInstance *models.Instance, state string, eTagSelector string) (string, error)
 
 	// UpdateInstanceFunc mocks the UpdateInstance method.
-	UpdateInstanceFunc func(ctx context.Context, ID string, instance *models.Instance) error
+	UpdateInstanceFunc func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error)
 
 	// UpdateObservationInsertedFunc mocks the UpdateObservationInserted method.
-	UpdateObservationInsertedFunc func(ID string, observationInserted int64) error
+	UpdateObservationInsertedFunc func(currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error)
 
 	// UpdateVersionFunc mocks the UpdateVersion method.
 	UpdateVersionFunc func(ID string, version *models.Version) error
@@ -247,6 +314,13 @@ type MongoDBMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AcquireInstanceLock holds details about calls to the AcquireInstanceLock method.
+		AcquireInstanceLock []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// InstanceID is the instanceID argument value.
+			InstanceID string
+		}
 		// AddDimensionToInstance holds details about calls to the AddDimensionToInstance method.
 		AddDimensionToInstance []struct {
 			// Dimension is the dimension argument value.
@@ -254,10 +328,12 @@ type MongoDBMock struct {
 		}
 		// AddEventToInstance holds details about calls to the AddEventToInstance method.
 		AddEventToInstance []struct {
-			// InstanceID is the instanceID argument value.
-			InstanceID string
+			// CurrentInstance is the currentInstance argument value.
+			CurrentInstance *models.Instance
 			// Event is the event argument value.
 			Event *models.Event
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
 		}
 		// AddInstance holds details about calls to the AddInstance method.
 		AddInstance []struct {
@@ -386,6 +462,8 @@ type MongoDBMock struct {
 		GetInstance []struct {
 			// ID is the ID argument value.
 			ID string
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
 		}
 		// GetInstances holds details about calls to the GetInstances method.
 		GetInstances []struct {
@@ -446,23 +524,32 @@ type MongoDBMock struct {
 			// Limit is the limit argument value.
 			Limit int
 		}
+		// UnlockInstance holds details about calls to the UnlockInstance method.
+		UnlockInstance []struct {
+			// LockID is the lockID argument value.
+			LockID string
+		}
 		// UpdateBuildHierarchyTaskState holds details about calls to the UpdateBuildHierarchyTaskState method.
 		UpdateBuildHierarchyTaskState []struct {
-			// ID is the id argument value.
-			ID string
+			// CurrentInstance is the currentInstance argument value.
+			CurrentInstance *models.Instance
 			// Dimension is the dimension argument value.
 			Dimension string
 			// State is the state argument value.
 			State string
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
 		}
 		// UpdateBuildSearchTaskState holds details about calls to the UpdateBuildSearchTaskState method.
 		UpdateBuildSearchTaskState []struct {
-			// ID is the id argument value.
-			ID string
+			// CurrentInstance is the currentInstance argument value.
+			CurrentInstance *models.Instance
 			// Dimension is the dimension argument value.
 			Dimension string
 			// State is the state argument value.
 			State string
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
 		}
 		// UpdateDataset holds details about calls to the UpdateDataset method.
 		UpdateDataset []struct {
@@ -489,28 +576,54 @@ type MongoDBMock struct {
 			// Dimension is the dimension argument value.
 			Dimension *models.DimensionOption
 		}
+		// UpdateETagForNodeIDAndOrder holds details about calls to the UpdateETagForNodeIDAndOrder method.
+		UpdateETagForNodeIDAndOrder []struct {
+			// CurrentInstance is the currentInstance argument value.
+			CurrentInstance *models.Instance
+			// NodeID is the nodeID argument value.
+			NodeID string
+			// Order is the order argument value.
+			Order *int
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
+		}
+		// UpdateETagForOptions holds details about calls to the UpdateETagForOptions method.
+		UpdateETagForOptions []struct {
+			// CurrentInstance is the currentInstance argument value.
+			CurrentInstance *models.Instance
+			// Option is the option argument value.
+			Option *models.CachedDimensionOption
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
+		}
 		// UpdateImportObservationsTaskState holds details about calls to the UpdateImportObservationsTaskState method.
 		UpdateImportObservationsTaskState []struct {
-			// ID is the id argument value.
-			ID string
+			// CurrentInstance is the currentInstance argument value.
+			CurrentInstance *models.Instance
 			// State is the state argument value.
 			State string
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
 		}
 		// UpdateInstance holds details about calls to the UpdateInstance method.
 		UpdateInstance []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// ID is the ID argument value.
-			ID string
-			// Instance is the instance argument value.
-			Instance *models.Instance
+			// CurrentInstance is the currentInstance argument value.
+			CurrentInstance *models.Instance
+			// UpdatedInstance is the updatedInstance argument value.
+			UpdatedInstance *models.Instance
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
 		}
 		// UpdateObservationInserted holds details about calls to the UpdateObservationInserted method.
 		UpdateObservationInserted []struct {
-			// ID is the ID argument value.
-			ID string
+			// CurrentInstance is the currentInstance argument value.
+			CurrentInstance *models.Instance
 			// ObservationInserted is the observationInserted argument value.
 			ObservationInserted int64
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
 		}
 		// UpdateVersion holds details about calls to the UpdateVersion method.
 		UpdateVersion []struct {
@@ -550,42 +663,41 @@ type MongoDBMock struct {
 			VersionDoc *models.Version
 		}
 	}
-	lockAddDimensionToInstance            sync.RWMutex
-	lockAddEventToInstance                sync.RWMutex
-	lockAddInstance                       sync.RWMutex
-	lockCheckDatasetExists                sync.RWMutex
-	lockCheckEditionExists                sync.RWMutex
-	lockChecker                           sync.RWMutex
-	lockClose                             sync.RWMutex
-	lockDeleteDataset                     sync.RWMutex
-	lockDeleteEdition                     sync.RWMutex
-	lockGetDataset                        sync.RWMutex
-	lockGetDatasets                       sync.RWMutex
-	lockGetDimensionOptions               sync.RWMutex
-	lockGetDimensionOptionsFromIDs        sync.RWMutex
-	lockGetDimensions                     sync.RWMutex
-	lockGetDimensionsFromInstance         sync.RWMutex
-	lockGetEdition                        sync.RWMutex
-	lockGetEditions                       sync.RWMutex
-	lockGetInstance                       sync.RWMutex
-	lockGetInstances                      sync.RWMutex
-	lockGetNextVersion                    sync.RWMutex
-	lockGetUniqueDimensionAndOptions      sync.RWMutex
-	lockGetVersion                        sync.RWMutex
-	lockGetVersions                       sync.RWMutex
-	lockUpdateBuildHierarchyTaskState     sync.RWMutex
-	lockUpdateBuildSearchTaskState        sync.RWMutex
-	lockUpdateDataset                     sync.RWMutex
-	lockUpdateDatasetWithAssociation      sync.RWMutex
-	lockUpdateDimensionNodeIDAndOrder     sync.RWMutex
-	lockUpdateImportObservationsTaskState sync.RWMutex
-	lockUpdateInstance                    sync.RWMutex
-	lockUpdateObservationInserted         sync.RWMutex
-	lockUpdateVersion                     sync.RWMutex
-	lockUpsertContact                     sync.RWMutex
-	lockUpsertDataset                     sync.RWMutex
-	lockUpsertEdition                     sync.RWMutex
-	lockUpsertVersion                     sync.RWMutex
+}
+
+// AcquireInstanceLock calls AcquireInstanceLockFunc.
+func (mock *MongoDBMock) AcquireInstanceLock(ctx context.Context, instanceID string) (string, error) {
+	if mock.AcquireInstanceLockFunc == nil {
+		panic("MongoDBMock.AcquireInstanceLockFunc: method is nil but MongoDB.AcquireInstanceLock was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		InstanceID string
+	}{
+		Ctx:        ctx,
+		InstanceID: instanceID,
+	}
+	lockMongoDBMockAcquireInstanceLock.Lock()
+	mock.calls.AcquireInstanceLock = append(mock.calls.AcquireInstanceLock, callInfo)
+	lockMongoDBMockAcquireInstanceLock.Unlock()
+	return mock.AcquireInstanceLockFunc(ctx, instanceID)
+}
+
+// AcquireInstanceLockCalls gets all the calls that were made to AcquireInstanceLock.
+// Check the length with:
+//     len(mockedMongoDB.AcquireInstanceLockCalls())
+func (mock *MongoDBMock) AcquireInstanceLockCalls() []struct {
+	Ctx        context.Context
+	InstanceID string
+} {
+	var calls []struct {
+		Ctx        context.Context
+		InstanceID string
+	}
+	lockMongoDBMockAcquireInstanceLock.RLock()
+	calls = mock.calls.AcquireInstanceLock
+	lockMongoDBMockAcquireInstanceLock.RUnlock()
+	return calls
 }
 
 // AddDimensionToInstance calls AddDimensionToInstanceFunc.
@@ -598,9 +710,9 @@ func (mock *MongoDBMock) AddDimensionToInstance(dimension *models.CachedDimensio
 	}{
 		Dimension: dimension,
 	}
-	mock.lockAddDimensionToInstance.Lock()
+	lockMongoDBMockAddDimensionToInstance.Lock()
 	mock.calls.AddDimensionToInstance = append(mock.calls.AddDimensionToInstance, callInfo)
-	mock.lockAddDimensionToInstance.Unlock()
+	lockMongoDBMockAddDimensionToInstance.Unlock()
 	return mock.AddDimensionToInstanceFunc(dimension)
 }
 
@@ -613,44 +725,48 @@ func (mock *MongoDBMock) AddDimensionToInstanceCalls() []struct {
 	var calls []struct {
 		Dimension *models.CachedDimensionOption
 	}
-	mock.lockAddDimensionToInstance.RLock()
+	lockMongoDBMockAddDimensionToInstance.RLock()
 	calls = mock.calls.AddDimensionToInstance
-	mock.lockAddDimensionToInstance.RUnlock()
+	lockMongoDBMockAddDimensionToInstance.RUnlock()
 	return calls
 }
 
 // AddEventToInstance calls AddEventToInstanceFunc.
-func (mock *MongoDBMock) AddEventToInstance(instanceID string, event *models.Event) error {
+func (mock *MongoDBMock) AddEventToInstance(currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
 	if mock.AddEventToInstanceFunc == nil {
 		panic("MongoDBMock.AddEventToInstanceFunc: method is nil but MongoDB.AddEventToInstance was just called")
 	}
 	callInfo := struct {
-		InstanceID string
-		Event      *models.Event
+		CurrentInstance *models.Instance
+		Event           *models.Event
+		ETagSelector    string
 	}{
-		InstanceID: instanceID,
-		Event:      event,
+		CurrentInstance: currentInstance,
+		Event:           event,
+		ETagSelector:    eTagSelector,
 	}
-	mock.lockAddEventToInstance.Lock()
+	lockMongoDBMockAddEventToInstance.Lock()
 	mock.calls.AddEventToInstance = append(mock.calls.AddEventToInstance, callInfo)
-	mock.lockAddEventToInstance.Unlock()
-	return mock.AddEventToInstanceFunc(instanceID, event)
+	lockMongoDBMockAddEventToInstance.Unlock()
+	return mock.AddEventToInstanceFunc(currentInstance, event, eTagSelector)
 }
 
 // AddEventToInstanceCalls gets all the calls that were made to AddEventToInstance.
 // Check the length with:
 //     len(mockedMongoDB.AddEventToInstanceCalls())
 func (mock *MongoDBMock) AddEventToInstanceCalls() []struct {
-	InstanceID string
-	Event      *models.Event
+	CurrentInstance *models.Instance
+	Event           *models.Event
+	ETagSelector    string
 } {
 	var calls []struct {
-		InstanceID string
-		Event      *models.Event
+		CurrentInstance *models.Instance
+		Event           *models.Event
+		ETagSelector    string
 	}
-	mock.lockAddEventToInstance.RLock()
+	lockMongoDBMockAddEventToInstance.RLock()
 	calls = mock.calls.AddEventToInstance
-	mock.lockAddEventToInstance.RUnlock()
+	lockMongoDBMockAddEventToInstance.RUnlock()
 	return calls
 }
 
@@ -664,9 +780,9 @@ func (mock *MongoDBMock) AddInstance(instance *models.Instance) (*models.Instanc
 	}{
 		Instance: instance,
 	}
-	mock.lockAddInstance.Lock()
+	lockMongoDBMockAddInstance.Lock()
 	mock.calls.AddInstance = append(mock.calls.AddInstance, callInfo)
-	mock.lockAddInstance.Unlock()
+	lockMongoDBMockAddInstance.Unlock()
 	return mock.AddInstanceFunc(instance)
 }
 
@@ -679,9 +795,9 @@ func (mock *MongoDBMock) AddInstanceCalls() []struct {
 	var calls []struct {
 		Instance *models.Instance
 	}
-	mock.lockAddInstance.RLock()
+	lockMongoDBMockAddInstance.RLock()
 	calls = mock.calls.AddInstance
-	mock.lockAddInstance.RUnlock()
+	lockMongoDBMockAddInstance.RUnlock()
 	return calls
 }
 
@@ -697,9 +813,9 @@ func (mock *MongoDBMock) CheckDatasetExists(ID string, state string) error {
 		ID:    ID,
 		State: state,
 	}
-	mock.lockCheckDatasetExists.Lock()
+	lockMongoDBMockCheckDatasetExists.Lock()
 	mock.calls.CheckDatasetExists = append(mock.calls.CheckDatasetExists, callInfo)
-	mock.lockCheckDatasetExists.Unlock()
+	lockMongoDBMockCheckDatasetExists.Unlock()
 	return mock.CheckDatasetExistsFunc(ID, state)
 }
 
@@ -714,9 +830,9 @@ func (mock *MongoDBMock) CheckDatasetExistsCalls() []struct {
 		ID    string
 		State string
 	}
-	mock.lockCheckDatasetExists.RLock()
+	lockMongoDBMockCheckDatasetExists.RLock()
 	calls = mock.calls.CheckDatasetExists
-	mock.lockCheckDatasetExists.RUnlock()
+	lockMongoDBMockCheckDatasetExists.RUnlock()
 	return calls
 }
 
@@ -734,9 +850,9 @@ func (mock *MongoDBMock) CheckEditionExists(ID string, editionID string, state s
 		EditionID: editionID,
 		State:     state,
 	}
-	mock.lockCheckEditionExists.Lock()
+	lockMongoDBMockCheckEditionExists.Lock()
 	mock.calls.CheckEditionExists = append(mock.calls.CheckEditionExists, callInfo)
-	mock.lockCheckEditionExists.Unlock()
+	lockMongoDBMockCheckEditionExists.Unlock()
 	return mock.CheckEditionExistsFunc(ID, editionID, state)
 }
 
@@ -753,9 +869,9 @@ func (mock *MongoDBMock) CheckEditionExistsCalls() []struct {
 		EditionID string
 		State     string
 	}
-	mock.lockCheckEditionExists.RLock()
+	lockMongoDBMockCheckEditionExists.RLock()
 	calls = mock.calls.CheckEditionExists
-	mock.lockCheckEditionExists.RUnlock()
+	lockMongoDBMockCheckEditionExists.RUnlock()
 	return calls
 }
 
@@ -771,9 +887,9 @@ func (mock *MongoDBMock) Checker(in1 context.Context, in2 *healthcheck.CheckStat
 		In1: in1,
 		In2: in2,
 	}
-	mock.lockChecker.Lock()
+	lockMongoDBMockChecker.Lock()
 	mock.calls.Checker = append(mock.calls.Checker, callInfo)
-	mock.lockChecker.Unlock()
+	lockMongoDBMockChecker.Unlock()
 	return mock.CheckerFunc(in1, in2)
 }
 
@@ -788,9 +904,9 @@ func (mock *MongoDBMock) CheckerCalls() []struct {
 		In1 context.Context
 		In2 *healthcheck.CheckState
 	}
-	mock.lockChecker.RLock()
+	lockMongoDBMockChecker.RLock()
 	calls = mock.calls.Checker
-	mock.lockChecker.RUnlock()
+	lockMongoDBMockChecker.RUnlock()
 	return calls
 }
 
@@ -804,9 +920,9 @@ func (mock *MongoDBMock) Close(in1 context.Context) error {
 	}{
 		In1: in1,
 	}
-	mock.lockClose.Lock()
+	lockMongoDBMockClose.Lock()
 	mock.calls.Close = append(mock.calls.Close, callInfo)
-	mock.lockClose.Unlock()
+	lockMongoDBMockClose.Unlock()
 	return mock.CloseFunc(in1)
 }
 
@@ -819,9 +935,9 @@ func (mock *MongoDBMock) CloseCalls() []struct {
 	var calls []struct {
 		In1 context.Context
 	}
-	mock.lockClose.RLock()
+	lockMongoDBMockClose.RLock()
 	calls = mock.calls.Close
-	mock.lockClose.RUnlock()
+	lockMongoDBMockClose.RUnlock()
 	return calls
 }
 
@@ -835,9 +951,9 @@ func (mock *MongoDBMock) DeleteDataset(ID string) error {
 	}{
 		ID: ID,
 	}
-	mock.lockDeleteDataset.Lock()
+	lockMongoDBMockDeleteDataset.Lock()
 	mock.calls.DeleteDataset = append(mock.calls.DeleteDataset, callInfo)
-	mock.lockDeleteDataset.Unlock()
+	lockMongoDBMockDeleteDataset.Unlock()
 	return mock.DeleteDatasetFunc(ID)
 }
 
@@ -850,9 +966,9 @@ func (mock *MongoDBMock) DeleteDatasetCalls() []struct {
 	var calls []struct {
 		ID string
 	}
-	mock.lockDeleteDataset.RLock()
+	lockMongoDBMockDeleteDataset.RLock()
 	calls = mock.calls.DeleteDataset
-	mock.lockDeleteDataset.RUnlock()
+	lockMongoDBMockDeleteDataset.RUnlock()
 	return calls
 }
 
@@ -866,9 +982,9 @@ func (mock *MongoDBMock) DeleteEdition(ID string) error {
 	}{
 		ID: ID,
 	}
-	mock.lockDeleteEdition.Lock()
+	lockMongoDBMockDeleteEdition.Lock()
 	mock.calls.DeleteEdition = append(mock.calls.DeleteEdition, callInfo)
-	mock.lockDeleteEdition.Unlock()
+	lockMongoDBMockDeleteEdition.Unlock()
 	return mock.DeleteEditionFunc(ID)
 }
 
@@ -881,9 +997,9 @@ func (mock *MongoDBMock) DeleteEditionCalls() []struct {
 	var calls []struct {
 		ID string
 	}
-	mock.lockDeleteEdition.RLock()
+	lockMongoDBMockDeleteEdition.RLock()
 	calls = mock.calls.DeleteEdition
-	mock.lockDeleteEdition.RUnlock()
+	lockMongoDBMockDeleteEdition.RUnlock()
 	return calls
 }
 
@@ -897,9 +1013,9 @@ func (mock *MongoDBMock) GetDataset(ID string) (*models.DatasetUpdate, error) {
 	}{
 		ID: ID,
 	}
-	mock.lockGetDataset.Lock()
+	lockMongoDBMockGetDataset.Lock()
 	mock.calls.GetDataset = append(mock.calls.GetDataset, callInfo)
-	mock.lockGetDataset.Unlock()
+	lockMongoDBMockGetDataset.Unlock()
 	return mock.GetDatasetFunc(ID)
 }
 
@@ -912,9 +1028,9 @@ func (mock *MongoDBMock) GetDatasetCalls() []struct {
 	var calls []struct {
 		ID string
 	}
-	mock.lockGetDataset.RLock()
+	lockMongoDBMockGetDataset.RLock()
 	calls = mock.calls.GetDataset
-	mock.lockGetDataset.RUnlock()
+	lockMongoDBMockGetDataset.RUnlock()
 	return calls
 }
 
@@ -934,9 +1050,9 @@ func (mock *MongoDBMock) GetDatasets(ctx context.Context, offset int, limit int,
 		Limit:      limit,
 		Authorised: authorised,
 	}
-	mock.lockGetDatasets.Lock()
+	lockMongoDBMockGetDatasets.Lock()
 	mock.calls.GetDatasets = append(mock.calls.GetDatasets, callInfo)
-	mock.lockGetDatasets.Unlock()
+	lockMongoDBMockGetDatasets.Unlock()
 	return mock.GetDatasetsFunc(ctx, offset, limit, authorised)
 }
 
@@ -955,9 +1071,9 @@ func (mock *MongoDBMock) GetDatasetsCalls() []struct {
 		Limit      int
 		Authorised bool
 	}
-	mock.lockGetDatasets.RLock()
+	lockMongoDBMockGetDatasets.RLock()
 	calls = mock.calls.GetDatasets
-	mock.lockGetDatasets.RUnlock()
+	lockMongoDBMockGetDatasets.RUnlock()
 	return calls
 }
 
@@ -979,9 +1095,9 @@ func (mock *MongoDBMock) GetDimensionOptions(ctx context.Context, version *model
 		Offset:    offset,
 		Limit:     limit,
 	}
-	mock.lockGetDimensionOptions.Lock()
+	lockMongoDBMockGetDimensionOptions.Lock()
 	mock.calls.GetDimensionOptions = append(mock.calls.GetDimensionOptions, callInfo)
-	mock.lockGetDimensionOptions.Unlock()
+	lockMongoDBMockGetDimensionOptions.Unlock()
 	return mock.GetDimensionOptionsFunc(ctx, version, dimension, offset, limit)
 }
 
@@ -1002,9 +1118,9 @@ func (mock *MongoDBMock) GetDimensionOptionsCalls() []struct {
 		Offset    int
 		Limit     int
 	}
-	mock.lockGetDimensionOptions.RLock()
+	lockMongoDBMockGetDimensionOptions.RLock()
 	calls = mock.calls.GetDimensionOptions
-	mock.lockGetDimensionOptions.RUnlock()
+	lockMongoDBMockGetDimensionOptions.RUnlock()
 	return calls
 }
 
@@ -1022,9 +1138,9 @@ func (mock *MongoDBMock) GetDimensionOptionsFromIDs(version *models.Version, dim
 		Dimension: dimension,
 		Ids:       ids,
 	}
-	mock.lockGetDimensionOptionsFromIDs.Lock()
+	lockMongoDBMockGetDimensionOptionsFromIDs.Lock()
 	mock.calls.GetDimensionOptionsFromIDs = append(mock.calls.GetDimensionOptionsFromIDs, callInfo)
-	mock.lockGetDimensionOptionsFromIDs.Unlock()
+	lockMongoDBMockGetDimensionOptionsFromIDs.Unlock()
 	return mock.GetDimensionOptionsFromIDsFunc(version, dimension, ids)
 }
 
@@ -1041,9 +1157,9 @@ func (mock *MongoDBMock) GetDimensionOptionsFromIDsCalls() []struct {
 		Dimension string
 		Ids       []string
 	}
-	mock.lockGetDimensionOptionsFromIDs.RLock()
+	lockMongoDBMockGetDimensionOptionsFromIDs.RLock()
 	calls = mock.calls.GetDimensionOptionsFromIDs
-	mock.lockGetDimensionOptionsFromIDs.RUnlock()
+	lockMongoDBMockGetDimensionOptionsFromIDs.RUnlock()
 	return calls
 }
 
@@ -1059,9 +1175,9 @@ func (mock *MongoDBMock) GetDimensions(datasetID string, versionID string) ([]bs
 		DatasetID: datasetID,
 		VersionID: versionID,
 	}
-	mock.lockGetDimensions.Lock()
+	lockMongoDBMockGetDimensions.Lock()
 	mock.calls.GetDimensions = append(mock.calls.GetDimensions, callInfo)
-	mock.lockGetDimensions.Unlock()
+	lockMongoDBMockGetDimensions.Unlock()
 	return mock.GetDimensionsFunc(datasetID, versionID)
 }
 
@@ -1076,9 +1192,9 @@ func (mock *MongoDBMock) GetDimensionsCalls() []struct {
 		DatasetID string
 		VersionID string
 	}
-	mock.lockGetDimensions.RLock()
+	lockMongoDBMockGetDimensions.RLock()
 	calls = mock.calls.GetDimensions
-	mock.lockGetDimensions.RUnlock()
+	lockMongoDBMockGetDimensions.RUnlock()
 	return calls
 }
 
@@ -1098,9 +1214,9 @@ func (mock *MongoDBMock) GetDimensionsFromInstance(ctx context.Context, ID strin
 		Offset: offset,
 		Limit:  limit,
 	}
-	mock.lockGetDimensionsFromInstance.Lock()
+	lockMongoDBMockGetDimensionsFromInstance.Lock()
 	mock.calls.GetDimensionsFromInstance = append(mock.calls.GetDimensionsFromInstance, callInfo)
-	mock.lockGetDimensionsFromInstance.Unlock()
+	lockMongoDBMockGetDimensionsFromInstance.Unlock()
 	return mock.GetDimensionsFromInstanceFunc(ctx, ID, offset, limit)
 }
 
@@ -1119,9 +1235,9 @@ func (mock *MongoDBMock) GetDimensionsFromInstanceCalls() []struct {
 		Offset int
 		Limit  int
 	}
-	mock.lockGetDimensionsFromInstance.RLock()
+	lockMongoDBMockGetDimensionsFromInstance.RLock()
 	calls = mock.calls.GetDimensionsFromInstance
-	mock.lockGetDimensionsFromInstance.RUnlock()
+	lockMongoDBMockGetDimensionsFromInstance.RUnlock()
 	return calls
 }
 
@@ -1139,9 +1255,9 @@ func (mock *MongoDBMock) GetEdition(ID string, editionID string, state string) (
 		EditionID: editionID,
 		State:     state,
 	}
-	mock.lockGetEdition.Lock()
+	lockMongoDBMockGetEdition.Lock()
 	mock.calls.GetEdition = append(mock.calls.GetEdition, callInfo)
-	mock.lockGetEdition.Unlock()
+	lockMongoDBMockGetEdition.Unlock()
 	return mock.GetEditionFunc(ID, editionID, state)
 }
 
@@ -1158,9 +1274,9 @@ func (mock *MongoDBMock) GetEditionCalls() []struct {
 		EditionID string
 		State     string
 	}
-	mock.lockGetEdition.RLock()
+	lockMongoDBMockGetEdition.RLock()
 	calls = mock.calls.GetEdition
-	mock.lockGetEdition.RUnlock()
+	lockMongoDBMockGetEdition.RUnlock()
 	return calls
 }
 
@@ -1184,9 +1300,9 @@ func (mock *MongoDBMock) GetEditions(ctx context.Context, ID string, state strin
 		Limit:      limit,
 		Authorised: authorised,
 	}
-	mock.lockGetEditions.Lock()
+	lockMongoDBMockGetEditions.Lock()
 	mock.calls.GetEditions = append(mock.calls.GetEditions, callInfo)
-	mock.lockGetEditions.Unlock()
+	lockMongoDBMockGetEditions.Unlock()
 	return mock.GetEditionsFunc(ctx, ID, state, offset, limit, authorised)
 }
 
@@ -1209,40 +1325,44 @@ func (mock *MongoDBMock) GetEditionsCalls() []struct {
 		Limit      int
 		Authorised bool
 	}
-	mock.lockGetEditions.RLock()
+	lockMongoDBMockGetEditions.RLock()
 	calls = mock.calls.GetEditions
-	mock.lockGetEditions.RUnlock()
+	lockMongoDBMockGetEditions.RUnlock()
 	return calls
 }
 
 // GetInstance calls GetInstanceFunc.
-func (mock *MongoDBMock) GetInstance(ID string) (*models.Instance, error) {
+func (mock *MongoDBMock) GetInstance(ID string, eTagSelector string) (*models.Instance, error) {
 	if mock.GetInstanceFunc == nil {
 		panic("MongoDBMock.GetInstanceFunc: method is nil but MongoDB.GetInstance was just called")
 	}
 	callInfo := struct {
-		ID string
+		ID           string
+		ETagSelector string
 	}{
-		ID: ID,
+		ID:           ID,
+		ETagSelector: eTagSelector,
 	}
-	mock.lockGetInstance.Lock()
+	lockMongoDBMockGetInstance.Lock()
 	mock.calls.GetInstance = append(mock.calls.GetInstance, callInfo)
-	mock.lockGetInstance.Unlock()
-	return mock.GetInstanceFunc(ID)
+	lockMongoDBMockGetInstance.Unlock()
+	return mock.GetInstanceFunc(ID, eTagSelector)
 }
 
 // GetInstanceCalls gets all the calls that were made to GetInstance.
 // Check the length with:
 //     len(mockedMongoDB.GetInstanceCalls())
 func (mock *MongoDBMock) GetInstanceCalls() []struct {
-	ID string
+	ID           string
+	ETagSelector string
 } {
 	var calls []struct {
-		ID string
+		ID           string
+		ETagSelector string
 	}
-	mock.lockGetInstance.RLock()
+	lockMongoDBMockGetInstance.RLock()
 	calls = mock.calls.GetInstance
-	mock.lockGetInstance.RUnlock()
+	lockMongoDBMockGetInstance.RUnlock()
 	return calls
 }
 
@@ -1264,9 +1384,9 @@ func (mock *MongoDBMock) GetInstances(ctx context.Context, states []string, data
 		Offset:   offset,
 		Limit:    limit,
 	}
-	mock.lockGetInstances.Lock()
+	lockMongoDBMockGetInstances.Lock()
 	mock.calls.GetInstances = append(mock.calls.GetInstances, callInfo)
-	mock.lockGetInstances.Unlock()
+	lockMongoDBMockGetInstances.Unlock()
 	return mock.GetInstancesFunc(ctx, states, datasets, offset, limit)
 }
 
@@ -1287,9 +1407,9 @@ func (mock *MongoDBMock) GetInstancesCalls() []struct {
 		Offset   int
 		Limit    int
 	}
-	mock.lockGetInstances.RLock()
+	lockMongoDBMockGetInstances.RLock()
 	calls = mock.calls.GetInstances
-	mock.lockGetInstances.RUnlock()
+	lockMongoDBMockGetInstances.RUnlock()
 	return calls
 }
 
@@ -1305,9 +1425,9 @@ func (mock *MongoDBMock) GetNextVersion(datasetID string, editionID string) (int
 		DatasetID: datasetID,
 		EditionID: editionID,
 	}
-	mock.lockGetNextVersion.Lock()
+	lockMongoDBMockGetNextVersion.Lock()
 	mock.calls.GetNextVersion = append(mock.calls.GetNextVersion, callInfo)
-	mock.lockGetNextVersion.Unlock()
+	lockMongoDBMockGetNextVersion.Unlock()
 	return mock.GetNextVersionFunc(datasetID, editionID)
 }
 
@@ -1322,9 +1442,9 @@ func (mock *MongoDBMock) GetNextVersionCalls() []struct {
 		DatasetID string
 		EditionID string
 	}
-	mock.lockGetNextVersion.RLock()
+	lockMongoDBMockGetNextVersion.RLock()
 	calls = mock.calls.GetNextVersion
-	mock.lockGetNextVersion.RUnlock()
+	lockMongoDBMockGetNextVersion.RUnlock()
 	return calls
 }
 
@@ -1346,9 +1466,9 @@ func (mock *MongoDBMock) GetUniqueDimensionAndOptions(ctx context.Context, ID st
 		Offset:    offset,
 		Limit:     limit,
 	}
-	mock.lockGetUniqueDimensionAndOptions.Lock()
+	lockMongoDBMockGetUniqueDimensionAndOptions.Lock()
 	mock.calls.GetUniqueDimensionAndOptions = append(mock.calls.GetUniqueDimensionAndOptions, callInfo)
-	mock.lockGetUniqueDimensionAndOptions.Unlock()
+	lockMongoDBMockGetUniqueDimensionAndOptions.Unlock()
 	return mock.GetUniqueDimensionAndOptionsFunc(ctx, ID, dimension, offset, limit)
 }
 
@@ -1369,9 +1489,9 @@ func (mock *MongoDBMock) GetUniqueDimensionAndOptionsCalls() []struct {
 		Offset    int
 		Limit     int
 	}
-	mock.lockGetUniqueDimensionAndOptions.RLock()
+	lockMongoDBMockGetUniqueDimensionAndOptions.RLock()
 	calls = mock.calls.GetUniqueDimensionAndOptions
-	mock.lockGetUniqueDimensionAndOptions.RUnlock()
+	lockMongoDBMockGetUniqueDimensionAndOptions.RUnlock()
 	return calls
 }
 
@@ -1391,9 +1511,9 @@ func (mock *MongoDBMock) GetVersion(datasetID string, editionID string, version 
 		Version:   version,
 		State:     state,
 	}
-	mock.lockGetVersion.Lock()
+	lockMongoDBMockGetVersion.Lock()
 	mock.calls.GetVersion = append(mock.calls.GetVersion, callInfo)
-	mock.lockGetVersion.Unlock()
+	lockMongoDBMockGetVersion.Unlock()
 	return mock.GetVersionFunc(datasetID, editionID, version, state)
 }
 
@@ -1412,9 +1532,9 @@ func (mock *MongoDBMock) GetVersionCalls() []struct {
 		Version   int
 		State     string
 	}
-	mock.lockGetVersion.RLock()
+	lockMongoDBMockGetVersion.RLock()
 	calls = mock.calls.GetVersion
-	mock.lockGetVersion.RUnlock()
+	lockMongoDBMockGetVersion.RUnlock()
 	return calls
 }
 
@@ -1438,9 +1558,9 @@ func (mock *MongoDBMock) GetVersions(ctx context.Context, datasetID string, edit
 		Offset:    offset,
 		Limit:     limit,
 	}
-	mock.lockGetVersions.Lock()
+	lockMongoDBMockGetVersions.Lock()
 	mock.calls.GetVersions = append(mock.calls.GetVersions, callInfo)
-	mock.lockGetVersions.Unlock()
+	lockMongoDBMockGetVersions.Unlock()
 	return mock.GetVersionsFunc(ctx, datasetID, editionID, state, offset, limit)
 }
 
@@ -1463,87 +1583,126 @@ func (mock *MongoDBMock) GetVersionsCalls() []struct {
 		Offset    int
 		Limit     int
 	}
-	mock.lockGetVersions.RLock()
+	lockMongoDBMockGetVersions.RLock()
 	calls = mock.calls.GetVersions
-	mock.lockGetVersions.RUnlock()
+	lockMongoDBMockGetVersions.RUnlock()
+	return calls
+}
+
+// UnlockInstance calls UnlockInstanceFunc.
+func (mock *MongoDBMock) UnlockInstance(lockID string) error {
+	if mock.UnlockInstanceFunc == nil {
+		panic("MongoDBMock.UnlockInstanceFunc: method is nil but MongoDB.UnlockInstance was just called")
+	}
+	callInfo := struct {
+		LockID string
+	}{
+		LockID: lockID,
+	}
+	lockMongoDBMockUnlockInstance.Lock()
+	mock.calls.UnlockInstance = append(mock.calls.UnlockInstance, callInfo)
+	lockMongoDBMockUnlockInstance.Unlock()
+	return mock.UnlockInstanceFunc(lockID)
+}
+
+// UnlockInstanceCalls gets all the calls that were made to UnlockInstance.
+// Check the length with:
+//     len(mockedMongoDB.UnlockInstanceCalls())
+func (mock *MongoDBMock) UnlockInstanceCalls() []struct {
+	LockID string
+} {
+	var calls []struct {
+		LockID string
+	}
+	lockMongoDBMockUnlockInstance.RLock()
+	calls = mock.calls.UnlockInstance
+	lockMongoDBMockUnlockInstance.RUnlock()
 	return calls
 }
 
 // UpdateBuildHierarchyTaskState calls UpdateBuildHierarchyTaskStateFunc.
-func (mock *MongoDBMock) UpdateBuildHierarchyTaskState(id string, dimension string, state string) error {
+func (mock *MongoDBMock) UpdateBuildHierarchyTaskState(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
 	if mock.UpdateBuildHierarchyTaskStateFunc == nil {
 		panic("MongoDBMock.UpdateBuildHierarchyTaskStateFunc: method is nil but MongoDB.UpdateBuildHierarchyTaskState was just called")
 	}
 	callInfo := struct {
-		ID        string
-		Dimension string
-		State     string
+		CurrentInstance *models.Instance
+		Dimension       string
+		State           string
+		ETagSelector    string
 	}{
-		ID:        id,
-		Dimension: dimension,
-		State:     state,
+		CurrentInstance: currentInstance,
+		Dimension:       dimension,
+		State:           state,
+		ETagSelector:    eTagSelector,
 	}
-	mock.lockUpdateBuildHierarchyTaskState.Lock()
+	lockMongoDBMockUpdateBuildHierarchyTaskState.Lock()
 	mock.calls.UpdateBuildHierarchyTaskState = append(mock.calls.UpdateBuildHierarchyTaskState, callInfo)
-	mock.lockUpdateBuildHierarchyTaskState.Unlock()
-	return mock.UpdateBuildHierarchyTaskStateFunc(id, dimension, state)
+	lockMongoDBMockUpdateBuildHierarchyTaskState.Unlock()
+	return mock.UpdateBuildHierarchyTaskStateFunc(currentInstance, dimension, state, eTagSelector)
 }
 
 // UpdateBuildHierarchyTaskStateCalls gets all the calls that were made to UpdateBuildHierarchyTaskState.
 // Check the length with:
 //     len(mockedMongoDB.UpdateBuildHierarchyTaskStateCalls())
 func (mock *MongoDBMock) UpdateBuildHierarchyTaskStateCalls() []struct {
-	ID        string
-	Dimension string
-	State     string
+	CurrentInstance *models.Instance
+	Dimension       string
+	State           string
+	ETagSelector    string
 } {
 	var calls []struct {
-		ID        string
-		Dimension string
-		State     string
+		CurrentInstance *models.Instance
+		Dimension       string
+		State           string
+		ETagSelector    string
 	}
-	mock.lockUpdateBuildHierarchyTaskState.RLock()
+	lockMongoDBMockUpdateBuildHierarchyTaskState.RLock()
 	calls = mock.calls.UpdateBuildHierarchyTaskState
-	mock.lockUpdateBuildHierarchyTaskState.RUnlock()
+	lockMongoDBMockUpdateBuildHierarchyTaskState.RUnlock()
 	return calls
 }
 
 // UpdateBuildSearchTaskState calls UpdateBuildSearchTaskStateFunc.
-func (mock *MongoDBMock) UpdateBuildSearchTaskState(id string, dimension string, state string) error {
+func (mock *MongoDBMock) UpdateBuildSearchTaskState(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
 	if mock.UpdateBuildSearchTaskStateFunc == nil {
 		panic("MongoDBMock.UpdateBuildSearchTaskStateFunc: method is nil but MongoDB.UpdateBuildSearchTaskState was just called")
 	}
 	callInfo := struct {
-		ID        string
-		Dimension string
-		State     string
+		CurrentInstance *models.Instance
+		Dimension       string
+		State           string
+		ETagSelector    string
 	}{
-		ID:        id,
-		Dimension: dimension,
-		State:     state,
+		CurrentInstance: currentInstance,
+		Dimension:       dimension,
+		State:           state,
+		ETagSelector:    eTagSelector,
 	}
-	mock.lockUpdateBuildSearchTaskState.Lock()
+	lockMongoDBMockUpdateBuildSearchTaskState.Lock()
 	mock.calls.UpdateBuildSearchTaskState = append(mock.calls.UpdateBuildSearchTaskState, callInfo)
-	mock.lockUpdateBuildSearchTaskState.Unlock()
-	return mock.UpdateBuildSearchTaskStateFunc(id, dimension, state)
+	lockMongoDBMockUpdateBuildSearchTaskState.Unlock()
+	return mock.UpdateBuildSearchTaskStateFunc(currentInstance, dimension, state, eTagSelector)
 }
 
 // UpdateBuildSearchTaskStateCalls gets all the calls that were made to UpdateBuildSearchTaskState.
 // Check the length with:
 //     len(mockedMongoDB.UpdateBuildSearchTaskStateCalls())
 func (mock *MongoDBMock) UpdateBuildSearchTaskStateCalls() []struct {
-	ID        string
-	Dimension string
-	State     string
+	CurrentInstance *models.Instance
+	Dimension       string
+	State           string
+	ETagSelector    string
 } {
 	var calls []struct {
-		ID        string
-		Dimension string
-		State     string
+		CurrentInstance *models.Instance
+		Dimension       string
+		State           string
+		ETagSelector    string
 	}
-	mock.lockUpdateBuildSearchTaskState.RLock()
+	lockMongoDBMockUpdateBuildSearchTaskState.RLock()
 	calls = mock.calls.UpdateBuildSearchTaskState
-	mock.lockUpdateBuildSearchTaskState.RUnlock()
+	lockMongoDBMockUpdateBuildSearchTaskState.RUnlock()
 	return calls
 }
 
@@ -1563,9 +1722,9 @@ func (mock *MongoDBMock) UpdateDataset(ctx context.Context, ID string, dataset *
 		Dataset:      dataset,
 		CurrentState: currentState,
 	}
-	mock.lockUpdateDataset.Lock()
+	lockMongoDBMockUpdateDataset.Lock()
 	mock.calls.UpdateDataset = append(mock.calls.UpdateDataset, callInfo)
-	mock.lockUpdateDataset.Unlock()
+	lockMongoDBMockUpdateDataset.Unlock()
 	return mock.UpdateDatasetFunc(ctx, ID, dataset, currentState)
 }
 
@@ -1584,9 +1743,9 @@ func (mock *MongoDBMock) UpdateDatasetCalls() []struct {
 		Dataset      *models.Dataset
 		CurrentState string
 	}
-	mock.lockUpdateDataset.RLock()
+	lockMongoDBMockUpdateDataset.RLock()
 	calls = mock.calls.UpdateDataset
-	mock.lockUpdateDataset.RUnlock()
+	lockMongoDBMockUpdateDataset.RUnlock()
 	return calls
 }
 
@@ -1604,9 +1763,9 @@ func (mock *MongoDBMock) UpdateDatasetWithAssociation(ID string, state string, v
 		State:   state,
 		Version: version,
 	}
-	mock.lockUpdateDatasetWithAssociation.Lock()
+	lockMongoDBMockUpdateDatasetWithAssociation.Lock()
 	mock.calls.UpdateDatasetWithAssociation = append(mock.calls.UpdateDatasetWithAssociation, callInfo)
-	mock.lockUpdateDatasetWithAssociation.Unlock()
+	lockMongoDBMockUpdateDatasetWithAssociation.Unlock()
 	return mock.UpdateDatasetWithAssociationFunc(ID, state, version)
 }
 
@@ -1623,9 +1782,9 @@ func (mock *MongoDBMock) UpdateDatasetWithAssociationCalls() []struct {
 		State   string
 		Version *models.Version
 	}
-	mock.lockUpdateDatasetWithAssociation.RLock()
+	lockMongoDBMockUpdateDatasetWithAssociation.RLock()
 	calls = mock.calls.UpdateDatasetWithAssociation
-	mock.lockUpdateDatasetWithAssociation.RUnlock()
+	lockMongoDBMockUpdateDatasetWithAssociation.RUnlock()
 	return calls
 }
 
@@ -1639,9 +1798,9 @@ func (mock *MongoDBMock) UpdateDimensionNodeIDAndOrder(dimension *models.Dimensi
 	}{
 		Dimension: dimension,
 	}
-	mock.lockUpdateDimensionNodeIDAndOrder.Lock()
+	lockMongoDBMockUpdateDimensionNodeIDAndOrder.Lock()
 	mock.calls.UpdateDimensionNodeIDAndOrder = append(mock.calls.UpdateDimensionNodeIDAndOrder, callInfo)
-	mock.lockUpdateDimensionNodeIDAndOrder.Unlock()
+	lockMongoDBMockUpdateDimensionNodeIDAndOrder.Unlock()
 	return mock.UpdateDimensionNodeIDAndOrderFunc(dimension)
 }
 
@@ -1654,118 +1813,212 @@ func (mock *MongoDBMock) UpdateDimensionNodeIDAndOrderCalls() []struct {
 	var calls []struct {
 		Dimension *models.DimensionOption
 	}
-	mock.lockUpdateDimensionNodeIDAndOrder.RLock()
+	lockMongoDBMockUpdateDimensionNodeIDAndOrder.RLock()
 	calls = mock.calls.UpdateDimensionNodeIDAndOrder
-	mock.lockUpdateDimensionNodeIDAndOrder.RUnlock()
+	lockMongoDBMockUpdateDimensionNodeIDAndOrder.RUnlock()
+	return calls
+}
+
+// UpdateETagForNodeIDAndOrder calls UpdateETagForNodeIDAndOrderFunc.
+func (mock *MongoDBMock) UpdateETagForNodeIDAndOrder(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (string, error) {
+	if mock.UpdateETagForNodeIDAndOrderFunc == nil {
+		panic("MongoDBMock.UpdateETagForNodeIDAndOrderFunc: method is nil but MongoDB.UpdateETagForNodeIDAndOrder was just called")
+	}
+	callInfo := struct {
+		CurrentInstance *models.Instance
+		NodeID          string
+		Order           *int
+		ETagSelector    string
+	}{
+		CurrentInstance: currentInstance,
+		NodeID:          nodeID,
+		Order:           order,
+		ETagSelector:    eTagSelector,
+	}
+	lockMongoDBMockUpdateETagForNodeIDAndOrder.Lock()
+	mock.calls.UpdateETagForNodeIDAndOrder = append(mock.calls.UpdateETagForNodeIDAndOrder, callInfo)
+	lockMongoDBMockUpdateETagForNodeIDAndOrder.Unlock()
+	return mock.UpdateETagForNodeIDAndOrderFunc(currentInstance, nodeID, order, eTagSelector)
+}
+
+// UpdateETagForNodeIDAndOrderCalls gets all the calls that were made to UpdateETagForNodeIDAndOrder.
+// Check the length with:
+//     len(mockedMongoDB.UpdateETagForNodeIDAndOrderCalls())
+func (mock *MongoDBMock) UpdateETagForNodeIDAndOrderCalls() []struct {
+	CurrentInstance *models.Instance
+	NodeID          string
+	Order           *int
+	ETagSelector    string
+} {
+	var calls []struct {
+		CurrentInstance *models.Instance
+		NodeID          string
+		Order           *int
+		ETagSelector    string
+	}
+	lockMongoDBMockUpdateETagForNodeIDAndOrder.RLock()
+	calls = mock.calls.UpdateETagForNodeIDAndOrder
+	lockMongoDBMockUpdateETagForNodeIDAndOrder.RUnlock()
+	return calls
+}
+
+// UpdateETagForOptions calls UpdateETagForOptionsFunc.
+func (mock *MongoDBMock) UpdateETagForOptions(currentInstance *models.Instance, option *models.CachedDimensionOption, eTagSelector string) (string, error) {
+	if mock.UpdateETagForOptionsFunc == nil {
+		panic("MongoDBMock.UpdateETagForOptionsFunc: method is nil but MongoDB.UpdateETagForOptions was just called")
+	}
+	callInfo := struct {
+		CurrentInstance *models.Instance
+		Option          *models.CachedDimensionOption
+		ETagSelector    string
+	}{
+		CurrentInstance: currentInstance,
+		Option:          option,
+		ETagSelector:    eTagSelector,
+	}
+	lockMongoDBMockUpdateETagForOptions.Lock()
+	mock.calls.UpdateETagForOptions = append(mock.calls.UpdateETagForOptions, callInfo)
+	lockMongoDBMockUpdateETagForOptions.Unlock()
+	return mock.UpdateETagForOptionsFunc(currentInstance, option, eTagSelector)
+}
+
+// UpdateETagForOptionsCalls gets all the calls that were made to UpdateETagForOptions.
+// Check the length with:
+//     len(mockedMongoDB.UpdateETagForOptionsCalls())
+func (mock *MongoDBMock) UpdateETagForOptionsCalls() []struct {
+	CurrentInstance *models.Instance
+	Option          *models.CachedDimensionOption
+	ETagSelector    string
+} {
+	var calls []struct {
+		CurrentInstance *models.Instance
+		Option          *models.CachedDimensionOption
+		ETagSelector    string
+	}
+	lockMongoDBMockUpdateETagForOptions.RLock()
+	calls = mock.calls.UpdateETagForOptions
+	lockMongoDBMockUpdateETagForOptions.RUnlock()
 	return calls
 }
 
 // UpdateImportObservationsTaskState calls UpdateImportObservationsTaskStateFunc.
-func (mock *MongoDBMock) UpdateImportObservationsTaskState(id string, state string) error {
+func (mock *MongoDBMock) UpdateImportObservationsTaskState(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
 	if mock.UpdateImportObservationsTaskStateFunc == nil {
 		panic("MongoDBMock.UpdateImportObservationsTaskStateFunc: method is nil but MongoDB.UpdateImportObservationsTaskState was just called")
 	}
 	callInfo := struct {
-		ID    string
-		State string
+		CurrentInstance *models.Instance
+		State           string
+		ETagSelector    string
 	}{
-		ID:    id,
-		State: state,
+		CurrentInstance: currentInstance,
+		State:           state,
+		ETagSelector:    eTagSelector,
 	}
-	mock.lockUpdateImportObservationsTaskState.Lock()
+	lockMongoDBMockUpdateImportObservationsTaskState.Lock()
 	mock.calls.UpdateImportObservationsTaskState = append(mock.calls.UpdateImportObservationsTaskState, callInfo)
-	mock.lockUpdateImportObservationsTaskState.Unlock()
-	return mock.UpdateImportObservationsTaskStateFunc(id, state)
+	lockMongoDBMockUpdateImportObservationsTaskState.Unlock()
+	return mock.UpdateImportObservationsTaskStateFunc(currentInstance, state, eTagSelector)
 }
 
 // UpdateImportObservationsTaskStateCalls gets all the calls that were made to UpdateImportObservationsTaskState.
 // Check the length with:
 //     len(mockedMongoDB.UpdateImportObservationsTaskStateCalls())
 func (mock *MongoDBMock) UpdateImportObservationsTaskStateCalls() []struct {
-	ID    string
-	State string
+	CurrentInstance *models.Instance
+	State           string
+	ETagSelector    string
 } {
 	var calls []struct {
-		ID    string
-		State string
+		CurrentInstance *models.Instance
+		State           string
+		ETagSelector    string
 	}
-	mock.lockUpdateImportObservationsTaskState.RLock()
+	lockMongoDBMockUpdateImportObservationsTaskState.RLock()
 	calls = mock.calls.UpdateImportObservationsTaskState
-	mock.lockUpdateImportObservationsTaskState.RUnlock()
+	lockMongoDBMockUpdateImportObservationsTaskState.RUnlock()
 	return calls
 }
 
 // UpdateInstance calls UpdateInstanceFunc.
-func (mock *MongoDBMock) UpdateInstance(ctx context.Context, ID string, instance *models.Instance) error {
+func (mock *MongoDBMock) UpdateInstance(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
 	if mock.UpdateInstanceFunc == nil {
 		panic("MongoDBMock.UpdateInstanceFunc: method is nil but MongoDB.UpdateInstance was just called")
 	}
 	callInfo := struct {
-		Ctx      context.Context
-		ID       string
-		Instance *models.Instance
+		Ctx             context.Context
+		CurrentInstance *models.Instance
+		UpdatedInstance *models.Instance
+		ETagSelector    string
 	}{
-		Ctx:      ctx,
-		ID:       ID,
-		Instance: instance,
+		Ctx:             ctx,
+		CurrentInstance: currentInstance,
+		UpdatedInstance: updatedInstance,
+		ETagSelector:    eTagSelector,
 	}
-	mock.lockUpdateInstance.Lock()
+	lockMongoDBMockUpdateInstance.Lock()
 	mock.calls.UpdateInstance = append(mock.calls.UpdateInstance, callInfo)
-	mock.lockUpdateInstance.Unlock()
-	return mock.UpdateInstanceFunc(ctx, ID, instance)
+	lockMongoDBMockUpdateInstance.Unlock()
+	return mock.UpdateInstanceFunc(ctx, currentInstance, updatedInstance, eTagSelector)
 }
 
 // UpdateInstanceCalls gets all the calls that were made to UpdateInstance.
 // Check the length with:
 //     len(mockedMongoDB.UpdateInstanceCalls())
 func (mock *MongoDBMock) UpdateInstanceCalls() []struct {
-	Ctx      context.Context
-	ID       string
-	Instance *models.Instance
+	Ctx             context.Context
+	CurrentInstance *models.Instance
+	UpdatedInstance *models.Instance
+	ETagSelector    string
 } {
 	var calls []struct {
-		Ctx      context.Context
-		ID       string
-		Instance *models.Instance
+		Ctx             context.Context
+		CurrentInstance *models.Instance
+		UpdatedInstance *models.Instance
+		ETagSelector    string
 	}
-	mock.lockUpdateInstance.RLock()
+	lockMongoDBMockUpdateInstance.RLock()
 	calls = mock.calls.UpdateInstance
-	mock.lockUpdateInstance.RUnlock()
+	lockMongoDBMockUpdateInstance.RUnlock()
 	return calls
 }
 
 // UpdateObservationInserted calls UpdateObservationInsertedFunc.
-func (mock *MongoDBMock) UpdateObservationInserted(ID string, observationInserted int64) error {
+func (mock *MongoDBMock) UpdateObservationInserted(currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error) {
 	if mock.UpdateObservationInsertedFunc == nil {
 		panic("MongoDBMock.UpdateObservationInsertedFunc: method is nil but MongoDB.UpdateObservationInserted was just called")
 	}
 	callInfo := struct {
-		ID                  string
+		CurrentInstance     *models.Instance
 		ObservationInserted int64
+		ETagSelector        string
 	}{
-		ID:                  ID,
+		CurrentInstance:     currentInstance,
 		ObservationInserted: observationInserted,
+		ETagSelector:        eTagSelector,
 	}
-	mock.lockUpdateObservationInserted.Lock()
+	lockMongoDBMockUpdateObservationInserted.Lock()
 	mock.calls.UpdateObservationInserted = append(mock.calls.UpdateObservationInserted, callInfo)
-	mock.lockUpdateObservationInserted.Unlock()
-	return mock.UpdateObservationInsertedFunc(ID, observationInserted)
+	lockMongoDBMockUpdateObservationInserted.Unlock()
+	return mock.UpdateObservationInsertedFunc(currentInstance, observationInserted, eTagSelector)
 }
 
 // UpdateObservationInsertedCalls gets all the calls that were made to UpdateObservationInserted.
 // Check the length with:
 //     len(mockedMongoDB.UpdateObservationInsertedCalls())
 func (mock *MongoDBMock) UpdateObservationInsertedCalls() []struct {
-	ID                  string
+	CurrentInstance     *models.Instance
 	ObservationInserted int64
+	ETagSelector        string
 } {
 	var calls []struct {
-		ID                  string
+		CurrentInstance     *models.Instance
 		ObservationInserted int64
+		ETagSelector        string
 	}
-	mock.lockUpdateObservationInserted.RLock()
+	lockMongoDBMockUpdateObservationInserted.RLock()
 	calls = mock.calls.UpdateObservationInserted
-	mock.lockUpdateObservationInserted.RUnlock()
+	lockMongoDBMockUpdateObservationInserted.RUnlock()
 	return calls
 }
 
@@ -1781,9 +2034,9 @@ func (mock *MongoDBMock) UpdateVersion(ID string, version *models.Version) error
 		ID:      ID,
 		Version: version,
 	}
-	mock.lockUpdateVersion.Lock()
+	lockMongoDBMockUpdateVersion.Lock()
 	mock.calls.UpdateVersion = append(mock.calls.UpdateVersion, callInfo)
-	mock.lockUpdateVersion.Unlock()
+	lockMongoDBMockUpdateVersion.Unlock()
 	return mock.UpdateVersionFunc(ID, version)
 }
 
@@ -1798,9 +2051,9 @@ func (mock *MongoDBMock) UpdateVersionCalls() []struct {
 		ID      string
 		Version *models.Version
 	}
-	mock.lockUpdateVersion.RLock()
+	lockMongoDBMockUpdateVersion.RLock()
 	calls = mock.calls.UpdateVersion
-	mock.lockUpdateVersion.RUnlock()
+	lockMongoDBMockUpdateVersion.RUnlock()
 	return calls
 }
 
@@ -1816,9 +2069,9 @@ func (mock *MongoDBMock) UpsertContact(ID string, update interface{}) error {
 		ID:     ID,
 		Update: update,
 	}
-	mock.lockUpsertContact.Lock()
+	lockMongoDBMockUpsertContact.Lock()
 	mock.calls.UpsertContact = append(mock.calls.UpsertContact, callInfo)
-	mock.lockUpsertContact.Unlock()
+	lockMongoDBMockUpsertContact.Unlock()
 	return mock.UpsertContactFunc(ID, update)
 }
 
@@ -1833,9 +2086,9 @@ func (mock *MongoDBMock) UpsertContactCalls() []struct {
 		ID     string
 		Update interface{}
 	}
-	mock.lockUpsertContact.RLock()
+	lockMongoDBMockUpsertContact.RLock()
 	calls = mock.calls.UpsertContact
-	mock.lockUpsertContact.RUnlock()
+	lockMongoDBMockUpsertContact.RUnlock()
 	return calls
 }
 
@@ -1851,9 +2104,9 @@ func (mock *MongoDBMock) UpsertDataset(ID string, datasetDoc *models.DatasetUpda
 		ID:         ID,
 		DatasetDoc: datasetDoc,
 	}
-	mock.lockUpsertDataset.Lock()
+	lockMongoDBMockUpsertDataset.Lock()
 	mock.calls.UpsertDataset = append(mock.calls.UpsertDataset, callInfo)
-	mock.lockUpsertDataset.Unlock()
+	lockMongoDBMockUpsertDataset.Unlock()
 	return mock.UpsertDatasetFunc(ID, datasetDoc)
 }
 
@@ -1868,9 +2121,9 @@ func (mock *MongoDBMock) UpsertDatasetCalls() []struct {
 		ID         string
 		DatasetDoc *models.DatasetUpdate
 	}
-	mock.lockUpsertDataset.RLock()
+	lockMongoDBMockUpsertDataset.RLock()
 	calls = mock.calls.UpsertDataset
-	mock.lockUpsertDataset.RUnlock()
+	lockMongoDBMockUpsertDataset.RUnlock()
 	return calls
 }
 
@@ -1888,9 +2141,9 @@ func (mock *MongoDBMock) UpsertEdition(datasetID string, edition string, edition
 		Edition:    edition,
 		EditionDoc: editionDoc,
 	}
-	mock.lockUpsertEdition.Lock()
+	lockMongoDBMockUpsertEdition.Lock()
 	mock.calls.UpsertEdition = append(mock.calls.UpsertEdition, callInfo)
-	mock.lockUpsertEdition.Unlock()
+	lockMongoDBMockUpsertEdition.Unlock()
 	return mock.UpsertEditionFunc(datasetID, edition, editionDoc)
 }
 
@@ -1907,9 +2160,9 @@ func (mock *MongoDBMock) UpsertEditionCalls() []struct {
 		Edition    string
 		EditionDoc *models.EditionUpdate
 	}
-	mock.lockUpsertEdition.RLock()
+	lockMongoDBMockUpsertEdition.RLock()
 	calls = mock.calls.UpsertEdition
-	mock.lockUpsertEdition.RUnlock()
+	lockMongoDBMockUpsertEdition.RUnlock()
 	return calls
 }
 
@@ -1925,9 +2178,9 @@ func (mock *MongoDBMock) UpsertVersion(ID string, versionDoc *models.Version) er
 		ID:         ID,
 		VersionDoc: versionDoc,
 	}
-	mock.lockUpsertVersion.Lock()
+	lockMongoDBMockUpsertVersion.Lock()
 	mock.calls.UpsertVersion = append(mock.calls.UpsertVersion, callInfo)
-	mock.lockUpsertVersion.Unlock()
+	lockMongoDBMockUpsertVersion.Unlock()
 	return mock.UpsertVersionFunc(ID, versionDoc)
 }
 
@@ -1942,8 +2195,8 @@ func (mock *MongoDBMock) UpsertVersionCalls() []struct {
 		ID         string
 		VersionDoc *models.Version
 	}
-	mock.lockUpsertVersion.RLock()
+	lockMongoDBMockUpsertVersion.RLock()
 	calls = mock.calls.UpsertVersion
-	mock.lockUpsertVersion.RUnlock()
+	lockMongoDBMockUpsertVersion.RUnlock()
 	return calls
 }

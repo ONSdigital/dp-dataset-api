@@ -96,7 +96,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 
 	log.Event(ctx, "get instance", log.INFO, logData)
 
-	instance, err := s.GetInstance(instanceID)
+	instance, err := s.GetInstance(instanceID, "*")
 	if err != nil {
 		log.Event(ctx, "get instance: failed to retrieve instance", log.ERROR, log.Error(err), logData)
 		handleInstanceErr(ctx, err, w, logData)
@@ -193,7 +193,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the current document
-	currentInstance, err := s.GetInstance(instanceID)
+	currentInstance, err := s.GetInstance(instanceID, "*")
 	if err != nil {
 		log.Event(ctx, "update instance: store.GetInstance returned error", log.ERROR, log.Error(err), logData)
 		handleInstanceErr(ctx, err, w, logData)
@@ -254,13 +254,14 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 	// Set the current mongo timestamp on instance document
 	instance.UniqueTimestamp = currentInstance.UniqueTimestamp
-	if err = s.UpdateInstance(ctx, instanceID, instance); err != nil {
+	newETag, err := s.UpdateInstance(ctx, currentInstance, instance, "*")
+	if err != nil {
 		log.Event(ctx, "update instance: store.UpdateInstance returned an error", log.ERROR, log.Error(err), logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
 
-	if instance, err = s.GetInstance(instanceID); err != nil {
+	if instance, err = s.GetInstance(instanceID, newETag); err != nil {
 		log.Event(ctx, "update instance: store.GetInstance for response returned an error", log.ERROR, log.Error(err), logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
@@ -274,7 +275,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setJSONContentType(w)
-	setETag(w, instance.ETag)
+	setETag(w, newETag)
 	w.WriteHeader(http.StatusOK)
 	writeBody(ctx, w, b, logData)
 
@@ -460,7 +461,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 }
 
 func (d *PublishCheck) checkState(instanceID string) error {
-	instance, err := d.Datastore.GetInstance(instanceID)
+	instance, err := d.Datastore.GetInstance(instanceID, "*")
 	if err != nil {
 		return err
 	}

@@ -54,12 +54,14 @@ func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []st
 }
 
 // GetInstance returns a single instance from an ID
-func (m *Mongo) GetInstance(ID string) (*models.Instance, error) {
+func (m *Mongo) GetInstance(ID, eTagSelector string) (*models.Instance, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
 	var instance models.Instance
-	err := s.DB(m.Database).C(instanceCollection).Find(bson.M{"id": ID}).One(&instance)
+	err := s.DB(m.Database).C(instanceCollection).
+		Find(selector(ID, 0, eTagSelector)).
+		One(&instance)
 
 	if err == mgo.ErrNotFound {
 		return nil, errs.ErrInstanceNotFound
@@ -279,7 +281,13 @@ func (m *Mongo) AddEventToInstance(currentInstance *models.Instance, event *mode
 	// create selector query
 	sel := selector(currentInstance.InstanceID, 0, eTagSelector)
 
-	update := bson.M{"$push": bson.M{"events": &event}, "$set": bson.M{"last_updated": time.Now().UTC()}}
+	update := bson.M{
+		"$push": bson.M{"events": &event},
+		"$set": bson.M{
+			"last_updated": time.Now().UTC(),
+			"e_tag":        newETag,
+		},
+	}
 
 	info, err := s.DB(m.Database).C(instanceCollection).Upsert(sel, update)
 	if err != nil {
@@ -288,69 +296,6 @@ func (m *Mongo) AddEventToInstance(currentInstance *models.Instance, event *mode
 
 	if info.Updated == 0 {
 		return "", errs.ErrInstanceNotFound
-	}
-
-	return newETag, nil
-}
-
-// UpdateDimensionNodeIDAndOrder to cache the id and order (optional) for other import processes.
-// The instance ETag will be checked, updated and the dimension options will be added atomically using the instance lock.
-func (m *Mongo) UpdateDimensionNodeIDAndOrder(ctx context.Context, currentInstance *models.Instance, dimension *models.DimensionOption, eTagSelector string) (newETag string, err error) {
-
-	// validate that there is something to update
-	if dimension.Order == nil && dimension.NodeID == "" {
-		return "", nil
-	}
-
-	s := m.Session.Copy()
-	defer s.Close()
-
-	// TODO we might want to move the locking calls to the API level, so that we have more control and testability
-
-	// acquire instance lock so that the instance update and the dimension.options update are atomic.
-	lockID, err := m.AcquireInstanceLock(ctx, currentInstance.InstanceID)
-	if err != nil {
-		return "", err
-	}
-	defer m.UnlockInstance(lockID)
-
-	// calculate the new eTag hash for the instance that would result from adding the event
-	newETag, err = newETagForNodeIDAndOrder(currentInstance, dimension.NodeID, dimension.Order)
-	if err != nil {
-		return "", err
-	}
-
-	// update instance with new ETag value, before making any other change
-	instanceSelector := selector(currentInstance.InstanceID, 0, eTagSelector)
-	instanceUpdate := bson.M{"$set": bson.M{"e_tag": newETag}}
-	updateWithTimestamps, err := dpmongo.WithUpdates(instanceUpdate)
-	if err != nil {
-		return "", err
-	}
-
-	// execute the update against MongoDB to atomically check and update the instance
-	if err = s.DB(m.Database).C(instanceCollection).Update(instanceSelector, updateWithTimestamps); err != nil {
-		return "", err
-	}
-
-	// having successfully updated the instnace ETag and before releasing the lock, update dimension options
-	dimensionOptionSelector := bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name, "option": dimension.Option}
-
-	update := bson.M{"last_updated": time.Now().UTC()}
-	if dimension.NodeID != "" {
-		update["node_id"] = &dimension.NodeID
-	}
-	if dimension.Order != nil {
-		update["order"] = &dimension.Order
-	}
-
-	err = s.DB(m.Database).C(dimensionOptions).Update(dimensionOptionSelector, bson.M{"$set": update})
-	if err == mgo.ErrNotFound {
-		return "", errs.ErrDimensionOptionNotFound
-	}
-
-	if err != nil {
-		return "", err
 	}
 
 	return newETag, nil
@@ -469,6 +414,65 @@ func (m *Mongo) UpdateBuildSearchTaskState(currentInstance *models.Instance, dim
 	update := bson.M{
 		"$set": bson.M{
 			"import_tasks.build_search_indexes.$.state": state,
+			"e_tag": newETag,
+		},
+		"$currentDate": bson.M{"last_updated": true},
+	}
+
+	if err := s.DB(m.Database).C(instanceCollection).Update(selector, update); err != nil {
+		return "", err
+	}
+
+	return newETag, nil
+}
+
+func (m *Mongo) UpdateETagForNodeIDAndOrder(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (newETag string, err error) {
+	s := m.Session.Copy()
+	defer s.Close()
+
+	// calculate the new eTag hash by calculating the hash of the current instance plus the provided nodeID and order
+	newETag, err = newETagForNodeIDAndOrder(currentInstance, nodeID, order)
+	if err != nil {
+		return "", err
+	}
+
+	selector := bson.M{
+		"e_tag": eTagSelector,
+		"id":    currentInstance.InstanceID,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"e_tag": newETag,
+		},
+		"$currentDate": bson.M{"last_updated": true},
+	}
+
+	if err := s.DB(m.Database).C(instanceCollection).Update(selector, update); err != nil {
+		return "", err
+	}
+
+	return newETag, nil
+}
+
+// UpdateETagForOptions updates the eTag value for an instance according to the provided dimension options
+func (m *Mongo) UpdateETagForOptions(currentInstance *models.Instance, option *models.CachedDimensionOption, eTagSelector string) (newETag string, err error) {
+	s := m.Session.Copy()
+	defer s.Close()
+
+	// calculate the new eTag hash by calculating the hash of the current instance plus the provided option
+	newETag, err = newETagForAddDimensionOption(currentInstance, option)
+	if err != nil {
+		return "", err
+	}
+
+	selector := bson.M{
+		"e_tag": eTagSelector,
+		"id":    currentInstance.InstanceID,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
 			"e_tag": newETag,
 		},
 		"$currentDate": bson.M{"last_updated": true},
