@@ -10,6 +10,7 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/utils"
 	dphttp "github.com/ONSdigital/dp-net/http"
@@ -37,6 +38,7 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
+	eTag := getIfMatch(r)
 	logData := log.Data{"instance_id": instanceID}
 	logData["action"] = GetDimensions
 
@@ -48,7 +50,7 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 	defer s.UnlockInstance(lockID)
 
 	// Get instance from MongoDB
-	instance, err := s.GetInstance(instanceID, "*")
+	instance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {
 		log.Event(ctx, "failed to get instance", log.ERROR, log.Error(err), logData)
 		handleDimensionErr(ctx, w, err, logData)
@@ -83,6 +85,7 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
 	dimension := vars["dimension"]
+	eTag := getIfMatch(r)
 	logData := log.Data{"instance_id": instanceID, "dimension": dimension}
 	logData["action"] = GetUniqueDimensionAndOptionsAction
 
@@ -94,7 +97,7 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	defer s.UnlockInstance(lockID)
 
 	// Get instance from MongoDB
-	instance, err := s.GetInstance(instanceID, "*")
+	instance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {
 		log.Event(ctx, "failed to get instance", log.ERROR, log.Error(err), logData)
 		handleDimensionErr(ctx, w, err, logData)
@@ -137,6 +140,7 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
+	eTag := getIfMatch(r)
 	logData := log.Data{"instance_id": instanceID}
 	logData["action"] = AddDimensionAction
 
@@ -147,7 +151,7 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newETag, err := s.add(ctx, instanceID, option, logData, "*")
+	newETag, err := s.add(ctx, instanceID, option, logData, eTag)
 	if err != nil {
 		handleDimensionErr(ctx, w, err, logData)
 		return
@@ -167,7 +171,7 @@ func (s *Store) add(ctx context.Context, instanceID string, option *models.Cache
 	defer s.UnlockInstance(lockID)
 
 	// Get instance
-	instance, err := s.GetInstance(instanceID, "*")
+	instance, err := s.GetInstance(instanceID, eTagSelector)
 	if err != nil {
 		log.Event(ctx, "failed to get instance", log.ERROR, log.Error(err), logData)
 		return "", err
@@ -224,6 +228,7 @@ func (s *Store) PatchOptionHandler(w http.ResponseWriter, r *http.Request) {
 	instanceID := vars["instance_id"]
 	dimensionName := vars["dimension"]
 	option := vars["option"]
+	eTag := getIfMatch(r)
 	logData := log.Data{"instance_id": instanceID, "dimension": dimensionName, "option": option}
 
 	// unmarshal and validate the patch array
@@ -236,7 +241,7 @@ func (s *Store) PatchOptionHandler(w http.ResponseWriter, r *http.Request) {
 	logData["patch_list"] = patches
 
 	// apply the patches to the dimension option
-	successfulPatches, newETag, err := s.patchOption(ctx, instanceID, dimensionName, option, patches, logData, "*")
+	successfulPatches, newETag, err := s.patchOption(ctx, instanceID, dimensionName, option, patches, logData, eTag)
 	if err != nil {
 		logData["successful_patches"] = successfulPatches
 		handleDimensionErr(ctx, w, err, logData)
@@ -283,7 +288,7 @@ func (s *Store) patchOption(ctx context.Context, instanceID, dimensionName, opti
 		}
 
 		// update values in database, updating the instance eTag
-		newETag, err := s.updateOption(ctx, dimOption, logData, eTagSelector)
+		newETag, err = s.updateOption(ctx, dimOption, logData, eTagSelector)
 		if err != nil {
 			return successful, "", err
 		}
@@ -302,11 +307,12 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 	dimensionName := vars["dimension"]
 	option := vars["option"]
 	nodeID := vars["node_id"]
+	eTag := getIfMatch(r)
 	logData := log.Data{"instance_id": instanceID, "dimension": dimensionName, "option": option, "node_id": nodeID, "action": UpdateNodeIDAction}
 
 	dimOption := models.DimensionOption{Name: dimensionName, Option: option, NodeID: nodeID, InstanceID: instanceID}
 
-	newETag, err := s.updateOption(ctx, dimOption, logData, "*")
+	newETag, err := s.updateOption(ctx, dimOption, logData, eTag)
 	if err != nil {
 		handleDimensionErr(ctx, w, err, logData)
 		return
@@ -361,6 +367,14 @@ func (s *Store) updateOption(ctx context.Context, dimOption models.DimensionOpti
 
 func setJSONPatchContentType(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json-patch+json")
+}
+
+func getIfMatch(r *http.Request) string {
+	ifMatch := r.Header.Get("If-Match")
+	if ifMatch == "" {
+		return mongo.AnyETag
+	}
+	return ifMatch
 }
 
 func setETag(w http.ResponseWriter, eTag string) {

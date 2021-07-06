@@ -22,11 +22,12 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
 	dimension := vars["dimension"]
+	eTag := getIfMatch(r)
 	logData := log.Data{"instance_id": instanceID, "dimension": dimension}
 
 	log.Event(ctx, "update instance dimension: update instance dimension", log.INFO, logData)
 
-	instance, err := s.GetInstance(instanceID, "*")
+	instance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {
 		log.Event(ctx, "update instance dimension: Failed to GET instance", log.ERROR, log.Error(err), logData)
 		handleInstanceErr(ctx, err, w, logData)
@@ -90,7 +91,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update instance
-	newETag, err := s.UpdateInstance(ctx, instance, instanceUpdate, "*")
+	newETag, err := s.UpdateInstance(ctx, instance, instanceUpdate, eTag)
 	if err != nil {
 		log.Event(ctx, "update instance dimension: failed to update instance with new dimension label/description", log.ERROR, log.Error(err), logData)
 		handleInstanceErr(ctx, err, w, logData)

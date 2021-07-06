@@ -14,7 +14,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-const testETag = "testETag"
+const (
+	testIfMatch = "testIfMatch"
+	testETag    = "testETag"
+)
 
 func Test_UpdateDimensionReturnsOk(t *testing.T) {
 	t.Parallel()
@@ -23,6 +26,7 @@ func Test_UpdateDimensionReturnsOk(t *testing.T) {
 			Convey("Then return status ok (200)", func() {
 				body := strings.NewReader(`{"label":"ages", "description": "A range of ages between 18 and 60"}`)
 				r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+				r.Header.Set("If-Match", testIfMatch)
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
@@ -46,6 +50,8 @@ func Test_UpdateDimensionReturnsOk(t *testing.T) {
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
 			})
 		})
@@ -232,6 +238,37 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+			})
+		})
+
+		Convey("When the provided If-Match header value does not match the instance eTag", func() {
+			Convey("Then return status conflict (409)", func() {
+				body := strings.NewReader(`{"label":"ages", "description": "A range of ages between 18 and 60"}`)
+				r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+				r.Header.Set("If-Match", "wrong")
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+						return nil, errs.ErrInstanceConflict
+					},
+				}
+
+				datasetPermissions := mocks.NewAuthHandlerMock()
+				permissions := mocks.NewAuthHandlerMock()
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusConflict)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceConflict.Error())
+
+				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+				So(permissions.Required.Calls, ShouldEqual, 1)
+
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, "wrong")
 			})
 		})
 	})

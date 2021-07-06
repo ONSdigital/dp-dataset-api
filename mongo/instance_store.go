@@ -58,16 +58,21 @@ func (m *Mongo) GetInstance(ID, eTagSelector string) (*models.Instance, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
+	// get instance from DB
 	var instance models.Instance
-	err := s.DB(m.Database).C(instanceCollection).
-		Find(selector(ID, 0, eTagSelector)).
-		One(&instance)
-
-	if err == mgo.ErrNotFound {
-		return nil, errs.ErrInstanceNotFound
+	if err := s.DB(m.Database).C(instanceCollection).Find(bson.M{"id": ID}).One(&instance); err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, errs.ErrInstanceNotFound
+		}
+		return nil, err
 	}
 
-	return &instance, err
+	// If eTag was provided and did not match, return the corresponding error
+	if eTagSelector != AnyETag && eTagSelector != instance.ETag {
+		return nil, errs.ErrInstanceConflict
+	}
+
+	return &instance, nil
 }
 
 // AddInstance to the instance collection
@@ -379,11 +384,8 @@ func (m *Mongo) UpdateBuildHierarchyTaskState(currentInstance *models.Instance, 
 		return "", err
 	}
 
-	selector := bson.M{
-		"e_tag": eTagSelector,
-		"id":    currentInstance.InstanceID,
-		"import_tasks.build_hierarchies.dimension_name": dimension,
-	}
+	sel := selector(currentInstance.InstanceID, 0, eTagSelector)
+	sel["import_tasks.build_hierarchies.dimension_name"] = dimension
 
 	update := bson.M{
 		"$set": bson.M{
@@ -411,11 +413,8 @@ func (m *Mongo) UpdateBuildSearchTaskState(currentInstance *models.Instance, dim
 		return "", err
 	}
 
-	selector := bson.M{
-		"e_tag": eTagSelector,
-		"id":    currentInstance.InstanceID,
-		"import_tasks.build_search_indexes.dimension_name": dimension,
-	}
+	sel := selector(currentInstance.InstanceID, 0, eTagSelector)
+	sel["import_tasks.build_search_indexes.dimension_name"] = dimension
 
 	update := bson.M{
 		"$set": bson.M{
@@ -442,10 +441,7 @@ func (m *Mongo) UpdateETagForNodeIDAndOrder(currentInstance *models.Instance, no
 		return "", err
 	}
 
-	selector := bson.M{
-		"e_tag": eTagSelector,
-		"id":    currentInstance.InstanceID,
-	}
+	sel := selector(currentInstance.InstanceID, 0, eTagSelector)
 
 	update := bson.M{
 		"$set": bson.M{
@@ -454,7 +450,7 @@ func (m *Mongo) UpdateETagForNodeIDAndOrder(currentInstance *models.Instance, no
 		"$currentDate": bson.M{"last_updated": true},
 	}
 
-	if err := s.DB(m.Database).C(instanceCollection).Update(selector, update); err != nil {
+	if err := s.DB(m.Database).C(instanceCollection).Update(sel, update); err != nil {
 		return "", err
 	}
 
@@ -472,10 +468,7 @@ func (m *Mongo) UpdateETagForOptions(currentInstance *models.Instance, option *m
 		return "", err
 	}
 
-	selector := bson.M{
-		"e_tag": eTagSelector,
-		"id":    currentInstance.InstanceID,
-	}
+	sel := selector(currentInstance.InstanceID, 0, eTagSelector)
 
 	update := bson.M{
 		"$set": bson.M{
@@ -484,7 +477,7 @@ func (m *Mongo) UpdateETagForOptions(currentInstance *models.Instance, option *m
 		"$currentDate": bson.M{"last_updated": true},
 	}
 
-	if err := s.DB(m.Database).C(instanceCollection).Update(selector, update); err != nil {
+	if err := s.DB(m.Database).C(instanceCollection).Update(sel, update); err != nil {
 		return "", err
 	}
 

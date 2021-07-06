@@ -57,6 +57,8 @@ func handleDimensionErr(ctx context.Context, w http.ResponseWriter, err error, d
 			status = http.StatusNotFound
 		case errs.BadRequestMap[err]:
 			status = http.StatusBadRequest
+		case errs.ConflictRequestMap[err]:
+			status = http.StatusConflict
 		default:
 			status = http.StatusInternalServerError
 			err = errs.ErrInternalServer

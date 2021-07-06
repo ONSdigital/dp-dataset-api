@@ -12,6 +12,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
@@ -87,16 +88,17 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit int, offse
 	return results, totalCount, nil
 }
 
-//Get a single instance by id
+// Get a single instance by id
 func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
+	eTag := getIfMatch(r)
 	logData := log.Data{"instance_id": instanceID}
 
 	log.Event(ctx, "get instance", log.INFO, logData)
 
-	instance, err := s.GetInstance(instanceID, "*")
+	instance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {
 		log.Event(ctx, "get instance: failed to retrieve instance", log.ERROR, log.Error(err), logData)
 		handleInstanceErr(ctx, err, w, logData)
@@ -178,6 +180,8 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
+	eTag := getIfMatch(r)
+
 	logData := log.Data{"instance_id": instanceID}
 
 	instance, err := unmarshalInstance(ctx, r.Body, false)
@@ -192,8 +196,17 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// acquire instance lock so that the dp-graph call to AddVersionDetailsToInstance and the mongoDB update are atomic
+	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
+	if err != nil {
+		log.Event(ctx, "update instance: failed to lock the instance", log.ERROR, log.Error(err), logData)
+		handleInstanceErr(ctx, taskError{error: err, status: http.StatusInternalServerError}, w, logData)
+		return
+	}
+	defer s.UnlockInstance(lockID)
+
 	// Get the current document
-	currentInstance, err := s.GetInstance(instanceID, "*")
+	currentInstance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {
 		log.Event(ctx, "update instance: store.GetInstance returned error", log.ERROR, log.Error(err), logData)
 		handleInstanceErr(ctx, err, w, logData)
@@ -254,7 +267,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 	// Set the current mongo timestamp on instance document
 	instance.UniqueTimestamp = currentInstance.UniqueTimestamp
-	newETag, err := s.UpdateInstance(ctx, currentInstance, instance, "*")
+	newETag, err := s.UpdateInstance(ctx, currentInstance, instance, eTag)
 	if err != nil {
 		log.Event(ctx, "update instance: store.UpdateInstance returned an error", log.ERROR, log.Error(err), logData)
 		handleInstanceErr(ctx, err, w, logData)
@@ -426,6 +439,14 @@ func setJSONContentType(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
+func getIfMatch(r *http.Request) string {
+	ifMatch := r.Header.Get("If-Match")
+	if ifMatch == "" {
+		return mongo.AnyETag
+	}
+	return ifMatch
+}
+
 func setETag(w http.ResponseWriter, eTag string) {
 	w.Header().Set("ETag", eTag)
 }
@@ -448,9 +469,10 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 		ctx := r.Context()
 		vars := mux.Vars(r)
 		instanceID := vars["instance_id"]
+		eTag := getIfMatch(r)
 		logData := log.Data{"action": "CheckAction", "instance_id": instanceID}
 
-		if err := d.checkState(instanceID); err != nil {
+		if err := d.checkState(instanceID, eTag); err != nil {
 			log.Event(ctx, "errored whilst checking instance state", log.ERROR, log.Error(err), logData)
 			handleInstanceErr(ctx, err, w, logData)
 			return
@@ -460,8 +482,8 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 	})
 }
 
-func (d *PublishCheck) checkState(instanceID string) error {
-	instance, err := d.Datastore.GetInstance(instanceID, "*")
+func (d *PublishCheck) checkState(instanceID, eTagSelector string) error {
+	instance, err := d.Datastore.GetInstance(instanceID, eTagSelector)
 	if err != nil {
 		return err
 	}

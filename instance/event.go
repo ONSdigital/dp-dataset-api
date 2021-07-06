@@ -35,6 +35,7 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
+	eTag := getIfMatch(r)
 	data := log.Data{"instance_id": instanceID, "action": AddInstanceEventAction}
 
 	event, err := unmarshalEvent(r.Body)
@@ -50,14 +51,14 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	instance, err := s.GetInstance(instanceID, "*")
+	instance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {
 		log.Event(ctx, "add instance event: failed to get instance from datastore", log.ERROR, log.Error(err), data)
 		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
-	newETag, err := s.AddEventToInstance(instance, event, "*")
+	newETag, err := s.AddEventToInstance(instance, event, eTag)
 	if err != nil {
 		log.Event(ctx, "add instance event: failed to add event to instance in datastore", log.ERROR, log.Error(err), data)
 		handleInstanceErr(ctx, err, w, data)

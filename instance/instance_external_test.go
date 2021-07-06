@@ -23,8 +23,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-const host = "http://localhost:8080"
-
 var (
 	mu          sync.Mutex
 	testContext = context.Background()
@@ -185,12 +183,16 @@ func Test_GetInstanceReturnsOK(t *testing.T) {
 		Convey("When the request is authorised", func() {
 			Convey("Then return status ok (200)", func() {
 				r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+				r.Header.Set("If-Match", testIfMatch)
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
 					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.CreatedState}, nil
+						return &models.Instance{
+							State: models.CreatedState,
+							ETag:  testETag,
+						}, nil
 					},
 				}
 
@@ -203,7 +205,10 @@ func Test_GetInstanceReturnsOK(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusOK)
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
+				So(w.Header().Get("eTag"), ShouldEqual, testETag)
 			})
 		})
 	})
@@ -288,13 +293,35 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 			})
 		})
-	})
-}
 
-type expectedPostInstanceAuditObject struct {
-	Action      string
-	ContainsKey string
-	Result      string
+		Convey("When the instance resource eTag does not match the provided If-Match header value", func() {
+			Convey("Then return status conflict (409)", func() {
+				r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+				r.Header.Set("If-Match", "wrong")
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+						return nil, errs.ErrInstanceConflict
+					},
+				}
+
+				datasetPermissions := mocks.NewAuthHandlerMock()
+				permissions := mocks.NewAuthHandlerMock()
+
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusConflict)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceConflict.Error())
+				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+				So(permissions.Required.Calls, ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, "wrong")
+			})
+		})
+	})
 }
 
 func Test_AddInstanceReturnsCreated(t *testing.T) {
@@ -417,28 +444,27 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 			Convey("Then return status ok (200)", func() {
 				body := strings.NewReader(`{"state":"submitted"}`)
 				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+				r.Header.Set("If-Match", testIfMatch)
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{
-							Links: &models.InstanceLinks{
-								Dataset: &models.LinkObject{
-									ID:   "234",
-									HRef: "example.com/234",
-								},
-								Self: &models.LinkObject{
-									ID:   "123",
-									HRef: "example.com/123",
-								},
-							},
-							State: models.CreatedState,
-						}, nil
+				mockedDataStore, isLocked := storeMockWithLock(&models.Instance{
+					Links: &models.InstanceLinks{
+						Dataset: &models.LinkObject{
+							ID:   "234",
+							HRef: "example.com/234",
+						},
+						Self: &models.LinkObject{
+							ID:   "123",
+							HRef: "example.com/123",
+						},
 					},
-					UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+					State: models.CreatedState,
+				}, true)
+
+				mockedDataStore.UpdateInstanceFunc = func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+					So(*isLocked, ShouldBeTrue)
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -450,8 +476,12 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 3)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
+				So(mockedDataStore.UpdateInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -606,6 +636,37 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
+			})
+		})
+
+		Convey("When the instance eTag does not match the provided if-Match header value", func() {
+			Convey("Then return status conflict (409)", func() {
+				body := strings.NewReader(`{"edition": "2017"}`)
+				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+				r.Header.Set("If-Match", testIfMatch)
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+						return nil, errs.ErrInstanceConflict
+					},
+				}
+
+				datasetPermissions := mocks.NewAuthHandlerMock()
+				permissions := mocks.NewAuthHandlerMock()
+
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusConflict)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceConflict.Error())
+
+				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+				So(permissions.Required.Calls, ShouldEqual, 1)
+
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 			})
 		})
 	})

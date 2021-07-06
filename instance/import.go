@@ -23,6 +23,7 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
 	insert := vars["inserted_observations"]
+	eTag := getIfMatch(r)
 	logData := log.Data{"instance_id": instanceID, "inserted_observations": insert}
 
 	observations, err := strconv.ParseInt(insert, 10, 64)
@@ -32,15 +33,12 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	instance, err := s.GetInstance(instanceID, "*")
+	instance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {
 		log.Event(ctx, "failed to get instance from database", log.ERROR, log.Error(err), logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
-
-	// TODO get value from If-Match
-	eTag := instance.ETag
 
 	newETag, err := s.UpdateObservationInserted(instance, observations, eTag)
 	if err != nil {
@@ -61,6 +59,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
+	eTag := getIfMatch(r)
 	logData := log.Data{"instance_id": instanceID}
 	defer r.Body.Close()
 
@@ -76,15 +75,16 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	instance, err := s.GetInstance(instanceID, "*")
+	instance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {
 		log.Event(ctx, "failed to get instance from database", log.ERROR, log.Error(err), logData)
+		if err == errs.ErrInstanceConflict {
+			handleError(&taskError{err, http.StatusConflict})
+			return
+		}
 		handleError(&taskError{err, http.StatusInternalServerError})
 		return
 	}
-
-	// TODO get value from If-Match
-	eTag := instance.ETag
 
 	validationErrs := make([]error, 0)
 	var hasImportTasks bool
