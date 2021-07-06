@@ -316,7 +316,10 @@ func (m *Mongo) UpdateObservationInserted(currentInstance *models.Instance, obse
 	err = s.DB(m.Database).C(instanceCollection).Update(sel,
 		bson.M{
 			"$inc": bson.M{"import_tasks.import_observations.total_inserted_observations": observationInserted},
-			"$set": bson.M{"last_updated": time.Now().UTC(), "e_tag": newETag},
+			"$set": bson.M{
+				"last_updated": time.Now().UTC(),
+				"e_tag":        newETag,
+			},
 		},
 	)
 
@@ -346,7 +349,10 @@ func (m *Mongo) UpdateImportObservationsTaskState(currentInstance *models.Instan
 
 	err = s.DB(m.Database).C(instanceCollection).Update(sel,
 		bson.M{
-			"$set":         bson.M{"import_tasks.import_observations.state": state, "e_tag": newETag},
+			"$set": bson.M{
+				"import_tasks.import_observations.state": state,
+				"e_tag":                                  newETag,
+			},
 			"$currentDate": bson.M{"last_updated": true},
 		},
 	)

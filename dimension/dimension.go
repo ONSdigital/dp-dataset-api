@@ -40,6 +40,13 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 	logData := log.Data{"instance_id": instanceID}
 	logData["action"] = GetDimensions
 
+	// acquire instance lock to make sure we read the correct values of dimension options
+	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer s.UnlockInstance(lockID)
+
 	// Get instance from MongoDB
 	instance, err := s.GetInstance(instanceID, "*")
 	if err != nil {
@@ -78,6 +85,13 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	dimension := vars["dimension"]
 	logData := log.Data{"instance_id": instanceID, "dimension": dimension}
 	logData["action"] = GetUniqueDimensionAndOptionsAction
+
+	// acquire instance lock to make sure we read the correct values of dimension options
+	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer s.UnlockInstance(lockID)
 
 	// Get instance from MongoDB
 	instance, err := s.GetInstance(instanceID, "*")

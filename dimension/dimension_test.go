@@ -44,18 +44,49 @@ func validateDimensionUpdate(mockedDataStore *storetest.StorerMock, expected *mo
 	So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
 	So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, expected.InstanceID)
 	So(mockedDataStore.GetInstanceCalls()[1].ID, ShouldEqual, expected.InstanceID)
-
-	So(mockedDataStore.AcquireInstanceLockCalls(), ShouldHaveLength, 1)
-	So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, ShouldEqual, expected.InstanceID)
-
-	So(mockedDataStore.UnlockInstanceCalls(), ShouldHaveLength, 1)
-	So(mockedDataStore.UnlockInstanceCalls()[0].LockID, ShouldEqual, testLockID)
+	validateLock(mockedDataStore, expected.InstanceID)
 
 	So(mockedDataStore.UpdateETagForNodeIDAndOrderCalls(), ShouldHaveLength, 1)
 	So(mockedDataStore.UpdateETagForNodeIDAndOrderCalls()[0].CurrentInstance.InstanceID, ShouldEqual, expected.InstanceID)
 
 	So(mockedDataStore.UpdateDimensionNodeIDAndOrderCalls(), ShouldHaveLength, 1)
 	So(mockedDataStore.UpdateDimensionNodeIDAndOrderCalls()[0].Dimension, ShouldResemble, expected)
+}
+
+func validateLock(mockedDataStore *storetest.StorerMock, expectedInstanceID string) {
+	So(mockedDataStore.AcquireInstanceLockCalls(), ShouldHaveLength, 1)
+	So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, ShouldEqual, "123")
+	So(mockedDataStore.UnlockInstanceCalls(), ShouldHaveLength, 1)
+	So(mockedDataStore.UnlockInstanceCalls()[0].LockID, ShouldEqual, testLockID)
+}
+
+func storeMockWithLock(expectFirstGetUnlocked bool) (*storetest.StorerMock, *bool) {
+	isLocked := false
+	numGetCall := 0
+	return &storetest.StorerMock{
+		AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+			isLocked = true
+			return testLockID, nil
+		},
+		UnlockInstanceFunc: func(lockID string) error {
+			isLocked = false
+			return nil
+		},
+		GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+			if expectFirstGetUnlocked {
+				if numGetCall > 0 {
+					So(isLocked, ShouldBeTrue)
+				} else {
+					So(isLocked, ShouldBeFalse)
+				}
+			}
+			numGetCall++
+			return &models.Instance{
+				InstanceID: ID,
+				State:      models.CreatedState,
+			}, nil
+		},
+	}, &isLocked
 }
 
 // Deprecated
@@ -66,26 +97,14 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
-				return testLockID, nil
-			},
-			UnlockInstanceFunc: func(lockID string) error {
-				return nil
-			},
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{
-					InstanceID: ID,
-					State:      models.CreatedState,
-				}, nil
-			},
-			UpdateETagForNodeIDAndOrderFunc: func(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (string, error) {
-				return testETag, nil
-			},
-			UpdateDimensionNodeIDAndOrderFunc: func(dimension *models.DimensionOption) error {
-				return nil
-			},
+		mockedDataStore, isLocked := storeMockWithLock(true)
+		mockedDataStore.UpdateETagForNodeIDAndOrderFunc = func(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (string, error) {
+			So(*isLocked, ShouldBeTrue)
+			return testETag, nil
+		}
+		mockedDataStore.UpdateDimensionNodeIDAndOrderFunc = func(dimension *models.DimensionOption) error {
+			So(*isLocked, ShouldBeTrue)
+			return nil
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -100,6 +119,7 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 				Option:     "55",
 				Order:      nil,
 			})
+			So(*isLocked, ShouldBeFalse)
 		})
 	})
 }
@@ -110,25 +130,14 @@ func TestPatchOptionReturnsOK(t *testing.T) {
 	Convey("Given a Dataset API instance with a mocked data store", t, func() {
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &storetest.StorerMock{
-			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
-				return testLockID, nil
-			},
-			UnlockInstanceFunc: func(lockID string) error {
-				return nil
-			},
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{
-					InstanceID: ID,
-					State:      models.CreatedState,
-				}, nil
-			},
-			UpdateETagForNodeIDAndOrderFunc: func(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (string, error) {
-				return testETag, nil
-			},
-			UpdateDimensionNodeIDAndOrderFunc: func(dimension *models.DimensionOption) error {
-				return nil
-			},
+		mockedDataStore, isLocked := storeMockWithLock(true)
+		mockedDataStore.UpdateETagForNodeIDAndOrderFunc = func(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (string, error) {
+			So(*isLocked, ShouldBeTrue)
+			return testETag, nil
+		}
+		mockedDataStore.UpdateDimensionNodeIDAndOrderFunc = func(dimension *models.DimensionOption) error {
+			So(*isLocked, ShouldBeTrue)
+			return nil
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -150,6 +159,7 @@ func TestPatchOptionReturnsOK(t *testing.T) {
 					NodeID:     "11",
 					Option:     "55",
 				})
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -171,6 +181,7 @@ func TestPatchOptionReturnsOK(t *testing.T) {
 					Option:     "55",
 					Order:      &expectedOrder,
 				})
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -205,6 +216,7 @@ func TestPatchOptionReturnsOK(t *testing.T) {
 					NodeID:     "11",
 					Option:     "55",
 				})
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -217,25 +229,14 @@ func TestAddNodeIDToDimensionReturnsNotFound(t *testing.T) {
 	Convey("Given a mocked Dataset API that fails to update dimension node ID due to DimensionNodeNotFound error", t, func() {
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &storetest.StorerMock{
-			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
-				return testLockID, nil
-			},
-			UnlockInstanceFunc: func(lockID string) error {
-				return nil
-			},
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{
-					InstanceID: ID,
-					State:      models.CreatedState,
-				}, nil
-			},
-			UpdateETagForNodeIDAndOrderFunc: func(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (string, error) {
-				return testETag, nil
-			},
-			UpdateDimensionNodeIDAndOrderFunc: func(dimension *models.DimensionOption) error {
-				return errs.ErrDimensionNodeNotFound
-			},
+		mockedDataStore, isLocked := storeMockWithLock(true)
+		mockedDataStore.UpdateETagForNodeIDAndOrderFunc = func(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (string, error) {
+			So(*isLocked, ShouldBeTrue)
+			return testETag, nil
+		}
+		mockedDataStore.UpdateDimensionNodeIDAndOrderFunc = func(dimension *models.DimensionOption) error {
+			So(*isLocked, ShouldBeTrue)
+			return errs.ErrDimensionNodeNotFound
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -255,6 +256,7 @@ func TestAddNodeIDToDimensionReturnsNotFound(t *testing.T) {
 					Option:     "55",
 					Order:      nil,
 				})
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -266,25 +268,14 @@ func TestPatchOptionReturnsNotFound(t *testing.T) {
 	Convey("Given a Dataset API instance with a mocked data store that fails to update dimension node ID due to DimensionNodeNotFound error", t, func() {
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &storetest.StorerMock{
-			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
-				return testLockID, nil
-			},
-			UnlockInstanceFunc: func(lockID string) error {
-				return nil
-			},
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{
-					InstanceID: ID,
-					State:      models.CreatedState,
-				}, nil
-			},
-			UpdateETagForNodeIDAndOrderFunc: func(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (string, error) {
-				return testETag, nil
-			},
-			UpdateDimensionNodeIDAndOrderFunc: func(dimension *models.DimensionOption) error {
-				return errs.ErrDimensionNodeNotFound
-			},
+		mockedDataStore, isLocked := storeMockWithLock(true)
+		mockedDataStore.UpdateETagForNodeIDAndOrderFunc = func(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (string, error) {
+			So(*isLocked, ShouldBeTrue)
+			return testETag, nil
+		}
+		mockedDataStore.UpdateDimensionNodeIDAndOrderFunc = func(dimension *models.DimensionOption) error {
+			So(*isLocked, ShouldBeTrue)
+			return errs.ErrDimensionNodeNotFound
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -307,6 +298,7 @@ func TestPatchOptionReturnsNotFound(t *testing.T) {
 					Option:     "55",
 					Order:      nil,
 				})
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -400,16 +392,9 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 	]`)
 
 	Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
-		mockedDataStore := &storetest.StorerMock{
-			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
-				return testLockID, nil
-			},
-			UnlockInstanceFunc: func(lockID string) error {
-				return nil
-			},
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return nil, errs.ErrInternalServer
-			},
+		mockedDataStore, isLocked := storeMockWithLock(false)
+		mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+			return nil, errs.ErrInternalServer
 		}
 
 		r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
@@ -422,6 +407,7 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(*isLocked, ShouldBeFalse)
 	})
 
 	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
@@ -430,16 +416,9 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &storetest.StorerMock{
-			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
-				return testLockID, nil
-			},
-			UnlockInstanceFunc: func(lockID string) error {
-				return nil
-			},
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{State: "gobbledygook"}, nil
-			},
+		mockedDataStore, isLocked := storeMockWithLock(false)
+		mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+			return &models.Instance{State: "gobbledygook"}, nil
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -449,17 +428,11 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(*isLocked, ShouldBeFalse)
 	})
 
 	Convey("Given an internal error is returned from mongo GetInstance on the second call, then response returns an internal error", t, func() {
-		mockedDataStore := &storetest.StorerMock{
-			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
-				return testLockID, nil
-			},
-			UnlockInstanceFunc: func(lockID string) error {
-				return nil
-			},
-		}
+		mockedDataStore, isLocked := storeMockWithLock(true)
 		mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
 			if len(mockedDataStore.GetInstanceCalls()) == 1 {
 				return &models.Instance{State: models.CreatedState}, nil
@@ -477,8 +450,8 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
+		So(*isLocked, ShouldBeFalse)
 	})
-
 }
 
 // Deprecated
@@ -585,25 +558,15 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
-				return testLockID, nil
-			},
-			UnlockInstanceFunc: func(lockID string) error {
-				return nil
-			},
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{
-					InstanceID: ID,
-					State:      models.CreatedState,
-				}, nil
-			},
-			UpdateETagForOptionsFunc: func(currentInstance *models.Instance, option *models.CachedDimensionOption, eTagSelector string) (string, error) {
-				return testETag, nil
-			},
-			AddDimensionToInstanceFunc: func(dimension *models.CachedDimensionOption) error {
-				return nil
-			},
+
+		mockedDataStore, isLocked := storeMockWithLock(true)
+		mockedDataStore.UpdateETagForOptionsFunc = func(currentInstance *models.Instance, option *models.CachedDimensionOption, eTagSelector string) (string, error) {
+			So(*isLocked, ShouldBeTrue)
+			return testETag, nil
+		}
+		mockedDataStore.AddDimensionToInstanceFunc = func(dimension *models.CachedDimensionOption) error {
+			So(*isLocked, ShouldBeTrue)
+			return nil
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -615,12 +578,7 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
 		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 		So(mockedDataStore.GetInstanceCalls()[1].ID, ShouldEqual, "123")
-
-		So(mockedDataStore.AcquireInstanceLockCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, ShouldEqual, "123")
-
-		So(mockedDataStore.UnlockInstanceCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UnlockInstanceCalls()[0].LockID, ShouldEqual, testLockID)
+		validateLock(mockedDataStore, "123")
 
 		So(mockedDataStore.UpdateETagForOptionsCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpdateETagForOptionsCalls()[0].ETagSelector, ShouldEqual, "*")
@@ -628,6 +586,7 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 
 		So(mockedDataStore.AddDimensionToInstanceCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.AddDimensionToInstanceCalls()[0].Dimension, ShouldResemble, expected)
+		So(*isLocked, ShouldBeFalse)
 	})
 }
 
@@ -646,25 +605,14 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &storetest.StorerMock{
-			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
-				return testLockID, nil
-			},
-			UnlockInstanceFunc: func(lockID string) error {
-				return nil
-			},
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{
-					InstanceID: ID,
-					State:      models.CreatedState,
-				}, nil
-			},
-			UpdateETagForOptionsFunc: func(currentInstance *models.Instance, option *models.CachedDimensionOption, eTagSelector string) (string, error) {
-				return testETag, nil
-			},
-			AddDimensionToInstanceFunc: func(dimension *models.CachedDimensionOption) error {
-				return errs.ErrDimensionNodeNotFound
-			},
+		mockedDataStore, isLocked := storeMockWithLock(true)
+		mockedDataStore.UpdateETagForOptionsFunc = func(currentInstance *models.Instance, option *models.CachedDimensionOption, eTagSelector string) (string, error) {
+			So(*isLocked, ShouldBeTrue)
+			return testETag, nil
+		}
+		mockedDataStore.AddDimensionToInstanceFunc = func(dimension *models.CachedDimensionOption) error {
+			So(*isLocked, ShouldBeTrue)
+			return errs.ErrDimensionNodeNotFound
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -678,11 +626,7 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 		So(mockedDataStore.GetInstanceCalls()[1].ID, ShouldEqual, "123")
 
-		So(mockedDataStore.AcquireInstanceLockCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, ShouldEqual, "123")
-
-		So(mockedDataStore.UnlockInstanceCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UnlockInstanceCalls()[0].LockID, ShouldEqual, testLockID)
+		validateLock(mockedDataStore, "123")
 
 		So(mockedDataStore.UpdateETagForOptionsCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpdateETagForOptionsCalls()[0].ETagSelector, ShouldEqual, "*")
@@ -690,6 +634,7 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 
 		So(mockedDataStore.AddDimensionToInstanceCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.AddDimensionToInstanceCalls()[0].Dimension, ShouldResemble, expected)
+		So(*isLocked, ShouldBeFalse)
 	})
 }
 
@@ -793,13 +738,10 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{State: models.CreatedState}, nil
-			},
-			GetDimensionsFromInstanceFunc: func(ctx context.Context, id string, offset, limit int) ([]*models.DimensionOption, int, error) {
-				return []*models.DimensionOption{}, 0, nil
-			},
+		mockedDataStore, isLocked := storeMockWithLock(false)
+		mockedDataStore.GetDimensionsFromInstanceFunc = func(ctx context.Context, id string, offset, limit int) ([]*models.DimensionOption, int, error) {
+			So(*isLocked, ShouldBeTrue)
+			return []*models.DimensionOption{}, 0, nil
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -807,7 +749,11 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 		So(mockedDataStore.GetDimensionsFromInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].ID, ShouldEqual, "123")
+		validateLock(mockedDataStore, "123")
+		So(*isLocked, ShouldBeFalse)
 	})
 }
 
@@ -818,14 +764,10 @@ func TestGetDimensionsReturnsNotFound(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{State: models.CreatedState}, nil
-			},
-			GetDimensionsFromInstanceFunc: func(ctx context.Context, id string, offset, limit int) ([]*models.DimensionOption, int, error) {
-				return nil, 0, errs.ErrDimensionNodeNotFound
-			},
+		mockedDataStore, isLocked := storeMockWithLock(false)
+		mockedDataStore.GetDimensionsFromInstanceFunc = func(ctx context.Context, id string, offset, limit int) ([]*models.DimensionOption, int, error) {
+			So(*isLocked, ShouldBeTrue)
+			return nil, 0, errs.ErrDimensionNodeNotFound
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -834,7 +776,11 @@ func TestGetDimensionsReturnsNotFound(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDimensionNodeNotFound.Error())
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 		So(mockedDataStore.GetDimensionsFromInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].ID, ShouldEqual, "123")
+		validateLock(mockedDataStore, "123")
+		So(*isLocked, ShouldBeFalse)
 	})
 }
 
@@ -845,11 +791,10 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return nil, errs.ErrInternalServer
-			},
+		mockedDataStore, isLocked := storeMockWithLock(false)
+		mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+			So(*isLocked, ShouldBeTrue)
+			return nil, errs.ErrInternalServer
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -857,7 +802,11 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+		validateLock(mockedDataStore, "123")
+		So(*isLocked, ShouldBeFalse)
 	})
 
 	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
@@ -865,11 +814,10 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{State: "gobbly gook"}, nil
-			},
+		mockedDataStore, isLocked := storeMockWithLock(true)
+		mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+			So(*isLocked, ShouldBeTrue)
+			return &models.Instance{State: "gobbly gook"}, nil
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -878,6 +826,9 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+		validateLock(mockedDataStore, "123")
+		So(*isLocked, ShouldBeFalse)
 	})
 }
 
@@ -889,13 +840,10 @@ func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{State: models.CreatedState}, nil
-			},
-			GetUniqueDimensionAndOptionsFunc: func(ctx context.Context, ID string, dimension string, offset int, limit int) ([]*string, int, error) {
-				return []*string{}, 0, nil
-			},
+		mockedDataStore, isLocked := storeMockWithLock(false)
+		mockedDataStore.GetUniqueDimensionAndOptionsFunc = func(ctx context.Context, ID string, dimension string, offset int, limit int) ([]*string, int, error) {
+			So(*isLocked, ShouldBeTrue)
+			return []*string{}, 0, nil
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -904,6 +852,8 @@ func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetUniqueDimensionAndOptionsCalls(), ShouldHaveLength, 1)
+		validateLock(mockedDataStore, "123")
+		So(*isLocked, ShouldBeFalse)
 	})
 }
 
@@ -914,13 +864,11 @@ func TestGetUniqueDimensionAndOptionsReturnsNotFound(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{State: models.CreatedState}, nil
-			},
-			GetUniqueDimensionAndOptionsFunc: func(ctx context.Context, ID string, dimension string, offset int, limit int) ([]*string, int, error) {
-				return nil, 0, errs.ErrInstanceNotFound
-			},
+
+		mockedDataStore, isLocked := storeMockWithLock(false)
+		mockedDataStore.GetUniqueDimensionAndOptionsFunc = func(ctx context.Context, ID string, dimension string, offset int, limit int) ([]*string, int, error) {
+			So(*isLocked, ShouldBeTrue)
+			return nil, 0, errs.ErrInstanceNotFound
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -929,7 +877,10 @@ func TestGetUniqueDimensionAndOptionsReturnsNotFound(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 		So(mockedDataStore.GetUniqueDimensionAndOptionsCalls(), ShouldHaveLength, 1)
+		validateLock(mockedDataStore, "123")
+		So(*isLocked, ShouldBeFalse)
 	})
 }
 
@@ -940,10 +891,10 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return nil, errs.ErrInternalServer
-			},
+		mockedDataStore, isLocked := storeMockWithLock(false)
+		mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+			So(*isLocked, ShouldBeTrue)
+			return nil, errs.ErrInternalServer
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -952,6 +903,8 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		validateLock(mockedDataStore, "123")
+		So(*isLocked, ShouldBeFalse)
 	})
 
 	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
@@ -959,10 +912,10 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{State: "gobbly gook"}, nil
-			},
+		mockedDataStore, isLocked := storeMockWithLock(false)
+		mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+			So(*isLocked, ShouldBeTrue)
+			return &models.Instance{State: "gobbly gook"}, nil
 		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
@@ -971,6 +924,8 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		validateLock(mockedDataStore, "123")
+		So(*isLocked, ShouldBeFalse)
 	})
 }
 
