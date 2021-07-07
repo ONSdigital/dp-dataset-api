@@ -32,7 +32,7 @@ var (
 	ErrIncorrectStateToDetach            = errors.New("only versions with a state of edition-confirmed or associated can be detached")
 	ErrIndexOutOfRange                   = errors.New("index out of range")
 	ErrInstanceNotFound                  = errors.New("instance not found")
-	ErrInstanceConflict                  = errors.New("instances does not match the expected eTag")
+	ErrInstanceConflict                  = errors.New("instance does not match the expected eTag")
 	ErrInternalServer                    = errors.New("internal error")
 	ErrInsertedObservationsInvalidSyntax = errors.New("inserted observation request parameter not an integer")
 	ErrInvalidQueryParameter             = errors.New("invalid query parameter")

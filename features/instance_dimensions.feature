@@ -245,6 +245,14 @@ Feature: Dataset API
             instance not found
             """
 
+    Scenario: GET /instances/test-item-1/dimensions in private mode with the wrong If-Match header value returns conflict
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        And I set the "If-Match" header to "wrongValue"
+        When I GET "/instances/test-item-1/dimensions"
+        Then the HTTP status code should be "409"
+
     Scenario: GET /instances/test-item-1/dimensions/time/options in private mode returns the first page of 20 instance dimensions options
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
@@ -304,3 +312,11 @@ Feature: Dataset API
             """
             dimension node not found
             """
+
+    Scenario: GET /instances/test-item-1/dimensions/time/options in private mode with the wrong If-Match header value returns conflict
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        And I set the "If-Match" header to "wrongValue"
+        When I GET "/instances/test-item-1/dimensions/time/options"
+        Then the HTTP status code should be "409"
