@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
@@ -15,40 +16,79 @@ import (
 
 func TestAddEventReturnsOk(t *testing.T) {
 	t.Parallel()
-	Convey("Given a valid request to add an event to instance resource", t, func() {
-		Convey("When the request is made", func() {
-			Convey(`Then the instance is successfully updated with the event and a
-				response status ok (200) is returned`, func() {
-				body := strings.NewReader(`{"message": "321", "type": "error", "message_offset":"00", "time":"2017-08-25T15:09:11.829+01:00" }`)
-				r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
-				r.Header.Set("If-Match", testIfMatch)
-				So(err, ShouldBeNil)
-				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{
-							InstanceID: ID,
-							State:      models.CompletedState,
-						}, nil
-					},
-					AddEventToInstanceFunc: func(currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
-				}
+	bodyStr := `{"message": "321", "type": "error", "message_offset":"00", "time":"2017-08-25T15:09:11.829Z" }`
+	layout := "2006-01-02T15:04:05.000Z"
+	str := "2017-08-25T15:09:11.829Z"
+	testTime, _ := time.Parse(layout, str)
+	expectedEvent := &models.Event{
+		Message:       "321",
+		Type:          "error",
+		MessageOffset: "00",
+		Time:          &testTime,
+	}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
-				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-				datasetAPI.Router.ServeHTTP(w, r)
+	Convey("Given a dataset API with a successful store mock and auth", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+				return &models.Instance{
+					InstanceID: ID,
+					State:      models.CompletedState,
+				}, nil
+			},
+			AddEventToInstanceFunc: func(currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
+				return testETag, nil
+			},
+		}
 
+		datasetPermissions := mocks.NewAuthHandlerMock()
+		permissions := mocks.NewAuthHandlerMock()
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		Convey("When a POST request to create an event for an instance resource is made, with a valid If-Match header", func() {
+			body := strings.NewReader(bodyStr)
+			r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
 				So(w.Code, ShouldEqual, http.StatusOK)
 				So(w.Header().Get("ETag"), ShouldEqual, testETag)
+			})
+
+			Convey("Then the expected functions are called", func() {
 				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 				So(mockedDataStore.AddEventToInstanceCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.AddEventToInstanceCalls()[0].CurrentInstance.InstanceID, ShouldEqual, "123")
+				So(mockedDataStore.AddEventToInstanceCalls()[0].Event, ShouldResemble, expectedEvent)
 				So(mockedDataStore.AddEventToInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
+			})
+		})
+
+		Convey("When a POST request to create an event for an instance resource is made, without an If-Match header", func() {
+			body := strings.NewReader(bodyStr)
+			r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
+			})
+
+			Convey("Then the expected functions are called", func() {
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, AnyETag)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.AddEventToInstanceCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.AddEventToInstanceCalls()[0].CurrentInstance.InstanceID, ShouldEqual, "123")
+				So(mockedDataStore.AddEventToInstanceCalls()[0].Event, ShouldResemble, expectedEvent)
+				So(mockedDataStore.AddEventToInstanceCalls()[0].ETagSelector, ShouldEqual, AnyETag)
 			})
 		})
 	})

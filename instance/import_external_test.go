@@ -17,32 +17,33 @@ import (
 
 func Test_InsertedObservationsReturnsOk(t *testing.T) {
 	t.Parallel()
-	Convey("Given a PUT request to update an instance resource with inserted observations", t, func() {
-		Convey("When the request is authorised", func() {
-			Convey("Then return status ok (200)", func() {
-				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
-				r.Header.Set("If-Match", testIfMatch)
-				So(err, ShouldBeNil)
-				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.EditionConfirmedState}, nil
-					},
-					UpdateObservationInsertedFunc: func(id *models.Instance, ob int64, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
-				}
+	Convey("Given a dataset API with a successful store mock and auth", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+				return &models.Instance{State: models.EditionConfirmedState}, nil
+			},
+			UpdateObservationInsertedFunc: func(id *models.Instance, ob int64, eTagSelector string) (string, error) {
+				return testETag, nil
+			},
+		}
+		datasetPermissions := mocks.NewAuthHandlerMock()
+		permissions := mocks.NewAuthHandlerMock()
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+		Convey("When a PUT request to update the inserted observations for an instance resource is made, with a valid If-Match header", func() {
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			datasetAPI.Router.ServeHTTP(w, r)
 
-				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-				datasetAPI.Router.ServeHTTP(w, r)
-
+			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
 				So(w.Code, ShouldEqual, http.StatusOK)
 				So(w.Header().Get("ETag"), ShouldEqual, testETag)
+			})
 
+			Convey("Then the expected functions are called", func() {
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
@@ -50,6 +51,29 @@ func Test_InsertedObservationsReturnsOk(t *testing.T) {
 				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 				So(mockedDataStore.UpdateObservationInsertedCalls(), ShouldHaveLength, 1)
 				So(mockedDataStore.UpdateObservationInsertedCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
+				So(mockedDataStore.UpdateObservationInsertedCalls()[0].ObservationInserted, ShouldEqual, 200)
+			})
+		})
+
+		Convey("When a PUT request to update the inserted observations for an instance resource is made, without an If-Match header", func() {
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
+			})
+
+			Convey("Then the expected functions are called", func() {
+				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+				So(permissions.Required.Calls, ShouldEqual, 1)
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, AnyETag)
+				So(mockedDataStore.UpdateObservationInsertedCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.UpdateObservationInsertedCalls()[0].ETagSelector, ShouldEqual, AnyETag)
 				So(mockedDataStore.UpdateObservationInsertedCalls()[0].ObservationInserted, ShouldEqual, 200)
 			})
 		})
@@ -181,37 +205,73 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 
 func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 	t.Parallel()
-	Convey("Given a PUT request to update an instance resource with import observations", t, func() {
-		Convey("When the request is authorised", func() {
-			Convey("Then return status ok (200)", func() {
-				body := strings.NewReader(`{"import_observations":{"state":"completed"}}`)
-				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
-				So(err, ShouldBeNil)
-				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.CreatedState}, nil
-					},
-					UpdateImportObservationsTaskStateFunc: func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
-				}
+	bodyStr := `{"import_observations":{"state":"completed"}}`
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+	Convey("Given a dataset API with a successful store mock and auth", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+				return &models.Instance{
+					InstanceID: ID,
+					State:      models.CreatedState,
+				}, nil
+			},
+			UpdateImportObservationsTaskStateFunc: func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+				return testETag, nil
+			},
+		}
+		datasetPermissions := mocks.NewAuthHandlerMock()
+		permissions := mocks.NewAuthHandlerMock()
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 
-				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-				datasetAPI.Router.ServeHTTP(w, r)
+		Convey("When a PUT request to update the import_observations value for an import task of an instance resource is made, with a valid If-Match header", func() {
+			body := strings.NewReader(bodyStr)
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			datasetAPI.Router.ServeHTTP(w, r)
 
+			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
 				So(w.Code, ShouldEqual, http.StatusOK)
 				So(w.Header().Get("ETag"), ShouldEqual, testETag)
+			})
 
+			Convey("Then the expected functions are called", func() {
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+				So(mockedDataStore.UpdateImportObservationsTaskStateCalls()[0].CurrentInstance.InstanceID, ShouldEqual, "123")
+				So(mockedDataStore.UpdateImportObservationsTaskStateCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
+				So(mockedDataStore.UpdateImportObservationsTaskStateCalls()[0].State, ShouldEqual, models.CompletedState)
+			})
+		})
+
+		Convey("When a HJGHF request to retrieve an instance resource is made, without an If-Match header", func() {
+			body := strings.NewReader(bodyStr)
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
+			})
+
+			Convey("Then the expected functions are called", func() {
+				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+				So(permissions.Required.Calls, ShouldEqual, 1)
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, AnyETag)
+				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
+				So(mockedDataStore.UpdateImportObservationsTaskStateCalls()[0].CurrentInstance.InstanceID, ShouldEqual, "123")
+				So(mockedDataStore.UpdateImportObservationsTaskStateCalls()[0].ETagSelector, ShouldEqual, AnyETag)
+				So(mockedDataStore.UpdateImportObservationsTaskStateCalls()[0].State, ShouldEqual, models.CompletedState)
 			})
 		})
 	})

@@ -198,6 +198,13 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 	})
 }
 
+func validateLock(mockedDataStore *storetest.StorerMock, expectedInstanceID string) {
+	So(mockedDataStore.AcquireInstanceLockCalls(), ShouldHaveLength, 1)
+	So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, ShouldEqual, "123")
+	So(mockedDataStore.UnlockInstanceCalls(), ShouldHaveLength, 1)
+	So(mockedDataStore.UnlockInstanceCalls()[0].LockID, ShouldEqual, testLockID)
+}
+
 func storeMockWithLock(instance *models.Instance, expectFirstGetUnlocked bool) (*storetest.StorerMock, *bool) {
 	isLocked := false
 	numGetCall := 0
