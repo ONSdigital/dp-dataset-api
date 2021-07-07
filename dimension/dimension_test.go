@@ -2,6 +2,7 @@ package dimension_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -27,6 +28,7 @@ var (
 	mu          sync.Mutex
 	testContext = context.Background()
 	testETag    = "testETag"
+	testIfMatch = "testIfMatch"
 	testLockID  = "testLockID"
 )
 
@@ -43,11 +45,14 @@ func validateDimensionUpdate(mockedDataStore *storetest.StorerMock, expected *mo
 	// checks the instance is not published before entering handler
 	So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
 	So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, expected.InstanceID)
+	So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 	So(mockedDataStore.GetInstanceCalls()[1].ID, ShouldEqual, expected.InstanceID)
+	So(mockedDataStore.GetInstanceCalls()[1].ETagSelector, ShouldEqual, testIfMatch)
 	validateLock(mockedDataStore, expected.InstanceID)
 
 	So(mockedDataStore.UpdateETagForNodeIDAndOrderCalls(), ShouldHaveLength, 1)
 	So(mockedDataStore.UpdateETagForNodeIDAndOrderCalls()[0].CurrentInstance.InstanceID, ShouldEqual, expected.InstanceID)
+	So(mockedDataStore.UpdateETagForNodeIDAndOrderCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 
 	So(mockedDataStore.UpdateDimensionNodeIDAndOrderCalls(), ShouldHaveLength, 1)
 	So(mockedDataStore.UpdateDimensionNodeIDAndOrderCalls()[0].Dimension, ShouldResemble, expected)
@@ -84,6 +89,7 @@ func storeMockWithLock(expectFirstGetUnlocked bool) (*storetest.StorerMock, *boo
 			return &models.Instance{
 				InstanceID: ID,
 				State:      models.CreatedState,
+				ETag:       testETag,
 			}, nil
 		},
 	}, &isLocked
@@ -94,6 +100,7 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("Add node id to a dimension returns ok", t, func() {
 		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
+		r.Header.Add("If-Match", testIfMatch)
 		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
@@ -130,10 +137,14 @@ func TestPatchOptionReturnsOK(t *testing.T) {
 	Convey("Given a Dataset API instance with a mocked data store", t, func() {
 		w := httptest.NewRecorder()
 
+		numUpdateCall := 0
+
 		mockedDataStore, isLocked := storeMockWithLock(true)
 		mockedDataStore.UpdateETagForNodeIDAndOrderFunc = func(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (string, error) {
 			So(*isLocked, ShouldBeTrue)
-			return testETag, nil
+			newETag := fmt.Sprintf("%s_%d", testETag, numUpdateCall)
+			numUpdateCall++
+			return newETag, nil
 		}
 		mockedDataStore.UpdateDimensionNodeIDAndOrderFunc = func(dimension *models.DimensionOption) error {
 			So(*isLocked, ShouldBeTrue)
@@ -147,10 +158,13 @@ func TestPatchOptionReturnsOK(t *testing.T) {
 				{"op": "add", "path": "/node_id", "value": "11"}
 			]`)
 			r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
+			r.Header.Set("If-Match", testIfMatch)
 			So(err, ShouldBeNil)
 
 			datasetAPI.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
+			expectedETag := fmt.Sprintf("%s_0", testETag)
+			So(w.Header().Get("ETag"), ShouldEqual, expectedETag)
 
 			Convey("And the expected database calls are performed to update node_id", func() {
 				validateDimensionUpdate(mockedDataStore, &models.DimensionOption{
@@ -168,10 +182,13 @@ func TestPatchOptionReturnsOK(t *testing.T) {
 				{"op": "add", "path": "/order", "value": 0}
 			]`)
 			r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
+			r.Header.Set("If-Match", testIfMatch)
 			So(err, ShouldBeNil)
 
 			datasetAPI.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
+			expectedETag := fmt.Sprintf("%s_0", testETag)
+			So(w.Header().Get("ETag"), ShouldEqual, expectedETag)
 
 			Convey("And the expected database calls are performed to update order", func() {
 				expectedOrder := 0
@@ -191,16 +208,24 @@ func TestPatchOptionReturnsOK(t *testing.T) {
 				{"op": "add", "path": "/node_id", "value": "11"}
 			]`)
 			r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
+			r.Header.Set("If-Match", testIfMatch)
 			So(err, ShouldBeNil)
+
+			expectedETag0 := fmt.Sprintf("%s_0", testETag)
+			expectedETag1 := fmt.Sprintf("%s_1", testETag)
 
 			datasetAPI.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
+			So(w.Header().Get("ETag"), ShouldEqual, expectedETag1)
 
 			Convey("And the expected database calls are performed to update node_id and order", func() {
 				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 3)
 				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 				So(mockedDataStore.GetInstanceCalls()[1].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[1].ETagSelector, ShouldEqual, testIfMatch)
 				So(mockedDataStore.GetInstanceCalls()[2].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[2].ETagSelector, ShouldEqual, expectedETag0)
 
 				expectedOrder := 0
 				So(mockedDataStore.UpdateDimensionNodeIDAndOrderCalls(), ShouldHaveLength, 2)
@@ -243,6 +268,7 @@ func TestAddNodeIDToDimensionReturnsNotFound(t *testing.T) {
 
 		Convey("Add node id to a dimension returns status not found", func() {
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
+			r.Header.Set("If-Match", testIfMatch)
 			So(err, ShouldBeNil)
 
 			datasetAPI.Router.ServeHTTP(w, r)
@@ -285,6 +311,7 @@ func TestPatchOptionReturnsNotFound(t *testing.T) {
 				{"op": "add", "path": "/node_id", "value": "11"}
 			]`)
 			r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
+			r.Header.Set("If-Match", testIfMatch)
 			So(err, ShouldBeNil)
 
 			datasetAPI.Router.ServeHTTP(w, r)
@@ -547,6 +574,7 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 	Convey("Add a dimension to an instance returns ok", t, func() {
 		json := strings.NewReader(`{"value":"24", "code_list":"123-456", "dimension": "test", "order": 1}`)
 		r, err := createRequestWithToken("POST", "http://localhost:22000/instances/123/dimensions", json)
+		r.Header.Set("If-Match", testIfMatch)
 		So(err, ShouldBeNil)
 
 		expectedOrder := 1
@@ -562,7 +590,7 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 		mockedDataStore, isLocked := storeMockWithLock(true)
 		mockedDataStore.UpdateETagForOptionsFunc = func(currentInstance *models.Instance, option *models.CachedDimensionOption, eTagSelector string) (string, error) {
 			So(*isLocked, ShouldBeTrue)
-			return testETag, nil
+			return "newETag", nil
 		}
 		mockedDataStore.AddDimensionToInstanceFunc = func(dimension *models.CachedDimensionOption) error {
 			So(*isLocked, ShouldBeTrue)
@@ -573,15 +601,18 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
+		So(w.Header().Get("ETag"), ShouldEqual, "newETag")
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
 		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+		So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 		So(mockedDataStore.GetInstanceCalls()[1].ID, ShouldEqual, "123")
+		So(mockedDataStore.GetInstanceCalls()[1].ETagSelector, ShouldEqual, testIfMatch)
 		validateLock(mockedDataStore, "123")
 
 		So(mockedDataStore.UpdateETagForOptionsCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UpdateETagForOptionsCalls()[0].ETagSelector, ShouldEqual, "*")
+		So(mockedDataStore.UpdateETagForOptionsCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 		So(mockedDataStore.UpdateETagForOptionsCalls()[0].Option, ShouldResemble, expected)
 
 		So(mockedDataStore.AddDimensionToInstanceCalls(), ShouldHaveLength, 1)
@@ -734,6 +765,7 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("Get dimensions (and their respective nodes) returns ok", t, func() {
 		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions", nil)
+		r.Header.Set("If-Match", testIfMatch)
 		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
@@ -748,8 +780,11 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
+		So(w.Header().Get("ETag"), ShouldEqual, testETag)
+
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+		So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 		So(mockedDataStore.GetDimensionsFromInstanceCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].ID, ShouldEqual, "123")
 		validateLock(mockedDataStore, "123")
@@ -779,6 +814,33 @@ func TestGetDimensionsReturnsNotFound(t *testing.T) {
 		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 		So(mockedDataStore.GetDimensionsFromInstanceCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].ID, ShouldEqual, "123")
+		validateLock(mockedDataStore, "123")
+		So(*isLocked, ShouldBeFalse)
+	})
+}
+
+func TestGetDimensionsReturnsConflict(t *testing.T) {
+	t.Parallel()
+	Convey("Get dimensions returns conflict", t, func() {
+		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions", nil)
+		r.Header.Set("If-Match", "wrong")
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore, isLocked := storeMockWithLock(false)
+		mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+			So(*isLocked, ShouldBeTrue)
+			return nil, errs.ErrInstanceConflict
+		}
+
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusConflict)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceConflict.Error())
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+		So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, "wrong")
 		validateLock(mockedDataStore, "123")
 		So(*isLocked, ShouldBeFalse)
 	})
@@ -836,6 +898,7 @@ func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("Get all unique dimensions returns ok", t, func() {
 		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
+		r.Header.Set("If-Match", testIfMatch)
 		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
@@ -850,7 +913,10 @@ func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
+		So(w.Header().Get("ETag"), ShouldEqual, testETag)
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+		So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 		So(mockedDataStore.GetUniqueDimensionAndOptionsCalls(), ShouldHaveLength, 1)
 		validateLock(mockedDataStore, "123")
 		So(*isLocked, ShouldBeFalse)
@@ -879,6 +945,33 @@ func TestGetUniqueDimensionAndOptionsReturnsNotFound(t *testing.T) {
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 		So(mockedDataStore.GetUniqueDimensionAndOptionsCalls(), ShouldHaveLength, 1)
+		validateLock(mockedDataStore, "123")
+		So(*isLocked, ShouldBeFalse)
+	})
+}
+
+func TestGetUniqueDimensionAndOptionsReturnsConflict(t *testing.T) {
+	t.Parallel()
+	Convey("Get all unique dimensions returns conflict", t, func() {
+		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
+		r.Header.Set("If-Match", "wrong")
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+
+		mockedDataStore, isLocked := storeMockWithLock(false)
+		mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+			return nil, errs.ErrInstanceConflict
+		}
+
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusConflict)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceConflict.Error())
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+		So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, "wrong")
 		validateLock(mockedDataStore, "123")
 		So(*isLocked, ShouldBeFalse)
 	})

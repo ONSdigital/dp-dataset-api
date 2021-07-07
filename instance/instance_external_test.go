@@ -208,7 +208,7 @@ func Test_GetInstanceReturnsOK(t *testing.T) {
 				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
-				So(w.Header().Get("eTag"), ShouldEqual, testETag)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
 			})
 		})
 	})
@@ -336,7 +336,9 @@ func Test_AddInstanceReturnsCreated(t *testing.T) {
 
 				mockedDataStore := &storetest.StorerMock{
 					AddInstanceFunc: func(*models.Instance) (*models.Instance, error) {
-						return &models.Instance{}, nil
+						return &models.Instance{
+							ETag: testETag,
+						}, nil
 					},
 				}
 
@@ -346,6 +348,7 @@ func Test_AddInstanceReturnsCreated(t *testing.T) {
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusCreated)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
 				So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 1)
 
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
@@ -460,6 +463,7 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 						},
 					},
 					State: models.CreatedState,
+					ETag:  testETag,
 				}, true)
 
 				mockedDataStore.UpdateInstanceFunc = func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
@@ -473,6 +477,7 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 3)

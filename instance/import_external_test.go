@@ -21,6 +21,7 @@ func Test_InsertedObservationsReturnsOk(t *testing.T) {
 		Convey("When the request is authorised", func() {
 			Convey("Then return status ok (200)", func() {
 				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
+				r.Header.Set("If-Match", testIfMatch)
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
@@ -40,10 +41,16 @@ func Test_InsertedObservationsReturnsOk(t *testing.T) {
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
+
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
-				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
+				So(mockedDataStore.UpdateObservationInsertedCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.UpdateObservationInsertedCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
+				So(mockedDataStore.UpdateObservationInsertedCalls()[0].ObservationInserted, ShouldEqual, 200)
 			})
 		})
 	})
@@ -139,6 +146,36 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 0)
 			})
 		})
+
+		Convey("When the provided If-Match header value does not match the instance eTag", func() {
+			Convey("Then return status conflict (409)", func() {
+				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
+				r.Header.Set("If-Match", "wrong")
+				So(err, ShouldBeNil)
+				w := httptest.NewRecorder()
+
+				mockedDataStore := &storetest.StorerMock{
+					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+						return nil, errs.ErrInstanceConflict
+					},
+				}
+				datasetPermissions := mocks.NewAuthHandlerMock()
+				permissions := mocks.NewAuthHandlerMock()
+
+				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI.Router.ServeHTTP(w, r)
+
+				So(w.Code, ShouldEqual, http.StatusConflict)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceConflict.Error())
+
+				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+				So(permissions.Required.Calls, ShouldEqual, 1)
+
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, "wrong")
+			})
+		})
 	})
 }
 
@@ -168,6 +205,8 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
+
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)

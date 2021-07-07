@@ -47,6 +47,8 @@ func Test_UpdateDimensionReturnsOk(t *testing.T) {
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
+
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
@@ -97,6 +99,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 			Convey("Then return status internal error (500)", func() {
 				body := strings.NewReader(`{"label":"ages"}`)
 				r, err := createRequestWithToken("PUT", "http://localhost:22000/instances/123/dimensions/age", body)
+				r.Header.Set("If-Match", testIfMatch)
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
