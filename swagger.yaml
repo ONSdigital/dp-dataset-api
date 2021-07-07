@@ -185,6 +185,12 @@ parameters:
     in: query
     required: false
     type: string
+  if_match:
+    name: If-Match
+    required: false
+    description: "Filter resource version, as returned by a previous ETag, to be validated; or '*' to skip the version check"
+    in: header
+    type: string
 securityDefinitions:
   FlorenceAPIKey:
     name: florence-token
@@ -601,6 +607,10 @@ paths:
           description: "Successfully created instance"
           schema:
             $ref: '#/definitions/NewInstance'
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
         400:
           $ref: '#/responses/InvalidRequestError'
         401:
@@ -617,6 +627,7 @@ paths:
       description: "Get the current state of an instance, this includes all events which have happened."
       parameters:
       - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/if_match'
       produces:
       - "application/json"
       security:
@@ -626,10 +637,16 @@ paths:
           description: "Return a single instance state"
           schema:
             $ref: '#/definitions/Instance'
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
         401:
           $ref: '#/responses/UnauthorisedError'
         404:
           $ref: '#/responses/InstanceNotFound'
+        409:
+          $ref: '#/responses/ConflictError'
         500:
           $ref: '#/responses/InternalError'
     put:
@@ -640,6 +657,7 @@ paths:
       parameters:
       - $ref: '#/parameters/instance_id'
       - $ref: '#/parameters/instance'
+      - $ref: '#/parameters/if_match'
       produces:
       - "application/json"
       security:
@@ -647,6 +665,10 @@ paths:
       responses:
         200:
           description: "The instance has been updated"
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
         400:
           $ref: '#/responses/InvalidRequestError'
         401:
@@ -667,6 +689,7 @@ paths:
       description: "Get all dimensions from an instance"
       parameters:
       - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/if_match'
       produces:
       - "application/json"
       security:
@@ -678,6 +701,10 @@ paths:
             type: array
             items:
               $ref: '#/definitions/DimensionOption'
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
         400:
           $ref: '#/responses/InvalidRequestError'
         401:
@@ -686,6 +713,8 @@ paths:
           $ref: '#/responses/ForbiddenError'
         404:
           $ref: '#/responses/InstanceNotFound'
+        409:
+          $ref: '#/responses/ConflictError'
         500:
           $ref: '#/responses/InternalError'
     post:
@@ -696,15 +725,22 @@ paths:
       parameters:
       - $ref: '#/parameters/instance_id'
       - $ref: '#/parameters/update_dimension_option_request'
+      - $ref: '#/parameters/if_match'
       security:
       - InternalAPIKey: []
       responses:
         201:
           description: "Dimension was created"
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
         400:
           $ref: '#/responses/InvalidRequestError'
         404:
           $ref: '#/responses/InstanceNotFound'
+        409:
+          $ref: '#/responses/ConflictError'
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}/dimensions/{dimension}:
@@ -717,11 +753,16 @@ paths:
       - $ref: '#/parameters/instance_id'
       - $ref: '#/parameters/dimension'
       - $ref: '#/parameters/update_dimension'
+      - $ref: '#/parameters/if_match'
       security:
       - InternalAPIKey: []
       responses:
         200:
           description: "The instance has been updated"
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
         400:
           $ref: '#/responses/InvalidRequestError'
         401:
@@ -743,6 +784,7 @@ paths:
       parameters:
       - $ref: '#/parameters/instance_id'
       - $ref: '#/parameters/dimension'
+      - $ref: '#/parameters/if_match'
       produces:
       - "application/json"
       security:
@@ -761,6 +803,10 @@ paths:
                 type: array
                 items:
                   type: string
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
         400:
           $ref: '#/responses/InvalidRequestError'
         401:
@@ -769,6 +815,8 @@ paths:
           $ref: '#/responses/ForbiddenError'
         404:
           description: "dimension does not match any dimensions within the instance"
+        409:
+          $ref: '#/responses/ConflictError'
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}/events:
@@ -783,17 +831,24 @@ paths:
       parameters:
       - $ref: '#/parameters/instance_id'
       - $ref: '#/parameters/event'
+      - $ref: '#/parameters/if_match'
       security:
       - InternalAPIKey: []
       responses:
         201:
           description: "The event was added to the instance"
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
         400:
           $ref: '#/responses/InvalidRequestError'
         401:
           $ref: '#/responses/UnauthorisedError'
         404:
           description: "InstanceId does not match any instances"
+        409:
+          $ref: '#/responses/ConflictError'
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}/inserted_observations/{inserted_observations}:
@@ -805,17 +860,24 @@ paths:
       parameters:
       - $ref: '#/parameters/instance_id'
       - $ref: '#/parameters/inserted_observations'
+      - $ref: '#/parameters/if_match'
       security:
       - InternalAPIKey: []
       responses:
         200:
           description: "Added value to inserted observation"
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
         400:
           $ref: '#/responses/InvalidRequestError'
         401:
           $ref: '#/responses/UnauthorisedError'
         404:
           description: "InstanceId does not match any instances"
+        409:
+          $ref: '#/responses/ConflictError'
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}/import_tasks:
@@ -827,17 +889,24 @@ paths:
       parameters:
       - $ref: '#/parameters/instance_id'
       - $ref: '#/parameters/import_tasks'
+      - $ref: '#/parameters/if_match'
       security:
       - InternalAPIKey: []
       responses:
         200:
           description: "Updated the state of the import task"
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
         400:
           $ref: '#/responses/InvalidRequestError'
         401:
           $ref: '#/responses/UnauthorisedError'
         404:
           description: "InstanceId does not match any instances"
+        409:
+          $ref: '#/responses/ConflictError'
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}/dimensions/{dimension}/options/{option}:
@@ -852,6 +921,7 @@ paths:
       - $ref: '#/parameters/dimension'
       - $ref: '#/parameters/option'
       - $ref: '#/parameters/patch_options'
+      - $ref: '#/parameters/if_match'
       produces:
       - "application/json-patch+json"
       security:
@@ -861,6 +931,10 @@ paths:
           description: "The dimension option was modified and the successfully applied patch operations are returned"
           schema:
             $ref: '#/definitions/PatchOptions'
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
         400:
           $ref: '#/responses/InvalidRequestError'
         401:
@@ -869,6 +943,8 @@ paths:
           $ref: '#/responses/ForbiddenError'
         404:
           description: "InstanceId does not match any instances"
+        409:
+          $ref: '#/responses/ConflictError'
         500:
           $ref: '#/responses/InternalError'
   /instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}:
@@ -884,6 +960,7 @@ paths:
       - $ref: '#/parameters/dimension'
       - $ref: '#/parameters/node_id'
       - $ref: '#/parameters/option'
+      - $ref: '#/parameters/if_match'
       produces:
       - "application/json"
       security:
@@ -891,6 +968,10 @@ paths:
       responses:
         200:
           description: "Updated the dimension with the nodeId"
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
         400:
           $ref: '#/responses/InvalidRequestError'
         401:
@@ -899,6 +980,8 @@ paths:
           $ref: '#/responses/ForbiddenError'
         404:
           description: "InstanceId does not match any instances"
+        409:
+          $ref: '#/responses/ConflictError'
         500:
           $ref: '#/responses/InternalError'
 responses:
