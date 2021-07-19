@@ -241,7 +241,7 @@ type VersionLinks struct {
 }
 
 // IsBasedOn refers to the Cantabular blob source
-type IsBasedOn struct{
+type IsBasedOn struct {
 	Type string `bson:"@type" json:"@type"`
 	ID   string `bson:"@id"   json:"@id"`
 }

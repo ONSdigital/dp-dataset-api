@@ -320,7 +320,7 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 			log.Event(ctx, "error adding check for kafka downloads producer", log.ERROR, log.Error(err))
 		}
 
-		if !svc.config.DisableGraphDBDependency{
+		if !svc.config.DisableGraphDBDependency {
 			log.Event(ctx, "private endpoints enabled: adding graph db health check", log.INFO)
 			if err = svc.healthCheck.AddCheck("Graph DB", svc.graphDB.Checker); err != nil {
 				hasErrors = true

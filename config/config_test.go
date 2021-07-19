@@ -33,6 +33,7 @@ func TestSpec(t *testing.T) {
 				So(cfg.MongoConfig.BindAddr, ShouldEqual, "localhost:27017")
 				So(cfg.MongoConfig.Collection, ShouldEqual, "datasets")
 				So(cfg.MongoConfig.Database, ShouldEqual, "datasets")
+				So(cfg.DisableGraphDBDependency, ShouldEqual, false)
 				So(cfg.DefaultLimit, ShouldEqual, 20)
 				So(cfg.DefaultOffset, ShouldEqual, 0)
 				So(cfg.EnablePermissionsAuth, ShouldBeFalse)
