@@ -29,16 +29,18 @@ func TestAddEventReturnsOk(t *testing.T) {
 	}
 
 	Convey("Given a dataset API with a successful store mock and auth", t, func() {
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{
-					InstanceID: ID,
-					State:      models.CompletedState,
-				}, nil
-			},
-			AddEventToInstanceFunc: func(currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
-				return testETag, nil
-			},
+		instance := &models.Instance{
+			InstanceID: "123",
+		}
+		mockedDataStore, isLocked := storeMockWithLock(instance, false)
+		mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+			return &models.Instance{
+				InstanceID: ID,
+				State:      models.CompletedState,
+			}, nil
+		}
+		mockedDataStore.AddEventToInstanceFunc = func(currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
+			return testETag, nil
 		}
 
 		datasetPermissions := mocks.NewAuthHandlerMock()
@@ -67,6 +69,11 @@ func TestAddEventReturnsOk(t *testing.T) {
 				So(mockedDataStore.AddEventToInstanceCalls()[0].Event, ShouldResemble, expectedEvent)
 				So(mockedDataStore.AddEventToInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 			})
+
+			Convey("Then the db lock is acquired and released as expected", func() {
+				validateLock(mockedDataStore, "123")
+				So(*isLocked, ShouldBeFalse)
+			})
 		})
 
 		Convey("When a POST request to create an event for an instance resource is made, without an If-Match header", func() {
@@ -89,6 +96,11 @@ func TestAddEventReturnsOk(t *testing.T) {
 				So(mockedDataStore.AddEventToInstanceCalls()[0].CurrentInstance.InstanceID, ShouldEqual, "123")
 				So(mockedDataStore.AddEventToInstanceCalls()[0].Event, ShouldResemble, expectedEvent)
 				So(mockedDataStore.AddEventToInstanceCalls()[0].ETagSelector, ShouldEqual, AnyETag)
+			})
+
+			Convey("Then the db lock is acquired and released as expected", func() {
+				validateLock(mockedDataStore, "123")
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -149,10 +161,12 @@ func TestAddEventToInstanceReturnsNotFound(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return nil, errs.ErrInstanceNotFound
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return nil, errs.ErrInstanceNotFound
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -163,6 +177,8 @@ func TestAddEventToInstanceReturnsNotFound(t *testing.T) {
 				So(w.Code, ShouldEqual, http.StatusNotFound)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
 				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -178,16 +194,18 @@ func TestAddEventToInstanceReturnsInternalError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{
-							InstanceID: ID,
-							State:      models.CompletedState,
-						}, nil
-					},
-					AddEventToInstanceFunc: func(currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
-						return "", errs.ErrInternalServer
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{
+						InstanceID: ID,
+						State:      models.CompletedState,
+					}, nil
+				}
+				mockedDataStore.AddEventToInstanceFunc = func(currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
+					return "", errs.ErrInternalServer
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -199,6 +217,8 @@ func TestAddEventToInstanceReturnsInternalError(t *testing.T) {
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 				So(mockedDataStore.AddEventToInstanceCalls(), ShouldHaveLength, 1)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -215,10 +235,12 @@ func TestAddInstanceConflict(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return nil, errs.ErrInstanceConflict
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return nil, errs.ErrInstanceConflict
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -230,6 +252,8 @@ func TestAddInstanceConflict(t *testing.T) {
 				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, "wrong")
 				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})

@@ -11,7 +11,6 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -19,13 +18,16 @@ func Test_InsertedObservationsReturnsOk(t *testing.T) {
 	t.Parallel()
 
 	Convey("Given a dataset API with a successful store mock and auth", t, func() {
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{State: models.EditionConfirmedState}, nil
-			},
-			UpdateObservationInsertedFunc: func(id *models.Instance, ob int64, eTagSelector string) (string, error) {
-				return testETag, nil
-			},
+		instance := &models.Instance{
+			InstanceID: "123",
+			State:      models.EditionConfirmedState,
+		}
+		mockedDataStore, isLocked := storeMockWithLock(instance, false)
+		mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+			return &models.Instance{State: models.EditionConfirmedState}, nil
+		}
+		mockedDataStore.UpdateObservationInsertedFunc = func(id *models.Instance, ob int64, eTagSelector string) (string, error) {
+			return testETag, nil
 		}
 		datasetPermissions := mocks.NewAuthHandlerMock()
 		permissions := mocks.NewAuthHandlerMock()
@@ -53,6 +55,11 @@ func Test_InsertedObservationsReturnsOk(t *testing.T) {
 				So(mockedDataStore.UpdateObservationInsertedCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 				So(mockedDataStore.UpdateObservationInsertedCalls()[0].ObservationInserted, ShouldEqual, 200)
 			})
+
+			Convey("Then the db lock is acquired and released as expected", func() {
+				validateLock(mockedDataStore, "123")
+				So(*isLocked, ShouldBeFalse)
+			})
 		})
 
 		Convey("When a PUT request to update the inserted observations for an instance resource is made, without an If-Match header", func() {
@@ -76,6 +83,11 @@ func Test_InsertedObservationsReturnsOk(t *testing.T) {
 				So(mockedDataStore.UpdateObservationInsertedCalls()[0].ETagSelector, ShouldEqual, AnyETag)
 				So(mockedDataStore.UpdateObservationInsertedCalls()[0].ObservationInserted, ShouldEqual, 200)
 			})
+
+			Convey("Then the db lock is acquired and released as expected", func() {
+				validateLock(mockedDataStore, "123")
+				So(*isLocked, ShouldBeFalse)
+			})
 		})
 	})
 }
@@ -89,10 +101,13 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return nil, errs.ErrInternalServer
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return nil, errs.ErrInternalServer
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -109,6 +124,8 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -118,13 +135,16 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.EditionConfirmedState}, nil
-					},
-					UpdateObservationInsertedFunc: func(id *models.Instance, ob int64, eTagSelector string) (string, error) {
-						return "", errs.ErrInstanceNotFound
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.EditionConfirmedState}, nil
+				}
+				mockedDataStore.UpdateObservationInsertedFunc = func(id *models.Instance, ob int64, eTagSelector string) (string, error) {
+					return "", errs.ErrInstanceNotFound
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
@@ -140,6 +160,8 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -148,10 +170,13 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/aa12a", nil)
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.SubmittedState}, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.SubmittedState}, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -168,6 +193,8 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -178,10 +205,13 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return nil, errs.ErrInstanceConflict
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return nil, errs.ErrInstanceConflict
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
@@ -198,6 +228,8 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, "wrong")
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -209,16 +241,19 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 	bodyStr := `{"import_observations":{"state":"completed"}}`
 
 	Convey("Given a dataset API with a successful store mock and auth", t, func() {
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{
-					InstanceID: ID,
-					State:      models.CreatedState,
-				}, nil
-			},
-			UpdateImportObservationsTaskStateFunc: func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
-				return testETag, nil
-			},
+		instance := &models.Instance{
+			InstanceID: "123",
+			State:      models.EditionConfirmedState,
+		}
+		mockedDataStore, isLocked := storeMockWithLock(instance, false)
+		mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+			return &models.Instance{
+				InstanceID: ID,
+				State:      models.CreatedState,
+			}, nil
+		}
+		mockedDataStore.UpdateImportObservationsTaskStateFunc = func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+			return testETag, nil
 		}
 		datasetPermissions := mocks.NewAuthHandlerMock()
 		permissions := mocks.NewAuthHandlerMock()
@@ -248,9 +283,14 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 				So(mockedDataStore.UpdateImportObservationsTaskStateCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 				So(mockedDataStore.UpdateImportObservationsTaskStateCalls()[0].State, ShouldEqual, models.CompletedState)
 			})
+
+			Convey("Then the handle was executed using a lock for the expected instance ID, and the lock was released", func() {
+				So(*isLocked, ShouldBeFalse)
+				validateLock(mockedDataStore, "123")
+			})
 		})
 
-		Convey("When a HJGHF request to retrieve an instance resource is made, without an If-Match header", func() {
+		Convey("When a PUT request to retrieve an instance resource is made, without an If-Match header", func() {
 			body := strings.NewReader(bodyStr)
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			So(err, ShouldBeNil)
@@ -273,6 +313,11 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 				So(mockedDataStore.UpdateImportObservationsTaskStateCalls()[0].ETagSelector, ShouldEqual, AnyETag)
 				So(mockedDataStore.UpdateImportObservationsTaskStateCalls()[0].State, ShouldEqual, models.CompletedState)
 			})
+
+			Convey("Then the handle was executed using a lock for the expected instance ID, and the lock was released", func() {
+				So(*isLocked, ShouldBeFalse)
+				validateLock(mockedDataStore, "123")
+			})
 		})
 	})
 }
@@ -287,10 +332,13 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return nil, errs.ErrInternalServer
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return nil, errs.ErrInternalServer
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -308,6 +356,8 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -318,10 +368,13 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return nil, errs.ErrInstanceNotFound
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return nil, errs.ErrInstanceNotFound
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -339,6 +392,8 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -349,13 +404,16 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.PublishedState}, nil
-					},
-					UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.PublishedState}, nil
+				}
+				mockedDataStore.UpdateInstanceFunc = func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -371,6 +429,8 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -386,13 +446,16 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.EditionConfirmedState}, nil
-					},
-					UpdateImportObservationsTaskStateFunc: func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.EditionConfirmedState}, nil
+				}
+				mockedDataStore.UpdateImportObservationsTaskStateFunc = func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -410,6 +473,8 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -420,13 +485,16 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.EditionConfirmedState}, nil
-					},
-					UpdateImportObservationsTaskStateFunc: func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.EditionConfirmedState}, nil
+				}
+				mockedDataStore.UpdateImportObservationsTaskStateFunc = func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -443,6 +511,8 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -453,13 +523,16 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.EditionConfirmedState}, nil
-					},
-					UpdateImportObservationsTaskStateFunc: func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.EditionConfirmedState}, nil
+				}
+				mockedDataStore.UpdateImportObservationsTaskStateFunc = func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
@@ -475,6 +548,8 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -485,13 +560,16 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.EditionConfirmedState}, nil
-					},
-					UpdateImportObservationsTaskStateFunc: func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
-						return "", errs.ErrInternalServer
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.EditionConfirmedState}, nil
+				}
+				mockedDataStore.UpdateImportObservationsTaskStateFunc = func(currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+					return "", errs.ErrInternalServer
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -507,6 +585,8 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -522,13 +602,16 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.EditionConfirmedState}, nil
-					},
-					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.EditionConfirmedState}, nil
+				}
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -546,6 +629,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -556,13 +641,16 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.EditionConfirmedState}, nil
-					},
-					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.EditionConfirmedState}, nil
+				}
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -580,6 +668,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -591,13 +681,16 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.EditionConfirmedState}, nil
-					},
-					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.EditionConfirmedState}, nil
+				}
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -615,6 +708,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -625,13 +720,16 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.EditionConfirmedState}, nil
-					},
-					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.EditionConfirmedState}, nil
+				}
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -649,6 +747,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -659,13 +759,16 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.EditionConfirmedState}, nil
-					},
-					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.EditionConfirmedState}, nil
+				}
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -683,6 +786,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -693,13 +798,16 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.EditionConfirmedState}, nil
-					},
-					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.EditionConfirmedState}, nil
+				}
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -717,6 +825,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -727,13 +837,16 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.EditionConfirmedState}, nil
-					},
-					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return "", errors.New("not found")
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.EditionConfirmedState}, nil
+				}
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return "", errors.New("not found")
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -751,6 +864,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -761,13 +876,16 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.EditionConfirmedState}, nil
-					},
-					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return "", errors.New("internal error")
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.EditionConfirmedState}, nil
+				}
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return "", errors.New("internal error")
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -785,6 +903,8 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -800,13 +920,16 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsOk(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.EditionConfirmedState}, nil
-					},
-					UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.EditionConfirmedState}, nil
+				}
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -821,6 +944,9 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
+
+				validateLock(mockedDataStore, "123")
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -836,13 +962,16 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.CreatedState}, nil
-					},
-					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.CreatedState}, nil
+				}
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -860,6 +989,8 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -870,13 +1001,16 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.CreatedState}, nil
-					},
-					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.CreatedState}, nil
+				}
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -894,6 +1028,8 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -904,13 +1040,16 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.CreatedState}, nil
-					},
-					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.CreatedState}, nil
+				}
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
@@ -927,6 +1066,8 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -937,13 +1078,16 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.CreatedState}, nil
-					},
-					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.CreatedState}, nil
+				}
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -961,6 +1105,8 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -971,13 +1117,16 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.CreatedState}, nil
-					},
-					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.CreatedState}, nil
+				}
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -995,6 +1144,8 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -1005,13 +1156,16 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.CreatedState}, nil
-					},
-					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.CreatedState}, nil
+				}
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -1029,6 +1183,8 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 0)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -1039,13 +1195,16 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.CreatedState}, nil
-					},
-					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return "", errors.New("not found")
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.CreatedState}, nil
+				}
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return "", errors.New("not found")
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -1063,6 +1222,8 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
@@ -1073,13 +1234,16 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.CreatedState}, nil
-					},
-					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return "", errors.New("internal error")
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.CreatedState}, nil
+				}
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return "", errors.New("internal error")
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -1097,6 +1261,8 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
+
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -1112,13 +1278,16 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexReturnsOk(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-						return &models.Instance{State: models.CreatedState}, nil
-					},
-					UpdateBuildSearchTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-						return testETag, nil
-					},
+				instance := &models.Instance{
+					InstanceID: "123",
+					State:      models.EditionConfirmedState,
+				}
+				mockedDataStore, isLocked := storeMockWithLock(instance, false)
+				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+					return &models.Instance{State: models.CreatedState}, nil
+				}
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+					return testETag, nil
 				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -1134,6 +1303,9 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildSearchTaskStateCalls()), ShouldEqual, 1)
+
+				validateLock(mockedDataStore, "123")
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})

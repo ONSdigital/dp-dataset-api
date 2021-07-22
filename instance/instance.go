@@ -89,6 +89,8 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit int, offse
 }
 
 // Get a single instance by id
+// Note that this method doesn't need to acquire the instance lock because it's a getter,
+// which will fail if the ETag doesn't match, and cannot interfere with writers.
 func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -129,6 +131,8 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 // Add an instance
+// Note that this method doesn't need to acquire the instance lock because it creates a new instance,
+// so it is not possible that any other call is concurrently trying to access the same instance
 func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 
 	defer dphttp.DrainBody(r)
