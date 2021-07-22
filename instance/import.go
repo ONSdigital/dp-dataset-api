@@ -33,6 +33,13 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Acquire instance lock to make sure that this call does not interfere with any other 'write' call against the same instance
+	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
+	if err != nil {
+		handleInstanceErr(ctx, err, w, logData)
+	}
+	defer s.UnlockInstance(lockID)
+
 	instance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {
 		log.Event(ctx, "failed to get instance from database", log.ERROR, log.Error(err), logData)
@@ -74,6 +81,13 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 		handleError(&taskError{err, http.StatusBadRequest})
 		return
 	}
+
+	// Acquire instance lock to make sure that this call does not interfere with any other 'write' call against the same instance
+	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
+	if err != nil {
+		handleInstanceErr(ctx, err, w, logData)
+	}
+	defer s.UnlockInstance(lockID)
 
 	instance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {

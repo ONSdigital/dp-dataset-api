@@ -51,6 +51,13 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Acquire instance lock to make sure that this call does not interfere with any other 'write' call against the same instance
+	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
+	if err != nil {
+		handleInstanceErr(ctx, err, w, data)
+	}
+	defer s.UnlockInstance(lockID)
+
 	instance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {
 		log.Event(ctx, "add instance event: failed to get instance from datastore", log.ERROR, log.Error(err), data)
