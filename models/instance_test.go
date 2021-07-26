@@ -191,7 +191,7 @@ func TestValidateInstanceState(t *testing.T) {
 		Convey("Then validation of state fails and returns an error", func() {
 			err := ValidateInstanceState("gobbledygook")
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "bad request - invalid filter state values: [gobbledygook]")
+			So(err.Error(), ShouldEqual, "bad request - invalid instance state: gobbledygook")
 		})
 	})
 }
@@ -250,6 +250,121 @@ func TestValidateImportTask(t *testing.T) {
 			err := ValidateImportTask(task)
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldEqual, "bad request - invalid task state value: submitted")
+		})
+	})
+}
+
+func TestInstanceHash(t *testing.T) {
+
+	testInstance := func() Instance {
+		return Instance{
+			InstanceID: "myInstance",
+			Edition:    "myEdition",
+			State:      CreatedState,
+			Version:    1,
+			Dimensions: []Dimension{
+				{
+					HRef: "http://dimensions.co.uk/dim1",
+					Name: "dim1",
+				},
+				{
+					HRef: "http://dimensions.co.uk/dim2",
+					Name: "dim2",
+				},
+			},
+			ImportTasks: &InstanceImportTasks{
+				BuildHierarchyTasks: []*BuildHierarchyTask{
+					{DimensionID: "dim1"},
+				},
+				BuildSearchIndexTasks: []*BuildSearchIndexTask{
+					{GenericTaskDetails{
+						DimensionName: "dim2",
+						State:         CreatedState,
+					}},
+				},
+				ImportObservations: &ImportObservationsTask{
+					InsertedObservations: 7,
+					State:                CreatedState,
+				},
+			},
+		}
+	}
+
+	Convey("Given an instance with some data", t, func() {
+		instance := testInstance()
+
+		Convey("We can generate a valid hash", func() {
+			h, err := instance.Hash(nil)
+			So(err, ShouldBeNil)
+			So(len(h), ShouldEqual, 40)
+
+			Convey("Then hashing it twice, produces the same result", func() {
+				hash, err := instance.Hash(nil)
+				So(err, ShouldBeNil)
+				So(hash, ShouldEqual, h)
+			})
+
+			Convey("Then storing the hash as its ETag value and hashing it again, produces the same result (field is ignored) and ETag field is preserved", func() {
+				instance.ETag = h
+				hash, err := instance.Hash(nil)
+				So(err, ShouldBeNil)
+				So(hash, ShouldEqual, h)
+				So(instance.ETag, ShouldEqual, h)
+			})
+
+			Convey("Then another instance with exactly the same data will resolve to the same hash", func() {
+				instance2 := testInstance()
+				hash, err := instance2.Hash(nil)
+				So(err, ShouldBeNil)
+				So(hash, ShouldEqual, h)
+			})
+
+			Convey("Then if a instance value is modified, its hash changes", func() {
+				instance.State = CompletedState
+				hash, err := instance.Hash(nil)
+				So(err, ShouldBeNil)
+				So(hash, ShouldNotEqual, h)
+			})
+
+			Convey("Then if a dimension is added to the instance, its hash changes", func() {
+				instance.Dimensions = append(instance.Dimensions, Dimension{Name: "dim3"})
+				hash, err := instance.Hash(nil)
+				So(err, ShouldBeNil)
+				So(hash, ShouldNotEqual, h)
+			})
+
+			Convey("Then if a dimension is removed from the instance, its hash changes", func() {
+				instance.Dimensions = []Dimension{
+					{
+						HRef: "http://dimensions.co.uk/dim1",
+						Name: "dim1",
+					},
+				}
+				hash, err := instance.Hash(nil)
+				So(err, ShouldBeNil)
+				So(hash, ShouldNotEqual, h)
+			})
+
+			Convey("Then if a BuildHierarchyTasks changes, its hash changes", func() {
+				instance.ImportTasks.BuildHierarchyTasks[0].State = CompletedState
+				hash, err := instance.Hash(nil)
+				So(err, ShouldBeNil)
+				So(hash, ShouldNotEqual, h)
+			})
+
+			Convey("Then if a BuildSearchIndexTasks changes, its hash changes", func() {
+				instance.ImportTasks.BuildSearchIndexTasks[0].State = CompletedState
+				hash, err := instance.Hash(nil)
+				So(err, ShouldBeNil)
+				So(hash, ShouldNotEqual, h)
+			})
+
+			Convey("Then if the ImportObservations changes, its hash changes", func() {
+				instance.ImportTasks.ImportObservations.State = CompletedState
+				hash, err := instance.Hash(nil)
+				So(err, ShouldBeNil)
+				So(hash, ShouldNotEqual, h)
+			})
 		})
 	})
 }

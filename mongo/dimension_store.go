@@ -12,7 +12,6 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
-const dimensionOptions = "dimension.options"
 const maxIDs = 1000
 
 // GetDimensionsFromInstance returns a list of dimensions and their options for an instance resource.
@@ -175,6 +174,39 @@ func (m *Mongo) GetDimensionOptionsFromIDs(version *models.Version, dimension st
 	}
 
 	return values, totalCount, nil
+}
+
+// UpdateDimensionNodeIDAndOrder to cache the id and order (optional) for other import processes
+func (m *Mongo) UpdateDimensionNodeIDAndOrder(dimension *models.DimensionOption) error {
+
+	// validate that there is something to update
+	if dimension.Order == nil && dimension.NodeID == "" {
+		return nil
+	}
+
+	s := m.Session.Copy()
+	defer s.Close()
+
+	selector := bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name, "option": dimension.Option}
+
+	update := bson.M{"last_updated": time.Now().UTC()}
+	if dimension.NodeID != "" {
+		update["node_id"] = &dimension.NodeID
+	}
+	if dimension.Order != nil {
+		update["order"] = &dimension.Order
+	}
+
+	err := s.DB(m.Database).C(dimensionOptions).Update(selector, bson.M{"$set": update})
+	if err == mgo.ErrNotFound {
+		return errs.ErrDimensionOptionNotFound
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // sortedQuery generates a sorted mongoDB query from the provided bson.M selector

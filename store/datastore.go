@@ -20,7 +20,7 @@ type DataStore struct {
 // dataMongoDB represents the required methos to access data from mongoDB
 type dataMongoDB interface {
 	AddDimensionToInstance(dimension *models.CachedDimensionOption) error
-	AddEventToInstance(instanceID string, event *models.Event) error
+	AddEventToInstance(currentInstance *models.Instance, event *models.Event, eTagSelector string) (newETag string, err error)
 	AddInstance(instance *models.Instance) (*models.Instance, error)
 	CheckDatasetExists(ID, state string) error
 	CheckEditionExists(ID, editionID, state string) error
@@ -33,19 +33,21 @@ type dataMongoDB interface {
 	GetEdition(ID, editionID, state string) (*models.EditionUpdate, error)
 	GetEditions(ctx context.Context, ID, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error)
 	GetInstances(ctx context.Context, states []string, datasets []string, offset, limit int) ([]*models.Instance, int, error)
-	GetInstance(ID string) (*models.Instance, error)
+	GetInstance(ID, eTagSelector string) (*models.Instance, error)
 	GetNextVersion(datasetID, editionID string) (int, error)
+	GetVersion(datasetID, editionID string, version int, state string) (*models.Version, error)
 	GetUniqueDimensionAndOptions(ctx context.Context, ID, dimension string, offset, limit int) ([]*string, int, error)
-	GetVersion(datasetID, editionID, version, state string) (*models.Version, error)
 	GetVersions(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error)
 	UpdateDataset(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
 	UpdateDatasetWithAssociation(ID, state string, version *models.Version) error
 	UpdateDimensionNodeIDAndOrder(dimension *models.DimensionOption) error
-	UpdateInstance(ctx context.Context, ID string, instance *models.Instance) error
-	UpdateObservationInserted(ID string, observationInserted int64) error
-	UpdateImportObservationsTaskState(id, state string) error
-	UpdateBuildHierarchyTaskState(id, dimension, state string) error
-	UpdateBuildSearchTaskState(id, dimension, state string) error
+	UpdateInstance(ctx context.Context, currentInstance, updatedInstance *models.Instance, eTagSelector string) (newETag string, err error)
+	UpdateObservationInserted(currentInstance *models.Instance, observationInserted int64, eTagSelector string) (newETag string, err error)
+	UpdateImportObservationsTaskState(currentInstance *models.Instance, state, eTagSelector string) (newETag string, err error)
+	UpdateBuildHierarchyTaskState(currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error)
+	UpdateBuildSearchTaskState(currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error)
+	UpdateETagForNodeIDAndOrder(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (newETag string, err error)
+	UpdateETagForOptions(currentInstance *models.Instance, option *models.CachedDimensionOption, eTagSelector string) (newETag string, err error)
 	UpdateVersion(ID string, version *models.Version) error
 	UpsertContact(ID string, update interface{}) error
 	UpsertDataset(ID string, datasetDoc *models.DatasetUpdate) error
@@ -53,6 +55,8 @@ type dataMongoDB interface {
 	UpsertVersion(ID string, versionDoc *models.Version) error
 	DeleteDataset(ID string) error
 	DeleteEdition(ID string) error
+	AcquireInstanceLock(ctx context.Context, instanceID string) (lockID string, err error)
+	UnlockInstance(lockID string) error
 }
 
 // MongoDB represents all the required methods from mongo DB

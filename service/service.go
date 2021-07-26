@@ -95,7 +95,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	}
 
 	// Get graphDB connection for observation store
-	if !svc.config.EnablePrivateEndpoints {
+	if !svc.config.EnablePrivateEndpoints || svc.config.DisableGraphDBDependency {
 		log.Event(ctx, "skipping graph DB client creation, because it is not required by the enabled endpoints", log.INFO, log.Data{
 			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
 		})
@@ -309,19 +309,23 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 	hasErrors := false
 
 	if svc.config.EnablePrivateEndpoints {
-		log.Event(ctx, "adding kafka, zebedee and graph db health check as the private endpoints are enabled", log.INFO)
+		log.Event(ctx, "private endpoints enabled: adding kafka and zebedee health checks", log.INFO)
 		if err = svc.healthCheck.AddCheck("Zebedee", svc.identityClient.Checker); err != nil {
 			hasErrors = true
 			log.Event(ctx, "error adding check for zebedeee", log.ERROR, log.Error(err))
 		}
+
 		if err = svc.healthCheck.AddCheck("Kafka Generate Downloads Producer", svc.generateDownloadsProducer.Checker); err != nil {
 			hasErrors = true
 			log.Event(ctx, "error adding check for kafka downloads producer", log.ERROR, log.Error(err))
 		}
 
-		if err = svc.healthCheck.AddCheck("Graph DB", svc.graphDB.Checker); err != nil {
-			hasErrors = true
-			log.Event(ctx, "error adding check for graph db", log.ERROR, log.Error(err))
+		if !svc.config.DisableGraphDBDependency {
+			log.Event(ctx, "private endpoints enabled: adding graph db health check", log.INFO)
+			if err = svc.healthCheck.AddCheck("Graph DB", svc.graphDB.Checker); err != nil {
+				hasErrors = true
+				log.Event(ctx, "error adding check for graph db", log.ERROR, log.Error(err))
+			}
 		}
 	}
 

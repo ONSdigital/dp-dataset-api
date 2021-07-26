@@ -32,6 +32,7 @@ var (
 	ErrIncorrectStateToDetach            = errors.New("only versions with a state of edition-confirmed or associated can be detached")
 	ErrIndexOutOfRange                   = errors.New("index out of range")
 	ErrInstanceNotFound                  = errors.New("instance not found")
+	ErrInstanceConflict                  = errors.New("instance does not match the expected eTag")
 	ErrInternalServer                    = errors.New("internal error")
 	ErrInsertedObservationsInvalidSyntax = errors.New("inserted observation request parameter not an integer")
 	ErrInvalidQueryParameter             = errors.New("invalid query parameter")
@@ -51,6 +52,7 @@ var (
 	ErrUnauthorised                      = errors.New("unauthorised access to API")
 	ErrVersionMissingState               = errors.New("missing state from version")
 	ErrVersionNotFound                   = errors.New("version not found")
+	ErrInvalidVersion                    = errors.New("invalid version requested")
 	ErrVersionAlreadyExists              = errors.New("an unpublished version of this dataset already exists")
 	ErrNotFound                          = errors.New("not found")
 
@@ -82,10 +84,12 @@ var (
 		ErrUnableToReadMessage:               true,
 		ErrTypeMismatch:                      true,
 		ErrDatasetTypeInvalid:                true,
+		ErrInvalidVersion:                    true,
 	}
 
 	ConflictRequestMap = map[error]bool{
 		ErrConflictUpdatingInstance: true,
+		ErrInstanceConflict:         true,
 	}
 
 	ForbiddenMap = map[error]bool{

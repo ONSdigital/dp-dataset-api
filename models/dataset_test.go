@@ -23,12 +23,12 @@ func createDataset() Dataset {
 	return Dataset{
 		ID:  "123",
 		URI: validURI,
-		QMI: &GeneralDetails {
+		QMI: &GeneralDetails{
 			Description: "some qmi description",
-			HRef: validHref,
-			Title: "some qmi title",
+			HRef:        validHref,
+			Title:       "some qmi title",
 		},
-		Publisher: &Publisher {
+		Publisher: &Publisher{
 			HRef: validHref,
 		},
 		Publications: []GeneralDetails{{
@@ -59,7 +59,9 @@ func TestString(t *testing.T) {
 			So(result, ShouldEqual, "filterable")
 			So(datasetTypes[0], ShouldEqual, "filterable")
 			So(datasetTypes[1], ShouldEqual, "nomis")
-			So(datasetTypes[2], ShouldEqual, "invalid")
+			So(datasetTypes[2], ShouldEqual, "cantabular_table")
+			So(datasetTypes[3], ShouldEqual, "cantabular_blob")
+			So(datasetTypes[4], ShouldEqual, "invalid")
 
 		})
 	})
@@ -190,47 +192,47 @@ func TestCreateDataset(t *testing.T) {
 }
 
 func TestCreateVersion(t *testing.T) {
-		t.Parallel()
-		Convey("Successfully return without any errors", t, func() {
-			Convey("when the version has all fields", func() {
-				testDatasetID := "test-dataset-id"
-				b, err := json.Marshal(associatedVersion)
-				if err != nil {
-					t.Logf("failed to marshal test data into bytes, error: %v", err)
-					t.FailNow()
-				}
-				r := bytes.NewReader(b)
-				version, err := CreateVersion(r, testDatasetID)
-				So(err, ShouldBeNil)
-				So(version.CollectionID, ShouldEqual, collectionID)
-				So(version.Dimensions, ShouldResemble, []Dimension{dimension})
-				So(version.DatasetID, ShouldEqual, testDatasetID)
-				So(version.Downloads, ShouldResemble, &downloads)
-				So(version.Edition, ShouldEqual, "2017")
-				So(version.ID, ShouldNotBeNil)
-				So(version.ReleaseDate, ShouldEqual, "2017-10-12")
-				So(version.LatestChanges, ShouldResemble, &[]LatestChange{latestChange})
-				So(version.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/geographylist")
-				So(version.State, ShouldEqual, AssociatedState)
-				So(version.Temporal, ShouldResemble, &[]TemporalFrequency{temporal})
-				So(version.Version, ShouldEqual, 1)
-			})
-		})
-
-		Convey("Return with error when the request body contains the correct fields but of the wrong type", t, func() {
+	t.Parallel()
+	Convey("Successfully return without any errors", t, func() {
+		Convey("when the version has all fields", func() {
 			testDatasetID := "test-dataset-id"
-			b, err := json.Marshal(badInputData)
+			b, err := json.Marshal(associatedVersion)
 			if err != nil {
 				t.Logf("failed to marshal test data into bytes, error: %v", err)
 				t.FailNow()
 			}
 			r := bytes.NewReader(b)
 			version, err := CreateVersion(r, testDatasetID)
-			So(version, ShouldBeNil)
-			So(err, ShouldNotBeNil)
-			So(err, ShouldResemble, errs.ErrUnableToParseJSON)
+			So(err, ShouldBeNil)
+			So(version.CollectionID, ShouldEqual, collectionID)
+			So(version.Dimensions, ShouldResemble, []Dimension{dimension})
+			So(version.DatasetID, ShouldEqual, testDatasetID)
+			So(version.Downloads, ShouldResemble, &downloads)
+			So(version.Edition, ShouldEqual, "2017")
+			So(version.ID, ShouldNotBeNil)
+			So(version.ReleaseDate, ShouldEqual, "2017-10-12")
+			So(version.LatestChanges, ShouldResemble, &[]LatestChange{latestChange})
+			So(version.Links.Spatial.HRef, ShouldEqual, "http://ons.gov.uk/geographylist")
+			So(version.State, ShouldEqual, AssociatedState)
+			So(version.Temporal, ShouldResemble, &[]TemporalFrequency{temporal})
+			So(version.Version, ShouldEqual, 1)
 		})
-	}
+	})
+
+	Convey("Return with error when the request body contains the correct fields but of the wrong type", t, func() {
+		testDatasetID := "test-dataset-id"
+		b, err := json.Marshal(badInputData)
+		if err != nil {
+			t.Logf("failed to marshal test data into bytes, error: %v", err)
+			t.FailNow()
+		}
+		r := bytes.NewReader(b)
+		version, err := CreateVersion(r, testDatasetID)
+		So(version, ShouldBeNil)
+		So(err, ShouldNotBeNil)
+		So(err, ShouldResemble, errs.ErrUnableToParseJSON)
+	})
+}
 
 func TestCleanDataset(t *testing.T) {
 	t.Parallel()
@@ -344,7 +346,7 @@ func TestValidateDataset(t *testing.T) {
 
 		Convey("when dataset.URI is empty", func() {
 			dataset := createDataset()
-			dataset.URI =""
+			dataset.URI = ""
 			validationErr := ValidateDataset(&dataset)
 			So(validationErr, ShouldBeNil)
 		})
@@ -869,4 +871,54 @@ func TestPublishLinks(t *testing.T) {
 		})
 	})
 
+}
+
+func TestValidateVersionNumberSuccess(t *testing.T) {
+
+	Convey("Given valid version number above 0 in string format", t, func() {
+		versionStr := "5"
+
+		Convey("When ValidateVersionNumber is called", func() {
+			versionNumber, err := ValidateVersionNumber(testContext, versionStr)
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
+
+				Convey("And version number is converted to integer successfully ", func() {
+					So(versionNumber, ShouldEqual, 5)
+					So(fmt.Sprintf("%T", versionNumber), ShouldEqual, "int")
+				})
+
+			})
+		})
+	})
+}
+
+func TestValidateVersionNumberFailure(t *testing.T) {
+
+	Convey("Given invalid version number in string format", t, func() {
+		versionStr := "abc"
+
+		Convey("When ValidateVersionNumber is called", func() {
+			_, err := ValidateVersionNumber(testContext, versionStr)
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err, ShouldResemble, errs.ErrInvalidVersion)
+			})
+		})
+	})
+
+	Convey("Given version number less than 0 in string format", t, func() {
+		versionStr := "-1"
+
+		Convey("When ValidateVersionNumber is called", func() {
+			_, err := ValidateVersionNumber(testContext, versionStr)
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err, ShouldResemble, errs.ErrInvalidVersion)
+			})
+		})
+	})
 }

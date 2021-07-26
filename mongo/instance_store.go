@@ -12,7 +12,17 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
-const instanceCollection = "instances"
+// AcquireInstanceLock tries to lock the provided instanceID.
+// If the instance is already locked, this function will block until it's released,
+// at which point we acquire the lock and return.
+func (m *Mongo) AcquireInstanceLock(ctx context.Context, instanceID string) (lockID string, err error) {
+	return m.lockClient.Acquire(ctx, instanceID)
+}
+
+// UnlockInstance releases an exclusive mongoDB lock for the provided lockId (if it exists)
+func (m *Mongo) UnlockInstance(lockID string) error {
+	return m.lockClient.Unlock(lockID)
+}
 
 // GetInstances from a mongo collection
 func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []string, offset, limit int) ([]*models.Instance, int, error) {
@@ -44,18 +54,25 @@ func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []st
 }
 
 // GetInstance returns a single instance from an ID
-func (m *Mongo) GetInstance(ID string) (*models.Instance, error) {
+func (m *Mongo) GetInstance(ID, eTagSelector string) (*models.Instance, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
+	// get instance from DB
 	var instance models.Instance
-	err := s.DB(m.Database).C(instanceCollection).Find(bson.M{"id": ID}).One(&instance)
-
-	if err == mgo.ErrNotFound {
-		return nil, errs.ErrInstanceNotFound
+	if err := s.DB(m.Database).C(instanceCollection).Find(bson.M{"id": ID}).One(&instance); err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, errs.ErrInstanceNotFound
+		}
+		return nil, err
 	}
 
-	return &instance, err
+	// If eTag was provided and did not match, return the corresponding error
+	if eTagSelector != AnyETag && eTagSelector != instance.ETag {
+		return nil, errs.ErrInstanceConflict
+	}
+
+	return &instance, nil
 }
 
 // AddInstance to the instance collection
@@ -63,11 +80,20 @@ func (m *Mongo) AddInstance(instance *models.Instance) (*models.Instance, error)
 	s := m.Session.Copy()
 	defer s.Close()
 
+	// Initialise with timestamp
 	instance.LastUpdated = time.Now().UTC()
 	var err error
 	if instance.UniqueTimestamp, err = bson.NewMongoTimestamp(instance.LastUpdated, 1); err != nil {
 		return nil, err
 	}
+
+	// set eTag value to current hash of the instance
+	instance.ETag, err = instance.Hash(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Insert instance to database
 	if err = s.DB(m.Database).C(instanceCollection).Insert(&instance); err != nil {
 		return nil, err
 	}
@@ -76,28 +102,41 @@ func (m *Mongo) AddInstance(instance *models.Instance) (*models.Instance, error)
 }
 
 // UpdateInstance with new properties
-func (m *Mongo) UpdateInstance(ctx context.Context, instanceID string, instance *models.Instance) error {
+func (m *Mongo) UpdateInstance(ctx context.Context, currentInstance, updatedInstance *models.Instance, eTagSelector string) (newETag string, err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	instance.LastUpdated = time.Now().UTC()
+	// set lastUpdate value to now
+	updatedInstance.LastUpdated = time.Now().UTC()
 
-	updates := createInstanceUpdateQuery(ctx, instanceID, instance)
+	// calculate the new eTag hash for the instance that would result from applying the update
+	newETag, err = newETagForUpdate(currentInstance, updatedInstance)
+	if err != nil {
+		return "", err
+	}
+	updatedInstance.ETag = newETag
+
+	// create selector query
+	sel := selector(currentInstance.InstanceID, updatedInstance.UniqueTimestamp, eTagSelector)
+
+	// create update query from updatedInstance and newly generated eTag
+	updates := createInstanceUpdateQuery(ctx, currentInstance.InstanceID, updatedInstance)
 	update := bson.M{"$set": updates}
 	updateWithTimestamps, err := dpmongo.WithUpdates(update)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	if err = s.DB(m.Database).C(instanceCollection).Update(bson.M{"id": instanceID, dpmongo.UniqueTimestampKey: instance.UniqueTimestamp}, updateWithTimestamps); err != nil {
+	// execute the update against MongoDB to atomically check and update the instance
+	if err = s.DB(m.Database).C(instanceCollection).Update(sel, updateWithTimestamps); err != nil {
 		if err != mgo.ErrNotFound {
-			return err
+			return "", err
 		}
 
-		return errs.ErrConflictUpdatingInstance
+		return "", errs.ErrConflictUpdatingInstance
 	}
 
-	return nil
+	return newETag, nil
 }
 
 func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance *models.Instance) bson.M {
@@ -121,6 +160,10 @@ func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance 
 
 	if instance.Dimensions != nil {
 		updates["dimensions"] = instance.Dimensions
+	}
+
+	if instance.ETag != "" {
+		updates["e_tag"] = instance.ETag
 	}
 
 	if instance.Downloads != nil {
@@ -230,136 +273,228 @@ func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance 
 }
 
 // AddEventToInstance to the instance collection
-func (m *Mongo) AddEventToInstance(instanceID string, event *models.Event) error {
+func (m *Mongo) AddEventToInstance(currentInstance *models.Instance, event *models.Event, eTagSelector string) (newETag string, err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	info, err := s.DB(m.Database).C(instanceCollection).Upsert(bson.M{"id": instanceID},
-		bson.M{"$push": bson.M{"events": &event}, "$set": bson.M{"last_updated": time.Now().UTC()}})
+	// calculate the new eTag hash for the instance that would result from adding the event
+	newETag, err = newETagForAddEvent(currentInstance, event)
 	if err != nil {
-		return err
+		return "", err
+	}
+
+	// create selector query
+	sel := selector(currentInstance.InstanceID, 0, eTagSelector)
+
+	update := bson.M{
+		"$push": bson.M{"events": &event},
+		"$set": bson.M{
+			"last_updated": time.Now().UTC(),
+			"e_tag":        newETag,
+		},
+	}
+
+	info, err := s.DB(m.Database).C(instanceCollection).Upsert(sel, update)
+	if err != nil {
+		return "", err
 	}
 
 	if info.Updated == 0 {
-		return errs.ErrInstanceNotFound
+		return "", errs.ErrInstanceNotFound
 	}
 
-	return nil
-}
-
-// UpdateDimensionNodeIDAndOrder to cache the id and order (optional) for other import processes
-func (m *Mongo) UpdateDimensionNodeIDAndOrder(dimension *models.DimensionOption) error {
-
-	// validate that there is something to update
-	if dimension.Order == nil && dimension.NodeID == "" {
-		return nil
-	}
-
-	s := m.Session.Copy()
-	defer s.Close()
-
-	selector := bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name, "option": dimension.Option}
-
-	update := bson.M{"last_updated": time.Now().UTC()}
-	if dimension.NodeID != "" {
-		update["node_id"] = &dimension.NodeID
-	}
-	if dimension.Order != nil {
-		update["order"] = &dimension.Order
-	}
-
-	err := s.DB(m.Database).C(dimensionOptions).Update(selector, bson.M{"$set": update})
-	if err == mgo.ErrNotFound {
-		return errs.ErrDimensionOptionNotFound
-	}
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return newETag, nil
 }
 
 // UpdateObservationInserted by incrementing the stored value
-func (m *Mongo) UpdateObservationInserted(id string, observationInserted int64) error {
+func (m *Mongo) UpdateObservationInserted(currentInstance *models.Instance, observationInserted int64, eTagSelector string) (newETag string, err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	err := s.DB(m.Database).C(instanceCollection).Update(bson.M{"id": id},
+	// calculate the new eTag hash for the instance that would result from inceasing the observations
+	newETag, err = newETagForObservationsInserted(currentInstance, observationInserted)
+	if err != nil {
+		return "", err
+	}
+
+	sel := selector(currentInstance.InstanceID, 0, eTagSelector)
+	err = s.DB(m.Database).C(instanceCollection).Update(sel,
 		bson.M{
 			"$inc": bson.M{"import_tasks.import_observations.total_inserted_observations": observationInserted},
-			"$set": bson.M{"last_updated": time.Now().UTC()},
+			"$set": bson.M{
+				"last_updated": time.Now().UTC(),
+				"e_tag":        newETag,
+			},
 		},
 	)
 
 	if err == mgo.ErrNotFound {
-		return errs.ErrInstanceNotFound
+		return "", errs.ErrInstanceNotFound
 	}
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return newETag, nil
 }
 
 // UpdateImportObservationsTaskState to the given state.
-func (m *Mongo) UpdateImportObservationsTaskState(id string, state string) error {
+func (m *Mongo) UpdateImportObservationsTaskState(currentInstance *models.Instance, state, eTagSelector string) (newETag string, err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	err := s.DB(m.Database).C(instanceCollection).Update(bson.M{"id": id},
+	// calculate the new eTag hash for the instance that would result from inceasing the observations
+	newETag, err = newETagForStateUpdate(currentInstance, state)
+	if err != nil {
+		return "", err
+	}
+
+	sel := selector(currentInstance.InstanceID, 0, eTagSelector)
+
+	err = s.DB(m.Database).C(instanceCollection).Update(sel,
 		bson.M{
-			"$set":         bson.M{"import_tasks.import_observations.state": state},
+			"$set": bson.M{
+				"import_tasks.import_observations.state": state,
+				"e_tag":                                  newETag,
+			},
 			"$currentDate": bson.M{"last_updated": true},
 		},
 	)
 
 	if err == mgo.ErrNotFound {
-		return errs.ErrInstanceNotFound
+		return "", errs.ErrInstanceNotFound
 	}
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return newETag, nil
 }
 
 // UpdateBuildHierarchyTaskState updates the state of a build hierarchy task.
-func (m *Mongo) UpdateBuildHierarchyTaskState(id, dimension, state string) (err error) {
+func (m *Mongo) UpdateBuildHierarchyTaskState(currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	selector := bson.M{
-		"id": id,
-		"import_tasks.build_hierarchies.dimension_name": dimension,
+	// calculate the new eTag hash for the instance that would result from inceasing the observations
+	newETag, err = newETagForHierarchyTaskStateUpdate(currentInstance, dimension, state)
+	if err != nil {
+		return "", err
 	}
 
+	sel := selector(currentInstance.InstanceID, 0, eTagSelector)
+	sel["import_tasks.build_hierarchies.dimension_name"] = dimension
+
 	update := bson.M{
-		"$set":         bson.M{"import_tasks.build_hierarchies.$.state": state},
+		"$set": bson.M{
+			"import_tasks.build_hierarchies.$.state": state,
+			"e_tag":                                  newETag,
+		},
 		"$currentDate": bson.M{"last_updated": true},
 	}
 
-	err = s.DB(m.Database).C(instanceCollection).Update(selector, update)
-	return
+	if err := s.DB(m.Database).C(instanceCollection).Update(selector, update); err != nil {
+		return "", err
+	}
+
+	return newETag, nil
 }
 
 // UpdateBuildSearchTaskState updates the state of a build search task.
-func (m *Mongo) UpdateBuildSearchTaskState(id, dimension, state string) (err error) {
+func (m *Mongo) UpdateBuildSearchTaskState(currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	selector := bson.M{
-		"id": id,
-		"import_tasks.build_search_indexes.dimension_name": dimension,
+	// calculate the new eTag hash for the instance that would result from inceasing the observations
+	newETag, err = newETagForBuildSearchTaskStateUpdate(currentInstance, dimension, state)
+	if err != nil {
+		return "", err
 	}
 
+	sel := selector(currentInstance.InstanceID, 0, eTagSelector)
+	sel["import_tasks.build_search_indexes.dimension_name"] = dimension
+
 	update := bson.M{
-		"$set":         bson.M{"import_tasks.build_search_indexes.$.state": state},
+		"$set": bson.M{
+			"import_tasks.build_search_indexes.$.state": state,
+			"e_tag": newETag,
+		},
 		"$currentDate": bson.M{"last_updated": true},
 	}
 
-	err = s.DB(m.Database).C(instanceCollection).Update(selector, update)
-	return
+	if err := s.DB(m.Database).C(instanceCollection).Update(selector, update); err != nil {
+		return "", err
+	}
+
+	return newETag, nil
+}
+
+func (m *Mongo) UpdateETagForNodeIDAndOrder(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (newETag string, err error) {
+	s := m.Session.Copy()
+	defer s.Close()
+
+	// calculate the new eTag hash by calculating the hash of the current instance plus the provided nodeID and order
+	newETag, err = newETagForNodeIDAndOrder(currentInstance, nodeID, order)
+	if err != nil {
+		return "", err
+	}
+
+	sel := selector(currentInstance.InstanceID, 0, eTagSelector)
+
+	update := bson.M{
+		"$set": bson.M{
+			"e_tag": newETag,
+		},
+		"$currentDate": bson.M{"last_updated": true},
+	}
+
+	if err := s.DB(m.Database).C(instanceCollection).Update(sel, update); err != nil {
+		return "", err
+	}
+
+	return newETag, nil
+}
+
+// UpdateETagForOptions updates the eTag value for an instance according to the provided dimension options
+func (m *Mongo) UpdateETagForOptions(currentInstance *models.Instance, option *models.CachedDimensionOption, eTagSelector string) (newETag string, err error) {
+	s := m.Session.Copy()
+	defer s.Close()
+
+	// calculate the new eTag hash by calculating the hash of the current instance plus the provided option
+	newETag, err = newETagForAddDimensionOption(currentInstance, option)
+	if err != nil {
+		return "", err
+	}
+
+	sel := selector(currentInstance.InstanceID, 0, eTagSelector)
+
+	update := bson.M{
+		"$set": bson.M{
+			"e_tag": newETag,
+		},
+		"$currentDate": bson.M{"last_updated": true},
+	}
+
+	if err := s.DB(m.Database).C(instanceCollection).Update(sel, update); err != nil {
+		return "", err
+	}
+
+	return newETag, nil
+}
+
+// selector creates a select query for mongoDB with the provided parameters
+// - instanceID represents the ID of the instance document that we want to query. Required.
+// - timestamp is a unique MongoDB timestamp to be matched to prevent race conditions. Optional.
+// - eTagselector is a unique hash of an instance document to be matched to prevent race conditions. Optional.
+func selector(instanceID string, timestamp bson.MongoTimestamp, eTagSelector string) bson.M {
+	selector := bson.M{"id": instanceID}
+	if timestamp > 0 {
+		selector[dpmongo.UniqueTimestampKey] = timestamp
+	}
+	if eTagSelector != AnyETag {
+		selector["e_tag"] = eTagSelector
+	}
+	return selector
 }

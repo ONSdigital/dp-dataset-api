@@ -28,37 +28,50 @@ func unmarshalEvent(reader io.Reader) (*models.Event, error) {
 	return &event, nil
 }
 
-//AddEvent details to an instance
+// AddEvent details to an instance
 func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	defer r.Body.Close()
 
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
+	eTag := getIfMatch(r)
 	data := log.Data{"instance_id": instanceID, "action": AddInstanceEventAction}
 
-	if err := func() error {
-		event, err := unmarshalEvent(r.Body)
-		if err != nil {
-			log.Event(ctx, "add instance event: failed to unmarshal request body", log.ERROR, log.Error(err), data)
-			return err
-		}
+	event, err := unmarshalEvent(r.Body)
+	if err != nil {
+		log.Event(ctx, "add instance event: failed to unmarshal request body", log.ERROR, log.Error(err), data)
+		handleInstanceErr(ctx, err, w, data)
+		return
+	}
 
-		if err = event.Validate(); err != nil {
-			log.Event(ctx, "add instance event: failed to validate event object", log.ERROR, log.Error(err), data)
-			return err
-		}
+	if err = event.Validate(); err != nil {
+		log.Event(ctx, "add instance event: failed to validate event object", log.ERROR, log.Error(err), data)
+		handleInstanceErr(ctx, err, w, data)
+		return
+	}
 
-		if err = s.AddEventToInstance(instanceID, event); err != nil {
-			log.Event(ctx, "add instance event: failed to add event to instance in datastore", log.ERROR, log.Error(err), data)
-			return err
-		}
+	// Acquire instance lock to make sure that this call does not interfere with any other 'write' call against the same instance
+	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
+	if err != nil {
+		handleInstanceErr(ctx, err, w, data)
+	}
+	defer s.UnlockInstance(lockID)
 
-		return nil
-	}(); err != nil {
+	instance, err := s.GetInstance(instanceID, eTag)
+	if err != nil {
+		log.Event(ctx, "add instance event: failed to get instance from datastore", log.ERROR, log.Error(err), data)
+		handleInstanceErr(ctx, err, w, data)
+		return
+	}
+
+	newETag, err := s.AddEventToInstance(instance, event, eTag)
+	if err != nil {
+		log.Event(ctx, "add instance event: failed to add event to instance in datastore", log.ERROR, log.Error(err), data)
 		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
 	log.Event(ctx, "add instance event: request successful", log.INFO, data)
+	setETag(w, newETag)
 }

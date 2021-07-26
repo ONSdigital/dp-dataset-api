@@ -59,12 +59,12 @@ func GetAPIWithMocks(mockedDataStore store.Storer, mockedGeneratedDownloads Down
 	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, datasetPermissions, permissions)
 }
 
-func createRequestWithAuth(method, URL string, body io.Reader) (*http.Request, error) {
+func createRequestWithAuth(method, URL string, body io.Reader) *http.Request {
 	r := httptest.NewRequest(method, URL, body)
 	ctx := r.Context()
 	ctx = dprequest.SetCaller(ctx, "someone@ons.gov.uk")
 	r = r.WithContext(ctx)
-	return r, nil
+	return r
 }
 
 func TestGetDatasetsReturnsOK(t *testing.T) {
@@ -145,8 +145,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 	})
 
 	Convey("When dataset document has only a next sub document and request is authorised return status 200", t, func() {
-		r, err := createRequestWithAuth("GET", "http://localhost:22000/datasets/123-456", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123-456", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -237,8 +236,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 	Convey("A successful request to post dataset returns 201 OK response", t, func() {
 		var b string
 		b = datasetPayload
-		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -263,7 +261,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -272,8 +270,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "", "title": "test"}}`
 
-		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -298,7 +295,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -307,8 +304,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://domain.com/path", "title": "test"}}`
 
-		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -333,7 +329,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -342,8 +338,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "/path", "title": "test"}}`
 
-		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -368,7 +363,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -377,8 +372,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://domain.com/", "title": "test"}}`
 
-		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -403,7 +397,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -412,8 +406,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "domain.com", "title": "test"}}`
 
-		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -438,7 +431,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -449,8 +442,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	Convey("When the request contain malformed json a bad request status is returned", t, func() {
 		var b string
 		b = "{"
-		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -475,7 +467,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -483,8 +475,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
 		var b string
 		b = datasetPayload
-		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -508,7 +499,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -547,8 +538,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	Convey("When the dataset already exists and a request is sent to create the same dataset return status forbidden", t, func() {
 		var b string
 		b = datasetPayload
-		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -577,7 +567,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -586,8 +576,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		var b string
 		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable","nomis_reference_url":"https://www.nomis.co.uk"}`
 
-		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -610,7 +599,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -619,8 +608,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": ":not a link", "title": "test"}}`
 
-		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -643,7 +631,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -652,8 +640,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://", "title": "test"}}`
 
-		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -676,7 +663,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -685,8 +672,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http:///path", "title": "test"}}`
 
-		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -709,7 +695,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -718,8 +704,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		var b string
 		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"nomis_filterable"}`
 
-		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -742,7 +727,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -751,8 +736,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		var b string
 		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":""}`
 		res := `{"id":"123123","next":{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","id":"123123","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"},"editions":{"href":"http://localhost:22000/datasets/123123/editions"},"self":{"href":"http://localhost:22000/datasets/123123"}},"next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department"},"state":"created","theme":"population","title":"CensusEthnicity","type":"filterable"}}`
-		r, err := createRequestWithAuth("POST", "http://localhost:22000/datasets/123123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -776,7 +760,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 2)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -788,8 +772,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 	Convey("A successful request to put dataset returns 200 OK response", t, func() {
 		var b string
 		b = datasetPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -819,7 +802,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -830,8 +813,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		var b string
 		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable","nomis_reference_url":"https://www.nomis.co.uk"}`
 
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -854,7 +836,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 1)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -863,8 +845,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "", "title": "test"}}`
 
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -888,7 +869,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 1)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -897,8 +878,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://domain.com/path", "title": "test"}}`
 
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -922,7 +902,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 1)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -931,8 +911,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "/path", "title": "test"}}`
 
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -956,7 +935,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 1)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -965,8 +944,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://domain.com/", "title": "test"}}`
 
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -990,7 +968,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 1)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -999,8 +977,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "domain.com", "title": "test"}}`
 
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -1024,7 +1001,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 1)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1036,8 +1013,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 	Convey("When the request contain malformed json a bad request status is returned", t, func() {
 		var b string
 		b = "{"
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
@@ -1064,7 +1040,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1072,8 +1048,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
 		var b string
 		b = versionPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -1104,7 +1079,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1112,8 +1087,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 	Convey("When the dataset document cannot be found return status not found ", t, func() {
 		var b string
 		b = datasetPayload
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -1140,7 +1114,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1149,8 +1123,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		var b string
 		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"nomis_reference_url":"https://www.nomis.co.uk"}`
 
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -1175,7 +1148,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1184,8 +1157,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": ":not a link", "title": "test"}}`
 
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -1210,7 +1182,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1219,8 +1191,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://", "title": "test"}}`
 
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -1245,7 +1216,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1254,8 +1225,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		var b string
 		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http:///path", "title": "test"}}`
 
-		r, err := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 
@@ -1280,7 +1250,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
 
 		Convey("then the request body has been drained", func() {
-			_, err = r.Body.Read(make([]byte, 1))
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
@@ -1324,8 +1294,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 	t.Parallel()
 	Convey("A successful request to delete dataset returns 200 OK response", t, func() {
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -1354,8 +1323,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 	})
 
 	Convey("A successful request to delete dataset with editions returns 200 OK response", t, func() {
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -1393,8 +1361,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 func TestDeleteDatasetReturnsError(t *testing.T) {
 	t.Parallel()
 	Convey("When a request to delete a published dataset return status forbidden", t, func() {
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -1424,8 +1391,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 
 		w := httptest.NewRecorder()
 
@@ -1455,8 +1421,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When the dataset document cannot be found return status not found ", t, func() {
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 
 		w := httptest.NewRecorder()
 
@@ -1487,8 +1452,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When the dataset document cannot be queried return status 500 ", t, func() {
-		r, err := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
-		So(err, ShouldBeNil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 
 		w := httptest.NewRecorder()
 

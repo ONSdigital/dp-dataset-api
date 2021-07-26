@@ -24,10 +24,12 @@ type DatasetType int
 const (
 	Filterable DatasetType = iota
 	Nomis
+	CantabularTable
+	CantabularBlob
 	Invalid
 )
 
-var datasetTypes = []string{"filterable", "nomis", "invalid"}
+var datasetTypes = []string{"filterable", "nomis", "cantabular_table", "cantabular_blob", "invalid"}
 
 func (dt DatasetType) String() string {
 	return datasetTypes[dt]
@@ -40,6 +42,10 @@ func GetDatasetType(datasetType string) (DatasetType, error) {
 		return Filterable, nil
 	case "nomis":
 		return Nomis, nil
+	case "cantabular_table":
+		return CantabularTable, nil
+	case "cantabular_blob":
+		return CantabularBlob, nil
 	default:
 		return Invalid, errs.ErrDatasetTypeInvalid
 	}
@@ -85,6 +91,7 @@ type Dataset struct {
 	URI               string           `bson:"uri,omitempty"                    json:"uri,omitempty"`
 	Type              string           `bson:"type,omitempty"                   json:"type,omitempty"`
 	NomisReferenceURL string           `bson:"nomis_reference_url,omitempty"    json:"nomis_reference_url,omitempty"`
+	IsBasedOn         *IsBasedOn       `bson:"is_based_on,omitempty"            json:"is_based_on,omitempty"`
 }
 
 // DatasetLinks represents a list of specific links related to the dataset resource
@@ -142,11 +149,13 @@ type EditionUpdateLinks struct {
 
 // Edition represents information related to a single edition for a dataset
 type Edition struct {
-	Edition     string              `bson:"edition,omitempty"     json:"edition,omitempty"`
-	ID          string              `bson:"id,omitempty"          json:"id,omitempty"`
+	Edition     string              `bson:"edition,omitempty"      json:"edition,omitempty"`
+	ID          string              `bson:"id,omitempty"           json:"id,omitempty"`
 	LastUpdated time.Time           `bson:"last_updated,omitempty" json:"-"`
-	Links       *EditionUpdateLinks `bson:"links,omitempty"       json:"links,omitempty"`
+	Links       *EditionUpdateLinks `bson:"links,omitempty"        json:"links,omitempty"`
 	State       string              `bson:"state,omitempty"        json:"state,omitempty"`
+	IsBasedOn   *IsBasedOn          `bson:"is_based_on,omitempty"  json:"is_based_on,omitempty"`
+	Type        string              `bson:"type,omitempty"         json:"type,omitempty"`
 }
 
 // Publisher represents an object containing information of the publisher
@@ -231,9 +240,14 @@ type VersionLinks struct {
 	Version    *LinkObject `bson:"version,omitempty"     json:"-"`
 }
 
+// IsBasedOn refers to the Cantabular blob source
+type IsBasedOn struct {
+	Type string `bson:"@type" json:"@type"`
+	ID   string `bson:"@id"   json:"@id"`
+}
+
 // CreateDataset manages the creation of a dataset from a reader
 func CreateDataset(reader io.Reader) (*Dataset, error) {
-
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, errs.ErrUnableToReadMessage
@@ -565,4 +579,20 @@ func ValidateVersion(version *Version) error {
 	}
 
 	return nil
+}
+
+// ValidateVersionNumber checks the version is a positive integer above 0
+func ValidateVersionNumber(ctx context.Context, version string) (int, error) {
+	versionNumber, err := strconv.Atoi(version)
+	if err != nil {
+		log.Event(ctx, "invalid version provided", log.ERROR, log.Error(err), log.Data{"version": version})
+		return versionNumber, errs.ErrInvalidVersion
+	}
+
+	if !(versionNumber > 0) {
+		log.Event(ctx, "version is not a positive integer", log.ERROR, log.Error(errs.ErrInvalidVersion), log.Data{"version": version})
+		return versionNumber, errs.ErrInvalidVersion
+	}
+
+	return versionNumber, nil
 }

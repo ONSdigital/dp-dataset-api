@@ -54,7 +54,7 @@ func NewDatasetComponent(mongoFeature *componenttest.MongoFeature, zebedeeURL st
 		URI:         mongoFeature.Server.URI(),
 	}
 
-	if err := mongodb.Init(); err != nil {
+	if err := mongodb.Init(context.Background()); err != nil {
 		return nil, err
 	}
 
@@ -75,7 +75,7 @@ func NewDatasetComponent(mongoFeature *componenttest.MongoFeature, zebedeeURL st
 
 func (f *DatasetComponent) Reset() *DatasetComponent {
 	f.MongoClient.Database = memongo.RandomDatabase()
-	f.MongoClient.Init()
+	f.MongoClient.Init(context.Background())
 	f.Config.EnablePrivateEndpoints = false
 	return f
 }
