@@ -18,68 +18,93 @@ import (
 const testLockID = "testLock"
 
 func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
-	Convey("Given a PUT request to update an instance resource", t, func() {
+
+	Convey("Given a dataset API with auth and a successful store mock with a 'completed' generic instance", t, func() {
+		i := completedInstance()
+
+		mockedDataStore, isLocked := storeMockEditionCompleteWithLock(i, true)
+		datasetPermissions := mocks.NewAuthHandlerMock()
+		permissions := mocks.NewAuthHandlerMock()
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
 		Convey("When the requested state change is to 'edition-confirmed'", func() {
-			Convey("Then return status ok (200)", func() {
-				body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
-				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
-				So(err, ShouldBeNil)
-				w := httptest.NewRecorder()
+			body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
 
-				currentInstanceTest_Data := &models.Instance{
-					Edition: "2017",
-					Links: &models.InstanceLinks{
-						Job: &models.LinkObject{
-							ID:   "7654",
-							HRef: "job-link",
-						},
-						Dataset: &models.LinkObject{
-							ID:   "4567",
-							HRef: "dataset-link",
-						},
-						Self: &models.LinkObject{
-							HRef: "self-link",
-						},
-					},
-					State: models.CompletedState,
-				}
+			datasetAPI.Router.ServeHTTP(w, r)
 
-				mockedDataStore, isLocked := storeMockWithLock(currentInstanceTest_Data, true)
-				mockedDataStore.GetEditionFunc = func(datasetID string, edition string, state string) (*models.EditionUpdate, error) {
-					So(*isLocked, ShouldBeTrue)
-					return nil, errs.ErrEditionNotFound
-				}
-				mockedDataStore.UpsertEditionFunc = func(datasetID, edition string, editionDoc *models.EditionUpdate) error {
-					So(*isLocked, ShouldBeTrue)
-					return nil
-				}
-				mockedDataStore.GetNextVersionFunc = func(string, string) (int, error) {
-					So(*isLocked, ShouldBeTrue)
-					return 1, nil
-				}
-				mockedDataStore.UpdateInstanceFunc = func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
-					So(*isLocked, ShouldBeTrue)
-					return testETag, nil
-				}
-				mockedDataStore.AddVersionDetailsToInstanceFunc = func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
-					So(*isLocked, ShouldBeTrue)
-					return nil
-				}
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
-
-				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-				datasetAPI.Router.ServeHTTP(w, r)
-
+			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
 				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
+			})
+
+			Convey("Then the expected permission required functions are called", func() {
 				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 				So(permissions.Required.Calls, ShouldEqual, 1)
+			})
+
+			Convey("Then the expected mongoDB functions are called", func() {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 3)
 				So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
-				//	So(len(mockedDataStore.GetNextVersionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
+			})
+
+			Convey("Then the dp-graph function is called", func() {
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 1)
+			})
+
+			Convey("Then the mongoDB instance lock is acquired and released as expected", func() {
+				validateLock(mockedDataStore, "123")
+				So(*isLocked, ShouldBeFalse)
+			})
+		})
+	})
+
+	Convey("Given a dataset API with auth and a successful store mock with a 'completed' cantabular_blob instance", t, func() {
+		i := completedInstance()
+		i.Type = models.CantabularBlob.String()
+
+		mockedDataStore, isLocked := storeMockEditionCompleteWithLock(i, true)
+		datasetPermissions := mocks.NewAuthHandlerMock()
+		permissions := mocks.NewAuthHandlerMock()
+		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		Convey("When the requested state change is to 'edition-confirmed'", func() {
+			body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
+			})
+
+			Convey("Then the expected permission required functions are called", func() {
+				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+				So(permissions.Required.Calls, ShouldEqual, 1)
+			})
+
+			Convey("Then the expected mongoDB functions are called", func() {
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 3)
+				So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
+			})
+
+			Convey("Then the dp-graph function is not called", func() {
+				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
+			})
+
+			Convey("Then the mongoDB instance lock is acquired and released as expected", func() {
+				validateLock(mockedDataStore, "123")
 				So(*isLocked, ShouldBeFalse)
 			})
 		})
@@ -116,23 +141,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 					State: models.CompletedState,
 				}
 
-				mockedDataStore, isLocked := storeMockWithLock(currentInstanceTest_Data, true)
-				mockedDataStore.GetEditionFunc = func(datasetID string, edition string, state string) (*models.EditionUpdate, error) {
-					So(*isLocked, ShouldBeTrue)
-					return nil, errs.ErrEditionNotFound
-				}
-				mockedDataStore.UpsertEditionFunc = func(datasetID, edition string, editionDoc *models.EditionUpdate) error {
-					So(*isLocked, ShouldBeTrue)
-					return nil
-				}
-				mockedDataStore.GetNextVersionFunc = func(string, string) (int, error) {
-					So(*isLocked, ShouldBeTrue)
-					return 1, nil
-				}
-				mockedDataStore.UpdateInstanceFunc = func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
-					So(*isLocked, ShouldBeTrue)
-					return testETag, nil
-				}
+				mockedDataStore, isLocked := storeMockEditionCompleteWithLock(currentInstanceTest_Data, true)
 				mockedDataStore.AddVersionDetailsToInstanceFunc = func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
 					So(*isLocked, ShouldBeTrue)
 					return errors.New("boom")
@@ -175,7 +184,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 
 				mockedDataStore, isLocked := storeMockWithLock(currentInstanceTest_Data, true)
 				mockedDataStore.UpdateInstanceFunc = func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
-					So(*&isLocked, ShouldBeTrue)
+					So(isLocked, ShouldBeTrue)
 					return testETag, nil
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -203,6 +212,51 @@ func validateLock(mockedDataStore *storetest.StorerMock, expectedInstanceID stri
 	So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, ShouldEqual, "123")
 	So(mockedDataStore.UnlockInstanceCalls(), ShouldHaveLength, 1)
 	So(mockedDataStore.UnlockInstanceCalls()[0].LockID, ShouldEqual, testLockID)
+}
+
+func storeMockEditionCompleteWithLock(instance *models.Instance, expectFirstGetUnlocked bool) (*storetest.StorerMock, *bool) {
+	mockedDataStore, isLocked := storeMockWithLock(instance, expectFirstGetUnlocked)
+	mockedDataStore.GetEditionFunc = func(datasetID string, edition string, state string) (*models.EditionUpdate, error) {
+		So(*isLocked, ShouldBeTrue)
+		return nil, errs.ErrEditionNotFound
+	}
+	mockedDataStore.UpsertEditionFunc = func(datasetID, edition string, editionDoc *models.EditionUpdate) error {
+		So(*isLocked, ShouldBeTrue)
+		return nil
+	}
+	mockedDataStore.GetNextVersionFunc = func(string, string) (int, error) {
+		So(*isLocked, ShouldBeTrue)
+		return 1, nil
+	}
+	mockedDataStore.UpdateInstanceFunc = func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+		So(*isLocked, ShouldBeTrue)
+		return testETag, nil
+	}
+	mockedDataStore.AddVersionDetailsToInstanceFunc = func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
+		So(*isLocked, ShouldBeTrue)
+		return nil
+	}
+	return mockedDataStore, isLocked
+}
+
+func completedInstance() *models.Instance {
+	return &models.Instance{
+		Edition: "2017",
+		Links: &models.InstanceLinks{
+			Job: &models.LinkObject{
+				ID:   "7654",
+				HRef: "job-link",
+			},
+			Dataset: &models.LinkObject{
+				ID:   "4567",
+				HRef: "dataset-link",
+			},
+			Self: &models.LinkObject{
+				HRef: "self-link",
+			},
+		},
+		State: models.CompletedState,
+	}
 }
 
 func storeMockWithLock(instance *models.Instance, expectFirstGetUnlocked bool) (*storetest.StorerMock, *bool) {

@@ -260,10 +260,16 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if versionErr := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); versionErr != nil {
-			log.Event(ctx, "update instance: datastore.AddVersionDetailsToInstance returned an error", log.ERROR, log.Error(versionErr), editionLogData)
-			handleInstanceErr(ctx, versionErr, w, logData)
-			return
+		// update dp-graph instance node (only for non-cantabular types)
+		if currentInstance.Type == models.CantabularBlob.String() || currentInstance.Type == models.CantabularTable.String() {
+			editionLogData["instance_type"] = instance.Type
+			log.Event(ctx, "skipping dp-graph instance update because it is not required by instance type", log.INFO, editionLogData)
+		} else {
+			if versionErr := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); versionErr != nil {
+				log.Event(ctx, "update instance: datastore.AddVersionDetailsToInstance returned an error", log.ERROR, log.Error(versionErr), editionLogData)
+				handleInstanceErr(ctx, versionErr, w, logData)
+				return
+			}
 		}
 
 		log.Event(ctx, "update instance: added version details to instance", log.INFO, editionLogData)
@@ -352,27 +358,22 @@ func validateInstanceStateUpdate(instance, currentInstance *models.Instance) (er
 			if currentInstance.State != models.CreatedState {
 				return errs.ErrExpectedResourceStateOfCreated
 			}
-			break
 		case models.CompletedState:
 			if currentInstance.State != models.SubmittedState {
 				return errs.ErrExpectedResourceStateOfSubmitted
 			}
-			break
 		case models.EditionConfirmedState:
 			if currentInstance.State != models.CompletedState {
 				return errs.ErrExpectedResourceStateOfCompleted
 			}
-			break
 		case models.AssociatedState:
 			if currentInstance.State != models.EditionConfirmedState {
 				return errs.ErrExpectedResourceStateOfEditionConfirmed
 			}
-			break
 		case models.PublishedState:
 			if currentInstance.State != models.AssociatedState {
 				return errs.ErrExpectedResourceStateOfAssociated
 			}
-			break
 		case models.FailedState:
 			break
 		default:
@@ -432,11 +433,6 @@ func unmarshalInstance(ctx context.Context, reader io.Reader, post bool) (*model
 	}
 
 	return &instance, nil
-}
-
-func internalError(ctx context.Context, w http.ResponseWriter, err error, logData log.Data) {
-	log.Event(ctx, "internal server error", log.ERROR, log.Error(err), logData)
-	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
 func setJSONContentType(w http.ResponseWriter) {
