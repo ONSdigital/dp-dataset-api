@@ -395,7 +395,7 @@ func (m *Mongo) UpdateBuildHierarchyTaskState(currentInstance *models.Instance, 
 		"$currentDate": bson.M{"last_updated": true},
 	}
 
-	if err := s.DB(m.Database).C(instanceCollection).Update(selector, update); err != nil {
+	if err := s.DB(m.Database).C(instanceCollection).Update(sel, update); err != nil {
 		return "", err
 	}
 
@@ -424,7 +424,7 @@ func (m *Mongo) UpdateBuildSearchTaskState(currentInstance *models.Instance, dim
 		"$currentDate": bson.M{"last_updated": true},
 	}
 
-	if err := s.DB(m.Database).C(instanceCollection).Update(selector, update); err != nil {
+	if err := s.DB(m.Database).C(instanceCollection).Update(sel, update); err != nil {
 		return "", err
 	}
 
