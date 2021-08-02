@@ -11,6 +11,11 @@ import (
 type Configuration struct {
 	BindAddr                   string        `envconfig:"BIND_ADDR"`
 	KafkaAddr                  []string      `envconfig:"KAFKA_ADDR"                       json:"-"`
+	KafkaSecProtocol           string        `envconfig:"KAFKA_SEC_PROTO"`
+	KafkaSecCACerts            string        `envconfig:"KAFKA_SEC_CA_CERTS"`
+	KafkaSecClientCert         string        `envconfig:"KAFKA_SEC_CLIENT_CERT"`
+	KafkaSecClientKey          string        `envconfig:"KAFKA_SEC_CLIENT_KEY"             json:"-"`
+	KafkaSecSkipVerify         bool          `envconfig:"KAFKA_SEC_SKIP_VERIFY"`
 	GenerateDownloadsTopic     string        `envconfig:"GENERATE_DOWNLOADS_TOPIC"`
 	CodeListAPIURL             string        `envconfig:"CODE_LIST_API_URL"`
 	DatasetAPIURL              string        `envconfig:"DATASET_API_URL"`

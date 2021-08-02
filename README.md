@@ -1,10 +1,11 @@
-dp-dataset-api
-==================
+# dp-dataset-api
+
 A ONS API used to navigate datasets, editions and versions - which are published.
 
-### Installation
+## Installation
 
-#### Database
+### Database
+
 * Run `brew install mongo`
 * Run `brew services start mongodb`
 
@@ -13,7 +14,7 @@ A ONS API used to navigate datasets, editions and versions - which are published
 * Set `dbms.security.auth_enabled=false`
 * Run `brew services restart neo4j`
 
-#### Getting started
+### Getting started
 
 * Run api auth stub, [see documentation](https://github.com/ONSdigital/dp-auth-api-stub)
 * Run `make debug`
@@ -61,37 +62,52 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 
 | Environment variable         | Default                                | Description
 | ---------------------------- | ---------------------------------------| -----------
-| BIND_ADDR                    | :22000                                 | The host and port to bind to
-| MONGODB_BIND_ADDR            | localhost:27017                        | The MongoDB bind address
-| MONGODB_DATABASE             | datasets                               | The MongoDB dataset database
-| MONGODB_COLLECTION           | datasets                               | MongoDB collection
-| SECRET_KEY                   | FD0108EA-825D-411C-9B1D-41EF7727F465   | A secret key used authentication
-| CODE_LIST_API_URL            | http://localhost:22400                 | The host name for the CodeList API
-| DATASET_API_URL              | http://localhost:22000                 | The host name for the Dataset API
+| BIND_ADDR                    | `:22000`                               | The host and port to bind to
+| MONGODB_BIND_ADDR            | `localhost:27017`                      | The MongoDB bind address
+| MONGODB_DATABASE             | `datasets`                             | The MongoDB dataset database
+| MONGODB_COLLECTION           | `datasets`                             | MongoDB collection
+| SECRET_KEY                   | `FD0108EA-825D-411C-9B1D-41EF7727F465` | A secret key used authentication
+| CODE_LIST_API_URL            | `http://localhost:22400`               | The host name for the CodeList API
+| DATASET_API_URL              | `http://localhost:22000`               | The host name for the Dataset API
 | GRACEFUL_SHUTDOWN_TIMEOUT    | 5s                                     | The graceful shutdown timeout in seconds
-| WEBSITE_URL                  | http://localhost:20000                 | The host name for the website
-| KAFKA_ADDR                   | localhost:9092                         | The list of kafka hosts
+| WEBSITE_URL                  | `http://localhost:20000`               | The host name for the website
+| KAFKA_ADDR                   | `localhost:9092`                       | The address of (TLS-ready) Kafka brokers (comma-separated values)
+| KAFKA_VERSION                | `2.6.1`                                | The version of (TLS-ready) Kafka
+| KAFKA_SEC_PROTO              | _unset_                 (only `TLS`)   | if set to `TLS`, kafka connections will use TLS
+| KAFKA_SEC_CLIENT_KEY         | _unset_                                | PEM [2] for the client key (optional, used for client auth) [1]
+| KAFKA_SEC_CLIENT_CERT        | _unset_                                | PEM [2] for the client certificate (optional, used for client auth) [1]
+| KAFKA_SEC_CA_CERTS           | _unset_                                | PEM [2] of CA cert chain if using private CA for the server cert [1]
+| KAFKA_SEC_SKIP_VERIFY        | false                                  | ignore server certificate issues if set to `true` [1]
 | GENERATE_DOWNLOADS_TOPIC     | filter-job-submitted                   | The topic to send generate full dataset version downloads to
 | HEALTHCHECK_INTERVAL         | 30s                                    | The time between calling healthcheck endpoints for check subsystems
 | HEALTHCHECK_CRITICAL_TIMEOUT | 90s                                    | The time taken for the health changes from warning state to critical due to subsystem check failures
 | ENABLE_PRIVATE_ENDPOINTS     | false                                  | Enable private endpoints for the API
 | DISABLE_GRAPH_DB_DEPENDENCY  | false                                  | Disables connection and health check for graph db
 | DOWNLOAD_SERVICE_SECRET_KEY  | QB0108EZ-825D-412C-9B1D-41EF7747F462   | A key specific for the download service to access public/private links
-| ZEBEDEE_URL                  | http://localhost:8082                  | The host name for Zebedee
+| ZEBEDEE_URL                  | `http://localhost:8082`                | The host name for Zebedee
 | ENABLE_PERMISSIONS_AUTH      | false                                  | Enable/disable user/service permissions checking for private endpoints
 | DEFAULT_MAXIMUM_LIMIT        | 1000                                   | Default maximum limit for pagination
 | DEFAULT_LIMIT                | 20                                     | Default limit for pagination
 | DEFAULT_OFFSET               | 0                                      | Default offset for pagination
 
+Notes:
+
+1. Ignored unless using TLS (i.e. `KAFKA_SEC_PROTO` has a value enabling TLS)
+
+2. PEM values are identified as those starting with `-----BEGIN`
+    and can use `\n` (sic) instead of newlines (they will be converted to newlines before use).
+        Any other value will be treated as a path to the given PEM file.
 
 ### Audit vulnerability
+
 The current version of jwt-go (4.0.0-preview1) is a preview release. This is a known vulnerability which has been excluded using the CVE-ID when running the audit command and should be updated when a stable version of the library is released.
+
 ### Contributing
 
 See [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 ### License
 
-Copyright © 2016-2021, Office for National Statistics (https://www.ons.gov.uk)
+Copyright © 2016-2021, [Office for National Statistics](https://www.ons.gov.uk)
 
 Released under MIT license, see [LICENSE](LICENSE.md) for details.

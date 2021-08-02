@@ -104,6 +104,15 @@ func (e *Init) DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration
 		KafkaVersion: &cfg.KafkaVersion,
 	}
 
+	if cfg.KafkaSecProtocol == "TLS" {
+		pConfig.SecurityConfig = kafka.GetSecurityConfig(
+			cfg.KafkaSecCACerts,
+			cfg.KafkaSecClientCert,
+			cfg.KafkaSecClientKey,
+			cfg.KafkaSecSkipVerify,
+		)
+	}
+
 	pChannels := kafka.CreateProducerChannels()
 	return kafka.NewProducer(ctx, cfg.KafkaAddr, cfg.GenerateDownloadsTopic, pChannels, pConfig)
 }
