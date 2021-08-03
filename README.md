@@ -72,7 +72,7 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | GRACEFUL_SHUTDOWN_TIMEOUT    | 5s                                     | The graceful shutdown timeout in seconds
 | WEBSITE_URL                  | `http://localhost:20000`               | The host name for the website
 | KAFKA_ADDR                   | `localhost:9092`                       | The address of (TLS-ready) Kafka brokers (comma-separated values)
-| KAFKA_VERSION                | `2.6.1`                                | The version of (TLS-ready) Kafka
+| KAFKA_VERSION                | `1.0.2`                                | The version of (TLS-ready) Kafka
 | KAFKA_SEC_PROTO              | _unset_                 (only `TLS`)   | if set to `TLS`, kafka connections will use TLS
 | KAFKA_SEC_CLIENT_KEY         | _unset_                                | PEM [2] for the client key (optional, used for client auth) [1]
 | KAFKA_SEC_CLIENT_CERT        | _unset_                                | PEM [2] for the client certificate (optional, used for client auth) [1]
