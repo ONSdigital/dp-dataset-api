@@ -69,7 +69,7 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | SECRET_KEY                   | `FD0108EA-825D-411C-9B1D-41EF7727F465` | A secret key used authentication
 | CODE_LIST_API_URL            | `http://localhost:22400`               | The host name for the CodeList API
 | DATASET_API_URL              | `http://localhost:22000`               | The host name for the Dataset API
-| GRACEFUL_SHUTDOWN_TIMEOUT    | 5s                                     | The graceful shutdown timeout in seconds
+| GRACEFUL_SHUTDOWN_TIMEOUT    | `5s`                                   | The graceful shutdown timeout in seconds
 | WEBSITE_URL                  | `http://localhost:20000`               | The host name for the website
 | KAFKA_ADDR                   | `localhost:9092`                       | The address of (TLS-ready) Kafka brokers (comma-separated values)
 | KAFKA_VERSION                | `1.0.2`                                | The version of (TLS-ready) Kafka
@@ -77,18 +77,18 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | KAFKA_SEC_CLIENT_KEY         | _unset_                                | PEM [2] for the client key (optional, used for client auth) [1]
 | KAFKA_SEC_CLIENT_CERT        | _unset_                                | PEM [2] for the client certificate (optional, used for client auth) [1]
 | KAFKA_SEC_CA_CERTS           | _unset_                                | PEM [2] of CA cert chain if using private CA for the server cert [1]
-| KAFKA_SEC_SKIP_VERIFY        | false                                  | ignore server certificate issues if set to `true` [1]
-| GENERATE_DOWNLOADS_TOPIC     | filter-job-submitted                   | The topic to send generate full dataset version downloads to
-| HEALTHCHECK_INTERVAL         | 30s                                    | The time between calling healthcheck endpoints for check subsystems
-| HEALTHCHECK_CRITICAL_TIMEOUT | 90s                                    | The time taken for the health changes from warning state to critical due to subsystem check failures
-| ENABLE_PRIVATE_ENDPOINTS     | false                                  | Enable private endpoints for the API
-| DISABLE_GRAPH_DB_DEPENDENCY  | false                                  | Disables connection and health check for graph db
-| DOWNLOAD_SERVICE_SECRET_KEY  | QB0108EZ-825D-412C-9B1D-41EF7747F462   | A key specific for the download service to access public/private links
+| KAFKA_SEC_SKIP_VERIFY        | `false`                                | ignore server certificate issues if set to `true` [1]
+| GENERATE_DOWNLOADS_TOPIC     | `filter-job-submitted`                 | The topic to send generate full dataset version downloads to
+| HEALTHCHECK_INTERVAL         | `30s`                                  | The time between calling healthcheck endpoints for check subsystems
+| HEALTHCHECK_CRITICAL_TIMEOUT | `90s`                                  | The time taken for the health changes from warning state to critical due to subsystem check failures
+| ENABLE_PRIVATE_ENDPOINTS     | `false`                                | Enable private endpoints for the API
+| DISABLE_GRAPH_DB_DEPENDENCY  | `false`                                | Disables connection and health check for graph db
+| DOWNLOAD_SERVICE_SECRET_KEY  | `QB0108EZ-825D-412C-9B1D-41EF7747F462` | A key specific for the download service to access public/private links
 | ZEBEDEE_URL                  | `http://localhost:8082`                | The host name for Zebedee
-| ENABLE_PERMISSIONS_AUTH      | false                                  | Enable/disable user/service permissions checking for private endpoints
-| DEFAULT_MAXIMUM_LIMIT        | 1000                                   | Default maximum limit for pagination
-| DEFAULT_LIMIT                | 20                                     | Default limit for pagination
-| DEFAULT_OFFSET               | 0                                      | Default offset for pagination
+| ENABLE_PERMISSIONS_AUTH      | `false`                                | Enable/disable user/service permissions checking for private endpoints
+| DEFAULT_MAXIMUM_LIMIT        | `1000`                                 | Default maximum limit for pagination
+| DEFAULT_LIMIT                | `20`                                   | Default limit for pagination
+| DEFAULT_OFFSET               | `0`                                    | Default offset for pagination
 
 Notes:
 
