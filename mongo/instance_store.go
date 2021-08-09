@@ -142,7 +142,7 @@ func (m *Mongo) UpdateInstance(ctx context.Context, currentInstance, updatedInst
 func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance *models.Instance) bson.M {
 	updates := make(bson.M)
 
-	logData := log.Data{"instance_id": instanceID, "instance": instance}
+	logData := log.Data{"instance_id": instanceID}
 
 	log.Event(ctx, "building update query for instance resource", log.INFO, logData)
 
