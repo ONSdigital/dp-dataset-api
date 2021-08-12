@@ -36,5 +36,3 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/tools v0.1.5 // indirect
 )
-
-replace github.com/ONSdigital/dp-kafka/v2 => ../dp-kafka
