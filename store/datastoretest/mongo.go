@@ -137,7 +137,7 @@ var _ store.MongoDB = &MongoDBMock{}
 //             GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error) {
 // 	               panic("mock out the GetVersions method")
 //             },
-//             UnlockInstanceFunc: func(lockID string) error {
+//             UnlockInstanceFunc: func(lockID string)  {
 // 	               panic("mock out the UnlockInstance method")
 //             },
 //             UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
@@ -265,7 +265,7 @@ type MongoDBMock struct {
 	GetVersionsFunc func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error)
 
 	// UnlockInstanceFunc mocks the UnlockInstance method.
-	UnlockInstanceFunc func(lockID string) error
+	UnlockInstanceFunc func(lockID string)
 
 	// UpdateBuildHierarchyTaskStateFunc mocks the UpdateBuildHierarchyTaskState method.
 	UpdateBuildHierarchyTaskStateFunc func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error)
@@ -1590,7 +1590,7 @@ func (mock *MongoDBMock) GetVersionsCalls() []struct {
 }
 
 // UnlockInstance calls UnlockInstanceFunc.
-func (mock *MongoDBMock) UnlockInstance(lockID string) error {
+func (mock *MongoDBMock) UnlockInstance(lockID string) {
 	if mock.UnlockInstanceFunc == nil {
 		panic("MongoDBMock.UnlockInstanceFunc: method is nil but MongoDB.UnlockInstance was just called")
 	}
@@ -1602,7 +1602,7 @@ func (mock *MongoDBMock) UnlockInstance(lockID string) error {
 	lockMongoDBMockUnlockInstance.Lock()
 	mock.calls.UnlockInstance = append(mock.calls.UnlockInstance, callInfo)
 	lockMongoDBMockUnlockInstance.Unlock()
-	return mock.UnlockInstanceFunc(lockID)
+	mock.UnlockInstanceFunc(lockID)
 }
 
 // UnlockInstanceCalls gets all the calls that were made to UnlockInstance.

@@ -267,9 +267,8 @@ func storeMockWithLock(instance *models.Instance, expectFirstGetUnlocked bool) (
 			isLocked = true
 			return testLockID, nil
 		},
-		UnlockInstanceFunc: func(lockID string) error {
+		UnlockInstanceFunc: func(lockID string) {
 			isLocked = false
-			return nil
 		},
 		GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
 			if expectFirstGetUnlocked {

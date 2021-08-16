@@ -35,13 +35,12 @@ github.com/ONSdigital/dp-kafka/v2 v2.3.1 h1:ZckulUco7eCB3M9d8u1kjiPMRfzGKcvGtAX+
 github.com/ONSdigital/dp-kafka/v2 v2.3.1/go.mod h1:tBbTWqxPEKaUJB9vOGu1sAWaz/L4hbbRvIzeTymjiY0=
 github.com/ONSdigital/dp-mocking v0.0.0-20190905163309-fee2702ad1b9 h1:+WXVfTDyWXY1DQRDFSmt1b/ORKk5c7jGiPu7NoeaM/0=
 github.com/ONSdigital/dp-mocking v0.0.0-20190905163309-fee2702ad1b9/go.mod h1:BcIRgitUju//qgNePRBmNjATarTtynAgc0yV29VpLEk=
-github.com/ONSdigital/dp-mongodb v1.5.0 h1:Jrqixx0xr9aPSPya0Wce8Ly1zVwB0M6nC3K4umNPfqI=
-github.com/ONSdigital/dp-mongodb v1.5.0/go.mod h1:zm2gWzuqR+aiy2y2NLnfBIafvhKQ0IVPtiClaYyLkmo=
+github.com/ONSdigital/dp-mongodb v1.7.0 h1:PBIfZSsz8mpbNpg53kaGwrOMCg9tWo7X+DzCdaTQPwo=
+github.com/ONSdigital/dp-mongodb v1.7.0/go.mod h1:DMVcvTIuIbm4F/4ww5iMRKq+dFa6QinyXWUaYd+0+bM=
 github.com/ONSdigital/dp-net v1.0.5-0.20200805082802-e518bc287596/go.mod h1:wDVhk2pYosQ1q6PXxuFIRYhYk2XX5+1CeRRnXpSczPY=
 github.com/ONSdigital/dp-net v1.0.5-0.20200805145012-9227a11caddb/go.mod h1:MrSZwDUvp8u1VJEqa+36Gwq4E7/DdceW+BDCvGes6Cs=
 github.com/ONSdigital/dp-net v1.0.5-0.20200805150805-cac050646ab5/go.mod h1:de3LB9tedE0tObBwa12dUOt5rvTW4qQkF5rXtt4b6CE=
 github.com/ONSdigital/dp-net v1.0.7/go.mod h1:1QFzx32FwPKD2lgZI6MtcsUXritsBdJihlzIWDrQ/gc=
-github.com/ONSdigital/dp-net v1.0.9/go.mod h1:2lvIKOlD4T3BjWQwjHhBUO2UNWDk82u/+mHRn0R3C9A=
 github.com/ONSdigital/dp-net v1.0.12 h1:Vd06ia1FXKR9uyhzWykQ52b1LTp4N0VOLnrF7KOeP78=
 github.com/ONSdigital/dp-net v1.0.12/go.mod h1:2lvIKOlD4T3BjWQwjHhBUO2UNWDk82u/+mHRn0R3C9A=
 github.com/ONSdigital/dp-rchttp v0.0.0-20190919143000-bb5699e6fd59/go.mod h1:KkW68U3FPuivW4ogi9L8CPKNj9ZxGko4qcUY7KoAAkQ=
@@ -67,6 +66,8 @@ github.com/ONSdigital/log.go v1.0.1/go.mod h1:dIwSXuvFB5EsZG5x44JhsXZKMd80zlb0DZ
 github.com/ONSdigital/log.go v1.1.0 h1:XFE8U5lPeiXyujgUtbh+pKCotiICeIGFEAauNk9c24A=
 github.com/ONSdigital/log.go v1.1.0/go.mod h1:0hOVuYR3bDUI30VRo48d5KHfJIoe+spuPXqgt6UF78o=
 github.com/ONSdigital/log.go/v2 v2.0.0/go.mod h1:PR7vXrv9dZKUc7SI/0toxBbStk84snmybBnWpe+xY2o=
+github.com/ONSdigital/log.go/v2 v2.0.5 h1:kl2lF0vr3BQDwPTAUcarDvX4Um3uE3fjVRfLoHAarBc=
+github.com/ONSdigital/log.go/v2 v2.0.5/go.mod h1:PR7vXrv9dZKUc7SI/0toxBbStk84snmybBnWpe+xY2o=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/Shopify/sarama v1.29.1 h1:wBAacXbYVLmWieEA/0X/JagDdCZ8NVFOfS6l6+2u5S0=
 github.com/Shopify/sarama v1.29.1/go.mod h1:mdtqvCSg8JOxk8PmpTNGyo6wzd4BMm4QXSfDnTXmgkE=

@@ -56,7 +56,7 @@ type dataMongoDB interface {
 	DeleteDataset(ID string) error
 	DeleteEdition(ID string) error
 	AcquireInstanceLock(ctx context.Context, instanceID string) (lockID string, err error)
-	UnlockInstance(lockID string) error
+	UnlockInstance(lockID string)
 }
 
 // MongoDB represents all the required methods from mongo DB
