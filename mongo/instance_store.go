@@ -493,8 +493,10 @@ func selector(instanceID string, timestamp bson.MongoTimestamp, eTagSelector str
 	if timestamp > 0 {
 		selector[dpmongo.UniqueTimestampKey] = timestamp
 	}
-	if eTagSelector != AnyETag {
-		selector["e_tag"] = eTagSelector
-	}
+	// TODO uncomment the following 3 lines once we know how to properly fix the race condition observed
+	// between the dimension importer and dataset api (Postmortem doc: https://docs.google.com/document/d/10zjmmTIef1Bd5mESTEvBKv_cl8uvRI7yMl9MzNCIPzA/edit#)
+	// if eTagSelector != AnyETag {
+	// 	selector["e_tag"] = eTagSelector
+	// }
 	return selector
 }
