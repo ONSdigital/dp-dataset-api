@@ -263,6 +263,13 @@ func (s *Store) PatchOptionHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Store) patchOption(ctx context.Context, instanceID, dimensionName, option string, patches []dprequest.Patch, logData log.Data, eTagSelector string) (successful []dprequest.Patch, newETag string, err error) {
+	// acquire instance lock so that the instance update and the dimension.options update are atomic
+	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
+	if err != nil {
+		return successful, "", err
+	}
+	defer s.UnlockInstance(lockID)
+
 	// apply patch operations sequentially, stop processing if one patch fails, and return a list of successful patches operations
 	for _, patch := range patches {
 		dimOption := models.DimensionOption{Name: dimensionName, Option: option, InstanceID: instanceID}
@@ -312,6 +319,14 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	dimOption := models.DimensionOption{Name: dimensionName, Option: option, NodeID: nodeID, InstanceID: instanceID}
 
+	// acquire instance lock so that the instance update and the dimension.options update are atomic
+	lockID, err := s.AcquireInstanceLock(ctx, dimOption.InstanceID)
+	if err != nil {
+		handleDimensionErr(ctx, w, err, logData)
+		return
+	}
+	defer s.UnlockInstance(lockID)
+
 	newETag, err := s.updateOption(ctx, dimOption, logData, eTag)
 	if err != nil {
 		handleDimensionErr(ctx, w, err, logData)
@@ -327,13 +342,6 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 // and then updates nodeID and order (if provided) to the provided dimension option.
 // This method locks the instance resource and updates its eTag value, making it safe to perform concurrent updates.
 func (s *Store) updateOption(ctx context.Context, dimOption models.DimensionOption, logData log.Data, eTagSelector string) (newETag string, err error) {
-
-	// acquire instance lock so that the instance update and the dimension.options update are atomic
-	lockID, err := s.AcquireInstanceLock(ctx, dimOption.InstanceID)
-	if err != nil {
-		return "", err
-	}
-	defer s.UnlockInstance(lockID)
 
 	// Get instance
 	instance, err := s.GetInstance(dimOption.InstanceID, eTagSelector)

@@ -418,12 +418,7 @@ func TestPatchOptionReturnsBadRequest(t *testing.T) {
 	Convey("Given a Dataset API instance with a mocked datastore GetInstance", t, func() {
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
-				return &models.Instance{State: models.CreatedState}, nil
-			},
-		}
-
+		mockedDataStore, isLocked := storeMockWithLock(false)
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
 		bodies := map[string]io.Reader{
@@ -442,6 +437,7 @@ func TestPatchOptionReturnsBadRequest(t *testing.T) {
 				datasetAPI.Router.ServeHTTP(w, r)
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+				So(*isLocked, ShouldBeFalse)
 			})
 		}
 	})
