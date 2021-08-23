@@ -1,6 +1,7 @@
 package dimension
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -481,6 +482,7 @@ func writeBody(ctx context.Context, w http.ResponseWriter, b []byte, data log.Da
 	}
 }
 
+// getOptionsArrayFromInterface obtains an array of *CachedDimensionOption from the provided interface
 func getOptionsArrayFromInterface(elements interface{}) ([]*models.CachedDimensionOption, error) {
 	options := []*models.CachedDimensionOption{}
 
@@ -492,20 +494,17 @@ func getOptionsArrayFromInterface(elements interface{}) ([]*models.CachedDimensi
 
 	// each item in the array should be an option
 	for _, v := range arr {
-
-		// convert the interface to a byte buffer (which implements io.Reader interface)
-		b, err := getBytesBuffer(v)
+		// need to re-marshal, as it is currently a map
+		b, err := json.Marshal(v)
 		if err != nil {
-			return options, fmt.Errorf("error getting bytes buffer from interface: %w", err)
+			return nil, err
 		}
 
-		// unmarshal the bytes buffer to a 'DimensionCache' struct, representing a dimension option
-		option, err := unmarshalDimensionCache(b)
+		// unmarshal and validate CachedDimensionOption structure
+		option, err := unmarshalDimensionCache(bytes.NewBuffer(b))
 		if err != nil {
-			return options, fmt.Errorf("error unmarshalling bytes buffer : %w", err)
+			return nil, err
 		}
-
-		// append the option to the list of options
 		options = append(options, option)
 	}
 
