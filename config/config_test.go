@@ -42,6 +42,7 @@ func TestSpec(t *testing.T) {
 				So(cfg.DisableGraphDBDependency, ShouldEqual, false)
 				So(cfg.DefaultLimit, ShouldEqual, 20)
 				So(cfg.DefaultOffset, ShouldEqual, 0)
+				So(cfg.MaxRequestOptions, ShouldEqual, 1000)
 				So(cfg.EnablePermissionsAuth, ShouldBeFalse)
 				So(cfg.HealthCheckCriticalTimeout, ShouldEqual, 90*time.Second)
 				So(cfg.HealthCheckInterval, ShouldEqual, 30*time.Second)

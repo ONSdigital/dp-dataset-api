@@ -65,6 +65,7 @@ type DatasetAPI struct {
 	permissions              AuthHandler
 	instancePublishedChecker *instance.PublishCheck
 	versionPublishedChecker  *PublishCheck
+	MaxRequestOptions        int
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
@@ -84,6 +85,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		permissions:              permissions,
 		versionPublishedChecker:  nil,
 		instancePublishedChecker: nil,
+		MaxRequestOptions:        cfg.MaxRequestOptions,
 	}
 
 	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)
@@ -106,7 +108,8 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		}
 
 		dimensionAPI := &dimension.Store{
-			Storer: api.dataStore.Backend,
+			Storer:            api.dataStore.Backend,
+			MaxRequestOptions: api.MaxRequestOptions,
 		}
 
 		api.enablePrivateDatasetEndpoints(ctx, paginator)

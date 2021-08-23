@@ -24,6 +24,7 @@ import (
 // Store provides a backend for dimensions
 type Store struct {
 	store.Storer
+	MaxRequestOptions int
 }
 
 // List of actions for dimensions
@@ -213,6 +214,30 @@ func (s *Store) PatchDimensionsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Store) patchDimensions(ctx context.Context, instanceID string, patches []dprequest.Patch, logData log.Data, eTagSelector string) (successful []dprequest.Patch, newETag string, err error) {
+
+	// validate patches, including max values
+	totalValues := 0
+	for _, patch := range patches {
+
+		// validate path
+		if patch.Path != "/-" {
+			return successful, "", apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("provided path '%s' not supported. Supported paths: '/-'", patch.Path)}
+		}
+
+		// check that the values is an array
+		arr, ok := patch.Value.([]interface{})
+		if !ok {
+			return successful, "", apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("provided values '%#v' is not a list", patch.Value)}
+		}
+
+		// check size of values array
+		totalValues += len(arr)
+		if totalValues > s.MaxRequestOptions {
+			logData["max_options"] = s.MaxRequestOptions
+			return successful, "", apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("a maximum of %d overall dimension values can be provied in a set of patch operations, which has been exceeded", s.MaxRequestOptions)}
+		}
+	}
+
 	// acquire instance lock so that the instance update and the dimension.options update are atomic
 	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
 	if err != nil {
@@ -222,13 +247,7 @@ func (s *Store) patchDimensions(ctx context.Context, instanceID string, patches 
 
 	// apply patch operations sequentially, stop processing if one patch fails, and return a list of successful patches operations
 	for _, patch := range patches {
-
-		// validate path
-		if patch.Path != "/-" {
-			return successful, "", apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("provided path '%s' not supported. Supported paths: '/-'", patch.Path)}
-		}
-
-		// get list of options provided as value value
+		// get list of options provided as value
 		options, err := getOptionsArrayFromInterface(patch.Value)
 		if err != nil {
 			return successful, "", apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("provided values '%#v' is not a list of dimension options", patch.Value)}

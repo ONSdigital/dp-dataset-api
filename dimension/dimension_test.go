@@ -24,13 +24,14 @@ import (
 )
 
 var (
-	urlBuilder  = url.NewBuilder("localhost:20000")
-	mu          sync.Mutex
-	testContext = context.Background()
-	testETag    = "testETag"
-	testIfMatch = "testIfMatch"
-	testLockID  = "testLockID"
-	AnyETag     = "*"
+	urlBuilder            = url.NewBuilder("localhost:20000")
+	mu                    sync.Mutex
+	testContext           = context.Background()
+	testETag              = "testETag"
+	testIfMatch           = "testIfMatch"
+	testLockID            = "testLockID"
+	AnyETag               = "*"
+	testMaxRequestOptions = 10
 )
 
 func createRequestWithToken(method, url string, body io.Reader) (*http.Request, error) {
@@ -1378,6 +1379,23 @@ func TestPatchDimensionsReturnsBadRequest(t *testing.T) {
 				"path": "/-",
 				"value": [{"option": "op1"},{"option": "op2", "dimension": "TestDim"}]
 			}]`),
+			"Then patch dimensions with a total number of values greater than MaxRequestOptions returns bad request": strings.NewReader(`[{
+				"op": "add",
+				"path": "/-",
+				"value": [
+					{"option": "op01", "dimension": "TestDim"},
+					{"option": "op02", "dimension": "TestDim"},
+					{"option": "op03", "dimension": "TestDim"},
+					{"option": "op04", "dimension": "TestDim"},
+					{"option": "op05", "dimension": "TestDim"},
+					{"option": "op06", "dimension": "TestDim"},
+					{"option": "op07", "dimension": "TestDim"},
+					{"option": "op08", "dimension": "TestDim"},
+					{"option": "op09", "dimension": "TestDim"},
+					{"option": "op10", "dimension": "TestDim"},
+					{"option": "op11", "dimension": "TestDim"}
+				]
+			}]`),
 		}
 
 		for msg, body := range bodies {
@@ -1403,6 +1421,7 @@ func getAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mockedGe
 	cfg.ServiceAuthToken = "dataset"
 	cfg.DatasetAPIURL = "http://localhost:22000"
 	cfg.EnablePrivateEndpoints = true
+	cfg.MaxRequestOptions = testMaxRequestOptions
 
 	datasetPermissions := getAuthorisationHandlerMock()
 	permissions := getAuthorisationHandlerMock()
