@@ -41,6 +41,13 @@ parameters:
       $ref: '#/definitions/PatchOptions'
     description: "A list of patch operations for a dimension option"
     in: body
+  patch_dimensions:
+    required: true
+    name: patch
+    schema:
+      $ref: '#/definitions/PatchDimensions'
+    description: "A list of patch operations for a dimension"
+    in: body
   edition:
     name: edition
     description: "An edition of a dataset"
@@ -718,6 +725,7 @@ paths:
         500:
           $ref: '#/responses/InternalError'
     post:
+      deprecated: true
       tags:
       - "Private"
       summary: "Create a dimension"
@@ -743,6 +751,35 @@ paths:
           $ref: '#/responses/ConflictError'
         500:
           $ref: '#/responses/InternalError'
+    patch:
+      tags:
+      - "Private"
+      summary: "Create one or more dimensions"
+      description: "Create one or more dimensions which are related to an instance"
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/patch_dimensions'
+      - $ref: '#/parameters/if_match'
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "All dimensions were successfully created"
+          schema:
+            $ref: '#/definitions/PatchDimensions'
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
+        400:
+          $ref: '#/responses/InvalidRequestError'
+        404:
+          $ref: '#/responses/InstanceNotFound'
+        409:
+          $ref: '#/responses/ConflictError'
+        500:
+          $ref: '#/responses/InternalError'
+
   /instances/{instance_id}/dimensions/{dimension}:
     put:
       tags:
@@ -1350,6 +1387,27 @@ definitions:
         value:
           description: "A value that will be set for the provided path. /node_id accepts string values, and /order accepts integer values."
           example: "node_123"
+  PatchDimensions:
+    description: "A list of operations to patch dimensions. Can only handle adding lists of dimension values. Each patch operation in the array is processed in sequential order. The dimensions in the value array of each patch operation are added to the database in bulk."
+    type: array
+    items:
+      type: object
+      description: "Item containing all necessary information to make a single operation on the resource."
+      properties:
+        op:
+          description: |
+            The operation to be made on path.
+            * add - Sets the value for the provided path
+          type: string
+          enum: [add]
+        path:
+          description: "Path to value that needs to be operated on."
+          type: string
+          example: "/-"
+          enum: [/-]
+        value:
+          description: "A list of dimenions that will be added to the instance."
+          example: "[{\"dimension\": \"dim1\", \"option\": \"op1\"}, {\"dimension\": \"dim1\", \"option\": \"op2\"}]"
   DownloadObject:
     description: "Object containing information of a downloadable file"
     type: object
