@@ -36,7 +36,7 @@ func TestNewETagForUpdate(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(eTag1, ShouldNotEqual, currentInstance.ETag)
 
-			Convey("Applying the same update to a different filter results in a different ETag", func() {
+			Convey("Applying the same update to a different instance results in a different ETag", func() {
 				instance2 := testInstance()
 				instance2.InstanceID = "otherInstance"
 				eTag2, err := newETagForUpdate(instance2, update)
@@ -44,7 +44,7 @@ func TestNewETagForUpdate(t *testing.T) {
 				So(eTag2, ShouldNotEqual, eTag1)
 			})
 
-			Convey("Applying a different update to the same filter results in a different ETag", func() {
+			Convey("Applying a different update to the same instance results in a different ETag", func() {
 				update2 := &models.Instance{
 					InstanceID: "anotherInstanceID",
 				}
@@ -79,7 +79,7 @@ func TestNewETagForAddEvent(t *testing.T) {
 				So(eTag2, ShouldNotEqual, eTag1)
 			})
 
-			Convey("Applying a different update to the same filter results in a different ETag", func() {
+			Convey("Applying a different update to the same instance results in a different ETag", func() {
 				event = models.Event{
 					Message: "anotherEvent",
 				}
@@ -112,7 +112,7 @@ func TestNewETagForObservationsInserted(t *testing.T) {
 				So(eTag2, ShouldNotEqual, eTag1)
 			})
 
-			Convey("Applying a different update to the same filter results in a different ETag", func() {
+			Convey("Applying a different update to the same instance results in a different ETag", func() {
 				obsInserted = 54321
 				eTag3, err := newETagForObservationsInserted(currentInstance, obsInserted)
 				So(err, ShouldBeNil)
@@ -141,7 +141,7 @@ func TestNewETagForStateUpdate(t *testing.T) {
 				So(eTag2, ShouldNotEqual, eTag1)
 			})
 
-			Convey("Applying a different update to the same filter results in a different ETag", func() {
+			Convey("Applying a different update to the same instance results in a different ETag", func() {
 				eTag3, err := newETagForStateUpdate(currentInstance, models.DetachedState)
 				So(err, ShouldBeNil)
 				So(eTag3, ShouldNotEqual, eTag1)
@@ -170,7 +170,7 @@ func TestNewETagForHierarchyTaskStateUpdate(t *testing.T) {
 				So(eTag2, ShouldNotEqual, eTag1)
 			})
 
-			Convey("Applying a different update to the same filter results in a different ETag", func() {
+			Convey("Applying a different update to the same instance results in a different ETag", func() {
 				eTag3, err := newETagForHierarchyTaskStateUpdate(currentInstance, dimension, models.DetachedState)
 				So(err, ShouldBeNil)
 				So(eTag3, ShouldNotEqual, eTag1)
@@ -199,7 +199,7 @@ func TestNewETagForBuildSearchTaskStateUpdate(t *testing.T) {
 				So(eTag2, ShouldNotEqual, eTag1)
 			})
 
-			Convey("Applying a different update to the same filter results in a different ETag", func() {
+			Convey("Applying a different update to the same instance results in a different ETag", func() {
 				eTag3, err := newETagForBuildSearchTaskStateUpdate(currentInstance, dimension, models.DetachedState)
 				So(err, ShouldBeNil)
 				So(eTag3, ShouldNotEqual, eTag1)
@@ -229,7 +229,7 @@ func TestNewETagForNodeIDAndOrder(t *testing.T) {
 				So(eTag2, ShouldNotEqual, eTag1)
 			})
 
-			Convey("Applying a different update to the same filter results in a different ETag", func() {
+			Convey("Applying a different update to the same instance results in a different ETag", func() {
 				eTag3, err := newETagForNodeIDAndOrder(currentInstance, nodeID, nil)
 				So(err, ShouldBeNil)
 				So(eTag3, ShouldNotEqual, eTag1)
@@ -243,30 +243,42 @@ func TestNewETagForAddDimensionOption(t *testing.T) {
 	Convey("Given an instance", t, func() {
 
 		currentInstance := testInstance()
+
 		option := models.CachedDimensionOption{
 			Code: "testCode",
 			Name: "testName",
 		}
 
+		anotherOption := models.CachedDimensionOption{
+			Code: "anotherCode",
+			Name: "anotherName",
+		}
+
 		Convey("newETagForAddDimensionOption returns an eTag that is different from the original instance ETag", func() {
-			eTag1, err := newETagForAddDimensionOption(currentInstance, &option)
+			eTag1, err := newETagForAddDimensionOptions(currentInstance, []*models.CachedDimensionOption{&option})
 			So(err, ShouldBeNil)
 			So(eTag1, ShouldNotEqual, currentInstance.ETag)
 
 			Convey("Applying the same update to a different instance results in a different ETag", func() {
 				instance2 := testInstance()
 				instance2.InstanceID = "otherInstance"
-				eTag2, err := newETagForAddDimensionOption(instance2, &option)
+				eTag2, err := newETagForAddDimensionOptions(instance2, []*models.CachedDimensionOption{&option})
 				So(err, ShouldBeNil)
 				So(eTag2, ShouldNotEqual, eTag1)
 			})
 
-			Convey("Applying a different update to the same filter results in a different ETag", func() {
+			Convey("Applying a different update to the same instance results in a different ETag", func() {
+				eTag3, err := newETagForAddDimensionOptions(currentInstance, []*models.CachedDimensionOption{&anotherOption})
+				So(err, ShouldBeNil)
+				So(eTag3, ShouldNotEqual, eTag1)
+			})
+
+			Convey("Applying an update to the same instance containing an extra dimensions results in a different ETag", func() {
 				option := models.CachedDimensionOption{
 					Code: "anotherCode",
 					Name: "anotherName",
 				}
-				eTag3, err := newETagForAddDimensionOption(currentInstance, &option)
+				eTag3, err := newETagForAddDimensionOptions(currentInstance, []*models.CachedDimensionOption{&option, &anotherOption})
 				So(err, ShouldBeNil)
 				So(eTag3, ShouldNotEqual, eTag1)
 			})

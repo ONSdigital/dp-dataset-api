@@ -1,7 +1,9 @@
 package dimension
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -18,6 +20,16 @@ const (
 	reqUser   = "req_user"
 	reqCaller = "req_caller"
 )
+
+func getBytesBuffer(key interface{}) (*bytes.Buffer, error) {
+	var buf *bytes.Buffer
+	enc := gob.NewEncoder(buf)
+	err := enc.Encode(key)
+	if err != nil {
+		return nil, err
+	}
+	return buf, nil
+}
 
 func unmarshalDimensionCache(reader io.Reader) (*models.CachedDimensionOption, error) {
 	b, err := ioutil.ReadAll(reader)

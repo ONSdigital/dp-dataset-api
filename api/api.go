@@ -297,11 +297,19 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.
 				paginator.Paginate(dimensionAPI.GetDimensionsHandler))),
 	)
 
+	// Deprecated (use patch /instances/{instance_id}/dimensions instead)
 	api.post(
 		"/instances/{instance_id}/dimensions",
 		api.isAuthenticated(
 			api.isAuthorised(createPermission,
 				api.isInstancePublished(dimensionAPI.AddHandler))),
+	)
+
+	api.patch(
+		"/instances/{instance_id}/dimensions",
+		api.isAuthenticated(
+			api.isAuthorised(createPermission,
+				api.isInstancePublished(dimensionAPI.PatchDimensionsHandler))),
 	)
 
 	api.get(
@@ -318,7 +326,7 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.
 				api.isInstancePublished(dimensionAPI.PatchOptionHandler))),
 	)
 
-	// Deprecated
+	// Deprecated (use patch /instances/{instance_id}/dimensions/{dimension}/options/{option} instead)
 	api.put(
 		"/instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}",
 		api.isAuthenticated(

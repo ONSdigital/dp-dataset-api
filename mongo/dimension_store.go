@@ -8,6 +8,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/log.go/log"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 )
@@ -61,20 +62,47 @@ func (m *Mongo) GetUniqueDimensionAndOptions(ctx context.Context, id, dimension 
 	return values, len(values), nil
 }
 
-// AddDimensionToInstance to the dimension collection
-func (m *Mongo) AddDimensionToInstance(opt *models.CachedDimensionOption) error {
+// AddDimensionsToInstance to the dimension collection
+func (m *Mongo) AddDimensionsToInstance(opts []*models.CachedDimensionOption) error {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name, Label: opt.Label}
-	option.Order = opt.Order
-	option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/code-lists/%s", m.CodeListURL, opt.CodeList)}
-	option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.CodeListURL, opt.CodeList, opt.Code)}
+	// the first element of each pair (%2==0) is a selector, and the second (%2==1) is the corresponding update
+	// pairsToUpsert := make([]interface{}, 2*len(opts))
 
-	option.LastUpdated = time.Now().UTC()
-	_, err := s.DB(m.Database).C(dimensionOptions).Upsert(bson.M{"instance_id": option.InstanceID, "name": option.Name,
-		"option": option.Option}, &option)
+	bulk := s.DB(m.Database).C(dimensionOptions).Bulk()
 
+	// upsert all options
+	now := time.Now().UTC()
+	for _, opt := range opts {
+		option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name, Label: opt.Label}
+		option.Order = opt.Order
+		option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/code-lists/%s", m.CodeListURL, opt.CodeList)}
+		option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.CodeListURL, opt.CodeList, opt.Code)}
+		option.LastUpdated = now
+
+		bulk.Upsert(
+			bson.M{"instance_id": option.InstanceID, "name": option.Name, "option": option.Option},
+			&option,
+		)
+
+		// add selector
+		// pairsToUpsert = append(pairsToUpsert, bson.M{"instance_id": option.InstanceID, "name": option.Name, "option": option.Option})
+		// pairsToUpsert = append(pairsToUpsert, &option)
+
+		// // TODO ideally we would like to upsert all options in a single transaction, but it seems that it's not possible.
+		// // If we can 'add' instead of 'upsert' then it would be possible.
+		// _, err := s.DB(m.Database).C(dimensionOptions).Upsert(bson.M{"instance_id": option.InstanceID, "name": option.Name,
+		// 	"option": option.Option}, &option)
+		// if err != nil {
+		// 	return err
+		// }
+	}
+
+	// execute the upserts in bulk
+	// bulk.Upsert(pairsToUpsert)
+	res, err := bulk.Run()
+	log.Event(context.Background(), "bulk result", log.Data{"result": res})
 	return err
 }
 

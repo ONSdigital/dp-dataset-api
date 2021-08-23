@@ -54,10 +54,14 @@ func newETagForNodeIDAndOrder(currentInstance *models.Instance, nodeID string, o
 	return currentInstance.Hash(b)
 }
 
-func newETagForAddDimensionOption(currentInstance *models.Instance, option *models.CachedDimensionOption) (eTag string, err error) {
-	optionBytes, err := bson.Marshal(option)
-	if err != nil {
-		return "", err
+func newETagForAddDimensionOptions(currentInstance *models.Instance, options []*models.CachedDimensionOption) (eTag string, err error) {
+	extraBytes := []byte{}
+	for _, option := range options {
+		optionBytes, err := bson.Marshal(option)
+		if err != nil {
+			return "", err
+		}
+		extraBytes = append(extraBytes, optionBytes...)
 	}
-	return currentInstance.Hash(optionBytes)
+	return currentInstance.Hash(extraBytes)
 }

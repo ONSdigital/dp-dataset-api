@@ -3,6 +3,7 @@ package dimension
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -151,7 +152,15 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newETag, err := s.add(ctx, instanceID, option, logData, eTag)
+	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
+	if err != nil {
+		log.Event(ctx, "failed to acquire lock", log.ERROR, log.Error(err), logData)
+		handleDimensionErr(ctx, w, err, logData)
+		return
+	}
+	defer s.UnlockInstance(lockID)
+
+	newETag, err := s.add(ctx, instanceID, []*models.CachedDimensionOption{option}, logData, eTag)
 	if err != nil {
 		handleDimensionErr(ctx, w, err, logData)
 		return
@@ -161,14 +170,84 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 	setETag(w, newETag)
 }
 
-func (s *Store) add(ctx context.Context, instanceID string, option *models.CachedDimensionOption, logData log.Data, eTagSelector string) (newETag string, err error) {
+// PatchDimensionsHandler represents adding multile dimensions to a specific instance
+func (s *Store) PatchDimensionsHandler(w http.ResponseWriter, r *http.Request) {
+	defer dphttp.DrainBody(r)
 
+	ctx := r.Context()
+	vars := mux.Vars(r)
+	instanceID := vars["instance_id"]
+	eTag := getIfMatch(r)
+	logData := log.Data{"instance_id": instanceID}
+
+	// unmarshal and validate the patch array
+	patches, err := createPatches(r.Body, dprequest.OpAdd)
+	if err != nil {
+		log.Event(ctx, "error obtaining patch from request body", log.ERROR, log.Error(err), logData)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	logData["patch_list"] = patches
+
+	// apply the patches to the instance dimensions
+	successfulPatches, newETag, err := s.patchDimensions(ctx, instanceID, patches, logData, eTag)
+	if err != nil {
+		logData["successful_patches"] = successfulPatches
+		handleDimensionErr(ctx, w, err, logData)
+		return
+	}
+
+	// Marshal successful patches response
+	b, err := json.Marshal(successfulPatches)
+	if err != nil {
+		handleDimensionErr(ctx, w, err, logData)
+		return
+	}
+
+	// set content type and write response body
+	setJSONPatchContentType(w)
+	setETag(w, newETag)
+	writeBody(ctx, w, b, logData)
+	log.Event(ctx, "successfully patched dimensions of an instance resource", log.INFO, logData)
+}
+
+func (s *Store) patchDimensions(ctx context.Context, instanceID string, patches []dprequest.Patch, logData log.Data, eTagSelector string) (successful []dprequest.Patch, newETag string, err error) {
 	// acquire instance lock so that the instance update and the dimension.options update are atomic
 	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
 	if err != nil {
-		return "", err
+		return successful, "", err
 	}
 	defer s.UnlockInstance(lockID)
+
+	// apply patch operations sequentially, stop processing if one patch fails, and return a list of successful patches operations
+	for _, patch := range patches {
+
+		// validate path
+		if patch.Path != "/-" {
+			return successful, "", apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("provided path '%s' not supported. Supported paths: '/-'", patch.Path)}
+		}
+
+		// get list of options provided as value value
+		options, err := getOptionsArrayFromInterface(patch.Value)
+		if err != nil {
+			return successful, "", apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("provided values '%#v' is not a list of dimension options", patch.Value)}
+		}
+
+		// update values in database, updating the instance eTag
+		newETag, err = s.add(ctx, instanceID, options, logData, eTagSelector)
+		if err != nil {
+			return successful, "", err
+		}
+
+		// update list of successful patches and eTag for next iteration
+		successful = append(successful, patch)
+		eTagSelector = newETag
+	}
+
+	return successful, newETag, nil
+}
+
+func (s *Store) add(ctx context.Context, instanceID string, options []*models.CachedDimensionOption, logData log.Data, eTagSelector string) (newETag string, err error) {
 
 	// Get instance
 	instance, err := s.GetInstance(instanceID, eTagSelector)
@@ -184,15 +263,21 @@ func (s *Store) add(ctx context.Context, instanceID string, option *models.Cache
 		return "", err
 	}
 
-	newETag, err = s.UpdateETagForOptions(instance, option, eTagSelector)
+	// set instanceID in all options
+	for _, option := range options {
+		option.InstanceID = instanceID
+	}
+
+	// generate a new unique ETag for the instance + options and update it in DB
+	newETag, err = s.UpdateETagForOptions(instance, options, eTagSelector)
 	if err != nil {
 		log.Event(ctx, "failed to update eTag for an instance", log.ERROR, log.Error(err), logData)
 		return "", err
 	}
 
-	option.InstanceID = instanceID
-	if err := s.AddDimensionToInstance(option); err != nil {
-		log.Event(ctx, "failed to upsert dimension for an instance", log.ERROR, log.Error(err), logData)
+	// Upsert dimension options in bulk
+	if err := s.AddDimensionsToInstance(options); err != nil {
+		log.Event(ctx, "failed to upsert dimensions for an instance", log.ERROR, log.Error(err), logData)
 		return "", err
 	}
 
@@ -200,7 +285,7 @@ func (s *Store) add(ctx context.Context, instanceID string, option *models.Cache
 }
 
 // createPatches manages the creation of an array of patch structs from the provided reader, and validates them
-func createPatches(reader io.Reader) ([]dprequest.Patch, error) {
+func createPatches(reader io.Reader, supportedOps ...dprequest.PatchOp) ([]dprequest.Patch, error) {
 	patches := []dprequest.Patch{}
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -214,7 +299,7 @@ func createPatches(reader io.Reader) ([]dprequest.Patch, error) {
 	}
 
 	for _, patch := range patches {
-		if err := patch.Validate(dprequest.OpAdd); err != nil {
+		if err := patch.Validate(supportedOps...); err != nil {
 			return []dprequest.Patch{}, err
 		}
 	}
@@ -232,7 +317,7 @@ func (s *Store) PatchOptionHandler(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"instance_id": instanceID, "dimension": dimensionName, "option": option}
 
 	// unmarshal and validate the patch array
-	patches, err := createPatches(r.Body)
+	patches, err := createPatches(r.Body, dprequest.OpAdd)
 	if err != nil {
 		log.Event(ctx, "error obtaining patch from request body", log.ERROR, log.Error(err), logData)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -394,4 +479,35 @@ func writeBody(ctx context.Context, w http.ResponseWriter, b []byte, data log.Da
 		log.Event(ctx, "failed to write response body", log.ERROR, log.Error(err), data)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func getOptionsArrayFromInterface(elements interface{}) ([]*models.CachedDimensionOption, error) {
+	options := []*models.CachedDimensionOption{}
+
+	// elements should be an array
+	arr, ok := elements.([]interface{})
+	if !ok {
+		return options, errors.New("missing list of items")
+	}
+
+	// each item in the array should be an option
+	for _, v := range arr {
+
+		// convert the interface to a byte buffer (which implements io.Reader interface)
+		b, err := getBytesBuffer(v)
+		if err != nil {
+			return options, fmt.Errorf("error getting bytes buffer from interface: %w", err)
+		}
+
+		// unmarshal the bytes buffer to a 'DimensionCache' struct, representing a dimension option
+		option, err := unmarshalDimensionCache(b)
+		if err != nil {
+			return options, fmt.Errorf("error unmarshalling bytes buffer : %w", err)
+		}
+
+		// append the option to the list of options
+		options = append(options, option)
+	}
+
+	return options, nil
 }

@@ -19,7 +19,7 @@ type DataStore struct {
 
 // dataMongoDB represents the required methos to access data from mongoDB
 type dataMongoDB interface {
-	AddDimensionToInstance(dimension *models.CachedDimensionOption) error
+	AddDimensionsToInstance(dimensions []*models.CachedDimensionOption) error
 	AddEventToInstance(currentInstance *models.Instance, event *models.Event, eTagSelector string) (newETag string, err error)
 	AddInstance(instance *models.Instance) (*models.Instance, error)
 	CheckDatasetExists(ID, state string) error
@@ -47,7 +47,7 @@ type dataMongoDB interface {
 	UpdateBuildHierarchyTaskState(currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error)
 	UpdateBuildSearchTaskState(currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error)
 	UpdateETagForNodeIDAndOrder(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (newETag string, err error)
-	UpdateETagForOptions(currentInstance *models.Instance, option *models.CachedDimensionOption, eTagSelector string) (newETag string, err error)
+	UpdateETagForOptions(currentInstance *models.Instance, options []*models.CachedDimensionOption, eTagSelector string) (newETag string, err error)
 	UpdateVersion(ID string, version *models.Version) error
 	UpsertContact(ID string, update interface{}) error
 	UpsertDataset(ID string, datasetDoc *models.DatasetUpdate) error

@@ -458,12 +458,12 @@ func (m *Mongo) UpdateETagForNodeIDAndOrder(currentInstance *models.Instance, no
 }
 
 // UpdateETagForOptions updates the eTag value for an instance according to the provided dimension options
-func (m *Mongo) UpdateETagForOptions(currentInstance *models.Instance, option *models.CachedDimensionOption, eTagSelector string) (newETag string, err error) {
+func (m *Mongo) UpdateETagForOptions(currentInstance *models.Instance, options []*models.CachedDimensionOption, eTagSelector string) (newETag string, err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
 	// calculate the new eTag hash by calculating the hash of the current instance plus the provided option
-	newETag, err = newETagForAddDimensionOption(currentInstance, option)
+	newETag, err = newETagForAddDimensionOptions(currentInstance, options)
 	if err != nil {
 		return "", err
 	}
