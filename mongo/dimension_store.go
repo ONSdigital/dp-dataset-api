@@ -8,7 +8,6 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/log.go/log"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 )
@@ -67,12 +66,9 @@ func (m *Mongo) AddDimensionsToInstance(opts []*models.CachedDimensionOption) er
 	s := m.Session.Copy()
 	defer s.Close()
 
-	// the first element of each pair (%2==0) is a selector, and the second (%2==1) is the corresponding update
-	// pairsToUpsert := make([]interface{}, 2*len(opts))
-
 	bulk := s.DB(m.Database).C(dimensionOptions).Bulk()
 
-	// upsert all options
+	// queue all options to be upserted
 	now := time.Now().UTC()
 	for _, opt := range opts {
 		option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name, Label: opt.Label}
@@ -80,29 +76,14 @@ func (m *Mongo) AddDimensionsToInstance(opts []*models.CachedDimensionOption) er
 		option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/code-lists/%s", m.CodeListURL, opt.CodeList)}
 		option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.CodeListURL, opt.CodeList, opt.Code)}
 		option.LastUpdated = now
-
 		bulk.Upsert(
 			bson.M{"instance_id": option.InstanceID, "name": option.Name, "option": option.Option},
 			&option,
 		)
-
-		// add selector
-		// pairsToUpsert = append(pairsToUpsert, bson.M{"instance_id": option.InstanceID, "name": option.Name, "option": option.Option})
-		// pairsToUpsert = append(pairsToUpsert, &option)
-
-		// // TODO ideally we would like to upsert all options in a single transaction, but it seems that it's not possible.
-		// // If we can 'add' instead of 'upsert' then it would be possible.
-		// _, err := s.DB(m.Database).C(dimensionOptions).Upsert(bson.M{"instance_id": option.InstanceID, "name": option.Name,
-		// 	"option": option.Option}, &option)
-		// if err != nil {
-		// 	return err
-		// }
 	}
 
 	// execute the upserts in bulk
-	// bulk.Upsert(pairsToUpsert)
-	res, err := bulk.Run()
-	log.Event(context.Background(), "bulk result", log.Data{"result": res})
+	_, err := bulk.Run()
 	return err
 }
 
