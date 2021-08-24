@@ -136,7 +136,7 @@ var _ store.Storer = &StorerMock{}
 //             SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
 // 	               panic("mock out the SetInstanceIsPublished method")
 //             },
-//             UnlockInstanceFunc: func(lockID string) error {
+//             UnlockInstanceFunc: func(lockID string)  {
 // 	               panic("mock out the UnlockInstance method")
 //             },
 //             UpdateBuildHierarchyTaskStateFunc: func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
@@ -264,7 +264,7 @@ type StorerMock struct {
 	SetInstanceIsPublishedFunc func(ctx context.Context, instanceID string) error
 
 	// UnlockInstanceFunc mocks the UnlockInstance method.
-	UnlockInstanceFunc func(lockID string) error
+	UnlockInstanceFunc func(lockID string)
 
 	// UpdateBuildHierarchyTaskStateFunc mocks the UpdateBuildHierarchyTaskState method.
 	UpdateBuildHierarchyTaskStateFunc func(currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error)
@@ -1613,7 +1613,7 @@ func (mock *StorerMock) SetInstanceIsPublishedCalls() []struct {
 }
 
 // UnlockInstance calls UnlockInstanceFunc.
-func (mock *StorerMock) UnlockInstance(lockID string) error {
+func (mock *StorerMock) UnlockInstance(lockID string) {
 	if mock.UnlockInstanceFunc == nil {
 		panic("StorerMock.UnlockInstanceFunc: method is nil but Storer.UnlockInstance was just called")
 	}
@@ -1625,7 +1625,7 @@ func (mock *StorerMock) UnlockInstance(lockID string) error {
 	lockStorerMockUnlockInstance.Lock()
 	mock.calls.UnlockInstance = append(mock.calls.UnlockInstance, callInfo)
 	lockStorerMockUnlockInstance.Unlock()
-	return mock.UnlockInstanceFunc(lockID)
+	mock.UnlockInstanceFunc(lockID)
 }
 
 // UnlockInstanceCalls gets all the calls that were made to UnlockInstance.

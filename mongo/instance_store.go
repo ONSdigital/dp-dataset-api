@@ -20,8 +20,8 @@ func (m *Mongo) AcquireInstanceLock(ctx context.Context, instanceID string) (loc
 }
 
 // UnlockInstance releases an exclusive mongoDB lock for the provided lockId (if it exists)
-func (m *Mongo) UnlockInstance(lockID string) error {
-	return m.lockClient.Unlock(lockID)
+func (m *Mongo) UnlockInstance(lockID string) {
+	m.lockClient.Unlock(lockID)
 }
 
 // GetInstances from a mongo collection
