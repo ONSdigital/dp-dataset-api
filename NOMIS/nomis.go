@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -16,7 +17,7 @@ import (
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	uuid "github.com/satori/go.uuid"
@@ -92,20 +93,20 @@ func main() {
 
 	session, err := mgo.Dial(mongoURL)
 	if err != nil {
-		log.Event(ctx, "failed to initialise mongo", log.FATAL, log.Error(err))
+		log.Fatal(ctx, "failed to initialise mongo", err)
 		os.Exit(1)
 	}
 	defer session.Close()
 	fileLocation := "./NOMIS/def.sdmx.json"
 	f, err := os.Open(fileLocation)
 	if err != nil {
-		log.Event(ctx, "failed to open file", log.FATAL, log.Error(err))
+		log.Fatal(ctx, "failed to open file", err)
 		os.Exit(1)
 	}
 
 	b, err := ioutil.ReadAll(f)
 	if err != nil {
-		log.Event(ctx, "failed to read json file as a byte array", log.ERROR, log.Error(err))
+		log.Error(ctx, "failed to read json file as a byte array", err)
 		os.Exit(1)
 	}
 
@@ -113,7 +114,7 @@ func main() {
 	res := CenStructure{}
 	if err := json.Unmarshal(b, &res); err != nil {
 		logData := log.Data{"json file": res}
-		log.Event(ctx, "failed to unmarshal json", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "failed to unmarshal json", err, logData)
 		fmt.Println("error")
 		return
 	}
@@ -130,7 +131,7 @@ func main() {
 				ref := annoIndex.Text.(string)
 				extractId := strings.Split(ref, census2011)
 				if len(extractId) < 2 {
-					log.Event(ctx, "error mnemonic length invalid", log.ERROR)
+					log.Error(ctx, "error mnemonic length invalid", errors.New("error mnemonic length invalid"))
 					os.Exit(1)
 				}
 				cenId = extractId[1]
@@ -140,7 +141,7 @@ func main() {
 
 		mapData.Title, err = CheckTitle(title, ctx)
 		if err != nil {
-			log.Event(ctx, "error getting the title", log.ERROR, log.Error(err))
+			log.Error(ctx, "error getting the title", err)
 			os.Exit(1)
 		}
 		datasetUrl := "http://127.0.0.1:12345/datasets/"
@@ -229,7 +230,7 @@ func main() {
 				tt := annotation.Text.(string)
 				t, parseErr := time.Parse("2006-01-02 15:04:05", tt)
 				if parseErr != nil {
-					log.Event(ctx, "error parsing date", log.ERROR, log.Error(err))
+					log.Error(ctx, "error parsing date", err)
 					os.Exit(1)
 				}
 				mapData.LastUpdated = t
@@ -243,7 +244,7 @@ func main() {
 				releaseDt := annotation.Text.(string)
 				rd, err := time.Parse("2006-01-02 15:04:05", releaseDt)
 				if err != nil {
-					log.Event(ctx, "failed to parse date correctly", log.ERROR, log.Error(err))
+					log.Error(ctx, "failed to parse date correctly", err)
 					os.Exit(1)
 				}
 				censusInstances.ReleaseDate = rd.Format("2006-01-02T15:04:05.000Z")
@@ -252,7 +253,7 @@ func main() {
 				if str != "MetadataText0" {
 					example, err = CheckSubString(annotation.Text.(string), ctx)
 					if err != nil {
-						log.Event(ctx, "failed to get metadatatext", log.ERROR, log.Error(err))
+						log.Error(ctx, "failed to get metadatatext", err)
 						os.Exit(1)
 					}
 				}
@@ -287,7 +288,7 @@ func createDatasetsDocument(ctx context.Context, id string, class interface{}, s
 	var err error
 	logData := log.Data{"data": class}
 	if _, err = session.DB("datasets").C("datasets").UpsertId(id, class); err != nil {
-		log.Event(ctx, "failed to upsert data in dataset collection", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "failed to upsert data in dataset collection", err, logData)
 		os.Exit(1)
 	}
 }
@@ -300,7 +301,7 @@ func createEditionsDocument(ctx context.Context, id string, class interface{}, s
 		"current.links.dataset.id": id,
 	}
 	if err = upsertData(ctx, selector, class, session, "editions", logData); err != nil {
-		log.Event(ctx, " failed to insert data in collection", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, " failed to insert data in collection", err, logData)
 		os.Exit(1)
 	}
 }
@@ -313,7 +314,7 @@ func createInstancesDocument(ctx context.Context, id string, class interface{}, 
 		"links.dataset.id": id,
 	}
 	if err = upsertData(ctx, selector, class, session, "instances", logData); err != nil {
-		log.Event(ctx, " failed to insert data in collection", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, " failed to insert data in collection", err, logData)
 		os.Exit(1)
 	}
 }
@@ -322,7 +323,7 @@ func createInstancesDocument(ctx context.Context, id string, class interface{}, 
 func upsertData(ctx context.Context, selector bson.M, class interface{}, session *mgo.Session, document string, logData log.Data) error {
 	var err error
 	if _, err = session.DB("datasets").C(document).Upsert(selector, class); err != nil {
-		log.Event(ctx, "failed to upsert data in collection", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "failed to upsert data in collection", err, logData)
 		return err
 	}
 	err = nil
@@ -336,7 +337,7 @@ func downloadFile(ctx context.Context) {
 	// Build fileName from fullPath
 	fileURL, err := url.Parse(fullURLFile)
 	if err != nil {
-		log.Event(ctx, "error parsing the file", log.ERROR, log.Error(err))
+		log.Error(ctx, "error parsing the file", err)
 		os.Exit(1)
 	}
 	path := fileURL.Path
@@ -347,7 +348,7 @@ func downloadFile(ctx context.Context) {
 	// Create blank file
 	file, err := os.Create(newFileName)
 	if err != nil {
-		log.Event(ctx, "error creating the file", log.ERROR, log.Error(err))
+		log.Error(ctx, "error creating the file", err)
 		os.Exit(1)
 	}
 	client := http.Client{
@@ -361,13 +362,13 @@ func downloadFile(ctx context.Context) {
 	resp, err := client.Get(fullURLFile)
 
 	if err != nil {
-		log.Event(ctx, "error writing the file", log.ERROR, log.Error(err))
+		log.Error(ctx, "error writing the file", err)
 		os.Exit(1)
 	}
 	defer resp.Body.Close()
 	size, err := io.Copy(file, resp.Body)
 	if err != nil {
-		log.Event(ctx, "error copying a file", log.ERROR, log.Error(err))
+		log.Error(ctx, "error copying a file", err)
 		os.Exit(1)
 	}
 	defer file.Close()
@@ -381,7 +382,7 @@ func CheckSubString(existingStr string, ctx context.Context) (string, error) {
 
 	valueCheck, err := regexp.Compile(`(http[^\[]*)(\[[^\[]*\])`)
 	if err != nil {
-		log.Event(ctx, "error checking substring", log.ERROR, log.Error(err))
+		log.Error(ctx, "error checking substring", err)
 		return "", err
 	}
 
@@ -391,7 +392,7 @@ func CheckSubString(existingStr string, ctx context.Context) (string, error) {
 func CheckTitle(sourceStr string, ctx context.Context) (string, error) {
 	valueCheck, err := regexp.Compile(`^[\d|\D].*?\-\s*([\d|\D].*)$`)
 	if err != nil {
-		log.Event(ctx, "error checking title", log.ERROR, log.Error(err))
+		log.Error(ctx, "error checking title", err)
 		return "", err
 	}
 	return valueCheck.ReplaceAllString(sourceStr, `$1`), err

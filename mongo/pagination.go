@@ -3,7 +3,7 @@ package mongo
 import (
 	"context"
 
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/globalsign/mgo"
 )
 
@@ -28,7 +28,7 @@ func QueryPage(ctx context.Context, q *mgo.Query, offset, limit int, result inte
 	// get total count of items for the provided query
 	totalCount, err = q.Count()
 	if err != nil {
-		log.Event(ctx, "error counting items", log.ERROR, log.Error(err))
+		log.Error(ctx, "error counting items", err)
 		return
 	}
 
@@ -38,7 +38,7 @@ func QueryPage(ctx context.Context, q *mgo.Query, offset, limit int, result inte
 		defer func() {
 			err := iter.Close()
 			if err != nil {
-				log.Event(ctx, "error closing iterator", log.ERROR, log.Error(err), log.Data{"query": q})
+				log.Error(ctx, "error closing iterator", err, log.Data{"query": q})
 			}
 		}()
 

@@ -8,7 +8,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dphttp "github.com/ONSdigital/dp-net/http"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 )
 
@@ -25,7 +25,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	eTag := getIfMatch(r)
 	logData := log.Data{"instance_id": instanceID, "dimension": dimension}
 
-	log.Event(ctx, "update instance dimension: update instance dimension", log.INFO, logData)
+	log.Info(ctx, "update instance dimension: update instance dimension", logData)
 
 	// Acquire instance lock to make sure that this call does not interfere with any other 'write' call against the same instance
 	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
@@ -36,7 +36,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	instance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {
-		log.Event(ctx, "update instance dimension: Failed to GET instance", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "update instance dimension: Failed to GET instance", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
@@ -44,7 +44,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	// Early return if instance state is invalid
 	if err = models.CheckState("instance", instance.State); err != nil {
 		logData["state"] = instance.State
-		log.Event(ctx, "update instance dimension: current instance has an invalid state", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "update instance dimension: current instance has an invalid state", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
@@ -52,7 +52,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	// Read and unmarshal request body
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Event(ctx, "update instance dimension: error reading request.body", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "update instance dimension: error reading request.body", err, logData)
 		handleInstanceErr(ctx, errs.ErrUnableToReadMessage, w, logData)
 		return
 	}
@@ -61,7 +61,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(b, &dim)
 	if err != nil {
-		log.Event(ctx, "update instance dimension: failing to model models.Codelist resource based on request", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "update instance dimension: failing to model models.Codelist resource based on request", err, logData)
 		handleInstanceErr(ctx, errs.ErrUnableToParseJSON, w, logData)
 		return
 	}
@@ -86,7 +86,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if notFound {
-		log.Event(ctx, "update instance dimension: dimension not found", log.ERROR, log.Error(errs.ErrDimensionNotFound), logData)
+		log.Error(ctx, "update instance dimension: dimension not found", errs.ErrDimensionNotFound, logData)
 		handleInstanceErr(ctx, errs.ErrDimensionNotFound, w, logData)
 		return
 	}
@@ -100,12 +100,12 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	// Update instance
 	newETag, err := s.UpdateInstance(ctx, instance, instanceUpdate, eTag)
 	if err != nil {
-		log.Event(ctx, "update instance dimension: failed to update instance with new dimension label/description", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "update instance dimension: failed to update instance with new dimension label/description", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
 
-	log.Event(ctx, "updated instance dimension: request successful", log.INFO, logData)
+	log.Info(ctx, "updated instance dimension: request successful", logData)
 
 	setETag(w, newETag)
 }

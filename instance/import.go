@@ -11,7 +11,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dphttp "github.com/ONSdigital/dp-net/http"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -28,7 +28,7 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 
 	observations, err := strconv.ParseInt(insert, 10, 64)
 	if err != nil {
-		log.Event(ctx, "update imported observations: failed to parse inserted_observations string to int", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "update imported observations: failed to parse inserted_observations string to int", err, logData)
 		handleInstanceErr(ctx, errs.ErrInsertedObservationsInvalidSyntax, w, logData)
 		return
 	}
@@ -42,19 +42,19 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 
 	instance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {
-		log.Event(ctx, "failed to get instance from database", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "failed to get instance from database", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
 
 	newETag, err := s.UpdateObservationInserted(instance, observations, eTag)
 	if err != nil {
-		log.Event(ctx, "update imported observations: store.UpdateObservationInserted returned an error", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "update imported observations: store.UpdateObservationInserted returned an error", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
 
-	log.Event(ctx, "update imported observations: request successful", log.INFO, logData)
+	log.Info(ctx, "update imported observations: request successful", logData)
 	setETag(w, newETag)
 }
 
@@ -71,13 +71,13 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	handleError := func(updateErr *taskError) {
-		log.Event(ctx, "updateImportTask endpoint: request unsuccessful", log.ERROR, log.Error(updateErr), logData)
+		log.Error(ctx, "updateImportTask endpoint: request unsuccessful", updateErr, logData)
 		http.Error(w, updateErr.Error(), updateErr.status)
 	}
 
 	tasks, err := unmarshalImportTasks(r.Body)
 	if err != nil {
-		log.Event(ctx, "failed to unmarshal request body to UpdateImportTasks model", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "failed to unmarshal request body to UpdateImportTasks model", err, logData)
 		handleError(&taskError{err, http.StatusBadRequest})
 		return
 	}
@@ -91,7 +91,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 
 	instance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {
-		log.Event(ctx, "failed to get instance from database", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "failed to get instance from database", err, logData)
 		if err == errs.ErrInstanceConflict {
 			handleError(&taskError{err, http.StatusConflict})
 			return
@@ -111,7 +111,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 			} else {
 				eTag, err = s.UpdateImportObservationsTaskState(instance, tasks.ImportObservations.State, eTag)
 				if err != nil {
-					log.Event(ctx, "failed to update import observations task state", log.ERROR, log.Error(err), logData)
+					log.Error(ctx, "failed to update import observations task state", err, logData)
 					handleError(&taskError{err, http.StatusInternalServerError})
 					return
 				}
@@ -133,11 +133,11 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					if err.Error() == errs.ErrNotFound.Error() {
 						notFoundErr := task.DimensionName + " hierarchy import task does not exist"
-						log.Event(ctx, notFoundErr, log.ERROR, log.Error(err), logData)
+						log.Error(ctx, notFoundErr, err, logData)
 						handleError(&taskError{errors.New(notFoundErr), http.StatusNotFound})
 						return
 					}
-					log.Event(ctx, "failed to update build hierarchy task state", log.ERROR, log.Error(err), logData)
+					log.Error(ctx, "failed to update build hierarchy task state", err, logData)
 					handleError(&taskError{err, http.StatusInternalServerError})
 					return
 				}
@@ -160,11 +160,11 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					if err.Error() == "not found" {
 						notFoundErr := task.DimensionName + " search index import task does not exist"
-						log.Event(ctx, notFoundErr, log.ERROR, log.Error(err), logData)
+						log.Error(ctx, notFoundErr, err, logData)
 						handleError(&taskError{errors.New(notFoundErr), http.StatusNotFound})
 						return
 					}
-					log.Event(ctx, "failed to update build hierarchy task state", log.ERROR, log.Error(err), logData)
+					log.Error(ctx, "failed to update build hierarchy task state", err, logData)
 					handleError(&taskError{err, http.StatusInternalServerError})
 					return
 				}
@@ -181,14 +181,14 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 
 	if len(validationErrs) > 0 {
 		for _, err := range validationErrs {
-			log.Event(ctx, "validation error", log.ERROR, log.Error(err), logData)
+			log.Error(ctx, "validation error", err, logData)
 		}
 		// todo: add all validation errors to the response
 		handleError(&taskError{validationErrs[0], http.StatusBadRequest})
 		return
 	}
 
-	log.Event(ctx, "updateImportTask endpoint: request successful", log.INFO, logData)
+	log.Info(ctx, "updateImportTask endpoint: request successful", logData)
 	setETag(w, eTag)
 }
 

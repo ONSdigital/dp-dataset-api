@@ -15,7 +15,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	dphttp "github.com/ONSdigital/dp-net/http"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
@@ -60,19 +60,19 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit int, offse
 		datasetFilterList = strings.Split(datasetFilterQuery, ",")
 	}
 
-	log.Event(ctx, "get list of instances", log.INFO, logData)
+	log.Info(ctx, "get list of instances", logData)
 
 	results, totalCount, err := func() ([]*models.Instance, int, error) {
 		if len(stateFilterList) > 0 {
 			if err := models.ValidateStateFilter(stateFilterList); err != nil {
-				log.Event(ctx, "get instances: filter state invalid", log.ERROR, log.Error(err), logData)
+				log.Error(ctx, "get instances: filter state invalid", err, logData)
 				return nil, 0, taskError{error: err, status: http.StatusBadRequest}
 			}
 		}
 
 		results, totalCount, err := s.GetInstances(ctx, stateFilterList, datasetFilterList, offset, limit)
 		if err != nil {
-			log.Event(ctx, "get instances: store.GetInstances returned an error", log.ERROR, log.Error(err), logData)
+			log.Error(ctx, "get instances: store.GetInstances returned an error", err, logData)
 			return nil, 0, err
 		}
 
@@ -84,7 +84,7 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit int, offse
 		return nil, 0, err
 	}
 
-	log.Event(ctx, "get instances: request successful", log.INFO, logData)
+	log.Info(ctx, "get instances: request successful", logData)
 	return results, totalCount, nil
 }
 
@@ -98,28 +98,28 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	eTag := getIfMatch(r)
 	logData := log.Data{"instance_id": instanceID}
 
-	log.Event(ctx, "get instance", log.INFO, logData)
+	log.Info(ctx, "get instance", logData)
 
 	instance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {
-		log.Event(ctx, "get instance: failed to retrieve instance", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "get instance: failed to retrieve instance", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
 
-	log.Event(ctx, "get instance: checking instance state", log.INFO, logData)
+	log.Info(ctx, "get instance: checking instance state", logData)
 	// Early return if instance state is invalid
 	if err = models.CheckState("instance", instance.State); err != nil {
 		logData["state"] = instance.State
-		log.Event(ctx, "get instance: instance has an invalid state", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "get instance: instance has an invalid state", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
 
-	log.Event(ctx, "get instance: marshalling instance json", log.INFO, logData)
+	log.Info(ctx, "get instance: marshalling instance json", logData)
 	b, err := json.Marshal(instance)
 	if err != nil {
-		log.Event(ctx, "get instance: failed to marshal instance to json", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "get instance: failed to marshal instance to json", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
@@ -127,7 +127,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	setJSONContentType(w)
 	setETag(w, instance.ETag)
 	writeBody(ctx, w, b, logData)
-	log.Event(ctx, "get instance: request successful", log.INFO, logData)
+	log.Info(ctx, "get instance: request successful", logData)
 }
 
 // Add an instance
@@ -140,7 +140,7 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logData := log.Data{}
 
-	log.Event(ctx, "add instance", log.INFO, logData)
+	log.Info(ctx, "add instance", logData)
 
 	instance, err := unmarshalInstance(ctx, r.Body, true)
 	if err != nil {
@@ -156,14 +156,14 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 
 	instance, err = s.AddInstance(instance)
 	if err != nil {
-		log.Event(ctx, "add instance: store.AddInstance returned an error", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "add instance: store.AddInstance returned an error", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
 
 	b, err := json.Marshal(instance)
 	if err != nil {
-		log.Event(ctx, "add instance: failed to marshal instance to json", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "add instance: failed to marshal instance to json", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
@@ -173,7 +173,7 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	writeBody(ctx, w, b, logData)
 
-	log.Event(ctx, "add instance: request successful", log.INFO, logData)
+	log.Info(ctx, "add instance: request successful", logData)
 }
 
 // Update a specific instance
@@ -190,7 +190,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 	instance, err := unmarshalInstance(ctx, r.Body, false)
 	if err != nil {
-		log.Event(ctx, "update instance: failed unmarshalling json to model", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "update instance: failed unmarshalling json to model", err, logData)
 		handleInstanceErr(ctx, taskError{error: err, status: 400}, w, logData)
 		return
 	}
@@ -203,7 +203,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	// acquire instance lock so that the dp-graph call to AddVersionDetailsToInstance and the mongoDB update are atomic
 	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
 	if err != nil {
-		log.Event(ctx, "update instance: failed to lock the instance", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "update instance: failed to lock the instance", err, logData)
 		handleInstanceErr(ctx, taskError{error: err, status: http.StatusInternalServerError}, w, logData)
 		return
 	}
@@ -212,7 +212,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	// Get the current document
 	currentInstance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {
-		log.Event(ctx, "update instance: store.GetInstance returned error", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "update instance: store.GetInstance returned error", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
@@ -221,7 +221,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	logData["requested_state"] = instance.State
 	if instance.State != "" && instance.State != currentInstance.State {
 		if err = validateInstanceStateUpdate(instance, currentInstance); err != nil {
-			log.Event(ctx, "update instance: instance state invalid", log.ERROR, log.Error(err), logData)
+			log.Error(ctx, "update instance: instance state invalid", err, logData)
 			handleInstanceErr(ctx, err, w, logData)
 			return
 		}
@@ -240,7 +240,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 		editionDoc, editionConfirmErr := s.confirmEdition(ctx, datasetID, edition, instanceID)
 		if editionConfirmErr != nil {
-			log.Event(ctx, "update instance: store.getEdition returned an error", log.ERROR, log.Error(editionConfirmErr), editionLogData)
+			log.Error(ctx, "update instance: store.getEdition returned an error", editionConfirmErr, editionLogData)
 			handleInstanceErr(ctx, editionConfirmErr, w, logData)
 			return
 		}
@@ -255,7 +255,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		instance.Links.Version = editionDoc.Next.Links.LatestVersion
 		instance.Version, editionConfirmErr = strconv.Atoi(editionDoc.Next.Links.LatestVersion.ID)
 		if editionConfirmErr != nil {
-			log.Event(ctx, "update instance: failed to convert edition latestVersion id to instance.version int", log.ERROR, log.Error(editionConfirmErr), editionLogData)
+			log.Error(ctx, "update instance: failed to convert edition latestVersion id to instance.version int", editionConfirmErr, editionLogData)
 			handleInstanceErr(ctx, editionConfirmErr, w, logData)
 			return
 		}
@@ -263,36 +263,36 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		// update dp-graph instance node (only for non-cantabular types)
 		if currentInstance.Type == models.CantabularBlob.String() || currentInstance.Type == models.CantabularTable.String() {
 			editionLogData["instance_type"] = instance.Type
-			log.Event(ctx, "skipping dp-graph instance update because it is not required by instance type", log.INFO, editionLogData)
+			log.Info(ctx, "skipping dp-graph instance update because it is not required by instance type", editionLogData)
 		} else {
 			if versionErr := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); versionErr != nil {
-				log.Event(ctx, "update instance: datastore.AddVersionDetailsToInstance returned an error", log.ERROR, log.Error(versionErr), editionLogData)
+				log.Error(ctx, "update instance: datastore.AddVersionDetailsToInstance returned an error", versionErr, editionLogData)
 				handleInstanceErr(ctx, versionErr, w, logData)
 				return
 			}
 		}
 
-		log.Event(ctx, "update instance: added version details to instance", log.INFO, editionLogData)
+		log.Info(ctx, "update instance: added version details to instance", editionLogData)
 	}
 
 	// Set the current mongo timestamp on instance document
 	instance.UniqueTimestamp = currentInstance.UniqueTimestamp
 	newETag, err := s.UpdateInstance(ctx, currentInstance, instance, eTag)
 	if err != nil {
-		log.Event(ctx, "update instance: store.UpdateInstance returned an error", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "update instance: store.UpdateInstance returned an error", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
 
 	if instance, err = s.GetInstance(instanceID, newETag); err != nil {
-		log.Event(ctx, "update instance: store.GetInstance for response returned an error", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "update instance: store.GetInstance for response returned an error", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
 
 	b, err := json.Marshal(instance)
 	if err != nil {
-		log.Event(ctx, "add instance: failed to marshal instance to json", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "add instance: failed to marshal instance to json", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
@@ -302,7 +302,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	writeBody(ctx, w, b, logData)
 
-	log.Event(ctx, "update instance: request successful", log.INFO, logData)
+	log.Info(ctx, "update instance: request successful", logData)
 }
 
 func validateInstanceUpdate(instance *models.Instance) error {
@@ -413,7 +413,7 @@ func unmarshalInstance(ctx context.Context, reader io.Reader, post bool) (*model
 		id := uuid.NewV4()
 
 		instance.InstanceID = id.String()
-		log.Event(ctx, "post request on an instance", log.INFO, log.Data{"instance_id": instance.InstanceID})
+		log.Info(ctx, "post request on an instance", log.Data{"instance_id": instance.InstanceID})
 		if instance.Links == nil || instance.Links.Job == nil {
 			return nil, errs.ErrMissingJobProperties
 		}
@@ -453,7 +453,7 @@ func setETag(w http.ResponseWriter, eTag string) {
 
 func writeBody(ctx context.Context, w http.ResponseWriter, b []byte, logData log.Data) {
 	if _, err := w.Write(b); err != nil {
-		log.Event(ctx, "failed to write http response body", log.FATAL, log.Error(err), logData)
+		log.Fatal(ctx, "failed to write http response body", err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -473,7 +473,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 		logData := log.Data{"action": "CheckAction", "instance_id": instanceID}
 
 		if err := d.checkState(instanceID, eTag); err != nil {
-			log.Event(ctx, "errored whilst checking instance state", log.ERROR, log.Error(err), logData)
+			log.Error(ctx, "errored whilst checking instance state", err, logData)
 			handleInstanceErr(ctx, err, w, logData)
 			return
 		}
@@ -526,6 +526,6 @@ func handleInstanceErr(ctx context.Context, err error, w http.ResponseWriter, lo
 	}
 
 	logData["responseStatus"] = status
-	log.Event(ctx, "request unsuccessful", log.ERROR, log.Error(err), logData)
+	log.Error(ctx, "request unsuccessful", err, logData)
 	http.Error(w, response.Error(), status)
 }

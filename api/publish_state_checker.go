@@ -10,7 +10,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	dphttp "github.com/ONSdigital/dp-net/http"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -32,7 +32,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 		data := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 		versionId, err := models.ValidateVersionNumber(ctx, version)
 		if err != nil {
-			log.Event(ctx, "failed due to invalid version request", log.ERROR, log.Error(err), data)
+			log.Error(ctx, "failed due to invalid version request", err, data)
 			dphttp.DrainBody(r)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -41,7 +41,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 		currentVersion, err := d.Datastore.GetVersion(datasetID, edition, versionId, "")
 		if err != nil {
 			if err != errs.ErrVersionNotFound {
-				log.Event(ctx, "errored whilst retrieving version resource", log.ERROR, log.Error(err), data)
+				log.Error(ctx, "errored whilst retrieving version resource", err, data)
 				dphttp.DrainBody(r)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -64,7 +64,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 				if action == updateVersionAction {
 					versionDoc, err := models.CreateVersion(r.Body, datasetID)
 					if err != nil {
-						log.Event(ctx, "failed to model version resource based on request", log.ERROR, log.Error(err), data)
+						log.Error(ctx, "failed to model version resource based on request", err, data)
 						dphttp.DrainBody(r)
 						http.Error(w, err.Error(), http.StatusBadRequest)
 						return
@@ -100,14 +100,14 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 							var b []byte
 							b, err = json.Marshal(newVersion)
 							if err != nil {
-								log.Event(ctx, "failed to marshal new version resource based on request", log.ERROR, log.Error(err), data)
+								log.Error(ctx, "failed to marshal new version resource based on request", err, data)
 								dphttp.DrainBody(r)
 								http.Error(w, err.Error(), http.StatusForbidden)
 								return
 							}
 
 							if err = r.Body.Close(); err != nil {
-								log.Event(ctx, "could not close response body", log.ERROR, log.Error(err), data)
+								log.Error(ctx, "could not close response body", err, data)
 							}
 
 							// Set variable `has_downloads` to true to prevent request
@@ -122,7 +122,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 
 				err = errors.New("unable to update version as it has been published")
 				data["version"] = currentVersion
-				log.Event(ctx, "failed to update version", log.ERROR, log.Error(err), data)
+				log.Error(ctx, "failed to update version", err, data)
 				dphttp.DrainBody(r)
 				http.Error(w, err.Error(), http.StatusForbidden)
 				return
