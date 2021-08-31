@@ -76,15 +76,30 @@ func (m *Mongo) UpsertDimensionsToInstance(opts []*models.CachedDimensionOption)
 		option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/code-lists/%s", m.CodeListURL, opt.CodeList)}
 		option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.CodeListURL, opt.CodeList, opt.Code)}
 		option.LastUpdated = now
-		bulk.Upsert(
+		if err := SafeUpsert(
+			bulk,
 			bson.M{"instance_id": option.InstanceID, "name": option.Name, "option": option.Option},
 			&option,
-		)
+		); err != nil {
+			return fmt.Errorf("error trying to upsert: %w", err)
+		}
 	}
 
 	// execute the upserts in bulk
 	_, err := bulk.Run()
 	return err
+}
+
+func SafeUpsert(b *mgo.Bulk, pairs ...interface{}) (err error) {
+	defer func() {
+		if recover() != nil {
+			// The return result can be altered
+			// in a defer function call.
+			err = errors.New("upsert panicked")
+		}
+	}()
+	b.Upsert(pairs...) // Do normal Upsert which may throw a panic
+	return nil
 }
 
 // GetDimensions returns a list of all dimensions from a dataset
