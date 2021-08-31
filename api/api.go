@@ -16,7 +16,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/url"
 	dphandlers "github.com/ONSdigital/dp-net/handlers"
 	dprequest "github.com/ONSdigital/dp-net/request"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 )
 
@@ -91,7 +91,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)
 
 	if api.enablePrivateEndpoints {
-		log.Event(ctx, "enabling private endpoints for dataset api", log.INFO)
+		log.Info(ctx, "enabling private endpoints for dataset api")
 
 		api.versionPublishedChecker = &PublishCheck{
 			Datastore: api.dataStore.Backend,
@@ -116,7 +116,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		api.enablePrivateInstancesEndpoints(instanceAPI, paginator)
 		api.enablePrivateDimensionsEndpoints(dimensionAPI, paginator)
 	} else {
-		log.Event(ctx, "enabling only public endpoints for dataset api", log.INFO)
+		log.Info(ctx, "enabling only public endpoints for dataset api")
 		api.enablePublicEndpoints(ctx, paginator)
 	}
 	return api

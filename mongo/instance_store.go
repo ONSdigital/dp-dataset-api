@@ -7,7 +7,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dpmongo "github.com/ONSdigital/dp-mongodb"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 )
@@ -144,7 +144,7 @@ func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance 
 
 	logData := log.Data{"instance_id": instanceID}
 
-	log.Event(ctx, "building update query for instance resource", log.INFO, logData)
+	log.Info(ctx, "building update query for instance resource", logData)
 
 	if instance.Alerts != nil {
 		updates["alerts"] = instance.Alerts
@@ -267,7 +267,7 @@ func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance 
 	}
 
 	logData["updates"] = updates
-	log.Event(ctx, "built update query for instance resource", log.INFO, logData)
+	log.Info(ctx, "built update query for instance resource", logData)
 
 	return updates
 }

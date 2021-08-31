@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/pkg/errors"
 )
 
@@ -68,7 +68,7 @@ func (gen *Generator) Generate(ctx context.Context, datasetID string, instanceID
 		Version:    version,
 	}
 
-	log.Event(ctx, "send generate downloads event", log.INFO, log.Data{
+	log.Info(ctx, "send generate downloads event", log.Data{
 		"datasetID":  datasetID,
 		"instanceID": instanceID,
 		"edition":    edition,

@@ -11,7 +11,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dprequest "github.com/ONSdigital/dp-net/request"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 )
 
 const (
@@ -77,5 +77,5 @@ func logError(ctx context.Context, err error, data log.Data) {
 	if caller := dprequest.Caller(ctx); caller != "" {
 		data[reqCaller] = caller
 	}
-	log.Event(ctx, "unsuccessful request", log.ERROR, log.Error(err), data)
+	log.Error(ctx, "unsuccessful request", err, data)
 }

@@ -10,7 +10,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/mux"
 )
@@ -48,19 +48,19 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 
 		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionNumber, state)
 		if err != nil {
-			log.Event(ctx, "datastore.getversion returned an error", log.ERROR, log.Error(err), logData)
+			log.Error(ctx, "datastore.getversion returned an error", err, logData)
 			return nil, 0, err
 		}
 
 		if err = models.CheckState("version", versionDoc.State); err != nil {
 			logData["state"] = versionDoc.State
-			log.Event(ctx, "unpublished version has an invalid state", log.ERROR, log.Error(err), logData)
+			log.Error(ctx, "unpublished version has an invalid state", err, logData)
 			return nil, 0, err
 		}
 
 		dimensions, err := api.dataStore.Backend.GetDimensions(datasetID, versionDoc.ID)
 		if err != nil {
-			log.Event(ctx, "failed to get version dimensions", log.ERROR, log.Error(err), logData)
+			log.Error(ctx, "failed to get version dimensions", err, logData)
 			return nil, 0, err
 		}
 
@@ -69,7 +69,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 		if limit > 0 {
 			results, err := api.createListOfDimensions(versionDoc, dimensions)
 			if err != nil {
-				log.Event(ctx, "failed to convert bson to dimension", log.ERROR, log.Error(err), logData)
+				log.Error(ctx, "failed to convert bson to dimension", err, logData)
 				return nil, 0, err
 			}
 
@@ -149,7 +149,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 
 	versionName, err := models.ValidateVersionNumber(ctx, versionID)
 	if err != nil {
-		log.Event(ctx, "invalid version requested", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "invalid version requested", err, logData)
 		handleDimensionsErr(ctx, w, "invalid version", err, logData)
 		return nil, 0, err
 	}
@@ -222,7 +222,7 @@ func handleDimensionsErr(ctx context.Context, w http.ResponseWriter, msg string,
 	case apierrors.ErrInvalidPatch:
 		data["response_status"] = http.StatusBadRequest
 		data["user_error"] = err.Error()
-		log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, data)
+		log.Error(ctx, fmt.Sprintf("request unsuccessful: %s", msg), err, data)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	default:
 		// Switch by error message
@@ -230,17 +230,17 @@ func handleDimensionsErr(ctx context.Context, w http.ResponseWriter, msg string,
 		case errs.BadRequestMap[err]:
 			data["response_status"] = http.StatusBadRequest
 			data["user_error"] = err.Error()
-			log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, data)
+			log.Error(ctx, fmt.Sprintf("request unsuccessful: %s", msg), err, data)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		case errs.NotFoundMap[err]:
 			data["response_status"] = http.StatusNotFound
 			data["user_error"] = err.Error()
-			log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, data)
+			log.Error(ctx, fmt.Sprintf("request unsuccessful: %s", msg), err, data)
 			http.Error(w, err.Error(), http.StatusNotFound)
 		default:
 			// a stack trace is added for Non User errors
 			data["response_status"] = http.StatusInternalServerError
-			log.Event(ctx, fmt.Sprintf("request unsuccessful: %s", msg), log.ERROR, log.Error(err), data)
+			log.Error(ctx, fmt.Sprintf("request unsuccessful: %s", msg), err, data)
 			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 		}
 	}

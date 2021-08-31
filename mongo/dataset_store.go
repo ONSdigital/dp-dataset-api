@@ -8,7 +8,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 )
@@ -269,7 +269,7 @@ func (m *Mongo) UpdateDataset(ctx context.Context, id string, dataset *models.Da
 func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Dataset, currentState string) bson.M {
 	updates := make(bson.M)
 
-	log.Event(ctx, "building update query for dataset resource", log.INFO, log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
+	log.Info(ctx, "building update query for dataset resource", log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
 
 	if dataset.CollectionID != "" {
 		updates["next.collection_id"] = dataset.CollectionID
@@ -381,7 +381,7 @@ func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Da
 		updates["next.nomis_reference_url"] = dataset.NomisReferenceURL
 	}
 
-	log.Event(ctx, "built update query for dataset resource", log.INFO, log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
+	log.Info(ctx, "built update query for dataset resource", log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
 
 	return updates
 }
@@ -608,10 +608,10 @@ func (m *Mongo) Ping(ctx context.Context) (time.Time, error) {
 
 	wg.Add(1)
 	go func() {
-		log.Event(ctx, "db ping", log.INFO)
+		log.Info(ctx, "db ping")
 		err := s.Ping()
 		if err != nil {
-			log.Event(ctx, "Ping mongo", log.ERROR, log.Error(err))
+			log.Error(ctx, "Ping mongo", err)
 		}
 		pingDoneChan <- err
 		wg.Done()

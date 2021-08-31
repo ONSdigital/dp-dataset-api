@@ -18,7 +18,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -673,10 +673,10 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		ctx := context.Background()
 		select {
 		case <-downloadsGenerated:
-			log.Event(ctx, "download generated as expected", log.INFO)
+			log.Info(ctx, "download generated as expected")
 		case <-time.After(time.Second * 10):
 			err := errors.New("failing test due to timeout")
-			log.Event(ctx, "timed out", log.ERROR, log.Error(err))
+			log.Error(ctx, "timed out", err)
 			t.Fail()
 		}
 

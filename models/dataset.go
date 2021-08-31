@@ -12,7 +12,7 @@ import (
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 )
@@ -368,7 +368,7 @@ func (ed *EditionUpdate) UpdateLinks(ctx context.Context, host string) error {
 	}
 
 	if currentVersion > version {
-		log.Event(ctx, "published edition links to a higher version than the requested change", log.INFO, log.Data{"doc": ed, "versionID": versionID})
+		log.Info(ctx, "published edition links to a higher version than the requested change", log.Data{"doc": ed, "versionID": versionID})
 		return errors.New("published edition links to a higher version than the requested change")
 	}
 
@@ -410,7 +410,7 @@ func (ed *EditionUpdate) PublishLinks(ctx context.Context, host string, versionL
 	}
 
 	if currentVersion > version {
-		log.Event(ctx, "current latest version is higher, no edition update required", log.INFO, log.Data{"doc": ed, "currentVersionID": currentVersion, "versionID": versionLink.ID})
+		log.Info(ctx, "current latest version is higher, no edition update required", log.Data{"doc": ed, "currentVersionID": currentVersion, "versionID": versionLink.ID})
 		return nil
 	}
 
@@ -490,7 +490,7 @@ func validateUrlString(urlString string, identifier string) (invalidFields []str
 func ValidateDatasetType(ctx context.Context, datasetType string) (*DatasetType, error) {
 	dataType, err := GetDatasetType(datasetType)
 	if err != nil {
-		log.Event(ctx, "error Invalid dataset type", log.ERROR, log.Error(err))
+		log.Error(ctx, "error Invalid dataset type", err)
 		return nil, err
 	}
 	return &dataType, nil
@@ -500,7 +500,7 @@ func ValidateDatasetType(ctx context.Context, datasetType string) (*DatasetType,
 func ValidateNomisURL(ctx context.Context, datasetType string, nomisURL string) (string, error) {
 
 	if nomisURL != "" && datasetType != Nomis.String() {
-		log.Event(ctx, "error Type mismatch", log.ERROR, log.Error(errs.ErrDatasetTypeInvalid))
+		log.Error(ctx, "error Type mismatch", errs.ErrDatasetTypeInvalid)
 		return "", errs.ErrTypeMismatch
 	}
 	return datasetType, nil
@@ -585,12 +585,12 @@ func ValidateVersion(version *Version) error {
 func ValidateVersionNumber(ctx context.Context, version string) (int, error) {
 	versionNumber, err := strconv.Atoi(version)
 	if err != nil {
-		log.Event(ctx, "invalid version provided", log.ERROR, log.Error(err), log.Data{"version": version})
+		log.Error(ctx, "invalid version provided", err, log.Data{"version": version})
 		return versionNumber, errs.ErrInvalidVersion
 	}
 
 	if !(versionNumber > 0) {
-		log.Event(ctx, "version is not a positive integer", log.ERROR, log.Error(errs.ErrInvalidVersion), log.Data{"version": version})
+		log.Error(ctx, "version is not a positive integer", errs.ErrInvalidVersion, log.Data{"version": version})
 		return versionNumber, errs.ErrInvalidVersion
 	}
 

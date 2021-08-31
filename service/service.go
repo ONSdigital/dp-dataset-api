@@ -16,7 +16,7 @@ import (
 	kafka "github.com/ONSdigital/dp-kafka/v2"
 	dphandlers "github.com/ONSdigital/dp-net/handlers"
 	dphttp "github.com/ONSdigital/dp-net/http"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"github.com/pkg/errors"
@@ -90,19 +90,19 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	// Get MongoDB connection
 	svc.mongoDB, err = svc.serviceList.GetMongoDB(ctx, svc.config)
 	if err != nil {
-		log.Event(ctx, "could not obtain mongo session", log.ERROR, log.Error(err))
+		log.Error(ctx, "could not obtain mongo session", err)
 		return err
 	}
 
 	// Get graphDB connection for observation store
 	if !svc.config.EnablePrivateEndpoints || svc.config.DisableGraphDBDependency {
-		log.Event(ctx, "skipping graph DB client creation, because it is not required by the enabled endpoints", log.INFO, log.Data{
+		log.Info(ctx, "skipping graph DB client creation, because it is not required by the enabled endpoints", log.Data{
 			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
 		})
 	} else {
 		svc.graphDB, svc.graphDBErrorConsumer, err = svc.serviceList.GetGraphDB(ctx)
 		if err != nil {
-			log.Event(ctx, "failed to initialise graph driver", log.FATAL, log.Error(err))
+			log.Fatal(ctx, "failed to initialise graph driver", err)
 			return err
 		}
 	}
@@ -110,13 +110,13 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 
 	// Get GenerateDownloads Kafka Producer
 	if !svc.config.EnablePrivateEndpoints {
-		log.Event(ctx, "skipping kafka producer creation, because it is not required by the enabled endpoints", log.INFO, log.Data{
+		log.Info(ctx, "skipping kafka producer creation, because it is not required by the enabled endpoints", log.Data{
 			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
 		})
 	} else {
 		svc.generateDownloadsProducer, err = svc.serviceList.GetProducer(ctx, svc.config)
 		if err != nil {
-			log.Event(ctx, "could not obtain generate downloads producer", log.FATAL, log.Error(err))
+			log.Fatal(ctx, "could not obtain generate downloads producer", err)
 			return err
 		}
 	}
@@ -134,7 +134,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	// Get HealthCheck
 	svc.healthCheck, err = svc.serviceList.GetHealthCheck(svc.config, buildTime, gitCommit, version)
 	if err != nil {
-		log.Event(ctx, "could not instantiate healthcheck", log.FATAL, log.Error(err))
+		log.Fatal(ctx, "could not instantiate healthcheck", err)
 		return err
 	}
 	if err := svc.registerCheckers(ctx); err != nil {
@@ -170,11 +170,11 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 
 func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (api.AuthHandler, api.AuthHandler) {
 	if !cfg.EnablePermissionsAuth {
-		log.Event(ctx, "feature flag not enabled defaulting to nop auth impl", log.INFO, log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
+		log.Info(ctx, "feature flag not enabled defaulting to nop auth impl", log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
 		return &auth.NopHandler{}, &auth.NopHandler{}
 	}
 
-	log.Event(ctx, "feature flag enabled", log.INFO, log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
+	log.Info(ctx, "feature flag enabled", log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
 
 	authClient := auth.NewPermissionsClient(dphttp.NewClient())
 	authVerifier := auth.DefaultPermissionsVerifier()
@@ -236,7 +236,7 @@ func newMiddleware(healthcheckHandler func(http.ResponseWriter, *http.Request), 
 // Close gracefully shuts the service down in the required order, with timeout
 func (svc *Service) Close(ctx context.Context) error {
 	timeout := svc.config.GracefulShutdownTimeout
-	log.Event(ctx, "commencing graceful shutdown", log.Data{"graceful_shutdown_timeout": timeout}, log.INFO)
+	log.Info(ctx, "commencing graceful shutdown", log.Data{"graceful_shutdown_timeout": timeout})
 	shutdownContext, cancel := context.WithTimeout(ctx, timeout)
 	hasShutdownError := false
 
@@ -251,34 +251,34 @@ func (svc *Service) Close(ctx context.Context) error {
 
 		// stop any incoming requests
 		if err := svc.server.Shutdown(shutdownContext); err != nil {
-			log.Event(shutdownContext, "failed to shutdown http server", log.Error(err), log.ERROR)
+			log.Error(shutdownContext, "failed to shutdown http server", err)
 			hasShutdownError = true
 		}
 
 		// Close MongoDB (if it exists)
 		if svc.serviceList.MongoDB {
 			if err := svc.mongoDB.Close(shutdownContext); err != nil {
-				log.Event(shutdownContext, "failed to close mongo db session", log.ERROR, log.Error(err))
+				log.Error(shutdownContext, "failed to close mongo db session", err)
 				hasShutdownError = true
 			}
 		}
 
 		// Close GenerateDownloadsProducer (if it exists)
 		if svc.serviceList.GenerateDownloadsProducer {
-			log.Event(shutdownContext, "closing generated downloads kafka producer", log.INFO, log.Data{"producer": "DimensionExtracted"})
+			log.Info(shutdownContext, "closing generated downloads kafka producer", log.Data{"producer": "DimensionExtracted"})
 			svc.generateDownloadsProducer.Close(shutdownContext)
-			log.Event(shutdownContext, "closed generated downloads kafka producer", log.INFO, log.Data{"producer": "DimensionExtracted"})
+			log.Info(shutdownContext, "closed generated downloads kafka producer", log.Data{"producer": "DimensionExtracted"})
 		}
 
 		// Close GraphDB (if it exists)
 		if svc.serviceList.Graph {
 			if err := svc.graphDB.Close(shutdownContext); err != nil {
-				log.Event(shutdownContext, "failed to close graph db", log.ERROR, log.Error(err))
+				log.Error(shutdownContext, "failed to close graph db", err)
 				hasShutdownError = true
 			}
 
 			if err := svc.graphDBErrorConsumer.Close(shutdownContext); err != nil {
-				log.Event(shutdownContext, "failed to close graph db error consumer", log.ERROR, log.Error(err))
+				log.Error(shutdownContext, "failed to close graph db error consumer", err)
 				hasShutdownError = true
 			}
 		}
@@ -289,18 +289,18 @@ func (svc *Service) Close(ctx context.Context) error {
 
 	// timeout expired
 	if shutdownContext.Err() == context.DeadlineExceeded {
-		log.Event(shutdownContext, "shutdown timed out", log.ERROR, log.Error(shutdownContext.Err()))
+		log.Error(shutdownContext, "shutdown timed out", shutdownContext.Err())
 		return shutdownContext.Err()
 	}
 
 	// other error
 	if hasShutdownError {
 		err := errors.New("failed to shutdown gracefully")
-		log.Event(shutdownContext, "failed to shutdown gracefully ", log.ERROR, log.Error(err))
+		log.Error(shutdownContext, "failed to shutdown gracefully ", err)
 		return err
 	}
 
-	log.Event(shutdownContext, "graceful shutdown was successful", log.INFO)
+	log.Info(shutdownContext, "graceful shutdown was successful")
 	return nil
 }
 
@@ -309,29 +309,29 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 	hasErrors := false
 
 	if svc.config.EnablePrivateEndpoints {
-		log.Event(ctx, "private endpoints enabled: adding kafka and zebedee health checks", log.INFO)
+		log.Info(ctx, "private endpoints enabled: adding kafka and zebedee health checks")
 		if err = svc.healthCheck.AddCheck("Zebedee", svc.identityClient.Checker); err != nil {
 			hasErrors = true
-			log.Event(ctx, "error adding check for zebedeee", log.ERROR, log.Error(err))
+			log.Error(ctx, "error adding check for zebedeee", err)
 		}
 
 		if err = svc.healthCheck.AddCheck("Kafka Generate Downloads Producer", svc.generateDownloadsProducer.Checker); err != nil {
 			hasErrors = true
-			log.Event(ctx, "error adding check for kafka downloads producer", log.ERROR, log.Error(err))
+			log.Error(ctx, "error adding check for kafka downloads producer", err)
 		}
 
 		if !svc.config.DisableGraphDBDependency {
-			log.Event(ctx, "private endpoints enabled: adding graph db health check", log.INFO)
+			log.Info(ctx, "private endpoints enabled: adding graph db health check")
 			if err = svc.healthCheck.AddCheck("Graph DB", svc.graphDB.Checker); err != nil {
 				hasErrors = true
-				log.Event(ctx, "error adding check for graph db", log.ERROR, log.Error(err))
+				log.Error(ctx, "error adding check for graph db", err)
 			}
 		}
 	}
 
 	if err = svc.healthCheck.AddCheck("Mongo DB", svc.mongoDB.Checker); err != nil {
 		hasErrors = true
-		log.Event(ctx, "error adding check for mongo db", log.ERROR, log.Error(err))
+		log.Error(ctx, "error adding check for mongo db", err)
 	}
 
 	if hasErrors {

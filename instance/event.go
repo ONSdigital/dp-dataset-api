@@ -8,7 +8,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 )
 
@@ -40,13 +40,13 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 
 	event, err := unmarshalEvent(r.Body)
 	if err != nil {
-		log.Event(ctx, "add instance event: failed to unmarshal request body", log.ERROR, log.Error(err), data)
+		log.Error(ctx, "add instance event: failed to unmarshal request body", err, data)
 		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
 	if err = event.Validate(); err != nil {
-		log.Event(ctx, "add instance event: failed to validate event object", log.ERROR, log.Error(err), data)
+		log.Error(ctx, "add instance event: failed to validate event object", err, data)
 		handleInstanceErr(ctx, err, w, data)
 		return
 	}
@@ -60,18 +60,18 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 
 	instance, err := s.GetInstance(instanceID, eTag)
 	if err != nil {
-		log.Event(ctx, "add instance event: failed to get instance from datastore", log.ERROR, log.Error(err), data)
+		log.Error(ctx, "add instance event: failed to get instance from datastore", err, data)
 		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
 	newETag, err := s.AddEventToInstance(instance, event, eTag)
 	if err != nil {
-		log.Event(ctx, "add instance event: failed to add event to instance in datastore", log.ERROR, log.Error(err), data)
+		log.Error(ctx, "add instance event: failed to add event to instance in datastore", err, data)
 		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
-	log.Event(ctx, "add instance event: request successful", log.INFO, data)
+	log.Info(ctx, "add instance event: request successful", data)
 	setETag(w, newETag)
 }

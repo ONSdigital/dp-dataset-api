@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 )
 
 // ListFetcher is an interface for an endpoint that returns a list of values that we want to paginate
@@ -50,7 +50,7 @@ func (p *Paginator) getPaginationParameters(w http.ResponseWriter, r *http.Reque
 		offset, err = strconv.Atoi(offsetParameter)
 		if err != nil || offset < 0 {
 			err = errors.New("invalid query parameter")
-			log.Event(r.Context(), "invalid query parameter: offset", log.ERROR, log.Error(err), logData)
+			log.Error(r.Context(), "invalid query parameter: offset", err, logData)
 			return 0, 0, err
 		}
 	}
@@ -60,7 +60,7 @@ func (p *Paginator) getPaginationParameters(w http.ResponseWriter, r *http.Reque
 		limit, err = strconv.Atoi(limitParameter)
 		if err != nil || limit < 0 {
 			err = errors.New("invalid query parameter")
-			log.Event(r.Context(), "invalid query parameter: limit", log.ERROR, log.Error(err), logData)
+			log.Error(r.Context(), "invalid query parameter: limit", err, logData)
 			return 0, 0, err
 		}
 	}
@@ -68,7 +68,7 @@ func (p *Paginator) getPaginationParameters(w http.ResponseWriter, r *http.Reque
 	if limit > p.DefaultMaxLimit {
 		logData["max_limit"] = p.DefaultMaxLimit
 		err = errors.New("invalid query parameter")
-		log.Event(r.Context(), "limit is greater than the maximum allowed", log.ERROR, logData)
+		log.Error(r.Context(), "limit is greater than the maximum allowed", err, logData)
 		return 0, 0, err
 	}
 	return
@@ -117,7 +117,7 @@ func returnPaginatedResults(w http.ResponseWriter, r *http.Request, list page) {
 	b, err := json.Marshal(list)
 
 	if err != nil {
-		log.Event(r.Context(), "api endpoint failed to marshal resource into bytes", log.ERROR, log.Error(err), logData)
+		log.Error(r.Context(), "api endpoint failed to marshal resource into bytes", err, logData)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
@@ -125,9 +125,9 @@ func returnPaginatedResults(w http.ResponseWriter, r *http.Request, list page) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if _, err = w.Write(b); err != nil {
-		log.Event(r.Context(), "api endpoint error writing response body", log.ERROR, log.Error(err), logData)
+		log.Error(r.Context(), "api endpoint error writing response body", err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.Event(r.Context(), "api endpoint request successful", log.INFO, logData)
+	log.Info(r.Context(), "api endpoint request successful", logData)
 }
