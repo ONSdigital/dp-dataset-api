@@ -76,7 +76,7 @@ func Get() (*Configuration, error) {
 		DefaultMaxLimit:            1000,
 		DefaultLimit:               20,
 		DefaultOffset:              0,
-		MaxRequestOptions:          1000, // Maximum number of options acceptable in an incoming Patch request. Compromise between one option per call (inefficient) and an order of 100k options per call, for census data (memory and computationally expensive)
+		MaxRequestOptions:          100, // Maximum number of options acceptable in an incoming Patch request. Compromise between one option per call (inefficient) and an order of 100k options per call, for census data (memory and computationally expensive)
 		MongoConfig: MongoConfig{
 			BindAddr:   "localhost:27017",
 			Collection: "datasets",

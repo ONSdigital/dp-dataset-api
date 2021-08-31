@@ -82,9 +82,9 @@ func validateDimensionsUpserted(mockedDataStore *storetest.StorerMock, instanceI
 	}
 
 	// validate Upsert calls
-	So(mockedDataStore.AddDimensionsToInstanceCalls(), ShouldHaveLength, len(expectedUpserts))
+	So(mockedDataStore.UpsertDimensionsToInstanceCalls(), ShouldHaveLength, len(expectedUpserts))
 	for i, expected := range expectedUpserts {
-		So(mockedDataStore.AddDimensionsToInstanceCalls()[i].Dimensions, ShouldResemble, expected)
+		So(mockedDataStore.UpsertDimensionsToInstanceCalls()[i].Dimensions, ShouldResemble, expected)
 	}
 }
 
@@ -692,7 +692,7 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 			So(*isLocked, ShouldBeTrue)
 			return testETag, nil
 		}
-		mockedDataStore.AddDimensionsToInstanceFunc = func(dimension []*models.CachedDimensionOption) error {
+		mockedDataStore.UpsertDimensionsToInstanceFunc = func(dimension []*models.CachedDimensionOption) error {
 			So(*isLocked, ShouldBeTrue)
 			return nil
 		}
@@ -723,8 +723,8 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 				So(mockedDataStore.UpdateETagForOptionsCalls(), ShouldHaveLength, 1)
 				So(mockedDataStore.UpdateETagForOptionsCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
 				So(mockedDataStore.UpdateETagForOptionsCalls()[0].Options[0], ShouldResemble, expected)
-				So(mockedDataStore.AddDimensionsToInstanceCalls(), ShouldHaveLength, 1)
-				So(mockedDataStore.AddDimensionsToInstanceCalls()[0].Dimensions[0], ShouldResemble, expected)
+				So(mockedDataStore.UpsertDimensionsToInstanceCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.UpsertDimensionsToInstanceCalls()[0].Dimensions[0], ShouldResemble, expected)
 			})
 
 			Convey("Then the db lock is acquired and released as expected", func() {
@@ -756,8 +756,8 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 				So(mockedDataStore.UpdateETagForOptionsCalls(), ShouldHaveLength, 1)
 				So(mockedDataStore.UpdateETagForOptionsCalls()[0].ETagSelector, ShouldEqual, AnyETag)
 				So(mockedDataStore.UpdateETagForOptionsCalls()[0].Options[0], ShouldResemble, expected)
-				So(mockedDataStore.AddDimensionsToInstanceCalls(), ShouldHaveLength, 1)
-				So(mockedDataStore.AddDimensionsToInstanceCalls()[0].Dimensions[0], ShouldResemble, expected)
+				So(mockedDataStore.UpsertDimensionsToInstanceCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.UpsertDimensionsToInstanceCalls()[0].Dimensions[0], ShouldResemble, expected)
 			})
 		})
 	})
@@ -783,7 +783,7 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 			So(*isLocked, ShouldBeTrue)
 			return testETag, nil
 		}
-		mockedDataStore.AddDimensionsToInstanceFunc = func(dimension []*models.CachedDimensionOption) error {
+		mockedDataStore.UpsertDimensionsToInstanceFunc = func(dimension []*models.CachedDimensionOption) error {
 			So(*isLocked, ShouldBeTrue)
 			return errs.ErrDimensionNodeNotFound
 		}
@@ -805,8 +805,8 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 		So(mockedDataStore.UpdateETagForOptionsCalls()[0].ETagSelector, ShouldEqual, "*")
 		So(mockedDataStore.UpdateETagForOptionsCalls()[0].Options[0], ShouldResemble, expected)
 
-		So(mockedDataStore.AddDimensionsToInstanceCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.AddDimensionsToInstanceCalls()[0].Dimensions[0], ShouldResemble, expected)
+		So(mockedDataStore.UpsertDimensionsToInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpsertDimensionsToInstanceCalls()[0].Dimensions[0], ShouldResemble, expected)
 		So(*isLocked, ShouldBeFalse)
 	})
 }
@@ -1256,7 +1256,7 @@ func TestPatchDimensions(t *testing.T) {
 			numUpdateCall++
 			return newETag, nil
 		}
-		mockedDataStore.AddDimensionsToInstanceFunc = func(dimensions []*models.CachedDimensionOption) error {
+		mockedDataStore.UpsertDimensionsToInstanceFunc = func(dimensions []*models.CachedDimensionOption) error {
 			So(*isLocked, ShouldBeTrue)
 			return nil
 		}

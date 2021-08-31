@@ -19,7 +19,7 @@ type DataStore struct {
 
 // dataMongoDB represents the required methos to access data from mongoDB
 type dataMongoDB interface {
-	AddDimensionsToInstance(dimensions []*models.CachedDimensionOption) error
+	UpsertDimensionsToInstance(dimensions []*models.CachedDimensionOption) error
 	AddEventToInstance(currentInstance *models.Instance, event *models.Event, eTagSelector string) (newETag string, err error)
 	AddInstance(instance *models.Instance) (*models.Instance, error)
 	CheckDatasetExists(ID, state string) error

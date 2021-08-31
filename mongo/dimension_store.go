@@ -61,8 +61,8 @@ func (m *Mongo) GetUniqueDimensionAndOptions(ctx context.Context, id, dimension 
 	return values, len(values), nil
 }
 
-// AddDimensionsToInstance to the dimension collection
-func (m *Mongo) AddDimensionsToInstance(opts []*models.CachedDimensionOption) error {
+// UpsertDimensionsToInstance to the dimension collection
+func (m *Mongo) UpsertDimensionsToInstance(opts []*models.CachedDimensionOption) error {
 	s := m.Session.Copy()
 	defer s.Close()
 

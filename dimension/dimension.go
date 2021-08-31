@@ -162,7 +162,7 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer s.UnlockInstance(lockID)
 
-	newETag, err := s.add(ctx, instanceID, []*models.CachedDimensionOption{option}, logData, eTag)
+	newETag, err := s.upsert(ctx, instanceID, []*models.CachedDimensionOption{option}, logData, eTag)
 	if err != nil {
 		handleDimensionErr(ctx, w, err, logData)
 		return
@@ -189,10 +189,10 @@ func (s *Store) PatchDimensionsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	logData["patch_list"] = patches
+	logData["num_patches"] = len(patches)
 
 	// apply the patches to the instance dimensions
-	successfulPatches, newETag, err := s.patchDimensions(ctx, instanceID, patches, logData, eTag)
+	successfulPatches, newETag, err := s.applyPatchesForDimensions(ctx, instanceID, patches, logData, eTag)
 	if err != nil {
 		logData["successful_patches"] = successfulPatches
 		handleDimensionErr(ctx, w, err, logData)
@@ -213,7 +213,7 @@ func (s *Store) PatchDimensionsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Event(ctx, "successfully patched dimensions of an instance resource", log.INFO, logData)
 }
 
-func (s *Store) patchDimensions(ctx context.Context, instanceID string, patches []dprequest.Patch, logData log.Data, eTagSelector string) (successful []dprequest.Patch, newETag string, err error) {
+func (s *Store) applyPatchesForDimensions(ctx context.Context, instanceID string, patches []dprequest.Patch, logData log.Data, eTagSelector string) (successful []dprequest.Patch, newETag string, err error) {
 
 	// validate patches, including max values
 	totalValues := 0
@@ -237,6 +237,7 @@ func (s *Store) patchDimensions(ctx context.Context, instanceID string, patches 
 			return successful, "", apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("a maximum of %d overall dimension values can be provied in a set of patch operations, which has been exceeded", s.MaxRequestOptions)}
 		}
 	}
+	logData["total_patch_values"] = totalValues
 
 	// acquire instance lock so that the instance update and the dimension.options update are atomic
 	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
@@ -253,8 +254,8 @@ func (s *Store) patchDimensions(ctx context.Context, instanceID string, patches 
 			return successful, "", apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("provided values '%#v' is not a list of dimension options", patch.Value)}
 		}
 
-		// update values in database, updating the instance eTag
-		newETag, err = s.add(ctx, instanceID, options, logData, eTagSelector)
+		// upsert values in database, updating the instance eTag
+		newETag, err = s.upsert(ctx, instanceID, options, logData, eTagSelector)
 		if err != nil {
 			return successful, "", err
 		}
@@ -267,7 +268,7 @@ func (s *Store) patchDimensions(ctx context.Context, instanceID string, patches 
 	return successful, newETag, nil
 }
 
-func (s *Store) add(ctx context.Context, instanceID string, options []*models.CachedDimensionOption, logData log.Data, eTagSelector string) (newETag string, err error) {
+func (s *Store) upsert(ctx context.Context, instanceID string, options []*models.CachedDimensionOption, logData log.Data, eTagSelector string) (newETag string, err error) {
 
 	// Get instance
 	instance, err := s.GetInstance(instanceID, eTagSelector)
@@ -296,7 +297,7 @@ func (s *Store) add(ctx context.Context, instanceID string, options []*models.Ca
 	}
 
 	// Upsert dimension options in bulk
-	if err := s.AddDimensionsToInstance(options); err != nil {
+	if err := s.UpsertDimensionsToInstance(options); err != nil {
 		log.Event(ctx, "failed to upsert dimensions for an instance", log.ERROR, log.Error(err), logData)
 		return "", err
 	}
@@ -337,7 +338,7 @@ func (s *Store) PatchOptionHandler(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"instance_id": instanceID, "dimension": dimensionName, "option": option}
 
 	// unmarshal and validate the patch array
-	patches, err := createPatches(r.Body, dprequest.OpAdd)
+	patches, err := createPatches(r.Body, dprequest.OpAdd) // OpAdd Upserts all the items provided in the value array
 	if err != nil {
 		log.Event(ctx, "error obtaining patch from request body", log.ERROR, log.Error(err), logData)
 		http.Error(w, err.Error(), http.StatusBadRequest)

@@ -14,7 +14,6 @@ import (
 
 var (
 	lockMongoDBMockAcquireInstanceLock               sync.RWMutex
-	lockMongoDBMockAddDimensionsToInstance           sync.RWMutex
 	lockMongoDBMockAddEventToInstance                sync.RWMutex
 	lockMongoDBMockAddInstance                       sync.RWMutex
 	lockMongoDBMockCheckDatasetExists                sync.RWMutex
@@ -51,6 +50,7 @@ var (
 	lockMongoDBMockUpdateVersion                     sync.RWMutex
 	lockMongoDBMockUpsertContact                     sync.RWMutex
 	lockMongoDBMockUpsertDataset                     sync.RWMutex
+	lockMongoDBMockUpsertDimensionsToInstance        sync.RWMutex
 	lockMongoDBMockUpsertEdition                     sync.RWMutex
 	lockMongoDBMockUpsertVersion                     sync.RWMutex
 )
@@ -67,9 +67,6 @@ var _ store.MongoDB = &MongoDBMock{}
 //         mockedMongoDB := &MongoDBMock{
 //             AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
 // 	               panic("mock out the AcquireInstanceLock method")
-//             },
-//             AddDimensionsToInstanceFunc: func(dimensions []*models.CachedDimensionOption) error {
-// 	               panic("mock out the AddDimensionsToInstance method")
 //             },
 //             AddEventToInstanceFunc: func(currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
 // 	               panic("mock out the AddEventToInstance method")
@@ -179,6 +176,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //             UpsertDatasetFunc: func(ID string, datasetDoc *models.DatasetUpdate) error {
 // 	               panic("mock out the UpsertDataset method")
 //             },
+//             UpsertDimensionsToInstanceFunc: func(dimensions []*models.CachedDimensionOption) error {
+// 	               panic("mock out the UpsertDimensionsToInstance method")
+//             },
 //             UpsertEditionFunc: func(datasetID string, edition string, editionDoc *models.EditionUpdate) error {
 // 	               panic("mock out the UpsertEdition method")
 //             },
@@ -194,9 +194,6 @@ var _ store.MongoDB = &MongoDBMock{}
 type MongoDBMock struct {
 	// AcquireInstanceLockFunc mocks the AcquireInstanceLock method.
 	AcquireInstanceLockFunc func(ctx context.Context, instanceID string) (string, error)
-
-	// AddDimensionsToInstanceFunc mocks the AddDimensionsToInstance method.
-	AddDimensionsToInstanceFunc func(dimensions []*models.CachedDimensionOption) error
 
 	// AddEventToInstanceFunc mocks the AddEventToInstance method.
 	AddEventToInstanceFunc func(currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error)
@@ -306,6 +303,9 @@ type MongoDBMock struct {
 	// UpsertDatasetFunc mocks the UpsertDataset method.
 	UpsertDatasetFunc func(ID string, datasetDoc *models.DatasetUpdate) error
 
+	// UpsertDimensionsToInstanceFunc mocks the UpsertDimensionsToInstance method.
+	UpsertDimensionsToInstanceFunc func(dimensions []*models.CachedDimensionOption) error
+
 	// UpsertEditionFunc mocks the UpsertEdition method.
 	UpsertEditionFunc func(datasetID string, edition string, editionDoc *models.EditionUpdate) error
 
@@ -320,11 +320,6 @@ type MongoDBMock struct {
 			Ctx context.Context
 			// InstanceID is the instanceID argument value.
 			InstanceID string
-		}
-		// AddDimensionsToInstance holds details about calls to the AddDimensionsToInstance method.
-		AddDimensionsToInstance []struct {
-			// Dimensions is the dimensions argument value.
-			Dimensions []*models.CachedDimensionOption
 		}
 		// AddEventToInstance holds details about calls to the AddEventToInstance method.
 		AddEventToInstance []struct {
@@ -646,6 +641,11 @@ type MongoDBMock struct {
 			// DatasetDoc is the datasetDoc argument value.
 			DatasetDoc *models.DatasetUpdate
 		}
+		// UpsertDimensionsToInstance holds details about calls to the UpsertDimensionsToInstance method.
+		UpsertDimensionsToInstance []struct {
+			// Dimensions is the dimensions argument value.
+			Dimensions []*models.CachedDimensionOption
+		}
 		// UpsertEdition holds details about calls to the UpsertEdition method.
 		UpsertEdition []struct {
 			// DatasetID is the datasetID argument value.
@@ -697,37 +697,6 @@ func (mock *MongoDBMock) AcquireInstanceLockCalls() []struct {
 	lockMongoDBMockAcquireInstanceLock.RLock()
 	calls = mock.calls.AcquireInstanceLock
 	lockMongoDBMockAcquireInstanceLock.RUnlock()
-	return calls
-}
-
-// AddDimensionsToInstance calls AddDimensionsToInstanceFunc.
-func (mock *MongoDBMock) AddDimensionsToInstance(dimensions []*models.CachedDimensionOption) error {
-	if mock.AddDimensionsToInstanceFunc == nil {
-		panic("MongoDBMock.AddDimensionsToInstanceFunc: method is nil but MongoDB.AddDimensionsToInstance was just called")
-	}
-	callInfo := struct {
-		Dimensions []*models.CachedDimensionOption
-	}{
-		Dimensions: dimensions,
-	}
-	lockMongoDBMockAddDimensionsToInstance.Lock()
-	mock.calls.AddDimensionsToInstance = append(mock.calls.AddDimensionsToInstance, callInfo)
-	lockMongoDBMockAddDimensionsToInstance.Unlock()
-	return mock.AddDimensionsToInstanceFunc(dimensions)
-}
-
-// AddDimensionsToInstanceCalls gets all the calls that were made to AddDimensionsToInstance.
-// Check the length with:
-//     len(mockedMongoDB.AddDimensionsToInstanceCalls())
-func (mock *MongoDBMock) AddDimensionsToInstanceCalls() []struct {
-	Dimensions []*models.CachedDimensionOption
-} {
-	var calls []struct {
-		Dimensions []*models.CachedDimensionOption
-	}
-	lockMongoDBMockAddDimensionsToInstance.RLock()
-	calls = mock.calls.AddDimensionsToInstance
-	lockMongoDBMockAddDimensionsToInstance.RUnlock()
 	return calls
 }
 
@@ -2124,6 +2093,37 @@ func (mock *MongoDBMock) UpsertDatasetCalls() []struct {
 	lockMongoDBMockUpsertDataset.RLock()
 	calls = mock.calls.UpsertDataset
 	lockMongoDBMockUpsertDataset.RUnlock()
+	return calls
+}
+
+// UpsertDimensionsToInstance calls UpsertDimensionsToInstanceFunc.
+func (mock *MongoDBMock) UpsertDimensionsToInstance(dimensions []*models.CachedDimensionOption) error {
+	if mock.UpsertDimensionsToInstanceFunc == nil {
+		panic("MongoDBMock.UpsertDimensionsToInstanceFunc: method is nil but MongoDB.UpsertDimensionsToInstance was just called")
+	}
+	callInfo := struct {
+		Dimensions []*models.CachedDimensionOption
+	}{
+		Dimensions: dimensions,
+	}
+	lockMongoDBMockUpsertDimensionsToInstance.Lock()
+	mock.calls.UpsertDimensionsToInstance = append(mock.calls.UpsertDimensionsToInstance, callInfo)
+	lockMongoDBMockUpsertDimensionsToInstance.Unlock()
+	return mock.UpsertDimensionsToInstanceFunc(dimensions)
+}
+
+// UpsertDimensionsToInstanceCalls gets all the calls that were made to UpsertDimensionsToInstance.
+// Check the length with:
+//     len(mockedMongoDB.UpsertDimensionsToInstanceCalls())
+func (mock *MongoDBMock) UpsertDimensionsToInstanceCalls() []struct {
+	Dimensions []*models.CachedDimensionOption
+} {
+	var calls []struct {
+		Dimensions []*models.CachedDimensionOption
+	}
+	lockMongoDBMockUpsertDimensionsToInstance.RLock()
+	calls = mock.calls.UpsertDimensionsToInstance
+	lockMongoDBMockUpsertDimensionsToInstance.RUnlock()
 	return calls
 }
 
