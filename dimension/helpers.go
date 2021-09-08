@@ -12,6 +12,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dprequest "github.com/ONSdigital/dp-net/request"
 	"github.com/ONSdigital/log.go/v2/log"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -61,7 +62,7 @@ func handleDimensionErr(ctx context.Context, w http.ResponseWriter, err error, d
 			status = http.StatusConflict
 		default:
 			status = http.StatusInternalServerError
-			err = errs.ErrInternalServer
+			err = errors.WithMessage(err, errs.ErrInternalServer.Error())
 		}
 	}
 
