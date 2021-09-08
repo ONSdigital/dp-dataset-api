@@ -62,7 +62,7 @@ func handleDimensionErr(ctx context.Context, w http.ResponseWriter, err error, d
 			status = http.StatusConflict
 		default:
 			status = http.StatusInternalServerError
-			err = errors.WithMessage(err, errs.ErrInternalServer.Error())
+			err = errors.WithMessage(err, "internal error")
 		}
 	}
 
