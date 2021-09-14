@@ -7,7 +7,7 @@ replace github.com/coreos/etcd => github.com/coreos/etcd v3.3.24+incompatible
 require (
 	github.com/ONSdigital/dp-api-clients-go v1.43.0
 	github.com/ONSdigital/dp-authorisation v0.2.0
-	github.com/ONSdigital/dp-component-test v0.2.0
+	github.com/ONSdigital/dp-component-test v0.5.0
 	github.com/ONSdigital/dp-graph/v2 v2.7.1
 	github.com/ONSdigital/dp-healthcheck v1.1.0
 	github.com/ONSdigital/dp-kafka/v2 v2.4.1
@@ -19,7 +19,6 @@ require (
 	github.com/cucumber/godog v0.11.0
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20210803090616-8f023c250c89 // indirect
 	github.com/gorilla/mux v1.8.0
