@@ -15,7 +15,6 @@ require (
 	github.com/ONSdigital/dp-net v1.2.0
 	github.com/ONSdigital/go-ns v0.0.0-20200902154605-290c8b5ba5eb
 	github.com/ONSdigital/log.go/v2 v2.0.9
-	github.com/benweissmann/memongo v0.1.1
 	github.com/cucumber/godog v0.11.0
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
