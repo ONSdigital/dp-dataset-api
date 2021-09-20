@@ -14,8 +14,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/pagination"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
-	dphandlers "github.com/ONSdigital/dp-net/handlers"
-	dprequest "github.com/ONSdigital/dp-net/request"
+	dphandlers "github.com/ONSdigital/dp-net/v2/handlers"
+	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 )

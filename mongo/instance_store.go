@@ -7,6 +7,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dpmongo "github.com/ONSdigital/dp-mongodb"
+	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -16,7 +17,11 @@ import (
 // If the instance is already locked, this function will block until it's released,
 // at which point we acquire the lock and return.
 func (m *Mongo) AcquireInstanceLock(ctx context.Context, instanceID string) (lockID string, err error) {
-	return m.lockClient.Acquire(ctx, instanceID)
+	caller := dprequest.User(ctx)
+	if caller == "" {
+		caller = dprequest.Caller(ctx)
+	}
+	return m.lockClient.Acquire(ctx, instanceID, caller)
 }
 
 // UnlockInstance releases an exclusive mongoDB lock for the provided lockId (if it exists)

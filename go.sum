@@ -20,6 +20,9 @@ github.com/ONSdigital/dp-api-clients-go v1.40.0/go.mod h1:Ga1+ANjviu21NFJI9wp5Nc
 github.com/ONSdigital/dp-api-clients-go v1.41.1/go.mod h1:Ga1+ANjviu21NFJI9wp5NctJIdB4TJLDGbpQFl2V8Wc=
 github.com/ONSdigital/dp-api-clients-go v1.43.0 h1:0982P/YxnYXvba1RhEcFmwF3xywC4eXokWQ8YH3Mm24=
 github.com/ONSdigital/dp-api-clients-go v1.43.0/go.mod h1:V5MfINik+o3OAF985UXUoMjXIfrZe3JKYa5AhZn5jts=
+github.com/ONSdigital/dp-api-clients-go/v2 v2.1.7-beta/go.mod h1:p9Ig0jUJmOXYpsZFZkb+mBeUgNBKoTiTVqHt1kJlVrM=
+github.com/ONSdigital/dp-api-clients-go/v2 v2.2.0 h1:hzVu6NjxTltXOWyj7yiqlxlVM1btrdP3JuDd5siR+8U=
+github.com/ONSdigital/dp-api-clients-go/v2 v2.2.0/go.mod h1:do31xNC5k22vAMnbnXGT9NH/7MLAsfR0qeTfiItw/mA=
 github.com/ONSdigital/dp-authorisation v0.2.0 h1:QVjTUSR3c1swZwP7lMbvnBsh4Je9oc54eGzgwPOvHOc=
 github.com/ONSdigital/dp-authorisation v0.2.0/go.mod h1:Tg3BiohT3+bRv4vr4aid/1Rf+S3eXLUI8oHbOLFqFpQ=
 github.com/ONSdigital/dp-component-test v0.5.0 h1:PM3bWLacuWkLNPxhRoqI1Oa1eXrLi/1IKjOJRJJY/x8=
@@ -35,8 +38,8 @@ github.com/ONSdigital/dp-kafka/v2 v2.4.1 h1:e4nTpfsqb/gRRF3ZgstZ8mEjONvt+QPoWKbZ
 github.com/ONSdigital/dp-kafka/v2 v2.4.1/go.mod h1:W7BZ0zUmIuOMne18Pe3I4V/nF41Ynwy0N5A4+s7ahaw=
 github.com/ONSdigital/dp-mocking v0.0.0-20190905163309-fee2702ad1b9 h1:+WXVfTDyWXY1DQRDFSmt1b/ORKk5c7jGiPu7NoeaM/0=
 github.com/ONSdigital/dp-mocking v0.0.0-20190905163309-fee2702ad1b9/go.mod h1:BcIRgitUju//qgNePRBmNjATarTtynAgc0yV29VpLEk=
-github.com/ONSdigital/dp-mongodb v1.7.1 h1:CRD8VNsHmouZhn7RcHRlFIrtQc9xJ5FYco9tVTRveZY=
-github.com/ONSdigital/dp-mongodb v1.7.1/go.mod h1:DMVcvTIuIbm4F/4ww5iMRKq+dFa6QinyXWUaYd+0+bM=
+github.com/ONSdigital/dp-mongodb v1.8.0 h1:7opxTS5LJdB7KYhdYYwFv0w4MlXzjgW2OkrRgnmAciQ=
+github.com/ONSdigital/dp-mongodb v1.8.0/go.mod h1:DMVcvTIuIbm4F/4ww5iMRKq+dFa6QinyXWUaYd+0+bM=
 github.com/ONSdigital/dp-mongodb-in-memory v1.0.0 h1:lnV+Fz302qZG4x+DL2mrZ4dzLEACW4UVj8S61hSTlFI=
 github.com/ONSdigital/dp-mongodb-in-memory v1.0.0/go.mod h1:1/9sBl447eRpkidK4eEZ667W8vvg/MaFNy5OnrJbStA=
 github.com/ONSdigital/dp-net v1.0.5-0.20200805082802-e518bc287596/go.mod h1:wDVhk2pYosQ1q6PXxuFIRYhYk2XX5+1CeRRnXpSczPY=
@@ -46,6 +49,8 @@ github.com/ONSdigital/dp-net v1.0.7/go.mod h1:1QFzx32FwPKD2lgZI6MtcsUXritsBdJihl
 github.com/ONSdigital/dp-net v1.0.12/go.mod h1:2lvIKOlD4T3BjWQwjHhBUO2UNWDk82u/+mHRn0R3C9A=
 github.com/ONSdigital/dp-net v1.2.0 h1:gP9pBt/J8gktYeKsb7hq6uOC2xx1tfvTorUBNXp6pX0=
 github.com/ONSdigital/dp-net v1.2.0/go.mod h1:NinlaqcsPbIR+X7j5PXCl3UI5G2zCL041SDF6WIiiO4=
+github.com/ONSdigital/dp-net/v2 v2.2.0-beta h1:AZFUvizC17H9FMj34cKqTm8v9Gjm5LrgXhcWeDPJ6Cs=
+github.com/ONSdigital/dp-net/v2 v2.2.0-beta/go.mod h1:lL/AjGwUqdxb+RtYlxZXSVgN7Bev9vw+f/NrKZOc1JQ=
 github.com/ONSdigital/dp-rchttp v0.0.0-20190919143000-bb5699e6fd59/go.mod h1:KkW68U3FPuivW4ogi9L8CPKNj9ZxGko4qcUY7KoAAkQ=
 github.com/ONSdigital/dp-rchttp v0.0.0-20200114090501-463a529590e8/go.mod h1:821jZtK0oBsV8hjIkNr8vhAWuv0FxJBPJuAHa2B70Gk=
 github.com/ONSdigital/dp-rchttp v1.0.0 h1:K/1/gDtfMZCX1Mbmq80nZxzDirzneqA1c89ea26FqP4=
@@ -374,6 +379,7 @@ github.com/satori/go.uuid v1.2.0 h1:0uYX9dsZ2yD7q2RtLRtPSdGDWzjeM3TbMJP9utgA0ww=
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
 github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529/go.mod h1:DxrIzT+xaE7yg65j358z/aeFdxmN0P9QXhEzd20vsDc=
 github.com/shurcooL/go v0.0.0-20200502201357-93f07166e636/go.mod h1:TDJrrUr11Vxrven61rcy3hJMUqaf/CLWYhHNPmT14Lk=
+github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a/go.mod h1:AuYgA5Kyo4c7HfUmvRGs/6rGlMMV/6B1bVnB9JxJEEg=
 github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749/go.mod h1:ZY1cvUeJuFPAdZ/B6v7RHavJWZn2YPVFQ1OSXhCGOkg=
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
 github.com/shurcooL/vfsgen v0.0.0-20200824052919-0d455de96546/go.mod h1:TrYk7fJVaAttu97ZZKrO9UbRa8izdowaMIZcxYMbVaw=

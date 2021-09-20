@@ -9,8 +9,8 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	dphttp "github.com/ONSdigital/dp-net/http"
-	dprequest "github.com/ONSdigital/dp-net/request"
+	dphttp "github.com/ONSdigital/dp-net/v2/http"
+	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
