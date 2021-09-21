@@ -69,8 +69,8 @@ func (f *DatasetComponent) iHaveTheseEditions(editionsJson *godog.DocString) err
 
 		editionUp := models.EditionUpdate{
 			ID:      editionID,
-			Next:    &editionDoc,
-			Current: &editionDoc,
+			Next:    &editions[time],
+			Current: &editions[time],
 		}
 
 		err = f.putDocumentInDatabase(editionUp, editionID, "editions", time)

@@ -46,22 +46,26 @@ func newETagForBuildSearchTaskStateUpdate(currentInstance *models.Instance, dime
 	return currentInstance.Hash(b)
 }
 
-func newETagForNodeIDAndOrder(currentInstance *models.Instance, nodeID string, order *int) (eTag string, err error) {
-	b := []byte(nodeID)
-	if order != nil {
-		b = []byte(fmt.Sprintf("%s%d", nodeID, &order))
-	}
-	return currentInstance.Hash(b)
-}
-
-func newETagForAddDimensionOptions(currentInstance *models.Instance, options []*models.CachedDimensionOption) (eTag string, err error) {
+func newETagForOptions(currentInstance *models.Instance, upserts []*models.CachedDimensionOption, updates []*models.DimensionOption) (eTag string, err error) {
 	extraBytes := []byte{}
-	for _, option := range options {
+
+	// append upserts option bytes to the hash func
+	for _, option := range upserts {
 		optionBytes, err := bson.Marshal(option)
 		if err != nil {
 			return "", err
 		}
 		extraBytes = append(extraBytes, optionBytes...)
 	}
+
+	// append updates option bytes to the hash func
+	for _, option := range updates {
+		optionBytes, err := bson.Marshal(option)
+		if err != nil {
+			return "", err
+		}
+		extraBytes = append(extraBytes, optionBytes...)
+	}
+
 	return currentInstance.Hash(extraBytes)
 }

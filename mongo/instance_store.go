@@ -436,39 +436,13 @@ func (m *Mongo) UpdateBuildSearchTaskState(currentInstance *models.Instance, dim
 	return newETag, nil
 }
 
-func (m *Mongo) UpdateETagForNodeIDAndOrder(currentInstance *models.Instance, nodeID string, order *int, eTagSelector string) (newETag string, err error) {
+// UpdateETagForOptions updates the eTag value for an instance according to the provided dimension options upserts and updates
+func (m *Mongo) UpdateETagForOptions(currentInstance *models.Instance, upserts []*models.CachedDimensionOption, updates []*models.DimensionOption, eTagSelector string) (newETag string, err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-	// calculate the new eTag hash by calculating the hash of the current instance plus the provided nodeID and order
-	newETag, err = newETagForNodeIDAndOrder(currentInstance, nodeID, order)
-	if err != nil {
-		return "", err
-	}
-
-	sel := selector(currentInstance.InstanceID, 0, eTagSelector)
-
-	update := bson.M{
-		"$set": bson.M{
-			"e_tag": newETag,
-		},
-		"$currentDate": bson.M{"last_updated": true},
-	}
-
-	if err := s.DB(m.Database).C(instanceCollection).Update(sel, update); err != nil {
-		return "", err
-	}
-
-	return newETag, nil
-}
-
-// UpdateETagForOptions updates the eTag value for an instance according to the provided dimension options
-func (m *Mongo) UpdateETagForOptions(currentInstance *models.Instance, options []*models.CachedDimensionOption, eTagSelector string) (newETag string, err error) {
-	s := m.Session.Copy()
-	defer s.Close()
-
-	// calculate the new eTag hash by calculating the hash of the current instance plus the provided option
-	newETag, err = newETagForAddDimensionOptions(currentInstance, options)
+	// calculate the new eTag hash by calculating the hash of the current instance plus the provided option upserts and updates
+	newETag, err = newETagForOptions(currentInstance, upserts, updates)
 	if err != nil {
 		return "", err
 	}
