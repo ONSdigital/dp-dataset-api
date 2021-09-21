@@ -10,7 +10,7 @@ require (
 	github.com/ONSdigital/dp-authorisation v0.2.0
 	github.com/ONSdigital/dp-component-test v0.5.0
 	github.com/ONSdigital/dp-graph/v2 v2.7.1
-	github.com/ONSdigital/dp-healthcheck v1.1.0
+	github.com/ONSdigital/dp-healthcheck v1.1.2
 	github.com/ONSdigital/dp-kafka/v2 v2.4.1
 	github.com/ONSdigital/dp-mongodb v1.8.0
 	github.com/ONSdigital/dp-net/v2 v2.2.0-beta
@@ -20,7 +20,6 @@ require (
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/gopherjs/gopherjs v0.0.0-20210803090616-8f023c250c89 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-memdb v1.3.1 // indirect
 	github.com/justinas/alice v1.2.0

@@ -1274,10 +1274,13 @@ func TestPatchDimensions(t *testing.T) {
 			So(*isLocked, ShouldBeTrue)
 			return nil
 		}
+		mockedDataStore.UpdateDimensionsNodeIDAndOrderFunc = func(updates []*models.DimensionOption) error {
+			return nil
+		}
 
 		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
-		Convey("When calling patch dimension with a valid single patch operation", func() {
+		Convey("When calling patch dimension with a valid single patch 'upsert' operation", func() {
 			body := strings.NewReader(`[
 				{"op": "add", "path": "/-", "value": [{"option": "op1", "dimension": "TestDim"},{"option": "op2", "dimension": "TestDim"}]}
 			]`)
@@ -1316,7 +1319,7 @@ func TestPatchDimensions(t *testing.T) {
 			})
 		})
 
-		Convey("When calling patch dimension with a valid array of multiple patch operations", func() {
+		Convey("When calling patch dimension with a valid array of multiple patch 'upsert' operations", func() {
 			body := strings.NewReader(`[
 				{"op": "add", "path": "/-", "value": [{"option": "op1", "dimension": "TestDim"}]},
 				{"op": "add", "path": "/-", "value": [{"option": "op2", "dimension": "TestDim"}]}
@@ -1355,6 +1358,47 @@ func TestPatchDimensions(t *testing.T) {
 				So(*isLocked, ShouldBeFalse)
 			})
 		})
+
+		Convey("When calling patch dimension with a valid array of multiple patch 'update' operations", func() {
+			body := strings.NewReader(`[
+				{"op": "add", "path": "/dim1/options/op1/node_id", "value": "testNode"},
+				{"op": "add", "path": "/dim2/options/op2/order", "value": 7}
+			]`)
+			r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions", body)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response is 200 OK, with the expected ETag (updated once)", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				expectedETag := fmt.Sprintf("%s_0", testETag)
+				So(w.Header().Get("ETag"), ShouldEqual, expectedETag)
+			})
+
+			Convey("Then the expected database calls are performed to update node_id and order", func() {
+				ord := 7
+				validateDimensionUpdates(mockedDataStore, []*models.DimensionOption{
+					{
+						InstanceID: "123",
+						Name:       "dim1",
+						NodeID:     "testNode",
+						Option:     "op1",
+					},
+					{
+						InstanceID: "123",
+						Name:       "dim2",
+						Option:     "op2",
+						Order:      &ord,
+					},
+				}, testIfMatch)
+			})
+
+			Convey("Then the db lock is acquired and released as expected, only once", func() {
+				validateLock(mockedDataStore, "123")
+				So(*isLocked, ShouldBeFalse)
+			})
+		})
 	})
 }
 
@@ -1378,17 +1422,27 @@ func TestPatchDimensionsReturnsBadRequest(t *testing.T) {
 				"path": "unexpected",
 				"value": [{"option": "op1", "dimension": "TestDim"},{"option": "op2", "dimension": "TestDim"}]
 			}]`),
-			"Then patch dimensions with an unexpected value type returns bad request": strings.NewReader(`[{
+			"Then patch dimensions with an unexpected value type for path '/-' returns bad request": strings.NewReader(`[{
 				"op": "add",
 				"path": "/-",
 				"value": {"option": "op1", "dimension": "TestDim"}
+			}]`),
+			"Then patch dimensions with an unexpected value type for path '/{dimension}/options/{option}/node_id' returns bad request": strings.NewReader(`[{
+				"op": "add",
+				"path": "/dim1/options/op1/node_id",
+				"value": 8
+			}]`),
+			"Then patch dimensions with an unexpected value type for path '/{dimension}/options/{option}/order' returns bad request": strings.NewReader(`[{
+				"op": "add",
+				"path": "/dim1/options/op1/order",
+				"value": "wrong"
 			}]`),
 			"Then patch dimensions with an option with missing parameters returns bad request": strings.NewReader(`[{
 				"op": "add",
 				"path": "/-",
 				"value": [{"option": "op1"},{"option": "op2", "dimension": "TestDim"}]
 			}]`),
-			"Then patch dimensions with a total number of values greater than MaxRequestOptions returns bad request": strings.NewReader(`[{
+			"Then patch dimensions with a total number of values greater than MaxRequestOptions in a single patch op returns bad request": strings.NewReader(`[{
 				"op": "add",
 				"path": "/-",
 				"value": [
@@ -1405,6 +1459,40 @@ func TestPatchDimensionsReturnsBadRequest(t *testing.T) {
 					{"option": "op11", "dimension": "TestDim"}
 				]
 			}]`),
+			"Then patch dimensions with a total number of values greater than MaxRequestOptions distributed in multiple patch ops returns bad request": strings.NewReader(`[
+				{
+					"op": "add",
+					"path": "/-",
+					"value": [
+						{"option": "op01", "dimension": "TestDim"},
+						{"option": "op02", "dimension": "TestDim"},
+						{"option": "op03", "dimension": "TestDim"},
+						{"option": "op04", "dimension": "TestDim"},
+						{"option": "op05", "dimension": "TestDim"},
+						{"option": "op06", "dimension": "TestDim"},
+						{"option": "op07", "dimension": "TestDim"},
+						{"option": "op08", "dimension": "TestDim"},
+						{"option": "op09", "dimension": "TestDim"}
+					]
+				},
+				{
+					"op": "add",
+					"path": "/TestDim/options/op1/order",
+					"value": 10
+				},
+				{
+					"op": "add",
+					"path": "/TestDim/options/op1/node_id",
+					"value": "testNodeID"
+				},
+				{
+					"op": "add",
+					"path": "/-",
+					"value": [
+						{"option": "op12", "dimension": "TestDim"}
+					]
+				}
+			]`),
 		}
 
 		for msg, body := range bodies {

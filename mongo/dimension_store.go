@@ -250,7 +250,6 @@ func (m *Mongo) UpdateDimensionsNodeIDAndOrder(dimensions []*models.DimensionOpt
 			return fmt.Errorf("error trying to upsert: %w", err)
 		}
 	}
-	return nil
 
 	// execute the updates in bulk
 	_, err := bulk.Run()

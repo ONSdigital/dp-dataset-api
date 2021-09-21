@@ -256,8 +256,8 @@ func (s *Store) applyPatchesForDimensions(ctx context.Context, instanceID string
 			}
 			spl := slashRegex.Split(patch.Path, 5)
 			optionsToUpdate = append(optionsToUpdate, &models.DimensionOption{
-				Name:       spl[1],
-				Option:     spl[3],
+				Name:       spl[1], // {dimension} value from patch path
+				Option:     spl[3], // {option} value from patch path
 				InstanceID: instanceID,
 				NodeID:     val,
 			})
@@ -269,13 +269,13 @@ func (s *Store) applyPatchesForDimensions(ctx context.Context, instanceID string
 		if len(optionOrderRegex.FindAllString(patch.Path, -1)) == 1 {
 			v, ok := patch.Value.(float64)
 			if !ok {
-				return successful, "", apierrors.ErrInvalidPatch{Msg: "wrong value type for /order, expected numeric value (float64)"}
+				return successful, "", apierrors.ErrInvalidPatch{Msg: "wrong value type for /{dimension}/options/{option}/order, expected numeric value (float64)"}
 			}
 			val := int(v)
 			spl := slashRegex.Split(patch.Path, 5)
 			optionsToUpdate = append(optionsToUpdate, &models.DimensionOption{
-				Name:       spl[1],
-				Option:     spl[3],
+				Name:       spl[1], // {dimension} value from patch path
+				Option:     spl[3], // {option} value from patch path
 				InstanceID: instanceID,
 				Order:      &val,
 			})
@@ -303,10 +303,10 @@ func (s *Store) applyPatchesForDimensions(ctx context.Context, instanceID string
 	// Upsert and update dimension options
 	upsertOK := false
 	newETag, upsertOK, err = s.upsertAndUpdate(ctx, instanceID, optionsToUpsert, optionsToUpdate, logData, eTagSelector)
+	if upsertOK {
+		successful = append(successful, upserts...)
+	}
 	if err != nil {
-		if upsertOK {
-			successful = append(successful, upserts...)
-		}
 		return successful, "", err
 	}
 
