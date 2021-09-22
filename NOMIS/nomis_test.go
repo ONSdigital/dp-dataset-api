@@ -57,8 +57,7 @@ func TestCheckSubString(t *testing.T) {
 	for _, test := range cases {
 		Convey(test.Description, t, func() {
 			Convey("Then the CheckSubString function should return the expected string", func() {
-				actualString, err := nomis.CheckSubString(test.GivenString, ctx)
-				So(err, ShouldBeNil)
+				actualString := nomis.CheckSubString(test.GivenString, ctx)
 				So(actualString, ShouldResemble, test.ExpectedResult)
 			})
 		})
@@ -107,8 +106,7 @@ func TestCheckTitle(t *testing.T) {
 	for _, test := range cases {
 		Convey(test.Description, t, func() {
 			Convey("Then the CheckTitle function should return the expected string", func() {
-				actualString, err := nomis.CheckTitle(test.GivenString, ctx)
-				So(err, ShouldBeNil)
+				actualString := nomis.CheckTitle(test.GivenString, ctx)
 				So(actualString, ShouldResemble, test.ExpectedResult)
 			})
 		})

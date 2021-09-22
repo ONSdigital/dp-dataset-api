@@ -235,7 +235,7 @@ func expectedMetadataDoc() Metadata {
 			},
 			Spatial:        links.Spatial,
 			Version:        links.Version,
-			WebsiteVersion: &LinkObject{HRef: strings.Replace(links.Version.HRef, "22000", "20000", -1)},
+			WebsiteVersion: &LinkObject{HRef: strings.ReplaceAll(links.Version.HRef, "22000", "20000")},
 		},
 		Methodologies:     []GeneralDetails{methodology},
 		NationalStatistic: &nationalStatistic,

@@ -96,8 +96,8 @@ func (f *DatasetComponent) iHaveTheseDatasets(datasetsJson *godog.DocString) err
 
 		datasetUp := models.DatasetUpdate{
 			ID:      datasetID,
-			Next:    &datasetDoc,
-			Current: &datasetDoc,
+			Next:    &datasets[time],
+			Current: &datasets[time],
 		}
 		if err := f.putDocumentInDatabase(datasetUp, datasetID, "datasets", time); err != nil {
 			return err

@@ -59,8 +59,8 @@ func GetAPIWithMocks(mockedDataStore store.Storer, mockedGeneratedDownloads Down
 	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, datasetPermissions, permissions)
 }
 
-func createRequestWithAuth(method, URL string, body io.Reader) *http.Request {
-	r := httptest.NewRequest(method, URL, body)
+func createRequestWithAuth(method, target string, body io.Reader) *http.Request {
+	r := httptest.NewRequest(method, target, body)
 	ctx := r.Context()
 	ctx = dprequest.SetCaller(ctx, "someone@ons.gov.uk")
 	r = r.WithContext(ctx)
