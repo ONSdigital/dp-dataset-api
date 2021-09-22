@@ -90,7 +90,7 @@ func validateDimensionsUpserted(mockedDataStore *storetest.StorerMock, instanceI
 
 func validateLock(mockedDataStore *storetest.StorerMock, expectedInstanceID string) {
 	So(mockedDataStore.AcquireInstanceLockCalls(), ShouldHaveLength, 1)
-	So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, ShouldEqual, "123")
+	So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, ShouldEqual, expectedInstanceID)
 	So(mockedDataStore.UnlockInstanceCalls(), ShouldHaveLength, 1)
 	So(mockedDataStore.UnlockInstanceCalls()[0].LockID, ShouldEqual, testLockID)
 }
@@ -1092,7 +1092,7 @@ func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 
 	Convey("Given a dataset API with a successful store mock and auth", t, func() {
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		mockedDataStore.GetUniqueDimensionAndOptionsFunc = func(ctx context.Context, ID string, dimension string, offset int, limit int) ([]*string, int, error) {
+		mockedDataStore.GetUniqueDimensionAndOptionsFunc = func(ID string, dimension string) ([]*string, int, error) {
 			So(*isLocked, ShouldBeTrue)
 			return []*string{}, 0, nil
 		}
@@ -1159,7 +1159,7 @@ func TestGetUniqueDimensionAndOptionsReturnsNotFound(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		mockedDataStore.GetUniqueDimensionAndOptionsFunc = func(ctx context.Context, ID string, dimension string, offset int, limit int) ([]*string, int, error) {
+		mockedDataStore.GetUniqueDimensionAndOptionsFunc = func(ID string, dimension string) ([]*string, int, error) {
 			So(*isLocked, ShouldBeTrue)
 			return nil, 0, errs.ErrInstanceNotFound
 		}

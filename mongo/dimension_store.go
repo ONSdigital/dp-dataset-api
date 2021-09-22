@@ -36,7 +36,7 @@ func (m *Mongo) GetDimensionsFromInstance(ctx context.Context, id string, offset
 }
 
 // GetUniqueDimensionAndOptions returns a list of dimension options for an instance resource
-func (m *Mongo) GetUniqueDimensionAndOptions(ctx context.Context, id, dimension string, offset, limit int) ([]*string, int, error) {
+func (m *Mongo) GetUniqueDimensionAndOptions(id, dimension string) ([]*string, int, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -115,7 +115,7 @@ func SafeUpdate(b *mgo.Bulk, pairs ...interface{}) (err error) {
 }
 
 // GetDimensions returns a list of all dimensions from a dataset
-func (m *Mongo) GetDimensions(datasetID, versionID string) ([]bson.M, error) {
+func (m *Mongo) GetDimensions(versionID string) ([]bson.M, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 

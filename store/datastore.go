@@ -27,7 +27,7 @@ type dataMongoDB interface {
 	GetDataset(ID string) (*models.DatasetUpdate, error)
 	GetDatasets(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 	GetDimensionsFromInstance(ctx context.Context, ID string, offset, limit int) ([]*models.DimensionOption, int, error)
-	GetDimensions(datasetID, versionID string) ([]bson.M, error)
+	GetDimensions(versionID string) ([]bson.M, error)
 	GetDimensionOptions(ctx context.Context, version *models.Version, dimension string, offset, limit int) ([]*models.PublicDimensionOption, int, error)
 	GetDimensionOptionsFromIDs(version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 	GetEdition(ID, editionID, state string) (*models.EditionUpdate, error)
@@ -36,7 +36,7 @@ type dataMongoDB interface {
 	GetInstance(ID, eTagSelector string) (*models.Instance, error)
 	GetNextVersion(datasetID, editionID string) (int, error)
 	GetVersion(datasetID, editionID string, version int, state string) (*models.Version, error)
-	GetUniqueDimensionAndOptions(ctx context.Context, ID, dimension string, offset, limit int) ([]*string, int, error)
+	GetUniqueDimensionAndOptions(ID, dimension string) ([]*string, int, error)
 	GetVersions(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error)
 	UpdateDataset(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
 	UpdateDatasetWithAssociation(ID, state string, version *models.Version) error

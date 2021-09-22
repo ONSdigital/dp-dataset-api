@@ -58,7 +58,8 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 				TotalCount int               `json:"total_count"`
 			}
 			var results datasetResults
-			json.Unmarshal(a, &results)
+			err := json.Unmarshal(a, &results)
+			So(err, ShouldBeNil)
 			// Only a single dataset should be returned in a web subnet
 			So(len(results.Items), ShouldEqual, 1)
 			So(results.Items[0].Title, ShouldEqual, current.Title)
@@ -91,7 +92,8 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 			var result models.Dataset
-			json.Unmarshal(a, &result)
+			err := json.Unmarshal(a, &result)
+			So(err, ShouldBeNil)
 			So(result.Title, ShouldEqual, current.Title)
 		})
 	})
@@ -240,7 +242,7 @@ func TestWebSubnetDimensionsEndpoint(t *testing.T) {
 						Version: &models.LinkObject{},
 						Self:    &models.LinkObject{}}}, nil
 			},
-			GetDimensionsFunc: func(datasetID string, versionID string) ([]bson.M, error) {
+			GetDimensionsFunc: func(versionID string) ([]bson.M, error) {
 				return []bson.M{}, nil
 			},
 		}

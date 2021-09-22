@@ -708,8 +708,6 @@ func TestUpdateLinks(t *testing.T) {
 }
 
 func TestPublishLinks(t *testing.T) {
-	host := "example.com"
-
 	Convey("Given a new edition with no links", t, func() {
 		edition := &EditionUpdate{
 			ID: "test",
@@ -720,7 +718,7 @@ func TestPublishLinks(t *testing.T) {
 		}
 
 		Convey("when PublishLinks is called", func() {
-			err := edition.PublishLinks(testContext, host, nil)
+			err := edition.PublishLinks(testContext, nil)
 
 			Convey("then an error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -755,7 +753,7 @@ func TestPublishLinks(t *testing.T) {
 		}
 
 		Convey("when PublishLinks is called", func() {
-			err := edition.PublishLinks(testContext, host, nil)
+			err := edition.PublishLinks(testContext, nil)
 
 			Convey("then an error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -782,7 +780,7 @@ func TestPublishLinks(t *testing.T) {
 		}
 
 		Convey("when PublishLinks is called with an invalid version link", func() {
-			err := edition.PublishLinks(testContext, host, nil)
+			err := edition.PublishLinks(testContext, nil)
 
 			Convey("then an error is returned", func() {
 				So(err, ShouldNotBeNil)
@@ -791,7 +789,7 @@ func TestPublishLinks(t *testing.T) {
 		})
 
 		Convey("when PublishLinks is called with an invalid version link ID", func() {
-			err := edition.PublishLinks(testContext, host, &LinkObject{
+			err := edition.PublishLinks(testContext, &LinkObject{
 				ID: "hello",
 			})
 
@@ -802,7 +800,7 @@ func TestPublishLinks(t *testing.T) {
 		})
 
 		Convey("when PublishLinks is called with a version link", func() {
-			err := edition.PublishLinks(testContext, host, version)
+			err := edition.PublishLinks(testContext, version)
 
 			Convey("then links are correctly updated", func() {
 				So(err, ShouldBeNil)
@@ -847,7 +845,7 @@ func TestPublishLinks(t *testing.T) {
 				HRef: "example.com/datasets/1/editions/time-series/versions/3",
 			}
 
-			err := edition.PublishLinks(testContext, host, argLink)
+			err := edition.PublishLinks(testContext, argLink)
 
 			Convey("then links are correctly updated", func() {
 				So(err, ShouldBeNil)
@@ -861,7 +859,7 @@ func TestPublishLinks(t *testing.T) {
 				ID:   "1",
 				HRef: "example.com/datasets/1/editions/time-series/versions/1",
 			}
-			err := edition.PublishLinks(testContext, host, argLink)
+			err := edition.PublishLinks(testContext, argLink)
 
 			Convey("then no changes should be made", func() {
 				So(err, ShouldBeNil)

@@ -114,7 +114,7 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 
 	// Get dimension options corresponding to the instance in the right state
 	// Note: GetUniqueDimensionAndOptions does not implement pagination at query level
-	options, totalCount, err := s.GetUniqueDimensionAndOptions(ctx, instanceID, dimension, offset, limit)
+	options, totalCount, err := s.GetUniqueDimensionAndOptions(instanceID, dimension)
 	if err != nil {
 		log.Error(ctx, "failed to get unique dimension options for instance", err, logData)
 		handleDimensionErr(ctx, w, err, logData)

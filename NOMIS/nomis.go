@@ -363,19 +363,31 @@ func downloadFile(ctx context.Context) {
 		log.Error(ctx, "error writing the file", err)
 		os.Exit(1)
 	}
-	defer resp.Body.Close()
+	defer closeBody(ctx, resp.Body)
 	size, err := io.Copy(file, resp.Body)
 	if err != nil {
 		log.Error(ctx, "error copying a file", err)
 		os.Exit(1)
 	}
-	defer file.Close()
+	defer closeFile(ctx, file)
 	fmt.Printf("Downloaded a file %s with size %d", fileName, size)
 }
 
-/*checkSubString checks if the string has substrings http and [Statistical Disclosure Control].
-If both the substrings exists then it adds parenthesis where necessary and swaps the pattern (url)[text] to [text](url)
-so it can be displayed correctly. If substrings does not exists then it returns the original string*/
+func closeBody(ctx context.Context, b io.ReadCloser) {
+	if err := b.Close(); err != nil {
+		log.Error(ctx, "error closing response body", err)
+	}
+}
+
+func closeFile(ctx context.Context, f *os.File) {
+	if err := f.Close(); err != nil {
+		log.Error(ctx, "error closing file", err)
+	}
+}
+
+// CheckSubString checks if the string has substrings http and [Statistical Disclosure Control].
+// If both the substrings exists then it adds parenthesis where necessary and swaps the pattern (url)[text] to [text](url)
+// so it can be displayed correctly. If substring does not exist then it returns the original string
 func CheckSubString(existingStr string, ctx context.Context) string {
 	return httpRegex.ReplaceAllString(existingStr, `$2($1)`)
 }

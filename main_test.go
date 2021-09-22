@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -8,6 +9,7 @@ import (
 
 	componenttest "github.com/ONSdigital/dp-component-test"
 	"github.com/ONSdigital/dp-dataset-api/features/steps"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 )
@@ -34,7 +36,9 @@ func (f *ComponentTest) InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(*godog.Scenario) {
 		apiFeature.Reset()
 		datasetFeature.Reset()
-		f.MongoFeature.Reset()
+		if err := f.MongoFeature.Reset(); err != nil {
+			log.Error(context.Background(), "failed to reset mongo feature", err)
+		}
 		authorizationFeature.Reset()
 	})
 

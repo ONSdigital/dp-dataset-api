@@ -15,6 +15,7 @@ import (
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka/v2"
 	"github.com/ONSdigital/dp-kafka/v2/kafkatest"
+	"github.com/ONSdigital/log.go/v2/log"
 )
 
 type DatasetComponent struct {
@@ -74,15 +75,20 @@ func NewDatasetComponent(mongoFeature *componenttest.MongoFeature, zebedeeURL st
 }
 
 func (f *DatasetComponent) Reset() *DatasetComponent {
+	ctx := context.Background()
 	f.MongoClient.Database = utils.RandomDatabase()
-	f.MongoClient.Init(context.Background())
+	if err := f.MongoClient.Init(ctx); err != nil {
+		log.Warn(ctx, "error initialising MongoClient during Reset", log.Data{"err": err.Error()})
+	}
 	f.Config.EnablePrivateEndpoints = false
 	return f
 }
 
 func (f *DatasetComponent) Close() error {
 	if f.svc != nil && f.ServiceRunning {
-		f.svc.Close(context.Background())
+		if err := f.svc.Close(context.Background()); err != nil {
+			return err
+		}
 		f.ServiceRunning = false
 	}
 	return nil

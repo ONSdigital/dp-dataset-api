@@ -13,10 +13,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-const (
-	editionPayload = `{"edition":"2017","state":"created"}`
-)
-
 func TestGetEditionsReturnsOK(t *testing.T) {
 
 	t.Parallel()
