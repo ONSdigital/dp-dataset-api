@@ -252,8 +252,9 @@ func (m *Mongo) UpdateDimensionsNodeIDAndOrder(dimensions []*models.DimensionOpt
 	}
 
 	// execute the updates in bulk
-	_, err := bulk.Run()
-	if err == mgo.ErrNotFound {
+	// if at least one update selector was not found, or a ErrNotFound is returned, then we return ErrDimensionOptionNotFound
+	res, err := bulk.Run()
+	if (res.Matched != len(dimensions)) || err == mgo.ErrNotFound {
 		return errs.ErrDimensionOptionNotFound
 	}
 	return err

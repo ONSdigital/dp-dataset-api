@@ -140,10 +140,6 @@ func logError(ctx context.Context, err error, data log.Data) {
 	log.Error(ctx, "unsuccessful request", err, data)
 }
 
-func setJSONPatchContentType(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json-patch+json")
-}
-
 func getIfMatch(r *http.Request) string {
 	ifMatch := r.Header.Get("If-Match")
 	if ifMatch == "" {
@@ -152,8 +148,12 @@ func getIfMatch(r *http.Request) string {
 	return ifMatch
 }
 
+func setJSONPatchContentType(w http.ResponseWriter) {
+	w.Header().Add("Content-Type", "application/json-patch+json")
+}
+
 func setETag(w http.ResponseWriter, eTag string) {
-	w.Header().Set("ETag", eTag)
+	w.Header().Add("ETag", eTag)
 }
 
 func writeBody(ctx context.Context, w http.ResponseWriter, b []byte, data log.Data) {
