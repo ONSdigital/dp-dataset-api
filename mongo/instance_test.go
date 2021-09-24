@@ -10,8 +10,8 @@ import (
 func TestSelector(t *testing.T) {
 
 	Convey("Given some testing values to provide as selector paramters", t, func() {
-		var testInstanceID string = "instanceID"
-		var testETag string = "testETag"
+		var testInstanceID = "instanceID"
+		var testETag = "testETag"
 		var testMongoTimestamp bson.MongoTimestamp = 1234567890
 
 		Convey("Then, providing a zero timestamp and any eTag generates a selector that only queries by id", func() {

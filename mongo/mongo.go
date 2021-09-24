@@ -57,7 +57,10 @@ func (m *Mongo) Init(ctx context.Context) (err error) {
 	}
 
 	// Create MongoDB lock client, which also starts the purger loop
-	m.lockClient = dpMongoLock.New(ctx, m.Session, m.Database, instanceCollection)
+	m.lockClient, err = dpMongoLock.New(ctx, m.Session, m.Database, instanceCollection, nil)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

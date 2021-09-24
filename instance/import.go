@@ -1,6 +1,7 @@
 package instance
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,7 +11,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	dphttp "github.com/ONSdigital/dp-net/http"
+	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -68,7 +69,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 	instanceID := vars["instance_id"]
 	eTag := getIfMatch(r)
 	logData := log.Data{"instance_id": instanceID}
-	defer r.Body.Close()
+	defer closeBody(ctx, r.Body)
 
 	handleError := func(updateErr *taskError) {
 		log.Error(ctx, "updateImportTask endpoint: request unsuccessful", updateErr, logData)
@@ -205,4 +206,10 @@ func unmarshalImportTasks(reader io.Reader) (*models.InstanceImportTasks, error)
 	}
 
 	return &tasks, nil
+}
+
+func closeBody(ctx context.Context, b io.ReadCloser) {
+	if err := b.Close(); err != nil {
+		log.Error(ctx, "error closing response body", err)
+	}
 }

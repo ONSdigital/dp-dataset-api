@@ -5,23 +5,21 @@ go 1.15
 replace github.com/coreos/etcd => github.com/coreos/etcd v3.3.24+incompatible
 
 require (
-	github.com/ONSdigital/dp-api-clients-go v1.43.0
+	github.com/ONSdigital/dp-api-clients-go v1.43.0 // indirect
+	github.com/ONSdigital/dp-api-clients-go/v2 v2.2.0
 	github.com/ONSdigital/dp-authorisation v0.2.0
-	github.com/ONSdigital/dp-component-test v0.2.0
+	github.com/ONSdigital/dp-component-test v0.5.0
 	github.com/ONSdigital/dp-graph/v2 v2.7.1
-	github.com/ONSdigital/dp-healthcheck v1.1.0
+	github.com/ONSdigital/dp-healthcheck v1.1.2
 	github.com/ONSdigital/dp-kafka/v2 v2.4.1
-	github.com/ONSdigital/dp-mongodb v1.7.0
-	github.com/ONSdigital/dp-net v1.2.0
-	github.com/ONSdigital/go-ns v0.0.0-20200902154605-290c8b5ba5eb
+	github.com/ONSdigital/dp-mongodb v1.8.0
+	github.com/ONSdigital/dp-net/v2 v2.2.0-beta
+	github.com/ONSdigital/go-ns v0.0.0-20200902154605-290c8b5ba5eb // indirect
 	github.com/ONSdigital/log.go/v2 v2.0.9
-	github.com/benweissmann/memongo v0.1.1
 	github.com/cucumber/godog v0.11.0
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/gopherjs/gopherjs v0.0.0-20210803090616-8f023c250c89 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-memdb v1.3.1 // indirect
 	github.com/justinas/alice v1.2.0

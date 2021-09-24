@@ -14,10 +14,9 @@ import (
 func TestGetPaginationParametersReturnsErrorWhenOffsetIsNegative(t *testing.T) {
 
 	r := httptest.NewRequest("GET", "/test?offset=-1", nil)
-	w := httptest.NewRecorder()
 	paginator := &Paginator{}
 
-	offset, limit, err := paginator.getPaginationParameters(w, r)
+	offset, limit, err := paginator.getPaginationParameters(r)
 
 	assert.Equal(t, errors.New("invalid query parameter"), err)
 	assert.Equal(t, 0, offset)
@@ -27,10 +26,9 @@ func TestGetPaginationParametersReturnsErrorWhenOffsetIsNegative(t *testing.T) {
 func TestGetPaginationParametersReturnsErrorWhenLimitIsNegative(t *testing.T) {
 
 	r := httptest.NewRequest("GET", "/test?limit=-1", nil)
-	w := httptest.NewRecorder()
 	paginator := &Paginator{}
 
-	offset, limit, err := paginator.getPaginationParameters(w, r)
+	offset, limit, err := paginator.getPaginationParameters(r)
 
 	assert.Equal(t, errors.New("invalid query parameter"), err)
 	assert.Equal(t, 0, offset)
@@ -40,10 +38,9 @@ func TestGetPaginationParametersReturnsErrorWhenLimitIsNegative(t *testing.T) {
 func TestGetPaginationParametersReturnsErrorWhenLimitIsGreaterThanMaxLimit(t *testing.T) {
 
 	r := httptest.NewRequest("GET", "/test?limit=1001", nil)
-	w := httptest.NewRecorder()
 	paginator := &Paginator{DefaultMaxLimit: 1000}
 
-	offset, limit, err := paginator.getPaginationParameters(w, r)
+	offset, limit, err := paginator.getPaginationParameters(r)
 
 	assert.Equal(t, errors.New("invalid query parameter"), err)
 	assert.Equal(t, 0, offset)
@@ -53,10 +50,9 @@ func TestGetPaginationParametersReturnsErrorWhenLimitIsGreaterThanMaxLimit(t *te
 func TestGetPaginationParametersReturnsLimitAndOffsetProvidedFromQuery(t *testing.T) {
 
 	r := httptest.NewRequest("GET", "/test?limit=10&offset=5", nil)
-	w := httptest.NewRecorder()
 	paginator := &Paginator{DefaultMaxLimit: 1000}
 
-	offset, limit, err := paginator.getPaginationParameters(w, r)
+	offset, limit, err := paginator.getPaginationParameters(r)
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 5, offset)
@@ -66,10 +62,9 @@ func TestGetPaginationParametersReturnsLimitAndOffsetProvidedFromQuery(t *testin
 func TestGetPaginationParametersReturnsDefaultValuesWhenNotProvided(t *testing.T) {
 
 	r := httptest.NewRequest("GET", "/test", nil)
-	w := httptest.NewRecorder()
 	paginator := &Paginator{DefaultLimit: 20, DefaultOffset: 1, DefaultMaxLimit: 1000}
 
-	offset, limit, err := paginator.getPaginationParameters(w, r)
+	offset, limit, err := paginator.getPaginationParameters(r)
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 1, offset)

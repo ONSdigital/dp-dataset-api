@@ -41,7 +41,7 @@ type Metadata struct {
 	Source            string               `json:"source,omitempty"`
 }
 
-// MetadataLinks represents a link object to list of metadata) relevant to a version
+// MetadataLinks represents a link object to list of metadata relevant to a version
 type MetadataLinks struct {
 	AccessRights   *LinkObject `json:"access_rights,omitempty"`
 	Self           *LinkObject `json:"self,omitempty"`

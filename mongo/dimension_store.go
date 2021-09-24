@@ -36,7 +36,7 @@ func (m *Mongo) GetDimensionsFromInstance(ctx context.Context, id string, offset
 }
 
 // GetUniqueDimensionAndOptions returns a list of dimension options for an instance resource
-func (m *Mongo) GetUniqueDimensionAndOptions(ctx context.Context, id, dimension string, offset, limit int) ([]*string, int, error) {
+func (m *Mongo) GetUniqueDimensionAndOptions(id, dimension string) ([]*string, int, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -102,8 +102,20 @@ func SafeUpsert(b *mgo.Bulk, pairs ...interface{}) (err error) {
 	return nil
 }
 
+func SafeUpdate(b *mgo.Bulk, pairs ...interface{}) (err error) {
+	defer func() {
+		if recover() != nil {
+			// The return result can be altered
+			// in a defer function call.
+			err = errors.New("update panicked")
+		}
+	}()
+	b.Update(pairs...) // Do normal Update which may throw a panic
+	return nil
+}
+
 // GetDimensions returns a list of all dimensions from a dataset
-func (m *Mongo) GetDimensions(datasetID, versionID string) ([]bson.M, error) {
+func (m *Mongo) GetDimensions(versionID string) ([]bson.M, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -200,37 +212,52 @@ func (m *Mongo) GetDimensionOptionsFromIDs(version *models.Version, dimension st
 	return values, totalCount, nil
 }
 
-// UpdateDimensionNodeIDAndOrder to cache the id and order (optional) for other import processes
-func (m *Mongo) UpdateDimensionNodeIDAndOrder(dimension *models.DimensionOption) error {
+// UpdateDimensionsNodeIDAndOrder to cache the id and order (optional) for other import processes
+func (m *Mongo) UpdateDimensionsNodeIDAndOrder(dimensions []*models.DimensionOption) error {
 
 	// validate that there is something to update
-	if dimension.Order == nil && dimension.NodeID == "" {
-		return nil
+	isUpdate := false
+	for _, dim := range dimensions {
+		if dim.Order != nil || dim.NodeID != "" {
+			isUpdate = true
+			break
+		}
+	}
+	if !isUpdate {
+		return nil // nothing to update
 	}
 
 	s := m.Session.Copy()
 	defer s.Close()
 
-	selector := bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name, "option": dimension.Option}
+	bulk := s.DB(m.Database).C(dimensionOptions).Bulk()
 
-	update := bson.M{"last_updated": time.Now().UTC()}
-	if dimension.NodeID != "" {
-		update["node_id"] = &dimension.NodeID
-	}
-	if dimension.Order != nil {
-		update["order"] = &dimension.Order
+	// queue all options to be updated
+	now := time.Now().UTC()
+	for _, dimension := range dimensions {
+		update := bson.M{"last_updated": now}
+		if dimension.NodeID != "" {
+			update["node_id"] = &dimension.NodeID
+		}
+		if dimension.Order != nil {
+			update["order"] = &dimension.Order
+		}
+		if err := SafeUpdate(
+			bulk,
+			bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name, "option": dimension.Option},
+			bson.M{"$set": update},
+		); err != nil {
+			return fmt.Errorf("error trying to upsert: %w", err)
+		}
 	}
 
-	err := s.DB(m.Database).C(dimensionOptions).Update(selector, bson.M{"$set": update})
-	if err == mgo.ErrNotFound {
+	// execute the updates in bulk
+	// if at least one update selector was not found, or a ErrNotFound is returned, then we return ErrDimensionOptionNotFound
+	res, err := bulk.Run()
+	if (res.Matched != len(dimensions)) || err == mgo.ErrNotFound {
 		return errs.ErrDimensionOptionNotFound
 	}
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // sortedQuery generates a sorted mongoDB query from the provided bson.M selector

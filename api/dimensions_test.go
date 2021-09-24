@@ -32,7 +32,7 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
 				return &models.Version{State: models.AssociatedState}, nil
 			},
-			GetDimensionsFunc: func(datasetID, versionID string) ([]bson.M, error) {
+			GetDimensionsFunc: func(versionID string) ([]bson.M, error) {
 				return []bson.M{}, nil
 			},
 		}
@@ -112,7 +112,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
 				return &models.Version{State: models.AssociatedState}, nil
 			},
-			GetDimensionsFunc: func(datasetID, versionID string) ([]bson.M, error) {
+			GetDimensionsFunc: func(versionID string) ([]bson.M, error) {
 				return nil, errs.ErrDimensionsNotFound
 			},
 		}

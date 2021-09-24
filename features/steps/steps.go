@@ -35,7 +35,9 @@ func (f *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId stri
 
 	var expectedDataset models.Dataset
 
-	json.Unmarshal([]byte(documentJson.Content), &expectedDataset)
+	if err := json.Unmarshal([]byte(documentJson.Content), &expectedDataset); err != nil {
+		return err
+	}
 
 	filterCursor := s.DB(f.MongoClient.Database).C("datasets").FindId(documentId)
 
@@ -69,8 +71,8 @@ func (f *DatasetComponent) iHaveTheseEditions(editionsJson *godog.DocString) err
 
 		editionUp := models.EditionUpdate{
 			ID:      editionID,
-			Next:    &editionDoc,
-			Current: &editionDoc,
+			Next:    &editions[time],
+			Current: &editions[time],
 		}
 
 		err = f.putDocumentInDatabase(editionUp, editionID, "editions", time)
@@ -96,8 +98,8 @@ func (f *DatasetComponent) iHaveTheseDatasets(datasetsJson *godog.DocString) err
 
 		datasetUp := models.DatasetUpdate{
 			ID:      datasetID,
-			Next:    &datasetDoc,
-			Current: &datasetDoc,
+			Next:    &datasets[time],
+			Current: &datasets[time],
 		}
 		if err := f.putDocumentInDatabase(datasetUp, datasetID, "datasets", time); err != nil {
 			return err
@@ -120,8 +122,9 @@ func (f *DatasetComponent) iHaveTheseVersions(versionsJson *godog.DocString) err
 		version.Links.Version = &models.LinkObject{
 			HRef: version.Links.Self.HRef,
 		}
-
-		f.putDocumentInDatabase(version, versionID, "instances", time)
+		if err := f.putDocumentInDatabase(version, versionID, "instances", time); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -137,8 +140,9 @@ func (f *DatasetComponent) iHaveTheseDimensions(dimensionsJson *godog.DocString)
 
 	for time, dimension := range dimensions {
 		dimensionID := dimension.Option
-
-		f.putDocumentInDatabase(dimension, dimensionID, "dimension.options", time)
+		if err := f.putDocumentInDatabase(dimension, dimensionID, "dimension.options", time); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -154,8 +158,9 @@ func (f *DatasetComponent) iHaveTheseInstances(instancesJson *godog.DocString) e
 
 	for time, instance := range instances {
 		instanceID := instance.InstanceID
-
-		f.putDocumentInDatabase(instance, instanceID, "instances", time)
+		if err := f.putDocumentInDatabase(instance, instanceID, "instances", time); err != nil {
+			return err
+		}
 	}
 
 	return nil

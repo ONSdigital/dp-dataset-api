@@ -10,7 +10,7 @@ import (
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
-// ListFetcher is an interface for an endpoint that returns a list of values that we want to paginate
+// PaginatedHandler is a func type for an endpoint that returns a list of values that we want to paginate
 type PaginatedHandler func(w http.ResponseWriter, r *http.Request, limit int, offset int) (list interface{}, totalCount int, err error)
 
 type page struct {
@@ -36,7 +36,7 @@ func NewPaginator(defaultLimit, defaultOffset, defaultMaxLimit int) *Paginator {
 	}
 }
 
-func (p *Paginator) getPaginationParameters(w http.ResponseWriter, r *http.Request) (offset int, limit int, err error) {
+func (p *Paginator) getPaginationParameters(r *http.Request) (offset int, limit int, err error) {
 
 	logData := log.Data{}
 	offsetParameter := r.URL.Query().Get("offset")
@@ -94,7 +94,7 @@ func listLength(list interface{}) int {
 func (p *Paginator) Paginate(paginatedHandler PaginatedHandler) func(w http.ResponseWriter, r *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		offset, limit, err := p.getPaginationParameters(w, r)
+		offset, limit, err := p.getPaginationParameters(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

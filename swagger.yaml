@@ -760,6 +760,8 @@ paths:
       - $ref: '#/parameters/instance_id'
       - $ref: '#/parameters/patch_dimensions'
       - $ref: '#/parameters/if_match'
+      produces:
+      - "application/json-patch+json"
       security:
       - InternalAPIKey: []
       responses:
@@ -1388,7 +1390,7 @@ definitions:
           description: "A value that will be set for the provided path. /node_id accepts string values, and /order accepts integer values."
           example: "node_123"
   PatchDimensions:
-    description: "A list of operations to patch dimensions. Can only handle adding lists of dimension values. Each patch operation in the array is processed in sequential order. The dimensions in the value array of each patch operation are added to the database in bulk."
+    description: "A list of operations to patch dimensions. Can only handle adding lists of dimension values, and modifying order and node_id values for existing dimension options. The patch operations are executed in bulk to improve performance, and they are idempotent. If at least one of the provided dimensions and/or options in a patch path cannot be matched against existing dimension options, the request will fail with 404."
     type: array
     items:
       type: object
@@ -1399,15 +1401,15 @@ definitions:
             The operation to be made on path.
             * add - Sets the value for the provided path
           type: string
-          enum: [add]
+          enum: ["add"]
         path:
           description: "Path to value that needs to be operated on."
           type: string
           example: "/-"
-          enum: [/-]
+          enum: ["/-", "/{dimension}/options/{option}/order", "/{dimension}/options/{option}/node_id"]
         value:
           description: "A list of dimenions that will be added to the instance."
-          example: "[{\"dimension\": \"dim1\", \"option\": \"op1\"}, {\"dimension\": \"dim1\", \"option\": \"op2\"}]"
+          example: "[{\"dimension\": \"dim1\", \"option\": \"op1\"}, {\"dimension\": \"dim1\", \"option\": \"op2\"}, {\"op\": \"add\", \"path\": \"/dim1/options/op1/order\", \"value\": 3}, {\"op\": \"add\", \"path\": \"/dim1/options/op2/node_id\", \"value\": \"node123\"}]"
   DownloadObject:
     description: "Object containing information of a downloadable file"
     type: object

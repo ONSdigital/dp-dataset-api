@@ -2,9 +2,10 @@ package url_test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/ONSdigital/dp-dataset-api/url"
 	. "github.com/smartystreets/goconvey/convey"
-	"testing"
 )
 
 const (
@@ -22,13 +23,13 @@ func TestBuilder_BuildWebsiteDatasetVersionURL(t *testing.T) {
 
 		Convey("When BuildWebsiteDatasetVersionURL is called", func() {
 
-			url := urlBuilder.BuildWebsiteDatasetVersionURL(datasetID, edition, version)
+			builtUrl := urlBuilder.BuildWebsiteDatasetVersionURL(datasetID, edition, version)
 
 			expectedURL := fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s",
 				websiteURL, datasetID, edition, version)
 
 			Convey("Then the expected URL is returned", func() {
-				So(url, ShouldEqual, expectedURL)
+				So(builtUrl, ShouldEqual, expectedURL)
 			})
 		})
 	})

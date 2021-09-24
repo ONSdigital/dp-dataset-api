@@ -1,6 +1,6 @@
 package schema
 
-import "github.com/ONSdigital/go-ns/avro"
+import "github.com/ONSdigital/dp-kafka/v2/avro"
 
 var generateDownloads = `{
   "type": "record",

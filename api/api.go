@@ -14,8 +14,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/pagination"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
-	dphandlers "github.com/ONSdigital/dp-net/handlers"
-	dprequest "github.com/ONSdigital/dp-net/request"
+	dphandlers "github.com/ONSdigital/dp-net/v2/handlers"
+	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 )
@@ -112,18 +112,18 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 			MaxRequestOptions: api.MaxRequestOptions,
 		}
 
-		api.enablePrivateDatasetEndpoints(ctx, paginator)
+		api.enablePrivateDatasetEndpoints(paginator)
 		api.enablePrivateInstancesEndpoints(instanceAPI, paginator)
 		api.enablePrivateDimensionsEndpoints(dimensionAPI, paginator)
 	} else {
 		log.Info(ctx, "enabling only public endpoints for dataset api")
-		api.enablePublicEndpoints(ctx, paginator)
+		api.enablePublicEndpoints(paginator)
 	}
 	return api
 }
 
 // enablePublicEndpoints register only the public GET endpoints.
-func (api *DatasetAPI) enablePublicEndpoints(ctx context.Context, paginator *pagination.Paginator) {
+func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
 	api.get("/datasets", paginator.Paginate(api.getDatasets))
 	api.get("/datasets/{dataset_id}", api.getDataset)
 	api.get("/datasets/{dataset_id}/editions", paginator.Paginate(api.getEditions))
@@ -138,7 +138,7 @@ func (api *DatasetAPI) enablePublicEndpoints(ctx context.Context, paginator *pag
 
 // enablePrivateDatasetEndpoints register the datasets endpoints with the appropriate authentication and authorisation
 // checks required when running the dataset API in publishing (private) mode.
-func (api *DatasetAPI) enablePrivateDatasetEndpoints(ctx context.Context, paginator *pagination.Paginator) {
+func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Paginator) {
 	api.get(
 		"/datasets",
 		api.isAuthorised(readPermission, paginator.Paginate(api.getDatasets)),

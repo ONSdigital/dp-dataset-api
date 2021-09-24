@@ -31,7 +31,7 @@ func unmarshalEvent(reader io.Reader) (*models.Event, error) {
 // AddEvent details to an instance
 func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	defer r.Body.Close()
+	defer closeBody(ctx, r.Body)
 
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]

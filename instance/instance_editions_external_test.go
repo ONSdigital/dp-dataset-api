@@ -123,7 +123,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				currentInstanceTest_Data := &models.Instance{
+				currentInstanceTestData := &models.Instance{
 					Edition: "2017",
 					Links: &models.InstanceLinks{
 						Job: &models.LinkObject{
@@ -141,7 +141,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 					State: models.CompletedState,
 				}
 
-				mockedDataStore, isLocked := storeMockEditionCompleteWithLock(currentInstanceTest_Data, true)
+				mockedDataStore, isLocked := storeMockEditionCompleteWithLock(currentInstanceTestData, true)
 				mockedDataStore.AddVersionDetailsToInstanceFunc = func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
 					So(*isLocked, ShouldBeTrue)
 					return errors.New("boom")
@@ -172,7 +172,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
-				currentInstanceTest_Data := &models.Instance{
+				currentInstanceTestData := &models.Instance{
 					Edition: "2017",
 					Links: &models.InstanceLinks{
 						Dataset: &models.LinkObject{
@@ -182,7 +182,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 					State: models.EditionConfirmedState,
 				}
 
-				mockedDataStore, isLocked := storeMockWithLock(currentInstanceTest_Data, true)
+				mockedDataStore, isLocked := storeMockWithLock(currentInstanceTestData, true)
 				mockedDataStore.UpdateInstanceFunc = func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
 					So(isLocked, ShouldBeTrue)
 					return testETag, nil
@@ -209,7 +209,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 
 func validateLock(mockedDataStore *storetest.StorerMock, expectedInstanceID string) {
 	So(mockedDataStore.AcquireInstanceLockCalls(), ShouldHaveLength, 1)
-	So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, ShouldEqual, "123")
+	So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, ShouldEqual, expectedInstanceID)
 	So(mockedDataStore.UnlockInstanceCalls(), ShouldHaveLength, 1)
 	So(mockedDataStore.UnlockInstanceCalls()[0].LockID, ShouldEqual, testLockID)
 }
