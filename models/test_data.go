@@ -253,3 +253,13 @@ func expectedMetadataDoc() Metadata {
 		URI:               "http://localhost:22000/datasets/123/breadcrumbs",
 	}
 }
+
+func expectedCantabularMetadataDoc() Metadata {
+	return Metadata{
+		Description:   "census",
+		Keywords:      []string{"test", "test2"},
+		ReleaseDate:   "2017-10-12",
+		Title:         "CensusEthnicity",
+		UnitOfMeasure: "Pounds Sterling",
+	}
+}

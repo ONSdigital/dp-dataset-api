@@ -121,6 +121,36 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 	return metaDataDoc
 }
 
+// CreateCantabularMetaDataDoc manages the creation of metadata across dataset and version docs for cantabular datasets
+// note: additional fields specific to Cantabular will be added to the Metadata model at a later date
+func CreateCantabularMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url.Builder) *Metadata {
+	metaDataDoc := &Metadata{
+		Description:   datasetDoc.Description,
+		Keywords:      datasetDoc.Keywords,
+		ReleaseDate:   versionDoc.ReleaseDate,
+		Title:         datasetDoc.Title,
+		UnitOfMeasure: datasetDoc.UnitOfMeasure,
+	}
+
+	// Remove Public and Private download links
+	if metaDataDoc.Downloads != nil {
+		if metaDataDoc.Downloads.CSV != nil {
+			metaDataDoc.Downloads.CSV.Private = ""
+			metaDataDoc.Downloads.CSV.Public = ""
+		}
+		if metaDataDoc.Downloads.CSVW != nil {
+			metaDataDoc.Downloads.CSVW.Private = ""
+			metaDataDoc.Downloads.CSVW.Public = ""
+		}
+		if metaDataDoc.Downloads.XLS != nil {
+			metaDataDoc.Downloads.XLS.Private = ""
+			metaDataDoc.Downloads.XLS.Public = ""
+		}
+	}
+
+	return metaDataDoc
+}
+
 func getDistribution(downloads *DownloadList) []string {
 	distribution := []string{"json"}
 

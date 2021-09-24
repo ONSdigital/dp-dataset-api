@@ -35,3 +35,23 @@ func TestCreateMetadataDoc(t *testing.T) {
 		So(metaDataDoc, ShouldResemble, &exectedMetadataDoc)
 	})
 }
+
+func TestCreateCantabularMetadataDoc(t *testing.T) {
+
+	Convey("Successfully create metadata document with all relavant cantabular fields", t, func() {
+		inputDatasetDoc := &Dataset{
+			Type:          "ghkgkj",
+			Description:   "census",
+			Keywords:      []string{"test", "test2"},
+			Title:         "CensusEthnicity",
+			UnitOfMeasure: "Pounds Sterling",
+		}
+
+		inputVersionDoc := &publishedVersion
+
+		exectedCantabularMetadataDoc := expectedCantabularMetadataDoc()
+
+		metaDataDoc := CreateCantabularMetaDataDoc(inputDatasetDoc, inputVersionDoc, urlBuilder)
+		So(metaDataDoc, ShouldResemble, &exectedCantabularMetadataDoc)
+	})
+}
