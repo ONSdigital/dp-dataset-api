@@ -40,7 +40,6 @@ func TestCreateCantabularMetadataDoc(t *testing.T) {
 
 	Convey("Successfully create metadata document with all relavant cantabular fields", t, func() {
 		inputDatasetDoc := &Dataset{
-			Type:          "ghkgkj",
 			Description:   "census",
 			Keywords:      []string{"test", "test2"},
 			Title:         "CensusEthnicity",

@@ -33,6 +33,12 @@ type Metadata struct {
 	UnitOfMeasure     string               `json:"unit_of_measure,omitempty"`
 	URI               string               `json:"uri,omitempty"`
 	UsageNotes        *[]UsageNote         `json:"usage_notes,omitempty"`
+	Coverage          string               `json:"coverage,omitempty"`
+	TablePopulation   string               `json:"table_population,omitempty"`
+	AreaType          string               `json:"area_type,omitempty"`
+	TableID           string               `json:"table_id,omitempty"`
+	Classifications   string               `json:"classifications,omitempty"`
+	Source            string               `json:"source,omitempty"`
 }
 
 // MetadataLinks represents a link object to list of metadata) relevant to a version
@@ -122,7 +128,7 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 }
 
 // CreateCantabularMetaDataDoc manages the creation of metadata across dataset and version docs for cantabular datasets
-// note: additional fields specific to Cantabular will be added to the Metadata model at a later date
+// note: logic to retrieve the newly-added Cantabular-specific fields to the Metadata model will be created at a later date
 func CreateCantabularMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url.Builder) *Metadata {
 	metaDataDoc := &Metadata{
 		Description:   datasetDoc.Description,
