@@ -137,6 +137,21 @@ var downloads = DownloadList{
 	},
 }
 
+var cantabularDownloads = DownloadList{
+	CSV: &DownloadObject{
+		HRef: "https://www.aws/123",
+		Size: "25",
+	},
+	CSVW: &DownloadObject{
+		HRef: "https://www.aws/123",
+		Size: "25",
+	},
+	XLS: &DownloadObject{
+		HRef: "https://www.aws/1234",
+		Size: "45",
+	},
+}
+
 var latestChange = LatestChange{
 	Description: "The border of Southampton changed after the south east cliff face fell into the sea.",
 	Name:        "Changes in Classification",
@@ -257,6 +272,8 @@ func expectedMetadataDoc() Metadata {
 func expectedCantabularMetadataDoc() Metadata {
 	return Metadata{
 		Description:   "census",
+		Distribution:  []string{"json", "csv", "csvw", "xls"},
+		Downloads:     &cantabularDownloads,
 		Keywords:      []string{"test", "test2"},
 		ReleaseDate:   "2017-10-12",
 		Title:         "CensusEthnicity",

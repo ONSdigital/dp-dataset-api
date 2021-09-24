@@ -10,7 +10,6 @@ import (
 var urlBuilder = url.NewBuilder("http://localhost:20000")
 
 func TestCreateMetadataDoc(t *testing.T) {
-	t.Parallel()
 
 	Convey("Successfully create metadata document with title only", t, func() {
 
@@ -29,10 +28,10 @@ func TestCreateMetadataDoc(t *testing.T) {
 
 		inputVersionDoc := &publishedVersion
 
-		exectedMetadataDoc := expectedMetadataDoc()
+		expectedMetadataDoc := expectedMetadataDoc()
 
 		metaDataDoc := CreateMetaDataDoc(inputDatasetDoc, inputVersionDoc, urlBuilder)
-		So(metaDataDoc, ShouldResemble, &exectedMetadataDoc)
+		So(metaDataDoc, ShouldResemble, &expectedMetadataDoc)
 	})
 }
 
@@ -48,9 +47,15 @@ func TestCreateCantabularMetadataDoc(t *testing.T) {
 
 		inputVersionDoc := &publishedVersion
 
-		exectedCantabularMetadataDoc := expectedCantabularMetadataDoc()
+		expectedCantabularMetadataDoc := expectedCantabularMetadataDoc()
+
+		inputVersionDoc.Downloads = &cantabularDownloads
 
 		metaDataDoc := CreateCantabularMetaDataDoc(inputDatasetDoc, inputVersionDoc, urlBuilder)
-		So(metaDataDoc, ShouldResemble, &exectedCantabularMetadataDoc)
+		So(metaDataDoc, ShouldResemble, &expectedCantabularMetadataDoc)
+		So(metaDataDoc.Downloads.CSV.Private, ShouldResemble, "")
+		So(metaDataDoc.Downloads.CSVW.Private, ShouldResemble, "")
+		So(metaDataDoc.Downloads.XLS.Private, ShouldResemble, "")
 	})
+
 }

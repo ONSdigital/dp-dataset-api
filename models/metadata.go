@@ -132,11 +132,14 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 func CreateCantabularMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url.Builder) *Metadata {
 	metaDataDoc := &Metadata{
 		Description:   datasetDoc.Description,
+		Downloads:     versionDoc.Downloads,
 		Keywords:      datasetDoc.Keywords,
 		ReleaseDate:   versionDoc.ReleaseDate,
 		Title:         datasetDoc.Title,
 		UnitOfMeasure: datasetDoc.UnitOfMeasure,
 	}
+
+	metaDataDoc.Distribution = getDistribution(metaDataDoc.Downloads)
 
 	// Remove Public and Private download links
 	if metaDataDoc.Downloads != nil {
