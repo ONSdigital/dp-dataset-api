@@ -65,8 +65,8 @@ func TestCreateObservationsDoc(t *testing.T) {
 		So(observationsDoc.UnitOfMeasure, ShouldEqual, "Pounds Sterling")
 		So(observationsDoc.UsageNotes, ShouldNotBeNil)
 		So(observationsDoc.UsageNotes, ShouldResemble, &[]UsageNote{
-			UsageNote{Title: "Confidence Interval", Note: "A value identifying the level of confidence of the observational data"},
-			UsageNote{Title: "data marking", Note: "The marking of observational data?"},
+			{Title: "Confidence Interval", Note: "A value identifying the level of confidence of the observational data"},
+			{Title: "data marking", Note: "The marking of observational data?"},
 		})
 	})
 }

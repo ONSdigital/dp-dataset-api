@@ -58,7 +58,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 			return nil, 0, err
 		}
 
-		dimensions, err := api.dataStore.Backend.GetDimensions(datasetID, versionDoc.ID)
+		dimensions, err := api.dataStore.Backend.GetDimensions(versionDoc.ID)
 		if err != nil {
 			log.Error(ctx, "failed to get version dimensions", err, logData)
 			return nil, 0, err
@@ -130,7 +130,9 @@ func convertBSONToDimensionOption(data interface{}) (*models.DimensionOption, er
 		return nil, err
 	}
 
-	bson.Unmarshal(b, &dim)
+	if err := bson.Unmarshal(b, &dim); err != nil {
+		return nil, err
+	}
 
 	return &dim, nil
 }

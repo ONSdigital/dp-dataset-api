@@ -42,7 +42,7 @@ func GetQueryParamListValues(queryVars url.Values, varKey string, maxNumItems in
 	return items, nil
 }
 
-// utility function to cut a slice according to the provided offset and limit.
+// Slice is a utility function to cut a slice according to the provided offset and limit.
 func Slice(full []models.Dimension, offset, limit int) (sliced []models.Dimension) {
 	end := offset + limit
 	if end > len(full) {
@@ -55,7 +55,7 @@ func Slice(full []models.Dimension, offset, limit int) (sliced []models.Dimensio
 	return full[offset:end]
 }
 
-// utility function to cut a slice of *strings according to the provided offset and limit.
+// SliceStr is a utility function to cut a slice of *strings according to the provided offset and limit.
 func SliceStr(full []*string, offset, limit int) (sliced []*string) {
 	end := offset + limit
 	if end > len(full) {

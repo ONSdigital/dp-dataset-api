@@ -78,7 +78,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
-		api.getVersions(w, r, 20, 0)
+		_, _, err := api.getVersions(w, r, 20, 0)
+		So(err, ShouldNotBeNil)
 
 		assertInternalServerErr(w)
 		So(permissions.Required.Calls, ShouldEqual, 0)
@@ -98,7 +99,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
-		api.getVersions(w, r, 20, 0)
+		_, _, err := api.getVersions(w, r, 20, 0)
+		So(err, ShouldNotBeNil)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
@@ -122,7 +124,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
-		api.getVersions(w, r, 20, 0)
+		_, _, err := api.getVersions(w, r, 20, 0)
+		So(err, ShouldNotBeNil)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
@@ -150,7 +153,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
-		api.getVersions(w, r, 20, 0)
+		_, _, err := api.getVersions(w, r, 20, 0)
+		So(err, ShouldNotBeNil)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
@@ -177,7 +181,8 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
-		api.getVersions(w, r, 20, 0)
+		_, _, err := api.getVersions(w, r, 20, 0)
+		So(err, ShouldNotBeNil)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
@@ -507,8 +512,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		var b string
-		b = versionPayload
+		b := versionPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -579,8 +583,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		var b string
-		b = versionAssociatedPayload
+		b := versionAssociatedPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -639,8 +642,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		var b string
-		b = versionAssociatedPayload
+		b := versionAssociatedPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -706,8 +708,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		var b string
-		b = versionPublishedPayload
+		b := versionPublishedPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -815,8 +816,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 	Convey("When version is already published and update includes downloads object only", t, func() {
 		Convey("And downloads object contains only a csv object", func() {
-			var b string
-			b = `{"downloads": { "csv": { "public": "http://cmd-dev/test-site/cpih01", "size": "12", "href": "http://localhost:8080/cpih01"}}}`
+			b := `{"downloads": { "csv": { "public": "http://cmd-dev/test-site/cpih01", "size": "12", "href": "http://localhost:8080/cpih01"}}}`
 			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 			updateVersionDownloadTest(r)
@@ -828,8 +828,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		})
 
 		Convey("And downloads object contains only a xls object", func() {
-			var b string
-			b = `{"downloads": { "xls": { "public": "http://cmd-dev/test-site/cpih01", "size": "12", "href": "http://localhost:8080/cpih01"}}}`
+			b := `{"downloads": { "xls": { "public": "http://cmd-dev/test-site/cpih01", "size": "12", "href": "http://localhost:8080/cpih01"}}}`
 			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 			updateVersionDownloadTest(r)
@@ -932,7 +931,8 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 	Convey("given download generator returns an error", t, func() {
 		mockedErr := errors.New("spectacular explosion")
 		var v models.Version
-		json.Unmarshal([]byte(versionAssociatedPayload), &v)
+		err := json.Unmarshal([]byte(versionAssociatedPayload), &v)
+		So(err, ShouldBeNil)
 		v.State = models.EditionConfirmedState
 
 		mockedDataStore := &storetest.StorerMock{
@@ -1011,12 +1011,17 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 }
 
 func TestPutEmptyVersion(t *testing.T) {
-	var v models.Version
-	json.Unmarshal([]byte(versionAssociatedPayload), &v)
-	v.State = models.AssociatedState
+	getVersionAssociatedModel := func() models.Version {
+		var v models.Version
+		err := json.Unmarshal([]byte(versionAssociatedPayload), &v)
+		So(err, ShouldBeNil)
+		v.State = models.AssociatedState
+		return v
+	}
 	xlsDownload := &models.DownloadList{XLS: &models.DownloadObject{Size: "1", HRef: "/hello"}}
 
 	Convey("given an existing version with empty downloads", t, func() {
+		v := getVersionAssociatedModel()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(datasetID string, editionID string, version int, state string) (*models.Version, error) {
 				return &v, nil
@@ -1034,7 +1039,6 @@ func TestPutEmptyVersion(t *testing.T) {
 
 		Convey("when put version is called with an associated version with empty downloads", func() {
 			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
-
 			w := httptest.NewRecorder()
 
 			datasetPermissions := getAuthorisationHandlerMock()
@@ -1057,6 +1061,7 @@ func TestPutEmptyVersion(t *testing.T) {
 	})
 
 	Convey("given an existing version with a xls download already exists", t, func() {
+		v := getVersionAssociatedModel()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(datasetID string, editionID string, version int, state string) (*models.Version, error) {
 				v.Downloads = xlsDownload
@@ -1127,8 +1132,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		var b string
-		b = "{"
+		b := "{"
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -1168,8 +1172,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		var b string
-		b = versionPayload
+		b := versionPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -1209,8 +1212,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		var b string
-		b = versionPayload
+		b := versionPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/-1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -1254,8 +1256,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		var b string
-		b = versionPayload
+		b := versionPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/0", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -1289,8 +1290,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		var b string
-		b = versionPayload
+		b := versionPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/kkk", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -1324,8 +1324,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		var b string
-		b = versionPayload
+		b := versionPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -1369,8 +1368,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		var b string
-		b = versionPayload
+		b := versionPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -1414,8 +1412,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		var b string
-		b = versionPayload
+		b := versionPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -1463,8 +1460,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		var b string
-		b = versionPayload
+		b := versionPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
@@ -1502,8 +1498,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		var b string
-		b = versionPayload
+		b := versionPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -1544,8 +1539,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		var b string
-		b = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"associated"}`
+		b := `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"associated"}`
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -1593,8 +1587,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		var b string
-		b = versionPublishedPayload
+		b := versionPublishedPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -1677,12 +1670,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		mockedDataStore.GetVersion("789", "2017", 1, "")
-		mockedDataStore.GetEdition("123", "2017", "")
-		mockedDataStore.UpdateVersion("a1b2c3", &models.Version{})
-		mockedDataStore.GetDataset("123")
-		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
-
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
@@ -1693,12 +1680,12 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 3)
-		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 

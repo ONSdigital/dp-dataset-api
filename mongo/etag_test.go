@@ -208,77 +208,83 @@ func TestNewETagForBuildSearchTaskStateUpdate(t *testing.T) {
 	})
 }
 
-func TestNewETagForNodeIDAndOrder(t *testing.T) {
-
-	Convey("Given an instance", t, func() {
-
-		currentInstance := testInstance()
-		nodeID := "testNode"
-		order := 2
-
-		Convey("newETagForNodeIDAndOrder returns an eTag that is different from the original instance ETag", func() {
-			eTag1, err := newETagForNodeIDAndOrder(currentInstance, nodeID, &order)
-			So(err, ShouldBeNil)
-			So(eTag1, ShouldNotEqual, currentInstance.ETag)
-
-			Convey("Applying the same update to a different instance results in a different ETag", func() {
-				instance2 := testInstance()
-				instance2.InstanceID = "otherInstance"
-				eTag2, err := newETagForNodeIDAndOrder(instance2, nodeID, &order)
-				So(err, ShouldBeNil)
-				So(eTag2, ShouldNotEqual, eTag1)
-			})
-
-			Convey("Applying a different update to the same instance results in a different ETag", func() {
-				eTag3, err := newETagForNodeIDAndOrder(currentInstance, nodeID, nil)
-				So(err, ShouldBeNil)
-				So(eTag3, ShouldNotEqual, eTag1)
-			})
-		})
-	})
-}
-
-func TestNewETagForAddDimensionOption(t *testing.T) {
+func TestNewETagForOptions(t *testing.T) {
 
 	Convey("Given an instance", t, func() {
 
 		currentInstance := testInstance()
 
-		option := models.CachedDimensionOption{
+		optionUpsert := models.CachedDimensionOption{
 			Code: "testCode",
 			Name: "testName",
 		}
 
-		anotherOption := models.CachedDimensionOption{
+		anotherOptionUpsert := models.CachedDimensionOption{
 			Code: "anotherCode",
 			Name: "anotherName",
 		}
 
-		Convey("newETagForAddDimensionOption returns an eTag that is different from the original instance ETag", func() {
-			eTag1, err := newETagForAddDimensionOptions(currentInstance, []*models.CachedDimensionOption{&option})
+		ord := 6
+		optionUpdate := models.DimensionOption{
+			NodeID: "myNode",
+			Order:  &ord,
+		}
+
+		anotherOptionUpdate := models.DimensionOption{
+			NodeID: "anotherNodeID",
+		}
+
+		Convey("newETagForOptions returns an eTag that is different from the original instance ETag when it is provided an upsert", func() {
+			eTag1, err := newETagForOptions(currentInstance, []*models.CachedDimensionOption{&optionUpsert}, nil)
+			So(err, ShouldBeNil)
+			So(eTag1, ShouldNotEqual, currentInstance.ETag)
+
+			Convey("Applying the same upsert to a different instance results in a different ETag", func() {
+				instance2 := testInstance()
+				instance2.InstanceID = "otherInstance"
+				eTag2, err := newETagForOptions(instance2, []*models.CachedDimensionOption{&optionUpsert}, nil)
+				So(err, ShouldBeNil)
+				So(eTag2, ShouldNotEqual, eTag1)
+			})
+
+			Convey("Applying a different upsert to the same instance results in a different ETag", func() {
+				eTag3, err := newETagForOptions(currentInstance, []*models.CachedDimensionOption{&anotherOptionUpsert}, nil)
+				So(err, ShouldBeNil)
+				So(eTag3, ShouldNotEqual, eTag1)
+			})
+
+			Convey("Applying an extra update to the same instance with the same update results in a different ETag", func() {
+				eTag3, err := newETagForOptions(currentInstance, []*models.CachedDimensionOption{&optionUpsert}, []*models.DimensionOption{&optionUpdate})
+				So(err, ShouldBeNil)
+				So(eTag3, ShouldNotEqual, eTag1)
+			})
+
+			Convey("Applying an upsert to the same instance containing an extra dimensions results in a different ETag", func() {
+				option := models.CachedDimensionOption{
+					Code: "anotherCode",
+					Name: "anotherName",
+				}
+				eTag3, err := newETagForOptions(currentInstance, []*models.CachedDimensionOption{&option, &anotherOptionUpsert}, nil)
+				So(err, ShouldBeNil)
+				So(eTag3, ShouldNotEqual, eTag1)
+			})
+		})
+
+		Convey("newETagForOptions returns an eTag that is different from the original instance ETag when it is provided an update", func() {
+			eTag1, err := newETagForOptions(currentInstance, nil, []*models.DimensionOption{&optionUpdate})
 			So(err, ShouldBeNil)
 			So(eTag1, ShouldNotEqual, currentInstance.ETag)
 
 			Convey("Applying the same update to a different instance results in a different ETag", func() {
 				instance2 := testInstance()
 				instance2.InstanceID = "otherInstance"
-				eTag2, err := newETagForAddDimensionOptions(instance2, []*models.CachedDimensionOption{&option})
+				eTag2, err := newETagForOptions(instance2, nil, []*models.DimensionOption{&optionUpdate})
 				So(err, ShouldBeNil)
 				So(eTag2, ShouldNotEqual, eTag1)
 			})
 
 			Convey("Applying a different update to the same instance results in a different ETag", func() {
-				eTag3, err := newETagForAddDimensionOptions(currentInstance, []*models.CachedDimensionOption{&anotherOption})
-				So(err, ShouldBeNil)
-				So(eTag3, ShouldNotEqual, eTag1)
-			})
-
-			Convey("Applying an update to the same instance containing an extra dimensions results in a different ETag", func() {
-				option := models.CachedDimensionOption{
-					Code: "anotherCode",
-					Name: "anotherName",
-				}
-				eTag3, err := newETagForAddDimensionOptions(currentInstance, []*models.CachedDimensionOption{&option, &anotherOption})
+				eTag3, err := newETagForOptions(currentInstance, nil, []*models.DimensionOption{&anotherOptionUpdate})
 				So(err, ShouldBeNil)
 				So(eTag3, ShouldNotEqual, eTag1)
 			})

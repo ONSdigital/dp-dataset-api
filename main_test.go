@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -8,12 +9,12 @@ import (
 
 	componenttest "github.com/ONSdigital/dp-component-test"
 	"github.com/ONSdigital/dp-dataset-api/features/steps"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 )
 
-// Mongo version here is overridden in the pipeline by the URL provided in the component.sh
-const MongoVersion = "4.0.23"
+const MongoVersion = "4.4.8"
 const MongoPort = 27017
 const DatabaseName = "testing"
 
@@ -35,7 +36,9 @@ func (f *ComponentTest) InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(*godog.Scenario) {
 		apiFeature.Reset()
 		datasetFeature.Reset()
-		f.MongoFeature.Reset()
+		if err := f.MongoFeature.Reset(); err != nil {
+			log.Error(context.Background(), "failed to reset mongo feature", err)
+		}
 		authorizationFeature.Reset()
 	})
 

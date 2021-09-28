@@ -9,7 +9,6 @@ import (
 	"net/http/httptest"
 	"sync"
 	"testing"
-	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
@@ -17,7 +16,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
-	dprequest "github.com/ONSdigital/dp-net/request"
+	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/gorilla/mux"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -25,11 +24,8 @@ import (
 )
 
 const (
-	host              = "http://localhost:22000"
-	authToken         = "dataset"
-	healthTimeout     = 2 * time.Second
-	internalServerErr = "internal server error\n"
-	callerIdentity    = "someone@ons.gov.uk"
+	host      = "http://localhost:22000"
+	authToken = "dataset"
 )
 
 var (
@@ -59,8 +55,8 @@ func GetAPIWithMocks(mockedDataStore store.Storer, mockedGeneratedDownloads Down
 	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, datasetPermissions, permissions)
 }
 
-func createRequestWithAuth(method, URL string, body io.Reader) *http.Request {
-	r := httptest.NewRequest(method, URL, body)
+func createRequestWithAuth(method, target string, body io.Reader) *http.Request {
+	r := httptest.NewRequest(method, target, body)
 	ctx := r.Context()
 	ctx = dprequest.SetCaller(ctx, "someone@ons.gov.uk")
 	r = r.WithContext(ctx)
@@ -118,7 +114,7 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 		So(actualTotalCount, ShouldEqual, 0)
 		So(err, ShouldEqual, errs.ErrInternalServer)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(string(w.Body.Bytes()), ShouldEqual, "internal error\n")
+		So(string(w.Body.String()), ShouldEqual, "internal error\n")
 	})
 }
 
@@ -234,8 +230,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 func TestPostDatasetsReturnsCreated(t *testing.T) {
 	t.Parallel()
 	Convey("A successful request to post dataset returns 201 OK response", t, func() {
-		var b string
-		b = datasetPayload
+		b := datasetPayload
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -250,7 +245,6 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
@@ -258,7 +252,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -267,8 +261,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 	})
 
 	Convey("When creating the dataset with an empty QMI url returns 201 success", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "", "title": "test"}}`
+		b := `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "", "title": "test"}}`
 
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -284,7 +277,6 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
@@ -292,7 +284,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -301,8 +293,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 	})
 
 	Convey("When creating the dataset with a valid QMI url (path in appropriate url format) returns 201 success", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://domain.com/path", "title": "test"}}`
+		b := `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://domain.com/path", "title": "test"}}`
 
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -318,7 +309,6 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
@@ -326,7 +316,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -335,8 +325,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 	})
 
 	Convey("When creating the dataset with a valid QMI url (relative path) returns 201 success", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "/path", "title": "test"}}`
+		b := `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "/path", "title": "test"}}`
 
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -352,7 +341,6 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
@@ -360,7 +348,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -369,8 +357,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 	})
 
 	Convey("When creating the dataset with a valid QMI url (valid host but an empty path) returns 201 success", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://domain.com/", "title": "test"}}`
+		b := `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://domain.com/", "title": "test"}}`
 
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -386,7 +373,6 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
@@ -394,7 +380,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -403,8 +389,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 	})
 
 	Convey("When creating the dataset with a valid QMI url (only a valid domain) returns 201 success", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "domain.com", "title": "test"}}`
+		b := `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "domain.com", "title": "test"}}`
 
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -420,7 +405,6 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		mockedDataStore.UpsertDataset("123", &models.DatasetUpdate{Next: &models.Dataset{}})
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
@@ -428,7 +412,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -440,8 +424,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 func TestPostDatasetReturnsError(t *testing.T) {
 	t.Parallel()
 	Convey("When the request contain malformed json a bad request status is returned", t, func() {
-		var b string
-		b = "{"
+		b := "{"
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -473,8 +456,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
-		var b string
-		b = datasetPayload
+		b := datasetPayload
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -505,8 +487,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When the request does not contain a valid internal token returns 401", t, func() {
-		var b string
-		b = datasetPayload
+		b := datasetPayload
 		r := httptest.NewRequest("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -536,8 +517,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When the dataset already exists and a request is sent to create the same dataset return status forbidden", t, func() {
-		var b string
-		b = datasetPayload
+		b := datasetPayload
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -573,9 +553,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When the request has an filterable datatype and nomis url it should return type mismatch error", t, func() {
-		var b string
-		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable","nomis_reference_url":"https://www.nomis.co.uk"}`
-
+		b := `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable","nomis_reference_url":"https://www.nomis.co.uk"}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -605,8 +583,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When creating the dataset with invalid QMI url (invalid character) returns bad request", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": ":not a link", "title": "test"}}`
+		b := `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": ":not a link", "title": "test"}}`
 
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -637,8 +614,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When creating the dataset with invalid QMI url (scheme only) returns bad request", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://", "title": "test"}}`
+		b := `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://", "title": "test"}}`
 
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -669,8 +645,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When creating the dataset with invalid QMI url (scheme and path only) returns bad request", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http:///path", "title": "test"}}`
+		b := `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http:///path", "title": "test"}}`
 
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -701,8 +676,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When the request has an invalid datatype it should return invalid type errorq", t, func() {
-		var b string
-		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"nomis_filterable"}`
+		b := `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"nomis_filterable"}`
 
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -733,8 +707,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When the request body has an empty type field it should create a dataset with type defaulted to filterable", t, func() {
-		var b string
-		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":""}`
+		b := `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":""}`
 		res := `{"id":"123123","next":{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","id":"123123","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"},"editions":{"href":"http://localhost:22000/datasets/123123/editions"},"self":{"href":"http://localhost:22000/datasets/123123"}},"next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department"},"state":"created","theme":"population","title":"CensusEthnicity","type":"filterable"}}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123123", bytes.NewBufferString(b))
 
@@ -750,14 +723,13 @@ func TestPostDatasetReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		mockedDataStore.UpsertDataset("123123", &models.DatasetUpdate{Next: &models.Dataset{}})
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusCreated)
 		So(w.Body.String(), ShouldContainSubstring, res)
 		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 2)
+		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -770,8 +742,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 	t.Parallel()
 	Convey("A successful request to put dataset returns 200 OK response", t, func() {
-		var b string
-		b = datasetPayload
+		b := datasetPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -787,11 +758,6 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 
-		dataset := &models.Dataset{
-			Title: "CPI",
-		}
-		mockedDataStore.UpdateDataset(testContext, "123", dataset, models.CreatedState)
-
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
@@ -799,7 +765,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -810,8 +776,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 	Convey("When update dataset type has a value of filterable and stored dataset type is nomis return status ok", t, func() {
 		// Dataset type field cannot be updated and hence is ignored in any updates to the dataset
 
-		var b string
-		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable","nomis_reference_url":"https://www.nomis.co.uk"}`
+		b := `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable","nomis_reference_url":"https://www.nomis.co.uk"}`
 
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -842,8 +807,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 	})
 
 	Convey("When updating the dataset with an empty QMI url returns 200 success", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "", "title": "test"}}`
+		b := `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "", "title": "test"}}`
 
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -875,8 +839,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 	})
 
 	Convey("When updating the dataset with a valid QMI url (path in appropriate url format) returns 200 success", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://domain.com/path", "title": "test"}}`
+		b := `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://domain.com/path", "title": "test"}}`
 
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -908,8 +871,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 	})
 
 	Convey("When updating the dataset with a valid QMI url (relative path) returns 200 success", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "/path", "title": "test"}}`
+		b := `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "/path", "title": "test"}}`
 
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -941,8 +903,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 	})
 
 	Convey("When updating the dataset with a valid QMI url (valid host but an empty path) returns 200 success", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://domain.com/", "title": "test"}}`
+		b := `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://domain.com/", "title": "test"}}`
 
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -974,8 +935,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 	})
 
 	Convey("When updating the dataset with a valid QMI url (only a valid domain) returns 200 success", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "domain.com", "title": "test"}}`
+		b := `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "domain.com", "title": "test"}}`
 
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -1011,8 +971,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 	t.Parallel()
 	Convey("When the request contain malformed json a bad request status is returned", t, func() {
-		var b string
-		b = "{"
+		b := "{"
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -1046,8 +1005,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
-		var b string
-		b = versionPayload
+		b := versionPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -1061,13 +1019,8 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		dataset := &models.Dataset{
-			Title: "CPI",
-		}
-
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		mockedDataStore.UpdateDataset(testContext, "123", dataset, models.CreatedState)
 		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 
 		api.Router.ServeHTTP(w, r)
@@ -1076,7 +1029,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -1085,8 +1038,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When the dataset document cannot be found return status not found ", t, func() {
-		var b string
-		b = datasetPayload
+		b := datasetPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -1120,8 +1072,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When updating the dataset nomis_reference_url and the stored dataset type is not nomis return bad request", t, func() {
-		var b string
-		b = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"nomis_reference_url":"https://www.nomis.co.uk"}`
+		b := `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"nomis_reference_url":"https://www.nomis.co.uk"}`
 
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -1154,8 +1105,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When updating the dataset with invalid QMI url (invalid character) returns bad request", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": ":not a link", "title": "test"}}`
+		b := `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": ":not a link", "title": "test"}}`
 
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -1188,8 +1138,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When updating the dataset with invalid QMI url (scheme only) returns bad request", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://", "title": "test"}}`
+		b := `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http://", "title": "test"}}`
 
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -1222,8 +1171,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When updating the dataset with invalid QMI url (scheme and path only) returns bad request", t, func() {
-		var b string
-		b = `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http:///path", "title": "test"}}`
+		b := `{"contacts": [{"email": "testing@hotmail.com", "name": "John Cox", "telephone": "01623 456789"}], "description": "census", "links": {"access_rights": {"href": "http://ons.gov.uk/accessrights"}}, "title": "CensusEthnicity", "theme": "population", "state": "completed", "next_release": "2016-04-04", "publisher": {"name": "The office of national statistics", "type": "government department", "url": "https://www.ons.gov.uk/"}, "type": "nomis", "nomis_reference_url": "https://www.nomis.co.uk", "qmi": {"href": "http:///path", "title": "test"}}`
 
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -1256,8 +1204,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When the request is not authorised to update dataset return status unauthorised", t, func() {
-		var b string
-		b = "{\"edition\":\"2017\",\"state\":\"created\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
+		b := "{\"edition\":\"2017\",\"state\":\"created\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
@@ -1482,8 +1429,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When the request is not authorised to delete the dataset return status not found", t, func() {
-		var b string
-		b = "{\"edition\":\"2017\",\"state\":\"created\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
+		b := "{\"edition\":\"2017\",\"state\":\"created\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
 		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 

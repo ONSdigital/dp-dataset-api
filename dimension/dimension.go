@@ -1,10 +1,8 @@
 package dimension
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,11 +10,10 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/utils"
-	dphttp "github.com/ONSdigital/dp-net/http"
-	dprequest "github.com/ONSdigital/dp-net/request"
+	dphttp "github.com/ONSdigital/dp-net/v2/http"
+	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 )
@@ -117,7 +114,7 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 
 	// Get dimension options corresponding to the instance in the right state
 	// Note: GetUniqueDimensionAndOptions does not implement pagination at query level
-	options, totalCount, err := s.GetUniqueDimensionAndOptions(ctx, instanceID, dimension, offset, limit)
+	options, totalCount, err := s.GetUniqueDimensionAndOptions(instanceID, dimension)
 	if err != nil {
 		log.Error(ctx, "failed to get unique dimension options for instance", err, logData)
 		handleDimensionErr(ctx, w, err, logData)
@@ -162,7 +159,8 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer s.UnlockInstance(lockID)
 
-	newETag, err := s.upsert(ctx, instanceID, []*models.CachedDimensionOption{option}, logData, eTag)
+	// upsert dimension option
+	newETag, err := s.upsertDimensionOption(ctx, instanceID, option, logData, eTag)
 	if err != nil {
 		handleDimensionErr(ctx, w, err, logData)
 		return
@@ -173,6 +171,7 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // PatchDimensionsHandler represents adding multile dimensions to a specific instance
+// And modifying multiple dimension options `node_id` and `order` values for a specific instance.
 func (s *Store) PatchDimensionsHandler(w http.ResponseWriter, r *http.Request) {
 	defer dphttp.DrainBody(r)
 
@@ -214,95 +213,165 @@ func (s *Store) PatchDimensionsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Store) applyPatchesForDimensions(ctx context.Context, instanceID string, patches []dprequest.Patch, logData log.Data, eTagSelector string) (successful []dprequest.Patch, newETag string, err error) {
+	upserts := []dprequest.Patch{} // list of patches that correspond to a MongoDB upsert
+	updates := []dprequest.Patch{} // list of patches that correspond to a MongoDB update
 
-	// validate patches, including max values
-	totalValues := 0
-	for _, patch := range patches {
+	optionsToUpdate := []*models.DimensionOption{}       // values to update (extracted from '/{dimension}/options/{option}/node_id' and '/{dimension}/options/{option}/order')
+	optionsToUpsert := []*models.CachedDimensionOption{} // full dimension options to upsert (extracted from '/-')
 
-		// validate path
-		if patch.Path != "/-" {
-			return successful, "", apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("provided path '%s' not supported. Supported paths: '/-'", patch.Path)}
-		}
-
-		// check that the values is an array
-		arr, ok := patch.Value.([]interface{})
-		if !ok {
-			return successful, "", apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("provided values '%#v' is not a list", patch.Value)}
-		}
-
-		// check size of values array
-		totalValues += len(arr)
-		if totalValues > s.MaxRequestOptions {
+	// checkSize is an aux func to check if we reached the maximum size allowed - if we did we return an error
+	var checkSize = func() error {
+		if len(optionsToUpdate)+len(optionsToUpsert) > s.MaxRequestOptions {
 			logData["max_options"] = s.MaxRequestOptions
-			return successful, "", apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("a maximum of %d overall dimension values can be provied in a set of patch operations, which has been exceeded", s.MaxRequestOptions)}
+			return apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("a maximum of %d overall dimension values can be provied in a set of patch operations, which has been exceeded", s.MaxRequestOptions)}
 		}
+		return nil
 	}
-	logData["total_patch_values"] = totalValues
+
+	// 1- Populate slices to update, failing if there is any wrong path or value (nothing is written to the DB yet)
+	for _, patch := range patches {
+		// check that we did not reach maximum size
+		if err := checkSize(); err != nil {
+			return nil, "", err
+		}
+
+		if patch.Path == "/-" {
+			// get list of options provided as value
+			options, err := getOptionsArrayFromInterface(patch.Value)
+			if err != nil {
+				return nil, "", apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("provided values '%#v' is not a list of dimension options", patch.Value)}
+			}
+			optionsToUpsert = append(optionsToUpsert, options...)
+			upserts = append(upserts, patch)
+			continue
+		}
+
+		// check if path is '/{dimension}/options/{option}/node_id':
+		if isNodeIDPath(patch.Path) {
+			val, ok := patch.Value.(string)
+			if !ok {
+				return nil, "", apierrors.ErrInvalidPatch{Msg: "wrong value type for /{dimension}/options/{option}/node_id, expected string"}
+			}
+			op := createOptionFromPath(patch.Path)
+			op.InstanceID = instanceID
+			op.NodeID = val
+			optionsToUpdate = append(optionsToUpdate, op)
+			updates = append(updates, patch)
+			continue
+		}
+
+		// check if path is '/{dimension}/options/{option}/order':
+		if isOrderPath(patch.Path) {
+			v, ok := patch.Value.(float64)
+			if !ok {
+				return successful, "", apierrors.ErrInvalidPatch{Msg: "wrong value type for /{dimension}/options/{option}/order, expected numeric value (float64)"}
+			}
+			val := int(v)
+			op := createOptionFromPath(patch.Path)
+			op.InstanceID = instanceID
+			op.Order = &val
+			optionsToUpdate = append(optionsToUpdate, op)
+			updates = append(updates, patch)
+			continue
+		}
+
+		// any other path is not supported
+		return nil, "", apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("provided path '%s' not supported. Supported paths: '/-', '/{dimension}/options/{option}/node_id', '/{dimension}/options/{option}/order'", patch.Path)}
+	}
+
+	// check that we did not reach maximum size
+	if err := checkSize(); err != nil {
+		return nil, "", err
+	}
 
 	// acquire instance lock so that the instance update and the dimension.options update are atomic
 	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
 	if err != nil {
-		return successful, "", err
+		return nil, "", err
 	}
 	defer s.UnlockInstance(lockID)
 
-	// apply patch operations sequentially, stop processing if one patch fails, and return a list of successful patches operations
-	for _, patch := range patches {
-		// get list of options provided as value
-		options, err := getOptionsArrayFromInterface(patch.Value)
-		if err != nil {
-			return successful, "", apierrors.ErrInvalidPatch{Msg: fmt.Sprintf("provided values '%#v' is not a list of dimension options", patch.Value)}
-		}
-
-		// upsert values in database, updating the instance eTag
-		newETag, err = s.upsert(ctx, instanceID, options, logData, eTagSelector)
-		if err != nil {
-			return successful, "", err
-		}
-
-		// update list of successful patches and eTag for next iteration
-		successful = append(successful, patch)
-		eTagSelector = newETag
+	// Upsert and update dimension options
+	upsertOK := false
+	newETag, upsertOK, err = s.upsertAndUpdateDimensionOptions(ctx, instanceID, optionsToUpsert, optionsToUpdate, logData, eTagSelector)
+	if upsertOK {
+		successful = append(successful, upserts...)
+	}
+	if err != nil {
+		return successful, "", err
 	}
 
+	successful = append(successful, updates...)
 	return successful, newETag, nil
 }
 
-func (s *Store) upsert(ctx context.Context, instanceID string, options []*models.CachedDimensionOption, logData log.Data, eTagSelector string) (newETag string, err error) {
+// upsertDimensionOption wraps upsertAndUpdateDimensionOptions for a single option upsert case, for simplicity
+func (s *Store) upsertDimensionOption(ctx context.Context, instanceID string, op *models.CachedDimensionOption, logData log.Data, eTagSelector string) (newETag string, err error) {
+	newETag, _, err = s.upsertAndUpdateDimensionOptions(ctx, instanceID, []*models.CachedDimensionOption{op}, nil, logData, eTagSelector)
+	return
+}
+
+// updateDimensionOption wraps upsertAndUpdateDimensionOptions for a single option update case, for simplicity
+func (s *Store) updateDimensionOption(ctx context.Context, instanceID string, op *models.DimensionOption, logData log.Data, eTagSelector string) (newETag string, err error) {
+	newETag, _, err = s.upsertAndUpdateDimensionOptions(ctx, instanceID, nil, []*models.DimensionOption{op}, logData, eTagSelector)
+	return
+}
+
+// upsertAndUpdateDimensionOptions checks that the instance is in a valid state,
+// then it updates its ETag value according to the upserts and updates
+// and then performs the upserts (inert or update) and updates (node id and order) in bulk
+// the caller may need to acquire an exclusive lock because this method does a read and potentially 2 writes to mongoDB
+func (s *Store) upsertAndUpdateDimensionOptions(ctx context.Context, instanceID string, optionsToUpsert []*models.CachedDimensionOption, optionsToUpdate []*models.DimensionOption, logData log.Data, eTagSelector string) (newETag string, upsertOK bool, err error) {
+	if len(optionsToUpsert) == 0 && len(optionsToUpdate) == 0 {
+		return "", true, nil // nothing to update or upsert
+	}
 
 	// Get instance
 	instance, err := s.GetInstance(instanceID, eTagSelector)
 	if err != nil {
 		log.Error(ctx, "failed to get instance", err, logData)
-		return "", err
+		return "", false, err
 	}
 
 	// Early return if instance state is invalid
 	if err = models.CheckState("instance", instance.State); err != nil {
 		logData["state"] = instance.State
 		log.Error(ctx, "current instance has an invalid state", err, logData)
-		return "", err
+		return "", false, err
 	}
 
 	// set instanceID in all options
-	for _, option := range options {
+	for _, option := range optionsToUpsert {
+		option.InstanceID = instanceID
+	}
+	for _, option := range optionsToUpdate {
 		option.InstanceID = instanceID
 	}
 
 	// generate a new unique ETag for the instance + options and update it in DB
-	newETag, err = s.UpdateETagForOptions(instance, options, eTagSelector)
+	newETag, err = s.UpdateETagForOptions(instance, optionsToUpsert, optionsToUpdate, eTagSelector)
 	if err != nil {
 		log.Error(ctx, "failed to update eTag for an instance", err, logData)
-		return "", err
+		return "", false, err
 	}
 
 	// Upsert dimension options in bulk
-	if err := s.UpsertDimensionsToInstance(options); err != nil {
-		log.Error(ctx, "failed to upsert dimensions for an instance", err, logData)
-		return "", err
+	if len(optionsToUpsert) > 0 {
+		if err := s.UpsertDimensionsToInstance(optionsToUpsert); err != nil {
+			log.Error(ctx, "failed to upsert dimensions for an instance", err, logData)
+			return "", false, err
+		}
 	}
 
-	return newETag, nil
+	// Update dimension options NodeID and Order values in bulk
+	if len(optionsToUpdate) > 0 {
+		if err := s.UpdateDimensionsNodeIDAndOrder(optionsToUpdate); err != nil {
+			log.Error(ctx, "failed to update a dimension of that instance", err, logData)
+			return "", true, err
+		}
+	}
+
+	return newETag, true, nil
 }
 
 // createPatches manages the creation of an array of patch structs from the provided reader, and validates them
@@ -401,7 +470,7 @@ func (s *Store) patchOption(ctx context.Context, instanceID, dimensionName, opti
 		}
 
 		// update values in database, updating the instance eTag
-		newETag, err = s.updateOption(ctx, dimOption, logData, eTagSelector)
+		newETag, err = s.updateDimensionOption(ctx, dimOption.InstanceID, &dimOption, logData, eTagSelector)
 		if err != nil {
 			return successful, "", err
 		}
@@ -433,7 +502,7 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer s.UnlockInstance(lockID)
 
-	newETag, err := s.updateOption(ctx, dimOption, logData, eTag)
+	newETag, err := s.updateDimensionOption(ctx, dimOption.InstanceID, &dimOption, logData, eTag)
 	if err != nil {
 		handleDimensionErr(ctx, w, err, logData)
 		return
@@ -442,91 +511,4 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 	logData["action"] = AddDimensionAction
 	log.Info(ctx, "added node id to dimension of an instance resource", logData)
 	setETag(w, newETag)
-}
-
-// updateOption checks that the instance is in a valid state
-// and then updates nodeID and order (if provided) to the provided dimension option.
-// This method locks the instance resource and updates its eTag value, making it safe to perform concurrent updates.
-func (s *Store) updateOption(ctx context.Context, dimOption models.DimensionOption, logData log.Data, eTagSelector string) (newETag string, err error) {
-
-	// Get instance
-	instance, err := s.GetInstance(dimOption.InstanceID, eTagSelector)
-	if err != nil {
-		log.Error(ctx, "failed to get instance", err, logData)
-		return "", err
-	}
-
-	// Early return if instance state is invalid
-	if err = models.CheckState("instance", instance.State); err != nil {
-		logData["state"] = instance.State
-		log.Error(ctx, "current instance has an invalid state", err, logData)
-		return "", err
-	}
-
-	// Update instance ETag
-	newETag, err = s.UpdateETagForNodeIDAndOrder(instance, dimOption.NodeID, dimOption.Order, eTagSelector)
-	if err != nil {
-		log.Error(ctx, "failed to update ETag for instance", err, logData)
-		return "", err
-	}
-
-	// Update dimension ID and order in dimension.options collection
-	if err := s.UpdateDimensionNodeIDAndOrder(&dimOption); err != nil {
-		log.Error(ctx, "failed to update a dimension of that instance", err, logData)
-		return "", err
-	}
-
-	return newETag, nil
-}
-
-func setJSONPatchContentType(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json-patch+json")
-}
-
-func getIfMatch(r *http.Request) string {
-	ifMatch := r.Header.Get("If-Match")
-	if ifMatch == "" {
-		return mongo.AnyETag
-	}
-	return ifMatch
-}
-
-func setETag(w http.ResponseWriter, eTag string) {
-	w.Header().Set("ETag", eTag)
-}
-
-func writeBody(ctx context.Context, w http.ResponseWriter, b []byte, data log.Data) {
-	if _, err := w.Write(b); err != nil {
-		log.Error(ctx, "failed to write response body", err, data)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-// getOptionsArrayFromInterface obtains an array of *CachedDimensionOption from the provided interface
-func getOptionsArrayFromInterface(elements interface{}) ([]*models.CachedDimensionOption, error) {
-	options := []*models.CachedDimensionOption{}
-
-	// elements should be an array
-	arr, ok := elements.([]interface{})
-	if !ok {
-		return options, errors.New("missing list of items")
-	}
-
-	// each item in the array should be an option
-	for _, v := range arr {
-		// need to re-marshal, as it is currently a map
-		b, err := json.Marshal(v)
-		if err != nil {
-			return nil, err
-		}
-
-		// unmarshal and validate CachedDimensionOption structure
-		option, err := unmarshalDimensionCache(bytes.NewBuffer(b))
-		if err != nil {
-			return nil, err
-		}
-		options = append(options, option)
-	}
-
-	return options, nil
 }

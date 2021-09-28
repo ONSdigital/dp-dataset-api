@@ -73,7 +73,13 @@ const (
 		"(https://webarchive.nationalarchives.gov.uk/20160129174312/http:/www.ons.gov.uk/ons/guide-method/census/2011/the-2011-census/processing-the-information/statistical-methodology/statistical-disclosure-control-for-2011-census.pdf)."
 )
 
-//CensusContactDetails returns the default values for contact details
+// Regular expressions
+var (
+	httpRegex  = regexp.MustCompile(`(http[^\[]*)(\[[^\[]*\])`)
+	titleRegex = regexp.MustCompile(`^[\d|\D].*?\-\s*([\d|\D].*)$`)
+)
+
+// CensusContactDetails returns the default values for contact details
 func CensusContactDetails() models.ContactDetails {
 	return models.ContactDetails{
 		Email:     "census.customerservices@ons.gov.uk",
@@ -110,7 +116,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	//var censusData CenStructure
+	// var censusData CenStructure
 	res := CenStructure{}
 	if err := json.Unmarshal(b, &res); err != nil {
 		logData := log.Data{"json file": res}
@@ -139,11 +145,7 @@ func main() {
 		}
 		title := res.Structure.Keyfamilies.Keyfamily[keyIndex].Name.Value
 
-		mapData.Title, err = CheckTitle(title, ctx)
-		if err != nil {
-			log.Error(ctx, "error getting the title", err)
-			os.Exit(1)
-		}
+		mapData.Title = CheckTitle(title, ctx)
 		datasetUrl := "http://127.0.0.1:12345/datasets/"
 		instanceUrl := "http://127.0.0.1:12345/instances/"
 		editionUrl := "/editions"
@@ -167,7 +169,7 @@ func main() {
 		mapData.State = "published"
 		mapData.Type = "nomis"
 
-		//Model to generate editions document in mongodb
+		// Model to generate editions document in mongodb
 		generalModel := &models.Edition{
 			Edition: censusYear,
 			Links: &models.EditionUpdateLinks{
@@ -251,11 +253,7 @@ func main() {
 			}
 			if strings.HasPrefix(str, "MetadataText") {
 				if str != "MetadataText0" {
-					example, err = CheckSubString(annotation.Text.(string), ctx)
-					if err != nil {
-						log.Error(ctx, "failed to get metadatatext", err)
-						os.Exit(1)
-					}
+					example = CheckSubString(annotation.Text.(string), ctx)
 				}
 				splitMetaData := strings.Split(str, "MetadataText")
 				txtNumber, _ := strconv.Atoi(splitMetaData[1])
@@ -365,37 +363,37 @@ func downloadFile(ctx context.Context) {
 		log.Error(ctx, "error writing the file", err)
 		os.Exit(1)
 	}
-	defer resp.Body.Close()
+	defer closeBody(ctx, resp.Body)
 	size, err := io.Copy(file, resp.Body)
 	if err != nil {
 		log.Error(ctx, "error copying a file", err)
 		os.Exit(1)
 	}
-	defer file.Close()
+	defer closeFile(ctx, file)
 	fmt.Printf("Downloaded a file %s with size %d", fileName, size)
 }
 
-/*checkSubString checks if the string has substrings http and [Statistical Disclosure Control].
-If both the substrings exists then it adds parenthesis where necessary and swaps the pattern (url)[text] to [text](url)
-so it can be displayed correctly. If substrings does not exists then it returns the original string*/
-func CheckSubString(existingStr string, ctx context.Context) (string, error) {
-
-	valueCheck, err := regexp.Compile(`(http[^\[]*)(\[[^\[]*\])`)
-	if err != nil {
-		log.Error(ctx, "error checking substring", err)
-		return "", err
+func closeBody(ctx context.Context, b io.ReadCloser) {
+	if err := b.Close(); err != nil {
+		log.Error(ctx, "error closing response body", err)
 	}
-
-	return valueCheck.ReplaceAllString(existingStr, `$2($1)`), nil
 }
 
-func CheckTitle(sourceStr string, ctx context.Context) (string, error) {
-	valueCheck, err := regexp.Compile(`^[\d|\D].*?\-\s*([\d|\D].*)$`)
-	if err != nil {
-		log.Error(ctx, "error checking title", err)
-		return "", err
+func closeFile(ctx context.Context, f *os.File) {
+	if err := f.Close(); err != nil {
+		log.Error(ctx, "error closing file", err)
 	}
-	return valueCheck.ReplaceAllString(sourceStr, `$1`), err
+}
+
+// CheckSubString checks if the string has substrings http and [Statistical Disclosure Control].
+// If both the substrings exists then it adds parenthesis where necessary and swaps the pattern (url)[text] to [text](url)
+// so it can be displayed correctly. If substring does not exist then it returns the original string
+func CheckSubString(existingStr string, ctx context.Context) string {
+	return httpRegex.ReplaceAllString(existingStr, `$2($1)`)
+}
+
+func CheckTitle(sourceStr string, ctx context.Context) string {
+	return titleRegex.ReplaceAllString(sourceStr, `$1`)
 }
 
 func ReplaceStatDis(note string, title string) (string, string) {

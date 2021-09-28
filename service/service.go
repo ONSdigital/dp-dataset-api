@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	clientsidentity "github.com/ONSdigital/dp-api-clients-go/identity"
+	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -14,15 +14,15 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	kafka "github.com/ONSdigital/dp-kafka/v2"
-	dphandlers "github.com/ONSdigital/dp-net/handlers"
-	dphttp "github.com/ONSdigital/dp-net/http"
+	dphandlers "github.com/ONSdigital/dp-net/v2/handlers"
+	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"github.com/pkg/errors"
 )
 
-// check that DatsetAPIStore satifies the the store.Storer interface
+// check that DatsetAPIStore satifies the store.Storer interface
 var _ store.Storer = (*DatsetAPIStore)(nil)
 
 //DatsetAPIStore is a wrapper which embeds Neo4j Mongo structs which between them satisfy the store.Storer interface.
@@ -106,7 +106,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 			return err
 		}
 	}
-	store := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB}}
+	ds := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB}}
 
 	// Get GenerateDownloads Kafka Producer
 	if !svc.config.EnablePrivateEndpoints {
@@ -149,7 +149,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	// Create Dataset API
 	urlBuilder := url.NewBuilder(svc.config.WebsiteURL)
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
-	svc.api = api.Setup(ctx, svc.config, r, store, urlBuilder, downloadGenerator, datasetPermissions, permissions)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerator, datasetPermissions, permissions)
 
 	svc.healthCheck.Start(ctx)
 
@@ -266,7 +266,9 @@ func (svc *Service) Close(ctx context.Context) error {
 		// Close GenerateDownloadsProducer (if it exists)
 		if svc.serviceList.GenerateDownloadsProducer {
 			log.Info(shutdownContext, "closing generated downloads kafka producer", log.Data{"producer": "DimensionExtracted"})
-			svc.generateDownloadsProducer.Close(shutdownContext)
+			if err := svc.generateDownloadsProducer.Close(shutdownContext); err != nil {
+				log.Warn(shutdownContext, "error while closing generated downloads kafka producer", log.Data{"producer": "DimensionExtracted", "err": err.Error()})
+			}
 			log.Info(shutdownContext, "closed generated downloads kafka producer", log.Data{"producer": "DimensionExtracted"})
 		}
 

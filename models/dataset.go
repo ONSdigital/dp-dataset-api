@@ -316,7 +316,7 @@ func CreateContact(reader io.Reader) (*Contact, error) {
 	return &contact, nil
 }
 
-// CreateEdition manages the creation of a an edition object
+// CreateEdition manages the creation of an edition object
 func CreateEdition(host, datasetID, edition string) (*EditionUpdate, error) {
 	id := uuid.NewV4()
 
@@ -345,7 +345,7 @@ func CreateEdition(host, datasetID, edition string) (*EditionUpdate, error) {
 	}, nil
 }
 
-//UpdateLinks in the editions.next document, ensuring links can't regress once published to current
+// UpdateLinks in the editions.next document, ensuring links can't regress once published to current
 func (ed *EditionUpdate) UpdateLinks(ctx context.Context, host string) error {
 	if ed.Next == nil || ed.Next.Links == nil || ed.Next.Links.LatestVersion == nil || ed.Next.Links.LatestVersion.ID == "" {
 		return ErrEditionLinksInvalid
@@ -383,9 +383,9 @@ func (ed *EditionUpdate) UpdateLinks(ctx context.Context, host string) error {
 	return nil
 }
 
-//PublishLinks applies the provided versionLink object to the edition being published only
-//if that version is greater than the latest published version
-func (ed *EditionUpdate) PublishLinks(ctx context.Context, host string, versionLink *LinkObject) error {
+// PublishLinks applies the provided versionLink object to the edition being published only
+// if that version is greater than the latest published version
+func (ed *EditionUpdate) PublishLinks(ctx context.Context, versionLink *LinkObject) error {
 	if ed.Next == nil || ed.Next.Links == nil || ed.Next.Links.LatestVersion == nil {
 		return errors.New("editions links do not exist")
 	}
@@ -479,8 +479,8 @@ func validateGeneralDetails(generalDetails []GeneralDetails, identifier string) 
 }
 
 func validateUrlString(urlString string, identifier string) (invalidFields []string) {
-	url, err := url.Parse(urlString)
-	if err != nil || (url.Scheme != "" && url.Host == "" && url.Path == "") || (url.Scheme != "" && url.Host == "" && url.Path != "") {
+	u, err := url.Parse(urlString)
+	if err != nil || (u.Scheme != "" && u.Host == "" && u.Path == "") || (u.Scheme != "" && u.Host == "" && u.Path != "") {
 		invalidFields = append(invalidFields, identifier)
 	}
 	return

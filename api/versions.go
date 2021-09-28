@@ -9,8 +9,8 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	dphttp "github.com/ONSdigital/dp-net/http"
-	dprequest "github.com/ONSdigital/dp-net/request"
+	dphttp "github.com/ONSdigital/dp-net/v2/http"
+	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -248,7 +248,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if versionDoc.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
-			if err := api.associateVersion(ctx, currentVersion, versionDoc, versionDetails); err != nil {
+			if err := api.associateVersion(ctx, versionDoc, versionDetails); err != nil {
 				handleVersionAPIErr(ctx, err, w, data)
 				return
 			}
@@ -428,7 +428,7 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 		}
 
 		editionDoc.Next.State = models.PublishedState
-		if err := editionDoc.PublishLinks(ctx, api.host, versionDoc.Links.Version); err != nil {
+		if err := editionDoc.PublishLinks(ctx, versionDoc.Links.Version); err != nil {
 			log.Error(ctx, "putVersion endpoint: failed to update the edition links for the version we're trying to publish", err, data)
 			return err
 		}
@@ -480,7 +480,7 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 	return nil
 }
 
-func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion *models.Version, versionDoc *models.Version, versionDetails VersionDetails) error {
+func (api *DatasetAPI) associateVersion(ctx context.Context, versionDoc *models.Version, versionDetails VersionDetails) error {
 	data := versionDetails.baseLogData()
 
 	associateVersionErr := func() error {
@@ -513,10 +513,7 @@ func populateNewVersionDoc(currentVersion *models.Version, version *models.Versi
 	var alerts []models.Alert
 
 	if version.Alerts != nil {
-		// loop through new alerts and add each alert to array
-		for _, newAlert := range *version.Alerts {
-			alerts = append(alerts, newAlert)
-		}
+		alerts = append(alerts, *version.Alerts...)
 	}
 
 	if alerts != nil {
@@ -530,19 +527,11 @@ func populateNewVersionDoc(currentVersion *models.Version, version *models.Versi
 
 	var latestChanges []models.LatestChange
 	if currentVersion.LatestChanges != nil {
-
-		// loop through current latestChanges and add each latest change to array
-		for _, currentLatestChange := range *currentVersion.LatestChanges {
-			latestChanges = append(latestChanges, currentLatestChange)
-		}
+		latestChanges = append(latestChanges, *currentVersion.LatestChanges...)
 	}
 
 	if version.LatestChanges != nil {
-
-		// loop through new latestChanges and add each latest change to array
-		for _, newLatestChange := range *version.LatestChanges {
-			latestChanges = append(latestChanges, newLatestChange)
-		}
+		latestChanges = append(latestChanges, *version.LatestChanges...)
 	}
 
 	if latestChanges != nil {

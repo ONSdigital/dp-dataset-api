@@ -33,9 +33,15 @@ type Metadata struct {
 	UnitOfMeasure     string               `json:"unit_of_measure,omitempty"`
 	URI               string               `json:"uri,omitempty"`
 	UsageNotes        *[]UsageNote         `json:"usage_notes,omitempty"`
+	Coverage          string               `json:"coverage,omitempty"`
+	TablePopulation   string               `json:"table_population,omitempty"`
+	AreaType          string               `json:"area_type,omitempty"`
+	TableID           string               `json:"table_id,omitempty"`
+	Classifications   string               `json:"classifications,omitempty"`
+	Source            string               `json:"source,omitempty"`
 }
 
-// MetadataLinks represents a link object to list of metadata) relevant to a version
+// MetadataLinks represents a link object to list of metadata relevant to a version
 type MetadataLinks struct {
 	AccessRights   *LinkObject `json:"access_rights,omitempty"`
 	Self           *LinkObject `json:"self,omitempty"`
@@ -98,6 +104,39 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 		metaDataDoc.Links.WebsiteVersion = &LinkObject{
 			HRef: websiteVersionURL,
 		}
+	}
+
+	metaDataDoc.Distribution = getDistribution(metaDataDoc.Downloads)
+
+	// Remove Public and Private download links
+	if metaDataDoc.Downloads != nil {
+		if metaDataDoc.Downloads.CSV != nil {
+			metaDataDoc.Downloads.CSV.Private = ""
+			metaDataDoc.Downloads.CSV.Public = ""
+		}
+		if metaDataDoc.Downloads.CSVW != nil {
+			metaDataDoc.Downloads.CSVW.Private = ""
+			metaDataDoc.Downloads.CSVW.Public = ""
+		}
+		if metaDataDoc.Downloads.XLS != nil {
+			metaDataDoc.Downloads.XLS.Private = ""
+			metaDataDoc.Downloads.XLS.Public = ""
+		}
+	}
+
+	return metaDataDoc
+}
+
+// CreateCantabularMetaDataDoc manages the creation of metadata across dataset and version docs for cantabular datasets
+// note: logic to retrieve the newly-added Cantabular-specific fields to the Metadata model will be created at a later date
+func CreateCantabularMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url.Builder) *Metadata {
+	metaDataDoc := &Metadata{
+		Description:   datasetDoc.Description,
+		Downloads:     versionDoc.Downloads,
+		Keywords:      datasetDoc.Keywords,
+		ReleaseDate:   versionDoc.ReleaseDate,
+		Title:         datasetDoc.Title,
+		UnitOfMeasure: datasetDoc.UnitOfMeasure,
 	}
 
 	metaDataDoc.Distribution = getDistribution(metaDataDoc.Downloads)

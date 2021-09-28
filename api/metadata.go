@@ -76,11 +76,22 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var metaDataDoc *models.Metadata
-		// combine version and dataset metadata
-		if state != models.PublishedState {
-			metaDataDoc = models.CreateMetaDataDoc(datasetDoc.Next, versionDoc, api.urlBuilder)
+
+		t, err := models.GetDatasetType(datasetDoc.Current.Type)
+		if err != nil {
+			log.Error(ctx, "invalid dataset type", err, logData)
+			return nil, err
+		}
+		if t == models.CantabularBlob || t == models.CantabularTable {
+			metaDataDoc = models.CreateCantabularMetaDataDoc(datasetDoc.Current, versionDoc, api.urlBuilder)
+
 		} else {
-			metaDataDoc = models.CreateMetaDataDoc(datasetDoc.Current, versionDoc, api.urlBuilder)
+			// combine version and dataset metadata
+			if state != models.PublishedState {
+				metaDataDoc = models.CreateMetaDataDoc(datasetDoc.Next, versionDoc, api.urlBuilder)
+			} else {
+				metaDataDoc = models.CreateMetaDataDoc(datasetDoc.Current, versionDoc, api.urlBuilder)
+			}
 		}
 
 		b, err := json.Marshal(metaDataDoc)

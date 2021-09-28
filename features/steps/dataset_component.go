@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	componenttest "github.com/ONSdigital/dp-component-test"
+	"github.com/ONSdigital/dp-component-test/utils"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/service"
@@ -14,7 +15,7 @@ import (
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka/v2"
 	"github.com/ONSdigital/dp-kafka/v2/kafkatest"
-	"github.com/benweissmann/memongo"
+	"github.com/ONSdigital/log.go/v2/log"
 )
 
 type DatasetComponent struct {
@@ -49,7 +50,7 @@ func NewDatasetComponent(mongoFeature *componenttest.MongoFeature, zebedeeURL st
 	mongodb := &mongo.Mongo{
 		CodeListURL: "",
 		Collection:  "datasets",
-		Database:    memongo.RandomDatabase(),
+		Database:    utils.RandomDatabase(),
 		DatasetURL:  "datasets",
 		URI:         mongoFeature.Server.URI(),
 	}
@@ -74,15 +75,20 @@ func NewDatasetComponent(mongoFeature *componenttest.MongoFeature, zebedeeURL st
 }
 
 func (f *DatasetComponent) Reset() *DatasetComponent {
-	f.MongoClient.Database = memongo.RandomDatabase()
-	f.MongoClient.Init(context.Background())
+	ctx := context.Background()
+	f.MongoClient.Database = utils.RandomDatabase()
+	if err := f.MongoClient.Init(ctx); err != nil {
+		log.Warn(ctx, "error initialising MongoClient during Reset", log.Data{"err": err.Error()})
+	}
 	f.Config.EnablePrivateEndpoints = false
 	return f
 }
 
 func (f *DatasetComponent) Close() error {
 	if f.svc != nil && f.ServiceRunning {
-		f.svc.Close(context.Background())
+		if err := f.svc.Close(context.Background()); err != nil {
+			return err
+		}
 		f.ServiceRunning = false
 	}
 	return nil
