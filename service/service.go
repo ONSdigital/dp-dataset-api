@@ -12,6 +12,7 @@ import (
 	adapter "github.com/ONSdigital/dp-dataset-api/kafka"
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	kafka "github.com/ONSdigital/dp-kafka/v2"
 	dphandlers "github.com/ONSdigital/dp-net/v2/handlers"
@@ -99,6 +100,11 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		log.Info(ctx, "skipping graph DB client creation, because it is not required by the enabled endpoints", log.Data{
 			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
 		})
+		svc.graphDB = &storetest.GraphDBMock{
+			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error{
+				return nil
+			},
+		}
 	} else {
 		svc.graphDB, svc.graphDBErrorConsumer, err = svc.serviceList.GetGraphDB(ctx)
 		if err != nil {
