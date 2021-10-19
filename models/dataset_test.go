@@ -77,6 +77,14 @@ func TestGetDatasetType(t *testing.T) {
 			})
 		})
 
+		Convey("When the type is cantabular_blob", func() {
+			Convey("Then it should return the appropriate value", func() {
+				result, err := GetDatasetType("cantabular_blob")
+				So(result, ShouldEqual, CantabularBlob)
+				So(err, ShouldBeNil)
+			})
+		})
+
 		Convey("When the type is invalid", func() {
 			Convey("Then an error should be returned", func() {
 				result, err := GetDatasetType("abcdefg")
