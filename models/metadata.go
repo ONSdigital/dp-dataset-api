@@ -39,6 +39,7 @@ type Metadata struct {
 	TableID           string               `json:"table_id,omitempty"`
 	Classifications   string               `json:"classifications,omitempty"`
 	Source            string               `json:"source,omitempty"`
+	CSVHeader         []string             `json:"headers,omitempty"`
 }
 
 // MetadataLinks represents a link object to list of metadata relevant to a version
@@ -155,6 +156,10 @@ func CreateCantabularMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBu
 			metaDataDoc.Downloads.XLS.Private = ""
 			metaDataDoc.Downloads.XLS.Public = ""
 		}
+		if metaDataDoc.Downloads.TXT != nil {
+			metaDataDoc.Downloads.TXT.Private = ""
+			metaDataDoc.Downloads.TXT.Public = ""
+		}
 	}
 
 	return metaDataDoc
@@ -174,6 +179,10 @@ func getDistribution(downloads *DownloadList) []string {
 
 		if downloads.XLS != nil && downloads.XLS.HRef != "" {
 			distribution = append(distribution, "xls")
+		}
+
+		if downloads.TXT != nil && downloads.TXT.HRef != "" {
+			distribution = append(distribution, "txt")
 		}
 	}
 
