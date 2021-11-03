@@ -61,10 +61,8 @@ func (f *ComponentTest) InitializeTestSuite(ctx *godog.TestSuiteContext) {
 	})
 }
 
-func TestMain(t *testing.T) {
+func TestComponent(t *testing.T) {
 	if *componentFlag {
-		status := 0
-
 		var opts = godog.Options{
 			Output: colors.Colored(os.Stdout),
 			Format: "pretty",
@@ -73,7 +71,7 @@ func TestMain(t *testing.T) {
 
 		f := &ComponentTest{}
 
-		status = godog.TestSuite{
+		status := godog.TestSuite{
 			Name:                 "feature_tests",
 			ScenarioInitializer:  f.InitializeScenario,
 			TestSuiteInitializer: f.InitializeTestSuite,
@@ -85,7 +83,7 @@ func TestMain(t *testing.T) {
 		fmt.Println("=================================")
 
 		if status > 0 {
-			t.Fail()
+			t.Errorf("component testing from godog test suite failed with status %d", status)
 		}
 	} else {
 		t.Skip("component flag required to run component tests")

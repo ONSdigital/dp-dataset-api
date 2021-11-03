@@ -47,8 +47,7 @@ test:
 
 .PHONY: test-component
 test-component:
-	go test -race -cover -coverpkg=github.com/ONSdigital/dp-dataset-api/... -component
-
+	go test -race -cover -v -coverpkg=github.com/ONSdigital/dp-dataset-api/... -component
 
 .PHONY: nomis
 nomis:

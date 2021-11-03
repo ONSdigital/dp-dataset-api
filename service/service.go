@@ -89,7 +89,7 @@ func (svc *Service) SetGraphDBErrorConsumer(graphDBErrorConsumer Closer) {
 func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version string, svcErrors chan error) (err error) {
 
 	// Get MongoDB connection
-	svc.mongoDB, err = svc.serviceList.GetMongoDB(ctx, svc.config)
+	svc.mongoDB, err = svc.serviceList.GetMongoDB(ctx, svc.config.MongoConfig)
 	if err != nil {
 		log.Error(ctx, "could not obtain mongo session", err)
 		return err
@@ -101,7 +101,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
 		})
 		svc.graphDB = &storetest.GraphDBMock{
-			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error{
+			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
 				return nil
 			},
 		}

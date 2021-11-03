@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	dpmongo "github.com/ONSdigital/dp-mongodb"
 	dpMongoLock "github.com/ONSdigital/dp-mongodb/dplock"
@@ -14,12 +15,9 @@ import (
 
 // Mongo represents a simplistic MongoDB configuration.
 type Mongo struct {
-	CodeListURL    string
-	Collection     string
-	Database       string
-	DatasetURL     string
+	config.MongoConfig
+
 	Session        *mgo.Session
-	URI            string
 	lastPingTime   time.Time
 	lastPingResult error
 	healthClient   *dpMongoHealth.CheckMongoClient
@@ -33,7 +31,7 @@ const (
 	dimensionOptions       = "dimension.options"
 )
 
-// Init creates a new mgo.Session with a strong consistency and a write mode of "majortiy"; and initialises the mongo health client.
+// Init creates a new mgo.Session with a strong consistency and a write mode of "majority"; and initialises the mongo health client.
 func (m *Mongo) Init(ctx context.Context) (err error) {
 	if m.Session != nil {
 		return errors.New("session already exists")
@@ -47,7 +45,7 @@ func (m *Mongo) Init(ctx context.Context) (err error) {
 	m.Session.SetMode(mgo.Strong, true)
 
 	databaseCollectionBuilder := make(map[dpMongoHealth.Database][]dpMongoHealth.Collection)
-	databaseCollectionBuilder[(dpMongoHealth.Database)(m.Database)] = []dpMongoHealth.Collection{(dpMongoHealth.Collection)(m.Collection), (dpMongoHealth.Collection)(editionsCollection), (dpMongoHealth.Collection)(instanceCollection), (dpMongoHealth.Collection)(instanceLockCollection), (dpMongoHealth.Collection)(dimensionOptions)}
+	databaseCollectionBuilder[(dpMongoHealth.Database)(m.Database)] = []dpMongoHealth.Collection{(dpMongoHealth.Collection)(m.Collection), editionsCollection, instanceCollection, instanceLockCollection, dimensionOptions}
 
 	// Create client and healthclient from session
 	client := dpMongoHealth.NewClientWithCollections(m.Session, databaseCollectionBuilder)

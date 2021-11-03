@@ -7,6 +7,23 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
+// MongoConfig contains the config required to connect to MongoDB.
+type MongoConfig struct {
+	URI                string        `envconfig:"MONGODB_BIND_ADDR"   json:"-"`
+	Collection         string        `envconfig:"MONGODB_COLLECTION"`
+	Database           string        `envconfig:"MONGODB_DATABASE"`
+	Username           string        `envconfig:"MONGODB_USERNAME"    json:"-"`
+	Password           string        `envconfig:"MONGODB_PASSWORD"    json:"-"`
+	IsSSL              bool          `envconfig:"MONGODB_IS_SSL"`
+	EnableReadConcern  bool          `envconfig:"MONGODB_ENABLE_READ_CONCERN"`
+	EnableWriteConcern bool          `envconfig:"MONGODB_ENABLE_WRITE_CONCERN"`
+	QueryTimeout       time.Duration `envconfig:"MONGODB_QUERY_TIMEOUT"`
+	ConnectionTimeout  time.Duration `envconfig:"MONGODB_CONNECT_TIMEOUT"`
+
+	CodeListAPIURL string `envconfig:"CODE_LIST_API_URL"`
+	DatasetAPIURL  string `envconfig:"DATASET_API_URL"`
+}
+
 // Configuration structure which hold information for configuring the import API
 type Configuration struct {
 	BindAddr                   string        `envconfig:"BIND_ADDR"`
@@ -17,8 +34,6 @@ type Configuration struct {
 	KafkaSecClientKey          string        `envconfig:"KAFKA_SEC_CLIENT_KEY"             json:"-"`
 	KafkaSecSkipVerify         bool          `envconfig:"KAFKA_SEC_SKIP_VERIFY"`
 	GenerateDownloadsTopic     string        `envconfig:"GENERATE_DOWNLOADS_TOPIC"`
-	CodeListAPIURL             string        `envconfig:"CODE_LIST_API_URL"`
-	DatasetAPIURL              string        `envconfig:"DATASET_API_URL"`
 	WebsiteURL                 string        `envconfig:"WEBSITE_URL"`
 	ZebedeeURL                 string        `envconfig:"ZEBEDEE_URL"`
 	DownloadServiceSecretKey   string        `envconfig:"DOWNLOAD_SERVICE_SECRET_KEY"      json:"-"`
@@ -36,14 +51,7 @@ type Configuration struct {
 	DefaultLimit               int           `envconfig:"DEFAULT_LIMIT"`
 	DefaultOffset              int           `envconfig:"DEFAULT_OFFSET"`
 	MaxRequestOptions          int           `envconfig:"MAX_REQUEST_OPTIONS"`
-	MongoConfig                MongoConfig
-}
-
-// MongoConfig contains the config required to connect to MongoDB.
-type MongoConfig struct {
-	BindAddr   string `envconfig:"MONGODB_BIND_ADDR"   json:"-"`
-	Collection string `envconfig:"MONGODB_COLLECTION"`
-	Database   string `envconfig:"MONGODB_DATABASE"`
+	MongoConfig
 }
 
 var cfg *Configuration
@@ -58,8 +66,6 @@ func Get() (*Configuration, error) {
 		BindAddr:                   ":22000",
 		KafkaAddr:                  []string{"localhost:9092"},
 		GenerateDownloadsTopic:     "filter-job-submitted",
-		CodeListAPIURL:             "http://localhost:22400",
-		DatasetAPIURL:              "http://localhost:22000",
 		WebsiteURL:                 "http://localhost:20000",
 		ZebedeeURL:                 "http://localhost:8082",
 		ServiceAuthToken:           "FD0108EA-825D-411C-9B1D-41EF7727F465",
@@ -78,9 +84,15 @@ func Get() (*Configuration, error) {
 		DefaultOffset:              0,
 		MaxRequestOptions:          100, // Maximum number of options acceptable in an incoming Patch request. Compromise between one option per call (inefficient) and an order of 100k options per call, for census data (memory and computationally expensive)
 		MongoConfig: MongoConfig{
-			BindAddr:   "localhost:27017",
-			Collection: "datasets",
-			Database:   "datasets",
+			URI:                "localhost:27017",
+			Database:           "datasets",
+			Collection:         "datasets",
+			QueryTimeout:       15 * time.Second,
+			ConnectionTimeout:  5 * time.Second,
+			EnableWriteConcern: true,
+
+			CodeListAPIURL: "http://localhost:22400",
+			DatasetAPIURL:  "http://localhost:22000",
 		},
 	}
 

@@ -48,11 +48,13 @@ func NewDatasetComponent(mongoFeature *componenttest.MongoFeature, zebedeeURL st
 	f.Config.EnablePermissionsAuth = false
 
 	mongodb := &mongo.Mongo{
-		CodeListURL: "",
-		Collection:  "datasets",
-		Database:    utils.RandomDatabase(),
-		DatasetURL:  "datasets",
-		URI:         mongoFeature.Server.URI(),
+		MongoConfig: config.MongoConfig{
+			CodeListAPIURL: "",
+			Collection:     "datasets",
+			Database:       utils.RandomDatabase(),
+			DatasetAPIURL:  "datasets",
+			URI:            mongoFeature.Server.URI(),
+		},
 	}
 
 	if err := mongodb.Init(context.Background()); err != nil {
@@ -102,11 +104,11 @@ func (f *DatasetComponent) InitialiseService() (http.Handler, error) {
 	return f.HTTPServer.Handler, nil
 }
 
-func funcClose(ctx context.Context) error {
+func funcClose(_ context.Context) error {
 	return nil
 }
 
-func (f *DatasetComponent) DoGetHealthcheckOk(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error) {
+func (f *DatasetComponent) DoGetHealthcheckOk(_ *config.Configuration, _ string, _ string, _ string) (service.HealthChecker, error) {
 	return &serviceMock.HealthCheckerMock{
 		AddCheckFunc: func(name string, checker healthcheck.Checker) error { return nil },
 		StartFunc:    func(ctx context.Context) {},
@@ -121,15 +123,15 @@ func (f *DatasetComponent) DoGetHTTPServer(bindAddr string, router http.Handler)
 }
 
 // DoGetMongoDB returns a MongoDB
-func (f *DatasetComponent) DoGetMongoDB(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error) {
+func (f *DatasetComponent) DoGetMongoDB(_ context.Context, _ config.MongoConfig) (store.MongoDB, error) {
 	return f.MongoClient, nil
 }
 
-func (f *DatasetComponent) DoGetGraphDBOk(ctx context.Context) (store.GraphDB, service.Closer, error) {
+func (f *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, service.Closer, error) {
 	return &storeMock.GraphDBMock{CloseFunc: funcClose}, &serviceMock.CloserMock{CloseFunc: funcClose}, nil
 }
 
-func (f *DatasetComponent) DoGetKafkaProducerOk(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error) {
+func (f *DatasetComponent) DoGetKafkaProducerOk(_ context.Context, _ *config.Configuration) (kafka.IProducer, error) {
 	return &kafkatest.IProducerMock{
 		ChannelsFunc: func() *kafka.ProducerChannels {
 			return &kafka.ProducerChannels{}
