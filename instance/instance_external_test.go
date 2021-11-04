@@ -96,7 +96,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 			}
 
 			api := initAPIWithMockedStore(mockedDataStore)
-			api.GetList(w, r, 20, 0)
+			_, _, _ = api.GetList(w, r, 20, 0)
 
 			So(mockedDataStore.GetInstancesCalls()[0].Datasets, ShouldResemble, []string{"test"})
 			So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
@@ -113,7 +113,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 			}
 
 			api := initAPIWithMockedStore(mockedDataStore)
-			api.GetList(w, r, 20, 0)
+			_, _, _ = api.GetList(w, r, 20, 0)
 
 			So(mockedDataStore.GetInstancesCalls()[0].States, ShouldResemble, []string{"completed", "edition-confirmed"})
 			So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
@@ -130,7 +130,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 			}
 
 			api := initAPIWithMockedStore(mockedDataStore)
-			api.GetList(w, r, 20, 0)
+			_, _, _ = api.GetList(w, r, 20, 0)
 
 			So(mockedDataStore.GetInstancesCalls()[0].States, ShouldResemble, []string{"completed"})
 			So(mockedDataStore.GetInstancesCalls()[0].Datasets, ShouldResemble, []string{"test"})
@@ -154,7 +154,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 				}
 
 				api := initAPIWithMockedStore(mockedDataStore)
-				api.GetList(w, r, 20, 0)
+				_, _, _ = api.GetList(w, r, 20, 0)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
@@ -168,7 +168,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				api := initAPIWithMockedStore(&storetest.StorerMock{})
-				api.GetList(w, r, 20, 0)
+				_, _, _ = api.GetList(w, r, 20, 0)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "bad request - invalid filter state values: [foo]")
@@ -182,7 +182,7 @@ func Test_GetInstanceReturnsOK(t *testing.T) {
 
 	Convey("Given a dataset API with a successful store mock and auth", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+			GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 				return &models.Instance{
 					State: models.CreatedState,
 					ETag:  testETag,
@@ -248,7 +248,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 						return nil, errs.ErrInternalServer
 					},
 				}
@@ -274,7 +274,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: "gobbledygook"}, nil
 					},
 				}
@@ -299,7 +299,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 						return nil, errs.ErrInstanceNotFound
 					},
 				}
@@ -326,7 +326,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 						return nil, errs.ErrInstanceConflict
 					},
 				}
@@ -359,7 +359,7 @@ func Test_AddInstanceReturnsCreated(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					AddInstanceFunc: func(*models.Instance) (*models.Instance, error) {
+					AddInstanceFunc: func(context.Context, *models.Instance) (*models.Instance, error) {
 						return &models.Instance{
 							ETag: testETag,
 						}, nil
@@ -392,7 +392,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{
-					AddInstanceFunc: func(*models.Instance) (*models.Instance, error) {
+					AddInstanceFunc: func(context.Context, *models.Instance) (*models.Instance, error) {
 						return nil, errs.ErrInternalServer
 					},
 				}
@@ -418,7 +418,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					AddInstanceFunc: func(*models.Instance) (*models.Instance, error) {
+					AddInstanceFunc: func(context.Context, *models.Instance) (*models.Instance, error) {
 						return &models.Instance{}, nil
 					},
 				}
@@ -444,7 +444,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					AddInstanceFunc: func(*models.Instance) (*models.Instance, error) {
+					AddInstanceFunc: func(context.Context, *models.Instance) (*models.Instance, error) {
 						return &models.Instance{}, nil
 					},
 				}
@@ -575,7 +575,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 						return nil, errs.ErrInternalServer
 					},
 				}
@@ -603,7 +603,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: "gobbledygook"}, nil
 					},
 				}
@@ -631,7 +631,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: "completed"}, nil
 					},
 				}
@@ -659,7 +659,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 						return &models.Instance{State: "completed"}, nil
 					},
 					UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
@@ -692,7 +692,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 						return nil, errs.ErrInstanceNotFound
 					},
 				}
@@ -723,7 +723,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 						return nil, errs.ErrInstanceConflict
 					},
 				}

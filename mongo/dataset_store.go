@@ -40,7 +40,7 @@ func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised b
 }
 
 // GetDataset retrieves a dataset document
-func (m *Mongo) GetDataset(id string) (*models.DatasetUpdate, error) {
+func (m *Mongo) GetDataset(_ context.Context, id string) (*models.DatasetUpdate, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 	var dataset models.DatasetUpdate
@@ -66,9 +66,9 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 	q := s.DB(m.Database).C(editionsCollection).Find(selector).Sort()
 
 	log.Info(context.TODO(), "[DEBUG] query details", log.Data{
-		"editionsCollection":editionsCollection,
-		"selector": selector,
-		"database": m.Database,
+		"editionsCollection": editionsCollection,
+		"selector":           selector,
+		"database":           m.Database,
 	})
 
 	// get total count and paginated values according to provided offset and limit
@@ -106,7 +106,7 @@ func buildEditionsQuery(id, state string, authorised bool) bson.M {
 }
 
 // GetEdition retrieves an edition document for a dataset
-func (m *Mongo) GetEdition(id, editionID, state string) (*models.EditionUpdate, error) {
+func (m *Mongo) GetEdition(_ context.Context, id, editionID, state string) (*models.EditionUpdate, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -142,7 +142,7 @@ func buildEditionQuery(id, editionID, state string) bson.M {
 }
 
 // GetNextVersion retrieves the latest version for an edition of a dataset
-func (m *Mongo) GetNextVersion(datasetID, edition string) (int, error) {
+func (m *Mongo) GetNextVersion(_ context.Context, datasetID, edition string) (int, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 	var version models.Version
@@ -221,7 +221,7 @@ func buildVersionsQuery(datasetID, editionID, state string) bson.M {
 }
 
 // GetVersion retrieves a version document for a dataset edition
-func (m *Mongo) GetVersion(id, editionID string, versionID int, state string) (*models.Version, error) {
+func (m *Mongo) GetVersion(_ context.Context, id, editionID string, versionID int, state string) (*models.Version, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -396,7 +396,7 @@ func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Da
 }
 
 // UpdateDatasetWithAssociation updates an existing dataset document with collection data
-func (m *Mongo) UpdateDatasetWithAssociation(id, state string, version *models.Version) (err error) {
+func (m *Mongo) UpdateDatasetWithAssociation(_ context.Context, id, state string, version *models.Version) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -415,7 +415,7 @@ func (m *Mongo) UpdateDatasetWithAssociation(id, state string, version *models.V
 }
 
 // UpdateVersion updates an existing version document
-func (m *Mongo) UpdateVersion(id string, version *models.Version) (err error) {
+func (m *Mongo) UpdateVersion(_ context.Context, id string, version *models.Version) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -482,7 +482,7 @@ func createVersionUpdateQuery(version *models.Version) bson.M {
 }
 
 // UpsertDataset adds or overides an existing dataset document
-func (m *Mongo) UpsertDataset(id string, datasetDoc *models.DatasetUpdate) (err error) {
+func (m *Mongo) UpsertDataset(_ context.Context, id string, datasetDoc *models.DatasetUpdate) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -498,7 +498,7 @@ func (m *Mongo) UpsertDataset(id string, datasetDoc *models.DatasetUpdate) (err 
 }
 
 // UpsertDataset adds or overides an existing dataset document
-func (m *Mongo) RemoveDatasetVersionAndEditionLinks(id string) error {
+func (m *Mongo) RemoveDatasetVersionAndEditionLinks(_ context.Context, id string) error {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -512,7 +512,7 @@ func (m *Mongo) RemoveDatasetVersionAndEditionLinks(id string) error {
 		},
 	}
 
-	if err := s.DB(m.Database).C("datasets").UpdateId(id, update); err != nil{
+	if err := s.DB(m.Database).C("datasets").UpdateId(id, update); err != nil {
 		return fmt.Errorf("failed to query MongoDB: %w", err)
 	}
 
@@ -520,7 +520,7 @@ func (m *Mongo) RemoveDatasetVersionAndEditionLinks(id string) error {
 }
 
 // UpsertEdition adds or overides an existing edition document
-func (m *Mongo) UpsertEdition(datasetID, edition string, editionDoc *models.EditionUpdate) (err error) {
+func (m *Mongo) UpsertEdition(_ context.Context, datasetID, edition string, editionDoc *models.EditionUpdate) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -540,7 +540,7 @@ func (m *Mongo) UpsertEdition(datasetID, edition string, editionDoc *models.Edit
 }
 
 // UpsertVersion adds or overrides an existing version document
-func (m *Mongo) UpsertVersion(id string, version *models.Version) (err error) {
+func (m *Mongo) UpsertVersion(_ context.Context, id string, version *models.Version) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -556,7 +556,7 @@ func (m *Mongo) UpsertVersion(id string, version *models.Version) (err error) {
 }
 
 // UpsertContact adds or overides an existing contact document
-func (m *Mongo) UpsertContact(id string, update interface{}) (err error) {
+func (m *Mongo) UpsertContact(_ context.Context, id string, update interface{}) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -565,7 +565,7 @@ func (m *Mongo) UpsertContact(id string, update interface{}) (err error) {
 }
 
 // CheckDatasetExists checks that the dataset exists
-func (m *Mongo) CheckDatasetExists(id, state string) error {
+func (m *Mongo) CheckDatasetExists(_ context.Context, id, state string) error {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -594,7 +594,7 @@ func (m *Mongo) CheckDatasetExists(id, state string) error {
 }
 
 // CheckEditionExists checks that the edition of a dataset exists
-func (m *Mongo) CheckEditionExists(id, editionID, state string) error {
+func (m *Mongo) CheckEditionExists(_ context.Context, id, editionID, state string) error {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -663,7 +663,7 @@ func (m *Mongo) Ping(ctx context.Context) (time.Time, error) {
 }
 
 // DeleteDataset deletes an existing dataset document
-func (m *Mongo) DeleteDataset(id string) (err error) {
+func (m *Mongo) DeleteDataset(_ context.Context, id string) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -678,10 +678,9 @@ func (m *Mongo) DeleteDataset(id string) (err error) {
 }
 
 // DeleteEdition deletes an existing edition document
-func (m *Mongo) DeleteEdition(id string) (err error) {
+func (m *Mongo) DeleteEdition(_ context.Context, id string) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
-
 
 	if err = s.DB(m.Database).C("editions").Remove(bson.D{{Name: "id", Value: id}}); err != nil {
 		if err == mgo.ErrNotFound {
@@ -690,6 +689,6 @@ func (m *Mongo) DeleteEdition(id string) (err error) {
 		return err
 	}
 
-	log.Info(context.TODO(), "edition deleted", log.Data{"id": id, })
+	log.Info(context.TODO(), "edition deleted", log.Data{"id": id})
 	return nil
 }

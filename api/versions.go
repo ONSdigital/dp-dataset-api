@@ -71,12 +71,12 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 			state = models.PublishedState
 		}
 
-		if err := api.dataStore.Backend.CheckDatasetExists(datasetID, state); err != nil {
+		if err := api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, state); err != nil {
 			log.Error(ctx, "failed to find dataset for list of versions", err, logData)
 			return nil, 0, err
 		}
 
-		if err := api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
+		if err := api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, state); err != nil {
 			log.Error(ctx, "failed to find edition for list of versions", err, logData)
 			return nil, 0, err
 		}
@@ -151,17 +151,17 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 			state = models.PublishedState
 		}
 
-		if err := api.dataStore.Backend.CheckDatasetExists(datasetID, state); err != nil {
+		if err := api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, state); err != nil {
 			log.Error(ctx, "failed to find dataset", err, logData)
 			return nil, err
 		}
 
-		if err := api.dataStore.Backend.CheckEditionExists(datasetID, edition, state); err != nil {
+		if err := api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, state); err != nil {
 			log.Error(ctx, "failed to find edition for dataset", err, logData)
 			return nil, err
 		}
 
-		results, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionId, state)
+		results, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionId, state)
 		if err != nil {
 			log.Error(ctx, "failed to find version for dataset edition", err, logData)
 			return nil, err
@@ -286,7 +286,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		editionDoc, err := api.dataStore.Backend.GetEdition(datasetID, edition, "")
+		editionDoc, err := api.dataStore.Backend.GetEdition(ctx, datasetID, edition, "")
 		if err != nil {
 			log.Error(ctx, "detachVersion endpoint: Cannot find the specified edition", errs.ErrEditionNotFound, logData)
 			return err
@@ -305,13 +305,13 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrIncorrectStateToDetach
 		}
 
-		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionId, editionDoc.Next.State)
+		versionDoc, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionId, editionDoc.Next.State)
 		if err != nil {
 			log.Error(ctx, "detachVersion endpoint: Cannot find the specified version", errs.ErrVersionNotFound, logData)
 			return errs.ErrVersionNotFound
 		}
 
-		datasetDoc, err := api.dataStore.Backend.GetDataset(datasetID)
+		datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			log.Error(ctx, "detachVersion endpoint: datastore.GetDatasets returned an error", err, logData)
 			return err
@@ -319,7 +319,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 
 		// Detach the version
 		versionDoc.State = models.DetachedState
-		if err = api.dataStore.Backend.UpdateVersion(versionDoc.ID, versionDoc); err != nil {
+		if err = api.dataStore.Backend.UpdateVersion(ctx, versionDoc.ID, versionDoc); err != nil {
 			log.Error(ctx, "detachVersion endpoint: failed to update version document", err, logData)
 			return err
 		}
@@ -328,27 +328,27 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 		if datasetDoc.Current != nil {
 			// Rollback the edition
 			editionDoc.Next = editionDoc.Current
-			if err = api.dataStore.Backend.UpsertEdition(datasetID, edition, editionDoc); err != nil {
+			if err = api.dataStore.Backend.UpsertEdition(ctx, datasetID, edition, editionDoc); err != nil {
 				log.Error(ctx, "detachVersion endpoint: failed to update edition document", err, logData)
 				return err
 			}
 
 			// Rollback the dataset
 			datasetDoc.Next = datasetDoc.Current
-			if err = api.dataStore.Backend.UpsertDataset(datasetID, datasetDoc); err != nil {
+			if err = api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
 				log.Error(ctx, "detachVersion endpoint: failed to update dataset document", err, logData)
 				return err
 			}
 		} else {
 			// For first (unpublished) versions:
 			// delete edition doc
-			if err := api.dataStore.Backend.DeleteEdition(editionDoc.ID); err != nil {
+			if err := api.dataStore.Backend.DeleteEdition(ctx, editionDoc.ID); err != nil {
 				log.Error(ctx, "detachVersion endpoint: failed to delete edition document", err, logData)
 				return err
 			}
 
 			// remove edition and version links from datasetDoc
-			if err := api.dataStore.Backend.RemoveDatasetVersionAndEditionLinks(datasetID); err != nil {
+			if err := api.dataStore.Backend.RemoveDatasetVersionAndEditionLinks(ctx, datasetID); err != nil {
 				log.Error(ctx, "detachVersion endpoint: failed to update dataset document", err, logData)
 				return err
 			}
@@ -382,18 +382,18 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 			return nil, nil, nil, errs.ErrUnableToParseJSON
 		}
 
-		currentDataset, err := api.dataStore.Backend.GetDataset(versionDetails.datasetID)
+		currentDataset, err := api.dataStore.Backend.GetDataset(ctx, versionDetails.datasetID)
 		if err != nil {
 			log.Error(ctx, "putVersion endpoint: datastore.getDataset returned an error", err, data)
 			return nil, nil, nil, err
 		}
 
-		if err = api.dataStore.Backend.CheckEditionExists(versionDetails.datasetID, versionDetails.edition, ""); err != nil {
+		if err = api.dataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
 			log.Error(ctx, "putVersion endpoint: failed to find edition of dataset", err, data)
 			return nil, nil, nil, err
 		}
 
-		currentVersion, err := api.dataStore.Backend.GetVersion(versionDetails.datasetID, versionDetails.edition, version, "")
+		currentVersion, err := api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, version, "")
 		if err != nil {
 			log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
 			return nil, nil, nil, err
@@ -409,7 +409,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 			return nil, nil, nil, err
 		}
 
-		if err := api.dataStore.Backend.UpdateVersion(versionUpdate.ID, versionUpdate); err != nil {
+		if err := api.dataStore.Backend.UpdateVersion(ctx, versionUpdate.ID, versionUpdate); err != nil {
 			log.Error(ctx, "putVersion endpoint: failed to update version document", err, data)
 			return nil, nil, nil, err
 		}
@@ -429,7 +429,7 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 	data := versionDetails.baseLogData()
 	log.Info(ctx, "attempting to publish version", data)
 	err := func() error {
-		editionDoc, err := api.dataStore.Backend.GetEdition(versionDetails.datasetID, versionDetails.edition, "")
+		editionDoc, err := api.dataStore.Backend.GetEdition(ctx, versionDetails.datasetID, versionDetails.edition, "")
 		if err != nil {
 			log.Error(ctx, "putVersion endpoint: failed to find the edition we're trying to update", err, data)
 			return err
@@ -443,7 +443,7 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 
 		editionDoc.Current = editionDoc.Next
 
-		if err := api.dataStore.Backend.UpsertEdition(versionDetails.datasetID, versionDetails.edition, editionDoc); err != nil {
+		if err := api.dataStore.Backend.UpsertEdition(ctx, versionDetails.datasetID, versionDetails.edition, editionDoc); err != nil {
 			log.Error(ctx, "putVersion endpoint: failed to update edition during publishing", err, data)
 			return err
 		}
@@ -496,7 +496,7 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, versionDoc *models.
 	data := versionDetails.baseLogData()
 
 	associateVersionErr := func() error {
-		if err := api.dataStore.Backend.UpdateDatasetWithAssociation(versionDetails.datasetID, versionDoc.State, versionDoc); err != nil {
+		if err := api.dataStore.Backend.UpdateDatasetWithAssociation(ctx, versionDetails.datasetID, versionDoc.State, versionDoc); err != nil {
 			log.Error(ctx, "putVersion endpoint: failed to update dataset document after a version of a dataset has been associated with a collection", err, data)
 			return err
 		}

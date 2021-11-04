@@ -18,7 +18,7 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 
 		log.Info(ctx, "confirm edition: getting edition", logData)
 
-		editionDoc, err := s.GetEdition(datasetID, edition, "")
+		editionDoc, err := s.GetEdition(ctx, datasetID, edition, "")
 		if err != nil {
 			if err != errs.ErrEditionNotFound {
 				log.Error(ctx, "confirm edition: failed to confirm edition", err, logData)
@@ -53,7 +53,7 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 
 		editionDoc.Next.State = models.EditionConfirmedState
 
-		if err = s.UpsertEdition(datasetID, edition, editionDoc); err != nil {
+		if err = s.UpsertEdition(ctx, datasetID, edition, editionDoc); err != nil {
 			log.Error(ctx, "confirm edition: store.UpsertEdition returned an error", err, logData)
 			return nil, action, err
 		}

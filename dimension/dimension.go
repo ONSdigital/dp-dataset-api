@@ -47,10 +47,10 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 	if err != nil {
 		return nil, 0, err
 	}
-	defer s.UnlockInstance(lockID)
+	defer s.UnlockInstance(ctx, lockID)
 
 	// Get instance from MongoDB
-	instance, err := s.GetInstance(instanceID, eTag)
+	instance, err := s.GetInstance(ctx, instanceID, eTag)
 	if err != nil {
 		log.Error(ctx, "failed to get instance", err, logData)
 		handleDimensionErr(ctx, w, err, logData)
@@ -94,10 +94,10 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	if err != nil {
 		return nil, 0, err
 	}
-	defer s.UnlockInstance(lockID)
+	defer s.UnlockInstance(ctx, lockID)
 
 	// Get instance from MongoDB
-	instance, err := s.GetInstance(instanceID, eTag)
+	instance, err := s.GetInstance(ctx, instanceID, eTag)
 	if err != nil {
 		log.Error(ctx, "failed to get instance", err, logData)
 		handleDimensionErr(ctx, w, err, logData)
@@ -114,7 +114,7 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 
 	// Get dimension options corresponding to the instance in the right state
 	// Note: GetUniqueDimensionAndOptions does not implement pagination at query level
-	options, totalCount, err := s.GetUniqueDimensionAndOptions(instanceID, dimension)
+	options, totalCount, err := s.GetUniqueDimensionAndOptions(ctx, instanceID, dimension)
 	if err != nil {
 		log.Error(ctx, "failed to get unique dimension options for instance", err, logData)
 		handleDimensionErr(ctx, w, err, logData)
@@ -157,7 +157,7 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
-	defer s.UnlockInstance(lockID)
+	defer s.UnlockInstance(ctx, lockID)
 
 	// upsert dimension option
 	newETag, err := s.upsertDimensionOption(ctx, instanceID, option, logData, eTag)
@@ -289,7 +289,7 @@ func (s *Store) applyPatchesForDimensions(ctx context.Context, instanceID string
 	if err != nil {
 		return nil, "", err
 	}
-	defer s.UnlockInstance(lockID)
+	defer s.UnlockInstance(ctx, lockID)
 
 	// Upsert and update dimension options
 	upsertOK := false
@@ -327,7 +327,7 @@ func (s *Store) upsertAndUpdateDimensionOptions(ctx context.Context, instanceID 
 	}
 
 	// Get instance
-	instance, err := s.GetInstance(instanceID, eTagSelector)
+	instance, err := s.GetInstance(ctx, instanceID, eTagSelector)
 	if err != nil {
 		log.Error(ctx, "failed to get instance", err, logData)
 		return "", false, err
@@ -349,7 +349,7 @@ func (s *Store) upsertAndUpdateDimensionOptions(ctx context.Context, instanceID 
 	}
 
 	// generate a new unique ETag for the instance + options and update it in DB
-	newETag, err = s.UpdateETagForOptions(instance, optionsToUpsert, optionsToUpdate, eTagSelector)
+	newETag, err = s.UpdateETagForOptions(ctx, instance, optionsToUpsert, optionsToUpdate, eTagSelector)
 	if err != nil {
 		log.Error(ctx, "failed to update eTag for an instance", err, logData)
 		return "", false, err
@@ -357,7 +357,7 @@ func (s *Store) upsertAndUpdateDimensionOptions(ctx context.Context, instanceID 
 
 	// Upsert dimension options in bulk
 	if len(optionsToUpsert) > 0 {
-		if err := s.UpsertDimensionsToInstance(optionsToUpsert); err != nil {
+		if err := s.UpsertDimensionsToInstance(ctx, optionsToUpsert); err != nil {
 			log.Error(ctx, "failed to upsert dimensions for an instance", err, logData)
 			return "", false, err
 		}
@@ -365,7 +365,7 @@ func (s *Store) upsertAndUpdateDimensionOptions(ctx context.Context, instanceID 
 
 	// Update dimension options NodeID and Order values in bulk
 	if len(optionsToUpdate) > 0 {
-		if err := s.UpdateDimensionsNodeIDAndOrder(optionsToUpdate); err != nil {
+		if err := s.UpdateDimensionsNodeIDAndOrder(ctx, optionsToUpdate); err != nil {
 			log.Error(ctx, "failed to update a dimension of that instance", err, logData)
 			return "", true, err
 		}
@@ -443,7 +443,7 @@ func (s *Store) patchOption(ctx context.Context, instanceID, dimensionName, opti
 	if err != nil {
 		return successful, "", err
 	}
-	defer s.UnlockInstance(lockID)
+	defer s.UnlockInstance(ctx, lockID)
 
 	// apply patch operations sequentially, stop processing if one patch fails, and return a list of successful patches operations
 	for _, patch := range patches {
@@ -500,7 +500,7 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 		handleDimensionErr(ctx, w, err, logData)
 		return
 	}
-	defer s.UnlockInstance(lockID)
+	defer s.UnlockInstance(ctx, lockID)
 
 	newETag, err := s.updateDimensionOption(ctx, dimOption.InstanceID, &dimOption, logData, eTag)
 	if err != nil {

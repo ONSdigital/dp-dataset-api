@@ -25,7 +25,7 @@ func (m *Mongo) AcquireInstanceLock(ctx context.Context, instanceID string) (loc
 }
 
 // UnlockInstance releases an exclusive mongoDB lock for the provided lockId (if it exists)
-func (m *Mongo) UnlockInstance(lockID string) {
+func (m *Mongo) UnlockInstance(_ context.Context, lockID string) {
 	m.lockClient.Unlock(lockID)
 }
 
@@ -59,7 +59,7 @@ func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []st
 }
 
 // GetInstance returns a single instance from an ID
-func (m *Mongo) GetInstance(ID, eTagSelector string) (*models.Instance, error) {
+func (m *Mongo) GetInstance(_ context.Context, ID, eTagSelector string) (*models.Instance, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -81,7 +81,7 @@ func (m *Mongo) GetInstance(ID, eTagSelector string) (*models.Instance, error) {
 }
 
 // AddInstance to the instance collection
-func (m *Mongo) AddInstance(instance *models.Instance) (*models.Instance, error) {
+func (m *Mongo) AddInstance(_ context.Context, instance *models.Instance) (*models.Instance, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -287,7 +287,7 @@ func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance 
 }
 
 // AddEventToInstance to the instance collection
-func (m *Mongo) AddEventToInstance(currentInstance *models.Instance, event *models.Event, eTagSelector string) (newETag string, err error) {
+func (m *Mongo) AddEventToInstance(_ context.Context, currentInstance *models.Instance, event *models.Event, eTagSelector string) (newETag string, err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -321,7 +321,7 @@ func (m *Mongo) AddEventToInstance(currentInstance *models.Instance, event *mode
 }
 
 // UpdateObservationInserted by incrementing the stored value
-func (m *Mongo) UpdateObservationInserted(currentInstance *models.Instance, observationInserted int64, eTagSelector string) (newETag string, err error) {
+func (m *Mongo) UpdateObservationInserted(_ context.Context, currentInstance *models.Instance, observationInserted int64, eTagSelector string) (newETag string, err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -354,7 +354,7 @@ func (m *Mongo) UpdateObservationInserted(currentInstance *models.Instance, obse
 }
 
 // UpdateImportObservationsTaskState to the given state.
-func (m *Mongo) UpdateImportObservationsTaskState(currentInstance *models.Instance, state, eTagSelector string) (newETag string, err error) {
+func (m *Mongo) UpdateImportObservationsTaskState(_ context.Context, currentInstance *models.Instance, state, eTagSelector string) (newETag string, err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -388,7 +388,7 @@ func (m *Mongo) UpdateImportObservationsTaskState(currentInstance *models.Instan
 }
 
 // UpdateBuildHierarchyTaskState updates the state of a build hierarchy task.
-func (m *Mongo) UpdateBuildHierarchyTaskState(currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error) {
+func (m *Mongo) UpdateBuildHierarchyTaskState(_ context.Context, currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -417,7 +417,7 @@ func (m *Mongo) UpdateBuildHierarchyTaskState(currentInstance *models.Instance, 
 }
 
 // UpdateBuildSearchTaskState updates the state of a build search task.
-func (m *Mongo) UpdateBuildSearchTaskState(currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error) {
+func (m *Mongo) UpdateBuildSearchTaskState(_ context.Context, currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -446,7 +446,7 @@ func (m *Mongo) UpdateBuildSearchTaskState(currentInstance *models.Instance, dim
 }
 
 // UpdateETagForOptions updates the eTag value for an instance according to the provided dimension options upserts and updates
-func (m *Mongo) UpdateETagForOptions(currentInstance *models.Instance, upserts []*models.CachedDimensionOption, updates []*models.DimensionOption, eTagSelector string) (newETag string, err error) {
+func (m *Mongo) UpdateETagForOptions(_ context.Context, currentInstance *models.Instance, upserts []*models.CachedDimensionOption, updates []*models.DimensionOption, eTagSelector string) (newETag string, err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 

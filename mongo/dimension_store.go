@@ -36,7 +36,7 @@ func (m *Mongo) GetDimensionsFromInstance(ctx context.Context, id string, offset
 }
 
 // GetUniqueDimensionAndOptions returns a list of dimension options for an instance resource
-func (m *Mongo) GetUniqueDimensionAndOptions(id, dimension string) ([]*string, int, error) {
+func (m *Mongo) GetUniqueDimensionAndOptions(_ context.Context, id, dimension string) ([]*string, int, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -62,7 +62,7 @@ func (m *Mongo) GetUniqueDimensionAndOptions(id, dimension string) ([]*string, i
 }
 
 // UpsertDimensionsToInstance to the dimension collection
-func (m *Mongo) UpsertDimensionsToInstance(opts []*models.CachedDimensionOption) error {
+func (m *Mongo) UpsertDimensionsToInstance(_ context.Context, opts []*models.CachedDimensionOption) error {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -115,7 +115,7 @@ func SafeUpdate(b *mgo.Bulk, pairs ...interface{}) (err error) {
 }
 
 // GetDimensions returns a list of all dimensions from a dataset
-func (m *Mongo) GetDimensions(versionID string) ([]bson.M, error) {
+func (m *Mongo) GetDimensions(_ context.Context, versionID string) ([]bson.M, error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
@@ -170,7 +170,7 @@ func (m *Mongo) GetDimensionOptions(ctx context.Context, version *models.Version
 }
 
 // GetDimensionOptionsFromIDs returns dimension options for a dimension within a dataset, whose IDs match the provided list of IDs
-func (m *Mongo) GetDimensionOptionsFromIDs(version *models.Version, dimension string, IDs []string) ([]*models.PublicDimensionOption, int, error) {
+func (m *Mongo) GetDimensionOptionsFromIDs(_ context.Context, version *models.Version, dimension string, IDs []string) ([]*models.PublicDimensionOption, int, error) {
 	if len(IDs) > maxIDs {
 		return nil, 0, errors.New("too many IDs provided")
 	}
@@ -213,7 +213,7 @@ func (m *Mongo) GetDimensionOptionsFromIDs(version *models.Version, dimension st
 }
 
 // UpdateDimensionsNodeIDAndOrder to cache the id and order (optional) for other import processes
-func (m *Mongo) UpdateDimensionsNodeIDAndOrder(dimensions []*models.DimensionOption) error {
+func (m *Mongo) UpdateDimensionsNodeIDAndOrder(_ context.Context, dimensions []*models.DimensionOption) error {
 
 	// validate that there is something to update
 	isUpdate := false

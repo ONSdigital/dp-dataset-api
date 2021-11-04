@@ -76,7 +76,7 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{
 					Current: current,
 					Next:    next,
@@ -108,7 +108,7 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ID, state string) error {
+			CheckDatasetExistsFunc: func(ctx context.Context, ID, state string) error {
 				datasetSearchState = state
 				return nil
 			},
@@ -138,11 +138,11 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ID, state string) error {
+			CheckDatasetExistsFunc: func(ctx context.Context, ID, state string) error {
 				datasetSearchState = state
 				return nil
 			},
-			GetEditionFunc: func(ID, editionID, state string) (*models.EditionUpdate, error) {
+			GetEditionFunc: func(ctx context.Context, ID, editionID, state string) (*models.EditionUpdate, error) {
 				editionSearchState = state
 				return edition, nil
 			},
@@ -166,11 +166,11 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 		var versionSearchState, editionSearchState, datasetSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ID, state string) error {
+			CheckDatasetExistsFunc: func(ctx context.Context, ID, state string) error {
 				datasetSearchState = state
 				return nil
 			},
-			CheckEditionExistsFunc: func(ID, editionID, state string) error {
+			CheckEditionExistsFunc: func(ctx context.Context, ID, editionID, state string) error {
 				editionSearchState = state
 				return nil
 			},
@@ -199,15 +199,15 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 		var versionSearchState, editionSearchState, datasetSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ID, state string) error {
+			CheckDatasetExistsFunc: func(ctx context.Context, ID, state string) error {
 				datasetSearchState = state
 				return nil
 			},
-			CheckEditionExistsFunc: func(ID, editionID, state string) error {
+			CheckEditionExistsFunc: func(ctx context.Context, ID, editionID, state string) error {
 				editionSearchState = state
 				return nil
 			},
-			GetVersionFunc: func(id string, editionID string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, id string, editionID string, version int, state string) (*models.Version, error) {
 				versionSearchState = state
 				return &models.Version{ID: "124", State: models.PublishedState,
 					Links: &models.VersionLinks{
@@ -235,14 +235,14 @@ func TestWebSubnetDimensionsEndpoint(t *testing.T) {
 		var versionSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(id string, editionID string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, id string, editionID string, version int, state string) (*models.Version, error) {
 				versionSearchState = state
 				return &models.Version{ID: "124", State: models.PublishedState,
 					Links: &models.VersionLinks{
 						Version: &models.LinkObject{},
 						Self:    &models.LinkObject{}}}, nil
 			},
-			GetDimensionsFunc: func(versionID string) ([]bson.M, error) {
+			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
 				return []bson.M{}, nil
 			},
 		}
@@ -264,7 +264,7 @@ func TestWebSubnetDimensionOptionsEndpoint(t *testing.T) {
 		var versionSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(id string, editionID string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, id string, editionID string, version int, state string) (*models.Version, error) {
 				versionSearchState = state
 				return &models.Version{ID: "124", State: models.PublishedState,
 					Links: &models.VersionLinks{

@@ -32,9 +32,9 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		handleInstanceErr(ctx, err, w, logData)
 	}
-	defer s.UnlockInstance(lockID)
+	defer s.UnlockInstance(ctx, lockID)
 
-	instance, err := s.GetInstance(instanceID, eTag)
+	instance, err := s.GetInstance(ctx, instanceID, eTag)
 	if err != nil {
 		log.Error(ctx, "update instance dimension: Failed to GET instance", err, logData)
 		handleInstanceErr(ctx, err, w, logData)

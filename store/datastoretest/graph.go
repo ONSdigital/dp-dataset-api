@@ -5,9 +5,14 @@ package storetest
 
 import (
 	"context"
+	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"sync"
 )
+
+// Ensure, that GraphDBMock does implement store.GraphDB.
+// If this is not the case, regenerate this file with moq.
+var _ store.GraphDB = &GraphDBMock{}
 
 // GraphDBMock is a mock implementation of store.GraphDB.
 //

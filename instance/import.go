@@ -39,16 +39,16 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		handleInstanceErr(ctx, err, w, logData)
 	}
-	defer s.UnlockInstance(lockID)
+	defer s.UnlockInstance(ctx, lockID)
 
-	instance, err := s.GetInstance(instanceID, eTag)
+	instance, err := s.GetInstance(ctx, instanceID, eTag)
 	if err != nil {
 		log.Error(ctx, "failed to get instance from database", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
 
-	newETag, err := s.UpdateObservationInserted(instance, observations, eTag)
+	newETag, err := s.UpdateObservationInserted(ctx, instance, observations, eTag)
 	if err != nil {
 		log.Error(ctx, "update imported observations: store.UpdateObservationInserted returned an error", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
@@ -88,9 +88,9 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		handleInstanceErr(ctx, err, w, logData)
 	}
-	defer s.UnlockInstance(lockID)
+	defer s.UnlockInstance(ctx, lockID)
 
-	instance, err := s.GetInstance(instanceID, eTag)
+	instance, err := s.GetInstance(ctx, instanceID, eTag)
 	if err != nil {
 		log.Error(ctx, "failed to get instance from database", err, logData)
 		if err == errs.ErrInstanceConflict {
@@ -110,7 +110,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 			if tasks.ImportObservations.State != models.CompletedState {
 				validationErrs = append(validationErrs, fmt.Errorf("bad request - invalid task state value for import observations: %v", tasks.ImportObservations.State))
 			} else {
-				eTag, err = s.UpdateImportObservationsTaskState(instance, tasks.ImportObservations.State, eTag)
+				eTag, err = s.UpdateImportObservationsTaskState(ctx, instance, tasks.ImportObservations.State, eTag)
 				if err != nil {
 					log.Error(ctx, "failed to update import observations task state", err, logData)
 					handleError(&taskError{err, http.StatusInternalServerError})
@@ -130,7 +130,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 			if err := models.ValidateImportTask(task.GenericTaskDetails); err != nil {
 				validationErrs = append(validationErrs, err)
 			} else {
-				eTag, err = s.UpdateBuildHierarchyTaskState(instance, task.DimensionName, task.State, eTag)
+				eTag, err = s.UpdateBuildHierarchyTaskState(ctx, instance, task.DimensionName, task.State, eTag)
 				if err != nil {
 					if err.Error() == errs.ErrNotFound.Error() {
 						notFoundErr := task.DimensionName + " hierarchy import task does not exist"
@@ -157,7 +157,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 			if err := models.ValidateImportTask(task.GenericTaskDetails); err != nil {
 				validationErrs = append(validationErrs, err)
 			} else {
-				eTag, err = s.UpdateBuildSearchTaskState(instance, task.DimensionName, task.State, eTag)
+				eTag, err = s.UpdateBuildSearchTaskState(ctx, instance, task.DimensionName, task.State, eTag)
 				if err != nil {
 					if err.Error() == "not found" {
 						notFoundErr := task.DimensionName + " search index import task does not exist"

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -26,13 +27,13 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(datasetID, edition, state string) error {
+			CheckEditionExistsFunc: func(ctx context.Context, datasetID, edition, state string) error {
 				return nil
 			},
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -86,13 +87,13 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(datasetID, edition, state string) error {
+			CheckEditionExistsFunc: func(ctx context.Context, datasetID, edition, state string) error {
 				return nil
 			},
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -143,7 +144,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return nil, errs.ErrInternalServer
 			},
 		}
@@ -169,10 +170,10 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return nil, nil
 			},
 		}
@@ -201,13 +202,13 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(datasetId, edition, state string) error {
+			CheckEditionExistsFunc: func(ctx context.Context, datasetId, edition, state string) error {
 				return nil
 			},
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -236,13 +237,13 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(datasetId, edition, state string) error {
+			CheckEditionExistsFunc: func(ctx context.Context, datasetId, edition, state string) error {
 				return errs.ErrEditionNotFound
 			},
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -271,13 +272,13 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(datasetId, edition, state string) error {
+			CheckEditionExistsFunc: func(ctx context.Context, datasetId, edition, state string) error {
 				return nil
 			},
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return nil, errs.ErrVersionNotFound
 			},
 		}
@@ -307,13 +308,13 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(datasetId, edition, state string) error {
+			CheckEditionExistsFunc: func(ctx context.Context, datasetId, edition, state string) error {
 				return nil
 			},
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return &models.Version{State: "gobbly-gook"}, nil
 			},
 		}

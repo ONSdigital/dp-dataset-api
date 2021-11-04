@@ -29,10 +29,10 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return &models.Version{State: models.AssociatedState}, nil
 			},
-			GetDimensionsFunc: func(versionID string) ([]bson.M, error) {
+			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
 				return []bson.M{}, nil
 			},
 		}
@@ -57,7 +57,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return nil, errs.ErrInternalServer
 			},
 		}
@@ -75,7 +75,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return nil, errs.ErrVersionNotFound
 			},
 		}
@@ -93,7 +93,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/abcd/dimensions", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return nil, errs.ErrVersionNotFound
 			},
 		}
@@ -109,10 +109,10 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return &models.Version{State: models.AssociatedState}, nil
 			},
-			GetDimensionsFunc: func(versionID string) ([]bson.M, error) {
+			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
 				return nil, errs.ErrDimensionsNotFound
 			},
 		}
@@ -130,7 +130,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return &models.Version{State: "gobbly-gook"}, nil
 			},
 		}
@@ -151,7 +151,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 
 		// testing DataStore with 5 dimension options
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return &models.Version{State: models.AssociatedState, ID: "v1"}, nil
 			},
 			GetDimensionOptionsFunc: func(ctx context.Context, version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error) {
@@ -163,7 +163,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 					{Option: "op5"}}
 				return allItems, 5, nil
 			},
-			GetDimensionOptionsFromIDsFunc: func(version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
+			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 				ret := []*models.PublicDimensionOption{}
 				sort.Strings(ids)
 				for _, id := range ids {
@@ -310,7 +310,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return nil, errs.ErrVersionNotFound
 			},
 		}
@@ -327,7 +327,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return &models.Version{State: models.AssociatedState}, nil
 			},
 			GetDimensionOptionsFunc: func(ctx context.Context, version *models.Version, dimensions string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
@@ -348,10 +348,10 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=id1", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return &models.Version{State: models.AssociatedState}, nil
 			},
-			GetDimensionOptionsFromIDsFunc: func(version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
+			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 				return nil, 0, errs.ErrInternalServer
 			},
 		}
@@ -369,7 +369,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return &models.Version{State: "gobbly-gook"}, nil
 			},
 		}
