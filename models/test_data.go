@@ -216,6 +216,7 @@ var publishedVersion = Version{
 	Dimensions:    []Dimension{dimension},
 	Downloads:     &downloads,
 	Edition:       "2017",
+	Headers:       []string{"cantabular_table", "age"},
 	LatestChanges: &[]LatestChange{latestChange},
 	Links:         &links,
 	ReleaseDate:   "2017-10-12",
@@ -272,6 +273,8 @@ func expectedMetadataDoc() Metadata {
 func expectedCantabularMetadataDoc() Metadata {
 	return Metadata{
 		Description:   "census",
+		Dimensions:    []Dimension{dimension},
+		CSVHeader:     []string{"cantabular_table", "age"},
 		Distribution:  []string{"json", "csv", "csvw", "xls"},
 		Downloads:     &cantabularDownloads,
 		Keywords:      []string{"test", "test2"},

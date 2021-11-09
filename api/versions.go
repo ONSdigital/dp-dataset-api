@@ -216,7 +216,6 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
-
 	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()
@@ -261,7 +260,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
-
 	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()
@@ -275,8 +273,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
-	err := func() error {
-
+	if err := func() error {
 		authorised := api.authenticate(r, logData)
 		if !authorised {
 			log.Error(ctx, "detachVersion endpoint: User is not authorised to detach a dataset version", errs.ErrUnauthorised, logData)
@@ -342,12 +339,23 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 				log.Error(ctx, "detachVersion endpoint: failed to update dataset document", err, logData)
 				return err
 			}
+		} else {
+			// For first (unpublished) versions:
+			// delete edition doc
+			if err := api.dataStore.Backend.DeleteEdition(editionDoc.ID); err != nil {
+				log.Error(ctx, "detachVersion endpoint: failed to delete edition document", err, logData)
+				return err
+			}
+
+			// remove edition and version links from datasetDoc
+			if err := api.dataStore.Backend.RemoveDatasetVersionAndEditionLinks(datasetID); err != nil {
+				log.Error(ctx, "detachVersion endpoint: failed to update dataset document", err, logData)
+				return err
+			}
 		}
 
 		return nil
-	}()
-
-	if err != nil {
+	}(); err != nil {
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
@@ -439,6 +447,10 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 			log.Error(ctx, "putVersion endpoint: failed to update edition during publishing", err, data)
 			return err
 		}
+
+		log.Info(ctx, "DATASTORE", log.Data{
+			"datastore": api.dataStore,
+		})
 
 		if err := api.dataStore.Backend.SetInstanceIsPublished(ctx, versionDoc.ID); err != nil {
 			if user := dprequest.User(ctx); user != "" {

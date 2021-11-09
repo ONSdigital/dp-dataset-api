@@ -39,6 +39,7 @@ type Metadata struct {
 	TableID           string               `json:"table_id,omitempty"`
 	Classifications   string               `json:"classifications,omitempty"`
 	Source            string               `json:"source,omitempty"`
+	CSVHeader         []string             `json:"headers,omitempty"`
 }
 
 // MetadataLinks represents a link object to list of metadata relevant to a version
@@ -129,35 +130,41 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 
 // CreateCantabularMetaDataDoc manages the creation of metadata across dataset and version docs for cantabular datasets
 // note: logic to retrieve the newly-added Cantabular-specific fields to the Metadata model will be created at a later date
-func CreateCantabularMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url.Builder) *Metadata {
-	metaDataDoc := &Metadata{
-		Description:   datasetDoc.Description,
-		Downloads:     versionDoc.Downloads,
-		Keywords:      datasetDoc.Keywords,
-		ReleaseDate:   versionDoc.ReleaseDate,
-		Title:         datasetDoc.Title,
-		UnitOfMeasure: datasetDoc.UnitOfMeasure,
+func CreateCantabularMetaDataDoc(d *Dataset, v *Version, urlBuilder *url.Builder) *Metadata {
+	m := &Metadata{
+		CSVHeader:     v.Headers,
+		Description:   d.Description,
+		Dimensions:    v.Dimensions,
+		Downloads:     v.Downloads,
+		Keywords:      d.Keywords,
+		ReleaseDate:   v.ReleaseDate,
+		Title:         d.Title,
+		UnitOfMeasure: d.UnitOfMeasure,
 	}
 
-	metaDataDoc.Distribution = getDistribution(metaDataDoc.Downloads)
+	m.Distribution = getDistribution(m.Downloads)
 
 	// Remove Public and Private download links
-	if metaDataDoc.Downloads != nil {
-		if metaDataDoc.Downloads.CSV != nil {
-			metaDataDoc.Downloads.CSV.Private = ""
-			metaDataDoc.Downloads.CSV.Public = ""
+	if m.Downloads != nil {
+		if m.Downloads.CSV != nil {
+			m.Downloads.CSV.Private = ""
+			m.Downloads.CSV.Public = ""
 		}
-		if metaDataDoc.Downloads.CSVW != nil {
-			metaDataDoc.Downloads.CSVW.Private = ""
-			metaDataDoc.Downloads.CSVW.Public = ""
+		if m.Downloads.CSVW != nil {
+			m.Downloads.CSVW.Private = ""
+			m.Downloads.CSVW.Public = ""
 		}
-		if metaDataDoc.Downloads.XLS != nil {
-			metaDataDoc.Downloads.XLS.Private = ""
-			metaDataDoc.Downloads.XLS.Public = ""
+		if m.Downloads.XLS != nil {
+			m.Downloads.XLS.Private = ""
+			m.Downloads.XLS.Public = ""
+		}
+		if m.Downloads.TXT != nil {
+			m.Downloads.TXT.Private = ""
+			m.Downloads.TXT.Public = ""
 		}
 	}
 
-	return metaDataDoc
+	return m
 }
 
 func getDistribution(downloads *DownloadList) []string {
@@ -174,6 +181,10 @@ func getDistribution(downloads *DownloadList) []string {
 
 		if downloads.XLS != nil && downloads.XLS.HRef != "" {
 			distribution = append(distribution, "xls")
+		}
+
+		if downloads.TXT != nil && downloads.TXT.HRef != "" {
+			distribution = append(distribution, "txt")
 		}
 	}
 

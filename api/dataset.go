@@ -121,7 +121,6 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
-
 	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()
@@ -223,7 +222,6 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
-
 	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()
@@ -324,12 +322,10 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	// attempt to delete the dataset.
 	err := func() error {
 		currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
-
 		if err == errs.ErrDatasetNotFound {
 			log.Info(ctx, "cannot delete dataset, it does not exist", logData)
 			return errs.ErrDeleteDatasetNotFound
 		}
-
 		if err != nil {
 			log.Error(ctx, "failed to run query for existing dataset", err, logData)
 			return err
@@ -342,9 +338,12 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 		// Find any editions associated with this dataset
 		editionDocs, _, err := api.dataStore.Backend.GetEditions(ctx, currentDataset.ID, "", 0, 0, true)
-		if err != nil {
-			log.Error(ctx, "unable to find the dataset editions", errs.ErrEditionsNotFound, logData)
-			return errs.ErrEditionsNotFound
+		if err != nil && err != errs.ErrEditionNotFound {
+			return fmt.Errorf("failed to get editions: %w", err)
+		}
+
+		if len(editionDocs) == 0 {
+			log.Info(ctx, "no editions found for dataset", logData)
 		}
 
 		// Then delete them
@@ -359,6 +358,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "failed to delete dataset", err, logData)
 			return err
 		}
+		
 		log.Info(ctx, "dataset deleted successfully", logData)
 		return nil
 	}()
