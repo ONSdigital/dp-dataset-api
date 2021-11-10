@@ -17,6 +17,7 @@ type Configuration struct {
 	KafkaSecClientKey          string        `envconfig:"KAFKA_SEC_CLIENT_KEY"             json:"-"`
 	KafkaSecSkipVerify         bool          `envconfig:"KAFKA_SEC_SKIP_VERIFY"`
 	GenerateDownloadsTopic     string        `envconfig:"GENERATE_DOWNLOADS_TOPIC"`
+	CantabularExportStartTopic string        `envconfig:"CANTABULAR_EXPORT_START"`
 	CodeListAPIURL             string        `envconfig:"CODE_LIST_API_URL"`
 	DatasetAPIURL              string        `envconfig:"DATASET_API_URL"`
 	WebsiteURL                 string        `envconfig:"WEBSITE_URL"`
@@ -48,7 +49,7 @@ type MongoConfig struct {
 
 var cfg *Configuration
 
-// Get the application and returns the configuration structure
+// Get the application and returns the configuration structure, and initialises with default values.
 func Get() (*Configuration, error) {
 	if cfg != nil {
 		return cfg, nil
@@ -58,6 +59,7 @@ func Get() (*Configuration, error) {
 		BindAddr:                   ":22000",
 		KafkaAddr:                  []string{"localhost:9092"},
 		GenerateDownloadsTopic:     "filter-job-submitted",
+		CantabularExportStartTopic: "cantabular-export-start",
 		CodeListAPIURL:             "http://localhost:22400",
 		DatasetAPIURL:              "http://localhost:22000",
 		WebsiteURL:                 "http://localhost:20000",
@@ -83,7 +85,7 @@ func Get() (*Configuration, error) {
 			Database:   "datasets",
 		},
 	}
-
+	// overwrites default values with system env variable values
 	return cfg, envconfig.Process("", cfg)
 }
 

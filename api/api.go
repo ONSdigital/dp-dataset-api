@@ -4,6 +4,7 @@ package api
 
 import (
 	"context"
+	"github.com/ONSdigital/dp-dataset-api/models"
 	"net/http"
 	"strconv"
 
@@ -58,7 +59,7 @@ type DatasetAPI struct {
 	host                     string
 	downloadServiceToken     string
 	EnablePrePublishView     bool
-	downloadGenerator        DownloadsGenerator
+	downloadGenerators       map[models.DatasetType]DownloadsGenerator
 	enablePrivateEndpoints   bool
 	enableDetachDataset      bool
 	datasetPermissions       AuthHandler
@@ -69,7 +70,7 @@ type DatasetAPI struct {
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
-func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerator DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
+func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
 
 	api := &DatasetAPI{
 		dataStore:                dataStore,
@@ -78,7 +79,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		EnablePrePublishView:     cfg.EnablePrivateEndpoints,
 		Router:                   router,
 		urlBuilder:               urlBuilder,
-		downloadGenerator:        downloadGenerator,
+		downloadGenerators:       downloadGenerators,
 		enablePrivateEndpoints:   cfg.EnablePrivateEndpoints,
 		enableDetachDataset:      cfg.EnableDetachDataset,
 		datasetPermissions:       datasetPermissions,

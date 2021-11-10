@@ -6,10 +6,15 @@ package storetest
 import (
 	"context"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"github.com/globalsign/mgo/bson"
 	"sync"
 )
+
+// Ensure, that MongoDBMock does implement store.MongoDB.
+// If this is not the case, regenerate this file with moq.
+var _ store.MongoDB = &MongoDBMock{}
 
 // MongoDBMock is a mock implementation of store.MongoDB.
 //

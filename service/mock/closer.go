@@ -9,29 +9,25 @@ import (
 	"sync"
 )
 
-var (
-	lockCloserMockClose sync.RWMutex
-)
-
 // Ensure, that CloserMock does implement service.Closer.
 // If this is not the case, regenerate this file with moq.
 var _ service.Closer = &CloserMock{}
 
 // CloserMock is a mock implementation of service.Closer.
 //
-//     func TestSomethingThatUsesCloser(t *testing.T) {
+// 	func TestSomethingThatUsesCloser(t *testing.T) {
 //
-//         // make and configure a mocked service.Closer
-//         mockedCloser := &CloserMock{
-//             CloseFunc: func(ctx context.Context) error {
-// 	               panic("mock out the Close method")
-//             },
-//         }
+// 		// make and configure a mocked service.Closer
+// 		mockedCloser := &CloserMock{
+// 			CloseFunc: func(ctx context.Context) error {
+// 				panic("mock out the Close method")
+// 			},
+// 		}
 //
-//         // use mockedCloser in code that requires service.Closer
-//         // and then make assertions.
+// 		// use mockedCloser in code that requires service.Closer
+// 		// and then make assertions.
 //
-//     }
+// 	}
 type CloserMock struct {
 	// CloseFunc mocks the Close method.
 	CloseFunc func(ctx context.Context) error
@@ -44,6 +40,7 @@ type CloserMock struct {
 			Ctx context.Context
 		}
 	}
+	lockClose sync.RWMutex
 }
 
 // Close calls CloseFunc.
@@ -56,9 +53,9 @@ func (mock *CloserMock) Close(ctx context.Context) error {
 	}{
 		Ctx: ctx,
 	}
-	lockCloserMockClose.Lock()
+	mock.lockClose.Lock()
 	mock.calls.Close = append(mock.calls.Close, callInfo)
-	lockCloserMockClose.Unlock()
+	mock.lockClose.Unlock()
 	return mock.CloseFunc(ctx)
 }
 
@@ -71,8 +68,8 @@ func (mock *CloserMock) CloseCalls() []struct {
 	var calls []struct {
 		Ctx context.Context
 	}
-	lockCloserMockClose.RLock()
+	mock.lockClose.RLock()
 	calls = mock.calls.Close
-	lockCloserMockClose.RUnlock()
+	mock.lockClose.RUnlock()
 	return calls
 }

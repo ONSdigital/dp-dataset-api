@@ -337,11 +337,14 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 }
 
 func GetWebAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
+	mockedMapDownloadGenerators := map[models.DatasetType]DownloadsGenerator{
+		models.Filterable: mockedGeneratedDownloads,
+	}
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)
 	cfg.ServiceAuthToken = authToken
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEndpoints = false
 
-	return Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, datasetPermissions, permissions)
+	return Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, datasetPermissions, permissions)
 }

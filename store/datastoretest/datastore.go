@@ -6,9 +6,14 @@ package storetest
 import (
 	"context"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/globalsign/mgo/bson"
 	"sync"
 )
+
+// Ensure, that StorerMock does implement store.Storer.
+// If this is not the case, regenerate this file with moq.
+var _ store.Storer = &StorerMock{}
 
 // StorerMock is a mock implementation of store.Storer.
 //

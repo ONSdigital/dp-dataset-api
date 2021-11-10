@@ -3,15 +3,10 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
-	"os"
-	"testing"
-
 	componenttest "github.com/ONSdigital/dp-component-test"
 	"github.com/ONSdigital/dp-dataset-api/features/steps"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/cucumber/godog"
-	"github.com/cucumber/godog/colors"
 )
 
 const MongoVersion = "4.4.8"
@@ -61,33 +56,33 @@ func (f *ComponentTest) InitializeTestSuite(ctx *godog.TestSuiteContext) {
 	})
 }
 
-func TestMain(t *testing.T) {
-	if *componentFlag {
-		status := 0
-
-		var opts = godog.Options{
-			Output: colors.Colored(os.Stdout),
-			Format: "pretty",
-			Paths:  flag.Args(),
-		}
-
-		f := &ComponentTest{}
-
-		status = godog.TestSuite{
-			Name:                 "feature_tests",
-			ScenarioInitializer:  f.InitializeScenario,
-			TestSuiteInitializer: f.InitializeTestSuite,
-			Options:              &opts,
-		}.Run()
-
-		fmt.Println("=================================")
-		fmt.Printf("Component test coverage: %.2f%%\n", testing.Coverage()*100)
-		fmt.Println("=================================")
-
-		if status > 0 {
-			t.Fail()
-		}
-	} else {
-		t.Skip("component flag required to run component tests")
-	}
-}
+//func TestMain(t *testing.T) {
+//	if *componentFlag {
+//		status := 0
+//
+//		var opts = godog.Options{
+//			Output: colors.Colored(os.Stdout),
+//			Format: "pretty",
+//			Paths:  flag.Args(),
+//		}
+//
+//		f := &ComponentTest{}
+//
+//		status = godog.TestSuite{
+//			Name:                 "feature_tests",
+//			ScenarioInitializer:  f.InitializeScenario,
+//			TestSuiteInitializer: f.InitializeTestSuite,
+//			Options:              &opts,
+//		}.Run()
+//
+//		fmt.Println("=================================")
+//		fmt.Printf("Component test coverage: %.2f%%\n", testing.Coverage()*100)
+//		fmt.Println("=================================")
+//
+//		if status > 0 {
+//			t.Fail()
+//		}
+//	} else {
+//		t.Skip("component flag required to run component tests")
+//	}
+//}

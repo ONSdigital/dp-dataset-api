@@ -138,7 +138,7 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 			So(*isLocked, ShouldBeTrue)
 			return nil
 		}
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
 		Convey("When a PUT request to update the nodeID for an option is made, with a valid If-Match header", func() {
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
@@ -221,7 +221,7 @@ func TestPatchOptionReturnsOK(t *testing.T) {
 			return nil
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
 		Convey("Then patch dimension option with a valid node_id returns ok", func() {
 			body := strings.NewReader(`[
@@ -375,7 +375,7 @@ func TestAddNodeIDToDimensionReturnsNotFound(t *testing.T) {
 			return errs.ErrDimensionNodeNotFound
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
 		Convey("Add node id to a dimension returns status not found", func() {
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
@@ -421,7 +421,7 @@ func TestPatchOptionReturnsNotFound(t *testing.T) {
 			return errs.ErrDimensionNodeNotFound
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
 		Convey("Then patch dimension option returns status not found", func() {
 			body := strings.NewReader(`[
@@ -461,7 +461,7 @@ func TestPatchOptionReturnsBadRequest(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
 		bodies := map[string]io.Reader{
 			"Then patch dimension option with an invalid body returns bad request":                            strings.NewReader(`wrong`),
@@ -500,7 +500,7 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -519,7 +519,7 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -548,7 +548,7 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -567,7 +567,7 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 			return &models.Instance{State: "gobbledygook"}, nil
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -591,7 +591,7 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -615,7 +615,7 @@ func TestAddNodeIDToDimensionReturnsForbidden(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -641,7 +641,7 @@ func TestPatchOptionReturnsForbidden(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -660,7 +660,7 @@ func TestAddNodeIDToDimensionReturnsUnauthorized(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
@@ -681,7 +681,7 @@ func TestPatchOptionReturnsUnauthorized(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
@@ -711,7 +711,7 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 			return nil
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
 		Convey("When a POST request to add dimensions to an instance resource is made, with a valid If-Match header", func() {
 			json := strings.NewReader(bodyStr)
@@ -802,7 +802,7 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 			return errs.ErrDimensionNodeNotFound
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -840,7 +840,7 @@ func TestAddDimensionToInstanceReturnsForbidden(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -860,7 +860,7 @@ func TestAddDimensionToInstanceReturnsUnauthorized(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
@@ -884,7 +884,7 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -906,7 +906,7 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -926,7 +926,7 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 			So(*isLocked, ShouldBeTrue)
 			return []*models.DimensionOption{}, 0, nil
 		}
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
 		Convey("When a GET request to retrieve an instance resource is made, with a valid If-Match header", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions", nil)
@@ -998,7 +998,7 @@ func TestGetDimensionsReturnsNotFound(t *testing.T) {
 			return nil, 0, errs.ErrDimensionNodeNotFound
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -1026,7 +1026,7 @@ func TestGetDimensionsReturnsConflict(t *testing.T) {
 			return nil, errs.ErrInstanceConflict
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusConflict)
@@ -1052,7 +1052,7 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 			return nil, errs.ErrInternalServer
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1075,7 +1075,7 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 			return &models.Instance{State: "gobbly gook"}, nil
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1097,7 +1097,7 @@ func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 			return []*string{}, 0, nil
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
 		Convey("When a GET request to retrieve an instance resource is made, with a valid If-Match header", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
@@ -1164,7 +1164,7 @@ func TestGetUniqueDimensionAndOptionsReturnsNotFound(t *testing.T) {
 			return nil, 0, errs.ErrInstanceNotFound
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -1191,7 +1191,7 @@ func TestGetUniqueDimensionAndOptionsReturnsConflict(t *testing.T) {
 			return nil, errs.ErrInstanceConflict
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusConflict)
@@ -1217,7 +1217,7 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 			return nil, errs.ErrInternalServer
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1238,7 +1238,7 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 			return &models.Instance{State: "gobbly gook"}, nil
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1278,7 +1278,7 @@ func TestPatchDimensions(t *testing.T) {
 			return nil
 		}
 
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
 		Convey("When calling patch dimension with a valid single patch 'upsert' operation", func() {
 			body := strings.NewReader(`[
@@ -1409,7 +1409,7 @@ func TestPatchDimensionsReturnsBadRequest(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
 		bodies := map[string]io.Reader{
 			"Then patch dimensions with an invalid body returns bad request": strings.NewReader(`wrong`),
@@ -1509,7 +1509,11 @@ func TestPatchDimensionsReturnsBadRequest(t *testing.T) {
 	})
 }
 
-func getAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator) *api.DatasetAPI {
+func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator) *api.DatasetAPI {
+	downloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
+		models.Filterable: mockedGeneratedDownloads,
+		models.Nomis: mockedGeneratedDownloads,
+	}
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -1523,7 +1527,7 @@ func getAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mockedGe
 	datasetPermissions := getAuthorisationHandlerMock()
 	permissions := getAuthorisationHandlerMock()
 
-	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedGeneratedDownloads, datasetPermissions, permissions)
+	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, downloadGenerators, datasetPermissions, permissions)
 }
 
 func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {
