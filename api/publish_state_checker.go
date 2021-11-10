@@ -96,6 +96,14 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 							}
 						}
 
+						if versionDoc.Downloads.TXT != nil && versionDoc.Downloads.TXT.Public != "" {
+							newVersion.Downloads.TXT = &models.DownloadObject{
+								Public: versionDoc.Downloads.TXT.Public,
+								Size:   versionDoc.Downloads.TXT.Size,
+								HRef:   versionDoc.Downloads.TXT.HRef,
+							}
+						}
+
 						if newVersion != nil {
 							var b []byte
 							b, err = json.Marshal(newVersion)

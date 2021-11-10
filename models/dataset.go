@@ -198,6 +198,7 @@ type DownloadList struct {
 	CSV  *DownloadObject `bson:"csv,omitempty" json:"csv,omitempty"`
 	CSVW *DownloadObject `bson:"csvw,omitempty" json:"csvw,omitempty"`
 	XLS  *DownloadObject `bson:"xls,omitempty" json:"xls,omitempty"`
+	TXT  *DownloadObject `bson:"txt,omitempty" json:"txt,omitempty"`
 }
 
 // DownloadObject represents information on the downloadable file
@@ -567,6 +568,18 @@ func ValidateVersion(version *Version) error {
 			}
 			if _, err := strconv.Atoi(version.Downloads.CSVW.Size); err != nil {
 				invalidFields = append(invalidFields, "Downloads.CSVW.Size not a number")
+			}
+		}
+
+		if version.Downloads.TXT != nil {
+			if version.Downloads.TXT.HRef == "" {
+				missingFields = append(missingFields, "Downloads.TXT.HRef")
+			}
+			if version.Downloads.TXT.Size == "" {
+				missingFields = append(missingFields, "Downloads.TXT.Size")
+			}
+			if _, err := strconv.Atoi(version.Downloads.TXT.Size); err != nil {
+				invalidFields = append(invalidFields, "Downloads.TXT.Size not a number")
 			}
 		}
 	}
