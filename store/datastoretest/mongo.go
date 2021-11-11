@@ -8,7 +8,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	"github.com/globalsign/mgo/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"sync"
 )
 
@@ -61,7 +61,7 @@ var _ store.MongoDB = &MongoDBMock{}
 // 			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 // 				panic("mock out the GetDimensionOptionsFromIDs method")
 // 			},
-// 			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
+// 			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]primitive.M, error) {
 // 				panic("mock out the GetDimensions method")
 // 			},
 // 			GetDimensionsFromInstanceFunc: func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error) {
@@ -189,7 +189,7 @@ type MongoDBMock struct {
 	GetDimensionOptionsFromIDsFunc func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
-	GetDimensionsFunc func(ctx context.Context, versionID string) ([]bson.M, error)
+	GetDimensionsFunc func(ctx context.Context, versionID string) ([]primitive.M, error)
 
 	// GetDimensionsFromInstanceFunc mocks the GetDimensionsFromInstance method.
 	GetDimensionsFromInstanceFunc func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error)
@@ -1208,7 +1208,7 @@ func (mock *MongoDBMock) GetDimensionOptionsFromIDsCalls() []struct {
 }
 
 // GetDimensions calls GetDimensionsFunc.
-func (mock *MongoDBMock) GetDimensions(ctx context.Context, versionID string) ([]bson.M, error) {
+func (mock *MongoDBMock) GetDimensions(ctx context.Context, versionID string) ([]primitive.M, error) {
 	if mock.GetDimensionsFunc == nil {
 		panic("MongoDBMock.GetDimensionsFunc: method is nil but MongoDB.GetDimensions was just called")
 	}

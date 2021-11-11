@@ -5,7 +5,7 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	"github.com/globalsign/mgo/bson"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // DataStore provides a datastore.Storer interface used to store, retrieve, remove or update datasets

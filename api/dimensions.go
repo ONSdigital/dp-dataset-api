@@ -11,8 +11,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
 	"github.com/ONSdigital/log.go/v2/log"
-	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 const maxIDs = 200

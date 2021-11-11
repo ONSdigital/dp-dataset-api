@@ -7,7 +7,7 @@ import (
 	"context"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/globalsign/mgo/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"sync"
 )
 
@@ -57,7 +57,7 @@ var _ store.Storer = &StorerMock{}
 // 			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 // 				panic("mock out the GetDimensionOptionsFromIDs method")
 // 			},
-// 			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
+// 			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]primitive.M, error) {
 // 				panic("mock out the GetDimensions method")
 // 			},
 // 			GetDimensionsFromInstanceFunc: func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error) {
@@ -185,7 +185,7 @@ type StorerMock struct {
 	GetDimensionOptionsFromIDsFunc func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
-	GetDimensionsFunc func(ctx context.Context, versionID string) ([]bson.M, error)
+	GetDimensionsFunc func(ctx context.Context, versionID string) ([]primitive.M, error)
 
 	// GetDimensionsFromInstanceFunc mocks the GetDimensionsFromInstance method.
 	GetDimensionsFromInstanceFunc func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error)
@@ -1196,7 +1196,7 @@ func (mock *StorerMock) GetDimensionOptionsFromIDsCalls() []struct {
 }
 
 // GetDimensions calls GetDimensionsFunc.
-func (mock *StorerMock) GetDimensions(ctx context.Context, versionID string) ([]bson.M, error) {
+func (mock *StorerMock) GetDimensions(ctx context.Context, versionID string) ([]primitive.M, error) {
 	if mock.GetDimensionsFunc == nil {
 		panic("StorerMock.GetDimensionsFunc: method is nil but Storer.GetDimensions was just called")
 	}
