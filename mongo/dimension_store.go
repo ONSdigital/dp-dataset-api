@@ -24,7 +24,7 @@ func (m *Mongo) GetDimensionsFromInstance(ctx context.Context, id string, offset
 
 	// get total count and paginated values according to provided offset and limit
 	dimensions := []*models.DimensionOption{}
-	totalCount, err := NewQueryPage(ctx, f, offset, limit, &dimensions)
+	totalCount, err := QueryPage(ctx, f, offset, limit, &dimensions)
 	if err != nil {
 		return dimensions, 0, err
 	}
@@ -142,7 +142,7 @@ func (m *Mongo) GetDimensionOptions(ctx context.Context, version *models.Version
 
 	// get total count and paginated values according to provided offset and limit
 	values := []*models.PublicDimensionOption{}
-	totalCount, err := NewQueryPage(ctx, f, offset, limit, &values)
+	totalCount, err := QueryPage(ctx, f, offset, limit, &values)
 	if err != nil {
 		return values, 0, err
 	}

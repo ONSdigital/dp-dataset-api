@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/globalsign/mgo/bson"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // AnyETag represents the wildchar that corresponds to not check the ETag value for update requests

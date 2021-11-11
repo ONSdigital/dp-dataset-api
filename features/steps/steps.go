@@ -1,13 +1,14 @@
 package steps
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/cucumber/godog"
-	"github.com/globalsign/mgo/bson"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 var WellKnownTestTime time.Time
@@ -28,7 +29,7 @@ func (f *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 }
 
 func (f *DatasetComponent) thereAreNoDatasets() error {
-	return f.MongoClient.Session.Copy().DB(f.MongoClient.Database).DropDatabase()
+	return f.MongoClient.Connection.DropDatabase(context.Background())
 }
 
 func (f *DatasetComponent) privateEndpointsAreEnabled() error {
@@ -37,20 +38,14 @@ func (f *DatasetComponent) privateEndpointsAreEnabled() error {
 }
 
 func (f *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId string, documentJson *godog.DocString) error {
-	s := f.MongoClient.Session.Copy()
-	defer s.Close()
-
 	var expectedDataset models.Dataset
 
 	if err := json.Unmarshal([]byte(documentJson.Content), &expectedDataset); err != nil {
 		return err
 	}
 
-	filterCursor := s.DB(f.MongoClient.Database).C("datasets").FindId(documentId)
-
 	var link models.DatasetUpdate
-
-	if err := filterCursor.One(&link); err != nil {
+	if err := f.MongoClient.Connection.GetConfiguredCollection().FindOne(context.Background(), bson.M{"_id": documentId}, &link); err != nil {
 		return err
 	}
 
@@ -174,8 +169,6 @@ func (f *DatasetComponent) iHaveTheseInstances(instancesJson *godog.DocString) e
 }
 
 func (f *DatasetComponent) putDocumentInDatabase(document interface{}, id, collectionName string, timeOffset int) error {
-	s := f.MongoClient.Session.Copy()
-	defer s.Close()
 
 	update := bson.M{
 		"$set": document,
@@ -183,7 +176,7 @@ func (f *DatasetComponent) putDocumentInDatabase(document interface{}, id, colle
 			"last_updated": WellKnownTestTime.Add(time.Second * time.Duration(timeOffset)),
 		},
 	}
-	_, err := s.DB(f.MongoClient.Database).C(collectionName).UpsertId(id, update)
+	_, err := f.MongoClient.Connection.C(collectionName).UpsertById(context.Background(), id, update)
 	if err != nil {
 		return err
 	}

@@ -29,7 +29,7 @@ type DatasetComponent struct {
 	ServiceRunning bool
 }
 
-func NewDatasetComponent(mongoFeature *componenttest.MongoFeature, zebedeeURL string) (*DatasetComponent, error) {
+func NewDatasetComponent(mongoURI string, zebedeeURL string) (*DatasetComponent, error) {
 
 	f := &DatasetComponent{
 		HTTPServer:     &http.Server{},
@@ -52,7 +52,7 @@ func NewDatasetComponent(mongoFeature *componenttest.MongoFeature, zebedeeURL st
 		MongoConfig: config.MongoConfig{
 			// TODO the following line can be used as 'normal', i.e. mongoFeature.Server.URI(),
 			// when the dp-mongodb has a proper uri parser in place (it's in the pipeline)
-			URI:               strings.Replace(mongoFeature.Server.URI(), "mongodb://", "", 1),
+			URI:               strings.Replace(mongoURI, "mongodb://", "", 1),
 			Database:          utils.RandomDatabase(),
 			Collection:        "datasets",
 			DatasetAPIURL:     "datasets",
@@ -83,6 +83,9 @@ func NewDatasetComponent(mongoFeature *componenttest.MongoFeature, zebedeeURL st
 
 func (f *DatasetComponent) Reset() *DatasetComponent {
 	ctx := context.Background()
+	if err := f.MongoClient.Connection.DropDatabase(ctx); err != nil {
+		log.Warn(ctx, "error dropping database on Reset", log.Data{"err": err.Error()})
+	}
 	f.MongoClient.Database = utils.RandomDatabase()
 	if err := f.MongoClient.Init(ctx); err != nil {
 		log.Warn(ctx, "error initialising MongoClient during Reset", log.Data{"err": err.Error()})
@@ -92,8 +95,12 @@ func (f *DatasetComponent) Reset() *DatasetComponent {
 }
 
 func (f *DatasetComponent) Close() error {
+	ctx := context.Background()
 	if f.svc != nil && f.ServiceRunning {
-		if err := f.svc.Close(context.Background()); err != nil {
+		if err := f.MongoClient.Connection.DropDatabase(ctx); err != nil {
+			log.Warn(ctx, "error dropping database on Close", log.Data{"err": err.Error()})
+		}
+		if err := f.svc.Close(ctx); err != nil {
 			return err
 		}
 		f.ServiceRunning = false

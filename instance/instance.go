@@ -229,7 +229,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 	datasetID := currentInstance.Links.Dataset.ID
 
-	//edition confirmation is a one time process - cannot be editted for an instance once done
+	//edition confirmation is a one time process - cannot be edited for an instance once done
 	if instance.State == models.EditionConfirmedState && instance.Version == 0 {
 		if instance.Edition == "" {
 			instance.Edition = currentInstance.Edition

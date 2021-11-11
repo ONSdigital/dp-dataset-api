@@ -170,7 +170,7 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 	setETag(w, newETag)
 }
 
-// PatchDimensionsHandler represents adding multile dimensions to a specific instance
+// PatchDimensionsHandler represents adding multiple dimensions to a specific instance
 // And modifying multiple dimension options `node_id` and `order` values for a specific instance.
 func (s *Store) PatchDimensionsHandler(w http.ResponseWriter, r *http.Request) {
 	defer dphttp.DrainBody(r)

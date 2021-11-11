@@ -18,9 +18,10 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/log.go/v2/log"
-	"github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
 	uuid "github.com/satori/go.uuid"
+
+	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type CenStructure struct {
@@ -97,12 +98,13 @@ func main() {
 	ctx := context.Background()
 	downloadFile(ctx)
 
-	session, err := mgo.Dial(mongoURL)
+	conn, err := mongodriver.Open(&mongodriver.MongoConnectionConfig{ClusterEndpoint: mongoURL, Database: "datasets", ConnectTimeoutInSeconds: 5 * time.Second})
 	if err != nil {
 		log.Fatal(ctx, "failed to initialise mongo", err)
 		os.Exit(1)
 	}
-	defer session.Close()
+	defer func(conn *mongodriver.MongoConnection) { _ = conn.Close(ctx) }(conn)
+
 	fileLocation := "./NOMIS/def.sdmx.json"
 	f, err := os.Open(fileLocation)
 	if err != nil {
@@ -145,7 +147,7 @@ func main() {
 		}
 		title := res.Structure.Keyfamilies.Keyfamily[keyIndex].Name.Value
 
-		mapData.Title = CheckTitle(title, ctx)
+		mapData.Title = CheckTitle(title)
 		datasetUrl := "http://127.0.0.1:12345/datasets/"
 		instanceUrl := "http://127.0.0.1:12345/instances/"
 		editionUrl := "/editions"
@@ -253,12 +255,12 @@ func main() {
 			}
 			if strings.HasPrefix(str, "MetadataText") {
 				if str != "MetadataText0" {
-					example = CheckSubString(annotation.Text.(string), ctx)
+					example = CheckSubString(annotation.Text.(string))
 				}
 				splitMetaData := strings.Split(str, "MetadataText")
 				txtNumber, _ := strconv.Atoi(splitMetaData[1])
 				var note, title string
-				if splitMetaData[1] == "" && splitMetaData[1] != "0" {
+				if splitMetaData[1] == "" {
 					note, title = ReplaceStatDis(example, metaTitleInfo[0])
 					appendUsageNote(censusInstances.UsageNotes, note, title)
 				} else if splitMetaData[1] != "0" {
@@ -274,53 +276,56 @@ func main() {
 			Next:    &mapData,
 		}
 
-		createDatasetsDocument(ctx, cenId, datasetDoc, session)
-		createEditionsDocument(ctx, cenId, censusEditionData, session)
-		createInstancesDocument(ctx, cenId, censusInstances, session)
+		createDatasetsDocument(ctx, cenId, datasetDoc, conn)
+		createEditionsDocument(ctx, cenId, censusEditionData, conn)
+		createInstancesDocument(ctx, cenId, censusInstances, conn)
 	}
 	fmt.Println("\ndatasets, instances and editions have been added to datasets db")
 }
 
 //Inserts a document in the datasets collection
-func createDatasetsDocument(ctx context.Context, id string, class interface{}, session *mgo.Session) {
+func createDatasetsDocument(ctx context.Context, id string, class interface{}, conn *mongodriver.MongoConnection) {
 	var err error
 	logData := log.Data{"data": class}
-	if _, err = session.DB("datasets").C("datasets").UpsertId(id, class); err != nil {
+	upsert := bson.M{"$set": class}
+	if _, err = conn.C("datasets").UpsertById(ctx, id, upsert); err != nil {
 		log.Error(ctx, "failed to upsert data in dataset collection", err, logData)
 		os.Exit(1)
 	}
 }
 
 //Inserts a document in the editions collection
-func createEditionsDocument(ctx context.Context, id string, class interface{}, session *mgo.Session) {
+func createEditionsDocument(ctx context.Context, id string, class interface{}, conn *mongodriver.MongoConnection) {
 	var err error
 	logData := log.Data{"data": class}
 	selector := bson.M{
 		"current.links.dataset.id": id,
 	}
-	if err = upsertData(ctx, selector, class, session, "editions", logData); err != nil {
+	upsert := bson.M{"$set": class}
+	if err = upsertData(ctx, selector, upsert, conn, "editions", logData); err != nil {
 		log.Error(ctx, " failed to insert data in collection", err, logData)
 		os.Exit(1)
 	}
 }
 
 //Inserts a document in the instances collection
-func createInstancesDocument(ctx context.Context, id string, class interface{}, session *mgo.Session) {
+func createInstancesDocument(ctx context.Context, id string, class interface{}, conn *mongodriver.MongoConnection) {
 	var err error
 	logData := log.Data{"data": class}
 	selector := bson.M{
 		"links.dataset.id": id,
 	}
-	if err = upsertData(ctx, selector, class, session, "instances", logData); err != nil {
+	upsert := bson.M{"$set": class}
+	if err = upsertData(ctx, selector, upsert, conn, "instances", logData); err != nil {
 		log.Error(ctx, " failed to insert data in collection", err, logData)
 		os.Exit(1)
 	}
 }
 
 //Updates document in the specific collection
-func upsertData(ctx context.Context, selector bson.M, class interface{}, session *mgo.Session, document string, logData log.Data) error {
+func upsertData(ctx context.Context, selector, upsert bson.M, conn *mongodriver.MongoConnection, document string, logData log.Data) error {
 	var err error
-	if _, err = session.DB("datasets").C(document).Upsert(selector, class); err != nil {
+	if _, err = conn.C(document).Upsert(ctx, selector, upsert); err != nil {
 		log.Error(ctx, "failed to upsert data in collection", err, logData)
 		return err
 	}
@@ -388,11 +393,11 @@ func closeFile(ctx context.Context, f *os.File) {
 // CheckSubString checks if the string has substrings http and [Statistical Disclosure Control].
 // If both the substrings exists then it adds parenthesis where necessary and swaps the pattern (url)[text] to [text](url)
 // so it can be displayed correctly. If substring does not exist then it returns the original string
-func CheckSubString(existingStr string, ctx context.Context) string {
+func CheckSubString(existingStr string) string {
 	return httpRegex.ReplaceAllString(existingStr, `$2($1)`)
 }
 
-func CheckTitle(sourceStr string, ctx context.Context) string {
+func CheckTitle(sourceStr string) string {
 	return titleRegex.ReplaceAllString(sourceStr, `$1`)
 }
 
