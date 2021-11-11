@@ -3,6 +3,7 @@ package steps
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	componenttest "github.com/ONSdigital/dp-component-test"
 	"github.com/ONSdigital/dp-component-test/utils"
@@ -49,11 +50,15 @@ func NewDatasetComponent(mongoFeature *componenttest.MongoFeature, zebedeeURL st
 
 	mongodb := &mongo.Mongo{
 		MongoConfig: config.MongoConfig{
-			CodeListAPIURL: "",
-			Collection:     "datasets",
-			Database:       utils.RandomDatabase(),
-			DatasetAPIURL:  "datasets",
-			URI:            mongoFeature.Server.URI(),
+			// TODO the following line can be used as 'normal', i.e. mongoFeature.Server.URI(),
+			// when the dp-mongodb has a proper uri parser in place (it's in the pipeline)
+			URI:               strings.Replace(mongoFeature.Server.URI(), "mongodb://", "", 1),
+			Database:          utils.RandomDatabase(),
+			Collection:        "datasets",
+			DatasetAPIURL:     "datasets",
+			CodeListAPIURL:    "",
+			ConnectionTimeout: f.Config.ConnectionTimeout,
+			QueryTimeout:      f.Config.QueryTimeout,
 		},
 	}
 

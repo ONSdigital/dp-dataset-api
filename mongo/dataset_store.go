@@ -3,36 +3,30 @@ package mongo
 import (
 	"context"
 	"fmt"
-
-	"sync"
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/log.go/v2/log"
-	"github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
+
+	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // GetDatasets retrieves all dataset documents
 func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
-	s := m.Session.Copy()
-	defer s.Close()
 
-	var q *mgo.Query
+	var f *mongodriver.Find
 	if authorised {
-		q = s.DB(m.Database).C("datasets").Find(nil).Sort()
+		f = m.Connection.GetConfiguredCollection().Find(bson.M{}).Sort(bson.M{"_id": -1})
 	} else {
-		q = s.DB(m.Database).C("datasets").Find(bson.M{"current": bson.M{"$exists": true}}).Sort()
+		f = m.Connection.GetConfiguredCollection().Find(bson.M{"current": bson.M{"$exists": true}}).Sort(bson.M{"_id": -1})
 	}
 
 	// get total count and paginated values according to provided offset and limit
 	values := []*models.DatasetUpdate{}
-	totalCount, err := QueryPage(ctx, q, offset, limit, &values)
+	totalCount, err := NewQueryPage(ctx, f, offset, limit, &values)
 	if err != nil {
-		if err == mgo.ErrNotFound { // ignore ErrNotFound errors
-			return values, totalCount, nil
-		}
 		return values, 0, err
 	}
 
@@ -40,13 +34,12 @@ func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised b
 }
 
 // GetDataset retrieves a dataset document
-func (m *Mongo) GetDataset(_ context.Context, id string) (*models.DatasetUpdate, error) {
-	s := m.Session.Copy()
-	defer s.Close()
+func (m *Mongo) GetDataset(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+
 	var dataset models.DatasetUpdate
-	err := s.DB(m.Database).C("datasets").Find(bson.M{"_id": id}).One(&dataset)
+	err := m.Connection.GetConfiguredCollection().FindOne(ctx, bson.M{"_id": id}, &dataset)
 	if err != nil {
-		if err == mgo.ErrNotFound {
+		if mongodriver.IsErrNoDocumentFound(err) {
 			return nil, errs.ErrDatasetNotFound
 		}
 		return nil, err
@@ -57,13 +50,11 @@ func (m *Mongo) GetDataset(_ context.Context, id string) (*models.DatasetUpdate,
 
 // GetEditions retrieves all edition documents for a dataset
 func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
-	log.Info(context.TODO(), "[DEBUG] getting edtions", log.Data{})
 
-	s := m.Session.Copy()
-	defer s.Close()
+	log.Info(context.TODO(), "[DEBUG] getting editions", log.Data{})
 
 	selector := buildEditionsQuery(id, state, authorised)
-	q := s.DB(m.Database).C(editionsCollection).Find(selector).Sort()
+	f := m.Connection.C(editionsCollection).Find(selector).Sort(bson.M{"id": 1})
 
 	log.Info(context.TODO(), "[DEBUG] query details", log.Data{
 		"editionsCollection": editionsCollection,
@@ -73,7 +64,7 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 
 	// get total count and paginated values according to provided offset and limit
 	results := []*models.EditionUpdate{}
-	totalCount, err := QueryPage(ctx, q, offset, limit, &results)
+	totalCount, err := NewQueryPage(ctx, f, offset, limit, &results)
 	if err != nil {
 		return results, 0, err
 	}
@@ -86,6 +77,7 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 }
 
 func buildEditionsQuery(id, state string, authorised bool) bson.M {
+
 	log.Info(context.TODO(), "[DEBUG] building query", log.Data{"id": id, "state": state, "authorised": authorised})
 	// all queries must get the dataset by id
 	selector := bson.M{
@@ -106,16 +98,15 @@ func buildEditionsQuery(id, state string, authorised bool) bson.M {
 }
 
 // GetEdition retrieves an edition document for a dataset
-func (m *Mongo) GetEdition(_ context.Context, id, editionID, state string) (*models.EditionUpdate, error) {
-	s := m.Session.Copy()
-	defer s.Close()
+func (m *Mongo) GetEdition(ctx context.Context, id, editionID, state string) (*models.EditionUpdate, error) {
 
 	selector := buildEditionQuery(id, editionID, state)
 
 	var edition models.EditionUpdate
-	err := s.DB(m.Database).C(editionsCollection).Find(selector).One(&edition)
+	err := m.Connection.C(editionsCollection).FindOne(ctx, selector, &edition)
+
 	if err != nil {
-		if err == mgo.ErrNotFound {
+		if mongodriver.IsErrNoDocumentFound(err) {
 			return nil, errs.ErrEditionNotFound
 		}
 		return nil, err
@@ -142,9 +133,8 @@ func buildEditionQuery(id, editionID, state string) bson.M {
 }
 
 // GetNextVersion retrieves the latest version for an edition of a dataset
-func (m *Mongo) GetNextVersion(_ context.Context, datasetID, edition string) (int, error) {
-	s := m.Session.Copy()
-	defer s.Close()
+func (m *Mongo) GetNextVersion(ctx context.Context, datasetID, edition string) (int, error) {
+
 	var version models.Version
 	var nextVersion int
 
@@ -154,9 +144,9 @@ func (m *Mongo) GetNextVersion(_ context.Context, datasetID, edition string) (in
 	}
 
 	// Results are sorted in reverse order to get latest version
-	err := s.DB(m.Database).C("instances").Find(selector).Sort("-version").One(&version)
+	err := m.Connection.C("instances").Find(selector).Sort(bson.M{"version": -1}).One(ctx, &version)
 	if err != nil {
-		if err == mgo.ErrNotFound {
+		if mongodriver.IsErrNoDocumentFound(err) {
 			return 1, nil
 		}
 		return nextVersion, err
@@ -169,18 +159,15 @@ func (m *Mongo) GetNextVersion(_ context.Context, datasetID, edition string) (in
 
 // GetVersions retrieves all version documents for a dataset edition
 func (m *Mongo) GetVersions(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
-	s := m.Session.Copy()
-	defer s.Close()
 
-	var q *mgo.Query
+	var f *mongodriver.Find
 
 	selector := buildVersionsQuery(datasetID, editionID, state)
-
-	q = s.DB(m.Database).C("instances").Find(selector).Sort("-last_updated")
+	f = m.Connection.C("instances").Find(selector).Sort(bson.M{"last_updated": -1})
 
 	// get total count and paginated values according to provided offset and limit
 	results := []models.Version{}
-	totalCount, err := QueryPage(ctx, q, offset, limit, &results)
+	totalCount, err := NewQueryPage(ctx, f, offset, limit, &results)
 	if err != nil {
 		return results, 0, err
 	}
@@ -198,6 +185,7 @@ func (m *Mongo) GetVersions(ctx context.Context, datasetID, editionID, state str
 }
 
 func buildVersionsQuery(datasetID, editionID, state string) bson.M {
+
 	var selector bson.M
 	if state == "" {
 		selector = bson.M{
@@ -221,24 +209,24 @@ func buildVersionsQuery(datasetID, editionID, state string) bson.M {
 }
 
 // GetVersion retrieves a version document for a dataset edition
-func (m *Mongo) GetVersion(_ context.Context, id, editionID string, versionID int, state string) (*models.Version, error) {
-	s := m.Session.Copy()
-	defer s.Close()
+func (m *Mongo) GetVersion(ctx context.Context, id, editionID string, versionID int, state string) (*models.Version, error) {
 
 	selector := buildVersionQuery(id, editionID, state, versionID)
 
 	var version models.Version
-	err := s.DB(m.Database).C("instances").Find(selector).One(&version)
+	err := m.Connection.C("instances").FindOne(ctx, selector, &version)
 	if err != nil {
-		if err == mgo.ErrNotFound {
+		if mongodriver.IsErrNoDocumentFound(err) {
 			return nil, errs.ErrVersionNotFound
 		}
 		return nil, err
 	}
+
 	return &version, nil
 }
 
 func buildVersionQuery(id, editionID, state string, versionID int) bson.M {
+
 	var selector bson.M
 	if state != models.PublishedState {
 		selector = bson.M{
@@ -260,13 +248,11 @@ func buildVersionQuery(id, editionID, state string, versionID int) bson.M {
 
 // UpdateDataset updates an existing dataset document
 func (m *Mongo) UpdateDataset(ctx context.Context, id string, dataset *models.Dataset, currentState string) (err error) {
-	s := m.Session.Copy()
-	defer s.Close()
 
 	updates := createDatasetUpdateQuery(ctx, id, dataset, currentState)
 	update := bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}}
-	if err = s.DB(m.Database).C("datasets").UpdateId(id, update); err != nil {
-		if err == mgo.ErrNotFound {
+	if _, err = m.Connection.GetConfiguredCollection().Must().UpdateById(ctx, id, update); err != nil {
+		if mongodriver.IsErrNoDocumentFound(err) {
 			return errs.ErrDatasetNotFound
 		}
 		return err
@@ -276,6 +262,7 @@ func (m *Mongo) UpdateDataset(ctx context.Context, id string, dataset *models.Da
 }
 
 func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Dataset, currentState string) bson.M {
+
 	updates := make(bson.M)
 
 	log.Info(ctx, "building update query for dataset resource", log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
@@ -396,9 +383,7 @@ func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Da
 }
 
 // UpdateDatasetWithAssociation updates an existing dataset document with collection data
-func (m *Mongo) UpdateDatasetWithAssociation(_ context.Context, id, state string, version *models.Version) (err error) {
-	s := m.Session.Copy()
-	defer s.Close()
+func (m *Mongo) UpdateDatasetWithAssociation(ctx context.Context, id, state string, version *models.Version) (err error) {
 
 	update := bson.M{
 		"$set": bson.M{
@@ -410,22 +395,33 @@ func (m *Mongo) UpdateDatasetWithAssociation(_ context.Context, id, state string
 		},
 	}
 
-	err = s.DB(m.Database).C("datasets").UpdateId(id, update)
-	return
+	if _, err = m.Connection.GetConfiguredCollection().Must().UpdateById(ctx, id, update); err != nil {
+		if mongodriver.IsErrNoDocumentFound(err) {
+			return errs.ErrDatasetNotFound
+		}
+		return err
+	}
+
+	return nil
 }
 
 // UpdateVersion updates an existing version document
-func (m *Mongo) UpdateVersion(_ context.Context, id string, version *models.Version) (err error) {
-	s := m.Session.Copy()
-	defer s.Close()
+func (m *Mongo) UpdateVersion(ctx context.Context, id string, version *models.Version) (err error) {
 
 	updates := createVersionUpdateQuery(version)
 
-	err = s.DB(m.Database).C("instances").Update(bson.M{"id": id}, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}})
-	return
+	if _, err = m.Connection.C("instances").Must().Update(ctx, bson.M{"id": id}, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}}); err != nil {
+		if mongodriver.IsErrNoDocumentFound(err) {
+			return errs.ErrDatasetNotFound
+		}
+		return err
+	}
+
+	return nil
 }
 
 func createVersionUpdateQuery(version *models.Version) bson.M {
+
 	setUpdates := make(bson.M)
 
 	/*
@@ -481,10 +477,8 @@ func createVersionUpdateQuery(version *models.Version) bson.M {
 	return setUpdates
 }
 
-// UpsertDataset adds or overides an existing dataset document
-func (m *Mongo) UpsertDataset(_ context.Context, id string, datasetDoc *models.DatasetUpdate) (err error) {
-	s := m.Session.Copy()
-	defer s.Close()
+// UpsertDataset adds or overrides an existing dataset document
+func (m *Mongo) UpsertDataset(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) (err error) {
 
 	update := bson.M{
 		"$set": datasetDoc,
@@ -493,14 +487,12 @@ func (m *Mongo) UpsertDataset(_ context.Context, id string, datasetDoc *models.D
 		},
 	}
 
-	_, err = s.DB(m.Database).C("datasets").UpsertId(id, update)
-	return
+	_, err = m.Connection.GetConfiguredCollection().UpsertById(ctx, id, update)
+
+	return err
 }
 
-// UpsertDataset adds or overides an existing dataset document
-func (m *Mongo) RemoveDatasetVersionAndEditionLinks(_ context.Context, id string) error {
-	s := m.Session.Copy()
-	defer s.Close()
+func (m *Mongo) RemoveDatasetVersionAndEditionLinks(ctx context.Context, id string) error {
 
 	update := bson.M{
 		"$unset": bson.M{
@@ -512,17 +504,15 @@ func (m *Mongo) RemoveDatasetVersionAndEditionLinks(_ context.Context, id string
 		},
 	}
 
-	if err := s.DB(m.Database).C("datasets").UpdateId(id, update); err != nil {
-		return fmt.Errorf("failed to query MongoDB: %w", err)
+	if _, err := m.Connection.GetConfiguredCollection().Must().UpdateById(ctx, id, update); err != nil {
+		return fmt.Errorf("failed in query to MongoDB: %w", err)
 	}
 
 	return nil
 }
 
-// UpsertEdition adds or overides an existing edition document
-func (m *Mongo) UpsertEdition(_ context.Context, datasetID, edition string, editionDoc *models.EditionUpdate) (err error) {
-	s := m.Session.Copy()
-	defer s.Close()
+// UpsertEdition adds or overrides an existing edition document
+func (m *Mongo) UpsertEdition(ctx context.Context, datasetID, edition string, editionDoc *models.EditionUpdate) (err error) {
 
 	selector := bson.M{
 		"next.edition":          edition,
@@ -535,14 +525,13 @@ func (m *Mongo) UpsertEdition(_ context.Context, datasetID, edition string, edit
 		"$set": editionDoc,
 	}
 
-	_, err = s.DB(m.Database).C(editionsCollection).Upsert(selector, update)
-	return
+	_, err = m.Connection.C(editionsCollection).Upsert(ctx, selector, update)
+
+	return err
 }
 
 // UpsertVersion adds or overrides an existing version document
-func (m *Mongo) UpsertVersion(_ context.Context, id string, version *models.Version) (err error) {
-	s := m.Session.Copy()
-	defer s.Close()
+func (m *Mongo) UpsertVersion(ctx context.Context, id string, version *models.Version) (err error) {
 
 	update := bson.M{
 		"$set": version,
@@ -551,52 +540,40 @@ func (m *Mongo) UpsertVersion(_ context.Context, id string, version *models.Vers
 		},
 	}
 
-	_, err = s.DB(m.Database).C("instances").UpsertId(id, update)
+	_, err = m.Connection.C("instances").Upsert(ctx, bson.M{"id": id}, update)
+
 	return err
 }
 
-// UpsertContact adds or overides an existing contact document
-func (m *Mongo) UpsertContact(_ context.Context, id string, update interface{}) (err error) {
-	s := m.Session.Copy()
-	defer s.Close()
+// UpsertContact adds or overrides an existing contact document
+func (m *Mongo) UpsertContact(ctx context.Context, id string, update interface{}) (err error) {
 
-	_, err = s.DB(m.Database).C("contacts").UpsertId(id, update)
-	return
+	_, err = m.Connection.C("contacts").UpsertById(ctx, id, update)
+
+	return err
 }
 
 // CheckDatasetExists checks that the dataset exists
-func (m *Mongo) CheckDatasetExists(_ context.Context, id, state string) error {
-	s := m.Session.Copy()
-	defer s.Close()
+func (m *Mongo) CheckDatasetExists(ctx context.Context, id, state string) error {
 
-	var query bson.M
-	if state == "" {
-		query = bson.M{
-			"_id": id,
-		}
-	} else {
-		query = bson.M{
-			"_id":           id,
-			"current.state": state,
-		}
+	query := bson.M{"_id": id}
+	if state != "" {
+		query["current.state"] = state
 	}
 
-	count, err := s.DB(m.Database).C("datasets").Find(query).Count()
-	if err != nil {
+	var d models.Dataset
+	if err := m.Connection.GetConfiguredCollection().Find(query).Select(bson.M{"_id": 1}).One(ctx, &d); err != nil {
+		if mongodriver.IsErrNoDocumentFound(err) {
+			return errs.ErrDatasetNotFound
+		}
 		return err
-	}
-
-	if count == 0 {
-		return errs.ErrDatasetNotFound
 	}
 
 	return nil
 }
 
 // CheckEditionExists checks that the edition of a dataset exists
-func (m *Mongo) CheckEditionExists(_ context.Context, id, editionID, state string) error {
-	s := m.Session.Copy()
-	defer s.Close()
+func (m *Mongo) CheckEditionExists(ctx context.Context, id, editionID, state string) error {
 
 	var query bson.M
 	if state == "" {
@@ -612,63 +589,22 @@ func (m *Mongo) CheckEditionExists(_ context.Context, id, editionID, state strin
 		}
 	}
 
-	count, err := s.DB(m.Database).C(editionsCollection).Find(query).Count()
-	if err != nil {
+	var d models.Edition
+	if err := m.Connection.C(editionsCollection).Find(query).Select(bson.M{"_id": 1}).One(ctx, &d); err != nil {
+		if mongodriver.IsErrNoDocumentFound(err) {
+			return errs.ErrEditionNotFound
+		}
 		return err
-	}
-
-	if count == 0 {
-		return errs.ErrEditionNotFound
 	}
 
 	return nil
 }
 
-// Ping the mongodb database
-func (m *Mongo) Ping(ctx context.Context) (time.Time, error) {
-	if time.Since(m.lastPingTime) < 1*time.Second {
-		return m.lastPingTime, m.lastPingResult
-	}
-
-	s := m.Session.Copy()
-	defer s.Close()
-
-	m.lastPingTime = time.Now()
-	pingDoneChan := make(chan error)
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-	go func() {
-		log.Info(ctx, "db ping")
-		err := s.Ping()
-		if err != nil {
-			log.Error(ctx, "Ping mongo", err)
-		}
-		pingDoneChan <- err
-		wg.Done()
-	}()
-
-	go func() {
-		wg.Wait()
-		close(pingDoneChan)
-	}()
-
-	select {
-	case err := <-pingDoneChan:
-		m.lastPingResult = err
-	case <-ctx.Done():
-		m.lastPingResult = ctx.Err()
-	}
-	return m.lastPingTime, m.lastPingResult
-}
-
 // DeleteDataset deletes an existing dataset document
-func (m *Mongo) DeleteDataset(_ context.Context, id string) (err error) {
-	s := m.Session.Copy()
-	defer s.Close()
+func (m *Mongo) DeleteDataset(ctx context.Context, id string) (err error) {
 
-	if err = s.DB(m.Database).C("datasets").RemoveId(id); err != nil {
-		if err == mgo.ErrNotFound {
+	if _, err = m.Connection.GetConfiguredCollection().Must().DeleteById(ctx, id); err != nil {
+		if mongodriver.IsErrNoDocumentFound(err) {
 			return errs.ErrDatasetNotFound
 		}
 		return err
@@ -678,12 +614,10 @@ func (m *Mongo) DeleteDataset(_ context.Context, id string) (err error) {
 }
 
 // DeleteEdition deletes an existing edition document
-func (m *Mongo) DeleteEdition(_ context.Context, id string) (err error) {
-	s := m.Session.Copy()
-	defer s.Close()
+func (m *Mongo) DeleteEdition(ctx context.Context, id string) (err error) {
 
-	if err = s.DB(m.Database).C("editions").Remove(bson.D{{Name: "id", Value: id}}); err != nil {
-		if err == mgo.ErrNotFound {
+	if _, err = m.Connection.C("editions").Must().Delete(ctx, bson.D{{Key: "id", Value: id}}); err != nil {
+		if mongodriver.IsErrNoDocumentFound(err) {
 			return errs.ErrEditionNotFound
 		}
 		return err

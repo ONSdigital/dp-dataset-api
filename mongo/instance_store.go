@@ -21,12 +21,12 @@ func (m *Mongo) AcquireInstanceLock(ctx context.Context, instanceID string) (loc
 	if caller == "" {
 		caller = dprequest.Caller(ctx)
 	}
-	return m.lockClient.Acquire(ctx, instanceID, caller)
+	return m.lockClient.Acquire(ctx, instanceID)
 }
 
 // UnlockInstance releases an exclusive mongoDB lock for the provided lockId (if it exists)
-func (m *Mongo) UnlockInstance(_ context.Context, lockID string) {
-	m.lockClient.Unlock(lockID)
+func (m *Mongo) UnlockInstance(ctx context.Context, lockID string) {
+	m.lockClient.Unlock(ctx, lockID)
 }
 
 // GetInstances from a mongo collection

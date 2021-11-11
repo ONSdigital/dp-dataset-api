@@ -2,12 +2,19 @@ package steps
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/cucumber/godog"
 	"github.com/globalsign/mgo/bson"
 	"github.com/stretchr/testify/assert"
 )
+
+var WellKnownTestTime time.Time
+
+func init() {
+	WellKnownTestTime, _ = time.Parse("2006-01-02T15:04:05Z", "2021-01-01T00:00:00Z")
+}
 
 func (f *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^private endpoints are enabled$`, f.privateEndpointsAreEnabled)
@@ -52,7 +59,7 @@ func (f *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId stri
 	document := link.Next
 
 	assert.Equal(&f.ErrorFeature, expectedDataset.Title, document.Title)
-	assert.Equal(&f.ErrorFeature, "created", document.State)
+	assert.Equal(&f.ErrorFeature, expectedDataset.State, document.State)
 
 	return f.ErrorFeature.StepError()
 }
@@ -66,16 +73,16 @@ func (f *DatasetComponent) iHaveTheseEditions(editionsJson *godog.DocString) err
 		return err
 	}
 
-	for time, editionDoc := range editions {
+	for timeOffset, editionDoc := range editions {
 		editionID := editionDoc.ID
 
 		editionUp := models.EditionUpdate{
 			ID:      editionID,
-			Next:    &editions[time],
-			Current: &editions[time],
+			Next:    &editions[timeOffset],
+			Current: &editions[timeOffset],
 		}
 
-		err = f.putDocumentInDatabase(editionUp, editionID, "editions", time)
+		err = f.putDocumentInDatabase(editionUp, editionID, "editions", timeOffset)
 		if err != nil {
 			return err
 		}
@@ -93,15 +100,15 @@ func (f *DatasetComponent) iHaveTheseDatasets(datasetsJson *godog.DocString) err
 		return err
 	}
 
-	for time, datasetDoc := range datasets {
+	for timeOffset, datasetDoc := range datasets {
 		datasetID := datasetDoc.ID
 
 		datasetUp := models.DatasetUpdate{
 			ID:      datasetID,
-			Next:    &datasets[time],
-			Current: &datasets[time],
+			Next:    &datasets[timeOffset],
+			Current: &datasets[timeOffset],
 		}
-		if err := f.putDocumentInDatabase(datasetUp, datasetID, "datasets", time); err != nil {
+		if err := f.putDocumentInDatabase(datasetUp, datasetID, "datasets", timeOffset); err != nil {
 			return err
 		}
 	}
@@ -117,12 +124,12 @@ func (f *DatasetComponent) iHaveTheseVersions(versionsJson *godog.DocString) err
 		return err
 	}
 
-	for time, version := range versions {
+	for timeOffset, version := range versions {
 		versionID := version.ID
 		version.Links.Version = &models.LinkObject{
 			HRef: version.Links.Self.HRef,
 		}
-		if err := f.putDocumentInDatabase(version, versionID, "instances", time); err != nil {
+		if err := f.putDocumentInDatabase(version, versionID, "instances", timeOffset); err != nil {
 			return err
 		}
 	}
@@ -138,9 +145,9 @@ func (f *DatasetComponent) iHaveTheseDimensions(dimensionsJson *godog.DocString)
 		return err
 	}
 
-	for time, dimension := range dimensions {
+	for timeOffset, dimension := range dimensions {
 		dimensionID := dimension.Option
-		if err := f.putDocumentInDatabase(dimension, dimensionID, "dimension.options", time); err != nil {
+		if err := f.putDocumentInDatabase(dimension, dimensionID, "dimension.options", timeOffset); err != nil {
 			return err
 		}
 	}
@@ -156,9 +163,9 @@ func (f *DatasetComponent) iHaveTheseInstances(instancesJson *godog.DocString) e
 		return err
 	}
 
-	for time, instance := range instances {
+	for timeOffset, instance := range instances {
 		instanceID := instance.InstanceID
-		if err := f.putDocumentInDatabase(instance, instanceID, "instances", time); err != nil {
+		if err := f.putDocumentInDatabase(instance, instanceID, "instances", timeOffset); err != nil {
 			return err
 		}
 	}
@@ -166,14 +173,14 @@ func (f *DatasetComponent) iHaveTheseInstances(instancesJson *godog.DocString) e
 	return nil
 }
 
-func (f *DatasetComponent) putDocumentInDatabase(document interface{}, id, collectionName string, time int) error {
+func (f *DatasetComponent) putDocumentInDatabase(document interface{}, id, collectionName string, timeOffset int) error {
 	s := f.MongoClient.Session.Copy()
 	defer s.Close()
 
 	update := bson.M{
 		"$set": document,
 		"$setOnInsert": bson.M{
-			"last_updated": time,
+			"last_updated": WellKnownTestTime.Add(time.Second * time.Duration(timeOffset)),
 		},
 	}
 	_, err := s.DB(f.MongoClient.Database).C(collectionName).UpsertId(id, update)

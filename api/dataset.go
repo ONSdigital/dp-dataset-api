@@ -80,7 +80,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		if !authorised {
 			// User is not authenticated and hence has only access to current sub document
 			if dataset.Current == nil {
-				log.Info(ctx, "getDataste endpoint: published dataset not found", logData)
+				log.Info(ctx, "getDataset endpoint: published dataset not found", logData)
 				return nil, errs.ErrDatasetNotFound
 			}
 

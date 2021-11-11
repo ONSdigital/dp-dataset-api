@@ -4,10 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/globalsign/mgo/bson"
-
 	"github.com/ONSdigital/dp-dataset-api/models"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 var (

@@ -47,7 +47,7 @@ Feature: Dataset API
                     {
                         "id": "test-item-3",
                         "import_tasks": null,
-                        "last_updated": "0001-01-01T00:00:00Z",
+                        "last_updated": "2021-01-01T00:00:02Z",
                         "links": {
                             "dataset": {
                                 "id": "income"
@@ -66,7 +66,7 @@ Feature: Dataset API
                             "job": null
                         },
                         "import_tasks": null,
-                        "last_updated": "0001-01-01T00:00:00Z"
+                        "last_updated": "2021-01-01T00:00:01Z"
                     },
                     {
                         "id": "test-item-1",
@@ -78,7 +78,7 @@ Feature: Dataset API
                             "job": null
                         },
                         "import_tasks": null,
-                        "last_updated": "0001-01-01T00:00:00Z"
+                        "last_updated": "2021-01-01T00:00:00Z"
                     }
                 ],
                 "limit": 20,
@@ -107,7 +107,7 @@ Feature: Dataset API
                             "job": null
                         },
                         "import_tasks": null,
-                        "last_updated": "0001-01-01T00:00:00Z"
+                        "last_updated": "2021-01-01T00:00:00Z"
                     }
                 ],
                 "limit": 20,
@@ -136,7 +136,7 @@ Feature: Dataset API
                             "job": null
                         },
                         "import_tasks": null,
-                        "last_updated": "0001-01-01T00:00:00Z"
+                        "last_updated": "2021-01-01T00:00:01Z"
                     }
                 ],
                 "limit": 20,
@@ -165,7 +165,7 @@ Feature: Dataset API
                             "job": null
                         },
                         "import_tasks": null,
-                        "last_updated": "0001-01-01T00:00:00Z"
+                        "last_updated": "2021-01-01T00:00:01Z"
                     }
                 ],
                 "limit": 20,
@@ -223,7 +223,7 @@ Feature: Dataset API
                     "job": null
                 },
                 "import_tasks": null,
-                "last_updated": "0001-01-01T00:00:00Z"
+                "last_updated": "2021-01-01T00:00:00Z"
             }
             """
 
@@ -244,7 +244,7 @@ Feature: Dataset API
                     "job": null
                 },
                 "import_tasks": null,
-                "last_updated": "0001-01-01T00:00:00Z"
+                "last_updated": "2021-01-01T00:00:00Z"
             }
             """
 
