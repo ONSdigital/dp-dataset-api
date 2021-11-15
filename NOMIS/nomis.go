@@ -287,8 +287,7 @@ func main() {
 func createDatasetsDocument(ctx context.Context, id string, class interface{}, conn *mongodriver.MongoConnection) {
 	var err error
 	logData := log.Data{"data": class}
-	upsert := bson.M{"$set": class}
-	if _, err = conn.C("datasets").UpsertById(ctx, id, upsert); err != nil {
+	if _, err = conn.C("datasets").UpsertById(ctx, id, bson.M{"$set": class}); err != nil {
 		log.Error(ctx, "failed to upsert data in dataset collection", err, logData)
 		os.Exit(1)
 	}
@@ -301,8 +300,7 @@ func createEditionsDocument(ctx context.Context, id string, class interface{}, c
 	selector := bson.M{
 		"current.links.dataset.id": id,
 	}
-	upsert := bson.M{"$set": class}
-	if err = upsertData(ctx, selector, upsert, conn, "editions", logData); err != nil {
+	if err = upsertData(ctx, selector, class, conn, "editions", logData); err != nil {
 		log.Error(ctx, " failed to insert data in collection", err, logData)
 		os.Exit(1)
 	}
@@ -315,17 +313,16 @@ func createInstancesDocument(ctx context.Context, id string, class interface{}, 
 	selector := bson.M{
 		"links.dataset.id": id,
 	}
-	upsert := bson.M{"$set": class}
-	if err = upsertData(ctx, selector, upsert, conn, "instances", logData); err != nil {
+	if err = upsertData(ctx, selector, class, conn, "instances", logData); err != nil {
 		log.Error(ctx, " failed to insert data in collection", err, logData)
 		os.Exit(1)
 	}
 }
 
 //Updates document in the specific collection
-func upsertData(ctx context.Context, selector, upsert bson.M, conn *mongodriver.MongoConnection, document string, logData log.Data) error {
+func upsertData(ctx context.Context, selector, class interface{}, conn *mongodriver.MongoConnection, document string, logData log.Data) error {
 	var err error
-	if _, err = conn.C(document).Upsert(ctx, selector, upsert); err != nil {
+	if _, err = conn.C(document).Upsert(ctx, selector, bson.M{"$set": class}); err != nil {
 		log.Error(ctx, "failed to upsert data in collection", err, logData)
 		return err
 	}
