@@ -44,7 +44,7 @@ func (gen *CMDGenerator) Generate(ctx context.Context, datasetID string, instanc
 		Version:    version,
 	}
 
-	log.Info(ctx, "send generate downloads event", log.Data{
+	log.Info(ctx, "send CMD generate downloads event", log.Data{
 		"datasetID":  datasetID,
 		"instanceID": instanceID,
 		"edition":    edition,

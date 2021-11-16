@@ -42,7 +42,7 @@ func (gen *CantabularGenerator) Generate(ctx context.Context, datasetID string, 
 		Version:    version,
 	}
 
-	log.Info(ctx, "send generate downloads event", log.Data{
+	log.Info(ctx, "send cantabular generate downloads event", log.Data{
 		"datasetID":  datasetID,
 		"instanceID": instanceID,
 		"edition":    edition,

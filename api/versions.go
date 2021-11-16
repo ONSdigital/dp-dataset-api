@@ -422,6 +422,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		return nil, nil, nil, err
 	}
 
+	data["type"] = currentVersion.Type
 	log.Info(ctx, "update version completed successfully", data)
 	return currentDataset, currentVersion, versionUpdate, nil
 }
@@ -449,10 +450,6 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 			return err
 		}
 
-		log.Info(ctx, "DATASTORE", log.Data{
-			"datastore": api.dataStore,
-		})
-
 		if err := api.dataStore.Backend.SetInstanceIsPublished(ctx, versionUpdate.ID); err != nil {
 			if user := dprequest.User(ctx); user != "" {
 				data[reqUser] = user
@@ -470,6 +467,9 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 			log.Error(ctx, "putVersion endpoint: failed to update dataset document once version state changes to publish", err, data)
 			return err
 		}
+		data["type"] = currentVersion.Type
+		data["version_update"] = versionUpdate
+		log.Info(ctx, "putVersion endpoint: published version", data)
 
 		// Only want to generate downloads again if there is no public link available
 		if currentVersion.Downloads != nil && currentVersion.Downloads.CSV != nil && currentVersion.Downloads.CSV.Public == "" {
@@ -480,17 +480,18 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 			}
 			generator, ok := api.downloadGenerators[t]
 			if !ok {
-				return fmt.Errorf("no downloader available for type %s", t.String())
+				return fmt.Errorf("no downloader available for type %s", t)
 			}
 			// Send Kafka message.  The generator which is used depends on the type defined in VersionDoc.
 			if err := generator.Generate(ctx, versionDetails.datasetID, versionUpdate.ID, versionDetails.edition, versionDetails.version); err != nil{
 				data["instance_id"] = versionUpdate.ID
 				data["state"] = versionUpdate.State
+				data["type"] = t.String()
 				log.Error(ctx, "putVersion endpoint: error while attempting to generate full dataset version downloads on version publish", err, data)
 				return err
 				// TODO - TECH DEBT - need to add an error event for this.  Kafka message perhaps.
 			}
-			log.Info(ctx, "putVersion endpoint: generated full dataset version downloads for type %s", data)
+			log.Info(ctx, "putVersion endpoint: generated full dataset version downloads", data)
 		}
 
 		return nil
@@ -506,6 +507,7 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 
 func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion, versionDoc *models.Version, versionDetails VersionDetails) error {
 	data := versionDetails.baseLogData()
+	log.Info(ctx, "putVersion endpoint: current version is %s ",log.Data{"current type": currentVersion.Type})
 	data["type"] = currentVersion.Type
 
 	associateVersionErr := func() error {
@@ -531,7 +533,8 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion, ver
 			log.Error(ctx, "putVersion endpoint: error while attempting to generate full dataset version downloads on version association", err, data)
 			return err
 		}
-		log.Info(ctx, "putVersion endpoint: generated full dataset version downloads for type %s", data)
+		data["type"] = t.String()
+		log.Info(ctx, "putVersion endpoint: generated full dataset version downloads", data)
 		return nil
 	}()
 
