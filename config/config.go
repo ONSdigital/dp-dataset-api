@@ -59,7 +59,7 @@ func Get() (*Configuration, error) {
 		BindAddr:                   ":22000",
 		KafkaAddr:                  []string{"localhost:9092"},
 		GenerateDownloadsTopic:     "filter-job-submitted",
-		CantabularExportStartTopic: "cantabular-dataset-instance-complete",
+		CantabularExportStartTopic: "cantabular-export-start",
 		CodeListAPIURL:             "http://localhost:22400",
 		DatasetAPIURL:              "http://localhost:22000",
 		WebsiteURL:                 "http://localhost:20000",
