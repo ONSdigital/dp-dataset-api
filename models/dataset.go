@@ -244,8 +244,8 @@ type VersionLinks struct {
 
 // IsBasedOn refers to the Cantabular blob source
 type IsBasedOn struct {
-	Type string `bson:"@type" json:"@type"`
-	ID   string `bson:"@id"   json:"@id"`
+	Type string `bson:"type" json:"@type"`
+	ID   string `bson:"id"   json:"@id"`
 }
 
 // CreateDataset manages the creation of a dataset from a reader

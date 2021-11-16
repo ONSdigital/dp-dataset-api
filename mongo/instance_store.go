@@ -271,6 +271,15 @@ func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance 
 		updates["version"] = instance.Version
 	}
 
+	if instance.IsBasedOn != nil {
+		if instance.IsBasedOn.ID != "" {
+			updates["is_based_on.id"] = instance.IsBasedOn.ID
+		}
+		if instance.IsBasedOn.Type != "" {
+			updates["is_based_on.type"] = instance.IsBasedOn.Type
+		}
+	}
+
 	logData["updates"] = updates
 	log.Info(ctx, "built update query for instance resource", logData)
 
