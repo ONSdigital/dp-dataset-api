@@ -507,8 +507,9 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 
 func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion, versionDoc *models.Version, versionDetails VersionDetails) error {
 	data := versionDetails.baseLogData()
-	log.Info(ctx, "putVersion endpoint: current version is %s ",log.Data{"current type": currentVersion.Type})
 	data["type"] = currentVersion.Type
+	data["version_update"] = versionDoc
+	log.Info(ctx, "putVersion endpoint: associated version", data)
 
 	associateVersionErr := func() error {
 		if err := api.dataStore.Backend.UpdateDatasetWithAssociation(versionDetails.datasetID, versionDoc.State, versionDoc); err != nil {
