@@ -2,7 +2,7 @@ package schema
 
 import "github.com/ONSdigital/dp-kafka/v2/avro"
 
-var generateDownloads = `{
+var generateCMDDownloads = `{
   "type": "record",
   "name": "filter-output-submitted",
   "fields": [
@@ -14,7 +14,23 @@ var generateDownloads = `{
   ]
 }`
 
-// GenerateDownloadsEvent the Avro schema for FilterOutputSubmitted messages.
-var GenerateDownloadsEvent = &avro.Schema{
-	Definition: generateDownloads,
+var generateCantabularDownloads = `{
+  "type": "record",
+  "name": "cantabular-export-start",
+  "fields": [
+    {"name": "instance_id", "type": "string", "default": ""},
+    {"name": "dataset_id", "type": "string", "default": ""},
+    {"name": "edition", "type": "string", "default": ""},
+    {"name": "version", "type": "string", "default": ""}
+  ]
+}`
+
+// GenerateCMDDownloadsEvent the Avro schema for FilterOutputSubmitted messages.
+var GenerateCMDDownloadsEvent = &avro.Schema{
+	Definition: generateCMDDownloads,
+}
+
+// GenerateCantabularDownloadsEvent the Avro schema for FilterOutputSubmitted messages.
+var GenerateCantabularDownloadsEvent = &avro.Schema{
+	Definition: generateCantabularDownloads,
 }

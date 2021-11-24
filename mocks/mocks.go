@@ -8,25 +8,21 @@ import (
 	"sync"
 )
 
-var (
-	lockDownloadsGeneratorMockGenerate sync.RWMutex
-)
-
 // DownloadsGeneratorMock is a mock implementation of api.DownloadsGenerator.
 //
-//     func TestSomethingThatUsesDownloadsGenerator(t *testing.T) {
+// 	func TestSomethingThatUsesDownloadsGenerator(t *testing.T) {
 //
-//         // make and configure a mocked api.DownloadsGenerator
-//         mockedDownloadsGenerator := &DownloadsGeneratorMock{
-//             GenerateFunc: func(ctx context.Context, datasetID string, instanceID string, edition string, version string) error {
-// 	               panic("mock out the Generate method")
-//             },
-//         }
+// 		// make and configure a mocked api.DownloadsGenerator
+// 		mockedDownloadsGenerator := &DownloadsGeneratorMock{
+// 			GenerateFunc: func(ctx context.Context, datasetID string, instanceID string, edition string, version string) error {
+// 				panic("mock out the Generate method")
+// 			},
+// 		}
 //
-//         // use mockedDownloadsGenerator in code that requires api.DownloadsGenerator
-//         // and then make assertions.
+// 		// use mockedDownloadsGenerator in code that requires api.DownloadsGenerator
+// 		// and then make assertions.
 //
-//     }
+// 	}
 type DownloadsGeneratorMock struct {
 	// GenerateFunc mocks the Generate method.
 	GenerateFunc func(ctx context.Context, datasetID string, instanceID string, edition string, version string) error
@@ -47,6 +43,7 @@ type DownloadsGeneratorMock struct {
 			Version string
 		}
 	}
+	lockGenerate sync.RWMutex
 }
 
 // Generate calls GenerateFunc.
@@ -67,9 +64,9 @@ func (mock *DownloadsGeneratorMock) Generate(ctx context.Context, datasetID stri
 		Edition:    edition,
 		Version:    version,
 	}
-	lockDownloadsGeneratorMockGenerate.Lock()
+	mock.lockGenerate.Lock()
 	mock.calls.Generate = append(mock.calls.Generate, callInfo)
-	lockDownloadsGeneratorMockGenerate.Unlock()
+	mock.lockGenerate.Unlock()
 	return mock.GenerateFunc(ctx, datasetID, instanceID, edition, version)
 }
 
@@ -90,8 +87,8 @@ func (mock *DownloadsGeneratorMock) GenerateCalls() []struct {
 		Edition    string
 		Version    string
 	}
-	lockDownloadsGeneratorMockGenerate.RLock()
+	mock.lockGenerate.RLock()
 	calls = mock.calls.Generate
-	lockDownloadsGeneratorMockGenerate.RUnlock()
+	mock.lockGenerate.RUnlock()
 	return calls
 }

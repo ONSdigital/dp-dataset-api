@@ -24,7 +24,7 @@ func TestGenerator_GenerateFullDatasetDownloadsValidationErrors(t *testing.T) {
 		},
 	}
 
-	gen := Generator{
+	gen := CMDGenerator{
 		Producer:   producerMock,
 		Marshaller: marhsallerMock,
 	}
@@ -123,7 +123,7 @@ func TestGenerator_GenerateMarshalError(t *testing.T) {
 			},
 		}
 
-		gen := Generator{
+		gen := CMDGenerator{
 			Producer:   producerMock,
 			Marshaller: marhsallerMock,
 		}
@@ -174,7 +174,7 @@ func TestGenerator_Generate(t *testing.T) {
 			},
 		}
 
-		gen := Generator{
+		gen := CMDGenerator{
 			Producer:   producerMock,
 			Marshaller: marhsallerMock,
 		}

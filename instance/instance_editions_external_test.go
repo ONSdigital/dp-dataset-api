@@ -25,7 +25,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 		mockedDataStore, isLocked := storeMockEditionCompleteWithLock(i, true)
 		datasetPermissions := mocks.NewAuthHandlerMock()
 		permissions := mocks.NewAuthHandlerMock()
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 
 		Convey("When the requested state change is to 'edition-confirmed'", func() {
 			body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
@@ -71,7 +71,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 		mockedDataStore, isLocked := storeMockEditionCompleteWithLock(i, true)
 		datasetPermissions := mocks.NewAuthHandlerMock()
 		permissions := mocks.NewAuthHandlerMock()
-		datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 
 		Convey("When the requested state change is to 'edition-confirmed'", func() {
 			body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
@@ -150,7 +150,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 
-				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -190,7 +190,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
 
-				datasetAPI := getAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusForbidden)

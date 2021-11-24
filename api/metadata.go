@@ -75,15 +75,25 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		var metaDataDoc *models.Metadata
+		// If dataset isn't published no 'Current' exists, use 'Next'
+		doc := datasetDoc.Current
+		if doc == nil {
+			if datasetDoc.Next == nil {
+				return nil, errors.New("invalid dataset doc: no 'current' or 'next' found")
+			}
+			doc = datasetDoc.Next
+		}
 
-		t, err := models.GetDatasetType(datasetDoc.Current.Type)
+		t, err := models.GetDatasetType(doc.Type)
 		if err != nil {
 			log.Error(ctx, "invalid dataset type", err, logData)
 			return nil, err
 		}
+
+		var metaDataDoc *models.Metadata
+
 		if t == models.CantabularBlob || t == models.CantabularTable {
-			metaDataDoc = models.CreateCantabularMetaDataDoc(datasetDoc.Current, versionDoc, api.urlBuilder)
+			metaDataDoc = models.CreateCantabularMetaDataDoc(doc, versionDoc, api.urlBuilder)
 		} else {
 			// combine version and dataset metadata
 			if state != models.PublishedState {

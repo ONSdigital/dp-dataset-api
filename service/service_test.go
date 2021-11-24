@@ -51,7 +51,7 @@ var funcDoGetGraphDBErr = func(ctx context.Context) (store.GraphDB, service.Clos
 	return nil, nil, errGraph
 }
 
-var funcDoGetKafkaProducerErr = func(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error) {
+var funcDoGetKafkaProducerErr = func(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
 	return nil, errKafka
 }
 
@@ -106,7 +106,7 @@ func TestRun(t *testing.T) {
 			return &storeMock.GraphDBMock{}, &serviceMock.CloserMock{CloseFunc: funcClose}, nil
 		}
 
-		funcDoGetKafkaProducerOk := func(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error) {
+		funcDoGetKafkaProducerOk := func(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
 			return &kafkatest.IProducerMock{
 				ChannelsFunc: func() *kafka.ProducerChannels {
 					return &kafka.ProducerChannels{}
@@ -220,11 +220,12 @@ func TestRun(t *testing.T) {
 				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.GenerateDownloadsProducer, ShouldBeTrue)
 				So(svcList.HealthCheck, ShouldBeTrue)
-				So(len(hcMockAddFail.AddCheckCalls()), ShouldEqual, 4)
+				So(len(hcMockAddFail.AddCheckCalls()), ShouldEqual, 5)
 				So(hcMockAddFail.AddCheckCalls()[0].Name, ShouldResemble, "Zebedee")
 				So(hcMockAddFail.AddCheckCalls()[1].Name, ShouldResemble, "Kafka Generate Downloads Producer")
-				So(hcMockAddFail.AddCheckCalls()[2].Name, ShouldResemble, "Graph DB")
-				So(hcMockAddFail.AddCheckCalls()[3].Name, ShouldResemble, "Mongo DB")
+				So(hcMockAddFail.AddCheckCalls()[2].Name, ShouldResemble, "Kafka Generate Cantabular Downloads Producer")
+				So(hcMockAddFail.AddCheckCalls()[3].Name, ShouldResemble, "Graph DB")
+				So(hcMockAddFail.AddCheckCalls()[4].Name, ShouldResemble, "Mongo DB")
 			})
 		})
 
@@ -251,11 +252,12 @@ func TestRun(t *testing.T) {
 			})
 
 			Convey("The checkers are registered and the healthcheck and http server started", func() {
-				So(len(hcMock.AddCheckCalls()), ShouldEqual, 4)
+				So(len(hcMock.AddCheckCalls()), ShouldEqual, 5)
 				So(hcMock.AddCheckCalls()[0].Name, ShouldResemble, "Zebedee")
 				So(hcMock.AddCheckCalls()[1].Name, ShouldResemble, "Kafka Generate Downloads Producer")
-				So(hcMock.AddCheckCalls()[2].Name, ShouldResemble, "Graph DB")
-				So(hcMock.AddCheckCalls()[3].Name, ShouldResemble, "Mongo DB")
+				So(hcMock.AddCheckCalls()[2].Name, ShouldResemble, "Kafka Generate Cantabular Downloads Producer")
+				So(hcMock.AddCheckCalls()[3].Name, ShouldResemble, "Graph DB")
+				So(hcMock.AddCheckCalls()[4].Name, ShouldResemble, "Mongo DB")
 				So(len(initMock.DoGetHTTPServerCalls()), ShouldEqual, 1)
 				So(initMock.DoGetHTTPServerCalls()[0].BindAddr, ShouldEqual, ":22000")
 				So(len(hcMock.StartCalls()), ShouldEqual, 1)

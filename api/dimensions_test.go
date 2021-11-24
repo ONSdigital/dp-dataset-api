@@ -19,7 +19,7 @@ import (
 func initAPIWithMockedStore(mockedStore *storetest.StorerMock) *DatasetAPI {
 	datasetPermissions := getAuthorisationHandlerMock()
 	permissions := getAuthorisationHandlerMock()
-	return GetAPIWithMocks(mockedStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+	return GetAPIWithCMDMocks(mockedStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 }
 
 func TestGetDimensionsReturnsOk(t *testing.T) {
@@ -39,7 +39,7 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)

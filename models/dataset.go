@@ -183,6 +183,7 @@ type Version struct {
 	Temporal      *[]TemporalFrequency `bson:"temporal,omitempty"       json:"temporal,omitempty"`
 	UsageNotes    *[]UsageNote         `bson:"usage_notes,omitempty"    json:"usage_notes,omitempty"`
 	Version       int                  `bson:"version,omitempty"        json:"version,omitempty"`
+	Type          string               `bson:"type,omitempty"           json:"type,omitempty"`
 }
 
 // Alert represents an object containing information on an alert

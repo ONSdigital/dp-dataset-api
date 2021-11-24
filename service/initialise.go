@@ -50,8 +50,8 @@ func (e *ExternalServiceList) GetHealthCheck(cfg *config.Configuration, buildTim
 }
 
 // GetProducer returns a kafka producer, which might not be initialised yet.
-func (e *ExternalServiceList) GetProducer(ctx context.Context, cfg *config.Configuration) (kafkaProducer kafka.IProducer, err error) {
-	kafkaProducer, err = e.Init.DoGetKafkaProducer(ctx, cfg)
+func (e *ExternalServiceList) GetProducer(ctx context.Context, cfg *config.Configuration, topic string) (kafkaProducer kafka.IProducer, err error) {
+	kafkaProducer, err = e.Init.DoGetKafkaProducer(ctx, cfg, topic)
 	if err != nil {
 		return
 	}
@@ -98,7 +98,7 @@ func (e *Init) DoGetHealthCheck(cfg *config.Configuration, buildTime, gitCommit,
 }
 
 // DoGetKafkaProducer creates a new Kafka Producer
-func (e *Init) DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error) {
+func (e *Init) DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
 
 	pConfig := &kafka.ProducerConfig{
 		KafkaVersion: &cfg.KafkaVersion,
@@ -114,7 +114,7 @@ func (e *Init) DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration
 	}
 
 	pChannels := kafka.CreateProducerChannels()
-	return kafka.NewProducer(ctx, cfg.KafkaAddr, cfg.GenerateDownloadsTopic, pChannels, pConfig)
+	return kafka.NewProducer(ctx, cfg.KafkaAddr, topic, pChannels, pConfig)
 }
 
 // DoGetGraphDB creates a new GraphDB

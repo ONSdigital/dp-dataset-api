@@ -10,6 +10,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	adapter "github.com/ONSdigital/dp-dataset-api/kafka"
+	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
@@ -34,16 +35,17 @@ type DatsetAPIStore struct {
 
 // Service contains all the configs, server and clients to run the Dataset API
 type Service struct {
-	config                    *config.Configuration
-	serviceList               *ExternalServiceList
-	graphDB                   store.GraphDB
-	graphDBErrorConsumer      Closer
-	mongoDB                   store.MongoDB
-	generateDownloadsProducer kafka.IProducer
-	identityClient            *clientsidentity.Client
-	server                    HTTPServer
-	healthCheck               HealthChecker
-	api                       *api.DatasetAPI
+	config                              *config.Configuration
+	serviceList                         *ExternalServiceList
+	graphDB                             store.GraphDB
+	graphDBErrorConsumer                Closer
+	mongoDB                             store.MongoDB
+	generateCMDDownloadsProducer        kafka.IProducer
+	generateCantabularDownloadsProducer kafka.IProducer
+	identityClient                      *clientsidentity.Client
+	server                              HTTPServer
+	healthCheck                         HealthChecker
+	api                                 *api.DatasetAPI
 }
 
 // New creates a new service
@@ -67,7 +69,7 @@ func (svc *Service) SetHealthCheck(healthCheck HealthChecker) {
 
 // SetDownloadsProducer sets the downloads kafka producer for a service
 func (svc *Service) SetDownloadsProducer(producer kafka.IProducer) {
-	svc.generateDownloadsProducer = producer
+	svc.generateCMDDownloadsProducer = producer
 }
 
 // SetMongoDB sets the mongoDB connection for a service
@@ -120,16 +122,33 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
 		})
 	} else {
-		svc.generateDownloadsProducer, err = svc.serviceList.GetProducer(ctx, svc.config)
+		svc.generateCMDDownloadsProducer, err = svc.serviceList.GetProducer(ctx, svc.config, svc.config.GenerateDownloadsTopic)
 		if err != nil {
-			log.Fatal(ctx, "could not obtain generate downloads producer", err)
+			log.Fatal(ctx, "could not obtain generate downloads producer for CMD", err)
+			return err
+		}
+		svc.generateCantabularDownloadsProducer, err = svc.serviceList.GetProducer(ctx, svc.config, svc.config.CantabularExportStartTopic)
+		if err != nil {
+			log.Fatal(ctx, "could not obtain generate downloads producer for cantabular", err)
 			return err
 		}
 	}
 
-	downloadGenerator := &download.Generator{
-		Producer:   adapter.NewProducerAdapter(svc.generateDownloadsProducer),
-		Marshaller: schema.GenerateDownloadsEvent,
+	downloadGeneratorCantabular := &download.CantabularGenerator{
+		Producer:   adapter.NewProducerAdapter(svc.generateCantabularDownloadsProducer),
+		Marshaller: schema.GenerateCantabularDownloadsEvent,
+	}
+
+	downloadGeneratorCMD := &download.CMDGenerator{
+		Producer:   adapter.NewProducerAdapter(svc.generateCMDDownloadsProducer),
+		Marshaller: schema.GenerateCMDDownloadsEvent,
+	}
+
+	downloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
+		models.CantabularBlob:  downloadGeneratorCantabular,
+		models.CantabularTable: downloadGeneratorCantabular,
+		models.Filterable:      downloadGeneratorCMD,
+		models.Nomis:           downloadGeneratorCMD,
 	}
 
 	// Get Identity Client (only if private endpoints are enabled)
@@ -155,13 +174,18 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	// Create Dataset API
 	urlBuilder := url.NewBuilder(svc.config.WebsiteURL)
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerator, datasetPermissions, permissions)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions)
 
 	svc.healthCheck.Start(ctx)
 
 	// Log kafka producer errors in parallel go-routine
 	if svc.config.EnablePrivateEndpoints {
-		svc.generateDownloadsProducer.Channels().LogErrors(ctx, "generate downloads producer error")
+		svc.generateCMDDownloadsProducer.Channels().LogErrors(ctx, "generate downloads producer error")
+		svc.generateCantabularDownloadsProducer.Channels().LogErrors(ctx, "generate downloads producer error")
+	}
+
+	// Log kafka producer errors in parallel go-routine
+	if svc.config.EnablePrivateEndpoints {
 	}
 
 	// Run the http server in a new go-routine
@@ -272,7 +296,7 @@ func (svc *Service) Close(ctx context.Context) error {
 		// Close GenerateDownloadsProducer (if it exists)
 		if svc.serviceList.GenerateDownloadsProducer {
 			log.Info(shutdownContext, "closing generated downloads kafka producer", log.Data{"producer": "DimensionExtracted"})
-			if err := svc.generateDownloadsProducer.Close(shutdownContext); err != nil {
+			if err := svc.generateCMDDownloadsProducer.Close(shutdownContext); err != nil {
 				log.Warn(shutdownContext, "error while closing generated downloads kafka producer", log.Data{"producer": "DimensionExtracted", "err": err.Error()})
 			}
 			log.Info(shutdownContext, "closed generated downloads kafka producer", log.Data{"producer": "DimensionExtracted"})
@@ -316,6 +340,7 @@ func (svc *Service) Close(ctx context.Context) error {
 func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 	hasErrors := false
 
+	// If feature flag for Publishing mode is disabled then don't do health checks
 	if svc.config.EnablePrivateEndpoints {
 		log.Info(ctx, "private endpoints enabled: adding kafka and zebedee health checks")
 		if err = svc.healthCheck.AddCheck("Zebedee", svc.identityClient.Checker); err != nil {
@@ -323,11 +348,17 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 			log.Error(ctx, "error adding check for zebedeee", err)
 		}
 
-		if err = svc.healthCheck.AddCheck("Kafka Generate Downloads Producer", svc.generateDownloadsProducer.Checker); err != nil {
+		if err = svc.healthCheck.AddCheck("Kafka Generate Downloads Producer", svc.generateCMDDownloadsProducer.Checker); err != nil {
 			hasErrors = true
-			log.Error(ctx, "error adding check for kafka downloads producer", err)
+			log.Error(ctx, "error adding check for CMD kafka downloads producer", err)
 		}
 
+		if err = svc.healthCheck.AddCheck("Kafka Generate Cantabular Downloads Producer", svc.generateCantabularDownloadsProducer.Checker); err != nil {
+			hasErrors = true
+			log.Error(ctx, "error adding check for cantabular kafka downloads producer", err)
+		}
+
+		// If running Catabular Locally then don't do health checks against GraphDB
 		if !svc.config.DisableGraphDBDependency {
 			log.Info(ctx, "private endpoints enabled: adding graph db health check")
 			if err = svc.healthCheck.AddCheck("Graph DB", svc.graphDB.Checker); err != nil {

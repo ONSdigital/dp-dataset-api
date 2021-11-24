@@ -143,7 +143,7 @@ func (f *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, ser
 	return &storeMock.GraphDBMock{CloseFunc: funcClose}, &serviceMock.CloserMock{CloseFunc: funcClose}, nil
 }
 
-func (f *DatasetComponent) DoGetKafkaProducerOk(_ context.Context, _ *config.Configuration) (kafka.IProducer, error) {
+func (f *DatasetComponent) DoGetKafkaProducerOk(_ context.Context, _ *config.Configuration, _ string) (kafka.IProducer, error) {
 	return &kafkatest.IProducerMock{
 		ChannelsFunc: func() *kafka.ProducerChannels {
 			return &kafka.ProducerChannels{}

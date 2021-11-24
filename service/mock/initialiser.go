@@ -32,7 +32,7 @@ var _ service.Initialiser = &InitialiserMock{}
 // 			DoGetHealthCheckFunc: func(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error) {
 // 				panic("mock out the DoGetHealthCheck method")
 // 			},
-// 			DoGetKafkaProducerFunc: func(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error) {
+// 			DoGetKafkaProducerFunc: func(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
 // 				panic("mock out the DoGetKafkaProducer method")
 // 			},
 // 			DoGetMongoDBFunc: func(ctx context.Context, cfg config.MongoConfig) (store.MongoDB, error) {
@@ -55,7 +55,7 @@ type InitialiserMock struct {
 	DoGetHealthCheckFunc func(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error)
 
 	// DoGetKafkaProducerFunc mocks the DoGetKafkaProducer method.
-	DoGetKafkaProducerFunc func(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error)
+	DoGetKafkaProducerFunc func(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error)
 
 	// DoGetMongoDBFunc mocks the DoGetMongoDB method.
 	DoGetMongoDBFunc func(ctx context.Context, cfg config.MongoConfig) (store.MongoDB, error)
@@ -91,6 +91,8 @@ type InitialiserMock struct {
 			Ctx context.Context
 			// Cfg is the cfg argument value.
 			Cfg *config.Configuration
+			// Topic is the topic argument value.
+			Topic string
 		}
 		// DoGetMongoDB holds details about calls to the DoGetMongoDB method.
 		DoGetMongoDB []struct {
@@ -217,33 +219,37 @@ func (mock *InitialiserMock) DoGetHealthCheckCalls() []struct {
 }
 
 // DoGetKafkaProducer calls DoGetKafkaProducerFunc.
-func (mock *InitialiserMock) DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration) (kafka.IProducer, error) {
+func (mock *InitialiserMock) DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
 	if mock.DoGetKafkaProducerFunc == nil {
 		panic("InitialiserMock.DoGetKafkaProducerFunc: method is nil but Initialiser.DoGetKafkaProducer was just called")
 	}
 	callInfo := struct {
-		Ctx context.Context
-		Cfg *config.Configuration
+		Ctx   context.Context
+		Cfg   *config.Configuration
+		Topic string
 	}{
-		Ctx: ctx,
-		Cfg: cfg,
+		Ctx:   ctx,
+		Cfg:   cfg,
+		Topic: topic,
 	}
 	mock.lockDoGetKafkaProducer.Lock()
 	mock.calls.DoGetKafkaProducer = append(mock.calls.DoGetKafkaProducer, callInfo)
 	mock.lockDoGetKafkaProducer.Unlock()
-	return mock.DoGetKafkaProducerFunc(ctx, cfg)
+	return mock.DoGetKafkaProducerFunc(ctx, cfg, topic)
 }
 
 // DoGetKafkaProducerCalls gets all the calls that were made to DoGetKafkaProducer.
 // Check the length with:
 //     len(mockedInitialiser.DoGetKafkaProducerCalls())
 func (mock *InitialiserMock) DoGetKafkaProducerCalls() []struct {
-	Ctx context.Context
-	Cfg *config.Configuration
+	Ctx   context.Context
+	Cfg   *config.Configuration
+	Topic string
 } {
 	var calls []struct {
-		Ctx context.Context
-		Cfg *config.Configuration
+		Ctx   context.Context
+		Cfg   *config.Configuration
+		Topic string
 	}
 	mock.lockDoGetKafkaProducer.RLock()
 	calls = mock.calls.DoGetKafkaProducer

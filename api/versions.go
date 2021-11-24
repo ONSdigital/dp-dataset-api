@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -231,7 +232,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		"version":   vars["version"],
 	}
 
-	currentDataset, currentVersion, versionDoc, err := api.updateVersion(ctx, r.Body, versionDetails)
+	currentDataset, currentVersion, versionUpdate, err := api.updateVersion(ctx, r.Body, versionDetails)
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
@@ -239,15 +240,15 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	// If update was to add downloads do not try to publish/associate version
 	if vars[hasDownloads] != trueStringified {
-		if versionDoc.State == models.PublishedState {
-			if err := api.publishVersion(ctx, currentDataset, currentVersion, versionDoc, versionDetails); err != nil {
+		if versionUpdate.State == models.PublishedState {
+			if err := api.publishVersion(ctx, currentDataset, currentVersion, versionUpdate, versionDetails); err != nil {
 				handleVersionAPIErr(ctx, err, w, data)
 				return
 			}
 		}
 
-		if versionDoc.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
-			if err := api.associateVersion(ctx, versionDoc, versionDetails); err != nil {
+		if versionUpdate.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
+			if err := api.associateVersion(ctx, currentVersion, versionUpdate, versionDetails); err != nil {
 				handleVersionAPIErr(ctx, err, w, data)
 				return
 			}
@@ -421,11 +422,12 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		return nil, nil, nil, err
 	}
 
+	data["type"] = currentVersion.Type
 	log.Info(ctx, "update version completed successfully", data)
 	return currentDataset, currentVersion, versionUpdate, nil
 }
 
-func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *models.DatasetUpdate, currentVersion *models.Version, versionDoc *models.Version, versionDetails VersionDetails) error {
+func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *models.DatasetUpdate, currentVersion *models.Version, versionUpdate *models.Version, versionDetails VersionDetails) error {
 	data := versionDetails.baseLogData()
 	log.Info(ctx, "attempting to publish version", data)
 	err := func() error {
@@ -436,7 +438,7 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 		}
 
 		editionDoc.Next.State = models.PublishedState
-		if err := editionDoc.PublishLinks(ctx, versionDoc.Links.Version); err != nil {
+		if err := editionDoc.PublishLinks(ctx, versionUpdate.Links.Version); err != nil {
 			log.Error(ctx, "putVersion endpoint: failed to update the edition links for the version we're trying to publish", err, data)
 			return err
 		}
@@ -448,11 +450,7 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 			return err
 		}
 
-		log.Info(ctx, "DATASTORE", log.Data{
-			"datastore": api.dataStore,
-		})
-
-		if err := api.dataStore.Backend.SetInstanceIsPublished(ctx, versionDoc.ID); err != nil {
+		if err := api.dataStore.Backend.SetInstanceIsPublished(ctx, versionUpdate.ID); err != nil {
 			if user := dprequest.User(ctx); user != "" {
 				data[reqUser] = user
 			}
@@ -465,20 +463,35 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 		}
 
 		// Pass in newVersion variable to include relevant data needed for update on dataset API (e.g. links)
-		if err := api.publishDataset(ctx, currentDataset, versionDoc); err != nil {
+		if err := api.publishDataset(ctx, currentDataset, versionUpdate); err != nil {
 			log.Error(ctx, "putVersion endpoint: failed to update dataset document once version state changes to publish", err, data)
 			return err
 		}
+		data["type"] = currentVersion.Type
+		data["version_update"] = versionUpdate
+		log.Info(ctx, "putVersion endpoint: published version", data)
 
 		// Only want to generate downloads again if there is no public link available
 		if currentVersion.Downloads != nil && currentVersion.Downloads.CSV != nil && currentVersion.Downloads.CSV.Public == "" {
-			if err := api.downloadGenerator.Generate(ctx, versionDetails.datasetID, versionDoc.ID, versionDetails.edition, versionDetails.version); err != nil {
-				data["instance_id"] = versionDoc.ID
-				data["state"] = versionDoc.State
-				log.Error(ctx, "putVersion endpoint: error while attempting to generate full dataset version downloads on version publish", err, data)
-				// TODO - TECH DEBT - need to add an error event for this.
-				return err
+			// Lookup the download generator using the version document type
+			t, err := models.GetDatasetType(currentVersion.Type)
+			if err != nil {
+				return fmt.Errorf("error getting type of version: %w", err)
 			}
+			generator, ok := api.downloadGenerators[t]
+			if !ok {
+				return fmt.Errorf("no downloader available for type %s", t)
+			}
+			// Send Kafka message.  The generator which is used depends on the type defined in VersionDoc.
+			if err := generator.Generate(ctx, versionDetails.datasetID, versionUpdate.ID, versionDetails.edition, versionDetails.version); err != nil {
+				data["instance_id"] = versionUpdate.ID
+				data["state"] = versionUpdate.State
+				data["type"] = t.String()
+				log.Error(ctx, "putVersion endpoint: error while attempting to generate full dataset version downloads on version publish", err, data)
+				return err
+				// TODO - TECH DEBT - need to add an error event for this.  Kafka message perhaps.
+			}
+			log.Info(ctx, "putVersion endpoint: generated full dataset version downloads", data)
 		}
 
 		return nil
@@ -492,8 +505,11 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 	return nil
 }
 
-func (api *DatasetAPI) associateVersion(ctx context.Context, versionDoc *models.Version, versionDetails VersionDetails) error {
+func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion, versionDoc *models.Version, versionDetails VersionDetails) error {
 	data := versionDetails.baseLogData()
+	data["type"] = currentVersion.Type
+	data["version_update"] = versionDoc
+	log.Info(ctx, "putVersion endpoint: associated version", data)
 
 	associateVersionErr := func() error {
 		if err := api.dataStore.Backend.UpdateDatasetWithAssociation(ctx, versionDetails.datasetID, versionDoc.State, versionDoc); err != nil {
@@ -501,14 +517,25 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, versionDoc *models.
 			return err
 		}
 
-		log.Info(ctx, "putVersion endpoint: generating full dataset version downloads", data)
-
-		if err := api.downloadGenerator.Generate(ctx, versionDetails.datasetID, versionDoc.ID, versionDetails.edition, versionDetails.version); err != nil {
+		// Get the download generator from the map, depending of the Version document type
+		t, err := models.GetDatasetType(currentVersion.Type)
+		if err != nil {
+			return fmt.Errorf("error getting type of version: %w", err)
+		}
+		generator, ok := api.downloadGenerators[t]
+		// ToDo outsidecoder - Test by passing in the wrong mock, eg Filterable instead of Cantabular Table.  Create API with CMD mock and pass in Canti
+		if !ok {
+			return fmt.Errorf("no downloader available for type %s", t.String())
+		}
+		// ToDo outsidecoder - Pass the right mock and get Generate to fail by returning an error.New("Error message")
+		if err := generator.Generate(ctx, versionDetails.datasetID, versionDoc.ID, versionDetails.edition, versionDetails.version); err != nil {
 			data["instance_id"] = versionDoc.ID
 			data["state"] = versionDoc.State
 			log.Error(ctx, "putVersion endpoint: error while attempting to generate full dataset version downloads on version association", err, data)
 			return err
 		}
+		data["type"] = t.String()
+		log.Info(ctx, "putVersion endpoint: generated full dataset version downloads", data)
 		return nil
 	}()
 
