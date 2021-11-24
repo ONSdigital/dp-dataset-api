@@ -60,6 +60,7 @@ var (
 )
 
 // DatasetUpdate represents an evolving dataset with the current dataset and the updated dataset
+// Note: Stored as Dataset (in `dataset` Collection) in MongoDB
 type DatasetUpdate struct {
 	ID      string   `bson:"_id,omitempty"         json:"id,omitempty"`
 	Current *Dataset `bson:"current,omitempty"     json:"current,omitempty"`
@@ -398,7 +399,7 @@ func (ed *EditionUpdate) PublishLinks(ctx context.Context, versionLink *LinkObje
 		var err error
 		currentVersion, err = strconv.Atoi(ed.Current.Links.LatestVersion.ID)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to parse LatestVersion.ID: %w", err)
 		}
 	}
 
@@ -408,7 +409,7 @@ func (ed *EditionUpdate) PublishLinks(ctx context.Context, versionLink *LinkObje
 
 	version, err := strconv.Atoi(versionLink.ID)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse VersionLink.ID: %w", err)
 	}
 
 	if currentVersion > version {
@@ -595,8 +596,8 @@ func ValidateVersion(version *Version) error {
 	return nil
 }
 
-// ValidateVersionNumber checks the version is a positive integer above 0
-func ValidateVersionNumber(ctx context.Context, version string) (int, error) {
+// ParseAndValidateVersionNumber checks the version is a positive integer above 0
+func ParseAndValidateVersionNumber(ctx context.Context, version string) (int, error) {
 	versionNumber, err := strconv.Atoi(version)
 	if err != nil {
 		log.Error(ctx, "invalid version provided", err, log.Data{"version": version})

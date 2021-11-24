@@ -2,6 +2,7 @@ package steps
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	componenttest "github.com/ONSdigital/dp-component-test"
@@ -26,11 +27,13 @@ type DatasetComponent struct {
 	Config         *config.Configuration
 	HTTPServer     *http.Server
 	ServiceRunning bool
+	consumer       kafka.IConsumerGroup
+	producer       kafka.IProducer
+	initialiser    service.Initialiser
 }
 
 func NewDatasetComponent(mongoFeature *componenttest.MongoFeature, zebedeeURL string) (*DatasetComponent, error) {
-
-	f := &DatasetComponent{
+	c := &DatasetComponent{
 		HTTPServer:     &http.Server{},
 		errorChan:      make(chan error),
 		ServiceRunning: false,
@@ -38,14 +41,16 @@ func NewDatasetComponent(mongoFeature *componenttest.MongoFeature, zebedeeURL st
 
 	var err error
 
-	f.Config, err = config.Get()
+	c.Config, err = config.Get()
 	if err != nil {
 		return nil, err
 	}
 
-	f.Config.ZebedeeURL = zebedeeURL
+	log.Info(context.Background(), "configuration for component test", log.Data{"config": c.Config})
 
-	f.Config.EnablePermissionsAuth = false
+	c.Config.ZebedeeURL = zebedeeURL
+
+	c.Config.EnablePermissionsAuth = false
 
 	mongodb := &mongo.Mongo{
 		CodeListURL: "",
@@ -59,54 +64,83 @@ func NewDatasetComponent(mongoFeature *componenttest.MongoFeature, zebedeeURL st
 		return nil, err
 	}
 
-	f.MongoClient = mongodb
+	c.MongoClient = mongodb
 
-	initMock := &serviceMock.InitialiserMock{
-		DoGetMongoDBFunc:       f.DoGetMongoDB,
-		DoGetGraphDBFunc:       f.DoGetGraphDBOk,
-		DoGetKafkaProducerFunc: f.DoGetKafkaProducerOk,
-		DoGetHealthCheckFunc:   f.DoGetHealthcheckOk,
-		DoGetHTTPServerFunc:    f.DoGetHTTPServer,
-	}
-
-	f.svc = service.New(f.Config, service.NewServiceList(initMock))
-
-	return f, nil
+	return c, nil
 }
 
-func (f *DatasetComponent) Reset() *DatasetComponent {
+func (c *DatasetComponent) Reset() error {
 	ctx := context.Background()
-	f.MongoClient.Database = utils.RandomDatabase()
-	if err := f.MongoClient.Init(ctx); err != nil {
+
+	c.MongoClient.Database = utils.RandomDatabase()
+	if err := c.MongoClient.Init(ctx); err != nil {
 		log.Warn(ctx, "error initialising MongoClient during Reset", log.Data{"err": err.Error()})
 	}
-	f.Config.EnablePrivateEndpoints = false
-	return f
+
+	c.Config.EnablePrivateEndpoints = false
+	// Resets back to Mocked Kafka
+	c.setInitialiserMock()
+
+	return nil
 }
 
-func (f *DatasetComponent) Close() error {
-	if f.svc != nil && f.ServiceRunning {
-		if err := f.svc.Close(context.Background()); err != nil {
-			return err
+func (c *DatasetComponent) Close() error {
+	ctx := context.Background()
+	if c.consumer != nil {
+		if err := c.consumer.Close(ctx); err != nil {
+			return fmt.Errorf("failed to close Kafka consumer %w", err)
 		}
-		f.ServiceRunning = false
+	}
+	if c.producer != nil {
+		if err := c.producer.Close(ctx); err != nil {
+			return fmt.Errorf("failed to close Kafka producer %w", err)
+		}
+	}
+
+	if c.svc != nil && c.ServiceRunning {
+		if err := c.svc.Close(ctx); err != nil {
+			return fmt.Errorf("failed to close service: %w", err)
+		}
+		c.ServiceRunning = false
 	}
 	return nil
 }
 
-func (f *DatasetComponent) InitialiseService() (http.Handler, error) {
-	if err := f.svc.Run(context.Background(), "1", "", "", f.errorChan); err != nil {
+func (c *DatasetComponent) InitialiseService() (http.Handler, error) {
+	// Initialiser before Run to allow switching out of Initialiser between tests.
+	c.svc = service.New(c.Config, service.NewServiceList(c.initialiser))
+
+	if err := c.svc.Run(context.Background(), "1", "", "", c.errorChan); err != nil {
 		return nil, err
 	}
-	f.ServiceRunning = true
-	return f.HTTPServer.Handler, nil
+	c.ServiceRunning = true
+	return c.HTTPServer.Handler, nil
 }
 
 func funcClose(ctx context.Context) error {
 	return nil
 }
 
-func (f *DatasetComponent) DoGetHealthcheckOk(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error) {
+func (c *DatasetComponent) setConsumer(topic string) error {
+	var err error
+	kafkaOffset := kafka.OffsetOldest
+	if c.consumer, err = kafka.NewConsumerGroup(
+		context.Background(),
+		c.Config.KafkaAddr,
+		topic,
+		"test-kafka-group",
+		kafka.CreateConsumerGroupChannels(1),
+		&kafka.ConsumerGroupConfig{
+			Offset:       &kafkaOffset,
+			KafkaVersion: &c.Config.KafkaVersion,
+		},
+	); err != nil {
+		return fmt.Errorf("error creating kafka consumer: %w", err)
+	}
+	return nil
+}
+
+func (c *DatasetComponent) DoGetHealthcheckOk(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error) {
 	return &serviceMock.HealthCheckerMock{
 		AddCheckFunc: func(name string, checker healthcheck.Checker) error { return nil },
 		StartFunc:    func(ctx context.Context) {},
@@ -114,26 +148,67 @@ func (f *DatasetComponent) DoGetHealthcheckOk(cfg *config.Configuration, buildTi
 	}, nil
 }
 
-func (f *DatasetComponent) DoGetHTTPServer(bindAddr string, router http.Handler) service.HTTPServer {
-	f.HTTPServer.Addr = bindAddr
-	f.HTTPServer.Handler = router
-	return f.HTTPServer
+func (c *DatasetComponent) DoGetHTTPServer(bindAddr string, router http.Handler) service.HTTPServer {
+	c.HTTPServer.Addr = bindAddr
+	c.HTTPServer.Handler = router
+	return c.HTTPServer
 }
 
 // DoGetMongoDB returns a MongoDB
-func (f *DatasetComponent) DoGetMongoDB(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error) {
-	return f.MongoClient, nil
+func (c *DatasetComponent) DoGetMongoDB(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error) {
+	return c.MongoClient, nil
 }
 
-func (f *DatasetComponent) DoGetGraphDBOk(ctx context.Context) (store.GraphDB, service.Closer, error) {
-	return &storeMock.GraphDBMock{CloseFunc: funcClose}, &serviceMock.CloserMock{CloseFunc: funcClose}, nil
+func (c *DatasetComponent) DoGetGraphDBOk(ctx context.Context) (store.GraphDB, service.Closer, error) {
+	return &storeMock.GraphDBMock{
+			CloseFunc:                  funcClose,
+			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error { return nil },
+		},
+		&serviceMock.CloserMock{CloseFunc: funcClose}, nil
 }
 
-func (f *DatasetComponent) DoGetKafkaProducerOk(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
+func (c *DatasetComponent) DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
+	pConfig := &kafka.ProducerConfig{
+		KafkaVersion: &cfg.KafkaVersion,
+	}
+
+	if cfg.KafkaSecProtocol == "TLS" {
+		pConfig.SecurityConfig = kafka.GetSecurityConfig(
+			cfg.KafkaSecCACerts,
+			cfg.KafkaSecClientCert,
+			cfg.KafkaSecClientKey,
+			cfg.KafkaSecSkipVerify,
+		)
+	}
+
+	pChannels := kafka.CreateProducerChannels()
+	return kafka.NewProducer(ctx, cfg.KafkaAddr, topic, pChannels, pConfig)
+}
+
+func (c *DatasetComponent) DoGetMockedKafkaProducerOk(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
 	return &kafkatest.IProducerMock{
 		ChannelsFunc: func() *kafka.ProducerChannels {
 			return &kafka.ProducerChannels{}
 		},
 		CloseFunc: funcClose,
 	}, nil
+}
+
+func (c *DatasetComponent) setInitialiserMock() {
+	c.initialiser = &serviceMock.InitialiserMock{
+		DoGetMongoDBFunc:       c.DoGetMongoDB,
+		DoGetGraphDBFunc:       c.DoGetGraphDBOk,
+		DoGetKafkaProducerFunc: c.DoGetMockedKafkaProducerOk,
+		DoGetHealthCheckFunc:   c.DoGetHealthcheckOk,
+		DoGetHTTPServerFunc:    c.DoGetHTTPServer,
+	}
+}
+func (c *DatasetComponent) setInitialiserRealKafka() {
+	c.initialiser = &serviceMock.InitialiserMock{
+		DoGetMongoDBFunc:       c.DoGetMongoDB,
+		DoGetGraphDBFunc:       c.DoGetGraphDBOk,
+		DoGetKafkaProducerFunc: c.DoGetKafkaProducer,
+		DoGetHealthCheckFunc:   c.DoGetHealthcheckOk,
+		DoGetHTTPServerFunc:    c.DoGetHTTPServer,
+	}
 }

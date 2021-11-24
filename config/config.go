@@ -69,7 +69,7 @@ func Get() (*Configuration, error) {
 		GracefulShutdownTimeout:    5 * time.Second,
 		HealthCheckInterval:        30 * time.Second,
 		HealthCheckCriticalTimeout: 90 * time.Second,
-		EnablePrivateEndpoints:     false,
+		EnablePrivateEndpoints:     true,
 		EnableDetachDataset:        false,
 		EnablePermissionsAuth:      false,
 		EnableObservationEndpoint:  true,

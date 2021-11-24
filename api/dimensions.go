@@ -32,7 +32,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "func": "getDimensions"}
 	var err error
 
-	versionNumber, err := models.ValidateVersionNumber(ctx, version)
+	versionNumber, err := models.ParseAndValidateVersionNumber(ctx, version)
 	if err != nil {
 		handleDimensionsErr(ctx, w, "invalid version request", err, logData)
 		return nil, 0, err
@@ -149,7 +149,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension, "func": "getDimensionOptions"}
 	authorised := api.authenticate(r, logData)
 
-	versionName, err := models.ValidateVersionNumber(ctx, versionID)
+	versionName, err := models.ParseAndValidateVersionNumber(ctx, versionID)
 	if err != nil {
 		log.Error(ctx, "invalid version requested", err, logData)
 		handleDimensionsErr(ctx, w, "invalid version", err, logData)

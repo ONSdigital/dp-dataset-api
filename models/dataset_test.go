@@ -893,8 +893,8 @@ func TestValidateVersionNumberSuccess(t *testing.T) {
 	Convey("Given valid version number above 0 in string format", t, func() {
 		versionStr := "5"
 
-		Convey("When ValidateVersionNumber is called", func() {
-			versionNumber, err := ValidateVersionNumber(testContext, versionStr)
+		Convey("When ParseAndValidateVersionNumber is called", func() {
+			versionNumber, err := ParseAndValidateVersionNumber(testContext, versionStr)
 
 			Convey("Then no error should be returned", func() {
 				So(err, ShouldBeNil)
@@ -914,8 +914,8 @@ func TestValidateVersionNumberFailure(t *testing.T) {
 	Convey("Given invalid version number in string format", t, func() {
 		versionStr := "abc"
 
-		Convey("When ValidateVersionNumber is called", func() {
-			_, err := ValidateVersionNumber(testContext, versionStr)
+		Convey("When ParseAndValidateVersionNumber is called", func() {
+			_, err := ParseAndValidateVersionNumber(testContext, versionStr)
 
 			Convey("Then an error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -927,8 +927,8 @@ func TestValidateVersionNumberFailure(t *testing.T) {
 	Convey("Given version number less than 0 in string format", t, func() {
 		versionStr := "-1"
 
-		Convey("When ValidateVersionNumber is called", func() {
-			_, err := ValidateVersionNumber(testContext, versionStr)
+		Convey("When ParseAndValidateVersionNumber is called", func() {
+			_, err := ParseAndValidateVersionNumber(testContext, versionStr)
 
 			Convey("Then an error should be returned", func() {
 				So(err, ShouldNotBeNil)

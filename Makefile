@@ -47,8 +47,7 @@ test:
 
 .PHONY: test-component
 test-component:
-	go test -race -cover -coverpkg=github.com/ONSdigital/dp-dataset-api/... -component
-
+	ENABLE_PRIVATE_ENDPOINTS=true cd features/compose; docker-compose up --abort-on-container-exit
 
 .PHONY: nomis
 nomis:

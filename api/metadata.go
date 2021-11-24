@@ -21,7 +21,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 	b, err := func() ([]byte, error) {
 
-		versionId, err := models.ValidateVersionNumber(ctx, version)
+		versionId, err := models.ParseAndValidateVersionNumber(ctx, version)
 		if err != nil {
 			log.Error(ctx, "failed due to invalid version request", err, logData)
 			return nil, err
@@ -77,8 +77,8 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 		// If dataset isn't published no 'Current' exists, use 'Next'
 		doc := datasetDoc.Current
-		if doc == nil{
-			if datasetDoc.Next == nil{
+		if doc == nil {
+			if datasetDoc.Next == nil {
 				return nil, errors.New("invalid dataset doc: no 'current' or 'next' found")
 			}
 			doc = datasetDoc.Next
@@ -89,7 +89,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "invalid dataset type", err, logData)
 			return nil, err
 		}
-		
+
 		var metaDataDoc *models.Metadata
 
 		if t == models.CantabularBlob || t == models.CantabularTable {

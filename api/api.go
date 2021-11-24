@@ -4,6 +4,7 @@ package api
 
 import (
 	"context"
+	"github.com/ONSdigital/dp-dataset-api/download"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"net/http"
 	"strconv"
@@ -44,6 +45,7 @@ type API interface {
 // DownloadsGenerator pre generates full file downloads for the specified dataset/edition/version
 type DownloadsGenerator interface {
 	Generate(ctx context.Context, datasetID, instanceID, edition, version string) error
+	GetProducer() download.KafkaProducer
 }
 
 // AuthHandler provides authorisation checks on requests
@@ -67,6 +69,10 @@ type DatasetAPI struct {
 	instancePublishedChecker *instance.PublishCheck
 	versionPublishedChecker  *PublishCheck
 	MaxRequestOptions        int
+}
+
+func (d *DatasetAPI) GetGenerators() map[models.DatasetType]DownloadsGenerator {
+	return d.downloadGenerators
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.

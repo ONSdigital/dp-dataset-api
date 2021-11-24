@@ -285,7 +285,6 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *models.DatasetUpdate, version *models.Version) error {
 	if version != nil {
 		currentDataset.Next.CollectionID = ""
-
 		currentDataset.Next.Links.LatestVersion = &models.LinkObject{
 			ID:   version.Links.Version.ID,
 			HRef: version.Links.Version.HRef,
@@ -358,7 +357,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "failed to delete dataset", err, logData)
 			return err
 		}
-		
+
 		log.Info(ctx, "dataset deleted successfully", logData)
 		return nil
 	}()

@@ -72,6 +72,17 @@ func (svc *Service) SetDownloadsProducer(producer kafka.IProducer) {
 	svc.generateCMDDownloadsProducer = producer
 }
 
+// SetCantabularProducer sets the Producer for the Cantabular Generator
+func (svc *Service) SetCantabularProducer(producer download.KafkaProducer) {
+
+	generators := svc.api.GetGenerators()
+	// Could also use CantabularBlob
+	g := generators[models.CantabularTable]
+	p := g.GetProducer()
+	p = p //Compiler complaining p isn't used, however it is.
+	p = producer
+}
+
 // SetMongoDB sets the mongoDB connection for a service
 func (svc *Service) SetMongoDB(mongoDB store.MongoDB) {
 	svc.mongoDB = mongoDB
@@ -103,7 +114,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
 		})
 		svc.graphDB = &storetest.GraphDBMock{
-			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error{
+			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
 				return nil
 			},
 		}
@@ -145,11 +156,11 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	}
 
 	downloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
-		models.CantabularBlob: downloadGeneratorCantabular,
+		models.CantabularBlob:  downloadGeneratorCantabular,
 		models.CantabularTable: downloadGeneratorCantabular,
-		models.Filterable: downloadGeneratorCMD,
-		models.Nomis: downloadGeneratorCMD,
-		}
+		models.Filterable:      downloadGeneratorCMD,
+		models.Nomis:           downloadGeneratorCMD,
+	}
 
 	// Get Identity Client (only if private endpoints are enabled)
 	if svc.config.EnablePrivateEndpoints {

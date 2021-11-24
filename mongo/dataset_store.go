@@ -57,19 +57,11 @@ func (m *Mongo) GetDataset(id string) (*models.DatasetUpdate, error) {
 
 // GetEditions retrieves all edition documents for a dataset
 func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
-	log.Info(context.TODO(), "[DEBUG] getting edtions", log.Data{})
-
 	s := m.Session.Copy()
 	defer s.Close()
 
 	selector := buildEditionsQuery(id, state, authorised)
 	q := s.DB(m.Database).C(editionsCollection).Find(selector).Sort()
-
-	log.Info(context.TODO(), "[DEBUG] query details", log.Data{
-		"editionsCollection":editionsCollection,
-		"selector": selector,
-		"database": m.Database,
-	})
 
 	// get total count and paginated values according to provided offset and limit
 	results := []*models.EditionUpdate{}
@@ -86,7 +78,6 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 }
 
 func buildEditionsQuery(id, state string, authorised bool) bson.M {
-	log.Info(context.TODO(), "[DEBUG] building query", log.Data{"id": id, "state": state, "authorised": authorised})
 	// all queries must get the dataset by id
 	selector := bson.M{
 		"next.links.dataset.id": id,
@@ -414,7 +405,7 @@ func (m *Mongo) UpdateDatasetWithAssociation(id, state string, version *models.V
 	return
 }
 
-// UpdateVersion updates an existing version document
+// UpdateVersion updates an existing version document in DB
 func (m *Mongo) UpdateVersion(id string, version *models.Version) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
@@ -512,7 +503,7 @@ func (m *Mongo) RemoveDatasetVersionAndEditionLinks(id string) error {
 		},
 	}
 
-	if err := s.DB(m.Database).C("datasets").UpdateId(id, update); err != nil{
+	if err := s.DB(m.Database).C("datasets").UpdateId(id, update); err != nil {
 		return fmt.Errorf("failed to query MongoDB: %w", err)
 	}
 
@@ -593,7 +584,7 @@ func (m *Mongo) CheckDatasetExists(id, state string) error {
 	return nil
 }
 
-// CheckEditionExists checks that the edition of a dataset exists
+// CheckEditionExists checks that the edition of a dataset exists in DB
 func (m *Mongo) CheckEditionExists(id, editionID, state string) error {
 	s := m.Session.Copy()
 	defer s.Close()
@@ -682,7 +673,6 @@ func (m *Mongo) DeleteEdition(id string) (err error) {
 	s := m.Session.Copy()
 	defer s.Close()
 
-
 	if err = s.DB(m.Database).C("editions").Remove(bson.D{{Name: "id", Value: id}}); err != nil {
 		if err == mgo.ErrNotFound {
 			return errs.ErrEditionNotFound
@@ -690,6 +680,6 @@ func (m *Mongo) DeleteEdition(id string) (err error) {
 		return err
 	}
 
-	log.Info(context.TODO(), "edition deleted", log.Data{"id": id, })
+	log.Info(context.TODO(), "edition deleted", log.Data{"id": id})
 	return nil
 }

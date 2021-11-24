@@ -4,15 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
-
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
@@ -21,6 +12,14 @@ import (
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
 )
 
 const (
@@ -264,7 +263,6 @@ func TestGetVersionReturnsOK(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
-
 }
 
 func TestGetVersionReturnsError(t *testing.T) {
@@ -628,6 +626,50 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 			So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 			So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
+
+			Convey("then the request body has been drained", func() {
+				_, err := r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
+		})
+
+		Convey("put version with Cantabular type and CMD mock", func() {
+
+			mockedDataStore := &storetest.StorerMock{
+				GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+					return &models.DatasetUpdate{}, nil
+				},
+				CheckEditionExistsFunc: func(string, string, string) error {
+					return nil
+				},
+				GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
+					return &models.Version{
+						Type: "null",
+					}, nil
+				},
+				UpdateVersionFunc: func(string, *models.Version) error {
+					return nil
+				},
+				UpdateDatasetWithAssociationFunc: func(string, string, *models.Version) error {
+					return nil
+				},
+			}
+
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+			api.Router.ServeHTTP(w, r)
+
+			So(w.Code, ShouldEqual, http.StatusInternalServerError)
+			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+			So(permissions.Required.Calls, ShouldEqual, 0)
+			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
+			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
+			So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
+			So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+			So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 			Convey("then the request body has been drained", func() {
 				_, err := r.Body.Read(make([]byte, 1))
@@ -1100,7 +1142,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		v.State = models.EditionConfirmedState
 
-		mockedDataStore := &storetest.StorerMock{
+			mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(datasetID string, editionID string, version int, state string) (*models.Version, error) {
 				return &v, nil
 			},
