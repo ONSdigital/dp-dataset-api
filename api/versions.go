@@ -369,56 +369,62 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	data := versionDetails.baseLogData()
 
 	// attempt to update the version
-	currentDataset, currentVersion, versionUpdate, err := func() (*models.DatasetUpdate, *models.Version, *models.Version, error) {
+	// currentDataset, currentVersion, versionUpdate, err := func() (*models.DatasetUpdate, *models.Version, *models.Version, error) {
 
-		version, err := models.ValidateVersionNumber(ctx, versionDetails.version)
-		if err != nil {
-			log.Error(ctx, "putVersion endpoint: invalid version request", err, data)
-			return nil, nil, nil, err
-		}
-
-		versionUpdate, err := models.CreateVersion(body, versionDetails.datasetID)
-		if err != nil {
-			log.Error(ctx, "putVersion endpoint: failed to model version resource based on request", err, data)
-			return nil, nil, nil, errs.ErrUnableToParseJSON
-		}
-
-		currentDataset, err := api.dataStore.Backend.GetDataset(ctx, versionDetails.datasetID)
-		if err != nil {
-			log.Error(ctx, "putVersion endpoint: datastore.getDataset returned an error", err, data)
-			return nil, nil, nil, err
-		}
-
-		if err = api.dataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
-			log.Error(ctx, "putVersion endpoint: failed to find edition of dataset", err, data)
-			return nil, nil, nil, err
-		}
-
-		currentVersion, err := api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, version, "")
-		if err != nil {
-			log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
-			return nil, nil, nil, err
-		}
-
-		// Combine update version document to existing version document
-		populateNewVersionDoc(currentVersion, versionUpdate)
-		data["updated_version"] = versionUpdate
-		log.Info(ctx, "putVersion endpoint: combined current version document with update request", data)
-
-		if err = models.ValidateVersion(versionUpdate); err != nil {
-			log.Error(ctx, "putVersion endpoint: failed validation check for version update", err)
-			return nil, nil, nil, err
-		}
-
-		if err := api.dataStore.Backend.UpdateVersion(ctx, versionUpdate.ID, versionUpdate); err != nil {
-			log.Error(ctx, "putVersion endpoint: failed to update version document", err, data)
-			return nil, nil, nil, err
-		}
-		return currentDataset, currentVersion, versionUpdate, nil
-	}()
-
-	// audit update unsuccessful if error
+	version, err := models.ValidateVersionNumber(ctx, versionDetails.version)
 	if err != nil {
+		log.Error(ctx, "putVersion endpoint: invalid version request", err, data)
+		return nil, nil, nil, err
+	}
+
+	versionUpdate, err := models.CreateVersion(body, versionDetails.datasetID)
+	if err != nil {
+		log.Error(ctx, "putVersion endpoint: failed to model version resource based on request", err, data)
+		return nil, nil, nil, errs.ErrUnableToParseJSON
+	}
+
+	currentDataset, err := api.dataStore.Backend.GetDataset(ctx, versionDetails.datasetID)
+	if err != nil {
+		log.Error(ctx, "putVersion endpoint: datastore.getDataset returned an error", err, data)
+		return nil, nil, nil, err
+	}
+
+	if err = api.dataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
+		log.Error(ctx, "putVersion endpoint: failed to find edition of dataset", err, data)
+		return nil, nil, nil, err
+	}
+
+	currentVersion, err := api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, version, "")
+	if err != nil {
+		log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
+		return nil, nil, nil, err
+	}
+
+	// acquire instance lock to make sure we read the correct values of dimension options
+	lockID, err := api.dataStore.Backend.AcquireInstanceLock(ctx, currentVersion.ID)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	defer api.dataStore.Backend.UnlockInstance(ctx, lockID)
+
+	currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, version, "")
+	if err != nil {
+		log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
+		return nil, nil, nil, err
+	}
+
+	// Combine update version document to existing version document
+	populateNewVersionDoc(currentVersion, versionUpdate)
+	data["updated_version"] = versionUpdate
+	log.Info(ctx, "putVersion endpoint: combined current version document with update request", data)
+
+	if err = models.ValidateVersion(versionUpdate); err != nil {
+		log.Error(ctx, "putVersion endpoint: failed validation check for version update", err)
+		return nil, nil, nil, err
+	}
+
+	if err := api.dataStore.Backend.UpdateVersion(ctx, versionUpdate.ID, versionUpdate); err != nil {
+		log.Error(ctx, "putVersion endpoint: failed to update version document", err, data)
 		return nil, nil, nil, err
 	}
 
