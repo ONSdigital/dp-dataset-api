@@ -251,13 +251,13 @@ func (m *Mongo) UpdateDataset(ctx context.Context, id string, dataset *models.Da
 
 	updates := createDatasetUpdateQuery(ctx, id, dataset, currentState)
 	update := bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}}
-	if _, err = m.Connection.GetConfiguredCollection().Must().UpdateById(ctx, id, update); err != nil {
-		if mongodriver.IsErrNoDocumentFound(err) {
-			return errs.ErrDatasetNotFound
-		}
+	result, err := m.Connection.GetConfiguredCollection().UpdateById(ctx, id, update)
+	if err != nil {
 		return err
 	}
-
+	if result.MatchedCount == 0 {
+		return errs.ErrDatasetNotFound
+	}
 	return nil
 }
 
@@ -409,14 +409,13 @@ func (m *Mongo) UpdateDatasetWithAssociation(ctx context.Context, id, state stri
 func (m *Mongo) UpdateVersion(ctx context.Context, id string, version *models.Version) (err error) {
 
 	updates := createVersionUpdateQuery(version)
-
-	if _, err = m.Connection.C("instances").Must().Update(ctx, bson.M{"id": id}, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}}); err != nil {
-		if mongodriver.IsErrNoDocumentFound(err) {
-			return errs.ErrDatasetNotFound
-		}
+	result, err := m.Connection.C("instances").Update(ctx, bson.M{"id": id}, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}})
+	if err != nil {
 		return err
 	}
-
+	if result.MatchedCount == 0 {
+		return errs.ErrDatasetNotFound
+	}
 	return nil
 }
 
