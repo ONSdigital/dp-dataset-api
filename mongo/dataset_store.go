@@ -258,6 +258,7 @@ func (m *Mongo) UpdateDataset(ctx context.Context, id string, dataset *models.Da
 	if result.MatchedCount == 0 {
 		return errs.ErrDatasetNotFound
 	}
+
 	return nil
 }
 
@@ -395,11 +396,12 @@ func (m *Mongo) UpdateDatasetWithAssociation(ctx context.Context, id, state stri
 		},
 	}
 
-	if _, err = m.Connection.GetConfiguredCollection().Must().UpdateById(ctx, id, update); err != nil {
-		if mongodriver.IsErrNoDocumentFound(err) {
-			return errs.ErrDatasetNotFound
-		}
+	result, err := m.Connection.GetConfiguredCollection().UpdateById(ctx, id, update)
+	if err != nil {
 		return err
+	}
+	if result.MatchedCount == 0 {
+		return errs.ErrDatasetNotFound
 	}
 
 	return nil
@@ -416,6 +418,7 @@ func (m *Mongo) UpdateVersion(ctx context.Context, id string, version *models.Ve
 	if result.MatchedCount == 0 {
 		return errs.ErrDatasetNotFound
 	}
+
 	return nil
 }
 
@@ -503,8 +506,12 @@ func (m *Mongo) RemoveDatasetVersionAndEditionLinks(ctx context.Context, id stri
 		},
 	}
 
-	if _, err := m.Connection.GetConfiguredCollection().Must().UpdateById(ctx, id, update); err != nil {
+	result, err := m.Connection.GetConfiguredCollection().UpdateById(ctx, id, update)
+	if err != nil {
 		return fmt.Errorf("failed in query to MongoDB: %w", err)
+	}
+	if result.MatchedCount == 0 {
+		return errs.ErrDatasetNotFound
 	}
 
 	return nil

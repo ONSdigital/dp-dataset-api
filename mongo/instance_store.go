@@ -50,9 +50,6 @@ func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []st
 	results := []*models.Instance{}
 	totalCount, err := QueryPage(ctx, f, offset, limit, &results)
 	if err != nil {
-		if mongodriver.IsErrNoDocumentFound(err) {
-			return results, 0, errs.ErrDatasetNotFound
-		}
 		return results, 0, err
 	}
 
@@ -124,12 +121,12 @@ func (m *Mongo) UpdateInstance(ctx context.Context, currentInstance, updatedInst
 	sel := selector(currentInstance.InstanceID, updatedInstance.UniqueTimestamp, eTagSelector)
 
 	// execute the update against MongoDB to atomically check and update the instance
-	if _, err = m.Connection.C(instanceCollection).Must().Update(ctx, sel, updateWithTimestamps); err != nil {
-		if mongodriver.IsErrNoDocumentFound(err) {
-			return "", errs.ErrConflictUpdatingInstance
-		}
-
+	result, err := m.Connection.C(instanceCollection).Update(ctx, sel, updateWithTimestamps)
+	if err != nil {
 		return "", err
+	}
+	if result.MatchedCount == 0 {
+		return "", errs.ErrConflictUpdatingInstance
 	}
 
 	return newETag, nil
@@ -298,11 +295,12 @@ func (m *Mongo) AddEventToInstance(ctx context.Context, currentInstance *models.
 		},
 	}
 
-	if _, err = m.Connection.C(instanceCollection).Must().Update(ctx, sel, update); err != nil {
-		if mongodriver.IsErrNoDocumentFound(err) {
-			return "", errs.ErrInstanceNotFound
-		}
+	result, err := m.Connection.C(instanceCollection).Update(ctx, sel, update)
+	if err != nil {
 		return "", err
+	}
+	if result.MatchedCount == 0 {
+		return "", errs.ErrInstanceNotFound
 	}
 
 	return newETag, nil
@@ -318,7 +316,7 @@ func (m *Mongo) UpdateObservationInserted(ctx context.Context, currentInstance *
 	}
 
 	sel := selector(currentInstance.InstanceID, bsonprim.Timestamp{}, eTagSelector)
-	if _, err = m.Connection.C(instanceCollection).Must().Update(ctx, sel,
+	result, err := m.Connection.C(instanceCollection).Update(ctx, sel,
 		bson.M{
 			"$inc": bson.M{"import_tasks.import_observations.total_inserted_observations": observationInserted},
 			"$set": bson.M{
@@ -326,11 +324,12 @@ func (m *Mongo) UpdateObservationInserted(ctx context.Context, currentInstance *
 				"e_tag":        newETag,
 			},
 		},
-	); err != nil {
-		if mongodriver.IsErrNoDocumentFound(err) {
-			return "", errs.ErrInstanceNotFound
-		}
+	)
+	if err != nil {
 		return "", err
+	}
+	if result.MatchedCount == 0 {
+		return "", errs.ErrInstanceNotFound
 	}
 
 	return newETag, nil
@@ -347,7 +346,7 @@ func (m *Mongo) UpdateImportObservationsTaskState(ctx context.Context, currentIn
 
 	sel := selector(currentInstance.InstanceID, bsonprim.Timestamp{}, eTagSelector)
 
-	if _, err = m.Connection.C(instanceCollection).Must().Update(ctx, sel,
+	result, err := m.Connection.C(instanceCollection).Update(ctx, sel,
 		bson.M{
 			"$set": bson.M{
 				"import_tasks.import_observations.state": state,
@@ -355,11 +354,12 @@ func (m *Mongo) UpdateImportObservationsTaskState(ctx context.Context, currentIn
 			},
 			"$currentDate": bson.M{"last_updated": true},
 		},
-	); err != nil {
-		if mongodriver.IsErrNoDocumentFound(err) {
-			return "", errs.ErrInstanceNotFound
-		}
+	)
+	if err != nil {
 		return "", err
+	}
+	if result.MatchedCount == 0 {
+		return "", errs.ErrInstanceNotFound
 	}
 
 	return newETag, nil
@@ -385,8 +385,12 @@ func (m *Mongo) UpdateBuildHierarchyTaskState(ctx context.Context, currentInstan
 		"$currentDate": bson.M{"last_updated": true},
 	}
 
-	if _, err = m.Connection.C(instanceCollection).Must().Update(ctx, sel, update); err != nil {
+	result, err := m.Connection.C(instanceCollection).Update(ctx, sel, update)
+	if err != nil {
 		return "", err
+	}
+	if result.MatchedCount == 0 {
+		return "", errs.ErrInstanceNotFound
 	}
 
 	return newETag, nil
@@ -412,8 +416,12 @@ func (m *Mongo) UpdateBuildSearchTaskState(ctx context.Context, currentInstance 
 		"$currentDate": bson.M{"last_updated": true},
 	}
 
-	if _, err = m.Connection.C(instanceCollection).Must().Update(ctx, sel, update); err != nil {
+	result, err := m.Connection.C(instanceCollection).Update(ctx, sel, update)
+	if err != nil {
 		return "", err
+	}
+	if result.MatchedCount == 0 {
+		return "", errs.ErrInstanceNotFound
 	}
 
 	return newETag, nil
@@ -437,8 +445,12 @@ func (m *Mongo) UpdateETagForOptions(ctx context.Context, currentInstance *model
 		"$currentDate": bson.M{"last_updated": true},
 	}
 
-	if _, err := m.Connection.C(instanceCollection).Must().Update(ctx, sel, update); err != nil {
+	result, err := m.Connection.C(instanceCollection).Update(ctx, sel, update)
+	if err != nil {
 		return "", err
+	}
+	if result.MatchedCount == 0 {
+		return "", errs.ErrInstanceNotFound
 	}
 
 	return newETag, nil

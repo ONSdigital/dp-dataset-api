@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"context"
-
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 
