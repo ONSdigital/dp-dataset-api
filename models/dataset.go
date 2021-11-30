@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,6 +16,7 @@ import (
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // DatasetType defines possible dataset types
@@ -184,6 +186,31 @@ type Version struct {
 	UsageNotes    *[]UsageNote         `bson:"usage_notes,omitempty"    json:"usage_notes,omitempty"`
 	Version       int                  `bson:"version,omitempty"        json:"version,omitempty"`
 	Type          string               `bson:"type,omitempty"           json:"type,omitempty"`
+	ETag          string               `bson:"e_tag"                    json:"-"`
+}
+
+// Hash generates a SHA-1 hash of the version struct. SHA-1 is not cryptographically safe,
+// but it has been selected for performance as we are only interested in uniqueness.
+// ETag field value is ignored when generating a hash.
+// An optional byte array can be provided to append to the hash.
+// This can be used, for example, to calculate a hash of this filter and an update applied to it.
+func (v *Version) Hash(extraBytes []byte) (string, error) {
+	h := sha1.New()
+
+	// copy by value to ignore ETag without affecting f
+	v2 := *v
+	v2.ETag = ""
+
+	versionBytes, err := bson.Marshal(v2)
+	if err != nil {
+		return "", err
+	}
+
+	if _, err := h.Write(append(versionBytes, extraBytes...)); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
 // Alert represents an object containing information on an alert
@@ -240,6 +267,47 @@ type VersionLinks struct {
 	Self       *LinkObject `bson:"self,omitempty"        json:"self,omitempty"`
 	Spatial    *LinkObject `bson:"spatial,omitempty"     json:"spatial,omitempty"`
 	Version    *LinkObject `bson:"version,omitempty"     json:"-"`
+}
+
+func (vl *VersionLinks) DeepCopy() *VersionLinks {
+	dst := &VersionLinks{}
+	if vl.Dataset != nil {
+		dst.Dataset = &LinkObject{
+			ID:   vl.Dataset.ID,
+			HRef: vl.Dataset.HRef,
+		}
+	}
+	if vl.Dimensions != nil {
+		dst.Dimensions = &LinkObject{
+			ID:   vl.Dimensions.ID,
+			HRef: vl.Dimensions.HRef,
+		}
+	}
+	if vl.Edition != nil {
+		dst.Edition = &LinkObject{
+			ID:   vl.Edition.ID,
+			HRef: vl.Edition.HRef,
+		}
+	}
+	if vl.Self != nil {
+		dst.Self = &LinkObject{
+			ID:   vl.Self.ID,
+			HRef: vl.Self.HRef,
+		}
+	}
+	if vl.Spatial != nil {
+		dst.Spatial = &LinkObject{
+			ID:   vl.Spatial.ID,
+			HRef: vl.Spatial.HRef,
+		}
+	}
+	if vl.Version != nil {
+		dst.Version = &LinkObject{
+			ID:   vl.Version.ID,
+			HRef: vl.Version.HRef,
+		}
+	}
+	return dst
 }
 
 // IsBasedOn refers to the Cantabular blob source

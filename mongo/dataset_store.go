@@ -11,6 +11,7 @@ import (
 
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
+	bsonprim "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // GetDatasets retrieves all dataset documents
@@ -406,21 +407,28 @@ func (m *Mongo) UpdateDatasetWithAssociation(ctx context.Context, id, state stri
 }
 
 // UpdateVersion updates an existing version document
-func (m *Mongo) UpdateVersion(ctx context.Context, id string, version *models.Version) (err error) {
-
-	updates := createVersionUpdateQuery(version)
-
-	if _, err = m.Connection.C("instances").Must().Update(ctx, bson.M{"id": id}, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}}); err != nil {
-		if mongodriver.IsErrNoDocumentFound(err) {
-			return errs.ErrDatasetNotFound
-		}
-		return err
+func (m *Mongo) UpdateVersion(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (newETag string, err error) {
+	// calculate the new eTag hash for the instance that would result from adding the event
+	newETag, err = newETagForVersionUpdate(currentVersion, versionUpdate)
+	if err != nil {
+		return "", err
 	}
 
-	return nil
+	sel := selector(currentVersion.ID, bsonprim.Timestamp{}, eTagSelector)
+
+	updates := createVersionUpdateQuery(versionUpdate, newETag)
+
+	if _, err = m.Connection.C("instances").Must().Update(ctx, sel, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}}); err != nil {
+		if mongodriver.IsErrNoDocumentFound(err) {
+			return "", errs.ErrDatasetNotFound
+		}
+		return "", err
+	}
+
+	return newETag, nil
 }
 
-func createVersionUpdateQuery(version *models.Version) bson.M {
+func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 
 	setUpdates := make(bson.M)
 
@@ -472,6 +480,10 @@ func createVersionUpdateQuery(version *models.Version) bson.M {
 
 	if version.UsageNotes != nil {
 		setUpdates["usage_notes"] = version.UsageNotes
+	}
+
+	if newETag != "" {
+		setUpdates["e_tag"] = newETag
 	}
 
 	return setUpdates

@@ -124,7 +124,7 @@ var _ store.MongoDB = &MongoDBMock{}
 // 			UpdateObservationInsertedFunc: func(ctx context.Context, currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error) {
 // 				panic("mock out the UpdateObservationInserted method")
 // 			},
-// 			UpdateVersionFunc: func(ctx context.Context, ID string, version *models.Version) error {
+// 			UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
 // 				panic("mock out the UpdateVersion method")
 // 			},
 // 			UpsertContactFunc: func(ctx context.Context, ID string, update interface{}) error {
@@ -252,7 +252,7 @@ type MongoDBMock struct {
 	UpdateObservationInsertedFunc func(ctx context.Context, currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error)
 
 	// UpdateVersionFunc mocks the UpdateVersion method.
-	UpdateVersionFunc func(ctx context.Context, ID string, version *models.Version) error
+	UpdateVersionFunc func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error)
 
 	// UpsertContactFunc mocks the UpsertContact method.
 	UpsertContactFunc func(ctx context.Context, ID string, update interface{}) error
@@ -615,10 +615,12 @@ type MongoDBMock struct {
 		UpdateVersion []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// ID is the ID argument value.
-			ID string
+			// CurrentVersion is the currentVersion argument value.
+			CurrentVersion *models.Version
 			// Version is the version argument value.
 			Version *models.Version
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
 		}
 		// UpsertContact holds details about calls to the UpsertContact method.
 		UpsertContact []struct {
@@ -2103,37 +2105,41 @@ func (mock *MongoDBMock) UpdateObservationInsertedCalls() []struct {
 }
 
 // UpdateVersion calls UpdateVersionFunc.
-func (mock *MongoDBMock) UpdateVersion(ctx context.Context, ID string, version *models.Version) error {
+func (mock *MongoDBMock) UpdateVersion(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
 	if mock.UpdateVersionFunc == nil {
 		panic("MongoDBMock.UpdateVersionFunc: method is nil but MongoDB.UpdateVersion was just called")
 	}
 	callInfo := struct {
-		Ctx     context.Context
-		ID      string
-		Version *models.Version
+		Ctx            context.Context
+		CurrentVersion *models.Version
+		Version        *models.Version
+		ETagSelector   string
 	}{
-		Ctx:     ctx,
-		ID:      ID,
-		Version: version,
+		Ctx:            ctx,
+		CurrentVersion: currentVersion,
+		Version:        version,
+		ETagSelector:   eTagSelector,
 	}
 	mock.lockUpdateVersion.Lock()
 	mock.calls.UpdateVersion = append(mock.calls.UpdateVersion, callInfo)
 	mock.lockUpdateVersion.Unlock()
-	return mock.UpdateVersionFunc(ctx, ID, version)
+	return mock.UpdateVersionFunc(ctx, currentVersion, version, eTagSelector)
 }
 
 // UpdateVersionCalls gets all the calls that were made to UpdateVersion.
 // Check the length with:
 //     len(mockedMongoDB.UpdateVersionCalls())
 func (mock *MongoDBMock) UpdateVersionCalls() []struct {
-	Ctx     context.Context
-	ID      string
-	Version *models.Version
+	Ctx            context.Context
+	CurrentVersion *models.Version
+	Version        *models.Version
+	ETagSelector   string
 } {
 	var calls []struct {
-		Ctx     context.Context
-		ID      string
-		Version *models.Version
+		Ctx            context.Context
+		CurrentVersion *models.Version
+		Version        *models.Version
+		ETagSelector   string
 	}
 	mock.lockUpdateVersion.RLock()
 	calls = mock.calls.UpdateVersion

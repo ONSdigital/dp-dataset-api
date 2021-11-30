@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
@@ -319,8 +320,11 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Detach the version
-		versionDoc.State = models.DetachedState
-		if err = api.dataStore.Backend.UpdateVersion(ctx, versionDoc.ID, versionDoc); err != nil {
+		// versionDoc.State = models.DetachedState
+		update := &models.Version{
+			State: models.DetachedState,
+		}
+		if _, err = api.dataStore.Backend.UpdateVersion(ctx, versionDoc, update, headers.IfMatchAnyETag); err != nil {
 			log.Error(ctx, "detachVersion endpoint: failed to update version document", err, logData)
 			return err
 		}
@@ -368,9 +372,6 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, versionDetails VersionDetails) (*models.DatasetUpdate, *models.Version, *models.Version, error) {
 	data := versionDetails.baseLogData()
 
-	// attempt to update the version
-	// currentDataset, currentVersion, versionUpdate, err := func() (*models.DatasetUpdate, *models.Version, *models.Version, error) {
-
 	version, err := models.ValidateVersionNumber(ctx, versionDetails.version)
 	if err != nil {
 		log.Error(ctx, "putVersion endpoint: invalid version request", err, data)
@@ -400,37 +401,65 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		return nil, nil, nil, err
 	}
 
-	// acquire instance lock to make sure we read the correct values of dimension options
+	var combinedVersionUpdate *models.Version
+
+	// doUpdate is an aux function that combines the existing version document with the update received in the body request,
+	// then it validates the new model, and performs the update in MongoDB, passing the existing model ETag (if it exists) to be used in the query selector
+	// Note that the combined version update does not mutate versionUpdate because multiple retries might generate a different value depending on the currentVersion at that point.
+	var doUpdate = func() error {
+		combinedVersionUpdate, err = populateNewVersionDoc(*currentVersion, *versionUpdate)
+		if err != nil {
+			return err
+		}
+		data["updated_version"] = combinedVersionUpdate
+		log.Info(ctx, "putVersion endpoint: combined current version document with update request", data)
+
+		if err = models.ValidateVersion(combinedVersionUpdate); err != nil {
+			log.Error(ctx, "putVersion endpoint: failed validation check for version update", err)
+			return err
+		}
+
+		eTag := headers.IfMatchAnyETag
+		if currentVersion.ETag != "" {
+			eTag = currentVersion.ETag
+		}
+
+		if _, err := api.dataStore.Backend.UpdateVersion(ctx, currentVersion, combinedVersionUpdate, eTag); err != nil {
+			log.Error(ctx, "putVersion endpoint: failed to update version document", err, data)
+			return err
+		}
+
+		return nil
+	}
+
+	// acquire instance lock to prevent race conditions on instance collection
 	lockID, err := api.dataStore.Backend.AcquireInstanceLock(ctx, currentVersion.ID)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	defer api.dataStore.Backend.UnlockInstance(ctx, lockID)
 
-	currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, version, "")
-	if err != nil {
-		log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
-		return nil, nil, nil, err
-	}
+	// Try to perform the update. If there was a race condition and another caller performed the update
+	// before we could acquire the lock, this will result in the ETag being changed
+	// and the update failing with ErrDatasetNotFound.
+	// In this scenario we re-try the get + update before releasing the lock.
+	// Note that the lock and ETag will also protect against race conditions with instance endpoints,
+	// which may also modify the same instance collection in the database.
+	if err := doUpdate(); err == errs.ErrDatasetNotFound {
+		currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, version, "")
+		if err != nil {
+			log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
+			return nil, nil, nil, err
+		}
 
-	// Combine update version document to existing version document
-	populateNewVersionDoc(currentVersion, versionUpdate)
-	data["updated_version"] = versionUpdate
-	log.Info(ctx, "putVersion endpoint: combined current version document with update request", data)
-
-	if err = models.ValidateVersion(versionUpdate); err != nil {
-		log.Error(ctx, "putVersion endpoint: failed validation check for version update", err)
-		return nil, nil, nil, err
-	}
-
-	if err := api.dataStore.Backend.UpdateVersion(ctx, versionUpdate.ID, versionUpdate); err != nil {
-		log.Error(ctx, "putVersion endpoint: failed to update version document", err, data)
-		return nil, nil, nil, err
+		if err = doUpdate(); err != nil {
+			return nil, nil, nil, err
+		}
 	}
 
 	data["type"] = currentVersion.Type
 	log.Info(ctx, "update version completed successfully", data)
-	return currentDataset, currentVersion, versionUpdate, nil
+	return currentDataset, currentVersion, combinedVersionUpdate, nil
 }
 
 func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *models.DatasetUpdate, currentVersion *models.Version, versionUpdate *models.Version, versionDetails VersionDetails) error {
@@ -553,8 +582,7 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion, ver
 	return associateVersionErr
 }
 
-func populateNewVersionDoc(currentVersion *models.Version, version *models.Version) *models.Version {
-
+func populateNewVersionDoc(currentVersion models.Version, version models.Version) (*models.Version, error) {
 	var alerts []models.Alert
 
 	if version.Alerts != nil {
@@ -612,7 +640,10 @@ func populateNewVersionDoc(currentVersion *models.Version, version *models.Versi
 	}
 
 	version.ID = currentVersion.ID
-	version.Links = currentVersion.Links
+	version.Links = nil
+	if currentVersion.Links != nil {
+		version.Links = currentVersion.Links.DeepCopy()
+	}
 
 	if spatial != "" {
 
@@ -653,13 +684,19 @@ func populateNewVersionDoc(currentVersion *models.Version, version *models.Versi
 				version.Downloads.CSVW = currentVersion.Downloads.CSVW
 			}
 		}
+
+		if version.Downloads.TXT == nil {
+			if currentVersion.Downloads != nil && currentVersion.Downloads.TXT != nil {
+				version.Downloads.TXT = currentVersion.Downloads.TXT
+			}
+		}
 	}
 
 	if version.UsageNotes == nil {
 		version.UsageNotes = currentVersion.UsageNotes
 	}
 
-	return version
+	return &version, nil
 }
 
 func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, data log.Data) {

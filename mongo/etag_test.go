@@ -21,6 +21,26 @@ func testInstance() *models.Instance {
 	return i
 }
 
+func testVersion() *models.Version {
+	v := &models.Version{
+		CollectionID: "testCollection",
+		Dimensions:   []models.Dimension{{Name: "dim1"}, {Name: "dim2"}},
+		Downloads: &models.DownloadList{
+			CSV: &models.DownloadObject{
+				HRef:    "download.service/file.csv",
+				Private: "private_s3/file.csv",
+			},
+		},
+		Edition: "testEdition",
+		ID:      "123",
+		State:   models.CreatedState,
+	}
+	eTag0, err := v.Hash(nil)
+	So(err, ShouldBeNil)
+	v.ETag = eTag0
+	return v
+}
+
 func TestNewETagForUpdate(t *testing.T) {
 
 	Convey("Given an instance", t, func() {
@@ -49,6 +69,40 @@ func TestNewETagForUpdate(t *testing.T) {
 					InstanceID: "anotherInstanceID",
 				}
 				eTag3, err := newETagForUpdate(currentInstance, update2)
+				So(err, ShouldBeNil)
+				So(eTag3, ShouldNotEqual, eTag1)
+			})
+		})
+	})
+}
+
+func TestNewETagForVersionUpdate(t *testing.T) {
+	Convey("Given a version", t, func() {
+
+		currentVersion := testVersion()
+
+		update := &models.Version{
+			State: models.CompletedState,
+		}
+
+		Convey("newETagForVersionUpdate returns an eTag that is different from the original version ETag", func() {
+			eTag1, err := newETagForVersionUpdate(currentVersion, update)
+			So(err, ShouldBeNil)
+			So(eTag1, ShouldNotEqual, currentVersion.ETag)
+
+			Convey("Applying the same update to a different version results in a different ETag", func() {
+				v2 := testVersion()
+				v2.ID = "otherVersion"
+				eTag2, err := newETagForVersionUpdate(v2, update)
+				So(err, ShouldBeNil)
+				So(eTag2, ShouldNotEqual, eTag1)
+			})
+
+			Convey("Applying a different update to the same version results in a different ETag", func() {
+				update2 := &models.Version{
+					ID: "anotherInstanceID",
+				}
+				eTag3, err := newETagForVersionUpdate(currentVersion, update2)
 				So(err, ShouldBeNil)
 				So(eTag3, ShouldNotEqual, eTag1)
 			})

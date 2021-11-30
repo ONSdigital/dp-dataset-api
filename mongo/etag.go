@@ -19,6 +19,14 @@ func newETagForUpdate(currentInstance *models.Instance, update *models.Instance)
 	return currentInstance.Hash(b)
 }
 
+func newETagForVersionUpdate(currentVersion *models.Version, update *models.Version) (eTag string, err error) {
+	b, err := bson.Marshal(update)
+	if err != nil {
+		return "", err
+	}
+	return currentVersion.Hash(b)
+}
+
 func newETagForAddEvent(currentInstance *models.Instance, event *models.Event) (eTag string, err error) {
 	b, err := bson.Marshal(event)
 	if err != nil {
