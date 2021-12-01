@@ -320,7 +320,6 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Detach the version
-		// versionDoc.State = models.DetachedState
 		update := &models.Version{
 			State: models.DetachedState,
 		}
