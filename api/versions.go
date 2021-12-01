@@ -444,14 +444,18 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	// In this scenario we re-try the get + update before releasing the lock.
 	// Note that the lock and ETag will also protect against race conditions with instance endpoints,
 	// which may also modify the same instance collection in the database.
-	if err := doUpdate(); err == errs.ErrDatasetNotFound {
-		currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, version, "")
-		if err != nil {
-			log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
-			return nil, nil, nil, err
-		}
+	if err := doUpdate(); err != nil {
+		if err == errs.ErrDatasetNotFound {
+			currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, version, "")
+			if err != nil {
+				log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
+				return nil, nil, nil, err
+			}
 
-		if err = doUpdate(); err != nil {
+			if err = doUpdate(); err != nil {
+				return nil, nil, nil, err
+			}
+		} else {
 			return nil, nil, nil, err
 		}
 	}

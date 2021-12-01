@@ -1889,70 +1889,70 @@ func TestPutVersionReturnsError(t *testing.T) {
 		})
 	})
 
-	// Convey("When the request body is invalid return status bad request", t, func() {
-	// 	generatorMock := &mocks.DownloadsGeneratorMock{
-	// 		GenerateFunc: func(context.Context, string, string, string, string) error {
-	// 			return nil
-	// 		},
-	// 	}
+	Convey("When the request body is invalid return status bad request", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
 
-	// 	b := `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"associated"}`
-	// 	r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		b := `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"associated"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
-	// 	w := httptest.NewRecorder()
-	// 	isLocked := false
-	// 	mockedDataStore := &storetest.StorerMock{
-	// 		GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
-	// 			return &models.Version{
-	// 				ID:    "789",
-	// 				State: "associated",
-	// 			}, nil
-	// 		},
-	// 		GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
-	// 			return &models.DatasetUpdate{}, nil
-	// 		},
-	// 		CheckEditionExistsFunc: func(context.Context, string, string, string) error {
-	// 			return nil
-	// 		},
-	// 		UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
-	// 			So(isLocked, ShouldBeTrue)
-	// 			return "", nil
-	// 		},
-	// 		AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
-	// 			isLocked = true
-	// 			return testLockID, nil
-	// 		},
-	// 		UnlockInstanceFunc: func(ctx context.Context, lockID string) {
-	// 			isLocked = false
-	// 		},
-	// 	}
+		w := httptest.NewRecorder()
+		isLocked := false
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:    "789",
+					State: "associated",
+				}, nil
+			},
+			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
+			},
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
+				So(isLocked, ShouldBeTrue)
+				return "", nil
+			},
+			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+				isLocked = true
+				return testLockID, nil
+			},
+			UnlockInstanceFunc: func(ctx context.Context, lockID string) {
+				isLocked = false
+			},
+		}
 
-	// 	datasetPermissions := getAuthorisationHandlerMock()
-	// 	permissions := getAuthorisationHandlerMock()
-	// 	api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
-	// 	api.Router.ServeHTTP(w, r)
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
 
-	// 	So(w.Code, ShouldEqual, http.StatusBadRequest)
-	// 	So(w.Body.String(), ShouldEqual, "missing collection_id for association between version and a collection\n")
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldEqual, "missing collection_id for association between version and a collection\n")
 
-	// 	So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-	// 	So(permissions.Required.Calls, ShouldEqual, 0)
-	// 	So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-	// 	So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-	// 	So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-	// 	So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
-	// 	So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
-	// 	Convey("Then the lock has been acquired and released ", func() {
-	// 		validateLock(mockedDataStore, "789")
-	// 		So(isLocked, ShouldBeFalse)
-	// 	})
+		Convey("Then the lock has been acquired and released ", func() {
+			validateLock(mockedDataStore, "789")
+			So(isLocked, ShouldBeFalse)
+		})
 
-	// 	Convey("then the request body has been drained", func() {
-	// 		_, err := r.Body.Read(make([]byte, 1))
-	// 		So(err, ShouldEqual, io.EOF)
-	// 	})
-	// })
+		Convey("then the request body has been drained", func() {
+			_, err := r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
 
 	Convey("When setting the instance node to published fails", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
