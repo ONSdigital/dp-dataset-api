@@ -8,6 +8,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/log.go/v2/log"
 
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
@@ -248,10 +249,14 @@ func (m *Mongo) UpdateDimensionsNodeIDAndOrder(ctx context.Context, dimensions [
 		if dimension.Order != nil {
 			update["order"] = &dimension.Order
 		}
-		if _, err := m.Connection.C(dimensionOptions).Must().Update(ctx,
+		result, err := m.Connection.C(dimensionOptions).Update(ctx,
 			bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name, "option": dimension.Option},
-			bson.M{"$set": update}); err != nil {
+			bson.M{"$set": update})
+		if err != nil {
 			return fmt.Errorf("error trying to update: %w", err)
+		}
+		if result.MatchedCount == 0 {
+			log.Event(ctx, "failed to update dimension.options ", log.WARN, log.Data{"instance_id": dimension.InstanceID, "name": dimension.Name, "option": dimension.Option})
 		}
 	}
 
