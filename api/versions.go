@@ -670,28 +670,20 @@ func populateNewVersionDoc(currentVersion models.Version, version models.Version
 	if version.Downloads == nil {
 		version.Downloads = currentVersion.Downloads
 	} else {
-		if version.Downloads.XLS == nil {
-			if currentVersion.Downloads != nil && currentVersion.Downloads.XLS != nil {
-				version.Downloads.XLS = currentVersion.Downloads.XLS
-			}
+		if version.Downloads.XLS == nil && currentVersion.Downloads != nil {
+			version.Downloads.XLS = currentVersion.Downloads.XLS
 		}
 
-		if version.Downloads.CSV == nil {
-			if currentVersion.Downloads != nil && currentVersion.Downloads.CSV != nil {
-				version.Downloads.CSV = currentVersion.Downloads.CSV
-			}
+		if version.Downloads.CSV == nil && currentVersion.Downloads != nil {
+			version.Downloads.CSV = currentVersion.Downloads.CSV
 		}
 
-		if version.Downloads.CSVW == nil {
-			if currentVersion.Downloads != nil && currentVersion.Downloads.CSVW != nil {
-				version.Downloads.CSVW = currentVersion.Downloads.CSVW
-			}
+		if version.Downloads.CSVW == nil && currentVersion.Downloads != nil {
+			version.Downloads.CSVW = currentVersion.Downloads.CSVW
 		}
 
-		if version.Downloads.TXT == nil {
-			if currentVersion.Downloads != nil && currentVersion.Downloads.TXT != nil {
-				version.Downloads.TXT = currentVersion.Downloads.TXT
-			}
+		if version.Downloads.TXT == nil && currentVersion.Downloads != nil {
+			version.Downloads.TXT = currentVersion.Downloads.TXT
 		}
 	}
 

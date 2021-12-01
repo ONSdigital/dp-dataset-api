@@ -39,11 +39,11 @@ type Instance struct {
 // but it has been selected for performance as we are only interested in uniqueness.
 // ETag field value is ignored when generating a hash.
 // An optional byte array can be provided to append to the hash.
-// This can be used, for example, to calculate a hash of this filter and an update applied to it.
+// This can be used, for example, to calculate a hash of this instance and an update applied to it.
 func (i *Instance) Hash(extraBytes []byte) (string, error) {
 	h := sha1.New()
 
-	// copy by value to ignore ETag without affecting f
+	// copy by value to ignore ETag without affecting i
 	i2 := *i
 	i2.ETag = ""
 
