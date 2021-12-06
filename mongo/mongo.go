@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 
@@ -29,7 +30,9 @@ func (m *Mongo) getConnectionConfig() *mongodriver.MongoConnectionConfig {
 		IsWriteConcernMajorityEnabled: m.EnableWriteConcern,
 		IsStrongReadConcernEnabled:    m.EnableReadConcern,
 
-		IsSSL:                   m.IsSSL,
+		TLSConnectionConfig: mongodriver.TLSConnectionConfig{
+			IsSSL: m.IsSSL,
+		},
 		ConnectTimeoutInSeconds: m.ConnectionTimeout,
 		QueryTimeoutInSeconds:   m.QueryTimeout,
 	}
@@ -53,12 +56,8 @@ func (m *Mongo) Init(ctx context.Context) (err error) {
 	databaseCollectionBuilder := make(map[mongohealth.Database][]mongohealth.Collection)
 	databaseCollectionBuilder[(mongohealth.Database)(m.Database)] = []mongohealth.Collection{(mongohealth.Collection)(m.Collection), editionsCollection, instanceCollection, instanceLockCollection, dimensionOptions}
 
-	// Create client and healthclient from session
-	client := mongohealth.NewClientWithCollections(m.Connection, databaseCollectionBuilder)
-	m.healthClient = &mongohealth.CheckMongoClient{
-		Client:      *client,
-		Healthcheck: client.Healthcheck,
-	}
+	// Create healthclient from session
+	m.healthClient = mongohealth.NewClientWithCollections(m.Connection, databaseCollectionBuilder)
 
 	// Create MongoDB lock client, which also starts the purger loop
 	m.lockClient = mongolock.New(ctx, m.Connection, instanceCollection)
