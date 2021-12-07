@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"testing"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -774,7 +775,9 @@ func TestPublishLinks(t *testing.T) {
 
 			Convey("then an error should be returned", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldResemble, "strconv.Atoi: parsing \"hello\": invalid syntax")
+
+				var expError *strconv.NumError
+				So(errors.As(err, &expError), ShouldBeTrue)
 			})
 		})
 	})
@@ -812,7 +815,8 @@ func TestPublishLinks(t *testing.T) {
 
 			Convey("then an error is returned", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldResemble, "strconv.Atoi: parsing \"hello\": invalid syntax")
+				var expError *strconv.NumError
+				So(errors.As(err, &expError), ShouldBeTrue)
 			})
 		})
 

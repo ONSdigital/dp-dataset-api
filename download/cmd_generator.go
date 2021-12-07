@@ -11,10 +11,6 @@ type CMDGenerator struct {
 	Marshaller GenerateDownloadsEvent
 }
 
-func (gen *CMDGenerator) GetProducer() KafkaProducer {
-	return gen.Producer
-}
-
 type GenerateDownloads struct {
 	FilterID   string `avro:"filter_output_id"`
 	InstanceID string `avro:"instance_id"`

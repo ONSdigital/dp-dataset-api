@@ -307,25 +307,13 @@ func (c *DatasetComponent) iHaveTheseInstances(instancesJson *godog.DocString) e
 }
 
 func (c *DatasetComponent) updateDocumentInDatabase(document bson.M, id, collectionName string, time int) error {
-	log.Info(context.Background(), "updating document with:", log.Data{
-		"document":       document,
-		"id":             id,
-		"collectionName": collectionName,
-		"time":           time,
-	})
 
 	s := c.MongoClient.Session.Copy()
 	defer s.Close()
 
 	update := bson.M{
 		"$set": document,
-		//"$setOnInsert": bson.M{
-		//	"last_updated": time,
-		//},
 	}
-
-	//update := bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}}
-	//if err = s.DB(m.Database).C("datasets").UpdateId(id, update); err != nil {
 
 	err := s.DB(c.MongoClient.Database).C(collectionName).UpdateId(id, update)
 	if err != nil {

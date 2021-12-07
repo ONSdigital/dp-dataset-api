@@ -18,10 +18,6 @@ type CantabularGenerator struct {
 	Marshaller GenerateDownloadsEvent
 }
 
-func (gen *CantabularGenerator) GetProducer() KafkaProducer {
-	return gen.Producer
-}
-
 // Generate the full file download files for the specified dataset/edition/version
 func (gen *CantabularGenerator) Generate(ctx context.Context, datasetID string, instanceID string, edition string, version string) error {
 	if datasetID == "" {
