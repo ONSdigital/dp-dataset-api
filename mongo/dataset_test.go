@@ -4,10 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/globalsign/mgo/bson"
-
 	"github.com/ONSdigital/dp-dataset-api/models"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 var (
@@ -285,6 +284,7 @@ func TestVersionUpdateQuery(t *testing.T) {
 			"links.spatial.href": "http://ons.gov.uk/geographylist",
 			"state":              models.PublishedState,
 			"temporal":           &[]models.TemporalFrequency{temporal},
+			"e_tag":              "newETag",
 		}
 
 		version := &models.Version{
@@ -299,7 +299,7 @@ func TestVersionUpdateQuery(t *testing.T) {
 			Temporal: &[]models.TemporalFrequency{temporal},
 		}
 
-		selector := createVersionUpdateQuery(version)
+		selector := createVersionUpdateQuery(version, "newETag")
 		So(selector, ShouldNotBeNil)
 		So(selector, ShouldResemble, expectedUpdate)
 	})

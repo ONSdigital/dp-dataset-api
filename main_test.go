@@ -4,13 +4,14 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+	"testing"
+
 	componenttest "github.com/ONSdigital/dp-component-test"
 	"github.com/ONSdigital/dp-dataset-api/features/steps"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
-	"os"
-	"testing"
 )
 
 const MongoVersion = "4.4.8"
@@ -25,7 +26,7 @@ type ComponentTest struct {
 
 func (f *ComponentTest) InitializeScenario(ctx *godog.ScenarioContext) {
 	authorizationFeature := componenttest.NewAuthorizationFeature()
-	datasetFeature, err := steps.NewDatasetComponent(f.MongoFeature, authorizationFeature.FakeAuthService.ResolveURL(""))
+	datasetFeature, err := steps.NewDatasetComponent(f.MongoFeature.Server.URI(), authorizationFeature.FakeAuthService.ResolveURL(""))
 	if err != nil {
 		panic(err)
 	}
@@ -62,10 +63,8 @@ func (f *ComponentTest) InitializeTestSuite(ctx *godog.TestSuiteContext) {
 	})
 }
 
-func TestMain(t *testing.T) {
+func TestComponent(t *testing.T) {
 	if *componentFlag {
-		status := 0
-
 		var opts = godog.Options{
 			Output: colors.Colored(os.Stdout),
 			Format: "pretty",
@@ -74,7 +73,7 @@ func TestMain(t *testing.T) {
 
 		f := &ComponentTest{}
 
-		status = godog.TestSuite{
+		status := godog.TestSuite{
 			Name:                 "feature_tests",
 			ScenarioInitializer:  f.InitializeScenario,
 			TestSuiteInitializer: f.InitializeTestSuite,
@@ -86,7 +85,7 @@ func TestMain(t *testing.T) {
 		fmt.Println("=================================")
 
 		if status > 0 {
-			t.Fail()
+			t.Errorf("component testing from godog test suite failed with status %d", status)
 		}
 	} else {
 		t.Skip("component flag required to run component tests")

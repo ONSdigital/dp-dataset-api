@@ -100,7 +100,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 
 	log.Info(ctx, "get instance", logData)
 
-	instance, err := s.GetInstance(instanceID, eTag)
+	instance, err := s.GetInstance(ctx, instanceID, eTag)
 	if err != nil {
 		log.Error(ctx, "get instance: failed to retrieve instance", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
@@ -154,7 +154,7 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 		HRef: fmt.Sprintf("%s/instances/%s", s.Host, instance.InstanceID),
 	}
 
-	instance, err = s.AddInstance(instance)
+	instance, err = s.AddInstance(ctx, instance)
 	if err != nil {
 		log.Error(ctx, "add instance: store.AddInstance returned an error", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
@@ -207,10 +207,10 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		handleInstanceErr(ctx, taskError{error: err, status: http.StatusInternalServerError}, w, logData)
 		return
 	}
-	defer s.UnlockInstance(lockID)
+	defer s.UnlockInstance(ctx, lockID)
 
 	// Get the current document
-	currentInstance, err := s.GetInstance(instanceID, eTag)
+	currentInstance, err := s.GetInstance(ctx, instanceID, eTag)
 	if err != nil {
 		log.Error(ctx, "update instance: store.GetInstance returned error", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
@@ -229,7 +229,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 	datasetID := currentInstance.Links.Dataset.ID
 
-	//edition confirmation is a one time process - cannot be editted for an instance once done
+	//edition confirmation is a one time process - cannot be edited for an instance once done
 	if instance.State == models.EditionConfirmedState && instance.Version == 0 {
 		if instance.Edition == "" {
 			instance.Edition = currentInstance.Edition
@@ -284,7 +284,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if instance, err = s.GetInstance(instanceID, newETag); err != nil {
+	if instance, err = s.GetInstance(ctx, instanceID, newETag); err != nil {
 		log.Error(ctx, "update instance: store.GetInstance for response returned an error", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
@@ -465,25 +465,25 @@ type PublishCheck struct {
 
 // Check wraps a HTTP handle. Checks that the state is not published
 func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
 		instanceID := vars["instance_id"]
 		eTag := getIfMatch(r)
 		logData := log.Data{"action": "CheckAction", "instance_id": instanceID}
 
-		if err := d.checkState(instanceID, eTag); err != nil {
+		if err := d.checkState(ctx, instanceID, eTag); err != nil {
 			log.Error(ctx, "errored whilst checking instance state", err, logData)
 			handleInstanceErr(ctx, err, w, logData)
 			return
 		}
 
 		handle(w, r)
-	})
+	}
 }
 
-func (d *PublishCheck) checkState(instanceID, eTagSelector string) error {
-	instance, err := d.Datastore.GetInstance(instanceID, eTagSelector)
+func (d *PublishCheck) checkState(ctx context.Context, instanceID, eTagSelector string) error {
+	instance, err := d.Datastore.GetInstance(ctx, instanceID, eTagSelector)
 	if err != nil {
 		return err
 	}

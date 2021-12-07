@@ -70,7 +70,7 @@ func (e *ExternalServiceList) GetGraphDB(ctx context.Context) (store.GraphDB, Cl
 }
 
 // GetMongoDB returns a mongodb health client and dataset mongo object
-func (e *ExternalServiceList) GetMongoDB(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error) {
+func (e *ExternalServiceList) GetMongoDB(ctx context.Context, cfg config.MongoConfig) (store.MongoDB, error) {
 	mongodb, err := e.Init.DoGetMongoDB(ctx, cfg)
 	if err != nil {
 		log.Error(ctx, "failed to initialise mongo", err)
@@ -130,13 +130,9 @@ func (e *Init) DoGetGraphDB(ctx context.Context) (store.GraphDB, Closer, error) 
 }
 
 // DoGetMongoDB returns a MongoDB
-func (e *Init) DoGetMongoDB(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error) {
+func (e *Init) DoGetMongoDB(ctx context.Context, cfg config.MongoConfig) (store.MongoDB, error) {
 	mongodb := &mongo.Mongo{
-		CodeListURL: cfg.CodeListAPIURL,
-		Collection:  cfg.MongoConfig.Collection,
-		Database:    cfg.MongoConfig.Database,
-		DatasetURL:  cfg.DatasetAPIURL,
-		URI:         cfg.MongoConfig.BindAddr,
+		MongoConfig: cfg,
 	}
 	if err := mongodb.Init(ctx); err != nil {
 		return nil, err

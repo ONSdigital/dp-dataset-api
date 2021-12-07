@@ -13,11 +13,18 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/cucumber/godog"
-	"github.com/globalsign/mgo/bson"
 	"github.com/stretchr/testify/assert"
+
+	"go.mongodb.org/mongo-driver/bson"
 
 	assistdog "github.com/ONSdigital/dp-assistdog"
 )
+
+var WellKnownTestTime time.Time
+
+func init() {
+	WellKnownTestTime, _ = time.Parse("2006-01-02T15:04:05Z", "2021-01-01T00:00:00Z")
+}
 
 func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^private endpoints are enabled$`, c.privateEndpointsAreEnabled)
@@ -34,41 +41,37 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^these generate downloads events are produced:$`, c.theseGenerateDownloadsEventsAreProduced)
 }
 
+
 func (c *DatasetComponent) thereAreNoDatasets() error {
 	return c.MongoClient.Session.Copy().DB(c.MongoClient.Database).DropDatabase()
-}
+	
+)
 
 func (c *DatasetComponent) privateEndpointsAreEnabled() error {
 	c.Config.EnablePrivateEndpoints = true
 	return nil
 }
 
-func (c *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId string, documentJson *godog.DocString) error {
-	s := c.MongoClient.Session.Copy()
-	defer s.Close()
-
+func (f *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId string, documentJson *godog.DocString) error {
 	var expectedDataset models.Dataset
 
 	if err := json.Unmarshal([]byte(documentJson.Content), &expectedDataset); err != nil {
 		return err
 	}
 
-	filterCursor := s.DB(c.MongoClient.Database).C("datasets").FindId(documentId)
-
 	var link models.DatasetUpdate
-
-	if err := filterCursor.One(&link); err != nil {
+	if err := f.MongoClient.Connection.GetConfiguredCollection().FindOne(context.Background(), bson.M{"_id": documentId}, &link); err != nil {
 		return err
 	}
 
-	assert.Equal(&c.ErrorFeature, documentId, link.ID)
+	assert.Equal(&f.ErrorFeature, documentId, link.ID)
 
 	document := link.Next
 
-	assert.Equal(&c.ErrorFeature, expectedDataset.Title, document.Title)
-	assert.Equal(&c.ErrorFeature, "created", document.State)
+	assert.Equal(&f.ErrorFeature, expectedDataset.Title, document.Title)
+	assert.Equal(&f.ErrorFeature, expectedDataset.State, document.State)
 
-	return c.ErrorFeature.StepError()
+	return f.ErrorFeature.StepError()
 }
 
 func (c *DatasetComponent) iHaveARealKafkaContainerWithTopic(topic string) error {
@@ -179,16 +182,17 @@ func (c *DatasetComponent) iHaveTheseEditions(editionsJson *godog.DocString) err
 		return err
 	}
 
-	for time, editionDoc := range editions {
+	for timeOffset, editionDoc := range editions {
 		editionID := editionDoc.ID
 
 		editionUp := models.EditionUpdate{
 			ID:      editionID,
-			Next:    &editions[time],
-			Current: &editions[time],
+			Next:    &editions[timeOffset],
+			Current: &editions[timeOffset],
 		}
 
-		err = c.putDocumentInDatabase(editionUp, editionID, "editions", time)
+		err = c.putDocumentInDatabase(editionUp, editionID, "editions", timeOffset)
+
 		if err != nil {
 			return err
 		}
@@ -206,15 +210,16 @@ func (c *DatasetComponent) iHaveTheseDatasets(datasetsJson *godog.DocString) err
 		return err
 	}
 
-	for time, datasetDoc := range datasets {
+	for timeOffset, datasetDoc := range datasets {
 		datasetID := datasetDoc.ID
 
 		datasetUp := models.DatasetUpdate{
 			ID:      datasetID,
-			Next:    &datasets[time],
-			Current: &datasets[time],
+			Next:    &datasets[timeOffset],
+			Current: &datasets[timeOffset],
 		}
-		if err := c.putDocumentInDatabase(datasetUp, datasetID, "datasets", time); err != nil {
+
+		if err := c.putDocumentInDatabase(datasetUp, datasetID, "datasets", timeOffset); err != nil {
 			return err
 		}
 	}
@@ -230,8 +235,7 @@ func (c *DatasetComponent) iHaveTheseVersions(versionsJson *godog.DocString) err
 		return err
 	}
 
-	log.Info(context.Background(), "NEILL versions: ", log.Data{"versions": versions})
-	for time, version := range versions {
+	for timeOffset, version := range versions {
 		versionID := version.ID
 		// Some tests need to specify the version links document
 		if version.Links.Version == nil {
@@ -239,7 +243,8 @@ func (c *DatasetComponent) iHaveTheseVersions(versionsJson *godog.DocString) err
 				HRef: version.Links.Self.HRef,
 			}
 		}
-		if err := c.putDocumentInDatabase(version, versionID, "instances", time); err != nil {
+
+		if err := c.putDocumentInDatabase(version, versionID, "instances", timeOffset); err != nil {
 			return err
 		}
 	}
@@ -278,9 +283,10 @@ func (c *DatasetComponent) iHaveTheseDimensions(dimensionsJson *godog.DocString)
 		return fmt.Errorf("failed to unmarshal dimensionsJson: %w", err)
 	}
 
-	for time, dimension := range dimensions {
+	for timeOffset, dimension := range dimensions {
 		dimensionID := dimension.Option
-		if err := c.putDocumentInDatabase(dimension, dimensionID, "dimension.options", time); err != nil {
+
+		if err := c.putDocumentInDatabase(dimension, dimensionID, "dimension.options", timeOffset); err != nil {
 			return err
 		}
 	}
@@ -296,9 +302,10 @@ func (c *DatasetComponent) iHaveTheseInstances(instancesJson *godog.DocString) e
 		return err
 	}
 
-	for time, instance := range instances {
+	for timeOffset, instance := range instances {
 		instanceID := instance.InstanceID
-		if err := c.putDocumentInDatabase(instance, instanceID, "instances", time); err != nil {
+
+		if err := c.putDocumentInDatabase(instance, instanceID, "instances", timeOffset); err != nil {
 			return err
 		}
 	}
@@ -306,33 +313,30 @@ func (c *DatasetComponent) iHaveTheseInstances(instancesJson *godog.DocString) e
 	return nil
 }
 
+
 func (c *DatasetComponent) updateDocumentInDatabase(document bson.M, id, collectionName string, time int) error {
-
-	s := c.MongoClient.Session.Copy()
-	defer s.Close()
-
 	update := bson.M{
 		"$set": document,
 	}
 
-	err := s.DB(c.MongoClient.Database).C(collectionName).UpdateId(id, update)
+	err := c.MongoClient.Connection.C(collectionName).UpdateId(context.Background(), id, update)
 	if err != nil {
 		return fmt.Errorf("failed to update document in DB: %w", err)
 	}
 	return nil
 }
 
-func (c *DatasetComponent) putDocumentInDatabase(document interface{}, id, collectionName string, time int) error {
-	s := c.MongoClient.Session.Copy()
-	defer s.Close()
 
+func (c *DatasetComponent) putDocumentInDatabase(document interface{}, id, collectionName string, timeOffset int) error {
 	update := bson.M{
 		"$set": document,
 		"$setOnInsert": bson.M{
-			"last_updated": time,
+			"last_updated": WellKnownTestTime.Add(time.Second * time.Duration(timeOffset)),
 		},
 	}
-	_, err := s.DB(c.MongoClient.Database).C(collectionName).UpsertId(id, update)
+
+	_, err := c.MongoClient.Connection.C(collectionName).UpsertById(context.Background(), id, update)
+
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 package instance_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -33,13 +34,13 @@ func TestAddEventReturnsOk(t *testing.T) {
 			InstanceID: "123",
 		}
 		mockedDataStore, isLocked := storeMockWithLock(instance, false)
-		mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+		mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 			return &models.Instance{
 				InstanceID: ID,
 				State:      models.CompletedState,
 			}, nil
 		}
-		mockedDataStore.AddEventToInstanceFunc = func(currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
+		mockedDataStore.AddEventToInstanceFunc = func(ctx context.Context, currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
 			return testETag, nil
 		}
 
@@ -165,7 +166,7 @@ func TestAddEventToInstanceReturnsNotFound(t *testing.T) {
 					InstanceID: "123",
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 					return nil, errs.ErrInstanceNotFound
 				}
 
@@ -198,13 +199,13 @@ func TestAddEventToInstanceReturnsInternalError(t *testing.T) {
 					InstanceID: "123",
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 					return &models.Instance{
 						InstanceID: ID,
 						State:      models.CompletedState,
 					}, nil
 				}
-				mockedDataStore.AddEventToInstanceFunc = func(currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
+				mockedDataStore.AddEventToInstanceFunc = func(ctx context.Context, currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
 					return "", errs.ErrInternalServer
 				}
 
@@ -239,7 +240,7 @@ func TestAddInstanceConflict(t *testing.T) {
 					InstanceID: "123",
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 					return nil, errs.ErrInstanceConflict
 				}
 

@@ -56,16 +56,16 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		handleInstanceErr(ctx, err, w, data)
 	}
-	defer s.UnlockInstance(lockID)
+	defer s.UnlockInstance(ctx, lockID)
 
-	instance, err := s.GetInstance(instanceID, eTag)
+	instance, err := s.GetInstance(ctx, instanceID, eTag)
 	if err != nil {
 		log.Error(ctx, "add instance event: failed to get instance from datastore", err, data)
 		handleInstanceErr(ctx, err, w, data)
 		return
 	}
 
-	newETag, err := s.AddEventToInstance(instance, event, eTag)
+	newETag, err := s.AddEventToInstance(ctx, instance, event, eTag)
 	if err != nil {
 		log.Error(ctx, "add instance event: failed to add event to instance in datastore", err, data)
 		handleInstanceErr(ctx, err, w, data)

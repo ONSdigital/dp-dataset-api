@@ -22,7 +22,7 @@ type PublishCheck struct {
 
 // Check wraps a HTTP handle. Checks that the state is not published
 func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), action string) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 
 		ctx := r.Context()
 		vars := mux.Vars(r)
@@ -38,7 +38,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 			return
 		}
 
-		currentVersion, err := d.Datastore.GetVersion(datasetID, edition, versionId, "")
+		currentVersion, err := d.Datastore.GetVersion(ctx, datasetID, edition, versionId, "")
 		if err != nil {
 			if err != errs.ErrVersionNotFound {
 				log.Error(ctx, "errored whilst retrieving version resource", err, data)
@@ -138,5 +138,5 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 		}
 
 		handle(w, r)
-	})
+	}
 }

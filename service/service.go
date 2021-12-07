@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"github.com/ONSdigital/dp-dataset-api/models"
 	"net/http"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
@@ -11,6 +10,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	adapter "github.com/ONSdigital/dp-dataset-api/kafka"
+	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
@@ -91,7 +91,7 @@ func (svc *Service) SetGraphDBErrorConsumer(graphDBErrorConsumer Closer) {
 func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version string, svcErrors chan error) (err error) {
 
 	// Get MongoDB connection
-	svc.mongoDB, err = svc.serviceList.GetMongoDB(ctx, svc.config)
+	svc.mongoDB, err = svc.serviceList.GetMongoDB(ctx, svc.config.MongoConfig)
 	if err != nil {
 		log.Error(ctx, "could not obtain mongo session", err)
 		return err

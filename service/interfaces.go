@@ -21,7 +21,7 @@ type Initialiser interface {
 	DoGetHealthCheck(cfg *config.Configuration, buildTime, gitCommit, version string) (HealthChecker, error)
 	DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error)
 	DoGetGraphDB(ctx context.Context) (store.GraphDB, Closer, error)
-	DoGetMongoDB(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error)
+	DoGetMongoDB(ctx context.Context, cfg config.MongoConfig) (store.MongoDB, error)
 }
 
 // HTTPServer defines the required methods from the HTTP server

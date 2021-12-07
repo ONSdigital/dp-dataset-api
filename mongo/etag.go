@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/globalsign/mgo/bson"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // AnyETag represents the wildchar that corresponds to not check the ETag value for update requests
@@ -16,6 +17,14 @@ func newETagForUpdate(currentInstance *models.Instance, update *models.Instance)
 		return "", err
 	}
 	return currentInstance.Hash(b)
+}
+
+func newETagForVersionUpdate(currentVersion *models.Version, update *models.Version) (eTag string, err error) {
+	b, err := bson.Marshal(update)
+	if err != nil {
+		return "", err
+	}
+	return currentVersion.Hash(b)
 }
 
 func newETagForAddEvent(currentInstance *models.Instance, event *models.Event) (eTag string, err error) {

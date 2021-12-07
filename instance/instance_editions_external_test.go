@@ -216,15 +216,15 @@ func validateLock(mockedDataStore *storetest.StorerMock, expectedInstanceID stri
 
 func storeMockEditionCompleteWithLock(instance *models.Instance, expectFirstGetUnlocked bool) (*storetest.StorerMock, *bool) {
 	mockedDataStore, isLocked := storeMockWithLock(instance, expectFirstGetUnlocked)
-	mockedDataStore.GetEditionFunc = func(datasetID string, edition string, state string) (*models.EditionUpdate, error) {
+	mockedDataStore.GetEditionFunc = func(ctx context.Context, datasetID string, edition string, state string) (*models.EditionUpdate, error) {
 		So(*isLocked, ShouldBeTrue)
 		return nil, errs.ErrEditionNotFound
 	}
-	mockedDataStore.UpsertEditionFunc = func(datasetID, edition string, editionDoc *models.EditionUpdate) error {
+	mockedDataStore.UpsertEditionFunc = func(ctx context.Context, datasetID, edition string, editionDoc *models.EditionUpdate) error {
 		So(*isLocked, ShouldBeTrue)
 		return nil
 	}
-	mockedDataStore.GetNextVersionFunc = func(string, string) (int, error) {
+	mockedDataStore.GetNextVersionFunc = func(context.Context, string, string) (int, error) {
 		So(*isLocked, ShouldBeTrue)
 		return 1, nil
 	}
@@ -267,10 +267,10 @@ func storeMockWithLock(instance *models.Instance, expectFirstGetUnlocked bool) (
 			isLocked = true
 			return testLockID, nil
 		},
-		UnlockInstanceFunc: func(lockID string) {
+		UnlockInstanceFunc: func(ctx context.Context, lockID string) {
 			isLocked = false
 		},
-		GetInstanceFunc: func(ID string, eTagSelector string) (*models.Instance, error) {
+		GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 			if expectFirstGetUnlocked {
 				if numGetCall > 0 {
 					So(isLocked, ShouldBeTrue)

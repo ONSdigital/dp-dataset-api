@@ -8,7 +8,6 @@ import (
 	"sync"
 )
 
-
 // DownloadsGeneratorMock is a mock implementation of api.DownloadsGenerator.
 //
 // 	func TestSomethingThatUsesDownloadsGenerator(t *testing.T) {

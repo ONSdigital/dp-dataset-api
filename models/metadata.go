@@ -140,6 +140,9 @@ func CreateCantabularMetaDataDoc(d *Dataset, v *Version, urlBuilder *url.Builder
 		ReleaseDate:   v.ReleaseDate,
 		Title:         d.Title,
 		UnitOfMeasure: d.UnitOfMeasure,
+		Contacts:      d.Contacts,
+		URI:           d.URI,
+		QMI:           d.QMI,
 	}
 
 	m.Distribution = getDistribution(m.Downloads)

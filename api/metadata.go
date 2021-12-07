@@ -27,7 +27,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionId, "")
+		versionDoc, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionId, "")
 		if err != nil {
 			if err == errs.ErrVersionNotFound {
 				log.Error(ctx, "getMetadata endpoint: failed to find version for dataset edition", err, logData)
@@ -37,7 +37,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		datasetDoc, err := api.dataStore.Backend.GetDataset(datasetID)
+		datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			log.Error(ctx, "getMetadata endpoint: get datastore.getDataset returned an error", err, logData)
 			return nil, err
@@ -64,7 +64,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			state = datasetDoc.Current.State
 		}
 
-		if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, ""); err != nil {
+		if err = api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, ""); err != nil {
 			log.Error(ctx, "getMetadata endpoint: failed to find edition for dataset", err, logData)
 			return nil, err
 		}

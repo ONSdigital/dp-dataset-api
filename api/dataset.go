@@ -66,7 +66,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID}
 
 	b, err := func() ([]byte, error) {
-		dataset, err := api.dataStore.Backend.GetDataset(datasetID)
+		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			log.Error(ctx, "getDataset endpoint: dataStore.Backend.GetDataset returned an error", err, logData)
 			return nil, err
@@ -80,7 +80,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		if !authorised {
 			// User is not authenticated and hence has only access to current sub document
 			if dataset.Current == nil {
-				log.Info(ctx, "getDataste endpoint: published dataset not found", logData)
+				log.Info(ctx, "getDataset endpoint: published dataset not found", logData)
 				return nil, errs.ErrDatasetNotFound
 			}
 
@@ -131,7 +131,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 
 	// TODO Could just do an insert, if dataset already existed we would get a duplicate key error instead of reading then writing doc
 	b, err := func() ([]byte, error) {
-		_, err := api.dataStore.Backend.GetDataset(datasetID)
+		_, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			if err != errs.ErrDatasetNotFound {
 				log.Error(ctx, "addDataset endpoint: error checking if dataset exists", err, logData)
@@ -193,7 +193,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			Next: dataset,
 		}
 
-		if err = api.dataStore.Backend.UpsertDataset(datasetID, datasetDoc); err != nil {
+		if err = api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
 			logData["new_dataset"] = datasetID
 			log.Error(ctx, "addDataset endpoint: failed to insert dataset resource to datastore", err, logData)
 			return nil, err
@@ -237,7 +237,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrAddUpdateDatasetBadRequest
 		}
 
-		currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
+		currentDataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			log.Error(ctx, "putDataset endpoint: datastore.getDataset returned an error", err, data)
 			return err
@@ -304,7 +304,7 @@ func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *model
 		Next:    currentDataset.Next,
 	}
 
-	if err := api.dataStore.Backend.UpsertDataset(currentDataset.ID, newDataset); err != nil {
+	if err := api.dataStore.Backend.UpsertDataset(ctx, currentDataset.ID, newDataset); err != nil {
 		log.Error(ctx, "unable to update dataset", err, log.Data{"dataset_id": currentDataset.ID})
 		return err
 	}
@@ -320,7 +320,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 	// attempt to delete the dataset.
 	err := func() error {
-		currentDataset, err := api.dataStore.Backend.GetDataset(datasetID)
+		currentDataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err == errs.ErrDatasetNotFound {
 			log.Info(ctx, "cannot delete dataset, it does not exist", logData)
 			return errs.ErrDeleteDatasetNotFound
@@ -347,13 +347,13 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 		// Then delete them
 		for i := range editionDocs {
-			if err := api.dataStore.Backend.DeleteEdition(editionDocs[i].ID); err != nil {
+			if err := api.dataStore.Backend.DeleteEdition(ctx, editionDocs[i].ID); err != nil {
 				log.Error(ctx, "failed to delete edition", err, logData)
 				return err
 			}
 		}
 
-		if err := api.dataStore.Backend.DeleteDataset(datasetID); err != nil {
+		if err := api.dataStore.Backend.DeleteDataset(ctx, datasetID); err != nil {
 			log.Error(ctx, "failed to delete dataset", err, logData)
 			return err
 		}

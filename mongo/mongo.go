@@ -2,28 +2,40 @@ package mongo
 
 import (
 	"context"
-	"errors"
-	"time"
 
+	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	dpmongo "github.com/ONSdigital/dp-mongodb"
-	dpMongoLock "github.com/ONSdigital/dp-mongodb/dplock"
-	dpMongoHealth "github.com/ONSdigital/dp-mongodb/health"
-	"github.com/globalsign/mgo"
+
+	mongolock "github.com/ONSdigital/dp-mongodb/v3/dplock"
+	mongohealth "github.com/ONSdigital/dp-mongodb/v3/health"
+	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
 )
 
 // Mongo represents a simplistic MongoDB configuration.
 type Mongo struct {
-	CodeListURL    string
-	Collection     string
-	Database       string
-	DatasetURL     string
-	Session        *mgo.Session
-	URI            string
-	lastPingTime   time.Time
-	lastPingResult error
-	healthClient   *dpMongoHealth.CheckMongoClient
-	lockClient     *dpMongoLock.Lock
+	config.MongoConfig
+
+	Connection   *mongodriver.MongoConnection
+	healthClient *mongohealth.CheckMongoClient
+	lockClient   *mongolock.Lock
+}
+
+func (m *Mongo) getConnectionConfig() *mongodriver.MongoConnectionConfig {
+	return &mongodriver.MongoConnectionConfig{
+		ClusterEndpoint:               m.URI,
+		Username:                      m.Username,
+		Password:                      m.Password,
+		Database:                      m.Database,
+		Collection:                    m.Collection,
+		IsWriteConcernMajorityEnabled: m.EnableWriteConcern,
+		IsStrongReadConcernEnabled:    m.EnableReadConcern,
+
+		TLSConnectionConfig: mongodriver.TLSConnectionConfig{
+			IsSSL: m.IsSSL,
+		},
+		ConnectTimeoutInSeconds: m.ConnectionTimeout,
+		QueryTimeoutInSeconds:   m.QueryTimeout,
+	}
 }
 
 const (
@@ -33,43 +45,32 @@ const (
 	dimensionOptions       = "dimension.options"
 )
 
-// Init creates a new mgo.Session with a strong consistency and a write mode of "majortiy"; and initialises the mongo health client.
+// Init creates a new mgo.Session with a strong consistency and a write mode of "majority"; and initialises the mongo health client.
 func (m *Mongo) Init(ctx context.Context) (err error) {
-	if m.Session != nil {
-		return errors.New("session already exists")
-	}
 
-	// Create session
-	if m.Session, err = mgo.Dial(m.URI); err != nil {
-		return err
-	}
-	m.Session.EnsureSafe(&mgo.Safe{WMode: "majority"})
-	m.Session.SetMode(mgo.Strong, true)
-
-	databaseCollectionBuilder := make(map[dpMongoHealth.Database][]dpMongoHealth.Collection)
-	databaseCollectionBuilder[(dpMongoHealth.Database)(m.Database)] = []dpMongoHealth.Collection{(dpMongoHealth.Collection)(m.Collection), (dpMongoHealth.Collection)(editionsCollection), (dpMongoHealth.Collection)(instanceCollection), (dpMongoHealth.Collection)(instanceLockCollection), (dpMongoHealth.Collection)(dimensionOptions)}
-
-	// Create client and healthclient from session
-	client := dpMongoHealth.NewClientWithCollections(m.Session, databaseCollectionBuilder)
-	m.healthClient = &dpMongoHealth.CheckMongoClient{
-		Client:      *client,
-		Healthcheck: client.Healthcheck,
-	}
-
-	// Create MongoDB lock client, which also starts the purger loop
-	m.lockClient, err = dpMongoLock.New(ctx, m.Session, m.Database, instanceCollection, nil)
+	m.Connection, err = mongodriver.Open(m.getConnectionConfig())
 	if err != nil {
 		return err
 	}
+
+	databaseCollectionBuilder := make(map[mongohealth.Database][]mongohealth.Collection)
+	databaseCollectionBuilder[(mongohealth.Database)(m.Database)] = []mongohealth.Collection{(mongohealth.Collection)(m.Collection), editionsCollection, instanceCollection, instanceLockCollection, dimensionOptions}
+
+	// Create healthclient from session
+	m.healthClient = mongohealth.NewClientWithCollections(m.Connection, databaseCollectionBuilder)
+
+	// Create MongoDB lock client, which also starts the purger loop
+	m.lockClient = mongolock.New(ctx, m.Connection, instanceCollection)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // Close represents mongo session closing within the context deadline
 func (m *Mongo) Close(ctx context.Context) error {
-	if m.Session == nil {
-		return errors.New("cannot close a mongoDB connection without a valid session")
-	}
-	return dpmongo.Close(ctx, m.Session)
+	return m.Connection.Close(ctx)
 }
 
 // Checker is called by the healthcheck library to check the health state of this mongoDB instance
