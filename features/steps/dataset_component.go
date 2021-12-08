@@ -33,14 +33,8 @@ type DatasetComponent struct {
 	initialiser    service.Initialiser
 }
 
-<<<<<<< HEAD
-func NewDatasetComponent(mongoFeature *componenttest.MongoFeature, zebedeeURL string) (*DatasetComponent, error) {
+func NewDatasetComponent(mongoURI string, mongoFeature *componenttest.MongoFeature, zebedeeURL string) (*DatasetComponent, error) {
 	c := &DatasetComponent{
-=======
-func NewDatasetComponent(mongoURI string, zebedeeURL string) (*DatasetComponent, error) {
-
-	f := &DatasetComponent{
->>>>>>> develop
 		HTTPServer:     &http.Server{},
 		errorChan:      make(chan error),
 		ServiceRunning: false,
@@ -68,8 +62,8 @@ func NewDatasetComponent(mongoURI string, zebedeeURL string) (*DatasetComponent,
 			Collection:        "datasets",
 			DatasetAPIURL:     "datasets",
 			CodeListAPIURL:    "",
-			ConnectionTimeout: f.Config.ConnectionTimeout,
-			QueryTimeout:      f.Config.QueryTimeout,
+			ConnectionTimeout: c.Config.ConnectionTimeout,
+			QueryTimeout:      c.Config.QueryTimeout,
 		},
 	}
 
@@ -98,8 +92,8 @@ func (c *DatasetComponent) Reset() error {
 }
 
 func (c *DatasetComponent) Close() error {
+	// Closing Kafka
 	ctx := context.Background()
-<<<<<<< HEAD
 	if c.consumer != nil {
 		if err := c.consumer.Close(ctx); err != nil {
 			return fmt.Errorf("failed to close Kafka consumer %w", err)
@@ -109,30 +103,14 @@ func (c *DatasetComponent) Close() error {
 		if err := c.producer.Close(ctx); err != nil {
 			return fmt.Errorf("failed to close Kafka producer %w", err)
 		}
-=======
-	if err := f.MongoClient.Connection.DropDatabase(ctx); err != nil {
-		log.Warn(ctx, "error dropping database on Reset", log.Data{"err": err.Error()})
 	}
-	f.MongoClient.Database = utils.RandomDatabase()
-	if err := f.MongoClient.Init(ctx); err != nil {
-		log.Warn(ctx, "error initialising MongoClient during Reset", log.Data{"err": err.Error()})
->>>>>>> develop
-	}
-
-<<<<<<< HEAD
+	// Closing Mongo DB
 	if c.svc != nil && c.ServiceRunning {
-		if err := c.svc.Close(ctx); err != nil {
-			return fmt.Errorf("failed to close service: %w", err)
-=======
-func (f *DatasetComponent) Close() error {
-	ctx := context.Background()
-	if f.svc != nil && f.ServiceRunning {
-		if err := f.MongoClient.Connection.DropDatabase(ctx); err != nil {
+		if err := c.MongoClient.Connection.DropDatabase(ctx); err != nil {
 			log.Warn(ctx, "error dropping database on Close", log.Data{"err": err.Error()})
 		}
-		if err := f.svc.Close(ctx); err != nil {
+		if err := c.svc.Close(ctx); err != nil {
 			return err
->>>>>>> develop
 		}
 		c.ServiceRunning = false
 	}
@@ -154,7 +132,6 @@ func funcClose(_ context.Context) error {
 	return nil
 }
 
-<<<<<<< HEAD
 func (c *DatasetComponent) setConsumer(topic string) error {
 	var err error
 	kafkaOffset := kafka.OffsetOldest
@@ -174,10 +151,7 @@ func (c *DatasetComponent) setConsumer(topic string) error {
 	return nil
 }
 
-func (c *DatasetComponent) DoGetHealthcheckOk(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error) {
-=======
 func (f *DatasetComponent) DoGetHealthcheckOk(_ *config.Configuration, _ string, _ string, _ string) (service.HealthChecker, error) {
->>>>>>> develop
 	return &serviceMock.HealthCheckerMock{
 		AddCheckFunc: func(name string, checker healthcheck.Checker) error { return nil },
 		StartFunc:    func(ctx context.Context) {},
@@ -189,20 +163,6 @@ func (c *DatasetComponent) DoGetHTTPServer(bindAddr string, router http.Handler)
 	c.HTTPServer.Addr = bindAddr
 	c.HTTPServer.Handler = router
 	return c.HTTPServer
-}
-
-// DoGetMongoDB returns a MongoDB
-<<<<<<< HEAD
-func (c *DatasetComponent) DoGetMongoDB(ctx context.Context, cfg *config.Configuration) (store.MongoDB, error) {
-	return c.MongoClient, nil
-}
-
-func (c *DatasetComponent) DoGetGraphDBOk(ctx context.Context) (store.GraphDB, service.Closer, error) {
-	return &storeMock.GraphDBMock{
-			CloseFunc:                  funcClose,
-			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error { return nil },
-		},
-		&serviceMock.CloserMock{CloseFunc: funcClose}, nil
 }
 
 func (c *DatasetComponent) DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
@@ -224,23 +184,20 @@ func (c *DatasetComponent) DoGetKafkaProducer(ctx context.Context, cfg *config.C
 }
 
 func (c *DatasetComponent) DoGetMockedKafkaProducerOk(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
-=======
-func (f *DatasetComponent) DoGetMongoDB(_ context.Context, _ config.MongoConfig) (store.MongoDB, error) {
-	return f.MongoClient, nil
-}
-
-func (f *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, service.Closer, error) {
-	return &storeMock.GraphDBMock{CloseFunc: funcClose}, &serviceMock.CloserMock{CloseFunc: funcClose}, nil
-}
-
-func (f *DatasetComponent) DoGetKafkaProducerOk(_ context.Context, _ *config.Configuration, _ string) (kafka.IProducer, error) {
->>>>>>> develop
 	return &kafkatest.IProducerMock{
 		ChannelsFunc: func() *kafka.ProducerChannels {
 			return &kafka.ProducerChannels{}
 		},
 		CloseFunc: funcClose,
 	}, nil
+}
+
+func (f *DatasetComponent) DoGetMongoDB(_ context.Context, _ config.MongoConfig) (store.MongoDB, error) {
+	return f.MongoClient, nil
+}
+
+func (f *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, service.Closer, error) {
+	return &storeMock.GraphDBMock{CloseFunc: funcClose}, &serviceMock.CloserMock{CloseFunc: funcClose}, nil
 }
 
 func (c *DatasetComponent) setInitialiserMock() {

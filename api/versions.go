@@ -395,15 +395,12 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		return nil, nil, nil, err
 	}
 
-	currentVersion, err := api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, version, "")
+	currentVersion, err := api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
 	if err != nil {
 		log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
 		return nil, nil, nil, err
 	}
 
-<<<<<<< HEAD
-		currentVersion, err := api.dataStore.Backend.GetVersion(versionDetails.datasetID, versionDetails.edition, versionNumber, "")
-=======
 	var combinedVersionUpdate *models.Version
 
 	// doUpdate is an aux function that combines the existing version document with the update received in the body request,
@@ -411,7 +408,6 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	// Note that the combined version update does not mutate versionUpdate because multiple retries might generate a different value depending on the currentVersion at that point.
 	var doUpdate = func() error {
 		combinedVersionUpdate, err = populateNewVersionDoc(*currentVersion, *versionUpdate)
->>>>>>> develop
 		if err != nil {
 			return err
 		}
@@ -451,7 +447,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	// which may also modify the same instance collection in the database.
 	if err := doUpdate(); err != nil {
 		if err == errs.ErrDatasetNotFound {
-			currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, version, "")
+			currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
 			if err != nil {
 				log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
 				return nil, nil, nil, err
@@ -574,10 +570,7 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion, ver
 		if !ok {
 			return fmt.Errorf("no downloader available for type %s", t.String())
 		}
-<<<<<<< HEAD
-=======
-		// ToDo outsidecoder - Pass the right mock and get Generate to fail by returning an error.New("Error message")
->>>>>>> develop
+
 		if err := generator.Generate(ctx, versionDetails.datasetID, versionDoc.ID, versionDetails.edition, versionDetails.version); err != nil {
 			data["instance_id"] = versionDoc.ID
 			data["state"] = versionDoc.State

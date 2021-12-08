@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/ONSdigital/dp-dataset-api/download"
 	"github.com/ONSdigital/dp-dataset-api/schema"
-	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/google/go-cmp/cmp"
-	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/cucumber/godog"
@@ -41,11 +41,10 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^these generate downloads events are produced:$`, c.theseGenerateDownloadsEventsAreProduced)
 }
 
-
 func (c *DatasetComponent) thereAreNoDatasets() error {
-	return c.MongoClient.Session.Copy().DB(c.MongoClient.Database).DropDatabase()
-	
-)
+	return c.MongoClient.Connection.DropDatabase(context.Background())
+
+}
 
 func (c *DatasetComponent) privateEndpointsAreEnabled() error {
 	c.Config.EnablePrivateEndpoints = true
@@ -313,19 +312,17 @@ func (c *DatasetComponent) iHaveTheseInstances(instancesJson *godog.DocString) e
 	return nil
 }
 
-
 func (c *DatasetComponent) updateDocumentInDatabase(document bson.M, id, collectionName string, time int) error {
 	update := bson.M{
 		"$set": document,
 	}
 
-	err := c.MongoClient.Connection.C(collectionName).UpdateId(context.Background(), id, update)
+	_, err := c.MongoClient.Connection.C(collectionName).UpdateById(context.Background(), id, update)
 	if err != nil {
 		return fmt.Errorf("failed to update document in DB: %w", err)
 	}
 	return nil
 }
-
 
 func (c *DatasetComponent) putDocumentInDatabase(document interface{}, id, collectionName string, timeOffset int) error {
 	update := bson.M{

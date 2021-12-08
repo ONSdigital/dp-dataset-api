@@ -329,9 +329,7 @@ Feature: Dataset API
     When I PUT "/datasets/population-estimates/editions/hellov2/versions/3"
             """
             {
-              "dataset_id": "population-estimates",
               "instance_id":"test-item-3",
-              "edition":"hellov2",
               "license":"ONS",
               "release_date":"2017-04-04",
               "state":"associated",
@@ -352,9 +350,7 @@ Feature: Dataset API
     When I PUT "/datasets/test-cantabular-dataset-1/editions/2021/versions/1"
             """
             {
-              "dataset_id": "test-cantabular-dataset-1",
               "instance_id":"test-cantabular-version-1",
-              "edition":"2021",
               "license":"ONS",
               "release_date":"2017-04-04",
               "state":"associated",
@@ -384,9 +380,7 @@ Feature: Dataset API
     When I PUT "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
             """
             {
-              "dataset_id": "test-cantabular-dataset-2",
               "instance_id": "test-cantabular-version-2",
-              "edition": "2021",
               "license": "ONS",
               "release_date": "2017-04-04",
               "state": "published",
