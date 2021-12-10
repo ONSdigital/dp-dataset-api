@@ -560,6 +560,101 @@ func TestValidateVersion(t *testing.T) {
 	})
 }
 
+func TestVersionHash(t *testing.T) {
+	testVersion := func() Version {
+		return Version{
+			Alerts: &[]Alert{
+				{
+					Date:        "today",
+					Description: "some error happened",
+					Type:        "alertingAlert",
+				},
+			},
+			CollectionID: "testCollection",
+			ID:           "myVersion",
+			Edition:      "myEdition",
+			State:        CreatedState,
+			Version:      1,
+			Dimensions: []Dimension{
+				{
+					HRef: "http://dimensions.co.uk/dim1",
+					Name: "dim1",
+				},
+				{
+					HRef: "http://dimensions.co.uk/dim2",
+					Name: "dim2",
+				},
+			},
+			Downloads: &DownloadList{
+				CSV: &DownloadObject{
+					Private: "private/link.csv",
+					HRef:    "downloadservice/link.csv",
+				},
+			},
+		}
+	}
+
+	Convey("Given a version with some data", t, func() {
+		v := testVersion()
+
+		Convey("We can generate a valid hash", func() {
+			h, err := v.Hash(nil)
+			So(err, ShouldBeNil)
+			So(len(h), ShouldEqual, 40)
+
+			Convey("Then hashing it twice, produces the same result", func() {
+				hash, err := v.Hash(nil)
+				So(err, ShouldBeNil)
+				So(hash, ShouldEqual, h)
+			})
+
+			Convey("Then storing the hash as its ETag value and hashing it again, produces the same result (field is ignored) and ETag field is preserved", func() {
+				v.ETag = h
+				hash, err := v.Hash(nil)
+				So(err, ShouldBeNil)
+				So(hash, ShouldEqual, h)
+				So(v.ETag, ShouldEqual, h)
+			})
+
+			Convey("Then another version with exactly the same data will resolve to the same hash", func() {
+				v2 := testVersion()
+				hash, err := v2.Hash(nil)
+				So(err, ShouldBeNil)
+				So(hash, ShouldEqual, h)
+			})
+
+			Convey("Then if a version value is modified, its hash changes", func() {
+				v.State = CompletedState
+				hash, err := v.Hash(nil)
+				So(err, ShouldBeNil)
+				So(hash, ShouldNotEqual, h)
+			})
+
+			Convey("Then if a download link is added to the version, its hash changes", func() {
+				v.Downloads.TXT = &DownloadObject{
+					Private: "private/link.txt",
+					HRef:    "downloadservice/link.txt",
+				}
+				hash, err := v.Hash(nil)
+				So(err, ShouldBeNil)
+				So(hash, ShouldNotEqual, h)
+			})
+
+			Convey("Then if a dimension is removed from the version, its hash changes", func() {
+				v.Dimensions = []Dimension{
+					{
+						HRef: "http://dimensions.co.uk/dim1",
+						Name: "dim1",
+					},
+				}
+				hash, err := v.Hash(nil)
+				So(err, ShouldBeNil)
+				So(hash, ShouldNotEqual, h)
+			})
+		})
+	})
+}
+
 func assertVersionDownloadError(expected error, v *Version) {
 	err := ValidateVersion(v)
 	So(err, ShouldNotBeNil)
@@ -934,6 +1029,84 @@ func TestValidateVersionNumberFailure(t *testing.T) {
 				So(err, ShouldNotBeNil)
 				So(err, ShouldResemble, errs.ErrInvalidVersion)
 			})
+		})
+	})
+}
+
+func TestVersionLinksDeepCopy(t *testing.T) {
+	Convey("Given a fully populated VersionLinks", t, func() {
+		vl := &VersionLinks{
+			Dataset: &LinkObject{
+				ID:   "datasetID",
+				HRef: "datasetHRef",
+			},
+			Dimensions: &LinkObject{
+				ID:   "dimensionID",
+				HRef: "dimensionHRef",
+			},
+			Edition: &LinkObject{
+				ID:   "editionID",
+				HRef: "editionHRef",
+			},
+			Self: &LinkObject{
+				ID:   "selfID",
+				HRef: "selfHRef",
+			},
+			Spatial: &LinkObject{
+				ID:   "spatialID",
+				HRef: "spatialHRef",
+			},
+			Version: &LinkObject{
+				ID:   "versionID",
+				HRef: "versionHRef",
+			},
+		}
+
+		Convey("Then doing a deep copy of it results in a new fully populated VersionLinks", func() {
+			vl2 := vl.DeepCopy()
+			So(*vl2, ShouldResemble, VersionLinks{
+				Dataset: &LinkObject{
+					ID:   "datasetID",
+					HRef: "datasetHRef",
+				},
+				Dimensions: &LinkObject{
+					ID:   "dimensionID",
+					HRef: "dimensionHRef",
+				},
+				Edition: &LinkObject{
+					ID:   "editionID",
+					HRef: "editionHRef",
+				},
+				Self: &LinkObject{
+					ID:   "selfID",
+					HRef: "selfHRef",
+				},
+				Spatial: &LinkObject{
+					ID:   "spatialID",
+					HRef: "spatialHRef",
+				},
+				Version: &LinkObject{
+					ID:   "versionID",
+					HRef: "versionHRef",
+				},
+			})
+			So(vl2, ShouldNotEqual, vl)
+			So(vl2.Dataset, ShouldNotEqual, vl.Dataset)
+			So(vl2.Dimensions, ShouldNotEqual, vl.Dimensions)
+			So(vl2.Edition, ShouldNotEqual, vl.Edition)
+			So(vl2.Self, ShouldNotEqual, vl.Self)
+			So(vl2.Spatial, ShouldNotEqual, vl.Spatial)
+			So(vl2.Version, ShouldNotEqual, vl.Version)
+		})
+	})
+
+	Convey("Given an empty VersionLinks", t, func() {
+		vl := &VersionLinks{}
+
+		Convey("Then doing a deep copy of it results in a new empty VersionLinks", func() {
+			vl2 := vl.DeepCopy()
+			So(*vl2, ShouldResemble, VersionLinks{})
+			So(vl2, ShouldNotEqual, vl)
 		})
 	})
 }

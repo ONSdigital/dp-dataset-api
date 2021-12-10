@@ -7,7 +7,6 @@ type KafkaProducer interface {
 	Output() chan []byte
 }
 
-
 // GenerateDownloadsEvent marshal the event into avro format
 type GenerateDownloadsEvent interface {
 	Marshal(s interface{}) ([]byte, error)

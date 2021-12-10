@@ -6,7 +6,8 @@ import (
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
-	"github.com/globalsign/mgo/bson"
+	"go.mongodb.org/mongo-driver/bson"
+	bsonprim "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Instance which presents a single dataset being imported
@@ -28,7 +29,7 @@ type Instance struct {
 	State             string               `bson:"state,omitempty"                       json:"state,omitempty"`
 	Temporal          *[]TemporalFrequency `bson:"temporal,omitempty"                    json:"temporal,omitempty"`
 	TotalObservations *int                 `bson:"total_observations,omitempty"          json:"total_observations,omitempty"`
-	UniqueTimestamp   bson.MongoTimestamp  `bson:"unique_timestamp"                      json:"-"`
+	UniqueTimestamp   bsonprim.Timestamp   `bson:"unique_timestamp"                      json:"-"`
 	Version           int                  `bson:"version,omitempty"                     json:"version,omitempty"`
 	Type              string               `bson:"type,omitempty"                        json:"type,omitempty"`
 	IsBasedOn         *IsBasedOn           `bson:"is_based_on,omitempty"                 json:"is_based_on,omitempty"`
@@ -38,11 +39,11 @@ type Instance struct {
 // but it has been selected for performance as we are only interested in uniqueness.
 // ETag field value is ignored when generating a hash.
 // An optional byte array can be provided to append to the hash.
-// This can be used, for example, to calculate a hash of this filter and an update applied to it.
+// This can be used, for example, to calculate a hash of this instance and an update applied to it.
 func (i *Instance) Hash(extraBytes []byte) (string, error) {
 	h := sha1.New()
 
-	// copy by value to ignore ETag without affecting f
+	// copy by value to ignore ETag without affecting i
 	i2 := *i
 	i2.ETag = ""
 

@@ -27,7 +27,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		versionDoc, err := api.dataStore.Backend.GetVersion(datasetID, edition, versionId, "")
+		versionDoc, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionId, "")
 		if err != nil {
 			if err == errs.ErrVersionNotFound {
 				log.Error(ctx, "getMetadata endpoint: failed to find version for dataset edition", err, logData)
@@ -37,7 +37,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		datasetDoc, err := api.dataStore.Backend.GetDataset(datasetID)
+		datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			log.Error(ctx, "getMetadata endpoint: get datastore.getDataset returned an error", err, logData)
 			return nil, err
@@ -64,7 +64,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			state = datasetDoc.Current.State
 		}
 
-		if err = api.dataStore.Backend.CheckEditionExists(datasetID, edition, ""); err != nil {
+		if err = api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, ""); err != nil {
 			log.Error(ctx, "getMetadata endpoint: failed to find edition for dataset", err, logData)
 			return nil, err
 		}
@@ -77,8 +77,8 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 		// If dataset isn't published no 'Current' exists, use 'Next'
 		doc := datasetDoc.Current
-		if doc == nil{
-			if datasetDoc.Next == nil{
+		if doc == nil {
+			if datasetDoc.Next == nil {
 				return nil, errors.New("invalid dataset doc: no 'current' or 'next' found")
 			}
 			doc = datasetDoc.Next
@@ -89,7 +89,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "invalid dataset type", err, logData)
 			return nil, err
 		}
-		
+
 		var metaDataDoc *models.Metadata
 
 		if t == models.CantabularBlob || t == models.CantabularTable {

@@ -4,7 +4,6 @@ package api
 
 import (
 	"context"
-	"github.com/ONSdigital/dp-dataset-api/models"
 	"net/http"
 	"strconv"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
 	"github.com/ONSdigital/dp-dataset-api/instance"
+	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/pagination"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"

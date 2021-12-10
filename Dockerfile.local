@@ -1,4 +1,4 @@
-FROM golang:1.16-stretch AS base
+FROM golang:1.17-stretch AS base
 
 ENV GOCACHE=/go/.go/cache GOPATH=/go/.go/path TZ=Europe/London
 

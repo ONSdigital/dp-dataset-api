@@ -7,7 +7,6 @@ import (
 	"sync"
 )
 
-
 // KafkaProducerMock is a mock implementation of download.KafkaProducer.
 //
 // 	func TestSomethingThatUsesKafkaProducer(t *testing.T) {
@@ -61,7 +60,6 @@ func (mock *KafkaProducerMock) OutputCalls() []struct {
 	mock.lockOutput.RUnlock()
 	return calls
 }
-
 
 // GenerateDownloadsEventMock is a mock implementation of download.GenerateDownloadsEvent.
 //
