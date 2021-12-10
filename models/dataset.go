@@ -38,7 +38,7 @@ func (dt DatasetType) String() string {
 // GetDatasetType returns a dataset type for a given dataset
 func GetDatasetType(datasetType string) (DatasetType, error) {
 	switch datasetType {
-	case "filterable", "":
+	case "filterable", "v4", "":
 		return Filterable, nil
 	case "nomis":
 		return Nomis, nil

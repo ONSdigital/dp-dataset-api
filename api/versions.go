@@ -483,7 +483,7 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 				return fmt.Errorf("no downloader available for type %s", t)
 			}
 			// Send Kafka message.  The generator which is used depends on the type defined in VersionDoc.
-			if err := generator.Generate(ctx, versionDetails.datasetID, versionUpdate.ID, versionDetails.edition, versionDetails.version); err != nil{
+			if err := generator.Generate(ctx, versionDetails.datasetID, versionUpdate.ID, versionDetails.edition, versionDetails.version); err != nil {
 				data["instance_id"] = versionUpdate.ID
 				data["state"] = versionUpdate.State
 				data["type"] = t.String()
@@ -528,7 +528,7 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion, ver
 			return fmt.Errorf("no downloader available for type %s", t.String())
 		}
 		// ToDo outsidecoder - Pass the right mock and get Generate to fail by returning an error.New("Error message")
-		if err := generator.Generate(ctx, versionDetails.datasetID, versionDoc.ID, versionDetails.edition, versionDetails.version); err != nil{
+		if err := generator.Generate(ctx, versionDetails.datasetID, versionDoc.ID, versionDetails.edition, versionDetails.version); err != nil {
 			data["instance_id"] = versionDoc.ID
 			data["state"] = versionDoc.State
 			log.Error(ctx, "putVersion endpoint: error while attempting to generate full dataset version downloads on version association", err, data)
@@ -672,7 +672,7 @@ func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	case strings.HasPrefix(err.Error(), "invalid version requested"):
 		status = http.StatusBadRequest
 	default:
-		err = errs.ErrInternalServer
+		err = fmt.Errorf("%s: %w", errs.ErrInternalServer.Error(), err)
 		status = http.StatusInternalServerError
 	}
 
