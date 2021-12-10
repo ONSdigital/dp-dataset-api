@@ -672,7 +672,7 @@ func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	case strings.HasPrefix(err.Error(), "invalid version requested"):
 		status = http.StatusBadRequest
 	default:
-		err = fmt.Errorf("%s: %s", errs.ErrInternalServer.Error(), err.Error())
+		err = fmt.Errorf("%s: %w", errs.ErrInternalServer.Error(), err)
 		status = http.StatusInternalServerError
 	}
 

@@ -1402,8 +1402,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+		assertInternalServerErr(w)
 
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
@@ -2295,8 +2294,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+		assertInternalServerErr(w)
 
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
@@ -2362,8 +2360,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+		assertInternalServerErr(w)
 
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
@@ -2400,8 +2397,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+		assertInternalServerErr(w)
 
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
@@ -2484,8 +2480,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+		assertInternalServerErr(w)
 
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
@@ -2534,8 +2529,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+		assertInternalServerErr(w)
 
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
