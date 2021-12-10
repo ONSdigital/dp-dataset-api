@@ -480,7 +480,6 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 			}
 			generator, ok := api.downloadGenerators[t]
 			if !ok {
-				fmt.Printf("we are here: %s", t)
 				return fmt.Errorf("no downloader available for type %s", t)
 			}
 			// Send Kafka message.  The generator which is used depends on the type defined in VersionDoc.
