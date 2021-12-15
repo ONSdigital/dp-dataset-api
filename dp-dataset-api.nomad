@@ -96,7 +96,7 @@ job "dp-dataset-api" {
       driver = "docker"
 
       artifact {
-        source = "s3::https://s3-eu-west-1.amazonaws.com/{{DEPLOYMENT_BUCKET}}/dp-dataset-api/{{REVISION}}.tar.gz"
+        source = "s3::https://s3-eu-west-1.amazonaws.com/{{DEPLOYMENT_BUCKET}}/dp-dataset-api/{{PROFILE}}/{{RELEASE}}.tar.gz"
       }
 
       config {

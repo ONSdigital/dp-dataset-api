@@ -10,7 +10,7 @@ require (
 	github.com/ONSdigital/dp-component-test v0.6.3
 	github.com/ONSdigital/dp-graph/v2 v2.7.1
 	github.com/ONSdigital/dp-healthcheck v1.2.1
-	github.com/ONSdigital/dp-kafka/v2 v2.4.1
+	github.com/ONSdigital/dp-kafka/v2 v2.4.3
 	github.com/ONSdigital/dp-mongodb/v3 v3.0.0-beta.5
 	github.com/ONSdigital/dp-net/v2 v2.2.0-beta
 	github.com/ONSdigital/log.go/v2 v2.0.9
@@ -26,15 +26,15 @@ require (
 )
 
 require (
-	github.com/ONSdigital/dp-api-clients-go v1.43.0 // indirect
+	github.com/ONSdigital/dp-api-clients-go v1.40.0 // indirect
 	github.com/ONSdigital/dp-mongodb-in-memory v1.1.0 // indirect
-	github.com/ONSdigital/dp-net v1.2.0 // indirect
+	github.com/ONSdigital/dp-net v1.0.12 // indirect
 	github.com/ONSdigital/dp-rchttp v1.0.0 // indirect
-	github.com/ONSdigital/go-ns v0.0.0-20200902154605-290c8b5ba5eb // indirect
+	github.com/ONSdigital/go-ns v0.0.0-20200205115900-a11716f93bad // indirect
 	github.com/ONSdigital/golang-neo4j-bolt-driver v0.0.0-20190228153339-da534111531d // indirect
 	github.com/ONSdigital/graphson v0.1.0 // indirect
 	github.com/ONSdigital/gremgo-neptune v1.0.1 // indirect
-	github.com/ONSdigital/log.go v1.1.0 // indirect
+	github.com/ONSdigital/log.go v1.0.1 // indirect
 	github.com/Shopify/sarama v1.29.1 // indirect
 	github.com/cucumber/gherkin-go/v11 v11.0.0 // indirect
 	github.com/cucumber/messages-go/v10 v10.0.3 // indirect
@@ -45,14 +45,13 @@ require (
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/go-avro/avro v0.0.0-20171219232920-444163702c11 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
-	github.com/go-test/deep v1.0.7 // indirect
-	github.com/gofrs/uuid v4.0.0+incompatible // indirect
+	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/gopherjs/gopherjs v0.0.0-20210803090616-8f023c250c89 // indirect
+	github.com/gopherjs/gopherjs v0.0.0-20210202160940-bed99a852dfe // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect
-	github.com/hashicorp/go-memdb v1.3.1 // indirect
+	github.com/hashicorp/go-memdb v1.3.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hokaccha/go-prettyjson v0.0.0-20211117102719-0474bc63780f // indirect

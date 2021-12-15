@@ -67,7 +67,7 @@ func Get() (*Configuration, error) {
 
 	cfg = &Configuration{
 		BindAddr:                   ":22000",
-		KafkaAddr:                  []string{"localhost:9092"},
+		KafkaAddr:                  []string{"localhost:9092", "localhost:9093", "localhost:9094"},
 		GenerateDownloadsTopic:     "filter-job-submitted",
 		CantabularExportStartTopic: "cantabular-export-start",
 		CodeListAPIURL:             "http://localhost:22400",
