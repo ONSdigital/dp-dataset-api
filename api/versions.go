@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -233,11 +234,13 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		"version":   vars["version"],
 	}
 
+	t0 := time.Now()
 	currentDataset, currentVersion, versionUpdate, err := api.updateVersion(ctx, r.Body, versionDetails)
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
 	}
+	log.Info(ctx, "DEBUG full updateVersion", log.Data{"time": time.Since(t0)})
 
 	// If update was to add downloads do not try to publish/associate version
 	if vars[hasDownloads] != trueStringified {
@@ -377,29 +380,38 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		return nil, nil, nil, err
 	}
 
+	t0 := time.Now()
 	// reads http header and creates struct for new versionNumber
 	versionUpdate, err := models.CreateVersion(body, versionDetails.datasetID)
 	if err != nil {
 		log.Error(ctx, "putVersion endpoint: failed to model version resource based on request", err, data)
 		return nil, nil, nil, errs.ErrUnableToParseJSON
 	}
+	log.Info(ctx, "DEBUG createVersion from body", log.Data{"time": time.Since(t0)})
 
+	t0 = time.Now()
 	currentDataset, err := api.dataStore.Backend.GetDataset(ctx, versionDetails.datasetID)
 	if err != nil {
 		log.Error(ctx, "putVersion endpoint: datastore.getDataset returned an error", err, data)
 		return nil, nil, nil, err
 	}
+	log.Info(ctx, "DEBUG GetDataset from mongo", log.Data{"time": time.Since(t0)})
 
+	t0 = time.Now()
 	if err = api.dataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
 		log.Error(ctx, "putVersion endpoint: failed to find edition of dataset", err, data)
 		return nil, nil, nil, err
 	}
-
+	log.Info(ctx, "DEBUG CheckEditionExists from mongo", log.Data{"time": time.Since(t0)})
+	
+	t0 = time.Now()
 	currentVersion, err := api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+
 	if err != nil {
 		log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
 		return nil, nil, nil, err
 	}
+	log.Info(ctx, "DEBUG GetVersion from mongo", log.Data{"time": time.Since(t0)})
 
 	var combinedVersionUpdate *models.Version
 
@@ -407,17 +419,23 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	// then it validates the new model, and performs the update in MongoDB, passing the existing model ETag (if it exists) to be used in the query selector
 	// Note that the combined version update does not mutate versionUpdate because multiple retries might generate a different value depending on the currentVersion at that point.
 	var doUpdate = func() error {
+		t0 = time.Now()
 		combinedVersionUpdate, err = populateNewVersionDoc(*currentVersion, *versionUpdate)
 		if err != nil {
 			return err
 		}
+		log.Info(ctx, "DEBUG populateNewVersionDoc (merge mongoDB doc and update)", log.Data{"time": time.Since(t0)})
 		data["updated_version"] = combinedVersionUpdate
 		log.Info(ctx, "putVersion endpoint: combined current version document with update request", data)
 
+		t0 = time.Now()
 		if err = models.ValidateVersion(combinedVersionUpdate); err != nil {
 			log.Error(ctx, "putVersion endpoint: failed validation check for version update", err)
 			return err
 		}
+		log.Info(ctx, "DEBUG ValidateVersion", log.Data{"time": time.Since(t0)})
+
+		t0 = time.Now()
 
 		eTag := headers.IfMatchAnyETag
 		if currentVersion.ETag != "" {
@@ -428,16 +446,23 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 			log.Error(ctx, "putVersion endpoint: failed to update version document", err, data)
 			return err
 		}
+		log.Info(ctx, "DEBUG UpdateVersion to MongoDB", log.Data{"time": time.Since(t0), "etag": eTag})
 
 		return nil
 	}
 
 	// acquire instance lock to prevent race conditions on instance collection
+	t0 = time.Now()
 	lockID, err := api.dataStore.Backend.AcquireInstanceLock(ctx, currentVersion.ID)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	defer api.dataStore.Backend.UnlockInstance(ctx, lockID)
+	log.Info(ctx, "DEBUG AcquireInstanceLock", log.Data{"time": time.Since(t0)})
+	defer func() {
+		t0 = time.Now()
+		api.dataStore.Backend.UnlockInstance(ctx, lockID)
+		log.Info(ctx, "DEBUG UnlockInstance", log.Data{"time": time.Since(t0)})
+	}()
 
 	// Try to perform the update. If there was a race condition and another caller performed the update
 	// before we could acquire the lock, this will result in the ETag being changed
@@ -447,11 +472,14 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	// which may also modify the same instance collection in the database.
 	if err := doUpdate(); err != nil {
 		if err == errs.ErrDatasetNotFound {
+			log.Info(ctx, "instance document in database corresponding to dataset version was modified before the lock was acquired, retrying...", data)
+			t0 = time.Now()
 			currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
 			if err != nil {
 				log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
 				return nil, nil, nil, err
 			}
+			log.Info(ctx, "DEBUG (retry) GetVersion from mongo", log.Data{"time": time.Since(t0)})
 
 			if err = doUpdate(); err != nil {
 				return nil, nil, nil, err
@@ -469,9 +497,9 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 func (api *DatasetAPI) publishVersion(
 	ctx context.Context,
 	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
-	currentVersion *models.Version, // Called Instances in Mongo
-	versionUpdate *models.Version, // Next version, that is the new version
-	versionDetails VersionDetails, // Struct holding URL Params.
+	currentVersion *models.Version,       // Called Instances in Mongo
+	versionUpdate *models.Version,        // Next version, that is the new version
+	versionDetails VersionDetails,        // Struct holding URL Params.
 ) error {
 	data := versionDetails.baseLogData()
 	log.Info(ctx, "attempting to publish version", data)
@@ -714,7 +742,7 @@ func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	case strings.HasPrefix(err.Error(), "invalid version requested"):
 		status = http.StatusBadRequest
 	default:
-		err = errs.ErrInternalServer
+		err = fmt.Errorf("%s: %w", errs.ErrInternalServer.Error(), err)
 		status = http.StatusInternalServerError
 	}
 

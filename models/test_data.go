@@ -281,5 +281,6 @@ func expectedCantabularMetadataDoc() Metadata {
 		ReleaseDate:   "2017-10-12",
 		Title:         "CensusEthnicity",
 		UnitOfMeasure: "Pounds Sterling",
+		Version:       1,
 	}
 }
