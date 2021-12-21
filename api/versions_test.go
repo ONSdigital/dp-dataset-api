@@ -22,14 +22,6 @@ import (
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
 )
 
 const (
@@ -722,22 +714,28 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		Convey("put version with Cantabular type and CMD mock", func() {
 
 			mockedDataStore := &storetest.StorerMock{
-				GetDatasetFunc: func(datasetID string) (*models.DatasetUpdate, error) {
+				GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
 					return &models.DatasetUpdate{}, nil
 				},
-				CheckEditionExistsFunc: func(string, string, string) error {
+				CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 					return nil
 				},
-				GetVersionFunc: func(string, string, int, string) (*models.Version, error) {
+				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 					return &models.Version{
 						Type: "null",
 					}, nil
 				},
-				UpdateVersionFunc: func(string, *models.Version) error {
+				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+					return "", nil
+				},
+				UpdateDatasetWithAssociationFunc: func(context.Context, string, string, *models.Version) error {
 					return nil
 				},
-				UpdateDatasetWithAssociationFunc: func(string, string, *models.Version) error {
-					return nil
+				AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
+					return "", nil
+				},
+				UnlockInstanceFunc: func(context.Context, string) {
+					return
 				},
 			}
 

@@ -33,7 +33,7 @@ type DatasetComponent struct {
 	initialiser    service.Initialiser
 }
 
-func NewDatasetComponent(mongoURI string, mongoFeature *componenttest.MongoFeature, zebedeeURL string) (*DatasetComponent, error) {
+func NewDatasetComponent(mongoURI string, zebedeeURL string) (*DatasetComponent, error) {
 	c := &DatasetComponent{
 		HTTPServer:     &http.Server{},
 		errorChan:      make(chan error),
@@ -197,7 +197,16 @@ func (f *DatasetComponent) DoGetMongoDB(_ context.Context, _ config.MongoConfig)
 }
 
 func (f *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, service.Closer, error) {
-	return &storeMock.GraphDBMock{CloseFunc: funcClose}, &serviceMock.CloserMock{CloseFunc: funcClose}, nil
+	return &storeMock.GraphDBMock{
+			SetInstanceIsPublishedFunc: func(context.Context, string) error {
+				return nil
+			},
+			CloseFunc: funcClose,
+		},
+		&serviceMock.CloserMock{
+			CloseFunc: funcClose,
+		},
+		nil
 }
 
 func (c *DatasetComponent) setInitialiserMock() {
