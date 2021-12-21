@@ -69,6 +69,8 @@ type DatasetAPI struct {
 	MaxRequestOptions        int
 }
 
+// GetGenerators returns a Map of DownloadGenerators, indexed by DatasetTypes.
+//   DownloadsGenerator pre generates full file downloads for the specified dataset/edition/version
 func (d *DatasetAPI) GetGenerators() map[models.DatasetType]DownloadsGenerator {
 	return d.downloadGenerators
 }

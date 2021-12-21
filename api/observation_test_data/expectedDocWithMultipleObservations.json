@@ -1,62 +1,67 @@
 {
-	"dimensions": {
-		"geography": {
-			"option": {
-				"href": "http://localhost:8081/code-lists/uk-only/codes/K02000001",
-				"id": "K02000001"
-			}
-		},
-		"time": {
-			"option": {
-				"href": "http://localhost:8081/code-lists/time/codes/16-Aug",
-				"id": "16-Aug"
-			}
-		}
-	},
-	"limit": 10000,
-	"links": {
-		"dataset_metadata": {
-			"href": "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/metadata"
-		},
-		"self": {
-			"href": "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=*&geography=K02000001"
-		},
-		"version": {
-			"href": "http://localhost:8080/datasets/cpih012/editions/2017/versions/1",
-			"id": "1"
-		}
-	},
-	"observations": [{
-		"dimensions": {
-			"aggregate": {
-				"href": "http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1G10100",
-				"id": "cpi1dim1G10100",
-				"label": "01.1 Food"
-			}
-		},
-		"metadata": {
-			"confidence_interval": "2",
-			"data_marking": "p"
-		},
-		"observation": "146.3"
-	}, {
-		"dimensions": {
-			"aggregate": {
-				"href": "http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1G10101",
-				"id": "cpi1dim1G10101",
-				"label": "01.2 Waste"
-			}
-		},
-		"metadata": {
-			"confidence_interval": "",
-			"data_marking": ""
-		},
-		"observation": "112.1"
-	}],
-	"offset": 0,
-	"total_observations": 2,
-	"usage_notes": [{
-		"note": "this marks the observation with a special character",
-		"title": "data_marking"
-	}]
+  "dimensions": {
+    "geography": {
+      "option": {
+        "href": "http://localhost:8081/code-lists/uk-only/codes/K02000001",
+        "id": "K02000001"
+      }
+    },
+    "time": {
+      "option": {
+        "href": "http://localhost:8081/code-lists/time/codes/16-Aug",
+        "id": "16-Aug"
+      }
+    }
+  },
+  "limit": 10000,
+  "links": {
+    "dataset_metadata": {
+      "href": "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/metadata"
+    },
+    "self": {
+      "href": "http://localhost:8080/datasets/cpih012/editions/2017/versions/1/observations?time=16-Aug&aggregate=*&geography=K02000001"
+    },
+    "version": {
+      "href": "http://localhost:8080/datasets/cpih012/editions/2017/versions/1",
+      "id": "1"
+    }
+  },
+  "observations": [
+    {
+      "dimensions": {
+        "aggregate": {
+          "href": "http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1G10100",
+          "id": "cpi1dim1G10100",
+          "label": "01.1 Food"
+        }
+      },
+      "metadata": {
+        "confidence_interval": "2",
+        "data_marking": "p"
+      },
+      "observation": "146.3"
+    },
+    {
+      "dimensions": {
+        "aggregate": {
+          "href": "http://localhost:8081/code-lists/cpih1dim1aggid/codes/cpi1dim1G10101",
+          "id": "cpi1dim1G10101",
+          "label": "01.2 Waste"
+        }
+      },
+      "metadata": {
+        "confidence_interval": "",
+        "data_marking": ""
+      },
+      "observation": "112.1"
+    }
+  ],
+  "offset": 0,
+  "total_observations": 2,
+  "usage_notes": [
+    {
+      "note": "this marks the observation with a special character",
+      "title": "data_marking"
+    }
+  ]
 }
