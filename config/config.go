@@ -54,6 +54,8 @@ type Configuration struct {
 	DefaultLimit               int           `envconfig:"DEFAULT_LIMIT"`
 	DefaultOffset              int           `envconfig:"DEFAULT_OFFSET"`
 	MaxRequestOptions          int           `envconfig:"MAX_REQUEST_OPTIONS"`
+	EncryptionDisabled         bool          `envconfig:"ENCRYPTION_DISABLED"`
+	ComponentTestUseLogFile    bool          `envconfig:"COMPONENT_TEST_USE_LOG_FILE"`
 	MongoConfig
 }
 
@@ -100,6 +102,7 @@ func Get() (*Configuration, error) {
 			CodeListAPIURL: "http://localhost:22400",
 			DatasetAPIURL:  "http://localhost:22000",
 		},
+		ComponentTestUseLogFile: false,
 	}
 	// overwrites default values with system env variable values
 	return cfg, envconfig.Process("", cfg)

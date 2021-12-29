@@ -403,7 +403,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		return nil, nil, nil, err
 	}
 	log.Info(ctx, "DEBUG CheckEditionExists from mongo", log.Data{"time": time.Since(t0)})
-	
+
 	t0 = time.Now()
 	currentVersion, err := api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
 
@@ -497,9 +497,9 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 func (api *DatasetAPI) publishVersion(
 	ctx context.Context,
 	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
-	currentVersion *models.Version,       // Called Instances in Mongo
-	versionUpdate *models.Version,        // Next version, that is the new version
-	versionDetails VersionDetails,        // Struct holding URL Params.
+	currentVersion *models.Version, // Called Instances in Mongo
+	versionUpdate *models.Version, // Next version, that is the new version
+	versionDetails VersionDetails, // Struct holding URL Params.
 ) error {
 	data := versionDetails.baseLogData()
 	log.Info(ctx, "attempting to publish version", data)

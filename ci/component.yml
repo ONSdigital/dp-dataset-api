@@ -5,7 +5,7 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: amidos/dcind
+    repository: taylorsilva/dcind
     tag: latest
 
 inputs:
@@ -19,6 +19,4 @@ run:
       source /docker-lib.sh
       start_docker
       dp-dataset-api/ci/scripts/component.sh
-
-caches:
-  - path: /var/run/docker.sock
+      

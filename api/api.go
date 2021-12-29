@@ -69,12 +69,6 @@ type DatasetAPI struct {
 	MaxRequestOptions        int
 }
 
-// GetGenerators returns a Map of DownloadGenerators, indexed by DatasetTypes.
-//   DownloadsGenerator pre generates full file downloads for the specified dataset/edition/version
-func (d *DatasetAPI) GetGenerators() map[models.DatasetType]DownloadsGenerator {
-	return d.downloadGenerators
-}
-
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
 func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
 

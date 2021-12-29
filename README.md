@@ -26,28 +26,27 @@ Normal sequential order of states:
 1. `created` (only on *instance*)
 2. `submitted` (only on *instance*)
 3. `completed` (only on *instance*)
-4. `edition-confirmed` (only on *instance* - this will create an *edition* and *version*,
-    in other words the *instance* will now be accessible by `version` endpoints).
-    Also the dataset `next` sub-document will also get updated here and so will the *edition*
-    (authorised users will see a different latest *version* link versus unauthorised users)
+4. `edition-confirmed` (only on *instance* - this will create an *edition* and *version*, in other words the *instance*
+   will now be accessible by `version` endpoints). Also the dataset `next` sub-document will also get updated here and
+   so will the *edition*
+   (authorised users will see a different latest *version* link versus unauthorised users)
 5. `associated` (only on *version*) - dataset `next` sub-document will be updated again and so will the *edition*
 6. `published` (only on *version*) - both *edition* and *dataset* are updated - must not be changed
 
 There is the possibility to **rollback** from `associated`  to `edition-confirmed`
-where a PST user has attached the _version_ to the wrong collection and so not only does
-the `collection_id` need to be updated with the new one (or removed altogether)
+where a PST user has attached the _version_ to the wrong collection and so not only does the `collection_id` need to be
+updated with the new one (or removed altogether)
 but the state will need to revert back to `edition-confirmed`.
 
 Lastly, **skipping a state**: it is possibly to jump from `edition-confirmed` to `published`
-as long as all the mandatory fields are there. There also might be a scenario whereby
-the state can change from `created` to `completed`, missing out the step to `submitted`
-due to race conditions, this is not expected to happen,
-the path to get to `completed` is longer than the `submitted` one.
+as long as all the mandatory fields are there. There also might be a scenario whereby the state can change
+from `created` to `completed`, missing out the step to `submitted`
+due to race conditions, this is not expected to happen, the path to get to `completed` is longer than the `submitted`
+one.
 
 ### Healthcheck
 
-The endpoint `/health` checks the connection to the database and returns
-one of:
+The endpoint `/health` checks the connection to the database and returns one of:
 
 * success (200, JSON "status": "OK")
 * failure (500, JSON "status": "error").
@@ -73,10 +72,14 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | WEBSITE_URL                  | `http://localhost:20000`               | The host name for the website
 | KAFKA_ADDR                   | `localhost:9092`                       | The address of (TLS-ready) Kafka brokers (comma-separated values)
 | KAFKA_VERSION                | `1.0.2`                                | The version of (TLS-ready) Kafka
-| KAFKA_SEC_PROTO              | _unset_                 (only `TLS`)   | if set to `TLS`, kafka connections will use TLS
-| KAFKA_SEC_CLIENT_KEY         | _unset_                                | PEM [2] for the client key (optional, used for client auth) [1]
-| KAFKA_SEC_CLIENT_CERT        | _unset_                                | PEM [2] for the client certificate (optional, used for client auth) [1]
-| KAFKA_SEC_CA_CERTS           | _unset_                                | PEM [2] of CA cert chain if using private CA for the server cert [1]
+| KAFKA_SEC_PROTO              | _
+unset_                 (only `TLS`)   | if set to `TLS`, kafka connections will use TLS
+| KAFKA_SEC_CLIENT_KEY         | _
+unset_                                | PEM [2] for the client key (optional, used for client auth) [1]
+| KAFKA_SEC_CLIENT_CERT        | _
+unset_                                | PEM [2] for the client certificate (optional, used for client auth) [1]
+| KAFKA_SEC_CA_CERTS           | _
+unset_                                | PEM [2] of CA cert chain if using private CA for the server cert [1]
 | KAFKA_SEC_SKIP_VERIFY        | `false`                                | ignore server certificate issues if set to `true` [1]
 | GENERATE_DOWNLOADS_TOPIC     | `filter-job-submitted`                 | The topic to send generate full dataset version downloads to
 | HEALTHCHECK_INTERVAL         | `30s`                                  | The time between calling healthcheck endpoints for check subsystems
@@ -95,12 +98,14 @@ Notes:
 1. Ignored unless using TLS (i.e. `KAFKA_SEC_PROTO` has a value enabling TLS)
 
 2. PEM values are identified as those starting with `-----BEGIN`
-    and can use `\n` (sic) instead of newlines (they will be converted to newlines before use).
-        Any other value will be treated as a path to the given PEM file.
+   and can use `\n` (sic) instead of newlines (they will be converted to newlines before use). Any other value will be
+   treated as a path to the given PEM file.
 
 ### Audit vulnerability
 
-The current version of jwt-go (4.0.0-preview1) is a preview release. This is a known vulnerability which has been excluded using the CVE-ID when running the audit command and should be updated when a stable version of the library is released.
+The current version of jwt-go (4.0.0-preview1) is a preview release. This is a known vulnerability which has been
+excluded using the CVE-ID when running the audit command and should be updated when a stable version of the library is
+released.
 
 ### Contributing
 
@@ -108,6 +113,6 @@ See [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 ### License
 
-Copyright © 2016-2021, [Office for National Statistics](https://www.ons.gov.uk)
+Copyright © 2016-2022, [Office for National Statistics](https://www.ons.gov.uk)
 
 Released under MIT license, see [LICENSE](LICENSE.md) for details
