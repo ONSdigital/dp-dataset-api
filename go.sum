@@ -63,8 +63,8 @@ github.com/ONSdigital/dp-healthcheck v0.0.0-20200131122546-9db6d3f0494e/go.mod h
 github.com/ONSdigital/dp-healthcheck v1.0.5/go.mod h1:2wbVAUHMl9+4tWhUlxYUuA1dnf2+NrwzC+So5f5BMLk=
 github.com/ONSdigital/dp-healthcheck v1.1.0/go.mod h1:vZwyjMJiCHjp/sJ2R1ZEqzZT0rJ0+uHVGwxqdP4J5vg=
 github.com/ONSdigital/dp-healthcheck v1.2.1/go.mod h1:XUhXoDIWPCdletDtpDOoXhmDFcc9b/kbedx96jN75aI=
-github.com/ONSdigital/dp-healthcheck v1.2.2 h1:jCB8X5oW+GBwbDkQ/eBY8WcFs1cfW+TCm0/3lRrGA7o=
-github.com/ONSdigital/dp-healthcheck v1.2.2/go.mod h1:XUhXoDIWPCdletDtpDOoXhmDFcc9b/kbedx96jN75aI=
+github.com/ONSdigital/dp-healthcheck v1.2.3-0.20220105154950-0c24359b5ce8 h1:9Sw0UQHf9Fu2af6HQpft4bES+dpQQvFLVuUJSXwYyvM=
+github.com/ONSdigital/dp-healthcheck v1.2.3-0.20220105154950-0c24359b5ce8/go.mod h1:XUhXoDIWPCdletDtpDOoXhmDFcc9b/kbedx96jN75aI=
 github.com/ONSdigital/dp-kafka/v2 v2.4.3 h1:Sb5nc4M3RsDMDmclsTqyjTMP6IBD7dRkv3kaIM26LLs=
 github.com/ONSdigital/dp-kafka/v2 v2.4.3/go.mod h1:W7BZ0zUmIuOMne18Pe3I4V/nF41Ynwy0N5A4+s7ahaw=
 github.com/ONSdigital/dp-mocking v0.0.0-20190905163309-fee2702ad1b9 h1:+WXVfTDyWXY1DQRDFSmt1b/ORKk5c7jGiPu7NoeaM/0=
