@@ -62,7 +62,7 @@ func (c *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId stri
 	}
 
 	var link models.DatasetUpdate
-	if err := c.MongoClient.Connection.GetConfiguredCollection().FindOne(context.Background(), bson.M{"_id": documentId}, &link); err != nil {
+	if err := c.MongoClient.Connection.Collection("datasets").FindOne(context.Background(), bson.M{"_id": documentId}, &link); err != nil {
 		return err
 	}
 
@@ -320,7 +320,7 @@ func (c *DatasetComponent) updateDocumentInDatabase(document bson.M, id, collect
 		"$set": document,
 	}
 
-	_, err := c.MongoClient.Connection.C(collectionName).UpdateById(context.Background(), id, update)
+	_, err := c.MongoClient.Connection.Collection(collectionName).UpdateById(context.Background(), id, update)
 	if err != nil {
 		return fmt.Errorf("failed to update document in DB: %w", err)
 	}
@@ -335,7 +335,7 @@ func (c *DatasetComponent) putDocumentInDatabase(document interface{}, id, colle
 		},
 	}
 
-	_, err := c.MongoClient.Connection.C(collectionName).UpsertById(context.Background(), id, update)
+	_, err := c.MongoClient.Connection.Collection(collectionName).UpsertById(context.Background(), id, update)
 
 	if err != nil {
 		return err

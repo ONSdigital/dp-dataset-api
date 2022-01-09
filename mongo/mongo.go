@@ -19,26 +19,25 @@ type Mongo struct {
 	lockClient   *mongolock.Lock
 }
 
-const (
-	editionsCollection     = "editions"
-	instanceCollection     = "instances"
-	instanceLockCollection = "instances_locks"
-	dimensionOptions       = "dimension.options"
-)
-
 // Init returns an initialised Mongo object encapsulating a connection to the mongo server/cluster with the given configuration,
 // a health client to check the health of the mongo server/cluster, and a lock client
 func (m *Mongo) Init(ctx context.Context) (err error) {
-
-	m.Connection, err = mongodriver.Open(&m.MongoConnectionConfig)
+	m.Connection, err = mongodriver.Open(&m.MongoDriverConfig)
 	if err != nil {
 		return err
 	}
 
 	databaseCollectionBuilder := map[mongohealth.Database][]mongohealth.Collection{
-		(mongohealth.Database)(m.Database): {editionsCollection, instanceCollection, instanceLockCollection, dimensionOptions}}
+		(mongohealth.Database)(m.Database): {
+			mongohealth.Collection(m.ActualCollectionName(config.DatasetsCollection)),
+			mongohealth.Collection(m.ActualCollectionName(config.EditionsCollection)),
+			mongohealth.Collection(m.ActualCollectionName(config.InstanceCollection)),
+			mongohealth.Collection(m.ActualCollectionName(config.DimensionOptionsCollection)),
+			mongohealth.Collection(m.ActualCollectionName(config.InstanceLockCollection)),
+		},
+	}
 	m.healthClient = mongohealth.NewClientWithCollections(m.Connection, databaseCollectionBuilder)
-	m.lockClient = mongolock.New(ctx, m.Connection, instanceCollection)
+	m.lockClient = mongolock.New(ctx, m.Connection, m.ActualCollectionName(config.InstanceCollection))
 
 	return nil
 }

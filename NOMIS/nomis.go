@@ -98,7 +98,7 @@ func main() {
 	ctx := context.Background()
 	downloadFile(ctx)
 
-	conn, err := mongodriver.Open(&mongodriver.MongoConnectionConfig{ClusterEndpoint: mongoURL, Database: "datasets", ConnectTimeoutInSeconds: 5 * time.Second})
+	conn, err := mongodriver.Open(&mongodriver.MongoDriverConfig{ClusterEndpoint: mongoURL, Database: "datasets", ConnectTimeout: 5 * time.Second})
 	if err != nil {
 		log.Fatal(ctx, "failed to initialise mongo", err)
 		os.Exit(1)
@@ -287,7 +287,7 @@ func main() {
 func createDatasetsDocument(ctx context.Context, id string, class interface{}, conn *mongodriver.MongoConnection) {
 	var err error
 	logData := log.Data{"data": class}
-	if _, err = conn.C("datasets").UpsertById(ctx, id, bson.M{"$set": class}); err != nil {
+	if _, err = conn.Collection("datasets").UpsertById(ctx, id, bson.M{"$set": class}); err != nil {
 		log.Error(ctx, "failed to upsert data in dataset collection", err, logData)
 		os.Exit(1)
 	}
@@ -322,7 +322,7 @@ func createInstancesDocument(ctx context.Context, id string, class interface{}, 
 //Updates document in the specific collection
 func upsertData(ctx context.Context, selector, class interface{}, conn *mongodriver.MongoConnection, document string, logData log.Data) error {
 	var err error
-	if _, err = conn.C(document).Upsert(ctx, selector, bson.M{"$set": class}); err != nil {
+	if _, err = conn.Collection(document).Upsert(ctx, selector, bson.M{"$set": class}); err != nil {
 		log.Error(ctx, "failed to upsert data in collection", err, logData)
 		return err
 	}

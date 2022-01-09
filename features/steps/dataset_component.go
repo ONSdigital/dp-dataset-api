@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"net/http"
-	"strings"
 
 	componenttest "github.com/ONSdigital/dp-component-test"
 	"github.com/ONSdigital/dp-component-test/utils"
@@ -59,14 +58,12 @@ func NewDatasetComponent(mongoURI string, zebedeeURL string) (*DatasetComponent,
 
 	mongodb := &mongo.Mongo{
 		MongoConfig: config.MongoConfig{
-			MongoConnectionConfig: mongodriver.MongoConnectionConfig{
-				// TODO the following line can be used as 'normal', i.e. mongoFeature.Server.URI(),
-				// when the dp-mongodb has a proper uri parser in place (it's in the pipeline)
-				ClusterEndpoint:         strings.Replace(mongoURI, "mongodb://", "", 1),
-				Database:                utils.RandomDatabase(),
-				Collection:              "datasets",
-				ConnectTimeoutInSeconds: c.Config.ConnectTimeoutInSeconds,
-				QueryTimeoutInSeconds:   c.Config.QueryTimeoutInSeconds,
+			MongoDriverConfig: mongodriver.MongoDriverConfig{
+				ClusterEndpoint: mongoURI,
+				Database:        utils.RandomDatabase(),
+				Collections:     c.Config.Collections,
+				ConnectTimeout:  c.Config.ConnectTimeout,
+				QueryTimeout:    c.Config.QueryTimeout,
 			},
 			DatasetAPIURL:  "datasets",
 			CodeListAPIURL: "",

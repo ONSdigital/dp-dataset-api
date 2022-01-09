@@ -10,7 +10,7 @@ import (
 )
 
 type MongoConfig struct {
-	mongodriver.MongoConnectionConfig
+	mongodriver.MongoDriverConfig
 
 	CodeListAPIURL string `envconfig:"CODE_LIST_API_URL"`
 	DatasetAPIURL  string `envconfig:"DATASET_API_URL"`
@@ -61,6 +61,15 @@ type Configuration struct {
 
 var cfg *Configuration
 
+const (
+	DatasetsCollection         = "DatasetsCollection"
+	ContactsCollection         = "ContactsCollection"
+	EditionsCollection         = "EditionsCollection"
+	InstanceCollection         = "InstanceCollection"
+	DimensionOptionsCollection = "DimensionOptionsCollection"
+	InstanceLockCollection     = "InstanceLockCollection"
+)
+
 // Get the application and returns the configuration structure, and initialises with default values.
 func Get() (*Configuration, error) {
 	if cfg != nil {
@@ -92,16 +101,17 @@ func Get() (*Configuration, error) {
 		DefaultOffset:              0,
 		MaxRequestOptions:          100, // Maximum number of options acceptable in an incoming Patch request. Compromise between one option per call (inefficient) and an order of 100k options per call, for census data (memory and computationally expensive)
 		MongoConfig: MongoConfig{
-			MongoConnectionConfig: mongodriver.MongoConnectionConfig{
+			MongoDriverConfig: mongodriver.MongoDriverConfig{
 				ClusterEndpoint:               "localhost:27017",
 				Username:                      "",
 				Password:                      "",
 				Database:                      "datasets",
+				Collections:                   map[string]string{DatasetsCollection: "datasets", ContactsCollection: "contacts", EditionsCollection: "editions", InstanceCollection: "instances", DimensionOptionsCollection: "dimension.options", InstanceLockCollection: "instances_locks"},
 				ReplicaSet:                    "",
 				IsStrongReadConcernEnabled:    false,
 				IsWriteConcernMajorityEnabled: true,
-				ConnectTimeoutInSeconds:       5 * time.Second,
-				QueryTimeoutInSeconds:         15 * time.Second,
+				ConnectTimeout:                5 * time.Second,
+				QueryTimeout:                  15 * time.Second,
 				TLSConnectionConfig: mongodriver.TLSConnectionConfig{
 					IsSSL: false,
 				},
