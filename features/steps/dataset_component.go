@@ -156,7 +156,7 @@ func (c *DatasetComponent) setConsumer(topic string) error {
 	return nil
 }
 
-func (f *DatasetComponent) DoGetHealthcheckOk(_ *config.Configuration, _ string, _ string, _ string) (service.HealthChecker, error) {
+func (c *DatasetComponent) DoGetHealthcheckOk(_ *config.Configuration, _ string, _ string, _ string) (service.HealthChecker, error) {
 	return &serviceMock.HealthCheckerMock{
 		AddCheckFunc: func(name string, checker healthcheck.Checker) error { return nil },
 		StartFunc:    func(ctx context.Context) {},
@@ -188,7 +188,7 @@ func (c *DatasetComponent) DoGetKafkaProducer(ctx context.Context, cfg *config.C
 	return kafka.NewProducer(ctx, cfg.KafkaAddr, topic, pChannels, pConfig)
 }
 
-func (c *DatasetComponent) DoGetMockedKafkaProducerOk(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
+func (c *DatasetComponent) DoGetMockedKafkaProducerOk(_ context.Context, _ *config.Configuration, _ string) (kafka.IProducer, error) {
 	return &kafkatest.IProducerMock{
 		ChannelsFunc: func() *kafka.ProducerChannels {
 			return &kafka.ProducerChannels{}
@@ -197,11 +197,11 @@ func (c *DatasetComponent) DoGetMockedKafkaProducerOk(ctx context.Context, cfg *
 	}, nil
 }
 
-func (f *DatasetComponent) DoGetMongoDB(_ context.Context, _ config.MongoConfig) (store.MongoDB, error) {
-	return f.MongoClient, nil
+func (c *DatasetComponent) DoGetMongoDB(_ context.Context, _ config.MongoConfig) (store.MongoDB, error) {
+	return c.MongoClient, nil
 }
 
-func (f *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, service.Closer, error) {
+func (c *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, service.Closer, error) {
 	return &storeMock.GraphDBMock{
 			SetInstanceIsPublishedFunc: func(context.Context, string) error {
 				return nil

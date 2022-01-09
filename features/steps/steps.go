@@ -54,7 +54,7 @@ func (c *DatasetComponent) privateEndpointsAreEnabled() error {
 	return nil
 }
 
-func (f *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId string, documentJson *godog.DocString) error {
+func (c *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId string, documentJson *godog.DocString) error {
 	var expectedDataset models.Dataset
 
 	if err := json.Unmarshal([]byte(documentJson.Content), &expectedDataset); err != nil {
@@ -62,18 +62,18 @@ func (f *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId stri
 	}
 
 	var link models.DatasetUpdate
-	if err := f.MongoClient.Connection.GetConfiguredCollection().FindOne(context.Background(), bson.M{"_id": documentId}, &link); err != nil {
+	if err := c.MongoClient.Connection.GetConfiguredCollection().FindOne(context.Background(), bson.M{"_id": documentId}, &link); err != nil {
 		return err
 	}
 
-	assert.Equal(&f.ErrorFeature, documentId, link.ID)
+	assert.Equal(&c.ErrorFeature, documentId, link.ID)
 
 	document := link.Next
 
-	assert.Equal(&f.ErrorFeature, expectedDataset.Title, document.Title)
-	assert.Equal(&f.ErrorFeature, expectedDataset.State, document.State)
+	assert.Equal(&c.ErrorFeature, expectedDataset.Title, document.Title)
+	assert.Equal(&c.ErrorFeature, expectedDataset.State, document.State)
 
-	return f.ErrorFeature.StepError()
+	return c.ErrorFeature.StepError()
 }
 
 func (c *DatasetComponent) iHaveARealKafkaContainerWithTopic(topic string) error {
@@ -315,7 +315,7 @@ func (c *DatasetComponent) iHaveTheseInstances(instancesJson *godog.DocString) e
 	return nil
 }
 
-func (c *DatasetComponent) updateDocumentInDatabase(document bson.M, id, collectionName string, time int) error {
+func (c *DatasetComponent) updateDocumentInDatabase(document bson.M, id, collectionName string, _ int) error {
 	update := bson.M{
 		"$set": document,
 	}
