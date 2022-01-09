@@ -17,6 +17,7 @@ import (
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka/v2"
 	"github.com/ONSdigital/dp-kafka/v2/kafkatest"
+	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
@@ -55,17 +56,18 @@ func NewDatasetComponent(mongoURI string, zebedeeURL string) (*DatasetComponent,
 
 	mongodb := &mongo.Mongo{
 		MongoConfig: config.MongoConfig{
-			// TODO the following line can be used as 'normal', i.e. mongoFeature.Server.URI(),
-			// when the dp-mongodb has a proper uri parser in place (it's in the pipeline)
-			URI:               strings.Replace(mongoURI, "mongodb://", "", 1),
-			Database:          utils.RandomDatabase(),
-			Collection:        "datasets",
-			DatasetAPIURL:     "datasets",
-			CodeListAPIURL:    "",
-			ConnectionTimeout: c.Config.ConnectionTimeout,
-			QueryTimeout:      c.Config.QueryTimeout,
-		},
-	}
+			MongoConnectionConfig: mongodriver.MongoConnectionConfig{
+				// TODO the following line can be used as 'normal', i.e. mongoFeature.Server.URI(),
+				// when the dp-mongodb has a proper uri parser in place (it's in the pipeline)
+				ClusterEndpoint:         strings.Replace(mongoURI, "mongodb://", "", 1),
+				Database:                utils.RandomDatabase(),
+				Collection:              "datasets",
+				ConnectTimeoutInSeconds: c.Config.ConnectTimeoutInSeconds,
+				QueryTimeoutInSeconds:   c.Config.QueryTimeoutInSeconds,
+			},
+			DatasetAPIURL:  "datasets",
+			CodeListAPIURL: "",
+		}}
 
 	if err := mongodb.Init(context.Background()); err != nil {
 		return nil, err

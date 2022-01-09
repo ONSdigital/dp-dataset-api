@@ -11,31 +11,12 @@ import (
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
 )
 
-// Mongo represents a simplistic MongoDB configuration.
 type Mongo struct {
 	config.MongoConfig
 
 	Connection   *mongodriver.MongoConnection
 	healthClient *mongohealth.CheckMongoClient
 	lockClient   *mongolock.Lock
-}
-
-func (m *Mongo) getConnectionConfig() *mongodriver.MongoConnectionConfig {
-	return &mongodriver.MongoConnectionConfig{
-		ClusterEndpoint:               m.URI,
-		Username:                      m.Username,
-		Password:                      m.Password,
-		Database:                      m.Database,
-		Collection:                    m.Collection,
-		IsWriteConcernMajorityEnabled: m.EnableWriteConcern,
-		IsStrongReadConcernEnabled:    m.EnableReadConcern,
-
-		TLSConnectionConfig: mongodriver.TLSConnectionConfig{
-			IsSSL: m.IsSSL,
-		},
-		ConnectTimeoutInSeconds: m.ConnectionTimeout,
-		QueryTimeoutInSeconds:   m.QueryTimeout,
-	}
 }
 
 const (
@@ -45,25 +26,19 @@ const (
 	dimensionOptions       = "dimension.options"
 )
 
-// Init creates a new mgo.Session with a strong consistency and a write mode of "majority"; and initialises the mongo health client.
+// Init returns an initialised Mongo object encapsulating a connection to the mongo server/cluster with the given configuration,
+// a health client to check the health of the mongo server/cluster, and a lock client
 func (m *Mongo) Init(ctx context.Context) (err error) {
 
-	m.Connection, err = mongodriver.Open(m.getConnectionConfig())
+	m.Connection, err = mongodriver.Open(&m.MongoConnectionConfig)
 	if err != nil {
 		return err
 	}
 
-	databaseCollectionBuilder := make(map[mongohealth.Database][]mongohealth.Collection)
-	databaseCollectionBuilder[(mongohealth.Database)(m.Database)] = []mongohealth.Collection{(mongohealth.Collection)(m.Collection), editionsCollection, instanceCollection, instanceLockCollection, dimensionOptions}
-
-	// Create healthclient from session
+	databaseCollectionBuilder := map[mongohealth.Database][]mongohealth.Collection{
+		(mongohealth.Database)(m.Database): {editionsCollection, instanceCollection, instanceLockCollection, dimensionOptions}}
 	m.healthClient = mongohealth.NewClientWithCollections(m.Connection, databaseCollectionBuilder)
-
-	// Create MongoDB lock client, which also starts the purger loop
 	m.lockClient = mongolock.New(ctx, m.Connection, instanceCollection)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }
