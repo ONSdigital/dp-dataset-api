@@ -2,6 +2,8 @@ package mongo
 
 import (
 	"context"
+	"errors"
+	"github.com/ONSdigital/dp-dataset-api/config"
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -44,11 +46,12 @@ func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []st
 		selector["links.dataset.id"] = bson.M{"$in": datasets}
 	}
 
-	f := m.Connection.C(instanceCollection).Find(selector).Sort(bson.M{"last_updated": -1})
-
 	// get total count and paginated values according to provided offset and limit
 	results := []*models.Instance{}
-	totalCount, err := QueryPage(ctx, f, offset, limit, &results)
+	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Find(ctx, selector, &results,
+		mongodriver.Sort(bson.M{"last_updated": -1}),
+		mongodriver.Offset(offset),
+		mongodriver.Limit(limit))
 	if err != nil {
 		return results, 0, err
 	}
@@ -61,8 +64,8 @@ func (m *Mongo) GetInstance(ctx context.Context, ID, eTagSelector string) (*mode
 
 	// get instance from DB
 	var instance models.Instance
-	if err := m.Connection.C(instanceCollection).FindOne(ctx, bson.M{"id": ID}, &instance); err != nil {
-		if mongodriver.IsErrNoDocumentFound(err) {
+	if err := m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).FindOne(ctx, bson.M{"id": ID}, &instance); err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
 			return nil, errs.ErrInstanceNotFound
 		}
 		return nil, err
@@ -89,7 +92,7 @@ func (m *Mongo) AddInstance(ctx context.Context, instance *models.Instance) (ins
 	}
 
 	// Insert instance to database
-	if _, err = m.Connection.C(instanceCollection).Insert(ctx, &instance); err != nil {
+	if _, err = m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Insert(ctx, &instance); err != nil {
 		return nil, err
 	}
 
@@ -121,7 +124,7 @@ func (m *Mongo) UpdateInstance(ctx context.Context, currentInstance, updatedInst
 	sel := selector(currentInstance.InstanceID, updatedInstance.UniqueTimestamp, eTagSelector)
 
 	// execute the update against MongoDB to atomically check and update the instance
-	result, err := m.Connection.C(instanceCollection).Update(ctx, sel, updateWithTimestamps)
+	result, err := m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Update(ctx, sel, updateWithTimestamps)
 	if err != nil {
 		return "", err
 	}
@@ -295,7 +298,7 @@ func (m *Mongo) AddEventToInstance(ctx context.Context, currentInstance *models.
 		},
 	}
 
-	result, err := m.Connection.C(instanceCollection).Update(ctx, sel, update)
+	result, err := m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Update(ctx, sel, update)
 	if err != nil {
 		return "", err
 	}
@@ -316,7 +319,7 @@ func (m *Mongo) UpdateObservationInserted(ctx context.Context, currentInstance *
 	}
 
 	sel := selector(currentInstance.InstanceID, bsonprim.Timestamp{}, eTagSelector)
-	result, err := m.Connection.C(instanceCollection).Update(ctx, sel,
+	result, err := m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Update(ctx, sel,
 		bson.M{
 			"$inc": bson.M{"import_tasks.import_observations.total_inserted_observations": observationInserted},
 			"$set": bson.M{
@@ -346,7 +349,7 @@ func (m *Mongo) UpdateImportObservationsTaskState(ctx context.Context, currentIn
 
 	sel := selector(currentInstance.InstanceID, bsonprim.Timestamp{}, eTagSelector)
 
-	result, err := m.Connection.C(instanceCollection).Update(ctx, sel,
+	result, err := m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Update(ctx, sel,
 		bson.M{
 			"$set": bson.M{
 				"import_tasks.import_observations.state": state,
@@ -385,7 +388,7 @@ func (m *Mongo) UpdateBuildHierarchyTaskState(ctx context.Context, currentInstan
 		"$currentDate": bson.M{"last_updated": true},
 	}
 
-	result, err := m.Connection.C(instanceCollection).Update(ctx, sel, update)
+	result, err := m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Update(ctx, sel, update)
 	if err != nil {
 		return "", err
 	}
@@ -416,7 +419,7 @@ func (m *Mongo) UpdateBuildSearchTaskState(ctx context.Context, currentInstance 
 		"$currentDate": bson.M{"last_updated": true},
 	}
 
-	result, err := m.Connection.C(instanceCollection).Update(ctx, sel, update)
+	result, err := m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Update(ctx, sel, update)
 	if err != nil {
 		return "", err
 	}
@@ -445,7 +448,7 @@ func (m *Mongo) UpdateETagForOptions(ctx context.Context, currentInstance *model
 		"$currentDate": bson.M{"last_updated": true},
 	}
 
-	result, err := m.Connection.C(instanceCollection).Update(ctx, sel, update)
+	result, err := m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Update(ctx, sel, update)
 	if err != nil {
 		return "", err
 	}

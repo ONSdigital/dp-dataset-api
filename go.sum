@@ -73,8 +73,8 @@ github.com/ONSdigital/dp-mocking v0.0.0-20190905163309-fee2702ad1b9 h1:+WXVfTDyW
 github.com/ONSdigital/dp-mocking v0.0.0-20190905163309-fee2702ad1b9/go.mod h1:BcIRgitUju//qgNePRBmNjATarTtynAgc0yV29VpLEk=
 github.com/ONSdigital/dp-mongodb-in-memory v1.1.0 h1:EjUU1zpIU1LElhiTMAG7qxy7Rq9+VTUtt3/lyA+K7jI=
 github.com/ONSdigital/dp-mongodb-in-memory v1.1.0/go.mod h1:AQaNcbSS18WtldA4iWUlHQDn9FCLB2K6ff68QnvZBqM=
-github.com/ONSdigital/dp-mongodb/v3 v3.0.0-beta.5 h1:y7INDdNSDkHqB11ARKfKr5/QGs6K9je1rLAV6pv+iRY=
-github.com/ONSdigital/dp-mongodb/v3 v3.0.0-beta.5/go.mod h1:Oc22wwUhKA5yAxx+64KAEhkYyx46Xo7482HjnXxfy9s=
+github.com/ONSdigital/dp-mongodb/v3 v3.0.0-beta.8 h1:si/3vZAdM5xnCyVprHJ7huByZ2Zavzkv91YcKwQGedQ=
+github.com/ONSdigital/dp-mongodb/v3 v3.0.0-beta.8/go.mod h1:8rceYZlPQVy5UpQp6QrJjS26+3p+Atidi6GZMPUdc/Y=
 github.com/ONSdigital/dp-net v1.0.5-0.20200805082802-e518bc287596/go.mod h1:wDVhk2pYosQ1q6PXxuFIRYhYk2XX5+1CeRRnXpSczPY=
 github.com/ONSdigital/dp-net v1.0.5-0.20200805145012-9227a11caddb/go.mod h1:MrSZwDUvp8u1VJEqa+36Gwq4E7/DdceW+BDCvGes6Cs=
 github.com/ONSdigital/dp-net v1.0.5-0.20200805150805-cac050646ab5/go.mod h1:de3LB9tedE0tObBwa12dUOt5rvTW4qQkF5rXtt4b6CE=
