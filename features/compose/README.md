@@ -1,0 +1,1 @@
+This folder contains the necessary docker compose files to run feature tests for this service using docker containers for dependencies and the service itself.

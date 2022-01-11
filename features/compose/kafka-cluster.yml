@@ -1,0 +1,25 @@
+version: '3.3'
+services:
+  zookeeper:
+    image: 'bitnami/zookeeper:latest'
+    hostname: zookeeper
+    restart: unless-stopped
+    ports:
+      - "2181:2181"
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+  kafka:
+    image: 'bitnami/kafka:latest'
+    hostname: kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      KAFKA_CFG_LOG_RETENTION_MS: "1500"
+      KAFKA_CFG_LOG_RETENTION_CHECK_INTERVAL_MS: "500"

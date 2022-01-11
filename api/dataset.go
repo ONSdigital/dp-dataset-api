@@ -285,7 +285,6 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *models.DatasetUpdate, version *models.Version) error {
 	if version != nil {
 		currentDataset.Next.CollectionID = ""
-
 		currentDataset.Next.Links.LatestVersion = &models.LinkObject{
 			ID:   version.Links.Version.ID,
 			HRef: version.Links.Version.HRef,

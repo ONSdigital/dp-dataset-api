@@ -40,6 +40,8 @@ type Metadata struct {
 	Classifications   string               `json:"classifications,omitempty"`
 	Source            string               `json:"source,omitempty"`
 	CSVHeader         []string             `json:"headers,omitempty"`
+	Version           int                  `json:"version,omitempty"`
+	DatasetLinks      *DatasetLinks        `json:"dataset_links,omitempty"`
 }
 
 // MetadataLinks represents a link object to list of metadata relevant to a version
@@ -143,6 +145,8 @@ func CreateCantabularMetaDataDoc(d *Dataset, v *Version, urlBuilder *url.Builder
 		Contacts:      d.Contacts,
 		URI:           d.URI,
 		QMI:           d.QMI,
+		Version:       v.Version,
+		DatasetLinks:  d.Links,
 	}
 
 	m.Distribution = getDistribution(m.Downloads)

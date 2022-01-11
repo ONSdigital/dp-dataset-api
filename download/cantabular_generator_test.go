@@ -148,7 +148,7 @@ func TestCantabularGenerator_Generate(t *testing.T) {
 		edition := "333"
 		version := "4"
 
-		downloads := cantbularGeneratorDownloads{
+		downloads := CantabularGeneratorDownloads{
 			DatasetID:  datasetID,
 			InstanceID: instanceID,
 			Edition:    edition,

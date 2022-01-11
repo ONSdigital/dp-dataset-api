@@ -35,7 +35,9 @@ func (f *ComponentTest) InitializeScenario(ctx *godog.ScenarioContext) {
 
 	ctx.BeforeScenario(func(*godog.Scenario) {
 		apiFeature.Reset()
-		datasetFeature.Reset()
+		if err := datasetFeature.Reset(); err != nil {
+			panic(err)
+		}
 		if err := f.MongoFeature.Reset(); err != nil {
 			log.Error(context.Background(), "failed to reset mongo feature", err)
 		}

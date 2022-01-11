@@ -11,7 +11,7 @@ type CMDGenerator struct {
 	Marshaller GenerateDownloadsEvent
 }
 
-type generateDownloads struct {
+type GenerateDownloads struct {
 	FilterID   string `avro:"filter_output_id"`
 	InstanceID string `avro:"instance_id"`
 	DatasetID  string `avro:"dataset_id"`
@@ -36,7 +36,7 @@ func (gen *CMDGenerator) Generate(ctx context.Context, datasetID string, instanc
 
 	// FilterID is set to an empty string as the avro schema expects there to be
 	// a filter ID otherwise struct wont be marshalled into an acceptable message
-	downloads := generateDownloads{
+	downloads := GenerateDownloads{
 		FilterID:   "",
 		DatasetID:  datasetID,
 		InstanceID: instanceID,

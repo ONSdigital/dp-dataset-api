@@ -5,7 +5,7 @@ import (
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
-type cantbularGeneratorDownloads struct {
+type CantabularGeneratorDownloads struct {
 	InstanceID string `avro:"instance_id"`
 	DatasetID  string `avro:"dataset_id"`
 	Edition    string `avro:"edition"`
@@ -35,7 +35,7 @@ func (gen *CantabularGenerator) Generate(ctx context.Context, datasetID string, 
 
 	// FilterID is set to an empty string as the avro schema expects there to be
 	// a filter ID otherwise struct wont be marshalled into an acceptable message
-	downloads := cantbularGeneratorDownloads{
+	downloads := CantabularGeneratorDownloads{
 		DatasetID:  datasetID,
 		InstanceID: instanceID,
 		Edition:    edition,

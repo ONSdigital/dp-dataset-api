@@ -143,7 +143,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	b, getVersionErr := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
 
-		versionId, err := models.ValidateVersionNumber(ctx, version)
+		versionId, err := models.ParseAndValidateVersionNumber(ctx, version)
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: invalid version", err, logData)
 			return nil, err
@@ -285,7 +285,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrNotFound
 		}
 
-		versionId, err := models.ValidateVersionNumber(ctx, version)
+		versionId, err := models.ParseAndValidateVersionNumber(ctx, version)
 		if err != nil {
 			log.Error(ctx, "detachVersion endpoint: invalid version request", err, logData)
 			return err
@@ -374,13 +374,14 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, versionDetails VersionDetails) (*models.DatasetUpdate, *models.Version, *models.Version, error) {
 	data := versionDetails.baseLogData()
 
-	version, err := models.ValidateVersionNumber(ctx, versionDetails.version)
+	versionNumber, err := models.ParseAndValidateVersionNumber(ctx, versionDetails.version)
 	if err != nil {
 		log.Error(ctx, "putVersion endpoint: invalid version request", err, data)
 		return nil, nil, nil, err
 	}
 
 	t0 := time.Now()
+	// reads http header and creates struct for new versionNumber
 	versionUpdate, err := models.CreateVersion(body, versionDetails.datasetID)
 	if err != nil {
 		log.Error(ctx, "putVersion endpoint: failed to model version resource based on request", err, data)
@@ -404,7 +405,8 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	log.Info(ctx, "DEBUG CheckEditionExists from mongo", log.Data{"time": time.Since(t0)})
 
 	t0 = time.Now()
-	currentVersion, err := api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, version, "")
+	currentVersion, err := api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+
 	if err != nil {
 		log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
 		return nil, nil, nil, err
@@ -472,7 +474,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		if err == errs.ErrDatasetNotFound {
 			log.Info(ctx, "instance document in database corresponding to dataset version was modified before the lock was acquired, retrying...", data)
 			t0 = time.Now()
-			currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, version, "")
+			currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
 			if err != nil {
 				log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
 				return nil, nil, nil, err
@@ -492,7 +494,13 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	return currentDataset, currentVersion, combinedVersionUpdate, nil
 }
 
-func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *models.DatasetUpdate, currentVersion *models.Version, versionUpdate *models.Version, versionDetails VersionDetails) error {
+func (api *DatasetAPI) publishVersion(
+	ctx context.Context,
+	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
+	currentVersion *models.Version, // Called Instances in Mongo
+	versionUpdate *models.Version, // Next version, that is the new version
+	versionDetails VersionDetails, // Struct holding URL Params.
+) error {
 	data := versionDetails.baseLogData()
 	log.Info(ctx, "attempting to publish version", data)
 	err := func() error {
@@ -556,9 +564,8 @@ func (api *DatasetAPI) publishVersion(ctx context.Context, currentDataset *model
 				return err
 				// TODO - TECH DEBT - need to add an error event for this.  Kafka message perhaps.
 			}
-			log.Info(ctx, "putVersion endpoint: generated full dataset version downloads", data)
+			log.Info(ctx, "putVersion endpoint (publishVersions): generated full dataset version downloads:", data)
 		}
-
 		return nil
 	}()
 
@@ -588,11 +595,10 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion, ver
 			return fmt.Errorf("error getting type of version: %w", err)
 		}
 		generator, ok := api.downloadGenerators[t]
-		// ToDo outsidecoder - Test by passing in the wrong mock, eg Filterable instead of Cantabular Table.  Create API with CMD mock and pass in Canti
 		if !ok {
 			return fmt.Errorf("no downloader available for type %s", t.String())
 		}
-		// ToDo outsidecoder - Pass the right mock and get Generate to fail by returning an error.New("Error message")
+
 		if err := generator.Generate(ctx, versionDetails.datasetID, versionDoc.ID, versionDetails.edition, versionDetails.version); err != nil {
 			data["instance_id"] = versionDoc.ID
 			data["state"] = versionDoc.State
@@ -600,7 +606,7 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion, ver
 			return err
 		}
 		data["type"] = t.String()
-		log.Info(ctx, "putVersion endpoint: generated full dataset version downloads", data)
+		log.Info(ctx, "putVersion endpoint (associateVersion): generated full dataset version downloads", data)
 		return nil
 	}()
 
@@ -676,7 +682,6 @@ func populateNewVersionDoc(currentVersion models.Version, version models.Version
 	}
 
 	if spatial != "" {
-
 		// In reality the current version will always have a link object, so
 		// if/else statement should always fall into else block
 		if version.Links == nil {

@@ -151,7 +151,7 @@ func TestGenerator_Generate(t *testing.T) {
 		edition := "333"
 		version := "4"
 
-		downloads := generateDownloads{
+		downloads := GenerateDownloads{
 			FilterID:   "",
 			DatasetID:  datasetID,
 			InstanceID: instanceID,
