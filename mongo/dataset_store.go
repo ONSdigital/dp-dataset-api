@@ -252,12 +252,11 @@ func (m *Mongo) UpdateDataset(ctx context.Context, id string, dataset *models.Da
 
 	updates := createDatasetUpdateQuery(ctx, id, dataset, currentState)
 	update := bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}}
-	result, err := m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).UpdateById(ctx, id, update)
-	if err != nil {
+	if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateById(ctx, id, update); err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return errs.ErrDatasetNotFound
+		}
 		return err
-	}
-	if result.MatchedCount == 0 {
-		return errs.ErrDatasetNotFound
 	}
 
 	return nil
@@ -397,12 +396,11 @@ func (m *Mongo) UpdateDatasetWithAssociation(ctx context.Context, id, state stri
 		},
 	}
 
-	result, err := m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).UpdateById(ctx, id, update)
-	if err != nil {
+	if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateById(ctx, id, update); err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return errs.ErrDatasetNotFound
+		}
 		return err
-	}
-	if result.MatchedCount == 0 {
-		return errs.ErrDatasetNotFound
 	}
 
 	return nil
@@ -419,13 +417,13 @@ func (m *Mongo) UpdateVersion(ctx context.Context, currentVersion *models.Versio
 	sel := selector(currentVersion.ID, bsonprim.Timestamp{}, eTagSelector)
 	updates := createVersionUpdateQuery(versionUpdate, newETag)
 
-	result, err := m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Update(ctx, sel, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}})
-	if err != nil {
+	if _, err := m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Must().Update(ctx, sel, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}}); err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return "", errs.ErrDatasetNotFound
+		}
 		return "", err
 	}
-	if result.MatchedCount == 0 {
-		return "", errs.ErrDatasetNotFound
-	}
+
 	return newETag, nil
 }
 
@@ -517,12 +515,8 @@ func (m *Mongo) RemoveDatasetVersionAndEditionLinks(ctx context.Context, id stri
 		},
 	}
 
-	result, err := m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).UpdateById(ctx, id, update)
-	if err != nil {
+	if _, err := m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateById(ctx, id, update); err != nil {
 		return fmt.Errorf("failed in query to MongoDB: %w", err)
-	}
-	if result.MatchedCount == 0 {
-		return errs.ErrDatasetNotFound
 	}
 
 	return nil
