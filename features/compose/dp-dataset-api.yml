@@ -8,6 +8,7 @@ services:
       - go
       - test
       - -cover
+      - -race
       - -coverpkg=github.com/ONSdigital/dp-dataset-api/...
       - -component
     volumes:

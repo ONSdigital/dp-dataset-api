@@ -21,7 +21,7 @@ var (
 	ErrAddUpdateDatasetBadRequest        = errors.New("failed to parse json body")
 	ErrConflictUpdatingInstance          = errors.New("conflict updating instance resource")
 	ErrDatasetNotFound                   = errors.New("dataset not found")
-	ErrDeleteDatasetNotFound             = errors.New("dataset not found")
+	ErrDeleteDatasetNotFound             = errors.New("delete dataset not found")
 	ErrDeletePublishedDatasetForbidden   = errors.New("a published dataset cannot be deleted")
 	ErrDimensionNodeNotFound             = errors.New("dimension node not found")
 	ErrDimensionNotFound                 = errors.New("dimension not found")
