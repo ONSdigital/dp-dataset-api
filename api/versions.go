@@ -446,7 +446,6 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		}
 
 		if _, err := api.dataStore.Backend.UpdateVersion(ctx, currentVersion, combinedVersionUpdate, eTag); err != nil {
-			log.Error(ctx, "putVersion endpoint: failed to update version document", err, data)
 			return err
 		}
 		log.Info(ctx, "DEBUG UpdateVersion to MongoDB", log.Data{"time": time.Since(t0), "reqID": reqID, "etag": eTag})
@@ -485,6 +484,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 			log.Info(ctx, "DEBUG (retry) GetVersion from mongo", log.Data{"time": time.Since(t0), "reqID": reqID})
 
 			if err = doUpdate(); err != nil {
+				log.Error(ctx, "putVersion endpoint: failed to update version document on 2nd attempt", err, data)
 				return nil, nil, nil, err
 			}
 		} else {
