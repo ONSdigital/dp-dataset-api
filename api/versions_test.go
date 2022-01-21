@@ -2141,7 +2141,7 @@ func TestCreateNewVersionDoc(t *testing.T) {
 		versionUpdate := models.Version{
 			CollectionID: "4321",
 		}
-		combinedVersionUpdate, err := populateNewVersionDoc(currentVersion, versionUpdate)
+		combinedVersionUpdate, err := populateNewVersionDoc(&currentVersion, &versionUpdate)
 		So(err, ShouldBeNil)
 
 		Convey("Then the combined version update contains the collection_id", func() {
@@ -2165,7 +2165,7 @@ func TestCreateNewVersionDoc(t *testing.T) {
 		versionUpdate := models.Version{
 			CollectionID: "4321",
 		}
-		combinedVersionUpdate, err := populateNewVersionDoc(currentVersion, versionUpdate)
+		combinedVersionUpdate, err := populateNewVersionDoc(&currentVersion, &versionUpdate)
 		So(err, ShouldBeNil)
 
 		Convey("Then the combined version update contains the updated collection_id", func() {
@@ -2189,7 +2189,7 @@ func TestCreateNewVersionDoc(t *testing.T) {
 			CollectionID: "1234",
 		}
 		versionUpdate := models.Version{}
-		combinedVersionUpdate, err := populateNewVersionDoc(currentVersion, versionUpdate)
+		combinedVersionUpdate, err := populateNewVersionDoc(&currentVersion, &versionUpdate)
 		So(err, ShouldBeNil)
 
 		Convey("Then the combined version update contains the updated collection_id", func() {
@@ -2209,7 +2209,7 @@ func TestCreateNewVersionDoc(t *testing.T) {
 	Convey("Given empty current version and update", t, func() {
 		currentVersion := models.Version{}
 		versionUpdate := models.Version{}
-		combinedVersionUpdate, err := populateNewVersionDoc(currentVersion, versionUpdate)
+		combinedVersionUpdate, err := populateNewVersionDoc(&currentVersion, &versionUpdate)
 		So(err, ShouldBeNil)
 
 		Convey("Then the combined version is empty", func() {
@@ -2231,7 +2231,7 @@ func TestCreateNewVersionDoc(t *testing.T) {
 				},
 			},
 		}
-		combinedVersionUpdate, err := populateNewVersionDoc(currentVersion, versionUpdate)
+		combinedVersionUpdate, err := populateNewVersionDoc(&currentVersion, &versionUpdate)
 		So(err, ShouldBeNil)
 
 		Convey("Then the combined version contains the provided spatial link", func() {
@@ -2271,7 +2271,7 @@ func TestCreateNewVersionDoc(t *testing.T) {
 				},
 			},
 		}
-		combinedVersionUpdate, err := populateNewVersionDoc(currentVersion, versionUpdate)
+		combinedVersionUpdate, err := populateNewVersionDoc(&currentVersion, &versionUpdate)
 		So(err, ShouldBeNil)
 
 		Convey("Then the combined version contains the updated spatial link", func() {
@@ -2311,7 +2311,7 @@ func TestCreateNewVersionDoc(t *testing.T) {
 			},
 		}
 		versionUpdate := models.Version{}
-		combinedVersionUpdate, err := populateNewVersionDoc(currentVersion, versionUpdate)
+		combinedVersionUpdate, err := populateNewVersionDoc(&currentVersion, &versionUpdate)
 		So(err, ShouldBeNil)
 
 		Convey("Then the combined version contains the old spatial link", func() {
@@ -2345,7 +2345,7 @@ func TestCreateNewVersionDoc(t *testing.T) {
 			},
 		}
 		versionUpdate := models.Version{}
-		combinedVersionUpdate, err := populateNewVersionDoc(currentVersion, versionUpdate)
+		combinedVersionUpdate, err := populateNewVersionDoc(&currentVersion, &versionUpdate)
 		So(err, ShouldBeNil)
 
 		Convey("Then the combined version contains the old dataset link", func() {
