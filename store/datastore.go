@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"go.mongodb.org/mongo-driver/bson"
@@ -79,8 +78,19 @@ type GraphDB interface {
 	Checker(context.Context, *healthcheck.CheckState) error
 }
 
-// Storer represents basic data access via Get, Remove and Upsert methods, abstracting it from mongoDB or graphDB
+// dataCantabular represents all the required methods to access data from Cantabular
+type dataCantabular interface {
+	Blobs(ctx context.Context) ([]CantabularBlob, error)
+}
+
+// Cantabular represents all the required methods from Cantabular
+type Cantabular interface {
+	dataCantabular
+}
+
+// Storer represents basic data access via Get, Remove and Upsert methods, abstracting it from mongoDB, graphDB or cantabular
 type Storer interface {
 	dataMongoDB
 	dataGraphDB
+	dataCantabular
 }

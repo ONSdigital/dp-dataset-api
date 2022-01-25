@@ -33,6 +33,9 @@ var _ store.Storer = &StorerMock{}
 // 			AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
 // 				panic("mock out the AddVersionDetailsToInstance method")
 // 			},
+// 			BlobsFunc: func(ctx context.Context) ([]store.CantabularBlob, error) {
+// 				panic("mock out the Blobs method")
+// 			},
 // 			CheckDatasetExistsFunc: func(ctx context.Context, ID string, state string) error {
 // 				panic("mock out the CheckDatasetExists method")
 // 			},
@@ -159,6 +162,9 @@ type StorerMock struct {
 
 	// AddVersionDetailsToInstanceFunc mocks the AddVersionDetailsToInstance method.
 	AddVersionDetailsToInstanceFunc func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error
+
+	// BlobsFunc mocks the Blobs method.
+	BlobsFunc func(ctx context.Context) ([]store.CantabularBlob, error)
 
 	// CheckDatasetExistsFunc mocks the CheckDatasetExists method.
 	CheckDatasetExistsFunc func(ctx context.Context, ID string, state string) error
@@ -307,6 +313,11 @@ type StorerMock struct {
 			Edition string
 			// Version is the version argument value.
 			Version int
+		}
+		// Blobs holds details about calls to the Blobs method.
+		Blobs []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 		}
 		// CheckDatasetExists holds details about calls to the CheckDatasetExists method.
 		CheckDatasetExists []struct {
@@ -679,6 +690,7 @@ type StorerMock struct {
 	lockAddEventToInstance                  sync.RWMutex
 	lockAddInstance                         sync.RWMutex
 	lockAddVersionDetailsToInstance         sync.RWMutex
+	lockBlobs                               sync.RWMutex
 	lockCheckDatasetExists                  sync.RWMutex
 	lockCheckEditionExists                  sync.RWMutex
 	lockDeleteDataset                       sync.RWMutex
@@ -874,6 +886,37 @@ func (mock *StorerMock) AddVersionDetailsToInstanceCalls() []struct {
 	mock.lockAddVersionDetailsToInstance.RLock()
 	calls = mock.calls.AddVersionDetailsToInstance
 	mock.lockAddVersionDetailsToInstance.RUnlock()
+	return calls
+}
+
+// Blobs calls BlobsFunc.
+func (mock *StorerMock) Blobs(ctx context.Context) ([]store.CantabularBlob, error) {
+	if mock.BlobsFunc == nil {
+		panic("StorerMock.BlobsFunc: method is nil but Storer.Blobs was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockBlobs.Lock()
+	mock.calls.Blobs = append(mock.calls.Blobs, callInfo)
+	mock.lockBlobs.Unlock()
+	return mock.BlobsFunc(ctx)
+}
+
+// BlobsCalls gets all the calls that were made to Blobs.
+// Check the length with:
+//     len(mockedStorer.BlobsCalls())
+func (mock *StorerMock) BlobsCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockBlobs.RLock()
+	calls = mock.calls.Blobs
+	mock.lockBlobs.RUnlock()
 	return calls
 }
 

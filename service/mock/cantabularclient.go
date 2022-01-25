@@ -6,6 +6,7 @@ package mock
 import (
 	"context"
 	"github.com/ONSdigital/dp-dataset-api/service"
+	"github.com/ONSdigital/dp-dataset-api/store"
 	"sync"
 )
 
@@ -19,7 +20,7 @@ var _ service.CantabularClient = &CantabularClientMock{}
 //
 // 		// make and configure a mocked service.CantabularClient
 // 		mockedCantabularClient := &CantabularClientMock{
-// 			PopulationTypesFunc: func(ctx context.Context) []service.CantabularBlob {
+// 			PopulationTypesFunc: func(ctx context.Context) []store.CantabularBlob {
 // 				panic("mock out the PopulationTypes method")
 // 			},
 // 		}
@@ -30,7 +31,7 @@ var _ service.CantabularClient = &CantabularClientMock{}
 // 	}
 type CantabularClientMock struct {
 	// PopulationTypesFunc mocks the PopulationTypes method.
-	PopulationTypesFunc func(ctx context.Context) []service.CantabularBlob
+	PopulationTypesFunc func(ctx context.Context) []store.CantabularBlob
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -44,7 +45,7 @@ type CantabularClientMock struct {
 }
 
 // PopulationTypes calls PopulationTypesFunc.
-func (mock *CantabularClientMock) PopulationTypes(ctx context.Context) []service.CantabularBlob {
+func (mock *CantabularClientMock) PopulationTypes(ctx context.Context) []store.CantabularBlob {
 	if mock.PopulationTypesFunc == nil {
 		panic("CantabularClientMock.PopulationTypesFunc: method is nil but CantabularClient.PopulationTypes was just called")
 	}

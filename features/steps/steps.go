@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ONSdigital/dp-dataset-api/service"
+	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/download"
@@ -362,7 +362,7 @@ func (c *DatasetComponent) iAccessTheCensusEndpoint() error {
 }
 
 func (c *DatasetComponent) iHaveSomeCantabularBlobs() error {
-	c.fakePopulationTypes = []service.CantabularBlob{
+	c.fakePopulationTypes = []mocks.CantabularBlob{
 		{Name: "blob 1"},
 		{Name: "blob 2"},
 		{Name: "blob 3"},

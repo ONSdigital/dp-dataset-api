@@ -31,12 +31,14 @@ var _ store.Storer = (*DatsetAPIStore)(nil)
 type DatsetAPIStore struct {
 	store.MongoDB
 	store.GraphDB
+	store.Cantabular
 }
 
 // Service contains all the configs, server and clients to run the Dataset API
 type Service struct {
 	config                              *config.Configuration
 	serviceList                         *ExternalServiceList
+	cantabular                          store.Cantabular
 	graphDB                             store.GraphDB
 	graphDBErrorConsumer                Closer
 	mongoDB                             store.MongoDB
@@ -114,7 +116,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 			return err
 		}
 	}
-	ds := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB}}
+	ds := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB, svc.cantabular}}
 
 	// Get GenerateDownloads Kafka Producer
 	if !svc.config.EnablePrivateEndpoints {

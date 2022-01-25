@@ -45,12 +45,8 @@ type Closer interface {
 	Close(ctx context.Context) error
 }
 
-type CantabularBlob struct {
-	Name string
-}
-
 type CantabularClient interface {
-	PopulationTypes(ctx context.Context) []CantabularBlob
+	PopulationTypes(ctx context.Context) []store.CantabularBlob
 	//StaticDatasetQueryStreamCSV(ctx context.Context, req cantabular.StaticDatasetQueryRequest, consume cantabular.Consumer) (rowCount int32, err error)
 	//Checker(context.Context, *healthcheck.CheckState) error
 	//CheckerAPIExt(ctx context.Context, state *healthcheck.CheckState) error
