@@ -41,7 +41,7 @@ func TestCensusRootHappyPath(t *testing.T) {
 			{Name: "blob 1"},
 			{Name: "blob 2"},
 		}
-		dataStoreWithMockStorer := funcName(fakeBlobs)
+		dataStoreWithMockStorer := buildDataStoreWithMockCantabularBlobs(fakeBlobs)
 		api := Setup(testContext, cfg, mux.NewRouter(), dataStoreWithMockStorer, nil, nil, nil, nil)
 
 		Convey("When I GET /census", func() {
@@ -57,13 +57,12 @@ func TestCensusRootHappyPath(t *testing.T) {
 	})
 }
 
-func funcName(fakeBlobs []store.CantabularBlob) store.DataStore {
-	dataStoreWithMockStorer := store.DataStore{
+func buildDataStoreWithMockCantabularBlobs(fakeBlobs []store.CantabularBlob) store.DataStore {
+	return store.DataStore{
 		Backend: &storetest.StorerMock{
 			BlobsFunc: func(ctx context.Context) ([]store.CantabularBlob, error) {
 				return fakeBlobs, nil
 			},
 		},
 	}
-	return dataStoreWithMockStorer
 }

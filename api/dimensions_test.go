@@ -23,6 +23,7 @@ func initAPIWithMockedStore(mockedStore *storetest.StorerMock) *DatasetAPI {
 }
 
 func TestGetDimensionsReturnsOk(t *testing.T) {
+	t.Parallel()
 
 	Convey("When the request contain valid ids return dimension information", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
