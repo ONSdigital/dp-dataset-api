@@ -4,5 +4,6 @@ Feature: Census endpoint
   So that I can use them to query further data
 
   Scenario: The root census endpoint should return a list of blobs
+    Given I have some cantabular blobs
     When I access the root census endpoint
-    Then a list of cantabular blobs is returned
+    Then a list of named cantabular blobs is returned

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ONSdigital/dp-api-clients-go/v2/cantabular"
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/download"
@@ -39,8 +40,9 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I have a real kafka container with topic "([^"]*)"$`, c.iHaveARealKafkaContainerWithTopic)
 	ctx.Step(`^these cantabular generator downloads events are produced:$`, c.theseCantabularGeneratorDownloadsEventsAreProduced)
 	ctx.Step(`^these generate downloads events are produced:$`, c.theseGenerateDownloadsEventsAreProduced)
-	ctx.Step(`^a list of cantabular blobs is returned$`, c.aListOfCantabularblobsIsReturned)
 	ctx.Step(`^I access the root census endpoint$`, c.iAccessTheCensusEndpoint)
+	ctx.Step(`^a list of named cantabular blobs is returned$`, c.aListOfNamedCantabularBlobsIsReturned)
+	ctx.Step(`^I have some cantabular blobs$`, c.iHaveSomeCantabularBlobs)
 }
 
 func (c *DatasetComponent) thereAreNoDatasets() error {
@@ -342,10 +344,19 @@ func (c *DatasetComponent) putDocumentInDatabase(document interface{}, id, colle
 	return nil
 }
 
-func (c *DatasetComponent) aListOfCantabularblobsIsReturned() error {
-	return c.APIFeature.IShouldReceiveTheFollowingJSONResponseWithStatus("200", &godog.DocString{Content: "fish-finger"})
+func (c *DatasetComponent) aListOfNamedCantabularBlobsIsReturned() error {
+	return c.APIFeature.IShouldReceiveTheFollowingJSONResponseWithStatus("200", &godog.DocString{Content: "{ \"fish\": \"finger\"}"})
 }
 
 func (c *DatasetComponent) iAccessTheCensusEndpoint() error {
 	return c.APIFeature.IGet("/census")
+}
+
+func (c *DatasetComponent) iHaveSomeCantabularBlobs() error {
+	c.fakePopulationTypes = []cantabular.Dataset{
+		cantabular.Dataset{Name: "blob 1"},
+		cantabular.Dataset{Name: "blob 2"},
+		cantabular.Dataset{Name: "blob 3"},
+	}
+	return nil
 }

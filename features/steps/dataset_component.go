@@ -3,6 +3,7 @@ package steps
 import (
 	"context"
 	"fmt"
+	"github.com/ONSdigital/dp-api-clients-go/v2/cantabular"
 	"net/http"
 	"strings"
 
@@ -21,17 +22,18 @@ import (
 )
 
 type DatasetComponent struct {
-	ErrorFeature   componenttest.ErrorFeature
-	svc            *service.Service
-	errorChan      chan error
-	MongoClient    *mongo.Mongo
-	Config         *config.Configuration
-	HTTPServer     *http.Server
-	ServiceRunning bool
-	consumer       kafka.IConsumerGroup
-	producer       kafka.IProducer
-	initialiser    service.Initialiser
-	APIFeature     *componenttest.APIFeature
+	ErrorFeature        componenttest.ErrorFeature
+	svc                 *service.Service
+	errorChan           chan error
+	MongoClient         *mongo.Mongo
+	Config              *config.Configuration
+	HTTPServer          *http.Server
+	ServiceRunning      bool
+	consumer            kafka.IConsumerGroup
+	producer            kafka.IProducer
+	initialiser         service.Initialiser
+	APIFeature          *componenttest.APIFeature
+	fakePopulationTypes []cantabular.Dataset
 }
 
 func NewDatasetComponent(mongoURI string, zebedeeURL string) (*DatasetComponent, error) {
@@ -210,21 +212,31 @@ func (f *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, ser
 		nil
 }
 
+func (c *DatasetComponent) DoGetFakeCantabularClient(ctx context.Context, cfg config.CantabularConfig) service.CantabularClient {
+	return &serviceMock.CantabularClientMock{
+		PopulationTypesFunc: func(ctx context.Context) []cantabular.Dataset {
+			return c.fakePopulationTypes
+		},
+	}
+}
+
 func (c *DatasetComponent) setInitialiserMock() {
 	c.initialiser = &serviceMock.InitialiserMock{
-		DoGetMongoDBFunc:       c.DoGetMongoDB,
-		DoGetGraphDBFunc:       c.DoGetGraphDBOk,
-		DoGetKafkaProducerFunc: c.DoGetMockedKafkaProducerOk,
-		DoGetHealthCheckFunc:   c.DoGetHealthcheckOk,
-		DoGetHTTPServerFunc:    c.DoGetHTTPServer,
+		DoGetMongoDBFunc:          c.DoGetMongoDB,
+		DoGetGraphDBFunc:          c.DoGetGraphDBOk,
+		DoGetKafkaProducerFunc:    c.DoGetMockedKafkaProducerOk,
+		DoGetHealthCheckFunc:      c.DoGetHealthcheckOk,
+		DoGetHTTPServerFunc:       c.DoGetHTTPServer,
+		DoGetCantabularClientFunc: c.DoGetFakeCantabularClient,
 	}
 }
 func (c *DatasetComponent) setInitialiserRealKafka() {
 	c.initialiser = &serviceMock.InitialiserMock{
-		DoGetMongoDBFunc:       c.DoGetMongoDB,
-		DoGetGraphDBFunc:       c.DoGetGraphDBOk,
-		DoGetKafkaProducerFunc: c.DoGetKafkaProducer,
-		DoGetHealthCheckFunc:   c.DoGetHealthcheckOk,
-		DoGetHTTPServerFunc:    c.DoGetHTTPServer,
+		DoGetMongoDBFunc:          c.DoGetMongoDB,
+		DoGetGraphDBFunc:          c.DoGetGraphDBOk,
+		DoGetKafkaProducerFunc:    c.DoGetKafkaProducer,
+		DoGetHealthCheckFunc:      c.DoGetHealthcheckOk,
+		DoGetHTTPServerFunc:       c.DoGetHTTPServer,
+		DoGetCantabularClientFunc: c.DoGetFakeCantabularClient,
 	}
 }

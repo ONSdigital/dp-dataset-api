@@ -140,3 +140,16 @@ func (e *Init) DoGetMongoDB(ctx context.Context, cfg config.MongoConfig) (store.
 	log.Info(ctx, "listening to mongo db session", log.Data{"URI": mongodb.URI})
 	return mongodb, nil
 }
+
+func (e *Init) DoGetCantabularClient(ctx context.Context, cfg config.CantabularConfig) CantabularClient {
+	panic("Not implemented")
+	//x := cantabular.NewClient(
+	//	cantabular.Config{
+	//		Host:           cfg.CantabularURL,
+	//		ExtApiHost:     cfg.CantabularExtURL,
+	//		GraphQLTimeout: cfg.DefaultRequestTimeout,
+	//	},
+	//	dphttp.NewClient(),
+	//	nil,
+	//)
+}

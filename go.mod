@@ -69,6 +69,7 @@ require (
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
+	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a // indirect
 	github.com/smartystreets/assertions v1.2.1 // indirect
 	github.com/spf13/afero v1.8.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect

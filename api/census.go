@@ -3,5 +3,6 @@ package api
 import "net/http"
 
 func (api *DatasetAPI) getCensus(writer http.ResponseWriter, request *http.Request) {
-	writer.Write([]byte{0, 1, 2})
+	writer.Header().Set("Content-Type", "application/json")
+	writer.Write([]byte("{}"))
 }

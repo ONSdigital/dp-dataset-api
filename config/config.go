@@ -24,6 +24,13 @@ type MongoConfig struct {
 	DatasetAPIURL  string `envconfig:"DATASET_API_URL"`
 }
 
+// CantabularConfig holds settings for the Cantabular client
+type CantabularConfig struct {
+	CantabularURL         string        `envconfig:"CANTABULAR_URL"`
+	CantabularExtURL      string        `envconfig:"CANTABULAR_EXT_API_URL"`
+	DefaultRequestTimeout time.Duration `envconfig:"DEFAULT_REQUEST_TIMEOUT"`
+}
+
 // Configuration structure which hold information for configuring the import API
 type Configuration struct {
 	BindAddr                   string        `envconfig:"BIND_ADDR"`

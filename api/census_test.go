@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/gorilla/mux"
@@ -13,8 +12,6 @@ import (
 
 func TestAPIRouteRegistration(t *testing.T) {
 
-	fmt.Printf("hello")
-
 	Convey("Given the data set API is created", t, func() {
 		cfg, err := config.Get()
 		So(err, ShouldBeNil)
@@ -25,7 +22,10 @@ func TestAPIRouteRegistration(t *testing.T) {
 			req := httptest.NewRequest("GET", "/census", nil)
 			api.Router.ServeHTTP(rec, req)
 
-			SoMsg("Then it should return with 200", rec.Code, ShouldEqual, 200)
+			SoMsg("Then it should return with 200",
+				rec.Code, ShouldEqual, 200)
+			SoMsg("Then it should return application/json content",
+				rec.Header().Get("Content-Type"), ShouldEqual, "application/json")
 		})
 	})
 }
