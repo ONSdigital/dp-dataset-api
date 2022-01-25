@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ONSdigital/dp-dataset-api/store"
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/download"
@@ -362,7 +361,7 @@ func (c *DatasetComponent) iAccessTheCensusEndpoint() error {
 }
 
 func (c *DatasetComponent) iHaveSomeCantabularBlobs() error {
-	c.fakePopulationTypes = []store.CantabularBlob{
+	c.fakeCantabularBlobs = []models.Blob{
 		{Name: "blob 1"},
 		{Name: "blob 2"},
 		{Name: "blob 3"},

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/ONSdigital/dp-dataset-api/models"
 	"net/http"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -46,7 +47,7 @@ type Closer interface {
 }
 
 type CantabularClient interface {
-	PopulationTypes(ctx context.Context) []store.CantabularBlob
+	Blobs(ctx context.Context) (models.Blobs, error)
 	//StaticDatasetQueryStreamCSV(ctx context.Context, req cantabular.StaticDatasetQueryRequest, consume cantabular.Consumer) (rowCount int32, err error)
 	//Checker(context.Context, *healthcheck.CheckState) error
 	//CheckerAPIExt(ctx context.Context, state *healthcheck.CheckState) error

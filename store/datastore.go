@@ -80,7 +80,7 @@ type GraphDB interface {
 
 // dataCantabular represents all the required methods to access data from Cantabular
 type dataCantabular interface {
-	Blobs(ctx context.Context) ([]CantabularBlob, error)
+	Blobs(ctx context.Context) (models.Blobs, error)
 }
 
 // Cantabular represents all the required methods from Cantabular

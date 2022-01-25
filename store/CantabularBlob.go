@@ -1,5 +1,5 @@
 package store
 
-type CantabularBlob struct {
-	Name string
-}
+//type CantabularBlob struct {
+//	Name string
+//}

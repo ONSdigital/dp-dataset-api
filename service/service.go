@@ -116,6 +116,10 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 			return err
 		}
 	}
+
+	// get cantabular service
+	svc.cantabular, err = svc.serviceList.GetCantabular(ctx, svc.config.CantabularConfig)
+
 	ds := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB, svc.cantabular}}
 
 	// Get GenerateDownloads Kafka Producer

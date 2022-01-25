@@ -20,6 +20,7 @@ type ExternalServiceList struct {
 	Graph                     bool
 	HealthCheck               bool
 	MongoDB                   bool
+	Cantabular                bool
 	Init                      Initialiser
 }
 
@@ -78,6 +79,12 @@ func (e *ExternalServiceList) GetMongoDB(ctx context.Context, cfg config.MongoCo
 	}
 	e.MongoDB = true
 	return mongodb, nil
+}
+
+func (e *ExternalServiceList) GetCantabular(ctx context.Context, cfg config.CantabularConfig) (store.Cantabular, error) {
+	cantabular := e.Init.DoGetCantabularClient(ctx, cfg)
+	e.Cantabular = true
+	return cantabular, nil
 }
 
 // DoGetHTTPServer creates an HTTP Server with the provided bind address and router

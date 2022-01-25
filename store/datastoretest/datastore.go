@@ -33,7 +33,7 @@ var _ store.Storer = &StorerMock{}
 // 			AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
 // 				panic("mock out the AddVersionDetailsToInstance method")
 // 			},
-// 			BlobsFunc: func(ctx context.Context) ([]store.CantabularBlob, error) {
+// 			BlobsFunc: func(ctx context.Context) (models.Blobs, error) {
 // 				panic("mock out the Blobs method")
 // 			},
 // 			CheckDatasetExistsFunc: func(ctx context.Context, ID string, state string) error {
@@ -164,7 +164,7 @@ type StorerMock struct {
 	AddVersionDetailsToInstanceFunc func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error
 
 	// BlobsFunc mocks the Blobs method.
-	BlobsFunc func(ctx context.Context) ([]store.CantabularBlob, error)
+	BlobsFunc func(ctx context.Context) (models.Blobs, error)
 
 	// CheckDatasetExistsFunc mocks the CheckDatasetExists method.
 	CheckDatasetExistsFunc func(ctx context.Context, ID string, state string) error
@@ -890,7 +890,7 @@ func (mock *StorerMock) AddVersionDetailsToInstanceCalls() []struct {
 }
 
 // Blobs calls BlobsFunc.
-func (mock *StorerMock) Blobs(ctx context.Context) ([]store.CantabularBlob, error) {
+func (mock *StorerMock) Blobs(ctx context.Context) (models.Blobs, error) {
 	if mock.BlobsFunc == nil {
 		panic("StorerMock.BlobsFunc: method is nil but Storer.Blobs was just called")
 	}

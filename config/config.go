@@ -64,6 +64,7 @@ type Configuration struct {
 	EncryptionDisabled         bool          `envconfig:"ENCRYPTION_DISABLED"`
 	ComponentTestUseLogFile    bool          `envconfig:"COMPONENT_TEST_USE_LOG_FILE"`
 	MongoConfig
+	CantabularConfig
 }
 
 var cfg *Configuration

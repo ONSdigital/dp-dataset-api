@@ -5,8 +5,8 @@ package mock
 
 import (
 	"context"
+	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/service"
-	"github.com/ONSdigital/dp-dataset-api/store"
 	"sync"
 )
 
@@ -20,8 +20,8 @@ var _ service.CantabularClient = &CantabularClientMock{}
 //
 // 		// make and configure a mocked service.CantabularClient
 // 		mockedCantabularClient := &CantabularClientMock{
-// 			PopulationTypesFunc: func(ctx context.Context) []store.CantabularBlob {
-// 				panic("mock out the PopulationTypes method")
+// 			BlobsFunc: func(ctx context.Context) (models.Blobs, error) {
+// 				panic("mock out the Blobs method")
 // 			},
 // 		}
 //
@@ -30,47 +30,47 @@ var _ service.CantabularClient = &CantabularClientMock{}
 //
 // 	}
 type CantabularClientMock struct {
-	// PopulationTypesFunc mocks the PopulationTypes method.
-	PopulationTypesFunc func(ctx context.Context) []store.CantabularBlob
+	// BlobsFunc mocks the Blobs method.
+	BlobsFunc func(ctx context.Context) (models.Blobs, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// PopulationTypes holds details about calls to the PopulationTypes method.
-		PopulationTypes []struct {
+		// Blobs holds details about calls to the Blobs method.
+		Blobs []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 		}
 	}
-	lockPopulationTypes sync.RWMutex
+	lockBlobs sync.RWMutex
 }
 
-// PopulationTypes calls PopulationTypesFunc.
-func (mock *CantabularClientMock) PopulationTypes(ctx context.Context) []store.CantabularBlob {
-	if mock.PopulationTypesFunc == nil {
-		panic("CantabularClientMock.PopulationTypesFunc: method is nil but CantabularClient.PopulationTypes was just called")
+// Blobs calls BlobsFunc.
+func (mock *CantabularClientMock) Blobs(ctx context.Context) (models.Blobs, error) {
+	if mock.BlobsFunc == nil {
+		panic("CantabularClientMock.BlobsFunc: method is nil but CantabularClient.Blobs was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
 	}{
 		Ctx: ctx,
 	}
-	mock.lockPopulationTypes.Lock()
-	mock.calls.PopulationTypes = append(mock.calls.PopulationTypes, callInfo)
-	mock.lockPopulationTypes.Unlock()
-	return mock.PopulationTypesFunc(ctx)
+	mock.lockBlobs.Lock()
+	mock.calls.Blobs = append(mock.calls.Blobs, callInfo)
+	mock.lockBlobs.Unlock()
+	return mock.BlobsFunc(ctx)
 }
 
-// PopulationTypesCalls gets all the calls that were made to PopulationTypes.
+// BlobsCalls gets all the calls that were made to Blobs.
 // Check the length with:
-//     len(mockedCantabularClient.PopulationTypesCalls())
-func (mock *CantabularClientMock) PopulationTypesCalls() []struct {
+//     len(mockedCantabularClient.BlobsCalls())
+func (mock *CantabularClientMock) BlobsCalls() []struct {
 	Ctx context.Context
 } {
 	var calls []struct {
 		Ctx context.Context
 	}
-	mock.lockPopulationTypes.RLock()
-	calls = mock.calls.PopulationTypes
-	mock.lockPopulationTypes.RUnlock()
+	mock.lockBlobs.RLock()
+	calls = mock.calls.Blobs
+	mock.lockBlobs.RUnlock()
 	return calls
 }
