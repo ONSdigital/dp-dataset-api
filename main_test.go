@@ -33,6 +33,7 @@ func (f *ComponentTest) InitializeScenario(ctx *godog.ScenarioContext) {
 	}
 
 	apiFeature := componenttest.NewAPIFeature(datasetFeature.InitialiseService)
+	datasetFeature.APIFeature = apiFeature
 
 	ctx.BeforeScenario(func(*godog.Scenario) {
 		apiFeature.Reset()

@@ -39,6 +39,8 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I have a real kafka container with topic "([^"]*)"$`, c.iHaveARealKafkaContainerWithTopic)
 	ctx.Step(`^these cantabular generator downloads events are produced:$`, c.theseCantabularGeneratorDownloadsEventsAreProduced)
 	ctx.Step(`^these generate downloads events are produced:$`, c.theseGenerateDownloadsEventsAreProduced)
+	ctx.Step(`^a list of cantabular blobs is returned$`, c.aListOfCantabularblobsIsReturned)
+	ctx.Step(`^I access the root census endpoint$`, c.iAccessTheCensusEndpoint)
 }
 
 func (c *DatasetComponent) thereAreNoDatasets() error {
@@ -338,4 +340,12 @@ func (c *DatasetComponent) putDocumentInDatabase(document interface{}, id, colle
 		return err
 	}
 	return nil
+}
+
+func (c *DatasetComponent) aListOfCantabularblobsIsReturned() error {
+	return c.APIFeature.IShouldReceiveTheFollowingJSONResponseWithStatus("200", &godog.DocString{Content: "fish-finger"})
+}
+
+func (c *DatasetComponent) iAccessTheCensusEndpoint() error {
+	return c.APIFeature.IGet("/census")
 }

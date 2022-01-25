@@ -31,6 +31,7 @@ type DatasetComponent struct {
 	consumer       kafka.IConsumerGroup
 	producer       kafka.IProducer
 	initialiser    service.Initialiser
+	APIFeature     *componenttest.APIFeature
 }
 
 func NewDatasetComponent(mongoURI string, zebedeeURL string) (*DatasetComponent, error) {
