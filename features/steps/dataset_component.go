@@ -32,7 +32,7 @@ type DatasetComponent struct {
 	producer            kafka.IProducer
 	initialiser         service.Initialiser
 	APIFeature          *componenttest.APIFeature
-	fakePopulationTypes []service.CantabularBlob
+	fakePopulationTypes []store.CantabularBlob
 }
 
 func NewDatasetComponent(mongoURI string, zebedeeURL string) (*DatasetComponent, error) {
@@ -213,7 +213,7 @@ func (f *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, ser
 
 func (c *DatasetComponent) DoGetFakeCantabularClient(ctx context.Context, cfg config.CantabularConfig) service.CantabularClient {
 	return &serviceMock.CantabularClientMock{
-		PopulationTypesFunc: func(ctx context.Context) []service.CantabularBlob {
+		PopulationTypesFunc: func(ctx context.Context) []store.CantabularBlob {
 			return c.fakePopulationTypes
 		},
 	}
