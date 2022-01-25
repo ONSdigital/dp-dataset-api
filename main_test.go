@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"testing"
 
@@ -65,6 +66,10 @@ func (f *ComponentTest) InitializeTestSuite(ctx *godog.TestSuiteContext) {
 
 func TestComponent(t *testing.T) {
 	if *componentFlag {
+		// discarding production logging to obtain cleaner reporting of component specifications and results
+		log.SetDestination(io.Discard, io.Discard)
+		defer func() { log.SetDestination(os.Stdout, os.Stderr) }()
+
 		var opts = godog.Options{
 			Output: colors.Colored(os.Stdout),
 			Format: "pretty",
