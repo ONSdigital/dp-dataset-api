@@ -3,7 +3,6 @@ package steps
 import (
 	"context"
 	"fmt"
-	"github.com/ONSdigital/dp-api-clients-go/v2/cantabular"
 	"net/http"
 	"strings"
 
@@ -33,7 +32,7 @@ type DatasetComponent struct {
 	producer            kafka.IProducer
 	initialiser         service.Initialiser
 	APIFeature          *componenttest.APIFeature
-	fakePopulationTypes []cantabular.Dataset
+	fakePopulationTypes []service.CantabularBlob
 }
 
 func NewDatasetComponent(mongoURI string, zebedeeURL string) (*DatasetComponent, error) {
@@ -214,7 +213,7 @@ func (f *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, ser
 
 func (c *DatasetComponent) DoGetFakeCantabularClient(ctx context.Context, cfg config.CantabularConfig) service.CantabularClient {
 	return &serviceMock.CantabularClientMock{
-		PopulationTypesFunc: func(ctx context.Context) []cantabular.Dataset {
+		PopulationTypesFunc: func(ctx context.Context) []service.CantabularBlob {
 			return c.fakePopulationTypes
 		},
 	}

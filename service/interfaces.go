@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"github.com/ONSdigital/dp-api-clients-go/v2/cantabular"
 	"net/http"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -46,8 +45,12 @@ type Closer interface {
 	Close(ctx context.Context) error
 }
 
+type CantabularBlob struct {
+	Name string
+}
+
 type CantabularClient interface {
-	PopulationTypes(ctx context.Context) []cantabular.Dataset
+	PopulationTypes(ctx context.Context) []CantabularBlob
 	//StaticDatasetQueryStreamCSV(ctx context.Context, req cantabular.StaticDatasetQueryRequest, consume cantabular.Consumer) (rowCount int32, err error)
 	//Checker(context.Context, *healthcheck.CheckState) error
 	//CheckerAPIExt(ctx context.Context, state *healthcheck.CheckState) error

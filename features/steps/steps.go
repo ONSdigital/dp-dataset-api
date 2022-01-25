@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ONSdigital/dp-api-clients-go/v2/cantabular"
+	"github.com/ONSdigital/dp-dataset-api/service"
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/download"
@@ -345,7 +345,16 @@ func (c *DatasetComponent) putDocumentInDatabase(document interface{}, id, colle
 }
 
 func (c *DatasetComponent) aListOfNamedCantabularBlobsIsReturned() error {
-	return c.APIFeature.IShouldReceiveTheFollowingJSONResponseWithStatus("200", &godog.DocString{Content: "{ \"fish\": \"finger\"}"})
+	return c.APIFeature.IShouldReceiveTheFollowingJSONResponseWithStatus(
+		"200",
+		&godog.DocString{Content: `{ 
+			"items": [
+				{ "name": "blob 1" },
+				{ "name": "blob 2" },
+				{ "name": "blob 3" }
+			]
+		}`},
+	)
 }
 
 func (c *DatasetComponent) iAccessTheCensusEndpoint() error {
@@ -353,10 +362,10 @@ func (c *DatasetComponent) iAccessTheCensusEndpoint() error {
 }
 
 func (c *DatasetComponent) iHaveSomeCantabularBlobs() error {
-	c.fakePopulationTypes = []cantabular.Dataset{
-		cantabular.Dataset{Name: "blob 1"},
-		cantabular.Dataset{Name: "blob 2"},
-		cantabular.Dataset{Name: "blob 3"},
+	c.fakePopulationTypes = []service.CantabularBlob{
+		{Name: "blob 1"},
+		{Name: "blob 2"},
+		{Name: "blob 3"},
 	}
 	return nil
 }
