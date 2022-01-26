@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/google/go-cmp/cmp"
@@ -61,8 +62,9 @@ func (c *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId stri
 		return err
 	}
 
+	collectionName := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
 	var link models.DatasetUpdate
-	if err := c.MongoClient.Connection.Collection("datasets").FindOne(context.Background(), bson.M{"_id": documentId}, &link); err != nil {
+	if err := c.MongoClient.Connection.Collection(collectionName).FindOne(context.Background(), bson.M{"_id": documentId}, &link); err != nil {
 		return err
 	}
 
@@ -193,7 +195,8 @@ func (c *DatasetComponent) iHaveTheseEditions(editionsJson *godog.DocString) err
 			Current: &editions[timeOffset],
 		}
 
-		err = c.putDocumentInDatabase(editionUp, editionID, "editions", timeOffset)
+		editionsCollection := c.MongoClient.ActualCollectionName(config.EditionsCollection)
+		err = c.putDocumentInDatabase(editionUp, editionID, editionsCollection, timeOffset)
 
 		if err != nil {
 			return err
@@ -221,7 +224,8 @@ func (c *DatasetComponent) iHaveTheseDatasets(datasetsJson *godog.DocString) err
 			Current: &datasets[timeOffset],
 		}
 
-		if err := c.putDocumentInDatabase(datasetUp, datasetID, "datasets", timeOffset); err != nil {
+		datasetsCollection := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
+		if err := c.putDocumentInDatabase(datasetUp, datasetID, datasetsCollection, timeOffset); err != nil {
 			return err
 		}
 	}
@@ -246,7 +250,8 @@ func (c *DatasetComponent) iHaveTheseVersions(versionsJson *godog.DocString) err
 			}
 		}
 
-		if err := c.putDocumentInDatabase(version, versionID, "instances", timeOffset); err != nil {
+		instanceCollection := c.MongoClient.ActualCollectionName(config.InstanceCollection)
+		if err := c.putDocumentInDatabase(version, versionID, instanceCollection, timeOffset); err != nil {
 			return err
 		}
 	}
@@ -269,7 +274,8 @@ func (c *DatasetComponent) theseVersionsNeedToBePublished(idsJSON *godog.DocStri
 		verDoc := make(bson.M)
 		verDoc["links.version.id"] = v.VersionNumber
 
-		if err := c.updateDocumentInDatabase(verDoc, v.VersionId, "instances", i); err != nil {
+		instanceCollection := c.MongoClient.ActualCollectionName(config.InstanceCollection)
+		if err := c.updateDocumentInDatabase(verDoc, v.VersionId, instanceCollection, i); err != nil {
 			return fmt.Errorf("failed to update database: %w", err)
 		}
 	}
@@ -288,7 +294,8 @@ func (c *DatasetComponent) iHaveTheseDimensions(dimensionsJson *godog.DocString)
 	for timeOffset, dimension := range dimensions {
 		dimensionID := dimension.Option
 
-		if err := c.putDocumentInDatabase(dimension, dimensionID, "dimension.options", timeOffset); err != nil {
+		dimensionOptionsCollection := c.MongoClient.ActualCollectionName(config.DimensionOptionsCollection)
+		if err := c.putDocumentInDatabase(dimension, dimensionID, dimensionOptionsCollection, timeOffset); err != nil {
 			return err
 		}
 	}
@@ -307,7 +314,8 @@ func (c *DatasetComponent) iHaveTheseInstances(instancesJson *godog.DocString) e
 	for timeOffset, instance := range instances {
 		instanceID := instance.InstanceID
 
-		if err := c.putDocumentInDatabase(instance, instanceID, "instances", timeOffset); err != nil {
+		instanceCollection := c.MongoClient.ActualCollectionName(config.InstanceCollection)
+		if err := c.putDocumentInDatabase(instance, instanceID, instanceCollection, timeOffset); err != nil {
 			return err
 		}
 	}
