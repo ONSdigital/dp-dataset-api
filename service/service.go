@@ -379,6 +379,9 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 		log.Error(ctx, "error adding check for mongo db", err)
 	}
 
+	if err = svc.healthCheck.AddCheck("Cantabular", svc.cantabular.Checker); err != nil {
+		hasErrors = true
+	}
 	if hasErrors {
 		return errors.New("Error(s) registering checkers for healthcheck")
 	}

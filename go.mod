@@ -28,6 +28,8 @@ require (
 	go.mongodb.org/mongo-driver v1.8.2
 )
 
+replace "github.com/ONSdigital/dp-api-clients-go/v2" v2.5.0 => "/Users/andrewgibson/src/dp-api-clients-go"
+
 require (
 	github.com/ONSdigital/dp-api-clients-go v1.43.0 // indirect
 	github.com/ONSdigital/dp-mongodb-in-memory v1.1.0 // indirect

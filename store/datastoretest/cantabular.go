@@ -7,6 +7,7 @@ import (
 	"context"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"sync"
 )
 
@@ -20,8 +21,11 @@ var _ store.Cantabular = &CantabularMock{}
 //
 // 		// make and configure a mocked store.Cantabular
 // 		mockedCantabular := &CantabularMock{
-// 			BlobsFunc: func(ctx context.Context) (models.Blobs, error) {
+// 			BlobsFunc: func(ctx context.Context) ([]models.Blob, error) {
 // 				panic("mock out the Blobs method")
+// 			},
+// 			CheckerFunc: func(contextMoqParam context.Context, checkState *healthcheck.CheckState) error {
+// 				panic("mock out the Checker method")
 // 			},
 // 		}
 //
@@ -31,7 +35,10 @@ var _ store.Cantabular = &CantabularMock{}
 // 	}
 type CantabularMock struct {
 	// BlobsFunc mocks the Blobs method.
-	BlobsFunc func(ctx context.Context) (models.Blobs, error)
+	BlobsFunc func(ctx context.Context) ([]models.Blob, error)
+
+	// CheckerFunc mocks the Checker method.
+	CheckerFunc func(contextMoqParam context.Context, checkState *healthcheck.CheckState) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -40,12 +47,20 @@ type CantabularMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 		}
+		// Checker holds details about calls to the Checker method.
+		Checker []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// CheckState is the checkState argument value.
+			CheckState *healthcheck.CheckState
+		}
 	}
-	lockBlobs sync.RWMutex
+	lockBlobs   sync.RWMutex
+	lockChecker sync.RWMutex
 }
 
 // Blobs calls BlobsFunc.
-func (mock *CantabularMock) Blobs(ctx context.Context) (models.Blobs, error) {
+func (mock *CantabularMock) Blobs(ctx context.Context) ([]models.Blob, error) {
 	if mock.BlobsFunc == nil {
 		panic("CantabularMock.BlobsFunc: method is nil but Cantabular.Blobs was just called")
 	}
@@ -72,5 +87,40 @@ func (mock *CantabularMock) BlobsCalls() []struct {
 	mock.lockBlobs.RLock()
 	calls = mock.calls.Blobs
 	mock.lockBlobs.RUnlock()
+	return calls
+}
+
+// Checker calls CheckerFunc.
+func (mock *CantabularMock) Checker(contextMoqParam context.Context, checkState *healthcheck.CheckState) error {
+	if mock.CheckerFunc == nil {
+		panic("CantabularMock.CheckerFunc: method is nil but Cantabular.Checker was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam context.Context
+		CheckState      *healthcheck.CheckState
+	}{
+		ContextMoqParam: contextMoqParam,
+		CheckState:      checkState,
+	}
+	mock.lockChecker.Lock()
+	mock.calls.Checker = append(mock.calls.Checker, callInfo)
+	mock.lockChecker.Unlock()
+	return mock.CheckerFunc(contextMoqParam, checkState)
+}
+
+// CheckerCalls gets all the calls that were made to Checker.
+// Check the length with:
+//     len(mockedCantabular.CheckerCalls())
+func (mock *CantabularMock) CheckerCalls() []struct {
+	ContextMoqParam context.Context
+	CheckState      *healthcheck.CheckState
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+		CheckState      *healthcheck.CheckState
+	}
+	mock.lockChecker.RLock()
+	calls = mock.calls.Checker
+	mock.lockChecker.RUnlock()
 	return calls
 }

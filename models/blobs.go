@@ -9,5 +9,10 @@ type Blobs struct {
 }
 
 func NewBlobs(ctx context.Context, cantabular CantabularDataProvider) (Blobs, error) {
-	return cantabular.Blobs(ctx)
+	items, err := cantabular.Blobs(ctx)
+	if err != nil {
+		return Blobs{}, err
+	}
+	blobs := Blobs{items}
+	return blobs, nil
 }

@@ -82,6 +82,7 @@ type GraphDB interface {
 // Cantabular represents all the required methods from Cantabular
 type Cantabular interface {
 	models.CantabularDataProvider
+	Checker(context.Context, *healthcheck.CheckState) error
 }
 
 // Storer represents basic data access via Get, Remove and Upsert methods, abstracting it from mongoDB, graphDB or cantabular

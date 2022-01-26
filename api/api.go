@@ -120,6 +120,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		log.Info(ctx, "enabling only public endpoints for dataset api")
 		api.enablePublicEndpoints(paginator)
 	}
+	api.enableCensusEndpoints()
 	return api
 }
 
@@ -134,7 +135,6 @@ func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata", api.getMetadata)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", paginator.Paginate(api.getDimensions))
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", paginator.Paginate(api.getDimensionOptions))
-	api.get("/census", api.getCensus)
 }
 
 // enablePrivateDatasetEndpoints register the datasets endpoints with the appropriate authentication and authorisation
@@ -424,6 +424,10 @@ func (api *DatasetAPI) authenticate(r *http.Request, logData log.Data) bool {
 		return authorised
 	}
 	return authorised
+}
+
+func (api *DatasetAPI) enableCensusEndpoints() {
+	api.get("/census", api.getCensus)
 }
 
 func setJSONContentType(w http.ResponseWriter) {

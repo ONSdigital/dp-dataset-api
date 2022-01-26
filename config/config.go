@@ -111,6 +111,11 @@ func Get() (*Configuration, error) {
 			DatasetAPIURL:  "http://localhost:22000",
 		},
 		ComponentTestUseLogFile: false,
+		CantabularConfig: CantabularConfig{
+			CantabularURL:         "http://localhost:8491",
+			CantabularExtURL:      "http://localhost:8492",
+			DefaultRequestTimeout: 10 * time.Second,
+		},
 	}
 	// overwrites default values with system env variable values
 	return cfg, envconfig.Process("", cfg)

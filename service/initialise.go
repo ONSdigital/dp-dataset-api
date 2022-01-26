@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/ONSdigital/dp-dataset-api/cantabular"
 	"net/http"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -149,14 +150,5 @@ func (e *Init) DoGetMongoDB(ctx context.Context, cfg config.MongoConfig) (store.
 }
 
 func (e *Init) DoGetCantabular(ctx context.Context, cfg config.CantabularConfig) store.Cantabular {
-	panic("Not implemented")
-	//x := cantabular.NewClient(
-	//	cantabular.Config{
-	//		Host:           cfg.CantabularURL,
-	//		ExtApiHost:     cfg.CantabularExtURL,
-	//		GraphQLTimeout: cfg.DefaultRequestTimeout,
-	//	},
-	//	dphttp.NewClient(),
-	//	nil,
-	//)
+	return cantabular.NewCantabular(ctx, cfg)
 }
