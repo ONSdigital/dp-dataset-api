@@ -114,6 +114,10 @@ func TestRun(t *testing.T) {
 			}, nil
 		}
 
+		funcDoGetCantabularOk := func(ctx context.Context, cfg config.CantabularConfig) store.Cantabular {
+			return &storeMock.CantabularMock{}
+		}
+
 		Convey("Given that initialising MongoDB returns an error", func() {
 			initMock := &serviceMock.InitialiserMock{
 				DoGetMongoDBFunc: funcDoGetMongoDBErr,
@@ -156,6 +160,7 @@ func TestRun(t *testing.T) {
 				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
 				DoGetGraphDBFunc:       funcDoGetGraphDBOk,
 				DoGetKafkaProducerFunc: funcDoGetKafkaProducerErr,
+				DoGetCantabularFunc:    funcDoGetCantabularOk,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -177,6 +182,7 @@ func TestRun(t *testing.T) {
 				DoGetGraphDBFunc:       funcDoGetGraphDBOk,
 				DoGetKafkaProducerFunc: funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:   funcDoGetHealthcheckErr,
+				DoGetCantabularFunc:    funcDoGetCantabularOk,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -207,6 +213,7 @@ func TestRun(t *testing.T) {
 				DoGetHealthCheckFunc: func(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error) {
 					return hcMockAddFail, nil
 				},
+				DoGetCantabularFunc: funcDoGetCantabularOk,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -236,6 +243,7 @@ func TestRun(t *testing.T) {
 				DoGetKafkaProducerFunc: funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:   funcDoGetHealthcheckOk,
 				DoGetHTTPServerFunc:    funcDoGetHTTPServer,
+				DoGetCantabularFunc:    funcDoGetCantabularOk,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -273,6 +281,7 @@ func TestRun(t *testing.T) {
 				DoGetKafkaProducerFunc: funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:   funcDoGetHealthcheckOk,
 				DoGetHTTPServerFunc:    funcDoGetHTTPServer,
+				DoGetCantabularFunc:    funcDoGetCantabularOk,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -307,6 +316,7 @@ func TestRun(t *testing.T) {
 				DoGetKafkaProducerFunc: funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:   funcDoGetHealthcheckOk,
 				DoGetHTTPServerFunc:    funcDoGetFailingHTTPSerer,
+				DoGetCantabularFunc:    funcDoGetCantabularOk,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)

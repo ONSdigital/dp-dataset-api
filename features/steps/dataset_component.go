@@ -212,8 +212,8 @@ func (f *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, ser
 		nil
 }
 
-func (c *DatasetComponent) DoGetFakeCantabularClient(ctx context.Context, cfg config.CantabularConfig) service.CantabularClient {
-	return &serviceMock.CantabularClientMock{
+func (c *DatasetComponent) DoGetFakeCantabularOk(ctx context.Context, cfg config.CantabularConfig) store.Cantabular {
+	return &storeMock.CantabularMock{
 		BlobsFunc: func(ctx context.Context) (models.Blobs, error) {
 			return models.Blobs{Items: c.fakeCantabularBlobs}, nil
 		},
@@ -222,21 +222,21 @@ func (c *DatasetComponent) DoGetFakeCantabularClient(ctx context.Context, cfg co
 
 func (c *DatasetComponent) setInitialiserMock() {
 	c.initialiser = &serviceMock.InitialiserMock{
-		DoGetMongoDBFunc:          c.DoGetMongoDB,
-		DoGetGraphDBFunc:          c.DoGetGraphDBOk,
-		DoGetKafkaProducerFunc:    c.DoGetMockedKafkaProducerOk,
-		DoGetHealthCheckFunc:      c.DoGetHealthcheckOk,
-		DoGetHTTPServerFunc:       c.DoGetHTTPServer,
-		DoGetCantabularClientFunc: c.DoGetFakeCantabularClient,
+		DoGetMongoDBFunc:       c.DoGetMongoDB,
+		DoGetGraphDBFunc:       c.DoGetGraphDBOk,
+		DoGetKafkaProducerFunc: c.DoGetMockedKafkaProducerOk,
+		DoGetHealthCheckFunc:   c.DoGetHealthcheckOk,
+		DoGetHTTPServerFunc:    c.DoGetHTTPServer,
+		DoGetCantabularFunc:    c.DoGetFakeCantabularOk,
 	}
 }
 func (c *DatasetComponent) setInitialiserRealKafka() {
 	c.initialiser = &serviceMock.InitialiserMock{
-		DoGetMongoDBFunc:          c.DoGetMongoDB,
-		DoGetGraphDBFunc:          c.DoGetGraphDBOk,
-		DoGetKafkaProducerFunc:    c.DoGetKafkaProducer,
-		DoGetHealthCheckFunc:      c.DoGetHealthcheckOk,
-		DoGetHTTPServerFunc:       c.DoGetHTTPServer,
-		DoGetCantabularClientFunc: c.DoGetFakeCantabularClient,
+		DoGetMongoDBFunc:       c.DoGetMongoDB,
+		DoGetGraphDBFunc:       c.DoGetGraphDBOk,
+		DoGetKafkaProducerFunc: c.DoGetKafkaProducer,
+		DoGetHealthCheckFunc:   c.DoGetHealthcheckOk,
+		DoGetHTTPServerFunc:    c.DoGetHTTPServer,
+		DoGetCantabularFunc:    c.DoGetFakeCantabularOk,
 	}
 }

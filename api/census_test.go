@@ -20,7 +20,8 @@ func TestAPIRouteRegistration(t *testing.T) {
 		cfg, err := config.Get()
 		So(err, ShouldBeNil)
 
-		api := Setup(testContext, cfg, mux.NewRouter(), store.DataStore{}, nil, nil, nil, nil)
+		dataStoreWithMockStorer := buildDataStoreWithMockCantabularBlobs([]models.Blob{})
+		api := Setup(testContext, cfg, mux.NewRouter(), dataStoreWithMockStorer, nil, nil, nil, nil)
 
 		Convey("When I GET /census", func() {
 			rec := httptest.NewRecorder()

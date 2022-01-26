@@ -23,8 +23,8 @@ var _ service.Initialiser = &InitialiserMock{}
 //
 // 		// make and configure a mocked service.Initialiser
 // 		mockedInitialiser := &InitialiserMock{
-// 			DoGetCantabularClientFunc: func(ctx context.Context, cfg config.CantabularConfig) service.CantabularClient {
-// 				panic("mock out the DoGetCantabularClient method")
+// 			DoGetCantabularFunc: func(ctx context.Context, cfg config.CantabularConfig) store.Cantabular {
+// 				panic("mock out the DoGetCantabular method")
 // 			},
 // 			DoGetGraphDBFunc: func(ctx context.Context) (store.GraphDB, service.Closer, error) {
 // 				panic("mock out the DoGetGraphDB method")
@@ -48,8 +48,8 @@ var _ service.Initialiser = &InitialiserMock{}
 //
 // 	}
 type InitialiserMock struct {
-	// DoGetCantabularClientFunc mocks the DoGetCantabularClient method.
-	DoGetCantabularClientFunc func(ctx context.Context, cfg config.CantabularConfig) service.CantabularClient
+	// DoGetCantabularFunc mocks the DoGetCantabular method.
+	DoGetCantabularFunc func(ctx context.Context, cfg config.CantabularConfig) store.Cantabular
 
 	// DoGetGraphDBFunc mocks the DoGetGraphDB method.
 	DoGetGraphDBFunc func(ctx context.Context) (store.GraphDB, service.Closer, error)
@@ -68,8 +68,8 @@ type InitialiserMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// DoGetCantabularClient holds details about calls to the DoGetCantabularClient method.
-		DoGetCantabularClient []struct {
+		// DoGetCantabular holds details about calls to the DoGetCantabular method.
+		DoGetCantabular []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Cfg is the cfg argument value.
@@ -115,18 +115,18 @@ type InitialiserMock struct {
 			Cfg config.MongoConfig
 		}
 	}
-	lockDoGetCantabularClient sync.RWMutex
-	lockDoGetGraphDB          sync.RWMutex
-	lockDoGetHTTPServer       sync.RWMutex
-	lockDoGetHealthCheck      sync.RWMutex
-	lockDoGetKafkaProducer    sync.RWMutex
-	lockDoGetMongoDB          sync.RWMutex
+	lockDoGetCantabular    sync.RWMutex
+	lockDoGetGraphDB       sync.RWMutex
+	lockDoGetHTTPServer    sync.RWMutex
+	lockDoGetHealthCheck   sync.RWMutex
+	lockDoGetKafkaProducer sync.RWMutex
+	lockDoGetMongoDB       sync.RWMutex
 }
 
-// DoGetCantabularClient calls DoGetCantabularClientFunc.
-func (mock *InitialiserMock) DoGetCantabularClient(ctx context.Context, cfg config.CantabularConfig) service.CantabularClient {
-	if mock.DoGetCantabularClientFunc == nil {
-		panic("InitialiserMock.DoGetCantabularClientFunc: method is nil but Initialiser.DoGetCantabularClient was just called")
+// DoGetCantabular calls DoGetCantabularFunc.
+func (mock *InitialiserMock) DoGetCantabular(ctx context.Context, cfg config.CantabularConfig) store.Cantabular {
+	if mock.DoGetCantabularFunc == nil {
+		panic("InitialiserMock.DoGetCantabularFunc: method is nil but Initialiser.DoGetCantabular was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
@@ -135,16 +135,16 @@ func (mock *InitialiserMock) DoGetCantabularClient(ctx context.Context, cfg conf
 		Ctx: ctx,
 		Cfg: cfg,
 	}
-	mock.lockDoGetCantabularClient.Lock()
-	mock.calls.DoGetCantabularClient = append(mock.calls.DoGetCantabularClient, callInfo)
-	mock.lockDoGetCantabularClient.Unlock()
-	return mock.DoGetCantabularClientFunc(ctx, cfg)
+	mock.lockDoGetCantabular.Lock()
+	mock.calls.DoGetCantabular = append(mock.calls.DoGetCantabular, callInfo)
+	mock.lockDoGetCantabular.Unlock()
+	return mock.DoGetCantabularFunc(ctx, cfg)
 }
 
-// DoGetCantabularClientCalls gets all the calls that were made to DoGetCantabularClient.
+// DoGetCantabularCalls gets all the calls that were made to DoGetCantabular.
 // Check the length with:
-//     len(mockedInitialiser.DoGetCantabularClientCalls())
-func (mock *InitialiserMock) DoGetCantabularClientCalls() []struct {
+//     len(mockedInitialiser.DoGetCantabularCalls())
+func (mock *InitialiserMock) DoGetCantabularCalls() []struct {
 	Ctx context.Context
 	Cfg config.CantabularConfig
 } {
@@ -152,9 +152,9 @@ func (mock *InitialiserMock) DoGetCantabularClientCalls() []struct {
 		Ctx context.Context
 		Cfg config.CantabularConfig
 	}
-	mock.lockDoGetCantabularClient.RLock()
-	calls = mock.calls.DoGetCantabularClient
-	mock.lockDoGetCantabularClient.RUnlock()
+	mock.lockDoGetCantabular.RLock()
+	calls = mock.calls.DoGetCantabular
+	mock.lockDoGetCantabular.RUnlock()
 	return calls
 }
 

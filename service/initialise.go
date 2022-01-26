@@ -82,7 +82,7 @@ func (e *ExternalServiceList) GetMongoDB(ctx context.Context, cfg config.MongoCo
 }
 
 func (e *ExternalServiceList) GetCantabular(ctx context.Context, cfg config.CantabularConfig) (store.Cantabular, error) {
-	cantabular := e.Init.DoGetCantabularClient(ctx, cfg)
+	cantabular := e.Init.DoGetCantabular(ctx, cfg)
 	e.Cantabular = true
 	return cantabular, nil
 }
@@ -148,7 +148,7 @@ func (e *Init) DoGetMongoDB(ctx context.Context, cfg config.MongoConfig) (store.
 	return mongodb, nil
 }
 
-func (e *Init) DoGetCantabularClient(ctx context.Context, cfg config.CantabularConfig) CantabularClient {
+func (e *Init) DoGetCantabular(ctx context.Context, cfg config.CantabularConfig) store.Cantabular {
 	panic("Not implemented")
 	//x := cantabular.NewClient(
 	//	cantabular.Config{

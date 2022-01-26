@@ -2,11 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/ONSdigital/dp-dataset-api/models"
 	"net/http"
 )
 
 func (api *DatasetAPI) getCensus(writer http.ResponseWriter, request *http.Request) {
-	blobs, err := api.dataStore.Backend.Blobs(request.Context())
+	blobs, err := models.NewBlobs(request.Context(), api.dataStore.Backend)
 	if err != nil {
 		panic("not implemented")
 	}
