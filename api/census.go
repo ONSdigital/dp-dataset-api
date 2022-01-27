@@ -7,15 +7,15 @@ import (
 )
 
 func (api *DatasetAPI) getCensus(writer http.ResponseWriter, request *http.Request) {
-	blobs, err := models.NewPopulationTypes(request.Context(), api.dataStore.Backend)
+	populationTypes, err := models.FetchPopulationTypes(request.Context(), api.dataStore.Backend)
 	if err != nil {
-		panic("not implemented")
+		http.Error(writer, "failed to fetch population types", http.StatusInternalServerError)
+		return
 	}
 
-	serializedBlobs, err := json.Marshal(blobs)
+	err = json.NewEncoder(writer).Encode(populationTypes)
 	if err != nil {
-		panic("not implemented")
+		http.Error(writer, "failed to respond with population types", http.StatusInternalServerError)
+		return
 	}
-	writer.Header().Set("Content-Type", "application/json")
-	writer.Write(serializedBlobs)
 }
