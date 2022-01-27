@@ -11,12 +11,14 @@ import (
 
 //go:generate moq -out mocks/client.go -pkg mocks . Client
 
+// Client is the (private) outward facing side of the adapter which sits inside the adapter struct. It should not be used directly and is only exposed to allow for testing
 type Client interface {
 	Checker(ctx context.Context, state *healthcheck.CheckState) error
 	CheckerAPIExt(ctx context.Context, state *healthcheck.CheckState) error
 	GetPopulationTypes(ctx context.Context) ([]string, error)
 }
 
+// adapter implements the inward facing (public) side of the adapter
 type adapter struct {
 	client Client
 }
