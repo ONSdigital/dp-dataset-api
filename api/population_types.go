@@ -7,17 +7,17 @@ import (
 )
 
 // this is the handler for the "/census" endpoint
-func (api *DatasetAPI) getPopulationTypes(writer http.ResponseWriter, request *http.Request) {
-	populationTypes, err := models.FetchPopulationTypes(request.Context(), api.dataStore.Backend)
+func (api *DatasetAPI) getPopulationTypes(w http.ResponseWriter, req *http.Request) {
+	populationTypes, err := models.FetchPopulationTypes(req.Context(), api.dataStore.Backend)
 	if err != nil {
-		http.Error(writer, "failed to fetch population types", http.StatusInternalServerError)
+		http.Error(w, "failed to fetch population types", http.StatusInternalServerError)
 		return
 	}
 
-	writer.Header().Set("content-type", "application/json")
-	err = json.NewEncoder(writer).Encode(populationTypes)
+	w.Header().Set("content-type", "application/json")
+	err = json.NewEncoder(w).Encode(populationTypes)
 	if err != nil {
-		http.Error(writer, "failed to respond with population types", http.StatusInternalServerError)
+		http.Error(w, "failed to respond with population types", http.StatusInternalServerError)
 		return
 	}
 }
