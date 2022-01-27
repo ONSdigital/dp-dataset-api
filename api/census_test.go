@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"net/http"
 	"testing"
@@ -19,11 +20,8 @@ import (
 func TestAPIRouteRegistration(t *testing.T) {
 
 	Convey("Given the data set API is created", t, func() {
-		cfg, err := config.Get()
-		So(err, ShouldBeNil)
-
 		dataStoreWithMockStorer := buildDataStoreWithFakePopulationTypes([]models.PopulationType{}, nil)
-		api := Setup(testContext, cfg, mux.NewRouter(), dataStoreWithMockStorer, nil, nil, nil, nil)
+		api := buildAPI(dataStoreWithMockStorer)
 
 		Convey("When I GET /census", func() {
 			rec := httptest.NewRecorder()
@@ -39,16 +37,13 @@ func TestAPIRouteRegistration(t *testing.T) {
 func TestCensusRootHappyPath(t *testing.T) {
 
 	Convey("Given the data set API is created", t, func() {
-		cfg, err := config.Get()
-		So(err, ShouldBeNil)
-
 		dataStoreWithMockStorer := buildDataStoreWithFakePopulationTypes(
 			[]models.PopulationType{
 				{Name: "blob 1"},
 				{Name: "blob 2"},
 			},
 			nil)
-		api := Setup(testContext, cfg, mux.NewRouter(), dataStoreWithMockStorer, nil, nil, nil, nil)
+		api := buildAPI(dataStoreWithMockStorer)
 
 		Convey("When I GET /census", func() {
 			rec := httptest.NewRecorder()
@@ -65,11 +60,8 @@ func TestCensusRootHappyPath(t *testing.T) {
 
 func TestCensusRootUnhappyPath(t *testing.T) {
 	Convey("Given the data set API is created but the data store fails", t, func() {
-		cfg, err := config.Get()
-		So(err, ShouldBeNil)
-
 		dataStoreWithMockStorer := buildDataStoreWithFakePopulationTypes(nil, errors.New("oh no no no no no"))
-		api := Setup(testContext, cfg, mux.NewRouter(), dataStoreWithMockStorer, nil, nil, nil, nil)
+		api := buildAPI(dataStoreWithMockStorer)
 
 		Convey("When I GET /census", func() {
 			rec := httptest.NewRecorder()
@@ -126,4 +118,13 @@ func buildDataStoreWithFakePopulationTypes(populationTypes []models.PopulationTy
 			},
 		},
 	}
+}
+
+func buildAPI(dataStoreWithMockStorer store.DataStore) *DatasetAPI {
+	cfg, err := config.Get()
+	if err != nil {
+		panic(err)
+	}
+	fakeAuthHandler := &mocks.AuthHandlerMock{Required: &mocks.PermissionCheckCalls{}}
+	return Setup(testContext, cfg, mux.NewRouter(), dataStoreWithMockStorer, nil, nil, fakeAuthHandler, fakeAuthHandler)
 }
