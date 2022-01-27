@@ -34,7 +34,7 @@ func TestAPIRouteRegistration(t *testing.T) {
 	})
 }
 
-func TestCensusRootHappyPath(t *testing.T) {
+func TestPopulationTypesRootHappyPath(t *testing.T) {
 
 	Convey("Given the data set API is created", t, func() {
 		dataStoreWithMockStorer := buildDataStoreWithFakePopulationTypes(
@@ -58,7 +58,7 @@ func TestCensusRootHappyPath(t *testing.T) {
 	})
 }
 
-func TestCensusRootUnhappyPath(t *testing.T) {
+func TestPopulationTypesRootUnhappyPath(t *testing.T) {
 	Convey("Given the data set API is created but the data store fails", t, func() {
 		dataStoreWithMockStorer := buildDataStoreWithFakePopulationTypes(nil, errors.New("oh no no no no no"))
 		api := buildAPI(dataStoreWithMockStorer)

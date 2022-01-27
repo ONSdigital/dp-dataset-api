@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// this is the handler for the "/census" endpoint
+// this is the handler for the "/population-types" endpoint
 func (api *DatasetAPI) getPopulationTypes(w http.ResponseWriter, req *http.Request) {
 	populationTypes, err := models.FetchPopulationTypes(req.Context(), api.dataStore.Backend)
 	if err != nil {
