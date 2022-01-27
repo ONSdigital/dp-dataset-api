@@ -21,8 +21,6 @@ type adapter struct {
 	client Client
 }
 
-type AdapterStrategy func(cantabularConfig cantabular.Config, userAgent dphttp.Clienter) Client
-
 func (c *adapter) PopulationTypes(ctx context.Context) ([]models.PopulationType, error) {
 	names, err := c.client.GetPopulationTypes(ctx)
 	if err != nil {
@@ -53,7 +51,7 @@ func buildRuntimeClient(cantabularConfig cantabular.Config, userAgent dphttp.Cli
 	return cantabular.NewClient(cantabularConfig, userAgent, nil)
 }
 
-// NewCantabularAdapterForStrategy is a test seam
+// NewCantabularAdapterForStrategy is a test seam and shouldn't be used directly
 func NewCantabularAdapterForStrategy(config config.CantabularConfig, buildStrategy AdapterStrategy) *adapter {
 
 	cantabularConfig := cantabular.Config{
@@ -67,3 +65,5 @@ func NewCantabularAdapterForStrategy(config config.CantabularConfig, buildStrate
 		client,
 	}
 }
+
+type AdapterStrategy func(cantabularConfig cantabular.Config, userAgent dphttp.Clienter) Client

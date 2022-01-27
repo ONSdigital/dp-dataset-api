@@ -18,4 +18,5 @@ func (api *DatasetAPI) getCensus(writer http.ResponseWriter, request *http.Reque
 		http.Error(writer, "failed to respond with population types", http.StatusInternalServerError)
 		return
 	}
+	writer.Header().Set("content-type", "application/json")
 }

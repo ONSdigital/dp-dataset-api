@@ -58,7 +58,7 @@ func TestCensusRootHappyPath(t *testing.T) {
 			SoMsg("Then it should return application/json content",
 				rec.Header().Get("Content-Type"), ShouldEqual, "application/json")
 			SoMsg("Then it should return expected JSON",
-				rec.Body.String(), ShouldEqual, `{"items":[{"name":"blob 1"},{"name":"blob 2"}]}`)
+				rec.Body.String(), ShouldEqual, `{"items":[{"name":"blob 1"},{"name":"blob 2"}]}`+"\n")
 		})
 	})
 }
