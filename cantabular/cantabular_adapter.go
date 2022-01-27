@@ -28,11 +28,11 @@ func (c *adapter) PopulationTypes(ctx context.Context) ([]models.PopulationType,
 	if err != nil {
 		return nil, err
 	}
-	blobs := make([]models.PopulationType, len(names))
+	populationTypes := make([]models.PopulationType, len(names))
 	for i, name := range names {
-		blobs[i] = models.NewPopulationType(name)
+		populationTypes[i] = models.NewPopulationType(name)
 	}
-	return blobs, nil
+	return populationTypes, nil
 }
 
 func (c *adapter) Checker(ctx context.Context, state *healthcheck.CheckState) error {

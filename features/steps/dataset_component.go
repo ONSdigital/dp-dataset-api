@@ -2,6 +2,7 @@ package steps
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"net/http"
@@ -22,18 +23,19 @@ import (
 )
 
 type DatasetComponent struct {
-	ErrorFeature        componenttest.ErrorFeature
-	svc                 *service.Service
-	errorChan           chan error
-	MongoClient         *mongo.Mongo
-	Config              *config.Configuration
-	HTTPServer          *http.Server
-	ServiceRunning      bool
-	consumer            kafka.IConsumerGroup
-	producer            kafka.IProducer
-	initialiser         service.Initialiser
-	APIFeature          *componenttest.APIFeature
-	fakeCantabularBlobs []models.PopulationType
+	ErrorFeature                  componenttest.ErrorFeature
+	svc                           *service.Service
+	errorChan                     chan error
+	MongoClient                   *mongo.Mongo
+	Config                        *config.Configuration
+	HTTPServer                    *http.Server
+	ServiceRunning                bool
+	consumer                      kafka.IConsumerGroup
+	producer                      kafka.IProducer
+	initialiser                   service.Initialiser
+	APIFeature                    *componenttest.APIFeature
+	fakeCantabularPopulationTypes []models.PopulationType
+	fakeCantabularIsUnresponsive  bool
 }
 
 func NewDatasetComponent(mongoURI string, zebedeeURL string) (*DatasetComponent, error) {
@@ -214,7 +216,10 @@ func (c *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, ser
 func (c *DatasetComponent) DoGetFakeCantabularOk(ctx context.Context, cfg config.CantabularConfig) store.Cantabular {
 	return &storeMock.CantabularMock{
 		PopulationTypesFunc: func(ctx context.Context) ([]models.PopulationType, error) {
-			return c.fakeCantabularBlobs, nil
+			if c.fakeCantabularIsUnresponsive {
+				return nil, errors.New("computer says no")
+			}
+			return c.fakeCantabularPopulationTypes, nil
 		},
 	}
 }

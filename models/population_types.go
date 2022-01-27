@@ -13,6 +13,5 @@ func FetchPopulationTypes(ctx context.Context, cantabular CantabularDataProvider
 	if err != nil {
 		return PopulationTypes{}, err
 	}
-	blobs := PopulationTypes{items}
-	return blobs, nil
+	return PopulationTypes{items}, nil
 }

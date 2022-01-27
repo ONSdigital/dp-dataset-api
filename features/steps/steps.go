@@ -41,8 +41,11 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^these cantabular generator downloads events are produced:$`, c.theseCantabularGeneratorDownloadsEventsAreProduced)
 	ctx.Step(`^these generate downloads events are produced:$`, c.theseGenerateDownloadsEventsAreProduced)
 	ctx.Step(`^I access the root census endpoint$`, c.iAccessTheCensusEndpoint)
-	ctx.Step(`^a list of named cantabular blobs is returned$`, c.aListOfNamedCantabularBlobsIsReturned)
-	ctx.Step(`^I have some cantabular blobs$`, c.iHaveSomeCantabularBlobs)
+	ctx.Step(`^a list of named cantabular population types is returned$`, c.aListOfNamedCantabularPopulationTypesIsReturned)
+	ctx.Step(`^I have some population types in cantabular$`, c.iHaveSomePopulationTypesInCantabular)
+	ctx.Step(`^cantabular is unresponsive$`, c.cantabularIsUnresponsive)
+	ctx.Step(`^the service responds with an internal server error saying "([^"]*)"$`, c.theServiceRespondsWithAnInternalServerErrorSaying)
+
 }
 
 func (c *DatasetComponent) thereAreNoDatasets() error {
@@ -351,7 +354,7 @@ func (c *DatasetComponent) putDocumentInDatabase(document interface{}, id, colle
 	return nil
 }
 
-func (c *DatasetComponent) aListOfNamedCantabularBlobsIsReturned() error {
+func (c *DatasetComponent) aListOfNamedCantabularPopulationTypesIsReturned() error {
 	return c.APIFeature.IShouldReceiveTheFollowingJSONResponseWithStatus(
 		"200",
 		&godog.DocString{Content: `{ 
@@ -368,11 +371,21 @@ func (c *DatasetComponent) iAccessTheCensusEndpoint() error {
 	return c.APIFeature.IGet("/census")
 }
 
-func (c *DatasetComponent) iHaveSomeCantabularBlobs() error {
-	c.fakeCantabularBlobs = []models.PopulationType{
+func (c *DatasetComponent) iHaveSomePopulationTypesInCantabular() error {
+	c.fakeCantabularPopulationTypes = []models.PopulationType{
 		{Name: "blob 1"},
 		{Name: "blob 2"},
 		{Name: "blob 3"},
 	}
 	return nil
+}
+
+func (c *DatasetComponent) cantabularIsUnresponsive() error {
+	c.fakeCantabularIsUnresponsive = true
+	return nil
+}
+
+func (c *DatasetComponent) theServiceRespondsWithAnInternalServerErrorSaying(arg1 string) error {
+	return c.APIFeature.IShouldReceiveTheFollowingResponse(
+		&godog.DocString{MediaType: "text/plain", Content: "failed to fetch population types"})
 }

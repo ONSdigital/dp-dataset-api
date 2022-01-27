@@ -13,10 +13,10 @@ func (api *DatasetAPI) getCensus(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
+	writer.Header().Set("content-type", "application/json")
 	err = json.NewEncoder(writer).Encode(populationTypes)
 	if err != nil {
 		http.Error(writer, "failed to respond with population types", http.StatusInternalServerError)
 		return
 	}
-	writer.Header().Set("content-type", "application/json")
 }
