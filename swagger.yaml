@@ -97,10 +97,10 @@ parameters:
     in: body
     required: true
     schema:
-     allOf:
+      allOf:
         - type: object
           properties:
-            type:  
+            type:
               $ref: '#/definitions/Type'
         - $ref: "#/definitions/Dataset"
   new_edition:
@@ -118,11 +118,11 @@ parameters:
     schema:
       $ref: '#/definitions/Version'
   node_id:
-   name: node_id
-   description: "An unique node id"
-   in: path
-   required: true
-   type: string
+    name: node_id
+    description: "An unique node id"
+    in: path
+    required: true
+    type: string
   newInstance:
     name: instance
     description: "An instance related to an import job"
@@ -131,11 +131,11 @@ parameters:
     schema:
       $ref: '#/definitions/NewInstance'
   option:
-   name: option
-   description: "A option to set within a type"
-   in: path
-   required: true
-   type: string
+    name: option
+    description: "A option to set within a type"
+    in: path
+    required: true
+    type: string
   state:
     name: "state"
     description: "A comma separated list of state values to filter on (e.g. ‘completed,edition-confirmed’)"
@@ -215,13 +215,26 @@ securityDefinitions:
     in: header
     type: apiKey
 paths:
+  /census:
+    get:
+      tags:
+        - "Public"
+      summary: "Get all population types relevant to Census"
+      description: "Retrieves a list of cantabular population types for Census"
+      responses:
+        200:
+          description: "Json object containing a list of population types for Census"
+          schema:
+            $ref: '#/definitions/PopulationTypes'
+        500:
+          $ref: '#/responses/InternalError'
   /datasets:
     get:
       tags:
       - "Public"
       summary: "Get a list of datasets"
       description: "Returns a list of all datasets provided by the ONS that can be filtered using the filter API"
-      parameters: 
+      parameters:
       - $ref: '#/parameters/limit'
       - $ref: '#/parameters/offset'
       produces:
@@ -1237,10 +1250,10 @@ definitions:
         type: string
 
   Type:
-    description: "The type for a dataset" 
+    description: "The type for a dataset"
     type: string
     enum: [filterable, nomis]
-    default: "filterable"    
+    default: "filterable"
   Dimension:
     description: "A single dimension within a dataset"
     type: object
@@ -1839,7 +1852,7 @@ definitions:
           properties:
             collection_id:
               $ref: '#/definitions/CollectionID'
-            type:  
+            type:
               $ref: '#/definitions/Type'
         - $ref: "#/definitions/Dataset"
       next:
@@ -1848,7 +1861,7 @@ definitions:
           properties:
             collection_id:
               $ref: '#/definitions/CollectionID'
-            type:  
+            type:
               $ref: '#/definitions/Type'
         - $ref: "#/definitions/Dataset"
   NewInstance:
@@ -1997,6 +2010,21 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/UsageNotes'
+  PopulationType:
+    description: "A population type which census data can be retrieved from"
+    type: object
+    properties:
+      name:
+        description: "The name of the population type"
+        type: string
+  PopulationTypes:
+    type: object
+    properties:
+      items:
+        description: "An array of population types"
+        type: array
+        items:
+          $ref: '#/definitions/PopulationType'
   Publisher:
     description: "The publisher of the dataset"
     type: object
@@ -2186,7 +2214,7 @@ definitions:
   Version:
     description: "An object containing information about published datasets from the ONS"
     required: [
-      release_date,
+        release_date,
     ]
     type: object
     properties:
