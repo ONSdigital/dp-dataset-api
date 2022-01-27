@@ -40,7 +40,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I have a real kafka container with topic "([^"]*)"$`, c.iHaveARealKafkaContainerWithTopic)
 	ctx.Step(`^these cantabular generator downloads events are produced:$`, c.theseCantabularGeneratorDownloadsEventsAreProduced)
 	ctx.Step(`^these generate downloads events are produced:$`, c.theseGenerateDownloadsEventsAreProduced)
-	ctx.Step(`^I access the root census endpoint$`, c.iAccessTheCensusEndpoint)
+	ctx.Step(`^I access the root population types endpoint$`, c.iAccessThePopulationTypesEndpoint)
 	ctx.Step(`^a list of named cantabular population types is returned$`, c.aListOfNamedCantabularPopulationTypesIsReturned)
 	ctx.Step(`^I have some population types in cantabular$`, c.iHaveSomePopulationTypesInCantabular)
 	ctx.Step(`^cantabular is unresponsive$`, c.cantabularIsUnresponsive)
@@ -367,8 +367,8 @@ func (c *DatasetComponent) aListOfNamedCantabularPopulationTypesIsReturned() err
 	)
 }
 
-func (c *DatasetComponent) iAccessTheCensusEndpoint() error {
-	return c.APIFeature.IGet("/census")
+func (c *DatasetComponent) iAccessThePopulationTypesEndpoint() error {
+	return c.APIFeature.IGet("/population-types")
 }
 
 func (c *DatasetComponent) iHaveSomePopulationTypesInCantabular() error {

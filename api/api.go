@@ -120,7 +120,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		log.Info(ctx, "enabling only public endpoints for dataset api")
 		api.enablePublicEndpoints(paginator)
 	}
-	api.enableCensusEndpoints()
+	api.enablePopulationTypesEndpoints()
 	return api
 }
 
@@ -426,8 +426,8 @@ func (api *DatasetAPI) authenticate(r *http.Request, logData log.Data) bool {
 	return authorised
 }
 
-func (api *DatasetAPI) enableCensusEndpoints() {
-	api.get("/census", api.getCensus)
+func (api *DatasetAPI) enablePopulationTypesEndpoints() {
+	api.get("/population-types", api.getPopulationTypes)
 }
 
 func setJSONContentType(w http.ResponseWriter) {

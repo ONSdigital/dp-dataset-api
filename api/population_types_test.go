@@ -23,9 +23,9 @@ func TestAPIRouteRegistration(t *testing.T) {
 		dataStoreWithMockStorer := buildDataStoreWithFakePopulationTypes([]models.PopulationType{}, nil)
 		api := buildAPI(dataStoreWithMockStorer)
 
-		Convey("When I GET /census", func() {
+		Convey("When I GET /population-types", func() {
 			rec := httptest.NewRecorder()
-			req := httptest.NewRequest("GET", "/census", nil)
+			req := httptest.NewRequest("GET", "/population-types", nil)
 			api.Router.ServeHTTP(rec, req)
 
 			SoMsg("Then it should return with 200",
@@ -45,9 +45,9 @@ func TestCensusRootHappyPath(t *testing.T) {
 			nil)
 		api := buildAPI(dataStoreWithMockStorer)
 
-		Convey("When I GET /census", func() {
+		Convey("When I GET /population-types", func() {
 			rec := httptest.NewRecorder()
-			req := httptest.NewRequest("GET", "/census", nil)
+			req := httptest.NewRequest("GET", "/population-types", nil)
 			api.Router.ServeHTTP(rec, req)
 
 			SoMsg("Then it should return application/json content",
@@ -63,9 +63,9 @@ func TestCensusRootUnhappyPath(t *testing.T) {
 		dataStoreWithMockStorer := buildDataStoreWithFakePopulationTypes(nil, errors.New("oh no no no no no"))
 		api := buildAPI(dataStoreWithMockStorer)
 
-		Convey("When I GET /census", func() {
+		Convey("When I GET /population-types", func() {
 			rec := httptest.NewRecorder()
-			req := httptest.NewRequest("GET", "/census", nil)
+			req := httptest.NewRequest("GET", "/population-types", nil)
 			api.Router.ServeHTTP(rec, req)
 
 			SoMsg("Then it should return the expected error",
@@ -80,10 +80,10 @@ func TestCensusRootUnhappyPath(t *testing.T) {
 		api := DatasetAPI{
 			dataStore: buildDataStoreWithFakePopulationTypes(nil, nil),
 		}
-		Convey("When I GET /census but writing fails", func() {
-			req := httptest.NewRequest("GET", "/census", nil)
+		Convey("When I GET /population-types but writing fails", func() {
+			req := httptest.NewRequest("GET", "/population-types", nil)
 			responseWriter := FailingWriter{}
-			api.getCensus(&responseWriter, req)
+			api.getPopulationTypes(&responseWriter, req)
 			SoMsg("Then it should return a 500 status code",
 				responseWriter.statusCode, ShouldEqual, http.StatusInternalServerError)
 			SoMsg("Should respond with error message",

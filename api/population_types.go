@@ -7,7 +7,7 @@ import (
 )
 
 // this is the handler for the "/census" endpoint
-func (api *DatasetAPI) getCensus(writer http.ResponseWriter, request *http.Request) {
+func (api *DatasetAPI) getPopulationTypes(writer http.ResponseWriter, request *http.Request) {
 	populationTypes, err := models.FetchPopulationTypes(request.Context(), api.dataStore.Backend)
 	if err != nil {
 		http.Error(writer, "failed to fetch population types", http.StatusInternalServerError)
