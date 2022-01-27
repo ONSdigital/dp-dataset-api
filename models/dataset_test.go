@@ -62,7 +62,8 @@ func TestString(t *testing.T) {
 			So(datasetTypes[1], ShouldEqual, "nomis")
 			So(datasetTypes[2], ShouldEqual, "cantabular_table")
 			So(datasetTypes[3], ShouldEqual, "cantabular_blob")
-			So(datasetTypes[4], ShouldEqual, "invalid")
+			So(datasetTypes[4], ShouldEqual, "cantabular_flexible_table")
+			So(datasetTypes[5], ShouldEqual, "invalid")
 
 		})
 	})
@@ -82,6 +83,22 @@ func TestGetDatasetType(t *testing.T) {
 			Convey("Then it should return the appropriate value", func() {
 				result, err := GetDatasetType("cantabular_blob")
 				So(result, ShouldEqual, CantabularBlob)
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When the type is cantabular_table", func() {
+			Convey("Then it should return the appropriate value", func() {
+				result, err := GetDatasetType("cantabular_table")
+				So(result, ShouldEqual, CantabularTable)
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When the type is cantabular_flexible_table", func() {
+			Convey("Then it should return the appropriate value", func() {
+				result, err := GetDatasetType("cantabular_flexible_table")
+				So(result, ShouldEqual, CantabularFlexibleTable)
 				So(err, ShouldBeNil)
 			})
 		})

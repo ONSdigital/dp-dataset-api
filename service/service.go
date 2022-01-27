@@ -13,7 +13,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	kafka "github.com/ONSdigital/dp-kafka/v2"
 	dphandlers "github.com/ONSdigital/dp-net/v2/handlers"
@@ -145,10 +145,11 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	}
 
 	downloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
-		models.CantabularBlob:  downloadGeneratorCantabular,
-		models.CantabularTable: downloadGeneratorCantabular,
-		models.Filterable:      downloadGeneratorCMD,
-		models.Nomis:           downloadGeneratorCMD,
+		models.CantabularBlob:          downloadGeneratorCantabular,
+		models.CantabularTable:         downloadGeneratorCantabular,
+		models.CantabularFlexibleTable: downloadGeneratorCantabular,
+		models.Filterable:              downloadGeneratorCMD,
+		models.Nomis:                   downloadGeneratorCMD,
 	}
 
 	// Get Identity Client (only if private endpoints are enabled)

@@ -268,7 +268,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// update dp-graph instance node (only for non-cantabular types)
-		if currentInstance.Type == models.CantabularBlob.String() || currentInstance.Type == models.CantabularTable.String() {
+		if currentInstance.Type == models.CantabularBlob.String() || currentInstance.Type == models.CantabularTable.String() || currentInstance.Type == models.CantabularFlexibleTable.String() {
 			editionLogData["instance_type"] = instance.Type
 			log.Info(ctx, "skipping dp-graph instance update because it is not required by instance type", editionLogData)
 		} else {
