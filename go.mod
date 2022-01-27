@@ -14,7 +14,7 @@ require (
 	github.com/ONSdigital/dp-kafka/v2 v2.4.4
 	github.com/ONSdigital/dp-mongodb/v3 v3.0.0-beta.8
 	github.com/ONSdigital/dp-net/v2 v2.2.0-beta
-	github.com/ONSdigital/log.go/v2 v2.0.9
+	github.com/ONSdigital/log.go/v2 v2.1.0
 	github.com/cucumber/godog v0.12.3
 	github.com/google/go-cmp v0.5.6
 	github.com/gorilla/mux v1.8.0

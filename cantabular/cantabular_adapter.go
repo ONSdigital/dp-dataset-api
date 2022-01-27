@@ -11,14 +11,16 @@ import (
 
 //go:generate moq -out mocks/client.go -pkg mocks . Client
 
-// Client is the (private) outward facing side of the adapter which sits inside the adapter struct. It should not be used directly and is only exposed to allow for testing
+// Client holds the methods which our adapter uses from the cantabular client library.
+// It should not be used directly and is only exposed for testing purposes
 type Client interface {
 	Checker(ctx context.Context, state *healthcheck.CheckState) error
 	CheckerAPIExt(ctx context.Context, state *healthcheck.CheckState) error
 	GetPopulationTypes(ctx context.Context) ([]string, error)
 }
 
-// adapter implements the inward facing (public) side of the adapter
+// adapter is the inward facing side of the adapter which exposes the store.Cantabular interface
+// which gets used by the datastore package
 type adapter struct {
 	client Client
 }
@@ -68,4 +70,5 @@ func NewCantabularAdapterForStrategy(config config.CantabularConfig, buildStrate
 	}
 }
 
+// AdapterStrategy is only exposed as part of the test seam
 type AdapterStrategy func(cantabularConfig cantabular.Config, userAgent dphttp.Clienter) Client
