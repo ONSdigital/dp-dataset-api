@@ -20,7 +20,7 @@ func TestAPIRouteRegistration(t *testing.T) {
 		cfg, err := config.Get()
 		So(err, ShouldBeNil)
 
-		dataStoreWithMockStorer := buildDataStoreWithMockCantabularBlobs([]models.Blob{})
+		dataStoreWithMockStorer := buildDataStoreWithFakePopulationTypes([]models.PopulationType{})
 		api := Setup(testContext, cfg, mux.NewRouter(), dataStoreWithMockStorer, nil, nil, nil, nil)
 
 		Convey("When I GET /census", func() {
@@ -40,8 +40,8 @@ func TestCensusRootHappyPath(t *testing.T) {
 		cfg, err := config.Get()
 		So(err, ShouldBeNil)
 
-		dataStoreWithMockStorer := buildDataStoreWithMockCantabularBlobs(
-			[]models.Blob{
+		dataStoreWithMockStorer := buildDataStoreWithFakePopulationTypes(
+			[]models.PopulationType{
 				{Name: "blob 1"},
 				{Name: "blob 2"},
 			},
@@ -61,11 +61,11 @@ func TestCensusRootHappyPath(t *testing.T) {
 	})
 }
 
-func buildDataStoreWithMockCantabularBlobs(fakeBlobs []models.Blob) store.DataStore {
+func buildDataStoreWithFakePopulationTypes(populationTypes []models.PopulationType) store.DataStore {
 	return store.DataStore{
 		Backend: &storetest.StorerMock{
-			BlobsFunc: func(ctx context.Context) (models.Blobs, error) {
-				return models.Blobs{Items: fakeBlobs}, nil
+			PopulationTypesFunc: func(ctx context.Context) ([]models.PopulationType, error) {
+				return populationTypes, nil
 			},
 		},
 	}

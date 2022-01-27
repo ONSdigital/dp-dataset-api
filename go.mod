@@ -5,7 +5,7 @@ go 1.17
 replace github.com/coreos/etcd => github.com/coreos/etcd v3.3.24+incompatible
 
 require (
-	github.com/ONSdigital/dp-api-clients-go/v2 v2.5.0
+	github.com/ONSdigital/dp-api-clients-go/v2 v2.8.0
 	github.com/ONSdigital/dp-assistdog v0.0.1
 	github.com/ONSdigital/dp-authorisation v0.2.0
 	github.com/ONSdigital/dp-component-test v0.6.3
@@ -27,8 +27,6 @@ require (
 	github.com/stretchr/testify v1.7.0
 	go.mongodb.org/mongo-driver v1.8.2
 )
-
-replace "github.com/ONSdigital/dp-api-clients-go/v2" v2.5.0 => "/Users/andrewgibson/src/dp-api-clients-go"
 
 require (
 	github.com/ONSdigital/dp-api-clients-go v1.43.0 // indirect

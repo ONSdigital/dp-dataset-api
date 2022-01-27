@@ -361,7 +361,7 @@ func (c *DatasetComponent) iAccessTheCensusEndpoint() error {
 }
 
 func (c *DatasetComponent) iHaveSomeCantabularBlobs() error {
-	c.fakeCantabularBlobs = []models.Blob{
+	c.fakeCantabularBlobs = []models.PopulationType{
 		{Name: "blob 1"},
 		{Name: "blob 2"},
 		{Name: "blob 3"},

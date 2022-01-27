@@ -21,11 +21,11 @@ var _ store.Cantabular = &CantabularMock{}
 //
 // 		// make and configure a mocked store.Cantabular
 // 		mockedCantabular := &CantabularMock{
-// 			BlobsFunc: func(ctx context.Context) ([]models.Blob, error) {
-// 				panic("mock out the Blobs method")
-// 			},
 // 			CheckerFunc: func(contextMoqParam context.Context, checkState *healthcheck.CheckState) error {
 // 				panic("mock out the Checker method")
+// 			},
+// 			PopulationTypesFunc: func(ctx context.Context) ([]models.PopulationType, error) {
+// 				panic("mock out the PopulationTypes method")
 // 			},
 // 		}
 //
@@ -34,19 +34,14 @@ var _ store.Cantabular = &CantabularMock{}
 //
 // 	}
 type CantabularMock struct {
-	// BlobsFunc mocks the Blobs method.
-	BlobsFunc func(ctx context.Context) ([]models.Blob, error)
-
 	// CheckerFunc mocks the Checker method.
 	CheckerFunc func(contextMoqParam context.Context, checkState *healthcheck.CheckState) error
 
+	// PopulationTypesFunc mocks the PopulationTypes method.
+	PopulationTypesFunc func(ctx context.Context) ([]models.PopulationType, error)
+
 	// calls tracks calls to the methods.
 	calls struct {
-		// Blobs holds details about calls to the Blobs method.
-		Blobs []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-		}
 		// Checker holds details about calls to the Checker method.
 		Checker []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
@@ -54,40 +49,14 @@ type CantabularMock struct {
 			// CheckState is the checkState argument value.
 			CheckState *healthcheck.CheckState
 		}
+		// PopulationTypes holds details about calls to the PopulationTypes method.
+		PopulationTypes []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
 	}
-	lockBlobs   sync.RWMutex
-	lockChecker sync.RWMutex
-}
-
-// Blobs calls BlobsFunc.
-func (mock *CantabularMock) Blobs(ctx context.Context) ([]models.Blob, error) {
-	if mock.BlobsFunc == nil {
-		panic("CantabularMock.BlobsFunc: method is nil but Cantabular.Blobs was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockBlobs.Lock()
-	mock.calls.Blobs = append(mock.calls.Blobs, callInfo)
-	mock.lockBlobs.Unlock()
-	return mock.BlobsFunc(ctx)
-}
-
-// BlobsCalls gets all the calls that were made to Blobs.
-// Check the length with:
-//     len(mockedCantabular.BlobsCalls())
-func (mock *CantabularMock) BlobsCalls() []struct {
-	Ctx context.Context
-} {
-	var calls []struct {
-		Ctx context.Context
-	}
-	mock.lockBlobs.RLock()
-	calls = mock.calls.Blobs
-	mock.lockBlobs.RUnlock()
-	return calls
+	lockChecker         sync.RWMutex
+	lockPopulationTypes sync.RWMutex
 }
 
 // Checker calls CheckerFunc.
@@ -122,5 +91,36 @@ func (mock *CantabularMock) CheckerCalls() []struct {
 	mock.lockChecker.RLock()
 	calls = mock.calls.Checker
 	mock.lockChecker.RUnlock()
+	return calls
+}
+
+// PopulationTypes calls PopulationTypesFunc.
+func (mock *CantabularMock) PopulationTypes(ctx context.Context) ([]models.PopulationType, error) {
+	if mock.PopulationTypesFunc == nil {
+		panic("CantabularMock.PopulationTypesFunc: method is nil but Cantabular.PopulationTypes was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockPopulationTypes.Lock()
+	mock.calls.PopulationTypes = append(mock.calls.PopulationTypes, callInfo)
+	mock.lockPopulationTypes.Unlock()
+	return mock.PopulationTypesFunc(ctx)
+}
+
+// PopulationTypesCalls gets all the calls that were made to PopulationTypes.
+// Check the length with:
+//     len(mockedCantabular.PopulationTypesCalls())
+func (mock *CantabularMock) PopulationTypesCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockPopulationTypes.RLock()
+	calls = mock.calls.PopulationTypes
+	mock.lockPopulationTypes.RUnlock()
 	return calls
 }

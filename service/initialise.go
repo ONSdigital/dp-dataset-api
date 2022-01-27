@@ -149,6 +149,6 @@ func (e *Init) DoGetMongoDB(ctx context.Context, cfg config.MongoConfig) (store.
 	return mongodb, nil
 }
 
-func (e *Init) DoGetCantabular(ctx context.Context, cfg config.CantabularConfig) store.Cantabular {
-	return cantabular.NewCantabular(ctx, cfg)
+func (e *Init) DoGetCantabular(_ context.Context, cfg config.CantabularConfig) store.Cantabular {
+	return cantabular.NewCantabularAdapter(cfg)
 }

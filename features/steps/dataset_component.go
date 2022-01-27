@@ -33,7 +33,7 @@ type DatasetComponent struct {
 	producer            kafka.IProducer
 	initialiser         service.Initialiser
 	APIFeature          *componenttest.APIFeature
-	fakeCantabularBlobs []models.Blob
+	fakeCantabularBlobs []models.PopulationType
 }
 
 func NewDatasetComponent(mongoURI string, zebedeeURL string) (*DatasetComponent, error) {
@@ -214,8 +214,8 @@ func (f *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, ser
 
 func (c *DatasetComponent) DoGetFakeCantabularOk(ctx context.Context, cfg config.CantabularConfig) store.Cantabular {
 	return &storeMock.CantabularMock{
-		BlobsFunc: func(ctx context.Context) (models.Blobs, error) {
-			return models.Blobs{Items: c.fakeCantabularBlobs}, nil
+		PopulationTypesFunc: func(ctx context.Context) ([]models.PopulationType, error) {
+			return c.fakeCantabularBlobs, nil
 		},
 	}
 }

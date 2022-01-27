@@ -7,7 +7,7 @@ import (
 )
 
 func (api *DatasetAPI) getCensus(writer http.ResponseWriter, request *http.Request) {
-	blobs, err := models.NewBlobs(request.Context(), api.dataStore.Backend)
+	blobs, err := models.NewPopulationTypes(request.Context(), api.dataStore.Backend)
 	if err != nil {
 		panic("not implemented")
 	}
