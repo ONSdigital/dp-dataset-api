@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"github.com/ONSdigital/dp-api-clients-go/v2/cantabular"
+	"github.com/ONSdigital/dp-dataset-api/cantabular"
 	"net/http"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
@@ -38,7 +38,7 @@ type DatsetAPIStore struct {
 type Service struct {
 	config                              *config.Configuration
 	serviceList                         *ExternalServiceList
-	cantabular                          *cantabular.Client
+	cantabular                          cantabular.CantabularClient
 	graphDB                             store.GraphDB
 	graphDBErrorConsumer                Closer
 	mongoDB                             store.MongoDB

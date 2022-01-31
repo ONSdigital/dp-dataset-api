@@ -359,9 +359,9 @@ func (c *DatasetComponent) aListOfNamedCantabularPopulationTypesIsReturned() err
 		"200",
 		&godog.DocString{Content: `{ 
 			"items": [
-				{ "name": "blob 1" },
-				{ "name": "blob 2" },
-				{ "name": "blob 3" }
+				{ "name": "dataset 1" },
+				{ "name": "dataset 2" },
+				{ "name": "dataset 3" }
 			]
 		}`},
 	)
@@ -372,11 +372,7 @@ func (c *DatasetComponent) iAccessThePopulationTypesEndpoint() error {
 }
 
 func (c *DatasetComponent) iHaveSomePopulationTypesInCantabular() error {
-	c.fakeCantabularPopulationTypes = []models.PopulationType{
-		{Name: "blob 1"},
-		{Name: "blob 2"},
-		{Name: "blob 3"},
-	}
+	c.fakeCantabularDatasets = []string{"dataset 1", "dataset 2", "dataset 3"}
 	return nil
 }
 

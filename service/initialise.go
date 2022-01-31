@@ -2,9 +2,10 @@ package service
 
 import (
 	"context"
+	"github.com/ONSdigital/dp-dataset-api/cantabular"
 	"net/http"
 
-	"github.com/ONSdigital/dp-api-clients-go/v2/cantabular"
+	cantabularClient "github.com/ONSdigital/dp-api-clients-go/v2/cantabular"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -82,7 +83,7 @@ func (e *ExternalServiceList) GetMongoDB(ctx context.Context, cfg config.MongoCo
 	return mongodb, nil
 }
 
-func (e *ExternalServiceList) GetCantabular(ctx context.Context, cfg config.CantabularConfig) (*cantabular.Client, error) {
+func (e *ExternalServiceList) GetCantabular(ctx context.Context, cfg config.CantabularConfig) (cantabular.CantabularClient, error) {
 	cantabular := e.Init.DoGetCantabular(ctx, cfg)
 	e.Cantabular = true
 	return cantabular, nil
@@ -149,12 +150,12 @@ func (e *Init) DoGetMongoDB(ctx context.Context, cfg config.MongoConfig) (store.
 	return mongodb, nil
 }
 
-func (e *Init) DoGetCantabular(_ context.Context, cfg config.CantabularConfig) *cantabular.Client {
-	cantabularConfig := cantabular.Config{
+func (e *Init) DoGetCantabular(_ context.Context, cfg config.CantabularConfig) cantabular.CantabularClient {
+	cantabularConfig := cantabularClient.Config{
 		Host:           cfg.CantabularURL,
 		ExtApiHost:     cfg.CantabularExtURL,
 		GraphQLTimeout: cfg.DefaultRequestTimeout,
 	}
 	userAgent := dphttp.NewClient()
-	return cantabular.NewClient(cantabularConfig, userAgent, nil)
+	return cantabularClient.NewClient(cantabularConfig, userAgent, nil)
 }

@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/cantabular"
+	"github.com/ONSdigital/dp-dataset-api/cantabular/mock"
 	"net/http"
 
 	componenttest "github.com/ONSdigital/dp-component-test"
@@ -23,19 +24,19 @@ import (
 )
 
 type DatasetComponent struct {
-	ErrorFeature                  componenttest.ErrorFeature
-	svc                           *service.Service
-	errorChan                     chan error
-	MongoClient                   *mongo.Mongo
-	Config                        *config.Configuration
-	HTTPServer                    *http.Server
-	ServiceRunning                bool
-	consumer                      kafka.IConsumerGroup
-	producer                      kafka.IProducer
-	initialiser                   service.Initialiser
-	APIFeature                    *componenttest.APIFeature
-	fakeCantabularPopulationTypes []models.PopulationType
-	fakeCantabularIsUnresponsive  bool
+	ErrorFeature                 componenttest.ErrorFeature
+	svc                          *service.Service
+	errorChan                    chan error
+	MongoClient                  *mongo.Mongo
+	Config                       *config.Configuration
+	HTTPServer                   *http.Server
+	ServiceRunning               bool
+	consumer                     kafka.IConsumerGroup
+	producer                     kafka.IProducer
+	initialiser                  service.Initialiser
+	APIFeature                   *componenttest.APIFeature
+	fakeCantabularDatasets       []string
+	fakeCantabularIsUnresponsive bool
 }
 
 func NewDatasetComponent(mongoURI string, zebedeeURL string) (*DatasetComponent, error) {
@@ -213,13 +214,13 @@ func (c *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, ser
 		nil
 }
 
-func (c *DatasetComponent) DoGetFakeCantabularOk(ctx context.Context, cfg config.CantabularConfig) store.Cantabular {
-	return &storeMock.CantabularMock{
-		PopulationTypesFunc: func(ctx context.Context) ([]models.PopulationType, error) {
+func (c *DatasetComponent) DoGetFakeCantabularOk(ctx context.Context, cfg config.CantabularConfig) cantabular.CantabularClient {
+	return &mock.CantabularClientMock{
+		ListDatasetsFunc: func(ctx context.Context) ([]string, error) {
 			if c.fakeCantabularIsUnresponsive {
 				return nil, errors.New("computer says no")
 			}
-			return c.fakeCantabularPopulationTypes, nil
+			return c.fakeCantabularDatasets, nil
 		},
 	}
 }

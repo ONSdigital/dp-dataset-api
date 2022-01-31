@@ -6,6 +6,7 @@ package mock
 import (
 	"context"
 	"github.com/ONSdigital/dp-dataset-api/cantabular"
+	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"sync"
 )
 
@@ -19,6 +20,9 @@ var _ cantabular.CantabularClient = &CantabularClientMock{}
 //
 // 		// make and configure a mocked cantabular.CantabularClient
 // 		mockedCantabularClient := &CantabularClientMock{
+// 			CheckerFunc: func(ctx context.Context, state *healthcheck.CheckState) error {
+// 				panic("mock out the Checker method")
+// 			},
 // 			ListDatasetsFunc: func(ctx context.Context) ([]string, error) {
 // 				panic("mock out the ListDatasets method")
 // 			},
@@ -29,18 +33,64 @@ var _ cantabular.CantabularClient = &CantabularClientMock{}
 //
 // 	}
 type CantabularClientMock struct {
+	// CheckerFunc mocks the Checker method.
+	CheckerFunc func(ctx context.Context, state *healthcheck.CheckState) error
+
 	// ListDatasetsFunc mocks the ListDatasets method.
 	ListDatasetsFunc func(ctx context.Context) ([]string, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// Checker holds details about calls to the Checker method.
+		Checker []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// State is the state argument value.
+			State *healthcheck.CheckState
+		}
 		// ListDatasets holds details about calls to the ListDatasets method.
 		ListDatasets []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 		}
 	}
+	lockChecker      sync.RWMutex
 	lockListDatasets sync.RWMutex
+}
+
+// Checker calls CheckerFunc.
+func (mock *CantabularClientMock) Checker(ctx context.Context, state *healthcheck.CheckState) error {
+	if mock.CheckerFunc == nil {
+		panic("CantabularClientMock.CheckerFunc: method is nil but CantabularClient.Checker was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		State *healthcheck.CheckState
+	}{
+		Ctx:   ctx,
+		State: state,
+	}
+	mock.lockChecker.Lock()
+	mock.calls.Checker = append(mock.calls.Checker, callInfo)
+	mock.lockChecker.Unlock()
+	return mock.CheckerFunc(ctx, state)
+}
+
+// CheckerCalls gets all the calls that were made to Checker.
+// Check the length with:
+//     len(mockedCantabularClient.CheckerCalls())
+func (mock *CantabularClientMock) CheckerCalls() []struct {
+	Ctx   context.Context
+	State *healthcheck.CheckState
+} {
+	var calls []struct {
+		Ctx   context.Context
+		State *healthcheck.CheckState
+	}
+	mock.lockChecker.RLock()
+	calls = mock.calls.Checker
+	mock.lockChecker.RUnlock()
+	return calls
 }
 
 // ListDatasets calls ListDatasetsFunc.
