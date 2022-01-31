@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"github.com/ONSdigital/dp-dataset-api/cantabular"
+	"github.com/ONSdigital/dp-dataset-api/api"
 	"net/http"
 
 	cantabularClient "github.com/ONSdigital/dp-api-clients-go/v2/cantabular"
@@ -83,7 +83,7 @@ func (e *ExternalServiceList) GetMongoDB(ctx context.Context, cfg config.MongoCo
 	return mongodb, nil
 }
 
-func (e *ExternalServiceList) GetCantabular(ctx context.Context, cfg config.CantabularConfig) (cantabular.CantabularClient, error) {
+func (e *ExternalServiceList) GetCantabular(ctx context.Context, cfg config.CantabularConfig) (api.CantabularClient, error) {
 	cantabular := e.Init.DoGetCantabular(ctx, cfg)
 	e.Cantabular = true
 	return cantabular, nil
@@ -150,7 +150,7 @@ func (e *Init) DoGetMongoDB(ctx context.Context, cfg config.MongoConfig) (store.
 	return mongodb, nil
 }
 
-func (e *Init) DoGetCantabular(_ context.Context, cfg config.CantabularConfig) cantabular.CantabularClient {
+func (e *Init) DoGetCantabular(_ context.Context, cfg config.CantabularConfig) api.CantabularClient {
 	cantabularConfig := cantabularClient.Config{
 		Host:           cfg.CantabularURL,
 		ExtApiHost:     cfg.CantabularExtURL,

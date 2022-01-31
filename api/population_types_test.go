@@ -1,15 +1,15 @@
-package api
+package api_test
 
 import (
 	"context"
 	"errors"
+	"github.com/ONSdigital/dp-dataset-api/api"
 	"net/http"
 	"testing"
 
 	"net/http/httptest"
 
-	"github.com/ONSdigital/dp-dataset-api/cantabular"
-	"github.com/ONSdigital/dp-dataset-api/cantabular/mock"
+	"github.com/ONSdigital/dp-dataset-api/api/mock"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -75,7 +75,7 @@ func TestPopulationTypesRootUnhappyPath(t *testing.T) {
 		Convey("When I GET /population-types but writing fails", func() {
 			req := httptest.NewRequest("GET", "/population-types", nil)
 			responseWriter := FailingWriter{}
-			api.getPopulationTypesHandler(&responseWriter, req)
+			api.GetPopulationTypesHandler(&responseWriter, req)
 			SoMsg("Then it should return a 500 status code",
 				responseWriter.statusCode, ShouldEqual, http.StatusInternalServerError)
 			SoMsg("Should respond with error message",
@@ -102,7 +102,7 @@ func (f *FailingWriter) WriteHeader(statusCode int) {
 	f.statusCode = statusCode
 }
 
-func cantabularClientReturningData(strings []string, err error) cantabular.CantabularClient {
+func cantabularClientReturningData(strings []string, err error) api.CantabularClient {
 	return &mock.CantabularClientMock{
 		ListDatasetsFunc: func(_ context.Context) ([]string, error) {
 			return strings, err
@@ -110,11 +110,11 @@ func cantabularClientReturningData(strings []string, err error) cantabular.Canta
 	}
 }
 
-func buildAPI(cantabularClient cantabular.CantabularClient) *DatasetAPI {
+func buildAPI(cantabularClient api.CantabularClient) *api.DatasetAPI {
 	cfg, err := config.Get()
 	if err != nil {
 		panic(err)
 	}
 	fakeAuthHandler := &mocks.AuthHandlerMock{Required: &mocks.PermissionCheckCalls{}}
-	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{}, nil, nil, fakeAuthHandler, fakeAuthHandler, cantabularClient)
+	return api.Setup(context.Background(), cfg, mux.NewRouter(), store.DataStore{}, nil, nil, fakeAuthHandler, fakeAuthHandler, cantabularClient)
 }

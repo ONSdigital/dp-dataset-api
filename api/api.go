@@ -4,7 +4,6 @@ package api
 
 import (
 	"context"
-	"github.com/ONSdigital/dp-dataset-api/cantabular"
 	"net/http"
 	"strconv"
 
@@ -68,11 +67,11 @@ type DatasetAPI struct {
 	instancePublishedChecker *instance.PublishCheck
 	versionPublishedChecker  *PublishCheck
 	MaxRequestOptions        int
-	cantabularClient         cantabular.CantabularClient
+	cantabularClient         CantabularClient
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
-func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler, cantabularClient cantabular.CantabularClient) *DatasetAPI {
+func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler, cantabularClient CantabularClient) *DatasetAPI {
 
 	api := &DatasetAPI{
 		dataStore:                dataStore,
@@ -430,7 +429,7 @@ func (api *DatasetAPI) authenticate(r *http.Request, logData log.Data) bool {
 }
 
 func (api *DatasetAPI) enablePopulationTypesEndpoints() {
-	api.get("/population-types", api.getPopulationTypesHandler)
+	api.get("/population-types", api.GetPopulationTypesHandler)
 }
 
 func setJSONContentType(w http.ResponseWriter) {

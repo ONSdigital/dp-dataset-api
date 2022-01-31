@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ONSdigital/dp-dataset-api/cantabular"
-	"github.com/ONSdigital/dp-dataset-api/cantabular/mock"
+	"github.com/ONSdigital/dp-dataset-api/api"
+	"github.com/ONSdigital/dp-dataset-api/api/mock"
 	"net/http"
 
 	componenttest "github.com/ONSdigital/dp-component-test"
@@ -214,7 +214,7 @@ func (c *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, ser
 		nil
 }
 
-func (c *DatasetComponent) DoGetFakeCantabularOk(ctx context.Context, cfg config.CantabularConfig) cantabular.CantabularClient {
+func (c *DatasetComponent) DoGetFakeCantabularOk(ctx context.Context, cfg config.CantabularConfig) api.CantabularClient {
 	return &mock.CantabularClientMock{
 		ListDatasetsFunc: func(ctx context.Context) ([]string, error) {
 			if c.fakeCantabularIsUnresponsive {

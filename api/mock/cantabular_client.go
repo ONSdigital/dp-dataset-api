@@ -5,20 +5,20 @@ package mock
 
 import (
 	"context"
-	"github.com/ONSdigital/dp-dataset-api/cantabular"
+	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"sync"
 )
 
-// Ensure, that CantabularClientMock does implement cantabular.CantabularClient.
+// Ensure, that CantabularClientMock does implement api.CantabularClient.
 // If this is not the case, regenerate this file with moq.
-var _ cantabular.CantabularClient = &CantabularClientMock{}
+var _ api.CantabularClient = &CantabularClientMock{}
 
-// CantabularClientMock is a mock implementation of cantabular.CantabularClient.
+// CantabularClientMock is a mock implementation of api.CantabularClient.
 //
 // 	func TestSomethingThatUsesCantabularClient(t *testing.T) {
 //
-// 		// make and configure a mocked cantabular.CantabularClient
+// 		// make and configure a mocked api.CantabularClient
 // 		mockedCantabularClient := &CantabularClientMock{
 // 			CheckerFunc: func(ctx context.Context, state *healthcheck.CheckState) error {
 // 				panic("mock out the Checker method")
@@ -28,7 +28,7 @@ var _ cantabular.CantabularClient = &CantabularClientMock{}
 // 			},
 // 		}
 //
-// 		// use mockedCantabularClient in code that requires cantabular.CantabularClient
+// 		// use mockedCantabularClient in code that requires api.CantabularClient
 // 		// and then make assertions.
 //
 // 	}

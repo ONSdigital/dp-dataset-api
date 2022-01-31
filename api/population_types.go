@@ -7,8 +7,8 @@ import (
 	"net/http"
 )
 
-// this is the handler for the "/population-types" endpoint
-func (api *DatasetAPI) getPopulationTypesHandler(w http.ResponseWriter, req *http.Request) {
+// GetPopulationTypesHandler is the handler for the "/population-types" endpoint
+func (api *DatasetAPI) GetPopulationTypesHandler(w http.ResponseWriter, req *http.Request) {
 	populationTypes, err := api.cantabularClient.ListDatasets(req.Context())
 	if err != nil {
 		http.Error(w, "failed to fetch population types", http.StatusInternalServerError)
