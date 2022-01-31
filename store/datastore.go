@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"go.mongodb.org/mongo-driver/bson"
@@ -78,7 +79,7 @@ type GraphDB interface {
 	Checker(context.Context, *healthcheck.CheckState) error
 }
 
-// Storer represents basic data access via Get, Remove and Upsert methods, abstracting it from mongoDB, graphDB or cantabular
+// Storer represents basic data access via Get, Remove and Upsert methods, abstracting it from mongoDB or graphDB
 type Storer interface {
 	dataMongoDB
 	dataGraphDB
