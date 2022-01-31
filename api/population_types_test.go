@@ -53,7 +53,7 @@ func TestPopulationTypesRootHappyPath(t *testing.T) {
 }
 
 func TestPopulationTypesRootUnhappyPath(t *testing.T) {
-	Convey("Given the data set API is created but the data store fails", t, func() {
+	Convey("Given the data set API is created but the cantabular client fails", t, func() {
 		cantabularClient := cantabularClientReturningData(nil, errors.New("oh no no no no no"))
 		api := buildAPI(cantabularClient)
 
