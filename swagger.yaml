@@ -215,7 +215,7 @@ securityDefinitions:
     in: header
     type: apiKey
 paths:
-  /census:
+  /population-types:
     get:
       tags:
         - "Public"
