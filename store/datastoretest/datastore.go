@@ -87,9 +87,6 @@ var _ store.Storer = &StorerMock{}
 // 			GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error) {
 // 				panic("mock out the GetVersions method")
 // 			},
-// 			PopulationTypesFunc: func(ctx context.Context) ([]models.PopulationType, error) {
-// 				panic("mock out the PopulationTypes method")
-// 			},
 // 			RemoveDatasetVersionAndEditionLinksFunc: func(ctx context.Context, id string) error {
 // 				panic("mock out the RemoveDatasetVersionAndEditionLinks method")
 // 			},
@@ -216,9 +213,6 @@ type StorerMock struct {
 
 	// GetVersionsFunc mocks the GetVersions method.
 	GetVersionsFunc func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error)
-
-	// PopulationTypesFunc mocks the PopulationTypes method.
-	PopulationTypesFunc func(ctx context.Context) ([]models.PopulationType, error)
 
 	// RemoveDatasetVersionAndEditionLinksFunc mocks the RemoveDatasetVersionAndEditionLinks method.
 	RemoveDatasetVersionAndEditionLinksFunc func(ctx context.Context, id string) error
@@ -502,11 +496,6 @@ type StorerMock struct {
 			// Limit is the limit argument value.
 			Limit int
 		}
-		// PopulationTypes holds details about calls to the PopulationTypes method.
-		PopulationTypes []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-		}
 		// RemoveDatasetVersionAndEditionLinks holds details about calls to the RemoveDatasetVersionAndEditionLinks method.
 		RemoveDatasetVersionAndEditionLinks []struct {
 			// Ctx is the ctx argument value.
@@ -708,7 +697,6 @@ type StorerMock struct {
 	lockGetUniqueDimensionAndOptions        sync.RWMutex
 	lockGetVersion                          sync.RWMutex
 	lockGetVersions                         sync.RWMutex
-	lockPopulationTypes                     sync.RWMutex
 	lockRemoveDatasetVersionAndEditionLinks sync.RWMutex
 	lockSetInstanceIsPublished              sync.RWMutex
 	lockUnlockInstance                      sync.RWMutex
@@ -1640,37 +1628,6 @@ func (mock *StorerMock) GetVersionsCalls() []struct {
 	mock.lockGetVersions.RLock()
 	calls = mock.calls.GetVersions
 	mock.lockGetVersions.RUnlock()
-	return calls
-}
-
-// PopulationTypes calls PopulationTypesFunc.
-func (mock *StorerMock) PopulationTypes(ctx context.Context) ([]models.PopulationType, error) {
-	if mock.PopulationTypesFunc == nil {
-		panic("StorerMock.PopulationTypesFunc: method is nil but Storer.PopulationTypes was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockPopulationTypes.Lock()
-	mock.calls.PopulationTypes = append(mock.calls.PopulationTypes, callInfo)
-	mock.lockPopulationTypes.Unlock()
-	return mock.PopulationTypesFunc(ctx)
-}
-
-// PopulationTypesCalls gets all the calls that were made to PopulationTypes.
-// Check the length with:
-//     len(mockedStorer.PopulationTypesCalls())
-func (mock *StorerMock) PopulationTypesCalls() []struct {
-	Ctx context.Context
-} {
-	var calls []struct {
-		Ctx context.Context
-	}
-	mock.lockPopulationTypes.RLock()
-	calls = mock.calls.PopulationTypes
-	mock.lockPopulationTypes.RUnlock()
 	return calls
 }
 

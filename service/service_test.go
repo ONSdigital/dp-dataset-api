@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"fmt"
+	"github.com/ONSdigital/dp-api-clients-go/v2/cantabular"
 	"net/http"
 	"sync"
 	"testing"
@@ -114,8 +115,8 @@ func TestRun(t *testing.T) {
 			}, nil
 		}
 
-		funcDoGetCantabularOk := func(ctx context.Context, cfg config.CantabularConfig) store.Cantabular {
-			return &storeMock.CantabularMock{}
+		funcDoGetCantabularOk := func(ctx context.Context, cfg config.CantabularConfig) *cantabular.Client {
+			return cantabular.NewClient(cantabular.Config{}, nil, nil)
 		}
 
 		Convey("Given that initialising MongoDB returns an error", func() {

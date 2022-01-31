@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/ONSdigital/dp-api-clients-go/v2/cantabular"
 	"net/http"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
@@ -31,14 +32,13 @@ var _ store.Storer = (*DatsetAPIStore)(nil)
 type DatsetAPIStore struct {
 	store.MongoDB
 	store.GraphDB
-	store.Cantabular
 }
 
 // Service contains all the configs, server and clients to run the Dataset API
 type Service struct {
 	config                              *config.Configuration
 	serviceList                         *ExternalServiceList
-	cantabular                          store.Cantabular
+	cantabular                          *cantabular.Client
 	graphDB                             store.GraphDB
 	graphDBErrorConsumer                Closer
 	mongoDB                             store.MongoDB
@@ -117,10 +117,10 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		}
 	}
 
-	// get cantabular service
+	// get cantabular client
 	svc.cantabular, err = svc.serviceList.GetCantabular(ctx, svc.config.CantabularConfig)
 
-	ds := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB, svc.cantabular}}
+	ds := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB}}
 
 	// Get GenerateDownloads Kafka Producer
 	if !svc.config.EnablePrivateEndpoints {
@@ -180,7 +180,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	// Create Dataset API
 	urlBuilder := url.NewBuilder(svc.config.WebsiteURL)
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, svc.cantabular)
 
 	svc.healthCheck.Start(ctx)
 

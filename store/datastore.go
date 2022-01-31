@@ -14,7 +14,6 @@ type DataStore struct {
 
 //go:generate moq -out datastoretest/mongo.go -pkg storetest . MongoDB
 //go:generate moq -out datastoretest/graph.go -pkg storetest . GraphDB
-//go:generate moq -out datastoretest/cantabular.go -pkg storetest . Cantabular
 //go:generate moq -out datastoretest/datastore.go -pkg storetest . Storer
 
 // dataMongoDB represents the required methos to access data from mongoDB
@@ -79,15 +78,8 @@ type GraphDB interface {
 	Checker(context.Context, *healthcheck.CheckState) error
 }
 
-// Cantabular represents all the required methods from Cantabular
-type Cantabular interface {
-	models.CantabularDataProvider
-	Checker(context.Context, *healthcheck.CheckState) error
-}
-
 // Storer represents basic data access via Get, Remove and Upsert methods, abstracting it from mongoDB, graphDB or cantabular
 type Storer interface {
 	dataMongoDB
 	dataGraphDB
-	models.CantabularDataProvider
 }

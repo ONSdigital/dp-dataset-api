@@ -3,16 +3,16 @@ package api
 import (
 	"context"
 	"errors"
-	"github.com/ONSdigital/dp-dataset-api/mocks"
-	"github.com/ONSdigital/dp-dataset-api/models"
 	"net/http"
 	"testing"
 
 	"net/http/httptest"
 
+	"github.com/ONSdigital/dp-dataset-api/cantabular"
+	"github.com/ONSdigital/dp-dataset-api/cantabular/mock"
 	"github.com/ONSdigital/dp-dataset-api/config"
+	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -20,8 +20,7 @@ import (
 func TestAPIRouteRegistration(t *testing.T) {
 
 	Convey("Given the data set API is created", t, func() {
-		dataStoreWithMockStorer := buildDataStoreWithFakePopulationTypes([]models.PopulationType{}, nil)
-		api := buildAPI(dataStoreWithMockStorer)
+		api := buildAPI(cantabularClientReturningData(nil, nil))
 
 		Convey("When I GET /population-types", func() {
 			rec := httptest.NewRecorder()
@@ -37,13 +36,8 @@ func TestAPIRouteRegistration(t *testing.T) {
 func TestPopulationTypesRootHappyPath(t *testing.T) {
 
 	Convey("Given the data set API is created", t, func() {
-		dataStoreWithMockStorer := buildDataStoreWithFakePopulationTypes(
-			[]models.PopulationType{
-				{Name: "blob 1"},
-				{Name: "blob 2"},
-			},
-			nil)
-		api := buildAPI(dataStoreWithMockStorer)
+		cantabularClient := cantabularClientReturningData([]string{"dataset 1", "dataset 2"}, nil)
+		api := buildAPI(cantabularClient)
 
 		Convey("When I GET /population-types", func() {
 			rec := httptest.NewRecorder()
@@ -53,15 +47,15 @@ func TestPopulationTypesRootHappyPath(t *testing.T) {
 			SoMsg("Then it should return application/json content",
 				rec.Header().Get("Content-Type"), ShouldEqual, "application/json")
 			SoMsg("Then it should return expected JSON",
-				rec.Body.String(), ShouldEqual, `{"items":[{"name":"blob 1"},{"name":"blob 2"}]}`+"\n")
+				rec.Body.String(), ShouldEqual, `{"items":[{"name":"dataset 1"},{"name":"dataset 2"}]}`+"\n")
 		})
 	})
 }
 
 func TestPopulationTypesRootUnhappyPath(t *testing.T) {
 	Convey("Given the data set API is created but the data store fails", t, func() {
-		dataStoreWithMockStorer := buildDataStoreWithFakePopulationTypes(nil, errors.New("oh no no no no no"))
-		api := buildAPI(dataStoreWithMockStorer)
+		cantabularClient := cantabularClientReturningData(nil, errors.New("oh no no no no no"))
+		api := buildAPI(cantabularClient)
 
 		Convey("When I GET /population-types", func() {
 			rec := httptest.NewRecorder()
@@ -76,14 +70,12 @@ func TestPopulationTypesRootUnhappyPath(t *testing.T) {
 	})
 
 	Convey("Given the data set API is created", t, func() {
+		api := buildAPI(cantabularClientReturningData(nil, nil))
 
-		api := DatasetAPI{
-			dataStore: buildDataStoreWithFakePopulationTypes(nil, nil),
-		}
 		Convey("When I GET /population-types but writing fails", func() {
 			req := httptest.NewRequest("GET", "/population-types", nil)
 			responseWriter := FailingWriter{}
-			api.getPopulationTypes(&responseWriter, req)
+			api.getPopulationTypesHandler(&responseWriter, req)
 			SoMsg("Then it should return a 500 status code",
 				responseWriter.statusCode, ShouldEqual, http.StatusInternalServerError)
 			SoMsg("Should respond with error message",
@@ -110,21 +102,19 @@ func (f *FailingWriter) WriteHeader(statusCode int) {
 	f.statusCode = statusCode
 }
 
-func buildDataStoreWithFakePopulationTypes(populationTypes []models.PopulationType, errorToReturn error) store.DataStore {
-	return store.DataStore{
-		Backend: &storetest.StorerMock{
-			PopulationTypesFunc: func(ctx context.Context) ([]models.PopulationType, error) {
-				return populationTypes, errorToReturn
-			},
+func cantabularClientReturningData(strings []string, err error) cantabular.CantabularClient {
+	return &mock.CantabularClientMock{
+		ListDatasetsFunc: func(_ context.Context) ([]string, error) {
+			return strings, err
 		},
 	}
 }
 
-func buildAPI(dataStoreWithMockStorer store.DataStore) *DatasetAPI {
+func buildAPI(cantabularClient cantabular.CantabularClient) *DatasetAPI {
 	cfg, err := config.Get()
 	if err != nil {
 		panic(err)
 	}
 	fakeAuthHandler := &mocks.AuthHandlerMock{Required: &mocks.PermissionCheckCalls{}}
-	return Setup(testContext, cfg, mux.NewRouter(), dataStoreWithMockStorer, nil, nil, fakeAuthHandler, fakeAuthHandler)
+	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{}, nil, nil, fakeAuthHandler, fakeAuthHandler, cantabularClient)
 }
