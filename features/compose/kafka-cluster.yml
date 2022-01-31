@@ -1,25 +1,23 @@
 version: '3.3'
 services:
-  zookeeper:
-    image: 'bitnami/zookeeper:latest'
-    hostname: zookeeper
-    restart: unless-stopped
-    ports:
-      - "2181:2181"
+  zookeeper-1:
+    image: confluentinc/cp-zookeeper:6.0.0
+    expose:
+      - "2181"
     environment:
-      ALLOW_ANONYMOUS_LOGIN: "yes"
-  kafka:
-    image: 'bitnami/kafka:latest'
-    hostname: kafka
-    restart: unless-stopped
-    ports:
-      - "9092:9092"
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+  kafka-1:
+    image: confluentinc/cp-kafka:6.0.0
+    expose:
+      - "9092" # exposed port to docker network so that the broker is reachable by other brokers, value needs to match PLAINTEXT port
     depends_on:
-      - zookeeper
+      - zookeeper-1
     environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181
       KAFKA_BROKER_ID: 1
-      KAFKA_ADVERTISED_HOST_NAME: kafka
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      ALLOW_PLAINTEXT_LISTENER: "yes"
-      KAFKA_CFG_LOG_RETENTION_MS: "1500"
-      KAFKA_CFG_LOG_RETENTION_CHECK_INTERVAL_MS: "500"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
