@@ -19,7 +19,7 @@ var _ api.Logger = &LoggerMock{}
 //
 // 		// make and configure a mocked api.Logger
 // 		mockedLogger := &LoggerMock{
-// 			ErrorFunc: func(ctx context.Context, event string, err error)  {
+// 			ErrorFunc: func(ctx context.Context, event string, err error, option map[string]interface{})  {
 // 				panic("mock out the Error method")
 // 			},
 // 		}
@@ -30,7 +30,7 @@ var _ api.Logger = &LoggerMock{}
 // 	}
 type LoggerMock struct {
 	// ErrorFunc mocks the Error method.
-	ErrorFunc func(ctx context.Context, event string, err error)
+	ErrorFunc func(ctx context.Context, event string, err error, option map[string]interface{})
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -42,43 +42,49 @@ type LoggerMock struct {
 			Event string
 			// Err is the err argument value.
 			Err error
+			// Option is the option argument value.
+			Option map[string]interface{}
 		}
 	}
 	lockError sync.RWMutex
 }
 
 // Error calls ErrorFunc.
-func (mock *LoggerMock) Error(ctx context.Context, event string, err error) {
+func (mock *LoggerMock) Error(ctx context.Context, event string, err error, option map[string]interface{}) {
 	if mock.ErrorFunc == nil {
 		panic("LoggerMock.ErrorFunc: method is nil but Logger.Error was just called")
 	}
 	callInfo := struct {
-		Ctx   context.Context
-		Event string
-		Err   error
+		Ctx    context.Context
+		Event  string
+		Err    error
+		Option map[string]interface{}
 	}{
-		Ctx:   ctx,
-		Event: event,
-		Err:   err,
+		Ctx:    ctx,
+		Event:  event,
+		Err:    err,
+		Option: option,
 	}
 	mock.lockError.Lock()
 	mock.calls.Error = append(mock.calls.Error, callInfo)
 	mock.lockError.Unlock()
-	mock.ErrorFunc(ctx, event, err)
+	mock.ErrorFunc(ctx, event, err, option)
 }
 
 // ErrorCalls gets all the calls that were made to Error.
 // Check the length with:
 //     len(mockedLogger.ErrorCalls())
 func (mock *LoggerMock) ErrorCalls() []struct {
-	Ctx   context.Context
-	Event string
-	Err   error
+	Ctx    context.Context
+	Event  string
+	Err    error
+	Option map[string]interface{}
 } {
 	var calls []struct {
-		Ctx   context.Context
-		Event string
-		Err   error
+		Ctx    context.Context
+		Event  string
+		Err    error
+		Option map[string]interface{}
 	}
 	mock.lockError.RLock()
 	calls = mock.calls.Error

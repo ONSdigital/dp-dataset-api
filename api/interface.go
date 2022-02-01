@@ -14,5 +14,5 @@ type CantabularClient interface {
 
 type Logger interface {
 	// Error wraps the Event function with the severity level set to ERROR
-	Error(ctx context.Context, event string, err error)
+	Error(ctx context.Context, event string, err error, option map[string]interface{})
 }
