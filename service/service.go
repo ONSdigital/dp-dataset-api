@@ -37,7 +37,7 @@ type DatsetAPIStore struct {
 type Service struct {
 	config                              *config.Configuration
 	serviceList                         *ExternalServiceList
-	cantabular                          api.CantabularClient
+	cantabular                          CantabularClient
 	graphDB                             store.GraphDB
 	graphDBErrorConsumer                Closer
 	mongoDB                             store.MongoDB

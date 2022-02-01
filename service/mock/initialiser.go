@@ -5,7 +5,6 @@ package mock
 
 import (
 	"context"
-	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/service"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -24,7 +23,7 @@ var _ service.Initialiser = &InitialiserMock{}
 //
 // 		// make and configure a mocked service.Initialiser
 // 		mockedInitialiser := &InitialiserMock{
-// 			DoGetCantabularFunc: func(ctx context.Context, cfg config.CantabularConfig) api.CantabularClient {
+// 			DoGetCantabularFunc: func(ctx context.Context, cfg config.CantabularConfig) service.CantabularClient {
 // 				panic("mock out the DoGetCantabular method")
 // 			},
 // 			DoGetGraphDBFunc: func(ctx context.Context) (store.GraphDB, service.Closer, error) {
@@ -50,7 +49,7 @@ var _ service.Initialiser = &InitialiserMock{}
 // 	}
 type InitialiserMock struct {
 	// DoGetCantabularFunc mocks the DoGetCantabular method.
-	DoGetCantabularFunc func(ctx context.Context, cfg config.CantabularConfig) api.CantabularClient
+	DoGetCantabularFunc func(ctx context.Context, cfg config.CantabularConfig) service.CantabularClient
 
 	// DoGetGraphDBFunc mocks the DoGetGraphDB method.
 	DoGetGraphDBFunc func(ctx context.Context) (store.GraphDB, service.Closer, error)
@@ -125,7 +124,7 @@ type InitialiserMock struct {
 }
 
 // DoGetCantabular calls DoGetCantabularFunc.
-func (mock *InitialiserMock) DoGetCantabular(ctx context.Context, cfg config.CantabularConfig) api.CantabularClient {
+func (mock *InitialiserMock) DoGetCantabular(ctx context.Context, cfg config.CantabularConfig) service.CantabularClient {
 	if mock.DoGetCantabularFunc == nil {
 		panic("InitialiserMock.DoGetCantabularFunc: method is nil but Initialiser.DoGetCantabular was just called")
 	}

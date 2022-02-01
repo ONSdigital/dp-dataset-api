@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"github.com/ONSdigital/dp-dataset-api/api"
 	"net/http"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -15,6 +14,7 @@ import (
 //go:generate moq -out mock/server.go -pkg mock . HTTPServer
 //go:generate moq -out mock/healthcheck.go -pkg mock . HealthChecker
 //go:generate moq -out mock/closer.go -pkg mock . Closer
+//go:generate moq -out mock/cantabular_client.go -pkg mock . CantabularClient
 
 // Initialiser defines the methods to initialise external services
 type Initialiser interface {
@@ -23,7 +23,7 @@ type Initialiser interface {
 	DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error)
 	DoGetGraphDB(ctx context.Context) (store.GraphDB, Closer, error)
 	DoGetMongoDB(ctx context.Context, cfg config.MongoConfig) (store.MongoDB, error)
-	DoGetCantabular(ctx context.Context, cfg config.CantabularConfig) api.CantabularClient
+	DoGetCantabular(ctx context.Context, cfg config.CantabularConfig) CantabularClient
 }
 
 // HTTPServer defines the required methods from the HTTP server
@@ -43,4 +43,10 @@ type HealthChecker interface {
 // Closer defines the required methods for a closable resource
 type Closer interface {
 	Close(ctx context.Context) error
+}
+
+// CantabularClient fetches lists of datasets
+type CantabularClient interface {
+	ListDatasets(ctx context.Context) ([]string, error)
+	Checker(ctx context.Context, state *healthcheck.CheckState) error
 }

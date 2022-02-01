@@ -3,8 +3,6 @@ package service_test
 import (
 	"context"
 	"fmt"
-	"github.com/ONSdigital/dp-dataset-api/api"
-
 	"net/http"
 	"sync"
 	"testing"
@@ -117,7 +115,7 @@ func TestRun(t *testing.T) {
 			}, nil
 		}
 
-		funcDoGetCantabularOk := func(ctx context.Context, cfg config.CantabularConfig) api.CantabularClient {
+		funcDoGetCantabularOk := func(ctx context.Context, cfg config.CantabularConfig) service.CantabularClient {
 			return cantabularClient.NewClient(cantabularClient.Config{}, nil, nil)
 		}
 
