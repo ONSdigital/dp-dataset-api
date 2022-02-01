@@ -57,7 +57,7 @@ func TestPopulationTypesRootUnhappyPath(t *testing.T) {
 	Convey("Given the data set API is created but the cantabular client fails", t, func() {
 
 		loggerMock := mock.LoggerMock{
-			ErrorFunc: func(ctx context.Context, event string, err error) {},
+			ErrorFunc: func(ctx context.Context, event string, err error, option map[string]interface{}) {},
 		}
 
 		errorText := "oh no no no no no"
@@ -85,7 +85,7 @@ func TestPopulationTypesRootUnhappyPath(t *testing.T) {
 	Convey("Given the data set API is created", t, func() {
 
 		loggerMock := mock.LoggerMock{
-			ErrorFunc: func(ctx context.Context, event string, err error) {},
+			ErrorFunc: func(ctx context.Context, event string, err error, option map[string]interface{}) {},
 		}
 		api := buildAPI(cantabularClientReturningData(nil, nil), &loggerMock)
 
