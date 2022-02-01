@@ -2,7 +2,7 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/contract"
 	"github.com/ONSdigital/log.go/v2/log"
 	"net/http"
 )
@@ -15,9 +15,9 @@ func (api *DatasetAPI) GetPopulationTypesHandler(w http.ResponseWriter, req *htt
 		return
 	}
 
-	model := models.PopulationTypes{}
+	model := contract.PopulationTypes{}
 	for _, item := range populationTypes {
-		model.Items = append(model.Items, models.PopulationType{
+		model.Items = append(model.Items, contract.PopulationType{
 			Name: item,
 		})
 	}

@@ -1,4 +1,4 @@
-package models
+package contract
 
 type PopulationType struct {
 	Name string `json:"name"`
