@@ -68,10 +68,15 @@ type DatasetAPI struct {
 	versionPublishedChecker  *PublishCheck
 	MaxRequestOptions        int
 	cantabularClient         CantabularClient
+	logger                   Logger
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
-func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler, cantabularClient CantabularClient) *DatasetAPI {
+func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler, cantabularClient CantabularClient, logger Logger) *DatasetAPI {
+
+	if logger == nil {
+		logger = dpLogger{}
+	}
 
 	api := &DatasetAPI{
 		dataStore:                dataStore,
@@ -89,6 +94,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		instancePublishedChecker: nil,
 		MaxRequestOptions:        cfg.MaxRequestOptions,
 		cantabularClient:         cantabularClient,
+		logger:                   logger,
 	}
 
 	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)

@@ -20,7 +20,7 @@ import (
 func TestAPIRouteRegistration(t *testing.T) {
 
 	Convey("Given the data set API is created", t, func() {
-		api := buildAPI(cantabularClientReturningData(nil, nil))
+		api := buildAPI(cantabularClientReturningData(nil, nil), nil)
 
 		Convey("When I GET /population-types", func() {
 			rec := httptest.NewRecorder()
@@ -37,7 +37,7 @@ func TestPopulationTypesRootHappyPath(t *testing.T) {
 
 	Convey("Given the data set API is created", t, func() {
 		cantabularClient := cantabularClientReturningData([]string{"dataset 1", "dataset 2"}, nil)
-		api := buildAPI(cantabularClient)
+		api := buildAPI(cantabularClient, nil)
 
 		Convey("When I GET /population-types", func() {
 			rec := httptest.NewRecorder()
@@ -53,9 +53,16 @@ func TestPopulationTypesRootHappyPath(t *testing.T) {
 }
 
 func TestPopulationTypesRootUnhappyPath(t *testing.T) {
+
 	Convey("Given the data set API is created but the cantabular client fails", t, func() {
-		cantabularClient := cantabularClientReturningData(nil, errors.New("oh no no no no no"))
-		api := buildAPI(cantabularClient)
+
+		loggerMock := mock.LoggerMock{
+			ErrorFunc: func(ctx context.Context, event string, err error) {},
+		}
+
+		errorText := "oh no no no no no"
+		cantabularClient := cantabularClientReturningData(nil, errors.New(errorText))
+		api := buildAPI(cantabularClient, &loggerMock)
 
 		Convey("When I GET /population-types", func() {
 			rec := httptest.NewRecorder()
@@ -66,23 +73,43 @@ func TestPopulationTypesRootUnhappyPath(t *testing.T) {
 				rec.Code, ShouldEqual, http.StatusInternalServerError)
 			SoMsg("Then it should indicate that fetching population types failed",
 				rec.Body.String(), ShouldEqual, "failed to fetch population types\n")
+			Convey("Then it should log the correct information", func() {
+				actualErrors := loggerMock.ErrorCalls()
+				So(actualErrors, ShouldHaveLength, 1)
+				So(actualErrors[0].Event, ShouldEqual, "error retrieving datasets from cantabular")
+				So(actualErrors[0].Err, ShouldResemble, errors.New(errorText))
+			})
 		})
 	})
 
 	Convey("Given the data set API is created", t, func() {
-		api := buildAPI(cantabularClientReturningData(nil, nil))
+
+		loggerMock := mock.LoggerMock{
+			ErrorFunc: func(ctx context.Context, event string, err error) {},
+		}
+		api := buildAPI(cantabularClientReturningData(nil, nil), &loggerMock)
 
 		Convey("When I GET /population-types but writing fails", func() {
+
 			req := httptest.NewRequest("GET", "/population-types", nil)
 			responseWriter := FailingWriter{}
 			api.GetPopulationTypesHandler(&responseWriter, req)
 			SoMsg("Then it should return a 500 status code",
 				responseWriter.statusCode, ShouldEqual, http.StatusInternalServerError)
-			SoMsg("Should respond with error message",
+			SoMsg("Then it should respond with error message",
 				responseWriter.attemptedWrite[0], ShouldEqual, "failed to respond with population types\n")
+			Convey("Then it should log the correct information", func() {
+				actualErrors := loggerMock.ErrorCalls()
+				So(actualErrors, ShouldHaveLength, 1)
+				So(actualErrors[0].Event, ShouldEqual, "failed to encode and write population types model to response object")
+				So(actualErrors[0].Err, ShouldResemble, errors.New(failingWriterErrorText))
+			})
+
 		})
 	})
 }
+
+const failingWriterErrorText = "oops"
 
 type FailingWriter struct {
 	statusCode     int
@@ -95,7 +122,7 @@ func (f *FailingWriter) Header() http.Header {
 
 func (f *FailingWriter) Write(data []byte) (int, error) {
 	f.attemptedWrite = append([]string{string(data)}, f.attemptedWrite...)
-	return 0, errors.New("oops")
+	return 0, errors.New(failingWriterErrorText)
 }
 
 func (f *FailingWriter) WriteHeader(statusCode int) {
@@ -110,11 +137,11 @@ func cantabularClientReturningData(strings []string, err error) api.CantabularCl
 	}
 }
 
-func buildAPI(cantabularClient api.CantabularClient) *api.DatasetAPI {
+func buildAPI(cantabularClient api.CantabularClient, loggerMock *mock.LoggerMock) *api.DatasetAPI {
 	cfg, err := config.Get()
 	if err != nil {
 		panic(err)
 	}
 	fakeAuthHandler := &mocks.AuthHandlerMock{Required: &mocks.PermissionCheckCalls{}}
-	return api.Setup(context.Background(), cfg, mux.NewRouter(), store.DataStore{}, nil, nil, fakeAuthHandler, fakeAuthHandler, cantabularClient)
+	return api.Setup(context.Background(), cfg, mux.NewRouter(), store.DataStore{}, nil, nil, fakeAuthHandler, fakeAuthHandler, cantabularClient, loggerMock)
 }

@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"github.com/ONSdigital/dp-dataset-api/contract"
-	"github.com/ONSdigital/log.go/v2/log"
 	"net/http"
 )
 
@@ -11,6 +10,7 @@ import (
 func (api *DatasetAPI) GetPopulationTypesHandler(w http.ResponseWriter, req *http.Request) {
 	populationTypes, err := api.cantabularClient.ListDatasets(req.Context())
 	if err != nil {
+		api.logger.Error(req.Context(), "error retrieving datasets from cantabular", err)
 		http.Error(w, "failed to fetch population types", http.StatusInternalServerError)
 		return
 	}
@@ -25,7 +25,7 @@ func (api *DatasetAPI) GetPopulationTypesHandler(w http.ResponseWriter, req *htt
 	w.Header().Set("content-type", "application/json")
 	err = json.NewEncoder(w).Encode(model)
 	if err != nil {
-		log.Error(req.Context(), "failed to encode and write population types model to response object", err)
+		api.logger.Error(req.Context(), "failed to encode and write population types model to response object", err)
 		http.Error(w, "failed to respond with population types", http.StatusInternalServerError)
 		return
 	}
