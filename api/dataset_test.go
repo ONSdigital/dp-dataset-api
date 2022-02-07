@@ -73,8 +73,9 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 	cfg.DefaultOffset = 0
 
 	mockedMapGeneratedDownloads := map[models.DatasetType]DownloadsGenerator{
-		models.CantabularBlob:  mockedGeneratedDownloads,
-		models.CantabularTable: mockedGeneratedDownloads,
+		models.CantabularBlob:          mockedGeneratedDownloads,
+		models.CantabularTable:         mockedGeneratedDownloads,
+		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
 
 	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions)

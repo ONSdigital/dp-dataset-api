@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	componenttest "github.com/ONSdigital/dp-component-test"
 	"github.com/ONSdigital/dp-component-test/utils"
@@ -17,6 +16,7 @@ import (
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka/v2"
 	"github.com/ONSdigital/dp-kafka/v2/kafkatest"
+	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
@@ -55,17 +55,16 @@ func NewDatasetComponent(mongoURI string, zebedeeURL string) (*DatasetComponent,
 
 	mongodb := &mongo.Mongo{
 		MongoConfig: config.MongoConfig{
-			// TODO the following line can be used as 'normal', i.e. mongoFeature.Server.URI(),
-			// when the dp-mongodb has a proper uri parser in place (it's in the pipeline)
-			URI:               strings.Replace(mongoURI, "mongodb://", "", 1),
-			Database:          utils.RandomDatabase(),
-			Collection:        "datasets",
-			DatasetAPIURL:     "datasets",
-			CodeListAPIURL:    "",
-			ConnectionTimeout: c.Config.ConnectionTimeout,
-			QueryTimeout:      c.Config.QueryTimeout,
-		},
-	}
+			MongoDriverConfig: mongodriver.MongoDriverConfig{
+				ClusterEndpoint: mongoURI,
+				Database:        utils.RandomDatabase(),
+				Collections:     c.Config.Collections,
+				ConnectTimeout:  c.Config.ConnectTimeout,
+				QueryTimeout:    c.Config.QueryTimeout,
+			},
+			DatasetAPIURL:  "datasets",
+			CodeListAPIURL: "",
+		}}
 
 	if err := mongodb.Init(context.Background()); err != nil {
 		return nil, err
@@ -151,7 +150,7 @@ func (c *DatasetComponent) setConsumer(topic string) error {
 	return nil
 }
 
-func (f *DatasetComponent) DoGetHealthcheckOk(_ *config.Configuration, _ string, _ string, _ string) (service.HealthChecker, error) {
+func (c *DatasetComponent) DoGetHealthcheckOk(_ *config.Configuration, _ string, _ string, _ string) (service.HealthChecker, error) {
 	return &serviceMock.HealthCheckerMock{
 		AddCheckFunc: func(name string, checker healthcheck.Checker) error { return nil },
 		StartFunc:    func(ctx context.Context) {},
@@ -183,7 +182,7 @@ func (c *DatasetComponent) DoGetKafkaProducer(ctx context.Context, cfg *config.C
 	return kafka.NewProducer(ctx, cfg.KafkaAddr, topic, pChannels, pConfig)
 }
 
-func (c *DatasetComponent) DoGetMockedKafkaProducerOk(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
+func (c *DatasetComponent) DoGetMockedKafkaProducerOk(_ context.Context, _ *config.Configuration, _ string) (kafka.IProducer, error) {
 	return &kafkatest.IProducerMock{
 		ChannelsFunc: func() *kafka.ProducerChannels {
 			return &kafka.ProducerChannels{}
@@ -192,11 +191,11 @@ func (c *DatasetComponent) DoGetMockedKafkaProducerOk(ctx context.Context, cfg *
 	}, nil
 }
 
-func (f *DatasetComponent) DoGetMongoDB(_ context.Context, _ config.MongoConfig) (store.MongoDB, error) {
-	return f.MongoClient, nil
+func (c *DatasetComponent) DoGetMongoDB(_ context.Context, _ config.MongoConfig) (store.MongoDB, error) {
+	return c.MongoClient, nil
 }
 
-func (f *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, service.Closer, error) {
+func (c *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, service.Closer, error) {
 	return &storeMock.GraphDBMock{
 			SetInstanceIsPublishedFunc: func(context.Context, string) error {
 				return nil

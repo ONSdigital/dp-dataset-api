@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/google/go-cmp/cmp"
@@ -51,26 +52,27 @@ func (c *DatasetComponent) privateEndpointsAreEnabled() error {
 	return nil
 }
 
-func (f *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId string, documentJson *godog.DocString) error {
+func (c *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId string, documentJson *godog.DocString) error {
 	var expectedDataset models.Dataset
 
 	if err := json.Unmarshal([]byte(documentJson.Content), &expectedDataset); err != nil {
 		return err
 	}
 
+	collectionName := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
 	var link models.DatasetUpdate
-	if err := f.MongoClient.Connection.GetConfiguredCollection().FindOne(context.Background(), bson.M{"_id": documentId}, &link); err != nil {
+	if err := c.MongoClient.Connection.Collection(collectionName).FindOne(context.Background(), bson.M{"_id": documentId}, &link); err != nil {
 		return err
 	}
 
-	assert.Equal(&f.ErrorFeature, documentId, link.ID)
+	assert.Equal(&c.ErrorFeature, documentId, link.ID)
 
 	document := link.Next
 
-	assert.Equal(&f.ErrorFeature, expectedDataset.Title, document.Title)
-	assert.Equal(&f.ErrorFeature, expectedDataset.State, document.State)
+	assert.Equal(&c.ErrorFeature, expectedDataset.Title, document.Title)
+	assert.Equal(&c.ErrorFeature, expectedDataset.State, document.State)
 
-	return f.ErrorFeature.StepError()
+	return c.ErrorFeature.StepError()
 }
 
 func (c *DatasetComponent) iHaveARealKafkaContainerWithTopic(topic string) error {
@@ -190,7 +192,8 @@ func (c *DatasetComponent) iHaveTheseEditions(editionsJson *godog.DocString) err
 			Current: &editions[timeOffset],
 		}
 
-		err = c.putDocumentInDatabase(editionUp, editionID, "editions", timeOffset)
+		editionsCollection := c.MongoClient.ActualCollectionName(config.EditionsCollection)
+		err = c.putDocumentInDatabase(editionUp, editionID, editionsCollection, timeOffset)
 
 		if err != nil {
 			return err
@@ -218,7 +221,8 @@ func (c *DatasetComponent) iHaveTheseDatasets(datasetsJson *godog.DocString) err
 			Current: &datasets[timeOffset],
 		}
 
-		if err := c.putDocumentInDatabase(datasetUp, datasetID, "datasets", timeOffset); err != nil {
+		datasetsCollection := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
+		if err := c.putDocumentInDatabase(datasetUp, datasetID, datasetsCollection, timeOffset); err != nil {
 			return err
 		}
 	}
@@ -243,7 +247,8 @@ func (c *DatasetComponent) iHaveTheseVersions(versionsJson *godog.DocString) err
 			}
 		}
 
-		if err := c.putDocumentInDatabase(version, versionID, "instances", timeOffset); err != nil {
+		instanceCollection := c.MongoClient.ActualCollectionName(config.InstanceCollection)
+		if err := c.putDocumentInDatabase(version, versionID, instanceCollection, timeOffset); err != nil {
 			return err
 		}
 	}
@@ -266,7 +271,8 @@ func (c *DatasetComponent) theseVersionsNeedToBePublished(idsJSON *godog.DocStri
 		verDoc := make(bson.M)
 		verDoc["links.version.id"] = v.VersionNumber
 
-		if err := c.updateDocumentInDatabase(verDoc, v.VersionId, "instances", i); err != nil {
+		instanceCollection := c.MongoClient.ActualCollectionName(config.InstanceCollection)
+		if err := c.updateDocumentInDatabase(verDoc, v.VersionId, instanceCollection, i); err != nil {
 			return fmt.Errorf("failed to update database: %w", err)
 		}
 	}
@@ -285,7 +291,8 @@ func (c *DatasetComponent) iHaveTheseDimensions(dimensionsJson *godog.DocString)
 	for timeOffset, dimension := range dimensions {
 		dimensionID := dimension.Option
 
-		if err := c.putDocumentInDatabase(dimension, dimensionID, "dimension.options", timeOffset); err != nil {
+		dimensionOptionsCollection := c.MongoClient.ActualCollectionName(config.DimensionOptionsCollection)
+		if err := c.putDocumentInDatabase(dimension, dimensionID, dimensionOptionsCollection, timeOffset); err != nil {
 			return err
 		}
 	}
@@ -304,7 +311,8 @@ func (c *DatasetComponent) iHaveTheseInstances(instancesJson *godog.DocString) e
 	for timeOffset, instance := range instances {
 		instanceID := instance.InstanceID
 
-		if err := c.putDocumentInDatabase(instance, instanceID, "instances", timeOffset); err != nil {
+		instanceCollection := c.MongoClient.ActualCollectionName(config.InstanceCollection)
+		if err := c.putDocumentInDatabase(instance, instanceID, instanceCollection, timeOffset); err != nil {
 			return err
 		}
 	}
@@ -312,12 +320,12 @@ func (c *DatasetComponent) iHaveTheseInstances(instancesJson *godog.DocString) e
 	return nil
 }
 
-func (c *DatasetComponent) updateDocumentInDatabase(document bson.M, id, collectionName string, time int) error {
+func (c *DatasetComponent) updateDocumentInDatabase(document bson.M, id, collectionName string, _ int) error {
 	update := bson.M{
 		"$set": document,
 	}
 
-	_, err := c.MongoClient.Connection.C(collectionName).UpdateById(context.Background(), id, update)
+	_, err := c.MongoClient.Connection.Collection(collectionName).UpdateById(context.Background(), id, update)
 	if err != nil {
 		return fmt.Errorf("failed to update document in DB: %w", err)
 	}
@@ -332,7 +340,7 @@ func (c *DatasetComponent) putDocumentInDatabase(document interface{}, id, colle
 		},
 	}
 
-	_, err := c.MongoClient.Connection.C(collectionName).UpsertById(context.Background(), id, update)
+	_, err := c.MongoClient.Connection.Collection(collectionName).UpsertById(context.Background(), id, update)
 
 	if err != nil {
 		return err

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/log.go/v2/log"
 
@@ -21,11 +22,11 @@ const maxIDs = 1000
 // which correspond to different options.
 func (m *Mongo) GetDimensionsFromInstance(ctx context.Context, id string, offset, limit int) ([]*models.DimensionOption, int, error) {
 
-	f := m.Connection.C(dimensionOptions).Find(bson.M{"instance_id": id}).Select(bson.M{"id": 0, "last_updated": 0, "instance_id": 0})
-
-	// get total count and paginated values according to provided offset and limit
 	dimensions := []*models.DimensionOption{}
-	totalCount, err := QueryPage(ctx, f, offset, limit, &dimensions)
+	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.DimensionOptionsCollection)).Find(ctx, bson.M{"instance_id": id}, &dimensions,
+		mongodriver.Projection(bson.M{"id": 0, "last_updated": 0, "instance_id": 0}),
+		mongodriver.Offset(offset),
+		mongodriver.Limit(limit))
 	if err != nil {
 		return dimensions, 0, err
 	}
@@ -36,15 +37,7 @@ func (m *Mongo) GetDimensionsFromInstance(ctx context.Context, id string, offset
 // GetUniqueDimensionAndOptions returns a list of dimension options for an instance resource
 func (m *Mongo) GetUniqueDimensionAndOptions(ctx context.Context, id, dimension string) ([]*string, int, error) {
 
-	f, err := m.sortedQuery(ctx, bson.M{"instance_id": id, "name": dimension})
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// Is Distinct necessary?
-	// If we can guarantee that all options will be different for a dimension and instance
-	// then we could create an iterator and get only the necessary items from the DB
-	vals, err := f.Distinct(ctx, "option")
+	vals, err := m.Connection.Collection(m.ActualCollectionName(config.DimensionOptionsCollection)).Distinct(ctx, "option", bson.M{"instance_id": id, "name": dimension})
 	if err != nil {
 		return nil, 0, err
 	}
@@ -66,29 +59,6 @@ func (m *Mongo) GetUniqueDimensionAndOptions(ctx context.Context, id, dimension 
 // UpsertDimensionsToInstance to the dimension collection
 func (m *Mongo) UpsertDimensionsToInstance(ctx context.Context, opts []*models.CachedDimensionOption) error {
 
-	// TODO At present there is no means to access the BulkWrite method on the golang Mongo diver's Collection, as our wrapping
-	// of same in dp-mongodb does not expose the underlying collection.
-	// I am leaving this todo-comment here as I will look at adding an accessor, so that the following commented code may be used
-	// to do a bulk write in a similar fashion to what existed with the old Mongo globalsign driver
-	// If I forget to remove this todo, please feel free to delete this comment and the underlying commented code after 31/12/21
-	//
-	//var upserts []mongoRawGoDriver.WriteModel
-	//now := time.Now().UTC()
-	//for _, opt := range opts {
-	//	option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name, Label: opt.Label}
-	//	option.Order = opt.Order
-	//	option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/code-lists/%s", m.MongoConfig.CodeListAPIURL, opt.CodeList)}
-	//	option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.MongoConfig.CodeListAPIURL, opt.CodeList, opt.Code)}
-	//	option.LastUpdated = now
-	//	upserts = append(upserts, mongoRawGoDriver.NewUpdateOneModel().
-	//		SetFilter(bson.M{"instance_id": option.InstanceID, "name": option.Name, "option": option.Option}).
-	//		SetUpdate(option).
-	//		SetUpsert(true))
-	//}
-	//
-	//_, err := m.Connection.C(dimensionOptions).GetMongoCollection().BulkWrite(ctx, upserts)
-	//return err
-
 	now := time.Now().UTC()
 	for _, opt := range opts {
 		option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name, Label: opt.Label}
@@ -96,7 +66,7 @@ func (m *Mongo) UpsertDimensionsToInstance(ctx context.Context, opts []*models.C
 		option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/code-lists/%s", m.MongoConfig.CodeListAPIURL, opt.CodeList)}
 		option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.MongoConfig.CodeListAPIURL, opt.CodeList, opt.Code)}
 		option.LastUpdated = now
-		if _, err := m.Connection.C(dimensionOptions).Upsert(ctx,
+		if _, err := m.Connection.Collection(m.ActualCollectionName(config.DimensionOptionsCollection)).Upsert(ctx,
 			bson.M{"instance_id": option.InstanceID, "name": option.Name, "option": option.Option},
 			bson.M{"$set": option}); err != nil {
 			return err
@@ -116,7 +86,7 @@ func (m *Mongo) GetDimensions(ctx context.Context, versionID string) ([]bson.M, 
 	// Then group the values by name.
 	group := bson.M{"$group": bson.M{"_id": "$name", "doc": bson.M{"$first": "$$ROOT"}}}
 	results := []bson.M{}
-	err := m.Connection.C(dimensionOptions).Aggregate([]bson.M{match, group}).All(ctx, &results)
+	err := m.Connection.Collection(m.ActualCollectionName(config.DimensionOptionsCollection)).Aggregate(ctx, []bson.M{match, group}, &results)
 	if err != nil {
 		return nil, err
 	}
@@ -135,15 +105,15 @@ func (m *Mongo) GetDimensionOptions(ctx context.Context, version *models.Version
 	// define selector to obtain all the dimension options for an instance
 	selector := bson.M{"instance_id": version.ID, "name": dimension}
 
-	// obtain query defining the order
-	f, err := m.sortedQuery(ctx, selector)
+	s, err := m.sortOrder(ctx, selector)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// get total count and paginated values according to provided offset and limit
 	values := []*models.PublicDimensionOption{}
-	totalCount, err := QueryPage(ctx, f, offset, limit, &values)
+	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.DimensionOptionsCollection)).Find(ctx, selector, &values,
+		s, mongodriver.Offset(offset), mongodriver.Limit(limit))
 	if err != nil {
 		return values, 0, err
 	}
@@ -166,8 +136,7 @@ func (m *Mongo) GetDimensionOptionsFromIDs(ctx context.Context, version *models.
 	selectorAll := bson.M{"instance_id": version.ID, "name": dimension}
 	selectorInList := bson.M{"instance_id": version.ID, "name": dimension, "option": bson.M{"$in": IDs}}
 
-	// count total number of options in dimension
-	totalCount, err := m.Connection.C(dimensionOptions).Find(selectorAll).Count(ctx)
+	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.DimensionOptionsCollection)).Count(ctx, selectorAll)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -175,13 +144,14 @@ func (m *Mongo) GetDimensionOptionsFromIDs(ctx context.Context, version *models.
 	var values []*models.PublicDimensionOption
 	if totalCount > 0 {
 		// obtain query defining the order for the provided IDs only
-		f, err := m.sortedQuery(ctx, selectorInList)
+		s, err := m.sortOrder(ctx, selectorInList)
 		if err != nil {
 			return nil, 0, err
 		}
 
 		// obtain all required options in order
-		if err = f.IterAll(ctx, &values); err != nil {
+		if _, err := m.Connection.Collection(m.ActualCollectionName(config.DimensionOptionsCollection)).Find(ctx, selectorInList, &values,
+			s, mongodriver.Limit(totalCount)); err != nil {
 			return nil, 0, err
 		}
 
@@ -209,36 +179,6 @@ func (m *Mongo) UpdateDimensionsNodeIDAndOrder(ctx context.Context, dimensions [
 		return nil // nothing to update
 	}
 
-	// TODO As with UpsertDimensionsToInstance above, at present there is no means to access the BulkWrite method on the
-	// golang Mongo diver's Collection, as our wrapping of same in dp-mongodb does not expose the underlying collection.
-	// I am leaving this todo-comment here as I will look at adding an accessor, so that the following commented code may be used
-	// to do a bulk write in a similar fashion to what existed with the old Mongo globalsign driver
-	// If I forget to remove this todo, please feel free to delete this comment and the underlying commented code after 31/12/21
-	//
-	//var updates []mongoRawGoDriver.WriteModel
-	//now := time.Now().UTC()
-	//for _, dimension := range dimensions {
-	//	update := bson.M{"last_updated": now}
-	//	if dimension.NodeID != "" {
-	//		update["node_id"] = &dimension.NodeID
-	//	}
-	//	if dimension.Order != nil {
-	//		update["order"] = &dimension.Order
-	//	}
-	//	updates = append(updates, mongoRawGoDriver.NewUpdateOneModel().
-	//		SetFilter(bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name, "option": dimension.Option}).
-	//		SetUpdate(bson.M{"$set": update}))
-	//}
-	//
-	//results, err := m.Connection.C(dimensionOptions).GetMongoCollection().BulkWrite(ctx, updates)
-	//if err != nil {
-	//	return err
-	//}
-	//if int(results.ModifiedCount) != len(dimensions) {
-	//	return errs.ErrDimensionOptionNotFound
-	//}
-	//return nil
-
 	// queue all options to be updated
 	now := time.Now().UTC()
 	for _, dimension := range dimensions {
@@ -249,7 +189,7 @@ func (m *Mongo) UpdateDimensionsNodeIDAndOrder(ctx context.Context, dimensions [
 		if dimension.Order != nil {
 			update["order"] = &dimension.Order
 		}
-		result, err := m.Connection.C(dimensionOptions).Update(ctx,
+		result, err := m.Connection.Collection(m.ActualCollectionName(config.DimensionOptionsCollection)).Update(ctx,
 			bson.M{"instance_id": dimension.InstanceID, "name": dimension.Name, "option": dimension.Option},
 			bson.M{"$set": update})
 		if err != nil {
@@ -263,22 +203,21 @@ func (m *Mongo) UpdateDimensionsNodeIDAndOrder(ctx context.Context, dimensions [
 	return nil
 }
 
-// sortedQuery generates a sorted mongoDB query from the provided bson.M selector
-// if order property exists, it will be used to determine the order
+// sortOrder generates a sort order from the provided bson.M selector
+// if the order property exists, it will be used to determine the order
 // otherwise, the items will be sorted alphabetically by option
-func (m *Mongo) sortedQuery(ctx context.Context, selector bson.M) (*mongodriver.Find, error) {
+func (m *Mongo) sortOrder(ctx context.Context, selector bson.M) (mongodriver.FindOption, error) {
 
 	selector["order"] = bson.M{"$exists": true}
-	orderCount, err := m.Connection.C(dimensionOptions).Find(selector).Count(ctx)
+	orderCount, err := m.Connection.Collection(m.ActualCollectionName(config.DimensionOptionsCollection)).Count(ctx, selector)
 	if err != nil {
 		return nil, err
 	}
 	delete(selector, "order")
 
-	f := m.Connection.C(dimensionOptions).Find(selector)
 	if orderCount > 0 {
-		return f.Sort(bson.M{"order": 1}), nil
+		return mongodriver.Sort(bson.M{"order": 1}), nil
 	}
 
-	return f.Sort(bson.M{"option": 1}), nil
+	return mongodriver.Sort(bson.M{"option": 1}), nil
 }

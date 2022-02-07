@@ -16,6 +16,7 @@ import (
 	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
+	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
 )
 
@@ -374,6 +375,8 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, versionDetails VersionDetails) (*models.DatasetUpdate, *models.Version, *models.Version, error) {
 	data := versionDetails.baseLogData()
 
+	reqID := ctx.Value(dprequest.RequestIdKey) // used to differentiate logs of concurrent calls to this function from different services
+
 	versionNumber, err := models.ParseAndValidateVersionNumber(ctx, versionDetails.version)
 	if err != nil {
 		log.Error(ctx, "putVersion endpoint: invalid version request", err, data)
@@ -387,7 +390,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		log.Error(ctx, "putVersion endpoint: failed to model version resource based on request", err, data)
 		return nil, nil, nil, errs.ErrUnableToParseJSON
 	}
-	log.Info(ctx, "DEBUG createVersion from body", log.Data{"time": time.Since(t0)})
+	log.Info(ctx, "DEBUG createVersion from body", log.Data{"time": time.Since(t0), "reqID": reqID})
 
 	t0 = time.Now()
 	currentDataset, err := api.dataStore.Backend.GetDataset(ctx, versionDetails.datasetID)
@@ -395,14 +398,14 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		log.Error(ctx, "putVersion endpoint: datastore.getDataset returned an error", err, data)
 		return nil, nil, nil, err
 	}
-	log.Info(ctx, "DEBUG GetDataset from mongo", log.Data{"time": time.Since(t0)})
+	log.Info(ctx, "DEBUG GetDataset from mongo", log.Data{"time": time.Since(t0), "reqID": reqID})
 
 	t0 = time.Now()
 	if err = api.dataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
 		log.Error(ctx, "putVersion endpoint: failed to find edition of dataset", err, data)
 		return nil, nil, nil, err
 	}
-	log.Info(ctx, "DEBUG CheckEditionExists from mongo", log.Data{"time": time.Since(t0)})
+	log.Info(ctx, "DEBUG CheckEditionExists from mongo", log.Data{"time": time.Since(t0), "reqID": reqID})
 
 	t0 = time.Now()
 	currentVersion, err := api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
@@ -411,7 +414,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
 		return nil, nil, nil, err
 	}
-	log.Info(ctx, "DEBUG GetVersion from mongo", log.Data{"time": time.Since(t0)})
+	log.Info(ctx, "DEBUG GetVersion from mongo", log.Data{"time": time.Since(t0), "reqID": reqID})
 
 	var combinedVersionUpdate *models.Version
 
@@ -420,11 +423,11 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	// Note that the combined version update does not mutate versionUpdate because multiple retries might generate a different value depending on the currentVersion at that point.
 	var doUpdate = func() error {
 		t0 = time.Now()
-		combinedVersionUpdate, err = populateNewVersionDoc(*currentVersion, *versionUpdate)
+		combinedVersionUpdate, err = populateNewVersionDoc(currentVersion, versionUpdate)
 		if err != nil {
 			return err
 		}
-		log.Info(ctx, "DEBUG populateNewVersionDoc (merge mongoDB doc and update)", log.Data{"time": time.Since(t0)})
+		log.Info(ctx, "DEBUG populateNewVersionDoc (merge mongoDB doc and update)", log.Data{"time": time.Since(t0), "reqID": reqID})
 		data["updated_version"] = combinedVersionUpdate
 		log.Info(ctx, "putVersion endpoint: combined current version document with update request", data)
 
@@ -433,7 +436,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 			log.Error(ctx, "putVersion endpoint: failed validation check for version update", err)
 			return err
 		}
-		log.Info(ctx, "DEBUG ValidateVersion", log.Data{"time": time.Since(t0)})
+		log.Info(ctx, "DEBUG ValidateVersion", log.Data{"time": time.Since(t0), "reqID": reqID})
 
 		t0 = time.Now()
 
@@ -443,10 +446,9 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		}
 
 		if _, err := api.dataStore.Backend.UpdateVersion(ctx, currentVersion, combinedVersionUpdate, eTag); err != nil {
-			log.Error(ctx, "putVersion endpoint: failed to update version document", err, data)
 			return err
 		}
-		log.Info(ctx, "DEBUG UpdateVersion to MongoDB", log.Data{"time": time.Since(t0), "etag": eTag})
+		log.Info(ctx, "DEBUG UpdateVersion to MongoDB", log.Data{"time": time.Since(t0), "reqID": reqID, "etag": eTag})
 
 		return nil
 	}
@@ -457,11 +459,11 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	log.Info(ctx, "DEBUG AcquireInstanceLock", log.Data{"time": time.Since(t0)})
+	log.Info(ctx, "DEBUG AcquireInstanceLock", log.Data{"time": time.Since(t0), "reqID": reqID})
 	defer func() {
 		t0 = time.Now()
 		api.dataStore.Backend.UnlockInstance(ctx, lockID)
-		log.Info(ctx, "DEBUG UnlockInstance", log.Data{"time": time.Since(t0)})
+		log.Info(ctx, "DEBUG UnlockInstance", log.Data{"time": time.Since(t0), "reqID": reqID})
 	}()
 
 	// Try to perform the update. If there was a race condition and another caller performed the update
@@ -479,9 +481,10 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 				log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
 				return nil, nil, nil, err
 			}
-			log.Info(ctx, "DEBUG (retry) GetVersion from mongo", log.Data{"time": time.Since(t0)})
+			log.Info(ctx, "DEBUG (retry) GetVersion from mongo", log.Data{"time": time.Since(t0), "reqID": reqID})
 
 			if err = doUpdate(); err != nil {
+				log.Error(ctx, "putVersion endpoint: failed to update version document on 2nd attempt", err, data)
 				return nil, nil, nil, err
 			}
 		} else {
@@ -490,6 +493,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	}
 
 	data["type"] = currentVersion.Type
+	data["reqID"] = reqID
 	log.Info(ctx, "update version completed successfully", data)
 	return currentDataset, currentVersion, combinedVersionUpdate, nil
 }
@@ -618,7 +622,10 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion, ver
 	return associateVersionErr
 }
 
-func populateNewVersionDoc(currentVersion models.Version, version models.Version) (*models.Version, error) {
+func populateNewVersionDoc(currentVersion *models.Version, originalVersion *models.Version) (*models.Version, error) {
+	var version models.Version
+	copier.Copy(&version, originalVersion) // create local copy that escapes to the HEAP at the end of this function
+
 	var alerts []models.Alert
 
 	if version.Alerts != nil {

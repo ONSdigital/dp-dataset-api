@@ -5,20 +5,12 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
+
+	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
 )
 
-// MongoConfig contains the config required to connect to MongoDB.
 type MongoConfig struct {
-	URI                string        `envconfig:"MONGODB_BIND_ADDR"   json:"-"`
-	Collection         string        `envconfig:"MONGODB_COLLECTION"`
-	Database           string        `envconfig:"MONGODB_DATABASE"`
-	Username           string        `envconfig:"MONGODB_USERNAME"    json:"-"`
-	Password           string        `envconfig:"MONGODB_PASSWORD"    json:"-"`
-	IsSSL              bool          `envconfig:"MONGODB_IS_SSL"`
-	EnableReadConcern  bool          `envconfig:"MONGODB_ENABLE_READ_CONCERN"`
-	EnableWriteConcern bool          `envconfig:"MONGODB_ENABLE_WRITE_CONCERN"`
-	QueryTimeout       time.Duration `envconfig:"MONGODB_QUERY_TIMEOUT"`
-	ConnectionTimeout  time.Duration `envconfig:"MONGODB_CONNECT_TIMEOUT"`
+	mongodriver.MongoDriverConfig
 
 	CodeListAPIURL string `envconfig:"CODE_LIST_API_URL"`
 	DatasetAPIURL  string `envconfig:"DATASET_API_URL"`
@@ -61,6 +53,15 @@ type Configuration struct {
 
 var cfg *Configuration
 
+const (
+	DatasetsCollection         = "DatasetsCollection"
+	ContactsCollection         = "ContactsCollection"
+	EditionsCollection         = "EditionsCollection"
+	InstanceCollection         = "InstanceCollection"
+	DimensionOptionsCollection = "DimensionOptionsCollection"
+	InstanceLockCollection     = "InstanceLockCollection"
+)
+
 // Get the application and returns the configuration structure, and initialises with default values.
 func Get() (*Configuration, error) {
 	if cfg != nil {
@@ -92,19 +93,27 @@ func Get() (*Configuration, error) {
 		DefaultOffset:              0,
 		MaxRequestOptions:          100, // Maximum number of options acceptable in an incoming Patch request. Compromise between one option per call (inefficient) and an order of 100k options per call, for census data (memory and computationally expensive)
 		MongoConfig: MongoConfig{
-			URI:                "localhost:27017",
-			Database:           "datasets",
-			Collection:         "datasets",
-			QueryTimeout:       15 * time.Second,
-			ConnectionTimeout:  5 * time.Second,
-			EnableWriteConcern: true,
-
+			MongoDriverConfig: mongodriver.MongoDriverConfig{
+				ClusterEndpoint:               "localhost:27017",
+				Username:                      "",
+				Password:                      "",
+				Database:                      "datasets",
+				Collections:                   map[string]string{DatasetsCollection: "datasets", ContactsCollection: "contacts", EditionsCollection: "editions", InstanceCollection: "instances", DimensionOptionsCollection: "dimension.options", InstanceLockCollection: "instances_locks"},
+				ReplicaSet:                    "",
+				IsStrongReadConcernEnabled:    false,
+				IsWriteConcernMajorityEnabled: true,
+				ConnectTimeout:                5 * time.Second,
+				QueryTimeout:                  15 * time.Second,
+				TLSConnectionConfig: mongodriver.TLSConnectionConfig{
+					IsSSL: false,
+				},
+			},
 			CodeListAPIURL: "http://localhost:22400",
 			DatasetAPIURL:  "http://localhost:22000",
 		},
 		ComponentTestUseLogFile: false,
 	}
-	// overwrites default values with system env variable values
+
 	return cfg, envconfig.Process("", cfg)
 }
 
