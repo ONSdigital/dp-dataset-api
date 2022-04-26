@@ -18,6 +18,7 @@ var generateCantabularDownloads = `{
   "type": "record",
   "name": "cantabular-export-start",
   "fields": [
+	{"name": "filter_output_id", "type": "string", "default": ""},
     {"name": "instance_id", "type": "string", "default": ""},
     {"name": "dataset_id", "type": "string", "default": ""},
     {"name": "edition", "type": "string", "default": ""},

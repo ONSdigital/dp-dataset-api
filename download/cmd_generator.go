@@ -2,6 +2,7 @@ package download
 
 import (
 	"context"
+
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
@@ -12,11 +13,11 @@ type CMDGenerator struct {
 }
 
 type GenerateDownloads struct {
-	FilterID   string `avro:"filter_output_id"`
-	InstanceID string `avro:"instance_id"`
-	DatasetID  string `avro:"dataset_id"`
-	Edition    string `avro:"edition"`
-	Version    string `avro:"version"`
+	FilterOutputID string `avro:"filter_output_id"`
+	InstanceID     string `avro:"instance_id"`
+	DatasetID      string `avro:"dataset_id"`
+	Edition        string `avro:"edition"`
+	Version        string `avro:"version"`
 }
 
 // Generate the full file download files for the specified dataset/edition/version
@@ -34,21 +35,22 @@ func (gen *CMDGenerator) Generate(ctx context.Context, datasetID string, instanc
 		return versionEmptyErr
 	}
 
-	// FilterID is set to an empty string as the avro schema expects there to be
-	// a filter ID otherwise struct wont be marshalled into an acceptable message
+	// FilterOutputID is set to an empty string as the avro schema expects there to be
+	// a filter output ID otherwise struct wont be marshalled into an acceptable message
 	downloads := GenerateDownloads{
-		FilterID:   "",
-		DatasetID:  datasetID,
-		InstanceID: instanceID,
-		Edition:    edition,
-		Version:    version,
+		FilterOutputID: "",
+		DatasetID:      datasetID,
+		InstanceID:     instanceID,
+		Edition:        edition,
+		Version:        version,
 	}
 
 	log.Info(ctx, "send CMD generate downloads event", log.Data{
-		"datasetID":  datasetID,
-		"instanceID": instanceID,
-		"edition":    edition,
-		"version":    version,
+		"datasetID":      datasetID,
+		"instanceID":     instanceID,
+		"edition":        edition,
+		"version":        version,
+		"FilterOutputId": "",
 	})
 
 	avroBytes, err := gen.Marshaller.Marshal(downloads)
