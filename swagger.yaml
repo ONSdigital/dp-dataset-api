@@ -238,8 +238,10 @@ paths:
           description: "A json list containing datasets which have been published"
           schema:
             $ref: '#/definitions/Datasets'
+        400:
+          description: "Parameter is_based_on was sent but no value was provided"
         404:
-          description: "No dataset was found with the popultation-typw provided"
+          description: "No dataset was found with the popultation-type provided"
         500:
           $ref: '#/responses/InternalError'
   /datasets/{id}:
