@@ -198,6 +198,12 @@ parameters:
     description: "Filter resource version, as returned by a previous ETag, to be validated; or '*' to skip the version check"
     in: header
     type: string
+  is-based-on:
+    name: is-based-on
+    required: false
+    description: "A population type to search on to return datasets that are associated with that population type."
+    in: query
+    type: string
 securityDefinitions:
   FlorenceAPIKey:
     name: florence-token
@@ -222,6 +228,7 @@ paths:
       summary: "Get a list of datasets"
       description: "Returns a list of all datasets provided by the ONS that can be filtered using the filter API"
       parameters: 
+      - $ref: '#/parameters/is-based-on'
       - $ref: '#/parameters/limit'
       - $ref: '#/parameters/offset'
       produces:
