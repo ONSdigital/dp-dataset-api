@@ -198,6 +198,12 @@ parameters:
     description: "Filter resource version, as returned by a previous ETag, to be validated; or '*' to skip the version check"
     in: header
     type: string
+  is_based_on:
+    name: is_based_on
+    required: false
+    description: "A population type to search on to return datasets that are associated with that population type e.g. Usual-Residents."
+    in: query
+    type: string
 securityDefinitions:
   FlorenceAPIKey:
     name: florence-token
@@ -222,6 +228,7 @@ paths:
       summary: "Get a list of datasets"
       description: "Returns a list of all datasets provided by the ONS that can be filtered using the filter API"
       parameters: 
+      - $ref: '#/parameters/is_based_on'
       - $ref: '#/parameters/limit'
       - $ref: '#/parameters/offset'
       produces:
@@ -231,6 +238,10 @@ paths:
           description: "A json list containing datasets which have been published"
           schema:
             $ref: '#/definitions/Datasets'
+        400:
+          description: "Parameter is_based_on was sent but no value was provided"
+        404:
+          description: "No dataset was found with the popultation-type provided"
         500:
           $ref: '#/responses/InternalError'
   /datasets/{id}:
@@ -1140,6 +1151,8 @@ definitions:
       description:
         description: "A description for a dataset"
         type: string
+      is_based_on:
+        $ref: '#/definitions/IsBasedOn'
       keywords:
         description: "A list of keywords for a dataset"
         type: array
@@ -1241,6 +1254,18 @@ definitions:
     type: string
     enum: [filterable, nomis]
     default: "filterable"    
+  IsBasedOn:
+    description: "Information about the population-type that the dataset is based on (census 2021 only)" 
+    type: object
+    properties:
+      id:
+        description: "The population-type that the dataset is based on"
+        type: string
+        example: "Usual-Residents"
+      type:
+        description: "The type of the dataset"
+        type: string
+        example: "cantabular_table"
   Dimension:
     description: "A single dimension within a dataset"
     type: object
