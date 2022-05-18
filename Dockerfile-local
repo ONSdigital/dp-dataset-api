@@ -1,0 +1,10 @@
+FROM golang:1.16-stretch as build
+
+RUN apt-get update && apt-get upgrade -y
+
+RUN apt-get install awscli -y && apt-get install less -y
+
+WORKDIR /service
+CMD tail -f /dev/null
+
+FROM build as test
