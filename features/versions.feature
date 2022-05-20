@@ -358,8 +358,8 @@ Feature: Dataset API
             }
             """
     And these cantabular generator downloads events are produced:
-      | InstanceID                | DatasetID                 | Edition | Version | FilterOutputID |
-      | test-cantabular-version-1 | test-cantabular-dataset-1 | 2021    | 1       |                |
+      | InstanceID                | DatasetID                 | Edition | Version |FilterOutputID| Dimensions |
+      | test-cantabular-version-1 | test-cantabular-dataset-1 | 2021    | 1       |              | []         |
     Then the HTTP status code should be "200"
 
 
@@ -394,6 +394,6 @@ Feature: Dataset API
             }
             """
     And these cantabular generator downloads events are produced:
-      | InstanceID                | DatasetID                 | Edition | Version | FilterOutputID |
-      | test-cantabular-version-2 | test-cantabular-dataset-2 | 2021    | 1       |                |
+      | InstanceID                | DatasetID                 | Edition | Version |FilterOutputID| Dimensions |
+      | test-cantabular-version-2 | test-cantabular-dataset-2 | 2021    | 1       |              | []         |
     Then the HTTP status code should be "200"
