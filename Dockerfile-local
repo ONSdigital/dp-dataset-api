@@ -1,0 +1,8 @@
+FROM golang:1.17-stretch as build
+
+RUN apt-get update && apt-get upgrade -y
+
+WORKDIR /service
+CMD tail -f /dev/null
+
+FROM build as test

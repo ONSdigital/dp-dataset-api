@@ -152,11 +152,11 @@ func TestGenerator_Generate(t *testing.T) {
 		version := "4"
 
 		downloads := GenerateDownloads{
-			FilterID:   "",
-			DatasetID:  datasetID,
-			InstanceID: instanceID,
-			Edition:    edition,
-			Version:    version,
+			FilterOutputID: "",
+			DatasetID:      datasetID,
+			InstanceID:     instanceID,
+			Edition:        edition,
+			Version:        version,
 		}
 
 		output := make(chan []byte, 1)

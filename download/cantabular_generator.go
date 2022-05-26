@@ -2,14 +2,17 @@ package download
 
 import (
 	"context"
+
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
 type CantabularGeneratorDownloads struct {
-	InstanceID string `avro:"instance_id"`
-	DatasetID  string `avro:"dataset_id"`
-	Edition    string `avro:"edition"`
-	Version    string `avro:"version"`
+	InstanceID     string   `avro:"instance_id"`
+	DatasetID      string   `avro:"dataset_id"`
+	Edition        string   `avro:"edition"`
+	Version        string   `avro:"version"`
+	FilterOutputID string   `avro:"filter_output_id"`
+	Dimensions     []string `avro:"dimensions"`
 }
 
 // Generator kicks off a full dataset version download task
@@ -33,20 +36,22 @@ func (gen *CantabularGenerator) Generate(ctx context.Context, datasetID string, 
 		return versionEmptyErr
 	}
 
-	// FilterID is set to an empty string as the avro schema expects there to be
-	// a filter ID otherwise struct wont be marshalled into an acceptable message
+	// FilterOutputID is set to an empty string as the avro schema expects there to be
+	// a filter output ID otherwise struct won't be marshalled into an acceptable message
 	downloads := CantabularGeneratorDownloads{
-		DatasetID:  datasetID,
-		InstanceID: instanceID,
-		Edition:    edition,
-		Version:    version,
+		DatasetID:      datasetID,
+		InstanceID:     instanceID,
+		Edition:        edition,
+		Version:        version,
+		FilterOutputID: "",
 	}
 
 	log.Info(ctx, "send cantabular generate downloads event", log.Data{
-		"datasetID":  datasetID,
-		"instanceID": instanceID,
-		"edition":    edition,
-		"version":    version,
+		"DatasetID":      datasetID,
+		"InstanceID":     instanceID,
+		"Edition":        edition,
+		"Version":        version,
+		"FilterOutputID": "",
 	})
 
 	avroBytes, err := gen.Marshaller.Marshal(downloads)
