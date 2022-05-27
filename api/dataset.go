@@ -42,17 +42,42 @@ var (
 	}
 )
 
+/*
+   1. check the query parameter, if not exists... as expected  if exists
+   if is_based_on exists  and but value is empty string (no value given) then 400
+   2. if there, then query database for different
+   3. ensure that the swagger spec is respected
+
+*/
+
+/*
+   query: check either current.is_based_on.id AND next.is_based_on.id for id.
+   So if this id is
+
+*/
+
 //getDatasets returns a list of datasets, the total count of datasets and an error
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	logData := log.Data{}
 	authorised := api.authenticate(r, logData)
-	datasets, totalCount, err := api.dataStore.Backend.GetDatasets(ctx, offset, limit, authorised)
-	if err != nil {
-		log.Error(ctx, "api endpoint getDatasets datastore.GetDatasets returned an error", err)
-		handleDatasetAPIErr(ctx, err, w, logData)
-		return nil, 0, err
+	// get the query string
+	is_based_on := vars["is_based_on"]
+
+	if is_based_on == "" {
+		datasets, totalCount, err := api.dataStore.Backend.GetDatasets(ctx, offset, limit, authorised)
+		if err != nil {
+			log.Error(ctx, "api endpoint getDatasets datastore.GetDatasets returned an error", err)
+			handleDatasetAPIErr(ctx, err, w, logData)
+			return nil, 0, err
+		}
+	} else {
+		// if is_based_on and but value does not exist then 400
+		// if empty list of datasets then you return 404
+
+		// return the data
 	}
+
 	if authorised {
 		return datasets, totalCount, nil
 	}

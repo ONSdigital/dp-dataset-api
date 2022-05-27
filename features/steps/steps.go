@@ -33,6 +33,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, c.theDocumentInTheDatabaseForIdShouldBe)
 	ctx.Step(`^there are no datasets$`, c.thereAreNoDatasets)
 	ctx.Step(`^I have these datasets:$`, c.iHaveTheseDatasets)
+	ctx.Step(`^I have these "([^"]*)" datasets:$`, c.iHaveTheseConditionalDatasets)
 	ctx.Step(`^I have these editions:$`, c.iHaveTheseEditions)
 	ctx.Step(`^I have these versions:$`, c.iHaveTheseVersions)
 	ctx.Step(`^these versions need to be published:$`, c.theseVersionsNeedToBePublished)
@@ -230,11 +231,41 @@ func (c *DatasetComponent) iHaveTheseDatasets(datasetsJson *godog.DocString) err
 
 	for timeOffset, datasetDoc := range datasets {
 		datasetID := datasetDoc.ID
-
 		datasetUp := models.DatasetUpdate{
 			ID:      datasetID,
 			Next:    &datasets[timeOffset],
 			Current: &datasets[timeOffset],
+		}
+
+		datasetsCollection := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
+		if err := c.putDocumentInDatabase(datasetUp, datasetID, datasetsCollection, timeOffset); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Done for GET /datastes?is_based_on so that we can condition a dataset on whether it is published or not.
+func (c *DatasetComponent) iHaveTheseConditionalDatasets(public, basedOn string, datasetsJson *godog.DocString) error {
+
+	datasets := []models.Dataset{}
+
+	err := json.Unmarshal([]byte(datasetsJson.Content), &datasets)
+	if err != nil {
+		return err
+	}
+
+	for timeOffset, datasetDoc := range datasets {
+		datasetID := datasetDoc.ID
+		datasetUp := models.DatasetUpdate{
+			ID: datasetID,
+		}
+
+		if public == "public" {
+			datasetUp.Current = &datasets[timeOffset]
+		} else {
+			datasetUp.Next = &datasets[timeOffset]
 		}
 
 		datasetsCollection := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
