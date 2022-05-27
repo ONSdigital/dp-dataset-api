@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
@@ -50,32 +51,38 @@ var (
 
 */
 
-/*
-   query: check either current.is_based_on.id AND next.is_based_on.id for id.
-   So if this id is
-
-*/
+const IsBasedOn = "is_based_on"
 
 //getDatasets returns a list of datasets, the total count of datasets and an error
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	logData := log.Data{}
 	authorised := api.authenticate(r, logData)
-	// get the query string
-	is_based_on := vars["is_based_on"]
 
-	if is_based_on == "" {
-		datasets, totalCount, err := api.dataStore.Backend.GetDatasets(ctx, offset, limit, authorised)
-		if err != nil {
-			log.Error(ctx, "api endpoint getDatasets datastore.GetDatasets returned an error", err)
-			handleDatasetAPIErr(ctx, err, w, logData)
-			return nil, 0, err
-		}
+	isBasedOnExists := r.URL.Query().Has(IsBasedOn)
+	isBasedOn := r.URL.Query().Get(IsBasedOn)
+
+	if isBasedOnExists && isBasedOn == "" {
+		err := apierrors.ErrInvalidQueryParameter
+		log.Error(ctx, "malformed is_based_on parameter", nil)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return nil, 0, err
+	}
+
+	var datasets []*models.DatasetUpdate
+	var totalCount int
+	var err error
+
+	if isBasedOnExists {
+		datasets, totalCount, err = api.dataStore.Backend.GetDatasetsByBasedOn(ctx, isBasedOn, offset, limit, authorised)
 	} else {
-		// if is_based_on and but value does not exist then 400
-		// if empty list of datasets then you return 404
-
-		// return the data
+		datasets, totalCount, err = api.
+			dataStore.Backend.GetDatasets(ctx, offset, limit, authorised)
+	}
+	if err != nil {
+		log.Error(ctx, "api endpoint getDatasets datastore.GetDatasets returned an error", err)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return nil, 0, err
 	}
 
 	if authorised {
