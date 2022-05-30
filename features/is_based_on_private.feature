@@ -9,15 +9,15 @@ Feature: Private Dataset API
                   {
                     "id": "1",
                     "is_based_on": {
-                      "type": "",
-                      "id": "not-included"
+                      "@type": "",
+                      "@id": "not-included"
                     }
                   },
                   {
-                    "id": "2",
+                    "id": "test-1",
                     "is_based_on": {
-                      "type": "",
-                      "id": "not-included"
+                      "@type": "",
+                      "@id": "included"
                     }
                   }
                 ]
@@ -26,42 +26,66 @@ Feature: Private Dataset API
         """
         [
           {
-            "id": "unpublished-estimates",
+            "id": "test-2",
             "is_based_on": {
-              "type": "",
-              "id": "included"
+              "@type": "",
+              "@id": "included"
             }
           },
           {
-            "id": "3",
+            "id": "2",
             "is_based_on": {
-              "type": "",
-              "id": "not-included"
+              "@type": "",
+              "@id": "not-included"
             }
           }
         ]
         """
-    # Scenario: Get /datasets is_based_on is provided
-    #     When I GET "/datasets?is_based_on=another" with is_based_on "test"
-    #     Then I should receive the following JSON response with status "200":
-    #     """
-    #     [
-    #       {
-    #         "id": "unpublished-estimates",
-    #         "is_based_on": {
-    #           "type": "",
-    #           "id": "included"
-    #         }
-    #       }
-    #     ]
-    #     """
-    # Scenario: Get /datasets is_based_on is malformed
-    #     When I GET "/datasets?is_based_on=" with is_based_on "test"
-    #     Then I should receive the following JSON response with status "400":
-    #     """
-    #     """
-    # Scenario: Get /datasets is_based_on returns 404
-    #     When I GET "/datasets" with is_based_on "does not exist"
-    #     Then I should receive the following JSON response with status "404":
-    #     """
-    #     """
+    Scenario: Get /datasets is_based_on is provided
+        When I GET "/datasets?is_based_on=included"
+        Then I should receive the following JSON response with status "200":
+        """
+{
+   "count":2,
+   "total_count":2,
+   "limit":20,
+   "offset":0,
+   "items":[
+      {
+         "id":"test-2",
+         "current":{
+            "id":"test-2",
+            "is_based_on":{
+               "@type":"",
+               "@id":"included"
+            }
+         },
+         "next":{
+            "id":"test-2",
+            "is_based_on":{
+               "@type":"",
+               "@id":"included"
+            }
+         }
+      },
+      {
+         "id":"test-1",
+         "current":{
+            "id":"test-1",
+            "is_based_on":{
+               "@type":"",
+               "@id":"included"
+            }
+         }
+      }
+   ]
+}
+
+        """
+    Scenario: Get /datasets is_based_on is malformed
+        When I GET "/datasets?is_based_on="
+        Then the HTTP status code should be "400"
+
+    Scenario: Get /datasets is_based_on returns nothing
+        When I GET "/datasets?is_based_on=not-exists"
+        Then the HTTP status code should be "404"
