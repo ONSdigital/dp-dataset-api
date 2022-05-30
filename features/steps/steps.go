@@ -247,8 +247,7 @@ func (c *DatasetComponent) iHaveTheseDatasets(datasetsJson *godog.DocString) err
 }
 
 // Done for GET /datastes?is_based_on so that we can condition a dataset on whether it is published or not.
-func (c *DatasetComponent) iHaveTheseConditionalDatasets(public, basedOn string, datasetsJson *godog.DocString) error {
-
+func (c *DatasetComponent) iHaveTheseConditionalDatasets(status string, datasetsJson *godog.DocString) error {
 	datasets := []models.Dataset{}
 
 	err := json.Unmarshal([]byte(datasetsJson.Content), &datasets)
@@ -262,9 +261,14 @@ func (c *DatasetComponent) iHaveTheseConditionalDatasets(public, basedOn string,
 			ID: datasetID,
 		}
 
-		if public == "public" {
-			datasetUp.Current = &datasets[timeOffset]
-		} else {
+		datasetUp.Current = &datasets[timeOffset]
+
+		/*
+		   Understanding of logic:
+		   if public: only current
+		   if private: current and next
+		*/
+		if status == "private" {
 			datasetUp.Next = &datasets[timeOffset]
 		}
 

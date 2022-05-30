@@ -20,15 +20,16 @@ import (
 // GetDatasetsByBasedOn checks Published...... TODO: FINISH
 // Filter condition checks for ... .TODO: FINISH
 func (m *Mongo) GetDatasetsByBasedOn(ctx context.Context, id string, offset, limit int, authorised bool) (values []*models.DatasetUpdate, totalCount int, err error) {
-
-	// if authorised, can add filter here as in getDatasets?
-	var filter = bson.D{
-		{"$or", []interface{}{
-			bson.D{{"current.is_based_on.id", id}},
-			bson.D{{"next.is_based_on.id", id}},
-		}},
+	var filter = bson.M{
+		"$or": bson.A{
+			bson.M{"current.is_based_on.id": id},
+			bson.M{"next.is_based_on.id": id},
+		},
 	}
 
+	if !authorised {
+		filter["current"] = bson.M{"current": bson.M{"$exists": true}}
+	}
 	values = []*models.DatasetUpdate{}
 	totalCount, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Find(ctx, filter, &values,
 		mongodriver.Sort(bson.M{"_id": -1}), mongodriver.Offset(offset), mongodriver.Limit(limit))
@@ -37,7 +38,7 @@ func (m *Mongo) GetDatasetsByBasedOn(ctx context.Context, id string, offset, lim
 	}
 
 	if len(values) == 0 {
-		return nil, 0, apierrors.ErrNotFound
+		return nil, 0, apierrors.ErrDatasetNotFound
 	}
 
 	return values, totalCount, nil
