@@ -6,14 +6,14 @@ Feature: Dataset API
                   {
                     "id": "1",
                     "is_based_on": {
-                      "type": "",
+                      "type": "test",
                       "id": "not-included"
                     }
                   },
                   {
                     "id": "unpublished-estimates",
                     "is_based_on": {
-                      "type": "",
+                      "type": "test",
                       "id": "included"
                     }
                   }
@@ -25,14 +25,14 @@ Feature: Dataset API
           {
             "id": "2",
             "is_based_on": {
-              "type": "",
+              "type": "test",
               "id": "not-included"
             }
           },
           {
             "id": "3",
             "is_based_on": {
-              "type": "",
+              "type": "test",
               "id": "not-included"
             }
           }
@@ -54,14 +54,11 @@ Feature: Dataset API
         ]
         """
     Scenario: Get /datasets is_based_on is malformed
-        Given I have these datasets:
         When I GET "/datasets?is_based_on="
-        Then I should receive the following JSON response with status "400":
-        """
-        """
-    Scenario: Get /datasets is_based_on returns nothing
-        Given I have these datasets:
-        When I GET "/datasets?is_based_on=not-exists"
-        Then I should receive the following JSON response with status "404":
-        """
-        """
+        Then the HTTP status code should be "400"
+
+    # Scenario: Get /datasets is_based_on returns nothing
+    #     When I GET "/datasets?is_based_on=not-exists"
+    #     Then I should receive the following JSON response with status "404":
+    #     """
+    #     """

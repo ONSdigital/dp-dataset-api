@@ -64,7 +64,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 
 	if isBasedOnExists && isBasedOn == "" {
 		err := apierrors.ErrInvalidQueryParameter
-		log.Error(ctx, "malformed is_based_on parameter", nil)
+		log.Error(ctx, "malformed is_based_on parameter", err)
 		handleDatasetAPIErr(ctx, err, w, logData)
 		return nil, 0, err
 	}
