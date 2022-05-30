@@ -27,9 +27,6 @@ func (m *Mongo) GetDatasetsByBasedOn(ctx context.Context, id string, offset, lim
 		},
 	}
 
-	if !authorised {
-		filter["current"] = bson.M{"current": bson.M{"$exists": true}}
-	}
 	values = []*models.DatasetUpdate{}
 	totalCount, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Find(ctx, filter, &values,
 		mongodriver.Sort(bson.M{"_id": -1}), mongodriver.Offset(offset), mongodriver.Limit(limit))
