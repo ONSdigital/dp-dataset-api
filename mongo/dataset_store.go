@@ -28,18 +28,23 @@ func (m *Mongo) GetDatasetsByBasedOn(ctx context.Context, id string, offset, lim
 	}
 
 	values = []*models.DatasetUpdate{}
-	totalCount, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Find(ctx, filter, &values,
-		mongodriver.Sort(bson.M{"_id": -1}), mongodriver.Offset(offset), mongodriver.Limit(limit))
+	totalCount, err = m.Connection.
+		Collection(m.ActualCollectionName(config.DatasetsCollection)).
+		Find(
+			ctx,
+			filter,
+			&values,
+			mongodriver.Sort(bson.M{"_id": -1}),
+			mongodriver.Offset(offset), mongodriver.Limit(limit),
+		)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("failed to insert to collection: %w", err)
 	}
-
 	if len(values) == 0 {
 		return nil, 0, apierrors.ErrDatasetNotFound
 	}
 
 	return values, totalCount, nil
-
 }
 
 // GetDatasets retrieves all dataset documents

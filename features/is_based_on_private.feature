@@ -45,41 +45,41 @@ Feature: Private Dataset API
         When I GET "/datasets?is_based_on=included"
         Then I should receive the following JSON response with status "200":
         """
-{
-   "count":2,
-   "total_count":2,
-   "limit":20,
-   "offset":0,
-   "items":[
-      {
-         "id":"test-2",
-         "current":{
-            "id":"test-2",
-            "is_based_on":{
-               "@type":"",
-               "@id":"included"
-            }
-         },
-         "next":{
-            "id":"test-2",
-            "is_based_on":{
-               "@type":"",
-               "@id":"included"
-            }
-         }
-      },
-      {
-         "id":"test-1",
-         "current":{
-            "id":"test-1",
-            "is_based_on":{
-               "@type":"",
-               "@id":"included"
-            }
-         }
-      }
-   ]
-}
+        {
+           "count":2,
+           "total_count":2,
+           "limit":20,
+           "offset":0,
+           "items":[
+              {
+                 "id":"test-2",
+                 "current":{
+                    "id":"test-2",
+                    "is_based_on":{
+                       "@type":"",
+                       "@id":"included"
+                    }
+                 },
+                 "next":{
+                    "id":"test-2",
+                    "is_based_on":{
+                       "@type":"",
+                       "@id":"included"
+                    }
+                 }
+              },
+              {
+                 "id":"test-1",
+                 "current":{
+                    "id":"test-1",
+                    "is_based_on":{
+                       "@type":"",
+                       "@id":"included"
+                    }
+                 }
+              }
+           ]
+        }
 
         """
     Scenario: Get /datasets is_based_on is malformed

@@ -252,7 +252,7 @@ func (c *DatasetComponent) iHaveTheseConditionalDatasets(status string, datasets
 
 	err := json.Unmarshal([]byte(datasetsJson.Content), &datasets)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to unmarshal: %w", err)
 	}
 
 	for timeOffset, datasetDoc := range datasets {
@@ -262,19 +262,13 @@ func (c *DatasetComponent) iHaveTheseConditionalDatasets(status string, datasets
 		}
 
 		datasetUp.Current = &datasets[timeOffset]
-
-		/*
-		   Understanding of logic:
-		   if public: only current
-		   if private: current and next
-		*/
 		if status == "private" {
 			datasetUp.Next = &datasets[timeOffset]
 		}
 
 		datasetsCollection := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
 		if err := c.putDocumentInDatabase(datasetUp, datasetID, datasetsCollection, timeOffset); err != nil {
-			return err
+			return fmt.Errorf("failed to insert to mongo: %w", err)
 		}
 	}
 

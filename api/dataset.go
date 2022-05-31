@@ -43,14 +43,6 @@ var (
 	}
 )
 
-/*
-   1. check the query parameter, if not exists... as expected  if exists
-   if is_based_on exists  and but value is empty string (no value given) then 400
-   2. if there, then query database for different
-   3. ensure that the swagger spec is respected
-
-*/
-
 const IsBasedOn = "is_based_on"
 
 //getDatasets returns a list of datasets, the total count of datasets and an error
@@ -76,8 +68,12 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 	if isBasedOnExists {
 		datasets, totalCount, err = api.dataStore.Backend.GetDatasetsByBasedOn(ctx, isBasedOn, offset, limit, authorised)
 	} else {
-		datasets, totalCount, err = api.
-			dataStore.Backend.GetDatasets(ctx, offset, limit, authorised)
+		datasets, totalCount, err = api.dataStore.Backend.GetDatasets(
+			ctx,
+			offset,
+			limit,
+			authorised,
+		)
 	}
 	if err != nil {
 		log.Error(ctx, "api endpoint getDatasets datastore.GetDatasets returned an error", err)
