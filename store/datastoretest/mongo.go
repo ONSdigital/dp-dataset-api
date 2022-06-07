@@ -55,6 +55,9 @@ var _ store.MongoDB = &MongoDBMock{}
 // 			GetDatasetsFunc: func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 // 				panic("mock out the GetDatasets method")
 // 			},
+// 			GetDatasetsByBasedOnFunc: func(ctx context.Context, ID string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+// 				panic("mock out the GetDatasetsByBasedOn method")
+// 			},
 // 			GetDimensionOptionsFunc: func(ctx context.Context, version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error) {
 // 				panic("mock out the GetDimensionOptions method")
 // 			},
@@ -181,6 +184,9 @@ type MongoDBMock struct {
 
 	// GetDatasetsFunc mocks the GetDatasets method.
 	GetDatasetsFunc func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
+
+	// GetDatasetsByBasedOnFunc mocks the GetDatasetsByBasedOn method.
+	GetDatasetsByBasedOnFunc func(ctx context.Context, ID string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 
 	// GetDimensionOptionsFunc mocks the GetDimensionOptions method.
 	GetDimensionOptionsFunc func(ctx context.Context, version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error)
@@ -353,6 +359,19 @@ type MongoDBMock struct {
 		GetDatasets []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+			// Authorised is the authorised argument value.
+			Authorised bool
+		}
+		// GetDatasetsByBasedOn holds details about calls to the GetDatasetsByBasedOn method.
+		GetDatasetsByBasedOn []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the ID argument value.
+			ID string
 			// Offset is the offset argument value.
 			Offset int
 			// Limit is the limit argument value.
@@ -679,6 +698,7 @@ type MongoDBMock struct {
 	lockDeleteEdition                       sync.RWMutex
 	lockGetDataset                          sync.RWMutex
 	lockGetDatasets                         sync.RWMutex
+	lockGetDatasetsByBasedOn                sync.RWMutex
 	lockGetDimensionOptions                 sync.RWMutex
 	lockGetDimensionOptionsFromIDs          sync.RWMutex
 	lockGetDimensions                       sync.RWMutex
@@ -1116,6 +1136,53 @@ func (mock *MongoDBMock) GetDatasetsCalls() []struct {
 	mock.lockGetDatasets.RLock()
 	calls = mock.calls.GetDatasets
 	mock.lockGetDatasets.RUnlock()
+	return calls
+}
+
+// GetDatasetsByBasedOn calls GetDatasetsByBasedOnFunc.
+func (mock *MongoDBMock) GetDatasetsByBasedOn(ctx context.Context, ID string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+	if mock.GetDatasetsByBasedOnFunc == nil {
+		panic("MongoDBMock.GetDatasetsByBasedOnFunc: method is nil but MongoDB.GetDatasetsByBasedOn was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		ID         string
+		Offset     int
+		Limit      int
+		Authorised bool
+	}{
+		Ctx:        ctx,
+		ID:         ID,
+		Offset:     offset,
+		Limit:      limit,
+		Authorised: authorised,
+	}
+	mock.lockGetDatasetsByBasedOn.Lock()
+	mock.calls.GetDatasetsByBasedOn = append(mock.calls.GetDatasetsByBasedOn, callInfo)
+	mock.lockGetDatasetsByBasedOn.Unlock()
+	return mock.GetDatasetsByBasedOnFunc(ctx, ID, offset, limit, authorised)
+}
+
+// GetDatasetsByBasedOnCalls gets all the calls that were made to GetDatasetsByBasedOn.
+// Check the length with:
+//     len(mockedMongoDB.GetDatasetsByBasedOnCalls())
+func (mock *MongoDBMock) GetDatasetsByBasedOnCalls() []struct {
+	Ctx        context.Context
+	ID         string
+	Offset     int
+	Limit      int
+	Authorised bool
+} {
+	var calls []struct {
+		Ctx        context.Context
+		ID         string
+		Offset     int
+		Limit      int
+		Authorised bool
+	}
+	mock.lockGetDatasetsByBasedOn.RLock()
+	calls = mock.calls.GetDatasetsByBasedOn
+	mock.lockGetDatasetsByBasedOn.RUnlock()
 	return calls
 }
 

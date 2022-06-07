@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -15,6 +16,36 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	bsonprim "go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+// GetDatasetsByBasedOn checks Published...... TODO: FINISH
+// Filter condition checks for ... .TODO: FINISH
+func (m *Mongo) GetDatasetsByBasedOn(ctx context.Context, id string, offset, limit int, authorised bool) (values []*models.DatasetUpdate, totalCount int, err error) {
+	var filter = bson.M{
+		"$or": bson.A{
+			bson.M{"current.is_based_on.id": id},
+			bson.M{"next.is_based_on.id": id},
+		},
+	}
+
+	values = []*models.DatasetUpdate{}
+	totalCount, err = m.Connection.
+		Collection(m.ActualCollectionName(config.DatasetsCollection)).
+		Find(
+			ctx,
+			filter,
+			&values,
+			mongodriver.Sort(bson.M{"_id": -1}),
+			mongodriver.Offset(offset), mongodriver.Limit(limit),
+		)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to insert to collection: %w", err)
+	}
+	if len(values) == 0 {
+		return nil, 0, apierrors.ErrDatasetNotFound
+	}
+
+	return values, totalCount, nil
+}
 
 // GetDatasets retrieves all dataset documents
 func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised bool) (values []*models.DatasetUpdate, totalCount int, err error) {

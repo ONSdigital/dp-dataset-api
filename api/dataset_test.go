@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	goURL "net/url"
 	"sync"
 	"testing"
 
@@ -95,7 +96,9 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 	Convey("A successful request to get dataset returns 200 OK response, and limit and offset are delegated to the datastore", t, func() {
 		r := &http.Request{}
 		w := httptest.NewRecorder()
-
+		address, err := goURL.Parse("localhost:20000/datasets")
+		So(err, ShouldBeNil)
+		r.URL = address
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 				return []*models.DatasetUpdate{}, 15, nil
@@ -121,6 +124,9 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
 		r := &http.Request{}
 		w := httptest.NewRecorder()
+		address, err := goURL.Parse("localhost:20000/datasets")
+		So(err, ShouldBeNil)
+		r.URL = address
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 				return nil, 0, errs.ErrInternalServer
