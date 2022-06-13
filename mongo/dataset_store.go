@@ -27,6 +27,11 @@ func (m *Mongo) GetDatasetsByBasedOn(ctx context.Context, id string, offset, lim
 		},
 	}
 
+	// added for total_count to return true value.
+	if !authorised {
+		filter["current"] = bson.M{"$exists": true}
+	}
+
 	values = []*models.DatasetUpdate{}
 	totalCount, err = m.Connection.
 		Collection(m.ActualCollectionName(config.DatasetsCollection)).
