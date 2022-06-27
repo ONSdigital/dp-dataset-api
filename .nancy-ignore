@@ -1,6 +1,0 @@
-CVE-2020-26160 # No upgrade path for github.com/dgrijalva/jwt-go. See: https://ossindex.sonatype.org/vulnerability/c16fb56d-9de6-4065-9fca-d2b4cfb13020?component-type=golang&component-name=github.com%2Fdgrijalva%2Fjwt-go&utm_source=nancy-client&utm_medium=integration&utm_content=0.0.0-dev
-sonatype-2019-0702 # pkg:golang/github.com/gobuffalo/packr/v2@v2.2.0
-sonatype-2021-4899 # pkg:golang/github.com/gorilla/sessions@v1.2.1
-CVE-2022-29153 # pkg:golang/github.com/hashicorp/consul/api@v1.1.0
-sonatype-2021-1401 # pkg:golang/github.com/miekg/dns@v1.0.14
-CVE-2022-21698 # golang/github.com/prometheus/client_golang@v0.9.3

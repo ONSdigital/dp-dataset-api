@@ -84,6 +84,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 	if authorised {
 		return datasets, totalCount, nil
 	}
+
 	return mapResults(datasets), totalCount, nil
 }
 
