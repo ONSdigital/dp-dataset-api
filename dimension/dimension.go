@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -15,7 +17,6 @@ import (
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
-	"github.com/gorilla/mux"
 )
 
 // Store provides a backend for dimensions
@@ -389,7 +390,7 @@ func createPatches(reader io.Reader, supportedOps ...dprequest.PatchOp) ([]dpreq
 	}
 
 	for _, patch := range patches {
-		if err := patch.Validate(supportedOps...); err != nil {
+		if err := patch.Validate(supportedOps); err != nil {
 			return []dprequest.Patch{}, err
 		}
 	}
