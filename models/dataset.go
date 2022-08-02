@@ -12,11 +12,12 @@ import (
 	"strings"
 	"time"
 
-	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
-	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"go.mongodb.org/mongo-driver/bson"
+
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/log.go/v2/log"
 )
 
 // DatasetType defines possible dataset types
@@ -188,6 +189,7 @@ type Version struct {
 	State         string               `bson:"state,omitempty"          json:"state,omitempty"`
 	Temporal      *[]TemporalFrequency `bson:"temporal,omitempty"       json:"temporal,omitempty"`
 	UsageNotes    *[]UsageNote         `bson:"usage_notes,omitempty"    json:"usage_notes,omitempty"`
+	IsBasedOn     *[]IsBasedOn         `bson:"is_based_on,omitempty"    json:"is_based_on,omitempty"`
 	Version       int                  `bson:"version,omitempty"        json:"version,omitempty"`
 	Type          string               `bson:"type,omitempty"           json:"type,omitempty"`
 	ETag          string               `bson:"e_tag"                    json:"-"`
