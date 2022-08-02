@@ -189,7 +189,7 @@ type Version struct {
 	State         string               `bson:"state,omitempty"          json:"state,omitempty"`
 	Temporal      *[]TemporalFrequency `bson:"temporal,omitempty"       json:"temporal,omitempty"`
 	UsageNotes    *[]UsageNote         `bson:"usage_notes,omitempty"    json:"usage_notes,omitempty"`
-	IsBasedOn     *[]IsBasedOn         `bson:"is_based_on,omitempty"    json:"is_based_on,omitempty"`
+	IsBasedOn     *IsBasedOn           `bson:"is_based_on,omitempty"    json:"is_based_on,omitempty"`
 	Version       int                  `bson:"version,omitempty"        json:"version,omitempty"`
 	Type          string               `bson:"type,omitempty"           json:"type,omitempty"`
 	ETag          string               `bson:"e_tag"                    json:"-"`
