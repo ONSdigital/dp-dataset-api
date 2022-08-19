@@ -30,10 +30,19 @@ const (
 	CantabularTable
 	CantabularBlob
 	CantabularFlexibleTable
+	CantabularMultivariateTable
 	Invalid
 )
 
-var datasetTypes = []string{"filterable", "nomis", "cantabular_table", "cantabular_blob", "cantabular_flexible_table", "invalid"}
+var datasetTypes = []string{
+	"filterable",
+	"nomis",
+	"cantabular_table",
+	"cantabular_blob",
+	"cantabular_flexible_table",
+	"cantabular_multivariate_table",
+	"invalid",
+}
 
 func (dt DatasetType) String() string {
 	return datasetTypes[dt]
@@ -52,6 +61,8 @@ func GetDatasetType(datasetType string) (DatasetType, error) {
 		return CantabularBlob, nil
 	case "cantabular_flexible_table":
 		return CantabularFlexibleTable, nil
+	case "cantabular_multivariate_table":
+		return CantabularMultivariateTable, nil
 	default:
 		return Invalid, errs.ErrDatasetTypeInvalid
 	}

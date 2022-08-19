@@ -63,7 +63,8 @@ func TestString(t *testing.T) {
 			So(datasetTypes[2], ShouldEqual, "cantabular_table")
 			So(datasetTypes[3], ShouldEqual, "cantabular_blob")
 			So(datasetTypes[4], ShouldEqual, "cantabular_flexible_table")
-			So(datasetTypes[5], ShouldEqual, "invalid")
+			So(datasetTypes[5], ShouldEqual, "cantabular_multivariate_table")
+			So(datasetTypes[6], ShouldEqual, "invalid")
 
 		})
 	})
