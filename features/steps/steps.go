@@ -31,6 +31,7 @@ func init() {
 func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^private endpoints are enabled$`, c.privateEndpointsAreEnabled)
 	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, c.theDocumentInTheDatabaseForIdShouldBe)
+	ctx.Step(`^the instance in the database for id "([^"]*)" should be:$`, c.theInstanceInTheDatabaseForIdShouldBe)
 	ctx.Step(`^there are no datasets$`, c.thereAreNoDatasets)
 	ctx.Step(`^I have these datasets:$`, c.iHaveTheseDatasets)
 	ctx.Step(`^I have these "([^"]*)" datasets:$`, c.iHaveTheseConditionalDatasets)
@@ -75,6 +76,25 @@ func (c *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId stri
 	assert.Equal(&c.ErrorFeature, expectedDataset.State, document.State)
 
 	return c.ErrorFeature.StepError()
+}
+
+func (c *DatasetComponent) theInstanceInTheDatabaseForIdShouldBe(id string, body *godog.DocString) error {
+	var expected models.Instance
+
+	if err := json.Unmarshal([]byte(body.Content), &expected); err != nil {
+		return fmt.Errorf("failed to unmarshal body: %w", err)
+	}
+
+	collectionName := c.MongoClient.ActualCollectionName(config.InstanceCollection)
+	var got models.Instance
+
+	if err := c.MongoClient.Connection.Collection(collectionName).FindOne(context.Background(), bson.M{"_id": id}, &got); err != nil {
+		return fmt.Errorf("failed to get instance from collection: %w", err)
+	}
+
+	assert.Equal(&c.ErrorFeature, expected, got)
+
+	return nil
 }
 
 func (c *DatasetComponent) iHaveARealKafkaContainerWithTopic(topic string) error {
