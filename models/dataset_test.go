@@ -176,6 +176,8 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.URI, ShouldEqual, "http://localhost:22000/datasets/123/breadcrumbs")
 			So(dataset.Type, ShouldEqual, "filterable")
 			So(dataset.NomisReferenceURL, ShouldEqual, "")
+			So(dataset.CanonicalTopic, ShouldResemble, &topic)
+			So(dataset.SubTopics[0], ShouldResemble, topic)
 		})
 	})
 

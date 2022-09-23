@@ -179,6 +179,19 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			Title: "some dataset title",
 		}
 
+		canonicalTopic := models.TopicTagObject{
+			ID:    "canonicalTopicID",
+			Title: "Canonical topic title",
+		}
+
+		subTopics := []models.TopicTagObject{{
+			ID:    "secondaryTopic1ID",
+			Title: "Secondary topic 1 title",
+		}, {
+			ID:    "secondaryTopic2ID",
+			Title: "Secondary topic 2 title",
+		}}
+
 		var methodologies, publications, relatedDatasets []models.GeneralDetails
 		methodologies = append(methodologies, methodology)
 		publications = append(publications, publication)
@@ -209,6 +222,8 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			"next.uri":                      "http://ons.gov.uk/datasets/123/landing-page",
 			"next.type":                     "nomis",
 			"next.nomis_reference_url":      "https://www.nomisweb.co.uk/census/2011/ks106ew",
+			"next.canonical_topic":          &canonicalTopic,
+			"next.sub_topics":               subTopics,
 		}
 
 		dataset := &models.Dataset{
@@ -239,6 +254,8 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			URI:               "http://ons.gov.uk/datasets/123/landing-page",
 			Type:              "nomis",
 			NomisReferenceURL: "https://www.nomisweb.co.uk/census/2011/ks106ew",
+			CanonicalTopic:    &canonicalTopic,
+			SubTopics:         subTopics,
 		}
 
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
@@ -251,20 +268,29 @@ func TestDatasetUpdateQuery(t *testing.T) {
 		dataset := &models.Dataset{
 			NationalStatistic: &nationalStatistic,
 		}
+
 		expectedUpdate := bson.M{
 			"next.national_statistic": &nationalStatistic,
+			"next.canonical_topic": dataset.CanonicalTopic,
+			"next.sub_topics": dataset.SubTopics,
 		}
+
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
 		So(selector, ShouldNotBeNil)
 		So(selector, ShouldResemble, expectedUpdate)
 	})
 
-	Convey("When national statistic is not set", t, func() {
+	Convey("When no properties are set update includes nil values for topic fields", t, func() {
 		dataset := &models.Dataset{}
+
+		expectedUpdate := bson.M{
+			"next.canonical_topic": dataset.CanonicalTopic,
+			"next.sub_topics": dataset.SubTopics,
+		}
 
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
 		So(selector, ShouldNotBeNil)
-		So(selector, ShouldResemble, bson.M{})
+		So(selector, ShouldResemble, expectedUpdate)
 	})
 }
 

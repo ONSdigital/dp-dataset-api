@@ -43,6 +43,11 @@ var relatedDatasets = GeneralDetails{
 	Title: "Census Age",
 }
 
+var topic = TopicTagObject{
+	ID:    "topidID",
+	Title: "Topic title",
+}
+
 // Create a fully populated dataset object to use in testing.
 func createTestDataset() *Dataset {
 	return &Dataset{
@@ -80,6 +85,8 @@ func createTestDataset() *Dataset {
 		URI:               "http://localhost:22000/datasets/123/breadcrumbs",
 		Type:              "filterable",
 		NomisReferenceURL: "",
+		CanonicalTopic:    &topic,
+		SubTopics:         []TopicTagObject{topic},
 	}
 }
 
@@ -116,6 +123,8 @@ func expectedDataset() Dataset {
 		URI:               "http://localhost:22000/datasets/123/breadcrumbs",
 		Type:              "filterable",
 		NomisReferenceURL: "",
+		CanonicalTopic:    &topic,
+		SubTopics:         []TopicTagObject{topic},
 	}
 }
 
