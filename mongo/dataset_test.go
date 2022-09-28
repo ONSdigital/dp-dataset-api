@@ -271,8 +271,8 @@ func TestDatasetUpdateQuery(t *testing.T) {
 
 		expectedUpdate := bson.M{
 			"next.national_statistic": &nationalStatistic,
-			"next.canonical_topic": dataset.CanonicalTopic,
-			"next.sub_topics": dataset.SubTopics,
+			"next.canonical_topic":    dataset.CanonicalTopic,
+			"next.sub_topics":         dataset.SubTopics,
 		}
 
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
@@ -285,7 +285,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 
 		expectedUpdate := bson.M{
 			"next.canonical_topic": dataset.CanonicalTopic,
-			"next.sub_topics": dataset.SubTopics,
+			"next.sub_topics":      dataset.SubTopics,
 		}
 
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
