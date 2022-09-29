@@ -43,7 +43,7 @@ var relatedDatasets = GeneralDetails{
 	Title: "Census Age",
 }
 
-var topic = TopicTagObject{
+var topic = Topic{
 	ID:    "topidID",
 	Title: "Topic title",
 }
@@ -86,7 +86,7 @@ func createTestDataset() *Dataset {
 		Type:              "filterable",
 		NomisReferenceURL: "",
 		CanonicalTopic:    &topic,
-		SubTopics:         []TopicTagObject{topic},
+		SubTopics:         []Topic{topic},
 	}
 }
 
@@ -124,7 +124,7 @@ func expectedDataset() Dataset {
 		Type:              "filterable",
 		NomisReferenceURL: "",
 		CanonicalTopic:    &topic,
-		SubTopics:         []TopicTagObject{topic},
+		SubTopics:         []Topic{topic},
 	}
 }
 

@@ -179,12 +179,12 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			Title: "some dataset title",
 		}
 
-		canonicalTopic := models.TopicTagObject{
+		canonicalTopic := models.Topic{
 			ID:    "canonicalTopicID",
 			Title: "Canonical topic title",
 		}
 
-		subTopics := []models.TopicTagObject{{
+		subTopics := []models.Topic{{
 			ID:    "secondaryTopic1ID",
 			Title: "Secondary topic 1 title",
 		}, {
