@@ -414,8 +414,10 @@ func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Da
 		updates["next.nomis_reference_url"] = dataset.NomisReferenceURL
 	}
 
-	log.Info(ctx, "built update query for dataset resource", log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
+	updates["next.canonical_topic"] = dataset.CanonicalTopic
+	updates["next.sub_topics"] = dataset.SubTopics
 
+	log.Info(ctx, "built update query for dataset resource", log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
 	return updates
 }
 

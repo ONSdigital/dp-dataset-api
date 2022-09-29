@@ -110,6 +110,13 @@ type Dataset struct {
 	Type              string           `bson:"type,omitempty"                   json:"type,omitempty"`
 	NomisReferenceURL string           `bson:"nomis_reference_url,omitempty"    json:"nomis_reference_url,omitempty"`
 	IsBasedOn         *IsBasedOn       `bson:"is_based_on,omitempty"            json:"is_based_on,omitempty"`
+	CanonicalTopic    *Topic           `bson:"canonical_topic,omitempty"        json:"canonical_topic,omitempty"`
+	SubTopics         []Topic          `bson:"sub_topics,omitempty"             json:"sub_topics,omitempty"`
+}
+
+type Topic struct {
+	ID    string `bson:"id,omitempty"     json:"id,omitempty"`
+	Title string `bson:"title,omitempty"  json:"title,omitempty"`
 }
 
 // DatasetLinks represents a list of specific links related to the dataset resource
