@@ -67,6 +67,20 @@ Feature: Private Dataset API
             }
             """
         Then the HTTP status code should be "200"
+        And the document in the database for id "population-estimates" should be:
+        """
+            {
+                "id": "population-estimates",
+                "canonical_topic": {
+                    "id": "canonical-topic-ID",
+                    "title": "Canonical topic title"
+                },
+                "sub_topics": [{
+                    "id": "subtopic-ID",
+                    "title": "Subtopic title"
+                }]
+            }
+        """
 
     Scenario: GET /datasets
         Given I have these datasets:
