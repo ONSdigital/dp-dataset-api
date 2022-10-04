@@ -271,21 +271,6 @@ func TestDatasetUpdateQuery(t *testing.T) {
 
 		expectedUpdate := bson.M{
 			"next.national_statistic": &nationalStatistic,
-			"next.canonical_topic":    dataset.CanonicalTopic,
-			"next.sub_topics":         dataset.SubTopics,
-		}
-
-		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldResemble, expectedUpdate)
-	})
-
-	Convey("When no properties are set update includes nil values for topic fields", t, func() {
-		dataset := &models.Dataset{}
-
-		expectedUpdate := bson.M{
-			"next.canonical_topic": dataset.CanonicalTopic,
-			"next.sub_topics":      dataset.SubTopics,
 		}
 
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
