@@ -192,6 +192,8 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			Title: "Secondary topic 2 title",
 		}}
 
+		survey := []string{"mockSurvey1", "mockSurvey2"}
+
 		var methodologies, publications, relatedDatasets []models.GeneralDetails
 		methodologies = append(methodologies, methodology)
 		publications = append(publications, publication)
@@ -224,6 +226,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			"next.nomis_reference_url":      "https://www.nomisweb.co.uk/census/2011/ks106ew",
 			"next.canonical_topic":          &canonicalTopic,
 			"next.sub_topics":               subTopics,
+			"next.survey":                   survey,
 		}
 
 		dataset := &models.Dataset{
@@ -256,6 +259,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			NomisReferenceURL: "https://www.nomisweb.co.uk/census/2011/ks106ew",
 			CanonicalTopic:    &canonicalTopic,
 			SubTopics:         subTopics,
+			Survey:            survey,
 		}
 
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)

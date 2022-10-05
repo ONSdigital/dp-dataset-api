@@ -422,6 +422,10 @@ func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Da
 		updates["next.sub_topics"] = dataset.SubTopics
 	}
 
+	if dataset.Survey != nil {
+		updates["next.survey"] = dataset.Survey
+	}
+
 	log.Info(ctx, "built update query for dataset resource", log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
 	return updates
 }

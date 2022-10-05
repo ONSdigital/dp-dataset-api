@@ -53,6 +53,8 @@ var subtopic = Topic{
 	Title: "Subtopic title",
 }
 
+var survey = []string{"mockSurvey1", "mockSurvey2"}
+
 // Create a fully populated dataset object to use in testing.
 func createTestDataset() *Dataset {
 	return &Dataset{
@@ -92,6 +94,7 @@ func createTestDataset() *Dataset {
 		NomisReferenceURL: "",
 		CanonicalTopic:    &canonicalTopic,
 		SubTopics:         []Topic{subtopic},
+		Survey:            survey,
 	}
 }
 
@@ -130,6 +133,7 @@ func expectedDataset() Dataset {
 		NomisReferenceURL: "",
 		CanonicalTopic:    &canonicalTopic,
 		SubTopics:         []Topic{subtopic},
+		Survey:            survey,
 	}
 }
 
