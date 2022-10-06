@@ -53,7 +53,7 @@ var subtopic = Topic{
 	Title: "Subtopic title",
 }
 
-var survey = []string{"mockSurvey1", "mockSurvey2"}
+var survey = "mockSurvey"
 
 // Create a fully populated dataset object to use in testing.
 func createTestDataset() *Dataset {

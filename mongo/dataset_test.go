@@ -192,7 +192,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			Title: "Secondary topic 2 title",
 		}}
 
-		survey := []string{"mockSurvey1", "mockSurvey2"}
+		survey := "mockSurvey"
 
 		var methodologies, publications, relatedDatasets []models.GeneralDetails
 		methodologies = append(methodologies, methodology)

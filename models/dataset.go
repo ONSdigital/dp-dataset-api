@@ -112,7 +112,7 @@ type Dataset struct {
 	IsBasedOn         *IsBasedOn       `bson:"is_based_on,omitempty"            json:"is_based_on,omitempty"`
 	CanonicalTopic    *Topic           `bson:"canonical_topic,omitempty"        json:"canonical_topic,omitempty"`
 	SubTopics         []Topic          `bson:"sub_topics,omitempty"             json:"sub_topics,omitempty"`
-	Survey            []string         `bson:"survey,omitempty"             json:"survey,omitempty"`
+	Survey            string           `bson:"survey,omitempty"             json:"survey,omitempty"`
 }
 
 type Topic struct {
