@@ -224,7 +224,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			"next.uri":                      "http://ons.gov.uk/datasets/123/landing-page",
 			"next.type":                     "nomis",
 			"next.nomis_reference_url":      "https://www.nomisweb.co.uk/census/2011/ks106ew",
-			"next.canonical_topic":          &canonicalTopic,
+			"next.canonical_topic":          canonicalTopic,
 			"next.sub_topics":               subTopics,
 			"next.survey":                   survey,
 		}
@@ -257,7 +257,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			URI:               "http://ons.gov.uk/datasets/123/landing-page",
 			Type:              "nomis",
 			NomisReferenceURL: "https://www.nomisweb.co.uk/census/2011/ks106ew",
-			CanonicalTopic:    &canonicalTopic,
+			CanonicalTopic:    canonicalTopic,
 			SubTopics:         subTopics,
 			Survey:            survey,
 		}

@@ -84,6 +84,29 @@ Feature: Private Dataset API
             }
         """
 
+    Scenario: Removing a survey from a dataset
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "population-estimates",
+                    "survey": "mockSurvey"
+                }
+            ]
+            """
+        When I PUT "/datasets/population-estimates"
+            """
+            {
+                "survey": ""
+            }
+            """
+        Then the document in the database for id "population-estimates" should be:
+            """
+            {
+                "id": "population-estimates"
+            }
+            """
+
     Scenario: GET /datasets
         Given I have these datasets:
             """

@@ -92,7 +92,7 @@ func createTestDataset() *Dataset {
 		URI:               "http://localhost:22000/datasets/123/breadcrumbs",
 		Type:              "filterable",
 		NomisReferenceURL: "",
-		CanonicalTopic:    &canonicalTopic,
+		CanonicalTopic:    canonicalTopic,
 		SubTopics:         []Topic{subtopic},
 		Survey:            survey,
 	}
@@ -131,7 +131,7 @@ func expectedDataset() Dataset {
 		URI:               "http://localhost:22000/datasets/123/breadcrumbs",
 		Type:              "filterable",
 		NomisReferenceURL: "",
-		CanonicalTopic:    &canonicalTopic,
+		CanonicalTopic:    canonicalTopic,
 		SubTopics:         []Topic{subtopic},
 		Survey:            survey,
 	}
