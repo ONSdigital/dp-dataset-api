@@ -58,7 +58,7 @@ Feature: Dataset API
             """
             {
                     "canonical_topic": "canonical-topic-ID",
-                    "sub_topics": ["subtopic-ID"],
+                    "subtopics": ["subtopic-ID"],
                     "survey": "mockSurvey"
             }
             """

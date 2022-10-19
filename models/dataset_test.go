@@ -177,7 +177,7 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.Type, ShouldEqual, "filterable")
 			So(dataset.NomisReferenceURL, ShouldEqual, "")
 			So(dataset.CanonicalTopic, ShouldResemble, canonicalTopic)
-			So(dataset.SubTopics[0], ShouldResemble, subtopic)
+			So(dataset.Subtopics[0], ShouldResemble, subtopic)
 			So(dataset.Survey, ShouldEqual, survey)
 		})
 	})

@@ -418,8 +418,8 @@ func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Da
 		updates["next.canonical_topic"] = dataset.CanonicalTopic
 	}
 
-	if len(dataset.SubTopics) > 0 {
-		updates["next.sub_topics"] = dataset.SubTopics
+	if len(dataset.Subtopics) > 0 {
+		updates["next.subtopics"] = dataset.Subtopics
 	}
 
 	if dataset.Survey != "" {

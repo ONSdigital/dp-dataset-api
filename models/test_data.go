@@ -87,7 +87,7 @@ func createTestDataset() *Dataset {
 		Type:              "filterable",
 		NomisReferenceURL: "",
 		CanonicalTopic:    canonicalTopic,
-		SubTopics:         []string{subtopic},
+		Subtopics:         []string{subtopic},
 		Survey:            survey,
 	}
 }
@@ -126,7 +126,7 @@ func expectedDataset() Dataset {
 		Type:              "filterable",
 		NomisReferenceURL: "",
 		CanonicalTopic:    canonicalTopic,
-		SubTopics:         []string{subtopic},
+		Subtopics:         []string{subtopic},
 		Survey:            survey,
 	}
 }

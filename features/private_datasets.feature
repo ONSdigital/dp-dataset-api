@@ -81,7 +81,7 @@ Feature: Private Dataset API
             """
             {
                     "canonical_topic": "canonical-topic-ID",
-                    "sub_topics": ["subtopic-ID"]
+                    "subtopics": ["subtopic-ID"]
             }
             """
         Then the HTTP status code should be "200"
@@ -90,7 +90,7 @@ Feature: Private Dataset API
             {
                 "id": "population-estimates",
                 "canonical_topic": "canonical-topic-ID",
-                "sub_topics": ["subtopic-ID"]
+                "subtopics": ["subtopic-ID"]
             }
         """
 
@@ -155,7 +155,7 @@ Feature: Private Dataset API
                 {
                     "id": "population-estimates",
                     "canonical_topic": "canonical-topic-ID",
-                    "sub_topics": ["subtopic-ID"]
+                    "subtopics": ["subtopic-ID"]
                 }
             ]
             """
@@ -169,12 +169,12 @@ Feature: Private Dataset API
             		"next": {
             			"id": "population-estimates",
             			"canonical_topic": "canonical-topic-ID",
-            			"sub_topics": ["subtopic-ID"]
+            			"subtopics": ["subtopic-ID"]
             		},
                     "current": {
                         "id": "population-estimates",
             			"canonical_topic": "canonical-topic-ID",
-            			"sub_topics": ["subtopic-ID"]
+            			"subtopics": ["subtopic-ID"]
                     }
             	}],
             	"limit": 20,

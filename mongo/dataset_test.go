@@ -181,7 +181,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 
 		canonicalTopic := "canonicalTopicID"
 
-		subTopics := []string{"secondaryTopic1ID", "secondaryTopic2ID"}
+		subtopics := []string{"secondaryTopic1ID", "secondaryTopic2ID"}
 
 		survey := "mockSurvey"
 
@@ -216,7 +216,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			"next.type":                     "nomis",
 			"next.nomis_reference_url":      "https://www.nomisweb.co.uk/census/2011/ks106ew",
 			"next.canonical_topic":          canonicalTopic,
-			"next.sub_topics":               subTopics,
+			"next.subtopics":                subtopics,
 			"next.survey":                   survey,
 		}
 
@@ -249,7 +249,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			Type:              "nomis",
 			NomisReferenceURL: "https://www.nomisweb.co.uk/census/2011/ks106ew",
 			CanonicalTopic:    canonicalTopic,
-			SubTopics:         subTopics,
+			Subtopics:         subtopics,
 			Survey:            survey,
 		}
 

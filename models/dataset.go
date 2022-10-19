@@ -111,7 +111,7 @@ type Dataset struct {
 	NomisReferenceURL string           `bson:"nomis_reference_url,omitempty"    json:"nomis_reference_url,omitempty"`
 	IsBasedOn         *IsBasedOn       `bson:"is_based_on,omitempty"            json:"is_based_on,omitempty"`
 	CanonicalTopic    string           `bson:"canonical_topic,omitempty"        json:"canonical_topic,omitempty"`
-	SubTopics         []string         `bson:"sub_topics,omitempty"             json:"sub_topics,omitempty"`
+	Subtopics         []string         `bson:"subtopics,omitempty"              json:"subtopics,omitempty"`
 	Survey            string           `bson:"survey,omitempty"                 json:"survey,omitempty"`
 }
 
