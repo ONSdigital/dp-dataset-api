@@ -56,14 +56,8 @@ Feature: Private Dataset API
         When I PUT "/datasets/population-estimates"
             """
             {
-                    "canonical_topic": {
-                        "id": "canonical-topic-ID",
-                        "title": "Canonical topic title"
-                    },
-                    "sub_topics": [{
-                        "id": "subtopic-ID",
-                        "title": "Subtopic title"
-                    }],
+                    "canonical_topic": "canonical-topic-ID",
+                    "sub_topics": ["subtopic-ID"],
                     "survey": "mockSurvey"
             }
             """
@@ -72,14 +66,8 @@ Feature: Private Dataset API
         """
             {
                 "id": "population-estimates",
-                "canonical_topic": {
-                    "id": "canonical-topic-ID",
-                    "title": "Canonical topic title"
-                },
-                "sub_topics": [{
-                    "id": "subtopic-ID",
-                    "title": "Subtopic title"
-                }],
+                "canonical_topic": "canonical-topic-ID",
+                "sub_topics": ["subtopic-ID"],
                 "survey": "mockSurvey"
             }
         """
@@ -144,14 +132,8 @@ Feature: Private Dataset API
             [
                 {
                     "id": "population-estimates",
-                    "canonical_topic": {
-                        "id": "canonical-topic-ID",
-                        "title": "Canonical topic title"
-                    },
-                    "sub_topics": [{
-                        "id": "subtopic-ID",
-                        "title": "Subtopic title"
-                    }]
+                    "canonical_topic": "canonical-topic-ID",
+                    "sub_topics": ["subtopic-ID"]
                 }
             ]
             """
@@ -164,25 +146,13 @@ Feature: Private Dataset API
             		"id": "population-estimates",
             		"next": {
             			"id": "population-estimates",
-            			"canonical_topic": {
-            				"id": "canonical-topic-ID",
-            				"title": "Canonical topic title"
-            			},
-            			"sub_topics": [{
-            				"id": "subtopic-ID",
-            				"title": "Subtopic title"
-            			}]
+            			"canonical_topic": "canonical-topic-ID",
+            			"sub_topics": ["subtopic-ID"]
             		},
                     "current": {
                         "id": "population-estimates",
-            			"canonical_topic": {
-            				"id": "canonical-topic-ID",
-            				"title": "Canonical topic title"
-            			},
-            			"sub_topics": [{
-            				"id": "subtopic-ID",
-            				"title": "Subtopic title"
-            			}]
+            			"canonical_topic": "canonical-topic-ID",
+            			"sub_topics": ["subtopic-ID"]
                     }
             	}],
             	"limit": 20,

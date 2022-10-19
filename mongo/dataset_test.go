@@ -179,18 +179,9 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			Title: "some dataset title",
 		}
 
-		canonicalTopic := models.Topic{
-			ID:    "canonicalTopicID",
-			Title: "Canonical topic title",
-		}
+		canonicalTopic := "canonicalTopicID"
 
-		subTopics := []models.Topic{{
-			ID:    "secondaryTopic1ID",
-			Title: "Secondary topic 1 title",
-		}, {
-			ID:    "secondaryTopic2ID",
-			Title: "Secondary topic 2 title",
-		}}
+		subTopics := []string{"secondaryTopic1ID", "secondaryTopic2ID"}
 
 		survey := "mockSurvey"
 

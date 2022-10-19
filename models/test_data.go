@@ -43,15 +43,9 @@ var relatedDatasets = GeneralDetails{
 	Title: "Census Age",
 }
 
-var canonicalTopic = Topic{
-	ID:    "canonicalTopicID",
-	Title: "Canonical topic title",
-}
+var canonicalTopic = "canonicalTopicID"
 
-var subtopic = Topic{
-	ID:    "subtopicID",
-	Title: "Subtopic title",
-}
+var subtopic = "subtopicID"
 
 var survey = "mockSurvey"
 
@@ -93,7 +87,7 @@ func createTestDataset() *Dataset {
 		Type:              "filterable",
 		NomisReferenceURL: "",
 		CanonicalTopic:    canonicalTopic,
-		SubTopics:         []Topic{subtopic},
+		SubTopics:         []string{subtopic},
 		Survey:            survey,
 	}
 }
@@ -132,7 +126,7 @@ func expectedDataset() Dataset {
 		Type:              "filterable",
 		NomisReferenceURL: "",
 		CanonicalTopic:    canonicalTopic,
-		SubTopics:         []Topic{subtopic},
+		SubTopics:         []string{subtopic},
 		Survey:            survey,
 	}
 }

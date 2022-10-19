@@ -57,14 +57,8 @@ Feature: Dataset API
         When I PUT "/datasets/population-estimates"
             """
             {
-                    "canonical_topic": {
-                        "id": "canonical-topic-ID",
-                        "title": "Canonical topic title"
-                    },
-                    "sub_topics": [{
-                        "id": "subtopic-ID",
-                        "title": "Subtopic title"
-                    }],
+                    "canonical_topic": "canonical-topic-ID",
+                    "sub_topics": ["subtopic-ID"],
                     "survey": "mockSurvey"
             }
             """
