@@ -9,9 +9,6 @@ replace github.com/coreos/etcd => github.com/coreos/etcd v3.3.24+incompatible
 //     - sonatype-2021-1401 # pkg:golang/github.com/miekg/dns@v1.0.14
 replace github.com/spf13/cobra => github.com/spf13/cobra v1.4.0
 
-// to avoid [CVE-2022-32149] CWE-400: Uncontrolled Resource Consumption ('Resource Exhaustion')
-replace golang.org/x/text => golang.org/x/text v0.3.8
-
 // to avoid 'sonatype-2021-4899' non-CVE Vulnerability
 exclude github.com/gorilla/sessions v1.2.1
 
@@ -104,6 +101,6 @@ require (
 	golang.org/x/net v0.0.0-20220728153142-1f511ac62c11 // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
 	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/text v0.3.8 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
