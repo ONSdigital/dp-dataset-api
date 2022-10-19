@@ -44,7 +44,31 @@ Feature: Private Dataset API
             forbidden - dataset already exists
             """
 
-    Scenario: Adding topic and survey fields to a dataset
+    Scenario: Adding survey field to a dataset
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "population-estimates"
+                }
+            ]
+            """
+        When I PUT "/datasets/population-estimates"
+            """
+            {
+                    "survey": "mockSurvey"
+            }
+            """
+        Then the HTTP status code should be "200"
+        And the document in the database for id "population-estimates" should be:
+        """
+            {
+                "id": "population-estimates",
+                "survey": "mockSurvey"
+            }
+        """
+
+    Scenario: Adding topic fields to a dataset
         Given I have these datasets:
             """
             [
@@ -57,8 +81,7 @@ Feature: Private Dataset API
             """
             {
                     "canonical_topic": "canonical-topic-ID",
-                    "sub_topics": ["subtopic-ID"],
-                    "survey": "mockSurvey"
+                    "sub_topics": ["subtopic-ID"]
             }
             """
         Then the HTTP status code should be "200"
@@ -67,8 +90,7 @@ Feature: Private Dataset API
             {
                 "id": "population-estimates",
                 "canonical_topic": "canonical-topic-ID",
-                "sub_topics": ["subtopic-ID"],
-                "survey": "mockSurvey"
+                "sub_topics": ["subtopic-ID"]
             }
         """
 
