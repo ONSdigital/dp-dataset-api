@@ -45,7 +45,7 @@ Feature: Dataset API
             }
             """
 
-    Scenario: Adding canonical and subtopic fields to a dataset
+    Scenario: Adding topic and survey fields to a dataset
         Given I have these datasets:
             """
             [
@@ -57,14 +57,9 @@ Feature: Dataset API
         When I PUT "/datasets/population-estimates"
             """
             {
-                    "canonical_topic": {
-                        "id": "canonical-topic-ID",
-                        "title": "Canonical topic title"
-                    },
-                    "sub_topics": [{
-                        "id": "subtopic-ID",
-                        "title": "Subtopic title"
-                    }]
+                    "canonical_topic": "canonical-topic-ID",
+                    "subtopics": ["subtopic-ID"],
+                    "survey": "mockSurvey"
             }
             """
         Then the HTTP status code should be "405"

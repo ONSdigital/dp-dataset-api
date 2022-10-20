@@ -179,18 +179,11 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			Title: "some dataset title",
 		}
 
-		canonicalTopic := models.Topic{
-			ID:    "canonicalTopicID",
-			Title: "Canonical topic title",
-		}
+		canonicalTopic := "canonicalTopicID"
 
-		subTopics := []models.Topic{{
-			ID:    "secondaryTopic1ID",
-			Title: "Secondary topic 1 title",
-		}, {
-			ID:    "secondaryTopic2ID",
-			Title: "Secondary topic 2 title",
-		}}
+		subtopics := []string{"secondaryTopic1ID", "secondaryTopic2ID"}
+
+		survey := "mockSurvey"
 
 		var methodologies, publications, relatedDatasets []models.GeneralDetails
 		methodologies = append(methodologies, methodology)
@@ -222,8 +215,9 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			"next.uri":                      "http://ons.gov.uk/datasets/123/landing-page",
 			"next.type":                     "nomis",
 			"next.nomis_reference_url":      "https://www.nomisweb.co.uk/census/2011/ks106ew",
-			"next.canonical_topic":          &canonicalTopic,
-			"next.sub_topics":               subTopics,
+			"next.canonical_topic":          canonicalTopic,
+			"next.subtopics":                subtopics,
+			"next.survey":                   survey,
 		}
 
 		dataset := &models.Dataset{
@@ -254,8 +248,9 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			URI:               "http://ons.gov.uk/datasets/123/landing-page",
 			Type:              "nomis",
 			NomisReferenceURL: "https://www.nomisweb.co.uk/census/2011/ks106ew",
-			CanonicalTopic:    &canonicalTopic,
-			SubTopics:         subTopics,
+			CanonicalTopic:    canonicalTopic,
+			Subtopics:         subtopics,
+			Survey:            survey,
 		}
 
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)

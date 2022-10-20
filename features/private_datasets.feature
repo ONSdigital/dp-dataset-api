@@ -44,7 +44,7 @@ Feature: Private Dataset API
             forbidden - dataset already exists
             """
 
-    Scenario: Adding canonical and subtopic fields to a dataset
+    Scenario: Adding survey field to a dataset
         Given I have these datasets:
             """
             [
@@ -56,14 +56,7 @@ Feature: Private Dataset API
         When I PUT "/datasets/population-estimates"
             """
             {
-                    "canonical_topic": {
-                        "id": "canonical-topic-ID",
-                        "title": "Canonical topic title"
-                    },
-                    "sub_topics": [{
-                        "id": "subtopic-ID",
-                        "title": "Subtopic title"
-                    }]
+                    "survey": "mockSurvey"
             }
             """
         Then the HTTP status code should be "200"
@@ -71,16 +64,58 @@ Feature: Private Dataset API
         """
             {
                 "id": "population-estimates",
-                "canonical_topic": {
-                    "id": "canonical-topic-ID",
-                    "title": "Canonical topic title"
-                },
-                "sub_topics": [{
-                    "id": "subtopic-ID",
-                    "title": "Subtopic title"
-                }]
+                "survey": "mockSurvey"
             }
         """
+
+    Scenario: Adding topic fields to a dataset
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "population-estimates"
+                }
+            ]
+            """
+        When I PUT "/datasets/population-estimates"
+            """
+            {
+                    "canonical_topic": "canonical-topic-ID",
+                    "subtopics": ["subtopic-ID"]
+            }
+            """
+        Then the HTTP status code should be "200"
+        And the document in the database for id "population-estimates" should be:
+        """
+            {
+                "id": "population-estimates",
+                "canonical_topic": "canonical-topic-ID",
+                "subtopics": ["subtopic-ID"]
+            }
+        """
+
+    Scenario: Removing a survey from a dataset
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "population-estimates",
+                    "survey": "mockSurvey"
+                }
+            ]
+            """
+        When I PUT "/datasets/population-estimates"
+            """
+            {
+                "survey": ""
+            }
+            """
+        Then the document in the database for id "population-estimates" should be:
+            """
+            {
+                "id": "population-estimates"
+            }
+            """
 
     Scenario: GET /datasets
         Given I have these datasets:
@@ -119,14 +154,8 @@ Feature: Private Dataset API
             [
                 {
                     "id": "population-estimates",
-                    "canonical_topic": {
-                        "id": "canonical-topic-ID",
-                        "title": "Canonical topic title"
-                    },
-                    "sub_topics": [{
-                        "id": "subtopic-ID",
-                        "title": "Subtopic title"
-                    }]
+                    "canonical_topic": "canonical-topic-ID",
+                    "subtopics": ["subtopic-ID"]
                 }
             ]
             """
@@ -139,25 +168,13 @@ Feature: Private Dataset API
             		"id": "population-estimates",
             		"next": {
             			"id": "population-estimates",
-            			"canonical_topic": {
-            				"id": "canonical-topic-ID",
-            				"title": "Canonical topic title"
-            			},
-            			"sub_topics": [{
-            				"id": "subtopic-ID",
-            				"title": "Subtopic title"
-            			}]
+            			"canonical_topic": "canonical-topic-ID",
+            			"subtopics": ["subtopic-ID"]
             		},
                     "current": {
                         "id": "population-estimates",
-            			"canonical_topic": {
-            				"id": "canonical-topic-ID",
-            				"title": "Canonical topic title"
-            			},
-            			"sub_topics": [{
-            				"id": "subtopic-ID",
-            				"title": "Subtopic title"
-            			}]
+            			"canonical_topic": "canonical-topic-ID",
+            			"subtopics": ["subtopic-ID"]
                     }
             	}],
             	"limit": 20,
