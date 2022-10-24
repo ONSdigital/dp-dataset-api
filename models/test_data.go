@@ -49,6 +49,16 @@ var subtopic = "subtopicID"
 
 var survey = "mockSurvey"
 
+var relatedContent = []GeneralDetails{{
+	Description: "related content description 1",
+	HRef:        "http://localhost:22000//datasets/123/relatedContent1",
+	Title:       "Related content 1",
+}, {
+	Description: "related content description 2",
+	HRef:        "http://localhost:22000//datasets/123/relatedContent2",
+	Title:       "Related content 2",
+}}
+
 // Create a fully populated dataset object to use in testing.
 func createTestDataset() *Dataset {
 	return &Dataset{
@@ -89,6 +99,7 @@ func createTestDataset() *Dataset {
 		CanonicalTopic:    canonicalTopic,
 		Subtopics:         []string{subtopic},
 		Survey:            survey,
+		RelatedContent:    relatedContent,
 	}
 }
 
@@ -128,6 +139,7 @@ func expectedDataset() Dataset {
 		CanonicalTopic:    canonicalTopic,
 		Subtopics:         []string{subtopic},
 		Survey:            survey,
+		RelatedContent:    relatedContent,
 	}
 }
 

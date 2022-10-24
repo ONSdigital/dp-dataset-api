@@ -185,6 +185,16 @@ func TestDatasetUpdateQuery(t *testing.T) {
 
 		survey := "mockSurvey"
 
+		relatedContent := []models.GeneralDetails{{
+			Description: "related content description 1",
+			HRef:        "http://localhost:22000//datasets/123/relatedContent1",
+			Title:       "Related content 1",
+		}, {
+			Description: "related content description 2",
+			HRef:        "http://localhost:22000//datasets/123/relatedContent2",
+			Title:       "Related content 2",
+		}}
+
 		var methodologies, publications, relatedDatasets []models.GeneralDetails
 		methodologies = append(methodologies, methodology)
 		publications = append(publications, publication)
@@ -218,6 +228,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			"next.canonical_topic":          canonicalTopic,
 			"next.subtopics":                subtopics,
 			"next.survey":                   survey,
+			"next.related_content":          relatedContent,
 		}
 
 		dataset := &models.Dataset{
@@ -251,6 +262,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			CanonicalTopic:    canonicalTopic,
 			Subtopics:         subtopics,
 			Survey:            survey,
+			RelatedContent:    relatedContent,
 		}
 
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)

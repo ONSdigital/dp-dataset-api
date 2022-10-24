@@ -93,29 +93,38 @@ Feature: Private Dataset API
                 "subtopics": ["subtopic-ID"]
             }
         """
-
-    Scenario: Removing a survey from a dataset
+    
+    Scenario: Adding related content to a dataset
         Given I have these datasets:
             """
             [
                 {
-                    "id": "population-estimates",
-                    "survey": "mockSurvey"
+                    "id": "population-estimates"
                 }
             ]
             """
         When I PUT "/datasets/population-estimates"
             """
             {
-                "survey": ""
+                	"related_content": [{
+		                "description": "Related content description",
+		                "href": "http://localhost:22000/datasets/123/relatedContent",
+		                "title": "Related content"
+	                }]
             }
             """
-        Then the document in the database for id "population-estimates" should be:
-            """
+        Then the HTTP status code should be "200"
+        And the document in the database for id "population-estimates" should be:
+        """
             {
-                "id": "population-estimates"
+                "id": "population-estimates",
+                "related_content": [{
+		                "description": "Related content description",
+		                "href": "http://localhost:22000//datasets/123/relatedContent",
+		                "title": "Related content"
+	                }]
             }
-            """
+        """
 
     Scenario: GET /datasets
         Given I have these datasets:
