@@ -14,7 +14,7 @@ type Dimension struct {
 	Name            string        `bson:"name,omitempty"              json:"name,omitempty"`
 	Variable        string        `bson:"variable,omitempty"          json:"variable,omitempty"`
 	NumberOfOptions *int          `bson:"number_of_options,omitempty" json:"number_of_options,omitempty"`
-	IsAreaType      bool          `bson:"is_area_type,omitempty"      json:"is_area_type,omitempty"`
+	IsAreaType      *bool         `bson:"is_area_type,omitempty"      json:"is_area_type,omitempty"`
 }
 
 // DimensionLink contains all links needed for a dimension

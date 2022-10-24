@@ -179,6 +179,12 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			Title: "some dataset title",
 		}
 
+		canonicalTopic := "canonicalTopicID"
+
+		subtopics := []string{"secondaryTopic1ID", "secondaryTopic2ID"}
+
+		survey := "mockSurvey"
+
 		var methodologies, publications, relatedDatasets []models.GeneralDetails
 		methodologies = append(methodologies, methodology)
 		publications = append(publications, publication)
@@ -209,6 +215,9 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			"next.uri":                      "http://ons.gov.uk/datasets/123/landing-page",
 			"next.type":                     "nomis",
 			"next.nomis_reference_url":      "https://www.nomisweb.co.uk/census/2011/ks106ew",
+			"next.canonical_topic":          canonicalTopic,
+			"next.subtopics":                subtopics,
+			"next.survey":                   survey,
 		}
 
 		dataset := &models.Dataset{
@@ -239,6 +248,9 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			URI:               "http://ons.gov.uk/datasets/123/landing-page",
 			Type:              "nomis",
 			NomisReferenceURL: "https://www.nomisweb.co.uk/census/2011/ks106ew",
+			CanonicalTopic:    canonicalTopic,
+			Subtopics:         subtopics,
+			Survey:            survey,
 		}
 
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
@@ -251,20 +263,14 @@ func TestDatasetUpdateQuery(t *testing.T) {
 		dataset := &models.Dataset{
 			NationalStatistic: &nationalStatistic,
 		}
+
 		expectedUpdate := bson.M{
 			"next.national_statistic": &nationalStatistic,
 		}
+
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
 		So(selector, ShouldNotBeNil)
 		So(selector, ShouldResemble, expectedUpdate)
-	})
-
-	Convey("When national statistic is not set", t, func() {
-		dataset := &models.Dataset{}
-
-		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldResemble, bson.M{})
 	})
 }
 

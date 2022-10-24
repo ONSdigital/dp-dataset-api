@@ -63,7 +63,8 @@ func TestString(t *testing.T) {
 			So(datasetTypes[2], ShouldEqual, "cantabular_table")
 			So(datasetTypes[3], ShouldEqual, "cantabular_blob")
 			So(datasetTypes[4], ShouldEqual, "cantabular_flexible_table")
-			So(datasetTypes[5], ShouldEqual, "invalid")
+			So(datasetTypes[5], ShouldEqual, "cantabular_multivariate_table")
+			So(datasetTypes[6], ShouldEqual, "invalid")
 
 		})
 	})
@@ -175,6 +176,9 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.URI, ShouldEqual, "http://localhost:22000/datasets/123/breadcrumbs")
 			So(dataset.Type, ShouldEqual, "filterable")
 			So(dataset.NomisReferenceURL, ShouldEqual, "")
+			So(dataset.CanonicalTopic, ShouldResemble, canonicalTopic)
+			So(dataset.Subtopics[0], ShouldResemble, subtopic)
+			So(dataset.Survey, ShouldEqual, survey)
 		})
 	})
 

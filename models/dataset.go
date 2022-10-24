@@ -30,10 +30,19 @@ const (
 	CantabularTable
 	CantabularBlob
 	CantabularFlexibleTable
+	CantabularMultivariateTable
 	Invalid
 )
 
-var datasetTypes = []string{"filterable", "nomis", "cantabular_table", "cantabular_blob", "cantabular_flexible_table", "invalid"}
+var datasetTypes = []string{
+	"filterable",
+	"nomis",
+	"cantabular_table",
+	"cantabular_blob",
+	"cantabular_flexible_table",
+	"cantabular_multivariate_table",
+	"invalid",
+}
 
 func (dt DatasetType) String() string {
 	return datasetTypes[dt]
@@ -52,6 +61,8 @@ func GetDatasetType(datasetType string) (DatasetType, error) {
 		return CantabularBlob, nil
 	case "cantabular_flexible_table":
 		return CantabularFlexibleTable, nil
+	case "cantabular_multivariate_table":
+		return CantabularMultivariateTable, nil
 	default:
 		return Invalid, errs.ErrDatasetTypeInvalid
 	}
@@ -99,6 +110,9 @@ type Dataset struct {
 	Type              string           `bson:"type,omitempty"                   json:"type,omitempty"`
 	NomisReferenceURL string           `bson:"nomis_reference_url,omitempty"    json:"nomis_reference_url,omitempty"`
 	IsBasedOn         *IsBasedOn       `bson:"is_based_on,omitempty"            json:"is_based_on,omitempty"`
+	CanonicalTopic    string           `bson:"canonical_topic,omitempty"        json:"canonical_topic,omitempty"`
+	Subtopics         []string         `bson:"subtopics,omitempty"              json:"subtopics,omitempty"`
+	Survey            string           `bson:"survey,omitempty"                 json:"survey,omitempty"`
 }
 
 // DatasetLinks represents a list of specific links related to the dataset resource

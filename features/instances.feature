@@ -1,4 +1,4 @@
-Feature: Dataset API
+    Feature: Dataset API
 
     Background: we have instances
         Given I have these instances:
@@ -30,6 +30,15 @@ Feature: Dataset API
                             "id": "income"
                         }
                     }
+                },
+                {
+                    "id": "test-item-4",
+                    "state": "created",
+                    "links": {
+                        "dataset": {
+                            "id": "other"
+                        }
+                    }
                 }
             ]
             """
@@ -42,8 +51,20 @@ Feature: Dataset API
         Then I should receive the following JSON response with status "200":
             """
             {
-                "count": 3,
+                "count": 4,
                 "items": [
+                      {
+                        "id": "test-item-4",
+                        "import_tasks": null,
+                        "last_updated": "2021-01-01T00:00:03Z",
+                        "links": {
+                            "dataset": {
+                                "id": "other"
+                            },
+                            "job": null
+                        },
+                        "state": "created"
+                    },
                     {
                         "id": "test-item-3",
                         "import_tasks": null,
@@ -83,7 +104,7 @@ Feature: Dataset API
                 ],
                 "limit": 20,
                 "offset": 0,
-                "total_count": 3
+                "total_count": 4
             }
             """
 
@@ -266,7 +287,42 @@ Feature: Dataset API
         And I set the "If-Match" header to "wrongValue"
         When I GET "/instances/test-item-1"
         Then the HTTP status code should be "409"
-                And I should receive the following response:
+        And I should receive the following response:
             """
             instance does not match the expected eTag
             """
+    Scenario: Updating instance with is_area_type explicitly false
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/instances"
+        """
+        {
+            "id": "test-item-4",
+            "dimensions":[
+                {
+                    "name": "foo",
+                    "is_area_type": false,
+                }
+            ]
+        }
+        """
+
+        Then the instance in the database for id "test-item-4" should be:
+        """
+        {
+            "id": "test-item-4",
+            "state": "created",
+            "links": {
+                "dataset": {
+                    "id": "other"
+                }
+            },
+            "dimensions":[
+                {
+                    "name": "foo",
+                    "is_area_type": false
+                }
+            ]
+        }
+        """

@@ -43,6 +43,12 @@ var relatedDatasets = GeneralDetails{
 	Title: "Census Age",
 }
 
+var canonicalTopic = "canonicalTopicID"
+
+var subtopic = "subtopicID"
+
+var survey = "mockSurvey"
+
 // Create a fully populated dataset object to use in testing.
 func createTestDataset() *Dataset {
 	return &Dataset{
@@ -80,6 +86,9 @@ func createTestDataset() *Dataset {
 		URI:               "http://localhost:22000/datasets/123/breadcrumbs",
 		Type:              "filterable",
 		NomisReferenceURL: "",
+		CanonicalTopic:    canonicalTopic,
+		Subtopics:         []string{subtopic},
+		Survey:            survey,
 	}
 }
 
@@ -116,6 +125,9 @@ func expectedDataset() Dataset {
 		URI:               "http://localhost:22000/datasets/123/breadcrumbs",
 		Type:              "filterable",
 		NomisReferenceURL: "",
+		CanonicalTopic:    canonicalTopic,
+		Subtopics:         []string{subtopic},
+		Survey:            survey,
 	}
 }
 

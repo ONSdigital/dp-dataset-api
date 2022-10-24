@@ -145,11 +145,12 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	}
 
 	downloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
-		models.CantabularBlob:          downloadGeneratorCantabular,
-		models.CantabularTable:         downloadGeneratorCantabular,
-		models.CantabularFlexibleTable: downloadGeneratorCantabular,
-		models.Filterable:              downloadGeneratorCMD,
-		models.Nomis:                   downloadGeneratorCMD,
+		models.CantabularBlob:              downloadGeneratorCantabular,
+		models.CantabularTable:             downloadGeneratorCantabular,
+		models.CantabularFlexibleTable:     downloadGeneratorCantabular,
+		models.CantabularMultivariateTable: downloadGeneratorCantabular,
+		models.Filterable:                  downloadGeneratorCMD,
+		models.Nomis:                       downloadGeneratorCMD,
 	}
 
 	// Get Identity Client (only if private endpoints are enabled)
@@ -183,10 +184,6 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	if svc.config.EnablePrivateEndpoints {
 		svc.generateCMDDownloadsProducer.Channels().LogErrors(ctx, "generate downloads producer error")
 		svc.generateCantabularDownloadsProducer.Channels().LogErrors(ctx, "generate downloads producer error")
-	}
-
-	// Log kafka producer errors in parallel go-routine
-	if svc.config.EnablePrivateEndpoints {
 	}
 
 	// Run the http server in a new go-routine
