@@ -228,7 +228,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			"next.canonical_topic":          canonicalTopic,
 			"next.subtopics":                subtopics,
 			"next.survey":                   survey,
-			"next.related_content":			 relatedContent,
+			"next.related_content":          relatedContent,
 		}
 
 		dataset := &models.Dataset{
