@@ -39,6 +39,15 @@
                             "id": "other"
                         }
                     }
+                },
+                {
+                    "id": "test-item-5",
+                    "state": "created",
+                    "links": {
+                        "dataset": {
+                            "id": "other"
+                        }
+                    }
                 }
             ]
             """
@@ -51,9 +60,21 @@
         Then I should receive the following JSON response with status "200":
             """
             {
-                "count": 4,
+                "count": 5,
                 "items": [
-                      {
+                    {
+                        "id": "test-item-5",
+                        "import_tasks": null,
+                        "last_updated": "2021-01-01T00:00:04Z",
+                        "links": {
+                            "dataset": {
+                                "id": "other"
+                            },
+                            "job": null
+                        },
+                        "state": "created"
+                    },
+                    {
                         "id": "test-item-4",
                         "import_tasks": null,
                         "last_updated": "2021-01-01T00:00:03Z",
@@ -104,7 +125,7 @@
                 ],
                 "limit": 20,
                 "offset": 0,
-                "total_count": 4
+                "total_count": 5
             }
             """
 
@@ -322,6 +343,44 @@
                 {
                     "name": "foo",
                     "is_area_type": false
+                }
+            ]
+        }
+        """
+
+    Scenario: Updating instance with quality statement fields
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/instances"
+        """
+        {
+            "id": "test-item-5",
+            "dimensions":[
+                {
+                    "name": "bar",
+                    "quality_statement_text": "This is a quality statement",
+                    "quality_statement_url": "www.ons.gov.uk/qualitystatement"
+                }
+            ]
+        }
+        """
+
+        Then the instance in the database for id "test-item-5" should be:
+        """
+        {
+            "id": "test-item-5",
+            "state": "created",
+            "links": {
+                "dataset": {
+                    "id": "other"
+                }
+            },
+            "dimensions":[
+                {
+                    "name": "foo",
+                    "quality_statement_text": "This is a quality statement",
+                    "quality_statement_url": "www.ons.gov.uk/qualitystatement"
                 }
             ]
         }
