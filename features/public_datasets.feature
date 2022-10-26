@@ -63,3 +63,25 @@ Feature: Dataset API
             }
             """
         Then the HTTP status code should be "405"
+
+    Scenario: Adding related content to a dataset
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "population-estimates"
+                }
+            ]
+            """
+        When I PUT "/datasets/population-estimates"
+            """
+            {
+                	"related_content": [{
+		                "description": "Related content description",
+		                "href": "http://localhost:22000/datasets/123/relatedContent",
+		                "title": "Related content"
+	                }]
+            }
+            """
+        Then the HTTP status code should be "405"
+        
