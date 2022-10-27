@@ -179,6 +179,7 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.CanonicalTopic, ShouldResemble, canonicalTopic)
 			So(dataset.Subtopics[0], ShouldResemble, subtopic)
 			So(dataset.Survey, ShouldEqual, survey)
+			So(dataset.RelatedContent, ShouldResemble, relatedContent)
 		})
 	})
 
