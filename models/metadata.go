@@ -42,6 +42,7 @@ type Metadata struct {
 	CSVHeader         []string             `json:"headers,omitempty"`
 	Version           int                  `json:"version,omitempty"`
 	DatasetLinks      *DatasetLinks        `json:"dataset_links,omitempty"`
+	RelatedContent    []GeneralDetails     `json:"related_content,omitempty"`
 }
 
 // MetadataLinks represents a link object to list of metadata relevant to a version
@@ -134,19 +135,20 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 // note: logic to retrieve the newly-added Cantabular-specific fields to the Metadata model will be created at a later date
 func CreateCantabularMetaDataDoc(d *Dataset, v *Version, urlBuilder *url.Builder) *Metadata {
 	m := &Metadata{
-		CSVHeader:     v.Headers,
-		Description:   d.Description,
-		Dimensions:    v.Dimensions,
-		Downloads:     v.Downloads,
-		Keywords:      d.Keywords,
-		ReleaseDate:   v.ReleaseDate,
-		Title:         d.Title,
-		UnitOfMeasure: d.UnitOfMeasure,
-		Contacts:      d.Contacts,
-		URI:           d.URI,
-		QMI:           d.QMI,
-		Version:       v.Version,
-		DatasetLinks:  d.Links,
+		CSVHeader:      v.Headers,
+		Description:    d.Description,
+		Dimensions:     v.Dimensions,
+		Downloads:      v.Downloads,
+		Keywords:       d.Keywords,
+		ReleaseDate:    v.ReleaseDate,
+		Title:          d.Title,
+		UnitOfMeasure:  d.UnitOfMeasure,
+		Contacts:       d.Contacts,
+		URI:            d.URI,
+		QMI:            d.QMI,
+		Version:        v.Version,
+		DatasetLinks:   d.Links,
+		RelatedContent: d.RelatedContent,
 	}
 
 	m.Distribution = getDistribution(m.Downloads)
