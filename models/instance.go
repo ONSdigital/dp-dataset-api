@@ -33,6 +33,7 @@ type Instance struct {
 	Version           int                  `bson:"version,omitempty"                     json:"version,omitempty"`
 	Type              string               `bson:"type,omitempty"                        json:"type,omitempty"`
 	IsBasedOn         *IsBasedOn           `bson:"is_based_on,omitempty"                 json:"is_based_on,omitempty"`
+	LowestGeography   string               `bson:"lowest_geography,omitempty"            json:"lowest_geography,omitempty"`
 }
 
 // Hash generates a SHA-1 hash of the instance struct. SHA-1 is not cryptographically safe,
