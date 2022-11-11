@@ -144,7 +144,8 @@ Feature: Dataset API
                             "href": "someurl"
                         }
                     },
-                    "edition": "hello"
+                    "edition": "hello",
+                    "lowest_geography": "ltla"
                 },
                 {
                     "id": "test-cantabular-version-1",
@@ -210,7 +211,8 @@ Feature: Dataset API
                             "self": {
                                 "href": "someurl"
                             }
-                        }
+                        },
+                        "lowest_geography": "ltla"
                     },
                     {
                         "dataset_id": "population-estimates",
@@ -258,7 +260,8 @@ Feature: Dataset API
                                 "href": "someurl"
                             }
                         },
-                        "edition": "hello"
+                        "edition": "hello",
+                        "lowest_geography": "ltla"
                     },
                     {
                         "dataset_id": "population-estimates",

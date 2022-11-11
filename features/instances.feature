@@ -48,6 +48,16 @@
                             "id": "other"
                         }
                     }
+                },
+                {
+                    "id": "test-item-6",
+                    "state": "created",
+                    "links": {
+                        "dataset": {
+                            "id": "other"
+                        }
+                    },
+                    "lowest_geography": "lowest_geo"
                 }
             ]
             """
@@ -60,8 +70,21 @@
         Then I should receive the following JSON response with status "200":
             """
             {
-                "count": 5,
+                "count": 6,
                 "items": [
+                    {
+                        "id": "test-item-6",
+                        "import_tasks": null,
+                        "last_updated": "2021-01-01T00:00:05Z",
+                        "links": {
+                            "dataset": {
+                                "id": "other"
+                            },
+                            "job": null
+                        },
+                        "state": "created",
+                        "lowest_geography": "lowest_geo"
+                    },
                     {
                         "id": "test-item-5",
                         "import_tasks": null,
@@ -125,7 +148,7 @@
                 ],
                 "limit": 20,
                 "offset": 0,
-                "total_count": 5
+                "total_count": 6
             }
             """
 
