@@ -1141,6 +1141,9 @@ definitions:
     description: "The dataset"
     type: object
     properties:
+      canonical_topic:
+        description: "The canonical topic id for this dataset"
+        type: string
       collection_id:
         $ref: '#/definitions/CollectionID'
       contacts:
@@ -1230,11 +1233,34 @@ definitions:
             title:
               description: "The title of a related dataset"
               type: string
+      related_content:
+        description: "A list of objects containing information of content related to a dataset"
+        type: array
+        items:
+          type: object
+          properties:
+            href:
+              description: "The url to related content"
+              type: string
+            description:
+              description: "The description of the related content"
+              type: string
+            title:
+              description: "The title of the related content"
+              type: string
       release_frequency:
         description: "The release frequency of a dataset"
         type: string
       state:
         $ref: '#/definitions/State'
+      subtopics:
+        description: "A list of ids of sub-topics for a dataset"
+        type: array
+        items:
+          type: "string"
+      survey:
+        description: "The survey for a dataset"
+        type: string
       theme:
         description: "The theme for a dataset"
         type: string
@@ -1242,12 +1268,17 @@ definitions:
         description: "The title of the dataset"
         example: "CPI"
         type: string
+      type:
+        description: "The type of dataset"
+        example: "cantabular_flexible_table"
+        type: string
       unit_of_measure:
         description: "The unit of measure for the dataset observations"
         type: string
       uri:
         description: "The uri to the location of this resource on the web"
         type: string
+    
 
   Type:
     description: "The type for a dataset" 
@@ -1276,6 +1307,15 @@ definitions:
       dimension:
         description: "The name of the dimension"
         type: string
+      href:
+        description: "A link to the code-list entry for the dimension"
+        type: string
+      id:
+        description: "The id of the dimension"
+        type: string
+      is_area_type:
+        description: "Indicates if a dimension is an area-type (census datasets only)"
+        type: boolean
       label:
         description: ""
         type: string
@@ -1296,6 +1336,12 @@ definitions:
             $ref: '#/definitions/OptionsLink'
           version:
             $ref: '#/definitions/VersionLink'
+      number_of_options:
+        description: "The number of options available for this dimension"
+        type: integer
+      variable:
+        description: "The variable name (census datasets only)"
+        type: string
   Dimensions:
     type: object
     properties:
@@ -1735,7 +1781,7 @@ definitions:
         description: "A list of codelists for each dimension of this version"
         type: array
         items:
-          $ref: '#/definitions/Codelist'
+          $ref: '#/definitions/Dimension'
       distribution:
         description: "A list of media types that the version data of an edition of a dataset can be accessed"
         type: array
@@ -1747,8 +1793,17 @@ definitions:
         properties:
           csv:
             $ref: '#/definitions/DownloadObject'
+          csvw:
+            $ref: '#/definitions/DownloadObject'
+          txt:
+            $ref: '#/definitions/DownloadObject'
           xls:
             $ref: '#/definitions/DownloadObject'
+      headers:
+        description: "A list of headers for a census dataset"
+        type: array
+        items:
+          type: "string"
       keywords:
         description: "A list of keywords for a dataset"
         type: array
@@ -1762,7 +1817,7 @@ definitions:
       license:
         description: "The standard Government license right text for the dataset"
         type: string
-      links:
+      dataset_links:
         $ref: '#/definitions/MetadataLinks'
       methodologies:
         description: "A list of methodologies for a dataset"
@@ -2226,12 +2281,16 @@ definitions:
         description: "A list of codelists for each dimension of this version"
         type: array
         items:
-          $ref: '#/definitions/Codelist'
+          $ref: '#/definitions/Dimension'
       downloads:
         description: "A selection of download objects containing information of downloadable files."
         type: object
         properties:
           csv:
+            $ref: '#/definitions/DownloadObject'
+          csvw:
+            $ref: '#/definitions/DownloadObject'
+          txt:
             $ref: '#/definitions/DownloadObject'
           xls:
             $ref: '#/definitions/DownloadObject'
@@ -2242,6 +2301,8 @@ definitions:
       id:
         description: "The identifier for this version of an edition for a dataset"
         type: string
+      is_based_on:
+        $ref: '#/definitions/IsBasedOn'
       dataset_id:
         description: "The identifier for the dataset."
         type: string
@@ -2252,6 +2313,9 @@ definitions:
           $ref: '#/definitions/LatestChange'
       links:
         $ref: '#/definitions/VersionLinks'
+      lowest_geography:
+        description: "The lowest geography this dataset is available at (Census datasets only)"
+        type: string
       release_date:
         description: "The release date of this version of the dataset"
         type: string
@@ -2259,6 +2323,9 @@ definitions:
         $ref: '#/definitions/State'
       temporal:
         $ref: '#/definitions/Temporal'
+      type:
+        description: "The type of dataset - e.g. cantabular_flexible_table"
+        type: string
       version:
         description: "A number identifying the version for an edition from a dataset"
         example: 1
