@@ -242,12 +242,13 @@ type Alert struct {
 	Type        string `bson:"type,omitempty"        json:"type,omitempty"`
 }
 
-// DownloadList represents a list of objects of containing information on the downloadable files
+// DownloadList represents a list of objects of containing information on the downloadable files.
+// Items are in a specific order and should not be changed (xlsx, csv, txt, csvw)
 type DownloadList struct {
-	CSV  *DownloadObject `bson:"csv,omitempty" json:"csv,omitempty"`
-	CSVW *DownloadObject `bson:"csvw,omitempty" json:"csvw,omitempty"`
 	XLS  *DownloadObject `bson:"xls,omitempty" json:"xls,omitempty"`
+	CSV  *DownloadObject `bson:"csv,omitempty" json:"csv,omitempty"`
 	TXT  *DownloadObject `bson:"txt,omitempty" json:"txt,omitempty"`
+	CSVW *DownloadObject `bson:"csvw,omitempty" json:"csvw,omitempty"`
 }
 
 // DownloadObject represents information on the downloadable file
