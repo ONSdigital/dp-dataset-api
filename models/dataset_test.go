@@ -1136,3 +1136,33 @@ func TestVersionLinksDeepCopy(t *testing.T) {
 		})
 	})
 }
+
+func TestVersionDownloadsOrder(t *testing.T) {
+	Convey("Given a Downloads struct", t, func() {
+		d := DownloadList{
+			XLS: &DownloadObject{
+				HRef: "XLSX",
+			},
+			CSV: &DownloadObject{
+				HRef: "CSV",
+			},
+			CSVW: &DownloadObject{
+				HRef: "CSVW",
+			},
+			TXT: &DownloadObject{
+				HRef: "TXT",
+			},
+		}
+
+		Convey("When marshalled", func() {
+			b, err := json.Marshal(d)
+			So(err, ShouldBeNil)
+			t.Log(string(b))
+
+			Convey("The downloads should be in the expected order", func() {
+				expected := `{"xls":{"href":"XLSX"},"csv":{"href":"CSV"},"txt":{"href":"TXT"},"csvw":{"href":"CSVW"}}`
+				So(string(b), ShouldResemble, expected)
+			})
+		})
+	})
+}
