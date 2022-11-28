@@ -201,7 +201,7 @@ parameters:
   is_based_on:
     name: is_based_on
     required: false
-    description: "A population type to search on to return datasets that are associated with that population type e.g. Usual-Residents."
+    description: "A population type to search on to return datasets that are associated with that population type e.g. Usual-Residents.  This is applicable to Census 2021 datasets only."
     in: query
     type: string
 securityDefinitions:
