@@ -1140,9 +1140,10 @@ definitions:
   Dataset:
     description: "The dataset"
     type: object
+    required: ["id", "contacts", "description", "license", "links", "national_statistics", "title"]
     properties:
       canonical_topic:
-        description: "The canonical topic id for this dataset"
+        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy."
         type: string
       collection_id:
         $ref: '#/definitions/CollectionID'
@@ -1254,12 +1255,12 @@ definitions:
       state:
         $ref: '#/definitions/State'
       subtopics:
-        description: "A list of ids of sub-topics for a dataset"
+        description: "A list of subtopic ids that the dataset relates to within the website taxonomy."
         type: array
         items:
           type: "string"
       survey:
-        description: "The survey for a dataset"
+        description: "The name of the survey the dataset was created from."
         type: string
       theme:
         description: "The theme for a dataset"
