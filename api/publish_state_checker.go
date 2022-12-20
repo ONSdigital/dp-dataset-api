@@ -96,6 +96,14 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 							}
 						}
 
+						if versionDoc.Downloads.XLSX != nil && versionDoc.Downloads.XLSX.Public != "" {
+							newVersion.Downloads.XLSX = &models.DownloadObject{
+								Public: versionDoc.Downloads.XLSX.Public,
+								Size:   versionDoc.Downloads.XLSX.Size,
+								HRef:   versionDoc.Downloads.XLSX.HRef,
+							}
+						}
+
 						if versionDoc.Downloads.TXT != nil && versionDoc.Downloads.TXT.Public != "" {
 							newVersion.Downloads.TXT = &models.DownloadObject{
 								Public: versionDoc.Downloads.TXT.Public,

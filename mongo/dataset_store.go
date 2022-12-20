@@ -89,15 +89,7 @@ func (m *Mongo) GetDataset(ctx context.Context, id string) (*models.DatasetUpdat
 
 // GetEditions retrieves all edition documents for a dataset
 func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
-
-	log.Info(context.TODO(), "[DEBUG] getting editions", log.Data{})
-
 	selector := buildEditionsQuery(id, state, authorised)
-	log.Info(context.TODO(), "[DEBUG] query details", log.Data{
-		"editionsCollection": m.ActualCollectionName(config.EditionsCollection),
-		"selector":           selector,
-		"database":           m.Database,
-	})
 
 	// get total count and paginated values according to provided offset and limit
 	results := []*models.EditionUpdate{}
@@ -115,8 +107,6 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit
 }
 
 func buildEditionsQuery(id, state string, authorised bool) bson.M {
-
-	log.Info(context.TODO(), "[DEBUG] building query", log.Data{"id": id, "state": state, "authorised": authorised})
 	// all queries must get the dataset by id
 	selector := bson.M{
 		"next.links.dataset.id": id,
@@ -137,7 +127,6 @@ func buildEditionsQuery(id, state string, authorised bool) bson.M {
 
 // GetEdition retrieves an edition document for a dataset
 func (m *Mongo) GetEdition(ctx context.Context, id, editionID, state string) (*models.EditionUpdate, error) {
-
 	selector := buildEditionQuery(id, editionID, state)
 
 	var edition models.EditionUpdate
