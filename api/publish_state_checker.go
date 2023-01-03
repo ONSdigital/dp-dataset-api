@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/ONSdigital/dp-dataset-api/api/common"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -128,7 +129,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 
 							// Set variable `has_downloads` to true to prevent request
 							// triggering version from being republished
-							vars[hasDownloads] = trueStringified
+							vars[hasDownloads] = common.TrueStringified
 							r.Body = ioutil.NopCloser(bytes.NewBuffer(b))
 							handle(w, r)
 							return

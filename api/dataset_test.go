@@ -20,6 +20,7 @@ import (
 	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/gorilla/mux"
 
+	"github.com/ONSdigital/dp-dataset-api/api/common"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -42,7 +43,7 @@ func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {
 }
 
 // GetAPIWithCMDMocks also used in other tests, so exported
-func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
+func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads common.DownloadsGenerator, datasetPermissions common.AuthHandler, permissions common.AuthHandler) *DatasetAPI {
 	mu.Lock()
 	defer mu.Unlock()
 	cfg, err := config.Get()
@@ -53,7 +54,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 	cfg.DefaultLimit = 0
 	cfg.DefaultOffset = 0
 
-	mockedMapGeneratedDownloads := map[models.DatasetType]DownloadsGenerator{
+	mockedMapGeneratedDownloads := map[models.DatasetType]common.DownloadsGenerator{
 		models.Filterable: mockedGeneratedDownloads,
 		models.Nomis:      mockedGeneratedDownloads,
 	}
@@ -62,7 +63,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 }
 
 // GetAPIWithCMDMocks also used in other tests, so exported
-func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
+func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDownloads common.DownloadsGenerator, datasetPermissions common.AuthHandler, permissions common.AuthHandler) *DatasetAPI {
 	mu.Lock()
 	defer mu.Unlock()
 	cfg, err := config.Get()
@@ -73,7 +74,7 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 	cfg.DefaultLimit = 0
 	cfg.DefaultOffset = 0
 
-	mockedMapGeneratedDownloads := map[models.DatasetType]DownloadsGenerator{
+	mockedMapGeneratedDownloads := map[models.DatasetType]common.DownloadsGenerator{
 		models.CantabularBlob:          mockedGeneratedDownloads,
 		models.CantabularTable:         mockedGeneratedDownloads,
 		models.CantabularFlexibleTable: mockedGeneratedDownloads,

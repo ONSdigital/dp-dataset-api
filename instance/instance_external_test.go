@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/ONSdigital/dp-dataset-api/api"
+	"github.com/ONSdigital/dp-dataset-api/api/common"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/instance"
@@ -750,8 +751,8 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 
 var urlBuilder = url.NewBuilder("localhost:20000")
 
-func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, datasetPermissions api.AuthHandler, permissions api.AuthHandler) *api.DatasetAPI {
-	mockedMapDownloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
+func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads common.DownloadsGenerator, datasetPermissions common.AuthHandler, permissions common.AuthHandler) *api.DatasetAPI {
+	mockedMapDownloadGenerators := map[models.DatasetType]common.DownloadsGenerator{
 		models.Filterable: mockedGeneratedDownloads,
 	}
 	mu.Lock()

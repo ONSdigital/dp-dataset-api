@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
+	"github.com/ONSdigital/dp-dataset-api/api/common"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
@@ -209,7 +210,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setJSONContentType(w)
+	common.SetJSONContentType(w)
 	_, err := w.Write(b)
 	if err != nil {
 		log.Error(ctx, "failed writing bytes to response", err, logData)
@@ -241,7 +242,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If update was to add downloads do not try to publish/associate version
-	if vars[hasDownloads] != trueStringified {
+	if vars[hasDownloads] != common.TrueStringified {
 		if versionUpdate.State == models.PublishedState {
 			if err := api.publishVersion(ctx, currentDataset, currentVersion, versionUpdate, versionDetails); err != nil {
 				handleVersionAPIErr(ctx, err, w, data)
@@ -257,7 +258,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	setJSONContentType(w)
+	common.SetJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
 	log.Info(ctx, "putVersion endpoint: request successful", data)
 }

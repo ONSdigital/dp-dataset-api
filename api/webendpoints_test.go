@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/ONSdigital/dp-dataset-api/api/common"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -335,8 +336,8 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 	})
 }
 
-func GetWebAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
-	mockedMapDownloadGenerators := map[models.DatasetType]DownloadsGenerator{
+func GetWebAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads common.DownloadsGenerator, datasetPermissions common.AuthHandler, permissions common.AuthHandler) *DatasetAPI {
+	mockedMapDownloadGenerators := map[models.DatasetType]common.DownloadsGenerator{
 		models.Filterable: mockedGeneratedDownloads,
 	}
 	cfg, err := config.Get()

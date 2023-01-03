@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/ONSdigital/dp-dataset-api/api/common"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 )
 
-//This function returns a list of editions, the total count of editions that match the query parameters and an error
+// getEditions returns a list of editions, the total count of editions that match the query parameters and an error
 func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -118,7 +119,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setJSONContentType(w)
+	common.SetJSONContentType(w)
 	_, err = w.Write(b)
 	if err != nil {
 		log.Error(ctx, "getEdition endpoint: failed to write byte to response", err, logData)

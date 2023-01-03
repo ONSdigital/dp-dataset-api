@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ONSdigital/dp-dataset-api/api/common"
 	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -45,7 +46,7 @@ var (
 
 const IsBasedOn = "is_based_on"
 
-//getDatasets returns a list of datasets, the total count of datasets and an error
+// getDatasets returns a list of datasets, the total count of datasets and an error
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	logData := log.Data{}
@@ -141,7 +142,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setJSONContentType(w)
+	common.SetJSONContentType(w)
 	if _, err = w.Write(b); err != nil {
 		log.Error(ctx, "getDataset endpoint: error writing bytes to response", err, logData)
 		handleDatasetAPIErr(ctx, err, w, logData)
@@ -241,7 +242,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setJSONContentType(w)
+	common.SetJSONContentType(w)
 	w.WriteHeader(http.StatusCreated)
 	if _, err = w.Write(b); err != nil {
 		log.Error(ctx, "addDataset endpoint: error writing bytes to response", err, logData)
@@ -306,7 +307,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setJSONContentType(w)
+	common.SetJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
 	log.Info(ctx, "putDataset endpoint: request successful", data)
 }

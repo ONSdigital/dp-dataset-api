@@ -7,6 +7,7 @@ import (
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/api"
+	"github.com/ONSdigital/dp-dataset-api/api/common"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	adapter "github.com/ONSdigital/dp-dataset-api/kafka"
@@ -27,7 +28,7 @@ import (
 // check that DatsetAPIStore satifies the store.Storer interface
 var _ store.Storer = (*DatsetAPIStore)(nil)
 
-//DatsetAPIStore is a wrapper which embeds Neo4j Mongo structs which between them satisfy the store.Storer interface.
+// DatsetAPIStore is a wrapper which embeds Neo4j Mongo structs which between them satisfy the store.Storer interface.
 type DatsetAPIStore struct {
 	store.MongoDB
 	store.GraphDB
@@ -144,7 +145,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		Marshaller: schema.GenerateCMDDownloadsEvent,
 	}
 
-	downloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
+	downloadGenerators := map[models.DatasetType]common.DownloadsGenerator{
 		models.CantabularBlob:              downloadGeneratorCantabular,
 		models.CantabularTable:             downloadGeneratorCantabular,
 		models.CantabularFlexibleTable:     downloadGeneratorCantabular,
@@ -196,7 +197,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	return nil
 }
 
-func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (api.AuthHandler, api.AuthHandler) {
+func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (common.AuthHandler, common.AuthHandler) {
 	if !cfg.EnablePermissionsAuth {
 		log.Info(ctx, "feature flag not enabled defaulting to nop auth impl", log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
 		return &auth.NopHandler{}, &auth.NopHandler{}

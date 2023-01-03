@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/ONSdigital/dp-dataset-api/api/common"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -117,7 +118,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setJSONContentType(w)
+	common.SetJSONContentType(w)
 	if _, err = w.Write(b); err != nil {
 		log.Error(ctx, "getMetadata endpoint: failed to write bytes to response", err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/ONSdigital/dp-dataset-api/api"
+	"github.com/ONSdigital/dp-dataset-api/api/common"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
@@ -1509,8 +1510,8 @@ func TestPatchDimensionsReturnsBadRequest(t *testing.T) {
 	})
 }
 
-func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator) *api.DatasetAPI {
-	downloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
+func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads common.DownloadsGenerator) *api.DatasetAPI {
+	downloadGenerators := map[models.DatasetType]common.DownloadsGenerator{
 		models.Filterable: mockedGeneratedDownloads,
 		models.Nomis:      mockedGeneratedDownloads,
 	}
