@@ -1,11 +1,9 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/api/common"
@@ -14,33 +12,6 @@ import (
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
-)
-
-var (
-	// errors that should return a 403 status
-	datasetsForbidden = map[error]bool{
-		errs.ErrDeletePublishedDatasetForbidden: true,
-		errs.ErrAddDatasetAlreadyExists:         true,
-	}
-
-	// errors that should return a 204 status
-	datasetsNoContent = map[error]bool{
-		errs.ErrDeleteDatasetNotFound: true,
-	}
-
-	// errors that should return a 400 status
-	datasetsBadRequest = map[error]bool{
-		errs.ErrAddUpdateDatasetBadRequest: true,
-		errs.ErrTypeMismatch:               true,
-		errs.ErrDatasetTypeInvalid:         true,
-		errs.ErrInvalidQueryParameter:      true,
-	}
-
-	// errors that should return a 404 status
-	resourcesNotFound = map[error]bool{
-		errs.ErrDatasetNotFound:  true,
-		errs.ErrEditionsNotFound: true,
-	}
 )
 
 const IsBasedOn = "is_based_on"
@@ -57,7 +28,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 	if isBasedOnExists && isBasedOn == "" {
 		err := errs.ErrInvalidQueryParameter
 		log.Error(ctx, "malformed is_based_on parameter", err)
-		handleDatasetAPIErr(ctx, err, w, logData)
+		common.HandleDatasetAPIErr(ctx, err, w, logData)
 		return nil, 0, err
 	}
 
@@ -77,7 +48,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 	}
 	if err != nil {
 		log.Error(ctx, "api endpoint getDatasets datastore.GetDatasets returned an error", err)
-		handleDatasetAPIErr(ctx, err, w, logData)
+		common.HandleDatasetAPIErr(ctx, err, w, logData)
 		return nil, 0, err
 	}
 
@@ -85,7 +56,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		return datasets, totalCount, nil
 	}
 
-	return mapResults(datasets), totalCount, nil
+	return common.MapResults(datasets), totalCount, nil
 }
 
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
@@ -137,14 +108,14 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		handleDatasetAPIErr(ctx, err, w, logData)
+		common.HandleDatasetAPIErr(ctx, err, w, logData)
 		return
 	}
 
 	common.SetJSONContentType(w)
 	if _, err = w.Write(b); err != nil {
 		log.Error(ctx, "getDataset endpoint: error writing bytes to response", err, logData)
-		handleDatasetAPIErr(ctx, err, w, logData)
+		common.HandleDatasetAPIErr(ctx, err, w, logData)
 	}
 	log.Info(ctx, "getDataset endpoint: request successful", logData)
 }
@@ -237,7 +208,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		handleDatasetAPIErr(ctx, err, w, logData)
+		common.HandleDatasetAPIErr(ctx, err, w, logData)
 		return
 	}
 
@@ -288,7 +259,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if dataset.State == models.PublishedState {
-			if err := api.publishDataset(ctx, currentDataset, nil); err != nil {
+			if err := common.PublishDataset(ctx, api.dataStore, currentDataset, nil); err != nil {
 				log.Error(ctx, "putDataset endpoint: failed to update dataset document to published", err, data)
 				return err
 			}
@@ -302,43 +273,13 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		handleDatasetAPIErr(ctx, err, w, data)
+		common.HandleDatasetAPIErr(ctx, err, w, data)
 		return
 	}
 
 	common.SetJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
 	log.Info(ctx, "putDataset endpoint: request successful", data)
-}
-
-func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *models.DatasetUpdate, version *models.Version) error {
-	if version != nil {
-		currentDataset.Next.CollectionID = ""
-		currentDataset.Next.Links.LatestVersion = &models.LinkObject{
-			ID:   version.Links.Version.ID,
-			HRef: version.Links.Version.HRef,
-		}
-	}
-
-	currentDataset.Next.State = models.PublishedState
-	currentDataset.Next.LastUpdated = time.Now()
-
-	// newDataset.Next will not be cleaned up due to keeping request to mongo
-	// idempotent; for instance if an authorised user double clicked to update
-	// dataset, the next sub document would not exist to create the correct
-	// current sub document on the second click
-	newDataset := &models.DatasetUpdate{
-		ID:      currentDataset.ID,
-		Current: currentDataset.Next,
-		Next:    currentDataset.Next,
-	}
-
-	if err := api.dataStore.Backend.UpsertDataset(ctx, currentDataset.ID, newDataset); err != nil {
-		log.Error(ctx, "unable to update dataset", err, log.Data{"dataset_id": currentDataset.ID})
-		return err
-	}
-
-	return nil
 }
 
 func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
@@ -392,61 +333,10 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		handleDatasetAPIErr(ctx, err, w, logData)
+		common.HandleDatasetAPIErr(ctx, err, w, logData)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 	log.Info(ctx, "delete dataset", logData)
-}
-
-// utility function to cut a slice according to the provided offset and limit.
-// limit=0 means no limit, and values higher than the slice length are ignored
-func slice(full []string, offset, limit int) (sliced []string) {
-	end := offset + limit
-	if limit == 0 || end > len(full) {
-		end = len(full)
-	}
-
-	if offset > len(full) {
-		return []string{}
-	}
-	return full[offset:end]
-}
-
-func mapResults(results []*models.DatasetUpdate) []*models.Dataset {
-	items := []*models.Dataset{}
-	for _, item := range results {
-		if item.Current == nil {
-			continue
-		}
-		item.Current.ID = item.ID
-		items = append(items, item.Current)
-	}
-	return items
-}
-
-func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, data log.Data) {
-	if data == nil {
-		data = log.Data{}
-	}
-
-	var status int
-	switch {
-	case datasetsForbidden[err]:
-		status = http.StatusForbidden
-	case datasetsNoContent[err]:
-		status = http.StatusNoContent
-	case datasetsBadRequest[err], strings.HasPrefix(err.Error(), "invalid fields:"):
-		status = http.StatusBadRequest
-	case resourcesNotFound[err]:
-		status = http.StatusNotFound
-	default:
-		err = errs.ErrInternalServer
-		status = http.StatusInternalServerError
-	}
-
-	data["responseStatus"] = status
-	log.Error(ctx, "request unsuccessful", err, data)
-	http.Error(w, err.Error(), status)
 }

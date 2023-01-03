@@ -8,6 +8,7 @@ import (
 
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/api/common"
+	"github.com/ONSdigital/dp-dataset-api/api/v2"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
 	"github.com/ONSdigital/dp-dataset-api/instance"
@@ -34,6 +35,7 @@ type API interface {
 
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
+	v2                       *v2.DatasetAPI
 	Router                   *mux.Router
 	dataStore                store.DataStore
 	urlBuilder               *url.Builder
@@ -68,6 +70,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		versionPublishedChecker:  nil,
 		instancePublishedChecker: nil,
 		MaxRequestOptions:        cfg.MaxRequestOptions,
+		v2:                       v2.NewDatasetAPI(dataStore, downloadGenerators, datasetPermissions, permissions),
 	}
 
 	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)
@@ -185,6 +188,13 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 		api.isAuthenticated(
 			api.isAuthorisedForDatasets(common.UpdatePermission,
 				api.putDataset)),
+	)
+
+	api.put(
+		"/v2/datasets/{dataset_id}",
+		api.isAuthenticated(
+			api.isAuthorisedForDatasets(common.UpdatePermission,
+				api.v2.PutDataset)),
 	)
 
 	api.delete(
