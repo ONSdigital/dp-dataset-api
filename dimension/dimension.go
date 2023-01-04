@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/ONSdigital/dp-dataset-api/api/common"
 	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -39,7 +40,7 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
-	eTag := getIfMatch(r)
+	eTag := common.GetIfMatch(r)
 	logData := log.Data{"instance_id": instanceID}
 	logData["action"] = GetDimensions
 
@@ -75,7 +76,7 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 	}
 
 	log.Info(ctx, "successfully get dimensions for an instance resource", logData)
-	setETag(w, instance.ETag)
+	common.SetETag(w, instance.ETag)
 	return dimensions, totalCount, nil
 }
 
@@ -86,7 +87,7 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
 	dimension := vars["dimension"]
-	eTag := getIfMatch(r)
+	eTag := common.GetIfMatch(r)
 	logData := log.Data{"instance_id": instanceID, "dimension": dimension}
 	logData["action"] = GetUniqueDimensionAndOptionsAction
 
@@ -129,7 +130,7 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	}
 
 	log.Info(ctx, "successfully get unique dimension options for an instance resource", logData)
-	setETag(w, instance.ETag)
+	common.SetETag(w, instance.ETag)
 	return slicedOptions, totalCount, nil
 }
 
@@ -141,7 +142,7 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
-	eTag := getIfMatch(r)
+	eTag := common.GetIfMatch(r)
 	logData := log.Data{"instance_id": instanceID}
 	logData["action"] = AddDimensionAction
 
@@ -168,7 +169,7 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Info(ctx, "added dimension to instance resource", logData)
 
-	setETag(w, newETag)
+	common.SetETag(w, newETag)
 }
 
 // PatchDimensionsHandler represents adding multiple dimensions to a specific instance
@@ -179,7 +180,7 @@ func (s *Store) PatchDimensionsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
-	eTag := getIfMatch(r)
+	eTag := common.GetIfMatch(r)
 	logData := log.Data{"instance_id": instanceID}
 
 	// unmarshal and validate the patch array
@@ -208,8 +209,8 @@ func (s *Store) PatchDimensionsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// set content type and write response body
 	setJSONPatchContentType(w)
-	setETag(w, newETag)
-	writeBody(ctx, w, b, logData)
+	common.SetETag(w, newETag)
+	common.WriteBody(ctx, w, b, logData)
 	log.Info(ctx, "successfully patched dimensions of an instance resource", logData)
 }
 
@@ -404,7 +405,7 @@ func (s *Store) PatchOptionHandler(w http.ResponseWriter, r *http.Request) {
 	instanceID := vars["instance_id"]
 	dimensionName := vars["dimension"]
 	option := vars["option"]
-	eTag := getIfMatch(r)
+	eTag := common.GetIfMatch(r)
 	logData := log.Data{"instance_id": instanceID, "dimension": dimensionName, "option": option}
 
 	// unmarshal and validate the patch array
@@ -433,8 +434,8 @@ func (s *Store) PatchOptionHandler(w http.ResponseWriter, r *http.Request) {
 
 	// set content type and write response body
 	setJSONPatchContentType(w)
-	setETag(w, newETag)
-	writeBody(ctx, w, b, logData)
+	common.SetETag(w, newETag)
+	common.WriteBody(ctx, w, b, logData)
 	log.Info(ctx, "successfully patched dimension option of an instance resource", logData)
 }
 
@@ -490,7 +491,7 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 	dimensionName := vars["dimension"]
 	option := vars["option"]
 	nodeID := vars["node_id"]
-	eTag := getIfMatch(r)
+	eTag := common.GetIfMatch(r)
 	logData := log.Data{"instance_id": instanceID, "dimension": dimensionName, "option": option, "node_id": nodeID, "action": UpdateNodeIDAction}
 
 	dimOption := models.DimensionOption{Name: dimensionName, Option: option, NodeID: nodeID, InstanceID: instanceID}
@@ -511,5 +512,5 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	logData["action"] = AddDimensionAction
 	log.Info(ctx, "added node id to dimension of an instance resource", logData)
-	setETag(w, newETag)
+	common.SetETag(w, newETag)
 }

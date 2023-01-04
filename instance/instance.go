@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ONSdigital/dp-dataset-api/api/common"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -21,7 +21,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-//Store provides a backend for instances
+// Store provides a backend for instances
 type Store struct {
 	store.Storer
 	Host                string
@@ -40,7 +40,7 @@ func (e taskError) Error() string {
 	return ""
 }
 
-//GetList returns a list of instances, the total count of instances that match the query parameters and an error
+// GetList returns a list of instances, the total count of instances that match the query parameters and an error
 func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	stateFilterQuery := r.URL.Query().Get("state")
@@ -95,7 +95,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
-	eTag := getIfMatch(r)
+	eTag := common.GetIfMatch(r)
 	logData := log.Data{"instance_id": instanceID}
 
 	log.Info(ctx, "get instance", logData)
@@ -124,8 +124,8 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setJSONContentType(w)
-	setETag(w, instance.ETag)
+	common.SetJSONContentType(w)
+	common.SetETag(w, instance.ETag)
 	writeBody(ctx, w, b, logData)
 	log.Info(ctx, "get instance: request successful", logData)
 }
@@ -168,8 +168,8 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setJSONContentType(w)
-	setETag(w, instance.ETag)
+	common.SetJSONContentType(w)
+	common.SetETag(w, instance.ETag)
 	w.WriteHeader(http.StatusCreated)
 	writeBody(ctx, w, b, logData)
 
@@ -191,7 +191,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
-	eTag := getIfMatch(r)
+	eTag := common.GetIfMatch(r)
 
 	logData := log.Data{"instance_id": instanceID}
 
@@ -304,8 +304,8 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setJSONContentType(w)
-	setETag(w, newETag)
+	common.SetJSONContentType(w)
+	common.SetETag(w, newETag)
 	w.WriteHeader(http.StatusOK)
 	writeBody(ctx, w, b, logData)
 
@@ -442,22 +442,6 @@ func unmarshalInstance(ctx context.Context, reader io.Reader, post bool) (*model
 	return &instance, nil
 }
 
-func setJSONContentType(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json")
-}
-
-func getIfMatch(r *http.Request) string {
-	ifMatch := r.Header.Get("If-Match")
-	if ifMatch == "" {
-		return mongo.AnyETag
-	}
-	return ifMatch
-}
-
-func setETag(w http.ResponseWriter, eTag string) {
-	w.Header().Set("ETag", eTag)
-}
-
 func writeBody(ctx context.Context, w http.ResponseWriter, b []byte, logData log.Data) {
 	if _, err := w.Write(b); err != nil {
 		log.Fatal(ctx, "failed to write http response body", err, logData)
@@ -476,7 +460,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request)) ht
 		ctx := r.Context()
 		vars := mux.Vars(r)
 		instanceID := vars["instance_id"]
-		eTag := getIfMatch(r)
+		eTag := common.GetIfMatch(r)
 		logData := log.Data{"action": "CheckAction", "instance_id": instanceID}
 
 		if err := d.checkState(ctx, instanceID, eTag); err != nil {

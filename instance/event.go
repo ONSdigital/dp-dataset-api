@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/ONSdigital/dp-dataset-api/api/common"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -35,7 +36,7 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
-	eTag := getIfMatch(r)
+	eTag := common.GetIfMatch(r)
 	data := log.Data{"instance_id": instanceID, "action": AddInstanceEventAction}
 
 	event, err := unmarshalEvent(r.Body)
@@ -73,5 +74,5 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Info(ctx, "add instance event: request successful", data)
-	setETag(w, newETag)
+	common.SetETag(w, newETag)
 }

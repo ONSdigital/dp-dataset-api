@@ -12,7 +12,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/mongo"
 	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/pkg/errors"
@@ -140,25 +139,7 @@ func logError(ctx context.Context, err error, data log.Data) {
 	log.Error(ctx, "unsuccessful request", err, data)
 }
 
-func getIfMatch(r *http.Request) string {
-	ifMatch := r.Header.Get("If-Match")
-	if ifMatch == "" {
-		return mongo.AnyETag
-	}
-	return ifMatch
-}
-
 func setJSONPatchContentType(w http.ResponseWriter) {
 	w.Header().Add("Content-Type", "application/json-patch+json")
 }
 
-func setETag(w http.ResponseWriter, eTag string) {
-	w.Header().Add("ETag", eTag)
-}
-
-func writeBody(ctx context.Context, w http.ResponseWriter, b []byte, data log.Data) {
-	if _, err := w.Write(b); err != nil {
-		log.Error(ctx, "failed to write response body", err, data)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}

@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/ONSdigital/dp-dataset-api/api/common"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
@@ -22,7 +23,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
 	dimension := vars["dimension"]
-	eTag := getIfMatch(r)
+	eTag := common.GetIfMatch(r)
 	logData := log.Data{"instance_id": instanceID, "dimension": dimension}
 
 	log.Info(ctx, "update instance dimension: update instance dimension", logData)
@@ -107,5 +108,5 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 
 	log.Info(ctx, "updated instance dimension: request successful", logData)
 
-	setETag(w, newETag)
+	common.SetETag(w, newETag)
 }
