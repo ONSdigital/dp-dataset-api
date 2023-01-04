@@ -287,16 +287,21 @@ func (m *Mongo) UpdateDataset(ctx context.Context, id string, dataset *models.Da
 }
 
 // UpdateDatasetV2 it is used by the v2 PutDataset endpoint and updates the complete existing dataset document
-func (m *Mongo) UpdateDatasetV2(ctx context.Context, id string, dataset *models.Dataset, currentState string) (err error) {
-	dataset.LastUpdated = time.Now()
+func (m *Mongo) UpdateDatasetV2(ctx context.Context, id string, updatedDataset *models.Dataset, eTagSelector, newETag string) (err error) {
+	updatedDataset.LastUpdated = time.Now()
+
+	sel := datasetSelector(id, bsonprim.Timestamp{}, eTagSelector)
+
 	update := bson.M{
 		"$set": bson.M{
-			"next": dataset,
+			"next":  updatedDataset,
+			"e_tag": newETag,
 		},
 		"$setOnInsert": bson.M{
 			"last_updated": time.Now()},
 	}
-	if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateById(ctx, id, update); err != nil {
+
+	if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().Update(ctx, sel, update); err != nil {
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
 			return errs.ErrDatasetNotFound
 		}

@@ -21,6 +21,7 @@ var (
 	ErrAddUpdateDatasetBadRequest        = errors.New("failed to parse json body")
 	ErrConflictUpdatingInstance          = errors.New("conflict updating instance resource")
 	ErrDatasetNotFound                   = errors.New("dataset not found")
+	ErrDatasetConflict                   = errors.New("dataset does not match the expected eTag")
 	ErrDeleteDatasetNotFound             = errors.New("delete dataset not found")
 	ErrDeletePublishedDatasetForbidden   = errors.New("a published dataset cannot be deleted")
 	ErrDimensionNodeNotFound             = errors.New("dimension node not found")
@@ -85,6 +86,7 @@ var (
 	ConflictRequestMap = map[error]bool{
 		ErrConflictUpdatingInstance: true,
 		ErrInstanceConflict:         true,
+		ErrDatasetConflict:          true,
 	}
 
 	ForbiddenMap = map[error]bool{

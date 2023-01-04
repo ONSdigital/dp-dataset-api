@@ -82,6 +82,7 @@ type DatasetUpdate struct {
 	ID      string   `bson:"_id,omitempty"         json:"id,omitempty"`
 	Current *Dataset `bson:"current,omitempty"     json:"current,omitempty"`
 	Next    *Dataset `bson:"next,omitempty"        json:"next,omitempty"`
+	ETag    string   `bson:"e_tag"                 json:"e_tag,omitempty"`
 }
 
 // Dataset represents information related to a single dataset
@@ -114,6 +115,30 @@ type Dataset struct {
 	Subtopics         []string         `bson:"subtopics,omitempty"              json:"subtopics,omitempty"`
 	Survey            string           `bson:"survey,omitempty"                 json:"survey,omitempty"`
 	RelatedContent    []GeneralDetails `bson:"related_content,omitempty"        json:"related_content,omitempty"`
+}
+
+// Hash generates a SHA-1 hash of the DatasetUpdate struct. SHA-1 is not cryptographically safe,
+// but it has been selected for performance as we are only interested in uniqueness.
+// ETag field value is ignored when generating a hash.
+// An optional byte array can be provided to append to the hash.
+// This can be used, for example, to calculate a hash of this dataset and an update applied to it.
+func (d *DatasetUpdate) Hash(extraBytes []byte) (string, error) {
+	h := sha1.New()
+
+	// copy by value to ignore ETag without affecting d
+	d2 := *d
+	d2.ETag = ""
+
+	datasetUpdateBytes, err := bson.Marshal(d2)
+	if err != nil {
+		return "", err
+	}
+
+	if _, err := h.Write(append(datasetUpdateBytes, extraBytes...)); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
 // DatasetLinks represents a list of specific links related to the dataset resource
