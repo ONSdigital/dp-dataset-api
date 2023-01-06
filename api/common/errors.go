@@ -2,7 +2,9 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strings"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	dprequest "github.com/ONSdigital/dp-net/v2/request"
@@ -49,4 +51,29 @@ func logError(ctx context.Context, err error, data log.Data) {
 		data[reqCaller] = caller
 	}
 	log.Error(ctx, "unsuccessful request", err, data)
+}
+
+func HandleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, data log.Data) {
+	if data == nil {
+		data = log.Data{}
+	}
+
+	var status int
+	switch {
+	case datasetsForbidden[err]:
+		status = http.StatusForbidden
+	case datasetsNoContent[err]:
+		status = http.StatusNoContent
+	case datasetsBadRequest[err], strings.HasPrefix(err.Error(), "invalid fields:"):
+		status = http.StatusBadRequest
+	case resourcesNotFound[err]:
+		status = http.StatusNotFound
+	default:
+		err = fmt.Errorf("%s: %w", errs.ErrInternalServer.Error(), err)
+		status = http.StatusInternalServerError
+	}
+
+	data["responseStatus"] = status
+	log.Error(ctx, "request unsuccessful", err, data)
+	http.Error(w, err.Error(), status)
 }
