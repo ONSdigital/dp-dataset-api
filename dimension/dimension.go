@@ -55,7 +55,7 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 	instance, err := s.GetInstance(ctx, instanceID, eTag)
 	if err != nil {
 		log.Error(ctx, "failed to get instance", err, logData)
-		handleDimensionErr(ctx, w, err, logData)
+		common.HandlePatchReqErr(ctx, w, err, logData)
 		return nil, 0, err
 	}
 
@@ -63,7 +63,7 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 	if err = models.CheckState("instance", instance.State); err != nil {
 		logData["state"] = instance.State
 		log.Error(ctx, "current instance has an invalid state", err, logData)
-		handleDimensionErr(ctx, w, err, logData)
+		common.HandlePatchReqErr(ctx, w, err, logData)
 		return nil, 0, err
 	}
 
@@ -71,7 +71,7 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 	dimensions, totalCount, err := s.GetDimensionsFromInstance(ctx, instanceID, offset, limit)
 	if err != nil {
 		log.Error(ctx, "failed to get dimension options for instance", err, logData)
-		handleDimensionErr(ctx, w, err, logData)
+		common.HandlePatchReqErr(ctx, w, err, logData)
 		return nil, 0, err
 	}
 
@@ -102,7 +102,7 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	instance, err := s.GetInstance(ctx, instanceID, eTag)
 	if err != nil {
 		log.Error(ctx, "failed to get instance", err, logData)
-		handleDimensionErr(ctx, w, err, logData)
+		common.HandlePatchReqErr(ctx, w, err, logData)
 		return nil, 0, err
 	}
 
@@ -110,7 +110,7 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	if err = models.CheckState("instance", instance.State); err != nil {
 		logData["state"] = instance.State
 		log.Error(ctx, "current instance has an invalid state", err, logData)
-		handleDimensionErr(ctx, w, err, logData)
+		common.HandlePatchReqErr(ctx, w, err, logData)
 		return nil, 0, err
 	}
 
@@ -119,7 +119,7 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	options, totalCount, err := s.GetUniqueDimensionAndOptions(ctx, instanceID, dimension)
 	if err != nil {
 		log.Error(ctx, "failed to get unique dimension options for instance", err, logData)
-		handleDimensionErr(ctx, w, err, logData)
+		common.HandlePatchReqErr(ctx, w, err, logData)
 		return nil, 0, err
 	}
 
@@ -149,14 +149,14 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 	option, err := unmarshalDimensionCache(r.Body)
 	if err != nil {
 		log.Error(ctx, "failed to unmarshal dimension cache", err, logData)
-		handleDimensionErr(ctx, w, err, logData)
+		common.HandlePatchReqErr(ctx, w, err, logData)
 		return
 	}
 
 	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
 	if err != nil {
 		log.Error(ctx, "failed to acquire lock", err, logData)
-		handleDimensionErr(ctx, w, err, logData)
+		common.HandlePatchReqErr(ctx, w, err, logData)
 		return
 	}
 	defer s.UnlockInstance(ctx, lockID)
@@ -164,7 +164,7 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 	// upsert dimension option
 	newETag, err := s.upsertDimensionOption(ctx, instanceID, option, logData, eTag)
 	if err != nil {
-		handleDimensionErr(ctx, w, err, logData)
+		common.HandlePatchReqErr(ctx, w, err, logData)
 		return
 	}
 	log.Info(ctx, "added dimension to instance resource", logData)
@@ -196,14 +196,14 @@ func (s *Store) PatchDimensionsHandler(w http.ResponseWriter, r *http.Request) {
 	successfulPatches, newETag, err := s.applyPatchesForDimensions(ctx, instanceID, patches, logData, eTag)
 	if err != nil {
 		logData["successful_patches"] = successfulPatches
-		handleDimensionErr(ctx, w, err, logData)
+		common.HandlePatchReqErr(ctx, w, err, logData)
 		return
 	}
 
 	// Marshal successful patches response
 	b, err := json.Marshal(successfulPatches)
 	if err != nil {
-		handleDimensionErr(ctx, w, err, logData)
+		common.HandlePatchReqErr(ctx, w, err, logData)
 		return
 	}
 
@@ -421,14 +421,14 @@ func (s *Store) PatchOptionHandler(w http.ResponseWriter, r *http.Request) {
 	successfulPatches, newETag, err := s.patchOption(ctx, instanceID, dimensionName, option, patches, logData, eTag)
 	if err != nil {
 		logData["successful_patches"] = successfulPatches
-		handleDimensionErr(ctx, w, err, logData)
+		common.HandlePatchReqErr(ctx, w, err, logData)
 		return
 	}
 
 	// Marshal provided model
 	b, err := json.Marshal(successfulPatches)
 	if err != nil {
-		handleDimensionErr(ctx, w, err, logData)
+		common.HandlePatchReqErr(ctx, w, err, logData)
 		return
 	}
 
@@ -499,14 +499,14 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 	// acquire instance lock so that the instance update and the dimension.options update are atomic
 	lockID, err := s.AcquireInstanceLock(ctx, dimOption.InstanceID)
 	if err != nil {
-		handleDimensionErr(ctx, w, err, logData)
+		common.HandlePatchReqErr(ctx, w, err, logData)
 		return
 	}
 	defer s.UnlockInstance(ctx, lockID)
 
 	newETag, err := s.updateDimensionOption(ctx, dimOption.InstanceID, &dimOption, logData, eTag)
 	if err != nil {
-		handleDimensionErr(ctx, w, err, logData)
+		common.HandlePatchReqErr(ctx, w, err, logData)
 		return
 	}
 

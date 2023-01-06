@@ -10,6 +10,11 @@ import (
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
+const (
+	reqUser   = "req_user"
+	reqCaller = "req_caller"
+)
+
 var (
 	TrueStringified = strconv.FormatBool(true)
 
