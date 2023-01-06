@@ -27,7 +27,7 @@ func newETagForVersionUpdate(currentVersion *models.Version, update *models.Vers
 	return currentVersion.Hash(b)
 }
 
-func NewETagForDatasetUpdate(currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset) (eTag string, err error) {
+func newETagForDatasetUpdate(currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset) (eTag string, err error) {
 	b, err := bson.Marshal(updatedDataset)
 	if err != nil {
 		return "", err

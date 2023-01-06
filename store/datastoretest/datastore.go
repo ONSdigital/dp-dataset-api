@@ -108,7 +108,7 @@ var _ store.Storer = &StorerMock{}
 //			UpdateDatasetFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
 //				panic("mock out the UpdateDataset method")
 //			},
-//			UpdateDatasetV2Func: func(ctx context.Context, ID string, updatedDataset *models.Dataset, eTagSelector string, newETag string) error {
+//			UpdateDatasetV2Func: func(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (string, error) {
 //				panic("mock out the UpdateDatasetV2 method")
 //			},
 //			UpdateDatasetWithAssociationFunc: func(ctx context.Context, ID string, state string, version *models.Version) error {
@@ -242,7 +242,7 @@ type StorerMock struct {
 	UpdateDatasetFunc func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
 
 	// UpdateDatasetV2Func mocks the UpdateDatasetV2 method.
-	UpdateDatasetV2Func func(ctx context.Context, ID string, updatedDataset *models.Dataset, eTagSelector string, newETag string) error
+	UpdateDatasetV2Func func(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (string, error)
 
 	// UpdateDatasetWithAssociationFunc mocks the UpdateDatasetWithAssociation method.
 	UpdateDatasetWithAssociationFunc func(ctx context.Context, ID string, state string, version *models.Version) error
@@ -583,14 +583,12 @@ type StorerMock struct {
 		UpdateDatasetV2 []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// ID is the ID argument value.
-			ID string
+			// CurrentDataset is the currentDataset argument value.
+			CurrentDataset *models.DatasetUpdate
 			// UpdatedDataset is the updatedDataset argument value.
 			UpdatedDataset *models.Dataset
 			// ETagSelector is the eTagSelector argument value.
 			ETagSelector string
-			// NewETag is the newETag argument value.
-			NewETag string
 		}
 		// UpdateDatasetWithAssociation holds details about calls to the UpdateDatasetWithAssociation method.
 		UpdateDatasetWithAssociation []struct {
@@ -1990,27 +1988,25 @@ func (mock *StorerMock) UpdateDatasetCalls() []struct {
 }
 
 // UpdateDatasetV2 calls UpdateDatasetV2Func.
-func (mock *StorerMock) UpdateDatasetV2(ctx context.Context, ID string, updatedDataset *models.Dataset, eTagSelector string, newETag string) error {
+func (mock *StorerMock) UpdateDatasetV2(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (string, error) {
 	if mock.UpdateDatasetV2Func == nil {
 		panic("StorerMock.UpdateDatasetV2Func: method is nil but Storer.UpdateDatasetV2 was just called")
 	}
 	callInfo := struct {
 		Ctx            context.Context
-		ID             string
+		CurrentDataset *models.DatasetUpdate
 		UpdatedDataset *models.Dataset
 		ETagSelector   string
-		NewETag        string
 	}{
 		Ctx:            ctx,
-		ID:             ID,
+		CurrentDataset: currentDataset,
 		UpdatedDataset: updatedDataset,
 		ETagSelector:   eTagSelector,
-		NewETag:        newETag,
 	}
 	mock.lockUpdateDatasetV2.Lock()
 	mock.calls.UpdateDatasetV2 = append(mock.calls.UpdateDatasetV2, callInfo)
 	mock.lockUpdateDatasetV2.Unlock()
-	return mock.UpdateDatasetV2Func(ctx, ID, updatedDataset, eTagSelector, newETag)
+	return mock.UpdateDatasetV2Func(ctx, currentDataset, updatedDataset, eTagSelector)
 }
 
 // UpdateDatasetV2Calls gets all the calls that were made to UpdateDatasetV2.
@@ -2019,17 +2015,15 @@ func (mock *StorerMock) UpdateDatasetV2(ctx context.Context, ID string, updatedD
 //	len(mockedStorer.UpdateDatasetV2Calls())
 func (mock *StorerMock) UpdateDatasetV2Calls() []struct {
 	Ctx            context.Context
-	ID             string
+	CurrentDataset *models.DatasetUpdate
 	UpdatedDataset *models.Dataset
 	ETagSelector   string
-	NewETag        string
 } {
 	var calls []struct {
 		Ctx            context.Context
-		ID             string
+		CurrentDataset *models.DatasetUpdate
 		UpdatedDataset *models.Dataset
 		ETagSelector   string
-		NewETag        string
 	}
 	mock.lockUpdateDatasetV2.RLock()
 	calls = mock.calls.UpdateDatasetV2

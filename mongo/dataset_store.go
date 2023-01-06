@@ -287,10 +287,17 @@ func (m *Mongo) UpdateDataset(ctx context.Context, id string, dataset *models.Da
 }
 
 // UpdateDatasetV2 it is used by the v2 PutDataset endpoint and updates the complete existing dataset document
-func (m *Mongo) UpdateDatasetV2(ctx context.Context, id string, updatedDataset *models.Dataset, eTagSelector, newETag string) (err error) {
+func (m *Mongo) UpdateDatasetV2(ctx context.Context,currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (newETag string,err error) {
+	// generate a new unique ETag for the dataset
+	newETag, err = newETagForDatasetUpdate(currentDataset, updatedDataset)
+	if err != nil {
+		log.Error(ctx, "generate a new unique ETag - error marshalling the updatedDataset", err)
+		return "", err
+	}
+	
 	updatedDataset.LastUpdated = time.Now()
 
-	sel := datasetSelector(id, bsonprim.Timestamp{}, eTagSelector)
+	sel := datasetSelector(currentDataset.Next.ID, bsonprim.Timestamp{}, eTagSelector)
 
 	update := bson.M{
 		"$set": bson.M{
@@ -303,12 +310,12 @@ func (m *Mongo) UpdateDatasetV2(ctx context.Context, id string, updatedDataset *
 
 	if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().Update(ctx, sel, update); err != nil {
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
-			return errs.ErrDatasetNotFound
+			return "",errs.ErrDatasetNotFound
 		}
-		return err
+		return "",err
 	}
 
-	return nil
+	return newETag, nil
 }
 
 func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Dataset, currentState string) bson.M {
