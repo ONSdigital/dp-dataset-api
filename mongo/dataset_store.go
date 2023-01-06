@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -46,7 +45,7 @@ func (m *Mongo) GetDatasetsByBasedOn(ctx context.Context, id string, offset, lim
 		return nil, 0, fmt.Errorf("failed to insert to collection: %w", err)
 	}
 	if len(values) == 0 {
-		return nil, 0, apierrors.ErrDatasetNotFound
+		return nil, 0, errs.ErrDatasetNotFound
 	}
 
 	return values, totalCount, nil

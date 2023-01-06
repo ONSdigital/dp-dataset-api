@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
@@ -22,7 +21,7 @@ var MaxIDs = func() int {
 	return maxIDs
 }
 
-//getDimensions returns a list of dimensions, the total count of dimensions that match the query parameters and an error
+// getDimensions returns a list of dimensions, the total count of dimensions that match the query parameters and an error
 func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -137,7 +136,7 @@ func convertBSONToDimensionOption(data interface{}) (*models.DimensionOption, er
 	return &dim, nil
 }
 
-//getDimensionOptions returns a list of options, the total count of options that match the query parameters and an error
+// getDimensionOptions returns a list of options, the total count of options that match the query parameters and an error
 func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -221,7 +220,7 @@ func handleDimensionsErr(ctx context.Context, w http.ResponseWriter, msg string,
 
 	// Switch by error type
 	switch err.(type) {
-	case apierrors.ErrInvalidPatch:
+	case errs.ErrInvalidPatch:
 		data["response_status"] = http.StatusBadRequest
 		data["user_error"] = err.Error()
 		log.Error(ctx, fmt.Sprintf("request unsuccessful: %s", msg), err, data)
