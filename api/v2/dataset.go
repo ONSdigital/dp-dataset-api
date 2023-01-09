@@ -107,7 +107,7 @@ func (api *DatasetAPI) validateRequest(ctx context.Context, currentDataset *mode
 		logData["current_state"] = currentDataset.Next.State
 		logData["incoming_state"] = updatedDataset.State
 		logData["incoming_collectionID"] = updatedDataset.CollectionID
-		log.Error(ctx, "the new dataset state is still created, therefore, it shouldn't be a collection ID in the body request", errs.ErrUnexpectedState, logData)
+		log.Error(ctx, "the new dataset state is still created, therefore, it shouldn't be a collection ID in the request body", errs.ErrUnexpectedState, logData)
 		return errs.ErrUnexpectedState
 	}
 
