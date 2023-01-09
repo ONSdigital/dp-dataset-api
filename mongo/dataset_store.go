@@ -303,9 +303,8 @@ func (m *Mongo) UpdateDatasetV2(ctx context.Context,currentDataset *models.Datas
 		"$set": bson.M{
 			"next":  updatedDataset,
 			"e_tag": newETag,
+			"last_updated": time.Now(),
 		},
-		"$setOnInsert": bson.M{
-			"last_updated": time.Now()},
 	}
 
 	if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().Update(ctx, sel, update); err != nil {
