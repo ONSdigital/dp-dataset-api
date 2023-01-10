@@ -291,7 +291,7 @@ func (m *Mongo) UpdateDatasetV2(ctx context.Context,currentDataset *models.Datas
 	// generate a new unique ETag for the dataset
 	newETag, err = newETagForDatasetUpdate(currentDataset, updatedDataset)
 	if err != nil {
-		log.Error(ctx, "generate a new unique ETag - error marshalling the updatedDataset", err)
+		log.Error(ctx, "error generating a new unique ETag for dataset", err)
 		return "", err
 	}
 	
