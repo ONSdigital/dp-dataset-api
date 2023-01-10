@@ -2,7 +2,6 @@ package v2
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/ONSdigital/dp-dataset-api/api/common"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -21,18 +20,18 @@ func (api *DatasetAPI) PutDataset(w http.ResponseWriter, r *http.Request) {
 	eTag := common.GetIfMatch(r)
 	logData := log.Data{"dataset_id": datasetID}
 
-	b, newETag, err := func() ([]byte, string, error) {
+	newETag, err := func() (string, error) {
 
 		updatedDataset, err := models.CreateDataset(r.Body)
 		if err != nil {
 			log.Error(ctx, "PutDataset endpoint: failed to model dataset resource based on request", err, logData)
-			return nil, "", errs.ErrAddUpdateDatasetBadRequest
+			return "", errs.ErrAddUpdateDatasetBadRequest
 		}
 
 		currentDataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			log.Error(ctx, "PutDataset endpoint: datastore.getDataset returned an error", err, logData)
-			return nil, "", err
+			return "", err
 		}
 
 		updatedDataset.Type = currentDataset.Next.Type
@@ -40,40 +39,36 @@ func (api *DatasetAPI) PutDataset(w http.ResponseWriter, r *http.Request) {
 		err = api.validateRequest(ctx, currentDataset, updatedDataset, logData, eTag)
 		if err != nil {
 			log.Error(ctx, "PutDataset endpoint: failed to pass the request validation check", err, logData)
-			return nil, "", err
+			return "", err
 		}
 
 		_, err = models.ValidateNomisURL(ctx, updatedDataset.Type, updatedDataset.NomisReferenceURL)
 		if err != nil {
 			log.Error(ctx, "PutDataset endpoint: error dataset.Type mismatch", err, logData)
-			return nil, "", err
+			return "", err
 		}
 
 		models.CleanDataset(updatedDataset)
 
 		if err = models.ValidateDataset(updatedDataset); err != nil {
 			log.Error(ctx, "PutDataset endpoint: failed validation check to update dataset", err, logData)
-			return nil, "", err
+			return "", err
 		}
 
 		if updatedDataset.State == models.PublishedState {
 			if err := common.PublishDataset(ctx, api.dataStore, currentDataset, nil); err != nil {
 				log.Error(ctx, "PutDataset endpoint: failed to update dataset document to published", err, logData)
-				return nil, "", err
+				return "", err
 			}
+		} else {
+			newETag, err := api.dataStore.Backend.UpdateDatasetV2(ctx, currentDataset, updatedDataset, eTag)
+			if err != nil {
+				log.Error(ctx, "PutDataset endpoint: failed to update dataset resource", err, logData)
+				return "", err
+			}
+			return newETag, nil
 		}
-		newETag, err := api.dataStore.Backend.UpdateDatasetV2(ctx, currentDataset, updatedDataset, eTag)
-		if err != nil {
-			log.Error(ctx, "PutDataset endpoint: failed to update dataset resource", err, logData)
-			return nil, "", err
-		}
-
-		b, err := json.Marshal(updatedDataset)
-		if err != nil {
-			log.Error(ctx, "PutDataset endpoint: failed to marshal the updated dataset model into bytes", err, logData)
-			return nil, "", err
-		}
-		return b, newETag, nil
+		return "", nil
 	}()
 
 	if err != nil {
@@ -82,8 +77,9 @@ func (api *DatasetAPI) PutDataset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	common.SetJSONContentType(w)
-	common.SetETag(w, newETag)
-	common.WriteBody(ctx, w, b, logData)
+	if newETag != "" {
+		common.SetETag(w, newETag)
+	}
 	w.WriteHeader(http.StatusOK)
 	log.Info(ctx, "PutDataset endpoint: request successful", logData)
 }
