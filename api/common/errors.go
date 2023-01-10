@@ -2,7 +2,6 @@ package common
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -69,7 +68,7 @@ func HandleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	case resourcesNotFound[err]:
 		status = http.StatusNotFound
 	default:
-		err = fmt.Errorf("%s: %w", errs.ErrInternalServer.Error(), err)
+		err = errs.ErrInternalServer
 		status = http.StatusInternalServerError
 	}
 
