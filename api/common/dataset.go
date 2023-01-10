@@ -67,15 +67,3 @@ func PublishDataset(ctx context.Context, dataStore store.DataStore, currentDatas
 
 	return nil
 }
-
-func MapResults(results []*models.DatasetUpdate) []*models.Dataset {
-	items := []*models.Dataset{}
-	for _, item := range results {
-		if item.Current == nil {
-			continue
-		}
-		item.Current.ID = item.ID
-		items = append(items, item.Current)
-	}
-	return items
-}

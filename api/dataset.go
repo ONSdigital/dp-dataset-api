@@ -56,7 +56,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		return datasets, totalCount, nil
 	}
 
-	return common.MapResults(datasets), totalCount, nil
+	return mapResults(datasets), totalCount, nil
 }
 
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
@@ -339,4 +339,16 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 	log.Info(ctx, "delete dataset", logData)
+}
+
+func mapResults(results []*models.DatasetUpdate) []*models.Dataset {
+	items := []*models.Dataset{}
+	for _, item := range results {
+		if item.Current == nil {
+			continue
+		}
+		item.Current.ID = item.ID
+		items = append(items, item.Current)
+	}
+	return items
 }
