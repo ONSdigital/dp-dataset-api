@@ -39,8 +39,8 @@ type dataMongoDB interface {
 	GetVersion(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error)
 	GetUniqueDimensionAndOptions(ctx context.Context, ID, dimension string) ([]*string, int, error)
 	GetVersions(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error)
-	UpdateDataset(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
-	UpdateDatasetV2(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (newETag string, err error)
+	UpdateDatasetFieldsIfNotEmpty(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
+	UpdateDataset(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (newETag string, err error)
 	UpdateDatasetWithAssociation(ctx context.Context, ID, state string, version *models.Version) error
 	UpdateDimensionsNodeIDAndOrder(ctx context.Context, updates []*models.DimensionOption) error
 	UpdateInstance(ctx context.Context, currentInstance, updatedInstance *models.Instance, eTagSelector string) (newETag string, err error)

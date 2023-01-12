@@ -106,11 +106,11 @@ var _ store.MongoDB = &MongoDBMock{}
 //			UpdateBuildSearchTaskStateFunc: func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
 //				panic("mock out the UpdateBuildSearchTaskState method")
 //			},
-//			UpdateDatasetFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
+//			UpdateDatasetFunc: func(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (string, error) {
 //				panic("mock out the UpdateDataset method")
 //			},
-//			UpdateDatasetV2Func: func(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (string, error) {
-//				panic("mock out the UpdateDatasetV2 method")
+//			UpdateDatasetFieldsIfNotEmptyFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
+//				panic("mock out the UpdateDatasetFieldsIfNotEmpty method")
 //			},
 //			UpdateDatasetWithAssociationFunc: func(ctx context.Context, ID string, state string, version *models.Version) error {
 //				panic("mock out the UpdateDatasetWithAssociation method")
@@ -240,10 +240,10 @@ type MongoDBMock struct {
 	UpdateBuildSearchTaskStateFunc func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error)
 
 	// UpdateDatasetFunc mocks the UpdateDataset method.
-	UpdateDatasetFunc func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
+	UpdateDatasetFunc func(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (string, error)
 
-	// UpdateDatasetV2Func mocks the UpdateDatasetV2 method.
-	UpdateDatasetV2Func func(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (string, error)
+	// UpdateDatasetFieldsIfNotEmptyFunc mocks the UpdateDatasetFieldsIfNotEmpty method.
+	UpdateDatasetFieldsIfNotEmptyFunc func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
 
 	// UpdateDatasetWithAssociationFunc mocks the UpdateDatasetWithAssociation method.
 	UpdateDatasetWithAssociationFunc func(ctx context.Context, ID string, state string, version *models.Version) error
@@ -565,23 +565,23 @@ type MongoDBMock struct {
 		UpdateDataset []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// ID is the ID argument value.
-			ID string
-			// Dataset is the dataset argument value.
-			Dataset *models.Dataset
-			// CurrentState is the currentState argument value.
-			CurrentState string
-		}
-		// UpdateDatasetV2 holds details about calls to the UpdateDatasetV2 method.
-		UpdateDatasetV2 []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
 			// CurrentDataset is the currentDataset argument value.
 			CurrentDataset *models.DatasetUpdate
 			// UpdatedDataset is the updatedDataset argument value.
 			UpdatedDataset *models.Dataset
 			// ETagSelector is the eTagSelector argument value.
 			ETagSelector string
+		}
+		// UpdateDatasetFieldsIfNotEmpty holds details about calls to the UpdateDatasetFieldsIfNotEmpty method.
+		UpdateDatasetFieldsIfNotEmpty []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the ID argument value.
+			ID string
+			// Dataset is the dataset argument value.
+			Dataset *models.Dataset
+			// CurrentState is the currentState argument value.
+			CurrentState string
 		}
 		// UpdateDatasetWithAssociation holds details about calls to the UpdateDatasetWithAssociation method.
 		UpdateDatasetWithAssociation []struct {
@@ -733,7 +733,7 @@ type MongoDBMock struct {
 	lockUpdateBuildHierarchyTaskState       sync.RWMutex
 	lockUpdateBuildSearchTaskState          sync.RWMutex
 	lockUpdateDataset                       sync.RWMutex
-	lockUpdateDatasetV2                     sync.RWMutex
+	lockUpdateDatasetFieldsIfNotEmpty       sync.RWMutex
 	lockUpdateDatasetWithAssociation        sync.RWMutex
 	lockUpdateDimensionsNodeIDAndOrder      sync.RWMutex
 	lockUpdateETagForOptions                sync.RWMutex
@@ -1921,53 +1921,9 @@ func (mock *MongoDBMock) UpdateBuildSearchTaskStateCalls() []struct {
 }
 
 // UpdateDataset calls UpdateDatasetFunc.
-func (mock *MongoDBMock) UpdateDataset(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
+func (mock *MongoDBMock) UpdateDataset(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (string, error) {
 	if mock.UpdateDatasetFunc == nil {
 		panic("MongoDBMock.UpdateDatasetFunc: method is nil but MongoDB.UpdateDataset was just called")
-	}
-	callInfo := struct {
-		Ctx          context.Context
-		ID           string
-		Dataset      *models.Dataset
-		CurrentState string
-	}{
-		Ctx:          ctx,
-		ID:           ID,
-		Dataset:      dataset,
-		CurrentState: currentState,
-	}
-	mock.lockUpdateDataset.Lock()
-	mock.calls.UpdateDataset = append(mock.calls.UpdateDataset, callInfo)
-	mock.lockUpdateDataset.Unlock()
-	return mock.UpdateDatasetFunc(ctx, ID, dataset, currentState)
-}
-
-// UpdateDatasetCalls gets all the calls that were made to UpdateDataset.
-// Check the length with:
-//
-//	len(mockedMongoDB.UpdateDatasetCalls())
-func (mock *MongoDBMock) UpdateDatasetCalls() []struct {
-	Ctx          context.Context
-	ID           string
-	Dataset      *models.Dataset
-	CurrentState string
-} {
-	var calls []struct {
-		Ctx          context.Context
-		ID           string
-		Dataset      *models.Dataset
-		CurrentState string
-	}
-	mock.lockUpdateDataset.RLock()
-	calls = mock.calls.UpdateDataset
-	mock.lockUpdateDataset.RUnlock()
-	return calls
-}
-
-// UpdateDatasetV2 calls UpdateDatasetV2Func.
-func (mock *MongoDBMock) UpdateDatasetV2(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (string, error) {
-	if mock.UpdateDatasetV2Func == nil {
-		panic("MongoDBMock.UpdateDatasetV2Func: method is nil but MongoDB.UpdateDatasetV2 was just called")
 	}
 	callInfo := struct {
 		Ctx            context.Context
@@ -1980,17 +1936,17 @@ func (mock *MongoDBMock) UpdateDatasetV2(ctx context.Context, currentDataset *mo
 		UpdatedDataset: updatedDataset,
 		ETagSelector:   eTagSelector,
 	}
-	mock.lockUpdateDatasetV2.Lock()
-	mock.calls.UpdateDatasetV2 = append(mock.calls.UpdateDatasetV2, callInfo)
-	mock.lockUpdateDatasetV2.Unlock()
-	return mock.UpdateDatasetV2Func(ctx, currentDataset, updatedDataset, eTagSelector)
+	mock.lockUpdateDataset.Lock()
+	mock.calls.UpdateDataset = append(mock.calls.UpdateDataset, callInfo)
+	mock.lockUpdateDataset.Unlock()
+	return mock.UpdateDatasetFunc(ctx, currentDataset, updatedDataset, eTagSelector)
 }
 
-// UpdateDatasetV2Calls gets all the calls that were made to UpdateDatasetV2.
+// UpdateDatasetCalls gets all the calls that were made to UpdateDataset.
 // Check the length with:
 //
-//	len(mockedMongoDB.UpdateDatasetV2Calls())
-func (mock *MongoDBMock) UpdateDatasetV2Calls() []struct {
+//	len(mockedMongoDB.UpdateDatasetCalls())
+func (mock *MongoDBMock) UpdateDatasetCalls() []struct {
 	Ctx            context.Context
 	CurrentDataset *models.DatasetUpdate
 	UpdatedDataset *models.Dataset
@@ -2002,9 +1958,53 @@ func (mock *MongoDBMock) UpdateDatasetV2Calls() []struct {
 		UpdatedDataset *models.Dataset
 		ETagSelector   string
 	}
-	mock.lockUpdateDatasetV2.RLock()
-	calls = mock.calls.UpdateDatasetV2
-	mock.lockUpdateDatasetV2.RUnlock()
+	mock.lockUpdateDataset.RLock()
+	calls = mock.calls.UpdateDataset
+	mock.lockUpdateDataset.RUnlock()
+	return calls
+}
+
+// UpdateDatasetFieldsIfNotEmpty calls UpdateDatasetFieldsIfNotEmptyFunc.
+func (mock *MongoDBMock) UpdateDatasetFieldsIfNotEmpty(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
+	if mock.UpdateDatasetFieldsIfNotEmptyFunc == nil {
+		panic("MongoDBMock.UpdateDatasetFieldsIfNotEmptyFunc: method is nil but MongoDB.UpdateDatasetFieldsIfNotEmpty was just called")
+	}
+	callInfo := struct {
+		Ctx          context.Context
+		ID           string
+		Dataset      *models.Dataset
+		CurrentState string
+	}{
+		Ctx:          ctx,
+		ID:           ID,
+		Dataset:      dataset,
+		CurrentState: currentState,
+	}
+	mock.lockUpdateDatasetFieldsIfNotEmpty.Lock()
+	mock.calls.UpdateDatasetFieldsIfNotEmpty = append(mock.calls.UpdateDatasetFieldsIfNotEmpty, callInfo)
+	mock.lockUpdateDatasetFieldsIfNotEmpty.Unlock()
+	return mock.UpdateDatasetFieldsIfNotEmptyFunc(ctx, ID, dataset, currentState)
+}
+
+// UpdateDatasetFieldsIfNotEmptyCalls gets all the calls that were made to UpdateDatasetFieldsIfNotEmpty.
+// Check the length with:
+//
+//	len(mockedMongoDB.UpdateDatasetFieldsIfNotEmptyCalls())
+func (mock *MongoDBMock) UpdateDatasetFieldsIfNotEmptyCalls() []struct {
+	Ctx          context.Context
+	ID           string
+	Dataset      *models.Dataset
+	CurrentState string
+} {
+	var calls []struct {
+		Ctx          context.Context
+		ID           string
+		Dataset      *models.Dataset
+		CurrentState string
+	}
+	mock.lockUpdateDatasetFieldsIfNotEmpty.RLock()
+	calls = mock.calls.UpdateDatasetFieldsIfNotEmpty
+	mock.lockUpdateDatasetFieldsIfNotEmpty.RUnlock()
 	return calls
 }
 

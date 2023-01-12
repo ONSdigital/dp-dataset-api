@@ -264,7 +264,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 				return err
 			}
 		} else {
-			if err := api.dataStore.Backend.UpdateDataset(ctx, datasetID, dataset, currentDataset.Next.State); err != nil {
+			if err := api.dataStore.Backend.UpdateDatasetFieldsIfNotEmpty(ctx, datasetID, dataset, currentDataset.Next.State); err != nil {
 				log.Error(ctx, "putDataset endpoint: failed to update dataset resource", err, data)
 				return err
 			}

@@ -271,8 +271,9 @@ func buildVersionQuery(id, editionID, state string, versionID int) bson.M {
 	return selector
 }
 
-// UpdateDataset updates an existing dataset document
-func (m *Mongo) UpdateDataset(ctx context.Context, id string, dataset *models.Dataset, currentState string) (err error) {
+// Deprecated - please use instead UpdateDataset method
+// UpdateDatasetFieldsIfNotEmpty updates only the dataset fields which are not empty
+func (m *Mongo) UpdateDatasetFieldsIfNotEmpty(ctx context.Context, id string, dataset *models.Dataset, currentState string) (err error) {
 
 	updates := createDatasetUpdateQuery(ctx, id, dataset, currentState)
 	update := bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}}
@@ -286,8 +287,8 @@ func (m *Mongo) UpdateDataset(ctx context.Context, id string, dataset *models.Da
 	return nil
 }
 
-// UpdateDatasetV2 it is used by the v2 PutDataset endpoint and updates the complete existing dataset document
-func (m *Mongo) UpdateDatasetV2(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (newETag string, err error) {
+// UpdateDataset  replaces the whole next object
+func (m *Mongo) UpdateDataset(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (newETag string, err error) {
 	// generate a new unique ETag for the dataset
 	newETag, err = newETagForDatasetUpdate(currentDataset, updatedDataset)
 	if err != nil {
@@ -297,7 +298,7 @@ func (m *Mongo) UpdateDatasetV2(ctx context.Context, currentDataset *models.Data
 
 	updatedDataset.LastUpdated = time.Now()
 
-	sel := datasetSelector(currentDataset.Next.ID, bsonprim.Timestamp{}, eTagSelector)
+	sel := datasetSelector(currentDataset.ID, bsonprim.Timestamp{}, eTagSelector)
 
 	update := bson.M{
 		"$set": bson.M{

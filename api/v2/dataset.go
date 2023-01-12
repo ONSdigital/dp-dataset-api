@@ -61,7 +61,7 @@ func (api *DatasetAPI) PutDataset(w http.ResponseWriter, r *http.Request) {
 				return "", err
 			}
 		} else {
-			newETag, err := api.dataStore.Backend.UpdateDatasetV2(ctx, currentDataset, updatedDataset, eTag)
+			newETag, err := api.dataStore.Backend.UpdateDataset(ctx, currentDataset, updatedDataset, eTag)
 			if err != nil {
 				log.Error(ctx, "PutDataset endpoint: failed to update dataset resource", err, logData)
 				return "", err

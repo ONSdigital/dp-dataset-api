@@ -783,7 +783,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{Type: "nomis"}}, nil
 			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+			UpdateDatasetFieldsIfNotEmptyFunc: func(context.Context, string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -798,7 +798,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetFieldsIfNotEmptyCalls()), ShouldEqual, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -819,7 +819,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{Type: "nomis"}}, nil
 			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+			UpdateDatasetFieldsIfNotEmptyFunc: func(context.Context, string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -831,7 +831,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateDatasetFieldsIfNotEmptyCalls(), ShouldHaveLength, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -850,7 +850,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{Type: "nomis"}}, nil
 			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+			UpdateDatasetFieldsIfNotEmptyFunc: func(context.Context, string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -863,7 +863,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateDatasetFieldsIfNotEmptyCalls(), ShouldHaveLength, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -882,7 +882,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{Type: "nomis"}}, nil
 			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+			UpdateDatasetFieldsIfNotEmptyFunc: func(context.Context, string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -895,7 +895,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateDatasetFieldsIfNotEmptyCalls(), ShouldHaveLength, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -914,7 +914,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{Type: "nomis"}}, nil
 			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+			UpdateDatasetFieldsIfNotEmptyFunc: func(context.Context, string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -927,7 +927,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateDatasetFieldsIfNotEmptyCalls(), ShouldHaveLength, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -946,7 +946,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{Type: "nomis"}}, nil
 			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+			UpdateDatasetFieldsIfNotEmptyFunc: func(context.Context, string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -959,7 +959,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateDatasetFieldsIfNotEmptyCalls(), ShouldHaveLength, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -978,7 +978,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{Type: "nomis"}}, nil
 			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+			UpdateDatasetFieldsIfNotEmptyFunc: func(context.Context, string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -991,7 +991,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateDatasetFieldsIfNotEmptyCalls(), ShouldHaveLength, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -1016,7 +1016,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
 			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+			UpdateDatasetFieldsIfNotEmptyFunc: func(context.Context, string, *models.Dataset, string) error {
 				return errs.ErrAddUpdateDatasetBadRequest
 			},
 		}
@@ -1047,7 +1047,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+			UpdateDatasetFieldsIfNotEmptyFunc: func(context.Context, string, *models.Dataset, string) error {
 				return errs.ErrInternalServer
 			},
 		}
@@ -1062,7 +1062,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetFieldsIfNotEmptyCalls()), ShouldEqual, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -1080,7 +1080,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+			UpdateDatasetFieldsIfNotEmptyFunc: func(context.Context, string, *models.Dataset, string) error {
 				return errs.ErrDatasetNotFound
 			},
 		}
@@ -1096,7 +1096,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateDatasetFieldsIfNotEmptyCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -1115,7 +1115,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{Type: "filterable"}}, nil
 			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+			UpdateDatasetFieldsIfNotEmptyFunc: func(context.Context, string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -1129,7 +1129,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, errs.ErrTypeMismatch.Error()+"\n")
 		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
+		So(mockedDataStore.UpdateDatasetFieldsIfNotEmptyCalls(), ShouldHaveLength, 0)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -1148,7 +1148,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{Type: "nomis"}}, nil
 			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+			UpdateDatasetFieldsIfNotEmptyFunc: func(context.Context, string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -1162,7 +1162,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "invalid fields: [QMI]\n")
 		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
+		So(mockedDataStore.UpdateDatasetFieldsIfNotEmptyCalls(), ShouldHaveLength, 0)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -1181,7 +1181,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{Type: "nomis"}}, nil
 			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+			UpdateDatasetFieldsIfNotEmptyFunc: func(context.Context, string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -1195,7 +1195,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "invalid fields: [QMI]\n")
 		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
+		So(mockedDataStore.UpdateDatasetFieldsIfNotEmptyCalls(), ShouldHaveLength, 0)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -1214,7 +1214,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{Type: "nomis"}}, nil
 			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+			UpdateDatasetFieldsIfNotEmptyFunc: func(context.Context, string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -1228,7 +1228,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldResemble, "invalid fields: [QMI]\n")
 		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
+		So(mockedDataStore.UpdateDatasetFieldsIfNotEmptyCalls(), ShouldHaveLength, 0)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -1246,7 +1246,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
 			},
-			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+			UpdateDatasetFieldsIfNotEmptyFunc: func(context.Context, string, *models.Dataset, string) error {
 				return nil
 			},
 		}
@@ -1262,7 +1262,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldResemble, "unauthenticated request\n")
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateDatasetFieldsIfNotEmptyCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
 			_, err = r.Body.Read(make([]byte, 1))
@@ -1428,7 +1428,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateDatasetFieldsIfNotEmptyCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the dataset document cannot be queried return status 500 ", t, func() {
@@ -1458,7 +1458,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateDatasetFieldsIfNotEmptyCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the request is not authorised to delete the dataset return status not found", t, func() {
