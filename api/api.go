@@ -28,14 +28,25 @@ const (
 	hasDownloads         = "has_downloads"
 )
 
+var (
+	createPermission = auth.Permissions{Create: true}
+	readPermission   = auth.Permissions{Read: true}
+	updatePermission = auth.Permissions{Update: true}
+	deletePermission = auth.Permissions{Delete: true}
+)
+
 // API provides an interface for the routes
 type API interface {
 	CreateDatasetAPI(string, *mux.Router, store.DataStore) *DatasetAPI
 }
 
+// AuthHandler provides authorisation checks on requests
+type AuthHandler interface {
+	Require(required auth.Permissions, handler http.HandlerFunc) http.HandlerFunc
+}
+
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
-	v2                       *v2.DatasetAPI
 	Router                   *mux.Router
 	dataStore                store.DataStore
 	urlBuilder               *url.Builder
@@ -45,15 +56,15 @@ type DatasetAPI struct {
 	downloadGenerators       map[models.DatasetType]common.DownloadsGenerator
 	enablePrivateEndpoints   bool
 	enableDetachDataset      bool
-	datasetPermissions       common.AuthHandler
-	permissions              common.AuthHandler
+	datasetPermissions       AuthHandler
+	permissions              AuthHandler
 	instancePublishedChecker *instance.PublishCheck
 	versionPublishedChecker  *PublishCheck
 	MaxRequestOptions        int
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
-func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]common.DownloadsGenerator, datasetPermissions common.AuthHandler, permissions common.AuthHandler) *DatasetAPI {
+func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]common.DownloadsGenerator, datasetPermissions AuthHandler, permissions AuthHandler) *DatasetAPI {
 
 	api := &DatasetAPI{
 		dataStore:                dataStore,
@@ -70,7 +81,6 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		versionPublishedChecker:  nil,
 		instancePublishedChecker: nil,
 		MaxRequestOptions:        cfg.MaxRequestOptions,
-		v2:                       v2.NewDatasetAPI(dataStore, downloadGenerators, datasetPermissions, permissions),
 	}
 
 	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)
@@ -126,88 +136,89 @@ func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
 func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Paginator) {
 	api.get(
 		"/datasets",
-		api.isAuthorised(common.ReadPermission, paginator.Paginate(api.getDatasets)),
+		api.isAuthorised(readPermission, paginator.Paginate(api.getDatasets)),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}",
-		api.isAuthorisedForDatasets(common.ReadPermission,
+		api.isAuthorisedForDatasets(readPermission,
 			api.getDataset),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions",
-		api.isAuthorisedForDatasets(common.ReadPermission, paginator.Paginate(api.getEditions)),
+		api.isAuthorisedForDatasets(readPermission, paginator.Paginate(api.getEditions)),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}",
-		api.isAuthorisedForDatasets(common.ReadPermission,
+		api.isAuthorisedForDatasets(readPermission,
 			api.getEdition),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions",
-		api.isAuthorisedForDatasets(common.ReadPermission,
+		api.isAuthorisedForDatasets(readPermission,
 			paginator.Paginate(api.getVersions)),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
-		api.isAuthorisedForDatasets(common.ReadPermission,
+		api.isAuthorisedForDatasets(readPermission,
 			api.getVersion),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata",
-		api.isAuthorisedForDatasets(common.ReadPermission,
+		api.isAuthorisedForDatasets(readPermission,
 			api.getMetadata),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions",
-		api.isAuthorisedForDatasets(common.ReadPermission,
+		api.isAuthorisedForDatasets(readPermission,
 			paginator.Paginate(api.getDimensions)),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options",
-		api.isAuthorisedForDatasets(common.ReadPermission,
+		api.isAuthorisedForDatasets(readPermission,
 			paginator.Paginate(api.getDimensionOptions)),
 	)
 
 	api.post(
 		"/datasets/{dataset_id}",
 		api.isAuthenticated(
-			api.isAuthorisedForDatasets(common.CreatePermission,
+			api.isAuthorisedForDatasets(createPermission,
 				api.addDataset)),
 	)
 
 	api.put(
 		"/datasets/{dataset_id}",
 		api.isAuthenticated(
-			api.isAuthorisedForDatasets(common.UpdatePermission,
+			api.isAuthorisedForDatasets(updatePermission,
 				api.putDataset)),
 	)
 
+	v2 := v2.NewDatasetAPI(api.dataStore, api.downloadGenerators)
 	api.put(
 		"/v2/datasets/{dataset_id}",
 		api.isAuthenticated(
-			api.isAuthorisedForDatasets(common.UpdatePermission,
-				api.v2.PutDataset)),
+			api.isAuthorisedForDatasets(updatePermission,
+				v2.PutDataset)),
 	)
 
 	api.delete(
 		"/datasets/{dataset_id}",
 		api.isAuthenticated(
-			api.isAuthorisedForDatasets(common.DeletePermission,
+			api.isAuthorisedForDatasets(deletePermission,
 				api.deleteDataset)),
 	)
 
 	api.put(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
 		api.isAuthenticated(
-			api.isAuthorisedForDatasets(common.UpdatePermission,
+			api.isAuthorisedForDatasets(updatePermission,
 				api.isVersionPublished(updateVersionAction,
 					api.putVersion))),
 	)
@@ -216,7 +227,7 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 		api.delete(
 			"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
 			api.isAuthenticated(
-				api.isAuthorisedForDatasets(common.DeletePermission,
+				api.isAuthorisedForDatasets(deletePermission,
 					api.detachVersion)),
 		)
 	}
@@ -228,56 +239,56 @@ func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI *instance.Sto
 	api.get(
 		"/instances",
 		api.isAuthenticated(
-			api.isAuthorised(common.ReadPermission,
+			api.isAuthorised(readPermission,
 				paginator.Paginate(instanceAPI.GetList))),
 	)
 
 	api.post(
 		"/instances",
 		api.isAuthenticated(
-			api.isAuthorised(common.CreatePermission,
+			api.isAuthorised(createPermission,
 				instanceAPI.Add)),
 	)
 
 	api.get(
 		"/instances/{instance_id}",
 		api.isAuthenticated(
-			api.isAuthorised(common.ReadPermission,
+			api.isAuthorised(readPermission,
 				instanceAPI.Get)),
 	)
 
 	api.put(
 		"/instances/{instance_id}",
 		api.isAuthenticated(
-			api.isAuthorised(common.UpdatePermission,
+			api.isAuthorised(updatePermission,
 				api.isInstancePublished(instanceAPI.Update))),
 	)
 
 	api.put(
 		"/instances/{instance_id}/dimensions/{dimension}",
 		api.isAuthenticated(
-			api.isAuthorised(common.UpdatePermission,
+			api.isAuthorised(updatePermission,
 				api.isInstancePublished(instanceAPI.UpdateDimension))),
 	)
 
 	api.post(
 		"/instances/{instance_id}/events",
 		api.isAuthenticated(
-			api.isAuthorised(common.CreatePermission,
+			api.isAuthorised(createPermission,
 				instanceAPI.AddEvent)),
 	)
 
 	api.put(
 		"/instances/{instance_id}/inserted_observations/{inserted_observations}",
 		api.isAuthenticated(
-			api.isAuthorised(common.UpdatePermission,
+			api.isAuthorised(updatePermission,
 				api.isInstancePublished(instanceAPI.UpdateObservations))),
 	)
 
 	api.put(
 		"/instances/{instance_id}/import_tasks",
 		api.isAuthenticated(
-			api.isAuthorised(common.UpdatePermission,
+			api.isAuthorised(updatePermission,
 				api.isInstancePublished(instanceAPI.UpdateImportTask))),
 	)
 }
@@ -288,7 +299,7 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.
 	api.get(
 		"/instances/{instance_id}/dimensions",
 		api.isAuthenticated(
-			api.isAuthorised(common.ReadPermission,
+			api.isAuthorised(readPermission,
 				paginator.Paginate(dimensionAPI.GetDimensionsHandler))),
 	)
 
@@ -296,28 +307,28 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.
 	api.post(
 		"/instances/{instance_id}/dimensions",
 		api.isAuthenticated(
-			api.isAuthorised(common.CreatePermission,
+			api.isAuthorised(createPermission,
 				api.isInstancePublished(dimensionAPI.AddHandler))),
 	)
 
 	api.patch(
 		"/instances/{instance_id}/dimensions",
 		api.isAuthenticated(
-			api.isAuthorised(common.CreatePermission,
+			api.isAuthorised(createPermission,
 				api.isInstancePublished(dimensionAPI.PatchDimensionsHandler))),
 	)
 
 	api.get(
 		"/instances/{instance_id}/dimensions/{dimension}/options",
 		api.isAuthenticated(
-			api.isAuthorised(common.ReadPermission,
+			api.isAuthorised(readPermission,
 				paginator.Paginate(dimensionAPI.GetUniqueDimensionAndOptionsHandler))),
 	)
 
 	api.patch(
 		"/instances/{instance_id}/dimensions/{dimension}/options/{option}",
 		api.isAuthenticated(
-			api.isAuthorised(common.UpdatePermission,
+			api.isAuthorised(updatePermission,
 				api.isInstancePublished(dimensionAPI.PatchOptionHandler))),
 	)
 
@@ -325,7 +336,7 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.
 	api.put(
 		"/instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}",
 		api.isAuthenticated(
-			api.isAuthorised(common.UpdatePermission,
+			api.isAuthorised(updatePermission,
 				api.isInstancePublished(dimensionAPI.AddNodeIDHandler))),
 	)
 }

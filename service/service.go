@@ -197,7 +197,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	return nil
 }
 
-func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (common.AuthHandler, common.AuthHandler) {
+func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (api.AuthHandler, api.AuthHandler) {
 	if !cfg.EnablePermissionsAuth {
 		log.Info(ctx, "feature flag not enabled defaulting to nop auth impl", log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
 		return &auth.NopHandler{}, &auth.NopHandler{}

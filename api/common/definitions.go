@@ -5,33 +5,17 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
-const (
-	reqUser   = "req_user"
-	reqCaller = "req_caller"
-)
-
 var (
 	TrueStringified = strconv.FormatBool(true)
-
-	ReadPermission   = auth.Permissions{Read: true}
-	CreatePermission = auth.Permissions{Create: true}
-	UpdatePermission = auth.Permissions{Update: true}
-	DeletePermission = auth.Permissions{Delete: true}
 )
 
 // DownloadsGenerator pre generates full file downloads for the specified dataset/edition/version
 type DownloadsGenerator interface {
 	Generate(ctx context.Context, datasetID, instanceID, edition, version string) error
-}
-
-// AuthHandler provides authorisation checks on requests
-type AuthHandler interface {
-	Require(required auth.Permissions, handler http.HandlerFunc) http.HandlerFunc
 }
 
 func SetJSONContentType(w http.ResponseWriter) {

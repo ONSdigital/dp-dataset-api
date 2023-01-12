@@ -9,15 +9,11 @@ import (
 type DatasetAPI struct {
 	dataStore          store.DataStore
 	downloadGenerators map[models.DatasetType]common.DownloadsGenerator
-	datasetPermissions common.AuthHandler
-	permissions        common.AuthHandler
 }
 
-func NewDatasetAPI(dataStore store.DataStore, downloadGenerators map[models.DatasetType]common.DownloadsGenerator, datasetPermissions common.AuthHandler, permissions common.AuthHandler) *DatasetAPI {
+func NewDatasetAPI(dataStore store.DataStore, downloadGenerators map[models.DatasetType]common.DownloadsGenerator) *DatasetAPI {
 	return &DatasetAPI{
 		dataStore:          dataStore,
 		downloadGenerators: downloadGenerators,
-		datasetPermissions: datasetPermissions,
-		permissions:        permissions,
 	}
 }

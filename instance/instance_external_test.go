@@ -751,7 +751,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 
 var urlBuilder = url.NewBuilder("localhost:20000")
 
-func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads common.DownloadsGenerator, datasetPermissions common.AuthHandler, permissions common.AuthHandler) *api.DatasetAPI {
+func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads common.DownloadsGenerator, datasetPermissions api.AuthHandler, permissions api.AuthHandler) *api.DatasetAPI {
 	mockedMapDownloadGenerators := map[models.DatasetType]common.DownloadsGenerator{
 		models.Filterable: mockedGeneratedDownloads,
 	}
