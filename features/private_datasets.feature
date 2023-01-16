@@ -136,6 +136,39 @@ Feature: Private Dataset API
             }
         """
 
+    Scenario: Updating an existing dataset (v2)
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "TS002",
+                    "type": "init",
+                    "state": "created",
+                    "next_release": "tomorrow"
+                }
+            ]
+            """
+        When I PUT "/v2/datasets/TS002"
+            """
+            {
+                "id": "TS002",
+                "type": "change-not-allowed",
+                "state": "completed",
+                "survey": "census"
+            }
+            """
+        Then the HTTP status code should be "200"
+        And the document in the database for id "TS002" should be:
+        """
+            {
+                "id": "TS002",
+                "type": "init",
+                "state": "completed",
+                "survey": "census"
+            }
+        """
+        
+
     Scenario: GET /datasets
         Given I have these datasets:
             """
