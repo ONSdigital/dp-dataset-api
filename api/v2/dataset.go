@@ -99,21 +99,6 @@ func (api *DatasetAPI) validateRequest(ctx context.Context, currentDataset *mode
 		return err
 	}
 
-	if currentDataset.Next.State == models.CreatedState && updatedDataset.CollectionID != "" && updatedDataset.State == models.CreatedState {
-		logData["current_state"] = currentDataset.Next.State
-		logData["incoming_state"] = updatedDataset.State
-		logData["incoming_collectionID"] = updatedDataset.CollectionID
-		log.Error(ctx, "the new dataset state is still created, therefore, it shouldn't be a collection ID in the request body", errs.ErrUnexpectedState, logData)
-		return errs.ErrUnexpectedState
-	}
-
-	if currentDataset.Next.State == models.AssociatedState && updatedDataset.CollectionID != currentDataset.Next.CollectionID {
-		logData["current_collectionID"] = currentDataset.Next.CollectionID
-		logData["incoming_collectionID"] = updatedDataset.CollectionID
-		log.Error(ctx, "current dataset is associated to a collection and the incoming collection ID does not match the existing one", errs.ErrCollectionIDMismatch, logData)
-		return errs.ErrCollectionIDMismatch
-	}
-
 	if currentDataset.Next.State == models.PublishedState {
 		logData["current_state"] = currentDataset.Next.State
 		log.Error(ctx, "current dataset is published, therefore it can't be updated", errs.ErrResourcePublished, logData)
