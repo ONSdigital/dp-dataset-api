@@ -36,22 +36,11 @@ func (api *DatasetAPI) PutDataset(w http.ResponseWriter, r *http.Request) {
 
 		updatedDataset.Type = currentDataset.Next.Type
 
+		models.CleanDataset(updatedDataset)
+
 		err = api.validateRequest(ctx, currentDataset, updatedDataset, logData, eTag)
 		if err != nil {
 			log.Error(ctx, "PutDataset endpoint: failed to pass the request validation check", err, logData)
-			return "", err
-		}
-
-		_, err = models.ValidateNomisURL(ctx, updatedDataset.Type, updatedDataset.NomisReferenceURL)
-		if err != nil {
-			log.Error(ctx, "PutDataset endpoint: error dataset.Type mismatch", err, logData)
-			return "", err
-		}
-
-		models.CleanDataset(updatedDataset)
-
-		if err = models.ValidateDataset(updatedDataset); err != nil {
-			log.Error(ctx, "PutDataset endpoint: failed validation check to update dataset", err, logData)
 			return "", err
 		}
 
@@ -103,6 +92,16 @@ func (api *DatasetAPI) validateRequest(ctx context.Context, currentDataset *mode
 		logData["current_state"] = currentDataset.Next.State
 		log.Error(ctx, "current dataset is published, therefore it can't be updated", errs.ErrResourcePublished, logData)
 		return errs.ErrResourcePublished
+	}
+	
+	if _, err = models.ValidateNomisURL(ctx, updatedDataset.Type, updatedDataset.NomisReferenceURL); err != nil {
+		log.Error(ctx, "the incoming dataset contains a nomis URL but its type is not nomis", err, logData)
+		return err
+	}
+
+	if err = models.ValidateDataset(updatedDataset); err != nil {
+		log.Error(ctx, "failed field validation", err, logData)
+		return err
 	}
 
 	return nil

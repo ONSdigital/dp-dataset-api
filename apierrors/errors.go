@@ -18,8 +18,6 @@ var (
 	ErrAddDatasetAlreadyExists           = errors.New("forbidden - dataset already exists")
 	ErrDatasetTypeInvalid                = errors.New("invalid dataset type")
 	ErrTypeMismatch                      = errors.New("type mismatch")
-	ErrCollectionIDMismatch              = errors.New("collectionID mismatch")
-	ErrUnexpectedState                   = errors.New("when the state is created or edition-confirmed, there can't be a collectionID")
 	ErrAddUpdateDatasetBadRequest        = errors.New("failed to parse json body")
 	ErrConflictUpdatingInstance          = errors.New("conflict updating instance resource")
 	ErrDatasetNotFound                   = errors.New("dataset not found")
@@ -83,8 +81,6 @@ var (
 		ErrTypeMismatch:                      true,
 		ErrDatasetTypeInvalid:                true,
 		ErrInvalidVersion:                    true,
-		ErrCollectionIDMismatch:              true,
-		ErrUnexpectedState:                   true,
 	}
 
 	ConflictRequestMap = map[error]bool{
