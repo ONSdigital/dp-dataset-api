@@ -41,26 +41,6 @@ func testVersion() *models.Version {
 	return v
 }
 
-func testDataset(id string) *models.DatasetUpdate {
-	d := &models.DatasetUpdate{
-		ID: id,
-		Next: &models.Dataset{
-			State:       models.CreatedState,
-			License:     "a dataset license for testing",
-			Title:       "a dataset title for testing",
-			Description: "some dataset description for testing",
-			QMI: &models.GeneralDetails{
-				Description: "some qmi description for testing",
-				HRef:        "http://localhost:22000/datasets/href",
-				Title:       "some qmi title for testing",
-			},
-			Type: "filterable",
-		},
-	}
-	d.ETag, _ = d.Hash(nil)
-	return d
-}
-
 func TestNewETagForUpdate(t *testing.T) {
 
 	Convey("Given an instance", t, func() {
@@ -361,46 +341,6 @@ func TestNewETagForOptions(t *testing.T) {
 				eTag3, err := newETagForOptions(currentInstance, nil, []*models.DimensionOption{&anotherOptionUpdate})
 				So(err, ShouldBeNil)
 				So(eTag3, ShouldNotEqual, eTag1)
-			})
-		})
-	})
-}
-
-func TestNewETagForDatasetUpdate(t *testing.T) {
-	Convey("Given a dataset and an update", t, func() {
-		currentDataset := testDataset("testDatasetCollectionID")
-
-		update := &models.Dataset{
-			ID:           currentDataset.ID,
-			State:        models.AssociatedState,
-			CollectionID: "testCollectionID",
-			Title:        "an updated dataset title for testing",
-		}
-		Convey("When we call newETagForDatasetUpdate", func() {
-			eTag, err := newETagForDatasetUpdate(currentDataset, update)
-			Convey("Then it returns an eTag that is different from the original dataset ETag", func() {
-				So(err, ShouldBeNil)
-				So(eTag, ShouldNotEqual, currentDataset.ETag)
-
-				Convey("And applying the same update to a different dataset results in a different ETag", func() {
-					d2 := testDataset("otherTestDatasetCollectionID")
-
-					otherEtag, err := newETagForDatasetUpdate(d2, update)
-					So(err, ShouldBeNil)
-					So(otherEtag, ShouldNotEqual, eTag)
-				})
-
-				Convey("And applying a different update to the same dataset results in a different ETag", func() {
-					update2 := &models.Dataset{
-						ID:           currentDataset.ID,
-						State:        models.AssociatedState,
-						CollectionID: "testCollectionID",
-						Title:        "a second update of the dataset title for testing",
-					}
-					otherEtag, err := newETagForDatasetUpdate(currentDataset, update2)
-					So(err, ShouldBeNil)
-					So(otherEtag, ShouldNotEqual, eTag)
-				})
 			})
 		})
 	})

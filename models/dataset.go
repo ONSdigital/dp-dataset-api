@@ -119,22 +119,17 @@ type Dataset struct {
 
 // Hash generates a SHA-1 hash of the DatasetUpdate struct. SHA-1 is not cryptographically safe,
 // but it has been selected for performance as we are only interested in uniqueness.
-// ETag field value is ignored when generating a hash.
 // An optional byte array can be provided to append to the hash.
 // This can be used, for example, to calculate a hash of this dataset and an update applied to it.
-func (d *DatasetUpdate) Hash(extraBytes []byte) (string, error) {
+func (d *Dataset) Hash(extraBytes []byte) (string, error) {
 	h := sha1.New()
 
-	// copy by value to ignore ETag without affecting d
-	d2 := *d
-	d2.ETag = ""
-
-	datasetUpdateBytes, err := bson.Marshal(d2)
+	datasetBytes, err := bson.Marshal(d)
 	if err != nil {
 		return "", err
 	}
 
-	if _, err := h.Write(append(datasetUpdateBytes, extraBytes...)); err != nil {
+	if _, err := h.Write(append(datasetBytes, extraBytes...)); err != nil {
 		return "", err
 	}
 
