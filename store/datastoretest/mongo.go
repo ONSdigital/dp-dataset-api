@@ -106,7 +106,7 @@ var _ store.MongoDB = &MongoDBMock{}
 //			UpdateBuildSearchTaskStateFunc: func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
 //				panic("mock out the UpdateBuildSearchTaskState method")
 //			},
-//			UpdateDatasetFunc: func(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (string, error) {
+//			UpdateDatasetFunc: func(ctx context.Context, datasetId string, etag string, updatedDataset *models.Dataset) (string, error) {
 //				panic("mock out the UpdateDataset method")
 //			},
 //			UpdateDatasetFieldsIfNotEmptyFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
@@ -240,7 +240,7 @@ type MongoDBMock struct {
 	UpdateBuildSearchTaskStateFunc func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error)
 
 	// UpdateDatasetFunc mocks the UpdateDataset method.
-	UpdateDatasetFunc func(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (string, error)
+	UpdateDatasetFunc func(ctx context.Context, datasetId string, etag string, updatedDataset *models.Dataset) (string, error)
 
 	// UpdateDatasetFieldsIfNotEmptyFunc mocks the UpdateDatasetFieldsIfNotEmpty method.
 	UpdateDatasetFieldsIfNotEmptyFunc func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
@@ -565,12 +565,12 @@ type MongoDBMock struct {
 		UpdateDataset []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// CurrentDataset is the currentDataset argument value.
-			CurrentDataset *models.DatasetUpdate
+			// DatasetId is the datasetId argument value.
+			DatasetId string
+			// Etag is the etag argument value.
+			Etag string
 			// UpdatedDataset is the updatedDataset argument value.
 			UpdatedDataset *models.Dataset
-			// ETagSelector is the eTagSelector argument value.
-			ETagSelector string
 		}
 		// UpdateDatasetFieldsIfNotEmpty holds details about calls to the UpdateDatasetFieldsIfNotEmpty method.
 		UpdateDatasetFieldsIfNotEmpty []struct {
@@ -1921,25 +1921,25 @@ func (mock *MongoDBMock) UpdateBuildSearchTaskStateCalls() []struct {
 }
 
 // UpdateDataset calls UpdateDatasetFunc.
-func (mock *MongoDBMock) UpdateDataset(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (string, error) {
+func (mock *MongoDBMock) UpdateDataset(ctx context.Context, datasetId string, etag string, updatedDataset *models.Dataset) (string, error) {
 	if mock.UpdateDatasetFunc == nil {
 		panic("MongoDBMock.UpdateDatasetFunc: method is nil but MongoDB.UpdateDataset was just called")
 	}
 	callInfo := struct {
 		Ctx            context.Context
-		CurrentDataset *models.DatasetUpdate
+		DatasetId      string
+		Etag           string
 		UpdatedDataset *models.Dataset
-		ETagSelector   string
 	}{
 		Ctx:            ctx,
-		CurrentDataset: currentDataset,
+		DatasetId:      datasetId,
+		Etag:           etag,
 		UpdatedDataset: updatedDataset,
-		ETagSelector:   eTagSelector,
 	}
 	mock.lockUpdateDataset.Lock()
 	mock.calls.UpdateDataset = append(mock.calls.UpdateDataset, callInfo)
 	mock.lockUpdateDataset.Unlock()
-	return mock.UpdateDatasetFunc(ctx, currentDataset, updatedDataset, eTagSelector)
+	return mock.UpdateDatasetFunc(ctx, datasetId, etag, updatedDataset)
 }
 
 // UpdateDatasetCalls gets all the calls that were made to UpdateDataset.
@@ -1948,15 +1948,15 @@ func (mock *MongoDBMock) UpdateDataset(ctx context.Context, currentDataset *mode
 //	len(mockedMongoDB.UpdateDatasetCalls())
 func (mock *MongoDBMock) UpdateDatasetCalls() []struct {
 	Ctx            context.Context
-	CurrentDataset *models.DatasetUpdate
+	DatasetId      string
+	Etag           string
 	UpdatedDataset *models.Dataset
-	ETagSelector   string
 } {
 	var calls []struct {
 		Ctx            context.Context
-		CurrentDataset *models.DatasetUpdate
+		DatasetId      string
+		Etag           string
 		UpdatedDataset *models.Dataset
-		ETagSelector   string
 	}
 	mock.lockUpdateDataset.RLock()
 	calls = mock.calls.UpdateDataset

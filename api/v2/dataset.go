@@ -2,13 +2,14 @@ package v2
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/ONSdigital/dp-dataset-api/api/common"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
-	"net/http"
 )
 
 func (api *DatasetAPI) PutDataset(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +51,7 @@ func (api *DatasetAPI) PutDataset(w http.ResponseWriter, r *http.Request) {
 				return "", err
 			}
 		} else {
-			newETag, err := api.dataStore.Backend.UpdateDataset(ctx, currentDataset, updatedDataset, eTag)
+			newETag, err := api.dataStore.Backend.UpdateDataset(ctx, datasetID, eTag, updatedDataset)
 			if err != nil {
 				log.Error(ctx, "PutDataset endpoint: failed to update dataset resource", err, logData)
 				return "", err
@@ -93,7 +94,7 @@ func (api *DatasetAPI) validateRequest(ctx context.Context, currentDataset *mode
 		log.Error(ctx, "current dataset is published, therefore it can't be updated", errs.ErrResourcePublished, logData)
 		return errs.ErrResourcePublished
 	}
-	
+
 	if _, err = models.ValidateNomisURL(ctx, updatedDataset.Type, updatedDataset.NomisReferenceURL); err != nil {
 		log.Error(ctx, "the incoming dataset contains a nomis URL but its type is not nomis", err, logData)
 		return err

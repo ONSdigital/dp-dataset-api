@@ -288,7 +288,7 @@ func (m *Mongo) UpdateDatasetFieldsIfNotEmpty(ctx context.Context, id string, da
 }
 
 // UpdateDataset replaces the whole next object for a given dataset id and etag
-func (m *Mongo) UpdateDataset(ctx context.Context, currentDataset *models.DatasetUpdate, updatedDataset *models.Dataset, eTagSelector string) (newETag string, err error) {
+func (m *Mongo) UpdateDataset(ctx context.Context, datasetId string, etag string, updatedDataset *models.Dataset) (newETag string, err error) {
 	updatedDataset.LastUpdated = time.Now()
 
 	// generate a new unique ETag for the dataset
@@ -298,7 +298,7 @@ func (m *Mongo) UpdateDataset(ctx context.Context, currentDataset *models.Datase
 		return "", err
 	}
 
-	sel := datasetSelector(datasetId, bsonprim.Timestamp{}, eTagSelector)
+	sel := datasetSelector(datasetId, bsonprim.Timestamp{}, etag)
 
 	update := bson.M{
 		"$set": bson.M{

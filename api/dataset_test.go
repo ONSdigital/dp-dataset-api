@@ -1513,7 +1513,7 @@ func TestV2PutDatasetEndpoint(t *testing.T) {
 					return nil, errs.ErrDatasetNotFound
 				}
 			},
-			UpdateDatasetFunc: func(context.Context, *models.DatasetUpdate, *models.Dataset, string) (string, error) {
+			UpdateDatasetFunc: func(context.Context, string, string, *models.Dataset) (string, error) {
 				return "", nil
 			},
 		}
@@ -1808,7 +1808,7 @@ func TestV2PutDatasetEndpoint(t *testing.T) {
 								So(permissions.Required.Calls, ShouldEqual, 0)
 								So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 								So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 1)
-								So(mockedDataStore.UpdateDatasetCalls()[0].ETagSelector, ShouldEqual, datasetDocument.ETag)
+								So(mockedDataStore.UpdateDatasetCalls()[0].Etag, ShouldEqual, datasetDocument.ETag)
 
 								Convey("And the request body has been drained", func() {
 									_, err := r.Body.Read(make([]byte, 1))
