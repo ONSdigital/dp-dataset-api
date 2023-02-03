@@ -173,10 +173,6 @@ Feature: Dataset API
                         },
                         "self": {
                             "href": "someurl"
-                        },
-                        "version": {
-                          "id": "1",
-                          "href": "someurl"
                         }
                     },
                     "edition": "2021",
