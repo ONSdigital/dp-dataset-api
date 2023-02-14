@@ -140,19 +140,21 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 func CreateCantabularMetaDataDoc(d *Dataset, v *Version, urlBuilder *url.Builder) *Metadata {
 	m := &Metadata{
 		CSVHeader:      v.Headers,
+		CanonicalTopic: d.CanonicalTopic,
+		Contacts:       d.Contacts,
+		DatasetLinks:   d.Links,
 		Description:    d.Description,
 		Dimensions:     v.Dimensions,
 		Downloads:      v.Downloads,
 		Keywords:       d.Keywords,
+		RelatedContent: d.RelatedContent,
 		ReleaseDate:    v.ReleaseDate,
+		Subtopics:      d.Subtopics,
 		Title:          d.Title,
 		UnitOfMeasure:  d.UnitOfMeasure,
-		Contacts:       d.Contacts,
 		URI:            d.URI,
 		QMI:            d.QMI,
 		Version:        v.Version,
-		DatasetLinks:   d.Links,
-		RelatedContent: d.RelatedContent,
 	}
 
 	m.Distribution = getDistribution(m.Downloads)

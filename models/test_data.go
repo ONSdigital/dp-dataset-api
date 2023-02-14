@@ -298,15 +298,17 @@ func expectedMetadataDoc() Metadata {
 
 func expectedCantabularMetadataDoc() Metadata {
 	return Metadata{
-		Description:   "census",
-		Dimensions:    []Dimension{dimension},
-		CSVHeader:     []string{"cantabular_table", "age"},
-		Distribution:  []string{"json", "csv", "csvw", "xls"},
-		Downloads:     &cantabularDownloads,
-		Keywords:      []string{"test", "test2"},
-		ReleaseDate:   "2017-10-12",
-		Title:         "CensusEthnicity",
-		UnitOfMeasure: "Pounds Sterling",
-		Version:       1,
+		CSVHeader:      []string{"cantabular_table", "age"},
+		CanonicalTopic: "1234",
+		Description:    "census",
+		Dimensions:     []Dimension{dimension},
+		Distribution:   []string{"json", "csv", "csvw", "xls"},
+		Downloads:      &cantabularDownloads,
+		Keywords:       []string{"test", "test2"},
+		ReleaseDate:    "2017-10-12",
+		Subtopics:      []string{"5678", "9012"},
+		Title:          "CensusEthnicity",
+		UnitOfMeasure:  "Pounds Sterling",
+		Version:        1,
 	}
 }
