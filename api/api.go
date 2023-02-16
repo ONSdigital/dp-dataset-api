@@ -8,7 +8,7 @@ import (
 
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/api/common"
-	"github.com/ONSdigital/dp-dataset-api/api/v2"
+	v2 "github.com/ONSdigital/dp-dataset-api/api/v2"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
 	"github.com/ONSdigital/dp-dataset-api/instance"
@@ -56,6 +56,7 @@ type DatasetAPI struct {
 	downloadGenerators       map[models.DatasetType]common.DownloadsGenerator
 	enablePrivateEndpoints   bool
 	enableDetachDataset      bool
+	enablePrivateV2Endpoints bool
 	datasetPermissions       AuthHandler
 	permissions              AuthHandler
 	instancePublishedChecker *instance.PublishCheck
@@ -76,6 +77,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		downloadGenerators:       downloadGenerators,
 		enablePrivateEndpoints:   cfg.EnablePrivateEndpoints,
 		enableDetachDataset:      cfg.EnableDetachDataset,
+		enablePrivateV2Endpoints: cfg.EnablePrivateV2Endpoints,
 		datasetPermissions:       datasetPermissions,
 		permissions:              permissions,
 		versionPublishedChecker:  nil,
@@ -110,6 +112,11 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		api.enablePrivateDatasetEndpoints(paginator)
 		api.enablePrivateInstancesEndpoints(instanceAPI, paginator)
 		api.enablePrivateDimensionsEndpoints(dimensionAPI, paginator)
+
+		if api.enablePrivateV2Endpoints {
+			log.Info(ctx, "enabling private V2 endpoints for dataset api")
+			api.enablePrivateV2DatasetEndpoints(paginator)
+		}
 	} else {
 		log.Info(ctx, "enabling only public endpoints for dataset api")
 		api.enablePublicEndpoints(paginator)
@@ -198,14 +205,6 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 		api.isAuthenticated(
 			api.isAuthorisedForDatasets(updatePermission,
 				api.putDataset)),
-	)
-
-	v2 := v2.NewDatasetAPI(api.dataStore, api.downloadGenerators)
-	api.put(
-		"/v2/datasets/{dataset_id}",
-		api.isAuthenticated(
-			api.isAuthorisedForDatasets(updatePermission,
-				v2.PutDataset)),
 	)
 
 	api.delete(
@@ -339,6 +338,99 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.
 			api.isAuthorised(updatePermission,
 				api.isInstancePublished(dimensionAPI.AddNodeIDHandler))),
 	)
+}
+
+func (api *DatasetAPI) enablePrivateV2DatasetEndpoints(paginator *pagination.Paginator) {
+	api.get(
+		"/v2/datasets",
+		api.isAuthorised(readPermission, paginator.Paginate(api.getDatasets)),
+	)
+
+	api.get(
+		"/v2/datasets/{dataset_id}",
+		api.isAuthorisedForDatasets(readPermission,
+			api.getDataset),
+	)
+
+	api.get(
+		"/v2/datasets/{dataset_id}/editions",
+		api.isAuthorisedForDatasets(readPermission, paginator.Paginate(api.getEditions)),
+	)
+
+	api.get(
+		"/v2/datasets/{dataset_id}/editions/{edition}",
+		api.isAuthorisedForDatasets(readPermission,
+			api.getEdition),
+	)
+
+	api.get(
+		"/v2/datasets/{dataset_id}/editions/{edition}/versions",
+		api.isAuthorisedForDatasets(readPermission,
+			paginator.Paginate(api.getVersions)),
+	)
+
+	api.get(
+		"/v2/datasets/{dataset_id}/editions/{edition}/versions/{version}",
+		api.isAuthorisedForDatasets(readPermission,
+			api.getVersion),
+	)
+
+	api.get(
+		"/v2/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata",
+		api.isAuthorisedForDatasets(readPermission,
+			api.getMetadata),
+	)
+
+	api.get(
+		"/v2/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions",
+		api.isAuthorisedForDatasets(readPermission,
+			paginator.Paginate(api.getDimensions)),
+	)
+
+	api.get(
+		"/v2/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options",
+		api.isAuthorisedForDatasets(readPermission,
+			paginator.Paginate(api.getDimensionOptions)),
+	)
+
+	api.post(
+		"/v2/datasets/{dataset_id}",
+		api.isAuthenticated(
+			api.isAuthorisedForDatasets(createPermission,
+				api.addDataset)),
+	)
+
+	v2 := v2.NewDatasetAPI(api.dataStore, api.downloadGenerators)
+	api.put(
+		"/v2/datasets/{dataset_id}",
+		api.isAuthenticated(
+			api.isAuthorisedForDatasets(updatePermission,
+				v2.PutDataset)),
+	)
+
+	api.delete(
+		"/v2/datasets/{dataset_id}",
+		api.isAuthenticated(
+			api.isAuthorisedForDatasets(deletePermission,
+				api.deleteDataset)),
+	)
+
+	api.put(
+		"/v2/datasets/{dataset_id}/editions/{edition}/versions/{version}",
+		api.isAuthenticated(
+			api.isAuthorisedForDatasets(updatePermission,
+				api.isVersionPublished(updateVersionAction,
+					api.putVersion))),
+	)
+
+	if api.enableDetachDataset {
+		api.delete(
+			"/v2/datasets/{dataset_id}/editions/{edition}/versions/{version}",
+			api.isAuthenticated(
+				api.isAuthorisedForDatasets(deletePermission,
+					api.detachVersion)),
+		)
+	}
 }
 
 // isAuthenticated wraps a http handler func in another http handler func that checks the caller is authenticated to

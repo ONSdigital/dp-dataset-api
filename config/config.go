@@ -40,6 +40,7 @@ type Configuration struct {
 	EnableDetachDataset        bool          `envconfig:"ENABLE_DETACH_DATASET"`
 	EnablePermissionsAuth      bool          `envconfig:"ENABLE_PERMISSIONS_AUTH"`
 	EnableObservationEndpoint  bool          `envconfig:"ENABLE_OBSERVATION_ENDPOINT"`
+	EnablePrivateV2Endpoints   bool          `envconfig:"ENABLE_PRIVATE_V2_ENDPOINTS"`
 	DisableGraphDBDependency   bool          `envconfig:"DISABLE_GRAPH_DB_DEPENDENCY"`
 	KafkaVersion               string        `envconfig:"KAFKA_VERSION"`
 	DefaultMaxLimit            int           `envconfig:"DEFAULT_MAXIMUM_LIMIT"`
@@ -86,6 +87,7 @@ func Get() (*Configuration, error) {
 		EnableDetachDataset:        false,
 		EnablePermissionsAuth:      false,
 		EnableObservationEndpoint:  true,
+		EnablePrivateV2Endpoints:   false,
 		DisableGraphDBDependency:   false,
 		KafkaVersion:               "1.0.2",
 		DefaultMaxLimit:            1000,
