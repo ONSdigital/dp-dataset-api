@@ -547,6 +547,9 @@ func TestValidateVersion(t *testing.T) {
 			v.Downloads = &DownloadList{XLS: &DownloadObject{HRef: "", Size: "2"}}
 			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLS.HRef"}), v)
 
+			v.Downloads = &DownloadList{XLSX: &DownloadObject{HRef: "", Size: "2"}}
+			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLSX.HRef"}), v)
+
 			v.Downloads = &DownloadList{CSV: &DownloadObject{HRef: "", Size: "2"}}
 			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSV.HRef"}), v)
 
@@ -559,6 +562,9 @@ func TestValidateVersion(t *testing.T) {
 			v.Downloads = &DownloadList{XLS: &DownloadObject{HRef: "/", Size: ""}}
 			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLS.Size"}), v)
 
+			v.Downloads = &DownloadList{XLSX: &DownloadObject{HRef: "/", Size: ""}}
+			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.XLSX.Size"}), v)
+
 			v.Downloads = &DownloadList{CSV: &DownloadObject{HRef: "/", Size: ""}}
 			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSV.Size"}), v)
 
@@ -570,6 +576,9 @@ func TestValidateVersion(t *testing.T) {
 
 			v.Downloads = &DownloadList{XLS: &DownloadObject{HRef: "/", Size: "bob"}}
 			assertVersionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.XLS.Size not a number"}), v)
+
+			v.Downloads = &DownloadList{XLSX: &DownloadObject{HRef: "/", Size: "bob"}}
+			assertVersionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.XLSX.Size not a number"}), v)
 
 			v.Downloads = &DownloadList{CSV: &DownloadObject{HRef: "/", Size: "bob"}}
 			assertVersionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.CSV.Size not a number"}), v)
@@ -1141,6 +1150,9 @@ func TestVersionDownloadsOrder(t *testing.T) {
 	Convey("Given a Downloads struct", t, func() {
 		d := DownloadList{
 			XLS: &DownloadObject{
+				HRef: "XLS",
+			},
+			XLSX: &DownloadObject{
 				HRef: "XLSX",
 			},
 			CSV: &DownloadObject{
@@ -1160,7 +1172,7 @@ func TestVersionDownloadsOrder(t *testing.T) {
 			t.Log(string(b))
 
 			Convey("The downloads should be in the expected order", func() {
-				expected := `{"xls":{"href":"XLSX"},"csv":{"href":"CSV"},"txt":{"href":"TXT"},"csvw":{"href":"CSVW"}}`
+				expected := `{"xls":{"href":"XLS"},"xlsx":{"href":"XLSX"},"csv":{"href":"CSV"},"txt":{"href":"TXT"},"csvw":{"href":"CSVW"}}`
 				So(string(b), ShouldResemble, expected)
 			})
 		})

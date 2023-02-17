@@ -243,9 +243,10 @@ type Alert struct {
 }
 
 // DownloadList represents a list of objects of containing information on the downloadable files.
-// Items are in a specific order and should not be changed (xlsx, csv, txt, csvw)
+// Items are in a specific order and should not be changed (xls, xlsx, csv, txt, csvw)
 type DownloadList struct {
 	XLS  *DownloadObject `bson:"xls,omitempty" json:"xls,omitempty"`
+	XLSX *DownloadObject `bson:"xlsx,omitempty" json:"xlsx,omitempty"`
 	CSV  *DownloadObject `bson:"csv,omitempty" json:"csv,omitempty"`
 	TXT  *DownloadObject `bson:"txt,omitempty" json:"txt,omitempty"`
 	CSVW *DownloadObject `bson:"csvw,omitempty" json:"csvw,omitempty"`
@@ -363,6 +364,7 @@ func CreateVersion(reader io.Reader, datasetID string) (*Version, error) {
 		return nil, errs.ErrUnableToReadMessage
 	}
 
+	log.Info(context.Background(), "DEBUG", log.Data{"body_create_version": string(b)})
 	var version Version
 	version.ID = uuid.NewV4().String()
 	version.DatasetID = datasetID
@@ -371,6 +373,8 @@ func CreateVersion(reader io.Reader, datasetID string) (*Version, error) {
 	if err != nil {
 		return nil, errs.ErrUnableToParseJSON
 	}
+
+	log.Info(context.Background(), "DEBUG", log.Data{"unmarshaled": version})
 
 	return &version, nil
 }
@@ -635,6 +639,18 @@ func ValidateVersion(version *Version) error {
 			}
 			if _, err := strconv.Atoi(version.Downloads.XLS.Size); err != nil {
 				invalidFields = append(invalidFields, "Downloads.XLS.Size not a number")
+			}
+		}
+
+		if version.Downloads.XLSX != nil {
+			if version.Downloads.XLSX.HRef == "" {
+				missingFields = append(missingFields, "Downloads.XLSX.HRef")
+			}
+			if version.Downloads.XLSX.Size == "" {
+				missingFields = append(missingFields, "Downloads.XLSX.Size")
+			}
+			if _, err := strconv.Atoi(version.Downloads.XLSX.Size); err != nil {
+				invalidFields = append(invalidFields, "Downloads.XLSX.Size not a number")
 			}
 		}
 
