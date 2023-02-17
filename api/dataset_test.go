@@ -53,6 +53,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads c
 	cfg.ServiceAuthToken = authToken
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEndpoints = true
+	cfg.EnablePrivateV2Endpoints = true
 	cfg.DefaultLimit = 0
 	cfg.DefaultOffset = 0
 
@@ -73,6 +74,7 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 	cfg.ServiceAuthToken = authToken
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEndpoints = true
+	cfg.EnablePrivateV2Endpoints = true
 	cfg.DefaultLimit = 0
 	cfg.DefaultOffset = 0
 
