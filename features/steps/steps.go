@@ -72,8 +72,11 @@ func (c *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId stri
 
 	document := link.Next
 
-	assert.Equal(&c.ErrorFeature, expectedDataset.Title, document.Title)
-	assert.Equal(&c.ErrorFeature, expectedDataset.State, document.State)
+	// Remove the last updated value so to be able to compare the datasets
+	// otherwise the assertion would always fail as last updated would be "now"
+	document.LastUpdated = time.Time{}
+
+	assert.Equal(&c.ErrorFeature, expectedDataset, *document)
 
 	return c.ErrorFeature.StepError()
 }
@@ -150,8 +153,8 @@ func (c *DatasetComponent) theseGenerateDownloadsEventsAreProduced(events *godog
 	return nil
 }
 
-//we are passing the string array as [xxxx,yyyy,zzz]
-//this is required to support array being used in kafka messages
+// we are passing the string array as [xxxx,yyyy,zzz]
+// this is required to support array being used in kafka messages
 func arrayParser(raw string) (interface{}, error) {
 	//remove the starting and trailing brackets
 	str := strings.Trim(raw, "[]")

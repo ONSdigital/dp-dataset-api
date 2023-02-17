@@ -9,6 +9,7 @@ import (
 // Metadata represents information (metadata) relevant to a version
 type Metadata struct {
 	Alerts            *[]Alert             `json:"alerts,omitempty"`
+	CanonicalTopic    string               `json:"canonical_topic,omitempty"`
 	Contacts          []ContactDetails     `json:"contacts,omitempty"`
 	Description       string               `json:"description,omitempty"`
 	Dimensions        []Dimension          `json:"dimensions,omitempty"`
@@ -30,6 +31,7 @@ type Metadata struct {
 	Temporal          *[]TemporalFrequency `json:"temporal,omitempty"`
 	Theme             string               `json:"theme,omitempty"`
 	Title             string               `json:"title,omitempty"`
+	Subtopics         []string             `json:"subtopics,omitempty"`
 	UnitOfMeasure     string               `json:"unit_of_measure,omitempty"`
 	URI               string               `json:"uri,omitempty"`
 	UsageNotes        *[]UsageNote         `json:"usage_notes,omitempty"`
@@ -58,6 +60,7 @@ type MetadataLinks struct {
 func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url.Builder) *Metadata {
 	metaDataDoc := &Metadata{
 		Alerts:            versionDoc.Alerts,
+		CanonicalTopic:    datasetDoc.CanonicalTopic,
 		Contacts:          datasetDoc.Contacts,
 		Description:       datasetDoc.Description,
 		Dimensions:        versionDoc.Dimensions,
@@ -75,6 +78,7 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 		RelatedDatasets:   datasetDoc.RelatedDatasets,
 		ReleaseDate:       versionDoc.ReleaseDate,
 		ReleaseFrequency:  datasetDoc.ReleaseFrequency,
+		Subtopics:         datasetDoc.Subtopics,
 		Temporal:          versionDoc.Temporal,
 		Theme:             datasetDoc.Theme,
 		Title:             datasetDoc.Title,
@@ -136,19 +140,21 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 func CreateCantabularMetaDataDoc(d *Dataset, v *Version, urlBuilder *url.Builder) *Metadata {
 	m := &Metadata{
 		CSVHeader:      v.Headers,
+		CanonicalTopic: d.CanonicalTopic,
+		Contacts:       d.Contacts,
+		DatasetLinks:   d.Links,
 		Description:    d.Description,
 		Dimensions:     v.Dimensions,
 		Downloads:      v.Downloads,
 		Keywords:       d.Keywords,
+		RelatedContent: d.RelatedContent,
 		ReleaseDate:    v.ReleaseDate,
+		Subtopics:      d.Subtopics,
 		Title:          d.Title,
 		UnitOfMeasure:  d.UnitOfMeasure,
-		Contacts:       d.Contacts,
 		URI:            d.URI,
 		QMI:            d.QMI,
 		Version:        v.Version,
-		DatasetLinks:   d.Links,
-		RelatedContent: d.RelatedContent,
 	}
 
 	m.Distribution = getDistribution(m.Downloads)

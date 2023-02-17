@@ -1770,6 +1770,9 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Alert'
+      canonical_topic:
+        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy."
+        type: string
       contacts:
         description: "A list containing contact details of staticians for a dataset"
         type: array
@@ -1889,6 +1892,11 @@ definitions:
       release_frequency:
         description: "The release frequency of a dataset"
         type: string
+      subtopics:
+        description: "A list of subtopic ids that the dataset relates to within the website taxonomy."
+        type: array
+        items:
+          type: "string"
       temporal:
         $ref: '#/definitions/Temporal'
       theme:

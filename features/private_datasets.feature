@@ -9,7 +9,9 @@ Feature: Private Dataset API
         When I POST "/datasets/ageing-population-estimates"
             """
             {
-                "title": "CID"
+                "state": "anything",
+                "title": "CID",
+                "type": "filterable"
             }
             """
         Then the HTTP status code should be "201"
@@ -19,7 +21,15 @@ Feature: Private Dataset API
                 "id": "ageing-population-estimates",
                 "state": "created",
                 "title": "CID",
-                "type": "filterable"
+                "type": "filterable",
+                "links": {
+                    "editions": {
+                        "href":"http://localhost:22000/datasets/ageing-population-estimates/editions"
+                    },
+                    "self": {
+                        "href":"http://localhost:22000/datasets/ageing-population-estimates"
+                    }
+                }
             }
             """
 
@@ -120,7 +130,7 @@ Feature: Private Dataset API
                 "id": "population-estimates",
                 "related_content": [{
 		                "description": "Related content description",
-		                "href": "http://localhost:22000//datasets/123/relatedContent",
+		                "href": "http://localhost:22000/datasets/123/relatedContent",
 		                "title": "Related content"
 	                }]
             }
