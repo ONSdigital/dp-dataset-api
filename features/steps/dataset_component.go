@@ -84,6 +84,7 @@ func (c *DatasetComponent) Reset() error {
 	}
 
 	c.Config.EnablePrivateEndpoints = false
+	c.Config.EnablePrivateV2Endpoints = false
 	// Resets back to Mocked Kafka
 	c.setInitialiserMock()
 

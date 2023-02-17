@@ -52,6 +52,7 @@ func (c *DatasetComponent) thereAreNoDatasets() error {
 
 func (c *DatasetComponent) privateEndpointsAreEnabled() error {
 	c.Config.EnablePrivateEndpoints = true
+	c.Config.EnablePrivateV2Endpoints = true
 	return nil
 }
 
