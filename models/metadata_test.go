@@ -37,8 +37,8 @@ func TestCreateMetadataDoc(t *testing.T) {
 
 func TestCreateCantabularMetadataDoc(t *testing.T) {
 
-	Convey("Successfully create metadata document with all relavant cantabular fields", t, func() {
-		inputDatasetDoc := Dataset{
+	Convey("Given a dataset and a version objects", t, func() {
+		dataset := Dataset{
 			CanonicalTopic: "1234",
 			Subtopics:      []string{"5678", "9012"},
 			Description:    "census",
@@ -73,7 +73,7 @@ func TestCreateCantabularMetadataDoc(t *testing.T) {
 			},
 		}
 
-		inputVersionDoc := Version{
+		version := Version{
 			Alerts:     &[]Alert{alert},
 			Dimensions: []Dimension{dimension},
 			Downloads: &DownloadList{
@@ -104,32 +104,34 @@ func TestCreateCantabularMetadataDoc(t *testing.T) {
 			Version:       1,
 		}
 
-		metaDataDoc := CreateCantabularMetaDataDoc(&inputDatasetDoc, &inputVersionDoc, urlBuilder)
-		So(metaDataDoc.Description, ShouldEqual, inputDatasetDoc.Description)
-		So(metaDataDoc.Keywords, ShouldResemble, inputDatasetDoc.Keywords)
-		So(metaDataDoc.Title, ShouldEqual, inputDatasetDoc.Title)
-		So(metaDataDoc.UnitOfMeasure, ShouldEqual, inputDatasetDoc.UnitOfMeasure)
-		So(metaDataDoc.Contacts, ShouldResemble, inputDatasetDoc.Contacts)
-		So(metaDataDoc.URI, ShouldEqual, inputDatasetDoc.URI)
-		So(metaDataDoc.QMI, ShouldResemble, inputDatasetDoc.QMI)
-		So(metaDataDoc.DatasetLinks, ShouldResemble, inputDatasetDoc.Links)
-		So(metaDataDoc.RelatedContent, ShouldResemble, inputDatasetDoc.RelatedContent)
-		So(metaDataDoc.CanonicalTopic, ShouldEqual, inputDatasetDoc.CanonicalTopic)
-		So(metaDataDoc.Subtopics, ShouldResemble, inputDatasetDoc.Subtopics)
+		Convey("CreateCantabularMetaDataDoc returns the right Cantabular metadata document", func() {
+			metaDataDoc := CreateCantabularMetaDataDoc(&dataset, &version, urlBuilder)
+			So(metaDataDoc.Description, ShouldEqual, dataset.Description)
+			So(metaDataDoc.Keywords, ShouldResemble, dataset.Keywords)
+			So(metaDataDoc.Title, ShouldEqual, dataset.Title)
+			So(metaDataDoc.UnitOfMeasure, ShouldEqual, dataset.UnitOfMeasure)
+			So(metaDataDoc.Contacts, ShouldResemble, dataset.Contacts)
+			So(metaDataDoc.URI, ShouldEqual, dataset.URI)
+			So(metaDataDoc.QMI, ShouldResemble, dataset.QMI)
+			So(metaDataDoc.DatasetLinks, ShouldResemble, dataset.Links)
+			So(metaDataDoc.RelatedContent, ShouldResemble, dataset.RelatedContent)
+			So(metaDataDoc.CanonicalTopic, ShouldEqual, dataset.CanonicalTopic)
+			So(metaDataDoc.Subtopics, ShouldResemble, dataset.Subtopics)
 
-		So(metaDataDoc.CSVHeader, ShouldResemble, inputVersionDoc.Headers)
-		So(metaDataDoc.Dimensions, ShouldResemble, inputVersionDoc.Dimensions)
-		So(metaDataDoc.Downloads, ShouldEqual, inputVersionDoc.Downloads)
-		So(metaDataDoc.ReleaseDate, ShouldEqual, inputVersionDoc.ReleaseDate)
-		So(metaDataDoc.Version, ShouldResemble, inputVersionDoc.Version)
-		So(metaDataDoc.Distribution, ShouldResemble, []string{"json", "csv", "csvw", "xls", "txt"})
+			So(metaDataDoc.CSVHeader, ShouldResemble, version.Headers)
+			So(metaDataDoc.Dimensions, ShouldResemble, version.Dimensions)
+			So(metaDataDoc.Downloads, ShouldEqual, version.Downloads)
+			So(metaDataDoc.ReleaseDate, ShouldEqual, version.ReleaseDate)
+			So(metaDataDoc.Version, ShouldResemble, version.Version)
+			So(metaDataDoc.Distribution, ShouldResemble, []string{"json", "csv", "csvw", "xls", "txt"})
 
-		So(metaDataDoc.Downloads.CSV.Private, ShouldEqual, "")
-		So(metaDataDoc.Downloads.CSV.Public, ShouldEqual, "")
-		So(metaDataDoc.Downloads.XLS.Private, ShouldEqual, "")
-		So(metaDataDoc.Downloads.XLS.Public, ShouldEqual, "")
-		So(metaDataDoc.Downloads.TXT.Private, ShouldEqual, "")
-		So(metaDataDoc.Downloads.TXT.Public, ShouldEqual, "")
+			So(metaDataDoc.Downloads.CSV.Private, ShouldEqual, "")
+			So(metaDataDoc.Downloads.CSV.Public, ShouldEqual, "")
+			So(metaDataDoc.Downloads.XLS.Private, ShouldEqual, "")
+			So(metaDataDoc.Downloads.XLS.Public, ShouldEqual, "")
+			So(metaDataDoc.Downloads.TXT.Private, ShouldEqual, "")
+			So(metaDataDoc.Downloads.TXT.Public, ShouldEqual, "")
+		})
 	})
 
 }
