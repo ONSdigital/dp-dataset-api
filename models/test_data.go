@@ -161,21 +161,6 @@ var downloads = DownloadList{
 	},
 }
 
-var cantabularDownloads = DownloadList{
-	CSV: &DownloadObject{
-		HRef: "https://www.aws/123",
-		Size: "25",
-	},
-	CSVW: &DownloadObject{
-		HRef: "https://www.aws/123",
-		Size: "25",
-	},
-	XLS: &DownloadObject{
-		HRef: "https://www.aws/1234",
-		Size: "45",
-	},
-}
-
 var latestChange = LatestChange{
 	Description: "The border of Southampton changed after the south east cliff face fell into the sea.",
 	Name:        "Changes in Classification",
@@ -293,22 +278,5 @@ func expectedMetadataDoc() Metadata {
 		Title:             "CensusEthnicity",
 		UnitOfMeasure:     "Pounds Sterling",
 		URI:               "http://localhost:22000/datasets/123/breadcrumbs",
-	}
-}
-
-func expectedCantabularMetadataDoc() Metadata {
-	return Metadata{
-		CSVHeader:      []string{"cantabular_table", "age"},
-		CanonicalTopic: "1234",
-		Description:    "census",
-		Dimensions:     []Dimension{dimension},
-		Distribution:   []string{"json", "csv", "csvw", "xls"},
-		Downloads:      &cantabularDownloads,
-		Keywords:       []string{"test", "test2"},
-		ReleaseDate:    "2017-10-12",
-		Subtopics:      []string{"5678", "9012"},
-		Title:          "CensusEthnicity",
-		UnitOfMeasure:  "Pounds Sterling",
-		Version:        1,
 	}
 }
