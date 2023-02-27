@@ -64,7 +64,6 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 		Contacts:          datasetDoc.Contacts,
 		Description:       datasetDoc.Description,
 		Dimensions:        versionDoc.Dimensions,
-		Downloads:         versionDoc.Downloads,
 		Keywords:          datasetDoc.Keywords,
 		LatestChanges:     versionDoc.LatestChanges,
 		Links:             &MetadataLinks{},
@@ -114,21 +113,52 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 		}
 	}
 
-	metaDataDoc.Distribution = getDistribution(metaDataDoc.Downloads)
+	metaDataDoc.Distribution = getDistribution(versionDoc.Downloads)
 
-	// Remove Public and Private download links
-	if metaDataDoc.Downloads != nil {
-		if metaDataDoc.Downloads.CSV != nil {
-			metaDataDoc.Downloads.CSV.Private = ""
-			metaDataDoc.Downloads.CSV.Public = ""
+	if versionDoc.Downloads != nil {
+		metaDataDoc.Downloads = &DownloadList{}
+		if versionDoc.Downloads.CSV != nil {
+			metaDataDoc.Downloads.CSV = &DownloadObject{
+				HRef: versionDoc.Downloads.CSV.HRef,
+				Size: versionDoc.Downloads.CSV.Size,
+				// Do not include Public and Private download links
+				Public:  "",
+				Private: "",
+			}
 		}
-		if metaDataDoc.Downloads.CSVW != nil {
-			metaDataDoc.Downloads.CSVW.Private = ""
-			metaDataDoc.Downloads.CSVW.Public = ""
+		if versionDoc.Downloads.CSVW != nil {
+			metaDataDoc.Downloads.CSVW = &DownloadObject{
+				HRef: versionDoc.Downloads.CSVW.HRef,
+				Size: versionDoc.Downloads.CSVW.Size,
+				// Do not include Public and Private download links
+				Public:  "",
+				Private: "",
+			}
 		}
-		if metaDataDoc.Downloads.XLS != nil {
-			metaDataDoc.Downloads.XLS.Private = ""
-			metaDataDoc.Downloads.XLS.Public = ""
+		if versionDoc.Downloads.XLS != nil {
+			metaDataDoc.Downloads.XLS = &DownloadObject{
+				HRef: versionDoc.Downloads.XLS.HRef,
+				Size: versionDoc.Downloads.XLS.Size,
+				// Do not include Public and Private download links
+				Public:  "",
+				Private: "",
+			}
+		}
+		if versionDoc.Downloads.TXT != nil {
+			metaDataDoc.Downloads.TXT = &DownloadObject{
+				HRef:    versionDoc.Downloads.TXT.HRef,
+				Size:    versionDoc.Downloads.TXT.Size,
+				Private: versionDoc.Downloads.TXT.Private,
+				Public:  versionDoc.Downloads.TXT.Public,
+			}
+		}
+		if versionDoc.Downloads.XLSX != nil {
+			metaDataDoc.Downloads.XLSX = &DownloadObject{
+				HRef:    versionDoc.Downloads.XLSX.HRef,
+				Size:    versionDoc.Downloads.XLSX.Size,
+				Private: versionDoc.Downloads.XLSX.Private,
+				Public:  versionDoc.Downloads.XLSX.Public,
+			}
 		}
 	}
 
@@ -145,7 +175,6 @@ func CreateCantabularMetaDataDoc(d *Dataset, v *Version, urlBuilder *url.Builder
 		DatasetLinks:   d.Links,
 		Description:    d.Description,
 		Dimensions:     v.Dimensions,
-		Downloads:      v.Downloads,
 		Keywords:       d.Keywords,
 		RelatedContent: d.RelatedContent,
 		ReleaseDate:    v.ReleaseDate,
@@ -157,25 +186,53 @@ func CreateCantabularMetaDataDoc(d *Dataset, v *Version, urlBuilder *url.Builder
 		Version:        v.Version,
 	}
 
-	m.Distribution = getDistribution(m.Downloads)
+	m.Distribution = getDistribution(v.Downloads)
 
-	// Remove Public and Private download links
-	if m.Downloads != nil {
-		if m.Downloads.CSV != nil {
-			m.Downloads.CSV.Private = ""
-			m.Downloads.CSV.Public = ""
+	if v.Downloads != nil {
+		m.Downloads = &DownloadList{}
+		if v.Downloads.CSV != nil {
+			m.Downloads.CSV = &DownloadObject{
+				HRef: v.Downloads.CSV.HRef,
+				Size: v.Downloads.CSV.Size,
+				// Do not include Public and Private download links
+				Public:  "",
+				Private: "",
+			}
 		}
-		if m.Downloads.CSVW != nil {
-			m.Downloads.CSVW.Private = ""
-			m.Downloads.CSVW.Public = ""
+		if v.Downloads.CSVW != nil {
+			m.Downloads.CSVW = &DownloadObject{
+				HRef: v.Downloads.CSVW.HRef,
+				Size: v.Downloads.CSVW.Size,
+				// Do not include Public and Private download links
+				Public:  "",
+				Private: "",
+			}
 		}
-		if m.Downloads.XLS != nil {
-			m.Downloads.XLS.Private = ""
-			m.Downloads.XLS.Public = ""
+		if v.Downloads.XLS != nil {
+			m.Downloads.XLS = &DownloadObject{
+				HRef: v.Downloads.XLS.HRef,
+				Size: v.Downloads.XLS.Size,
+				// Do not include Public and Private download links
+				Public:  "",
+				Private: "",
+			}
 		}
-		if m.Downloads.TXT != nil {
-			m.Downloads.TXT.Private = ""
-			m.Downloads.TXT.Public = ""
+		if v.Downloads.TXT != nil {
+			m.Downloads.TXT = &DownloadObject{
+				HRef: v.Downloads.TXT.HRef,
+				Size: v.Downloads.TXT.Size,
+				// Do not include Public and Private download links
+				Public:  "",
+				Private: "",
+			}
+		}
+		if v.Downloads.XLSX != nil {
+			m.Downloads.XLSX = &DownloadObject{
+				HRef:    v.Downloads.XLSX.HRef,
+				Size:    v.Downloads.XLSX.Size,
+				Private: v.Downloads.XLSX.Private,
+				Public:  v.Downloads.XLSX.Public,
+			}
 		}
 	}
 
