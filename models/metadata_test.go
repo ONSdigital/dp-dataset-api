@@ -133,7 +133,7 @@ func TestCreateMetadata(t *testing.T) {
 				So(metaDataDoc.Dimensions, ShouldResemble, version.Dimensions)
 				So(metaDataDoc.Downloads, ShouldEqual, version.Downloads)
 				So(metaDataDoc.ReleaseDate, ShouldEqual, version.ReleaseDate)
-				So(metaDataDoc.Version, ShouldResemble, version.Version)
+				So(metaDataDoc.Version, ShouldEqual, version.Version)
 
 				So(metaDataDoc.Downloads.CSV.HRef, ShouldEqual, csvDownload.HRef)
 				So(metaDataDoc.Downloads.CSV.Size, ShouldEqual, csvDownload.Size)
