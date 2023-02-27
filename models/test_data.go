@@ -1,7 +1,5 @@
 package models
 
-import "strings"
-
 const (
 	collectionID = "12345678"
 )
@@ -238,45 +236,4 @@ var badInputData = struct {
 	CollectionID int `json:"collection_id"`
 }{
 	CollectionID: 1,
-}
-
-func expectedMetadataDoc() Metadata {
-	return Metadata{
-		Alerts:         &[]Alert{alert},
-		CanonicalTopic: "canonicalTopicID",
-		Contacts:       []ContactDetails{contacts},
-		Description:    "census",
-		Dimensions:     []Dimension{dimension},
-		Distribution:   []string{"json", "csv", "xls"},
-		Downloads:      &downloads,
-		Keywords:       []string{"test", "test2"},
-		LatestChanges:  &[]LatestChange{latestChange},
-		License:        "Office of National Statistics license",
-		Links: &MetadataLinks{
-			AccessRights: &LinkObject{
-				HRef: "http://ons.gov.uk/accessrights",
-			},
-			Self: &LinkObject{
-				HRef: links.Version.HRef + "/metadata",
-			},
-			Spatial:        links.Spatial,
-			Version:        links.Version,
-			WebsiteVersion: &LinkObject{HRef: strings.ReplaceAll(links.Version.HRef, "22000", "20000")},
-		},
-		Methodologies:     []GeneralDetails{methodology},
-		NationalStatistic: &nationalStatistic,
-		NextRelease:       "2016-05-05",
-		Publications:      []GeneralDetails{publications},
-		Publisher:         &publisher,
-		QMI:               &qmi,
-		RelatedDatasets:   []GeneralDetails{relatedDatasets},
-		ReleaseDate:       "2017-10-12",
-		ReleaseFrequency:  "yearly",
-		Subtopics:         []string{"subtopicID"},
-		Temporal:          &[]TemporalFrequency{temporal},
-		Theme:             "population",
-		Title:             "CensusEthnicity",
-		UnitOfMeasure:     "Pounds Sterling",
-		URI:               "http://localhost:22000/datasets/123/breadcrumbs",
-	}
 }
