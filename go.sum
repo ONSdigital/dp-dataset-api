@@ -51,8 +51,8 @@ github.com/ONSdigital/dp-assistdog v0.0.1 h1:5jzUWZ3EmweVjSx+5c40oLh/+WBJtD3VOEr
 github.com/ONSdigital/dp-assistdog v0.0.1/go.mod h1:Agb8iTx42/V+eSffc/gD2oXEvOcerN3GER76FAcBr+I=
 github.com/ONSdigital/dp-authorisation v0.2.0 h1:QVjTUSR3c1swZwP7lMbvnBsh4Je9oc54eGzgwPOvHOc=
 github.com/ONSdigital/dp-authorisation v0.2.0/go.mod h1:Tg3BiohT3+bRv4vr4aid/1Rf+S3eXLUI8oHbOLFqFpQ=
-github.com/ONSdigital/dp-component-test v0.7.0 h1:VfAxUPDSSt106qxDVF9NQ/5S9GwJaiMDpwhQZ9lybOM=
-github.com/ONSdigital/dp-component-test v0.7.0/go.mod h1:6nvnxyPDFxEhVVIciXdMJ5e2nG8wS8XGhciCtuan5xo=
+github.com/ONSdigital/dp-component-test v0.9.0 h1:DfSvL1CKrZ4Jm/WqNLw27DtOcn2fmPI6KNx9zaFYgCo=
+github.com/ONSdigital/dp-component-test v0.9.0/go.mod h1:fs/MoGNWVq2Z/RgWH/Xm8k/QHv5aoRxZy7ujP+RiEV4=
 github.com/ONSdigital/dp-frontend-models v1.1.0/go.mod h1:TT96P7Mi69N3Tc/jFNdbjiwG4GAaMjP26HLotFQ6BPw=
 github.com/ONSdigital/dp-graph/v2 v2.15.0 h1:vDd+GdfJcKXSJ0p6EOZFBkuiYksGsofcoJr6Y0WrwZc=
 github.com/ONSdigital/dp-graph/v2 v2.15.0/go.mod h1:2ZxB5+k+swxWCoeV8yK9YdCIp1SeRokFs2cx2pURTSM=
@@ -66,10 +66,10 @@ github.com/ONSdigital/dp-kafka/v2 v2.5.0 h1:VIhJwf5soKGxtiVjdG2Td21M08acrPwfsDLl
 github.com/ONSdigital/dp-kafka/v2 v2.5.0/go.mod h1:8fTKJ8F06nmTA3ixRnbUwfi9n+sQDfltw5d9uLJQtug=
 github.com/ONSdigital/dp-mocking v0.0.0-20190905163309-fee2702ad1b9 h1:+WXVfTDyWXY1DQRDFSmt1b/ORKk5c7jGiPu7NoeaM/0=
 github.com/ONSdigital/dp-mocking v0.0.0-20190905163309-fee2702ad1b9/go.mod h1:BcIRgitUju//qgNePRBmNjATarTtynAgc0yV29VpLEk=
-github.com/ONSdigital/dp-mongodb-in-memory v1.3.1 h1:E2xSPOBr5B0riB1qN+z+m8ouWymnLWu+XHBUpgYLXWc=
-github.com/ONSdigital/dp-mongodb-in-memory v1.3.1/go.mod h1:QuDIrDBBsmL9Jh/kmpKI1ENslO8yBCDLlAQ6qL10Pac=
-github.com/ONSdigital/dp-mongodb/v3 v3.3.0 h1:r6zblTi/X69pNwJeTmnun4DW4GIhSaB66eT2Le1aVR0=
-github.com/ONSdigital/dp-mongodb/v3 v3.3.0/go.mod h1:5EtdWLz6X+S6mtFLvmsYqaP/uzGCFLmEbzjbepZwHgE=
+github.com/ONSdigital/dp-mongodb-in-memory v1.5.0 h1:3IYKdIeaFbOZXyQlHpz4jsIYScfRLxaOHioykVEE2mU=
+github.com/ONSdigital/dp-mongodb-in-memory v1.5.0/go.mod h1:UGCMUhALBCorDNm8AAlsQgDKZAsB4YP8/eWrVfnLbB8=
+github.com/ONSdigital/dp-mongodb/v3 v3.5.0 h1:Y4MGEBO7LUSCTUgLHwHvgsa7CygiBngTYrjs14aoRvo=
+github.com/ONSdigital/dp-mongodb/v3 v3.5.0/go.mod h1:M9JdwMw46ebejFM0Qi8CbpgCkN1xBcvTfR8XYDhKFjs=
 github.com/ONSdigital/dp-net v1.0.5-0.20200805082802-e518bc287596/go.mod h1:wDVhk2pYosQ1q6PXxuFIRYhYk2XX5+1CeRRnXpSczPY=
 github.com/ONSdigital/dp-net v1.0.5-0.20200805145012-9227a11caddb/go.mod h1:MrSZwDUvp8u1VJEqa+36Gwq4E7/DdceW+BDCvGes6Cs=
 github.com/ONSdigital/dp-net v1.0.5-0.20200805150805-cac050646ab5/go.mod h1:de3LB9tedE0tObBwa12dUOt5rvTW4qQkF5rXtt4b6CE=

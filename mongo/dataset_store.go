@@ -528,6 +528,60 @@ func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 	return setUpdates
 }
 
+func (m *Mongo) UpdateMetadata(ctx context.Context, datasetId string, versionId string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
+
+	updatedDataset.LastUpdated = time.Now()
+	datasetUpdate := bson.M{
+		"$set": bson.M{
+			"next":         updatedDataset,
+			"last_updated": updatedDataset.LastUpdated,
+		},
+	}
+
+	// calculate the new eTag hash for the version
+	newETag, err := updatedVersion.Hash(nil)
+	if err != nil {
+		return err
+	}
+
+	versionSelector := selector(versionId, bsonprim.Timestamp{}, versionEtag)
+
+	// We can't update the whole version as it would lose instance fields (not in the version struct)
+	versionUpdate := bson.M{
+		"$set": bson.M{
+			"alerts":         updatedVersion.Alerts,
+			"release_date":   updatedVersion.ReleaseDate,
+			"usage_notes":    updatedVersion.UsageNotes,
+			"latest_changes": updatedVersion.LatestChanges,
+			"dimensions":     updatedVersion.Dimensions,
+			"e_tag":          newETag,
+			"last_updated":   time.Now(),
+		},
+	}
+
+	_, err = m.Connection.RunTransaction(ctx, false, func(transactionCtx context.Context) (interface{}, error) {
+		// Update dataset
+		if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateById(transactionCtx, datasetId, datasetUpdate); err != nil {
+			if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+				return nil, errs.ErrDatasetNotFound
+			}
+			return nil, err
+		}
+
+		// Update version
+		if _, err := m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Must().UpdateOne(transactionCtx, versionSelector, versionUpdate); err != nil {
+			if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+				return nil, errs.ErrVersionNotFound
+			}
+			return nil, err
+		}
+
+		return nil, nil
+	})
+
+	return err
+}
+
 // UpsertDataset adds or overrides an existing dataset document
 func (m *Mongo) UpsertDataset(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) (err error) {
 

@@ -2,10 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -125,6 +127,99 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "getMetadata endpoint: get metadata request successful", logData)
 }
 
+func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
+	defer dphttp.DrainBody(r)
+
+	ctx := r.Context()
+	vars := mux.Vars(r)
+	versionEtag := r.Header.Get("If-Match")
+	datasetID := vars["dataset_id"]
+	edition := vars["edition"]
+	version := vars["version"]
+	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "version etag": versionEtag}
+
+	err := func() error {
+
+		var metadata models.EditableMetadata
+		payload, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			return errs.ErrUnableToReadMessage
+		}
+
+		err = json.Unmarshal(payload, &metadata)
+		if err != nil {
+			return errs.ErrUnableToParseJSON
+		}
+
+		versionNumber, err := models.ParseAndValidateVersionNumber(ctx, version)
+		if err != nil {
+			log.Error(ctx, "putMetadata endpoint: failed due to invalid version request", err, logData)
+			return err
+		}
+
+		//TODO check if needed - this is only checking if the edition document exists
+		// if err = api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, ""); err != nil {
+		// 	log.Error(ctx, "putMetadata endpoint: failed to find edition for dataset", err, logData)
+		// 	return err
+		// }
+
+		version, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionNumber, "")
+		if err != nil {
+			if err == errs.ErrVersionNotFound {
+				log.Error(ctx, "putMetadata endpoint: failed to find version for dataset edition", err, logData)
+				return errs.ErrMetadataVersionNotFound
+			}
+			log.Error(ctx, "putMetadata endpoint: get datastore.getVersion returned an error", err, logData)
+			return err
+		}
+
+		//TODO -  check if this is needed since it is checking a state of an existing dataset doc in mongo
+		// if err = models.CheckState("version", versionDoc.State); err != nil {
+		// 	logData["state"] = versionDoc.State
+		// 	log.Error(ctx, "putMetadata endpoint: unpublished version has an invalid state", err, logData)
+		// 	return err
+		// }
+
+		datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+		if err != nil {
+			log.Error(ctx, "putMetadata endpoint: get datastore.getDataset returned an error", err, logData)
+			return err
+		}
+
+		dataset := datasetDoc.Next
+		if dataset == nil {
+			err := errors.New("invalid dataset: no 'next' object found")
+			log.Error(ctx, "putMetadata endpoint: failed to find next object for dataset", err, logData)
+			return err
+		}
+
+		if dataset.State != models.AssociatedState && version.State != models.AssociatedState {
+			err := errors.New("invalid request: can't update a record with a state other than associated")
+			log.Error(ctx, "putMetadata endpoint: failed to update the record due to unexpected state", err, logData)
+			return errs.ErrExpectedResourceStateOfAssociated
+		}
+
+		dataset.UpdateMetadata(metadata)
+		version.UpdateMetadata(metadata)
+
+		if err = api.dataStore.Backend.UpdateMetadata(ctx, datasetID, version.ID, versionEtag, dataset, version); err != nil {
+			log.Error(ctx, "putMetadata endpoint: failed to update version resource", err, logData)
+			return err
+		}
+		return err
+	}()
+
+	if err != nil {
+		log.Error(ctx, "received error", err, logData)
+		handleMetadataErr(w, err)
+		return
+	}
+
+	setJSONContentType(w)
+	w.WriteHeader(http.StatusOK)
+	log.Info(ctx, "putMetadata endpoint: put metadata request successful", logData)
+}
+
 func handleMetadataErr(w http.ResponseWriter, err error) {
 	var responseStatus int
 
@@ -139,6 +234,12 @@ func handleMetadataErr(w http.ResponseWriter, err error) {
 		responseStatus = http.StatusNotFound
 	case err == errs.ErrInvalidVersion:
 		responseStatus = http.StatusBadRequest
+	case err == errs.ErrUnableToParseJSON:
+		responseStatus = http.StatusBadRequest
+	case err == errs.ErrUnableToReadMessage:
+		responseStatus = http.StatusBadRequest
+	case err == errs.ErrExpectedResourceStateOfAssociated:
+		responseStatus = http.StatusForbidden
 	default:
 		err = errs.ErrInternalServer
 		responseStatus = http.StatusInternalServerError

@@ -49,6 +49,7 @@ type dataMongoDB interface {
 	UpdateBuildSearchTaskState(ctx context.Context, currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error)
 	UpdateETagForOptions(ctx context.Context, currentInstance *models.Instance, upserts []*models.CachedDimensionOption, updates []*models.DimensionOption, eTagSelector string) (newETag string, err error)
 	UpdateVersion(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (newETag string, err error)
+	UpdateMetadata(ctx context.Context, datasetId string, versionId string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error
 	UpsertContact(ctx context.Context, ID string, update interface{}) error
 	UpsertDataset(ctx context.Context, ID string, datasetDoc *models.DatasetUpdate) error
 	UpsertEdition(ctx context.Context, datasetID, edition string, editionDoc *models.EditionUpdate) error

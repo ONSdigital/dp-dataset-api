@@ -16,11 +16,11 @@ require (
 	github.com/ONSdigital/dp-api-clients-go/v2 v2.159.1
 	github.com/ONSdigital/dp-assistdog v0.0.1
 	github.com/ONSdigital/dp-authorisation v0.2.0
-	github.com/ONSdigital/dp-component-test v0.7.0
+	github.com/ONSdigital/dp-component-test v0.9.0
 	github.com/ONSdigital/dp-graph/v2 v2.15.0
 	github.com/ONSdigital/dp-healthcheck v1.3.0
 	github.com/ONSdigital/dp-kafka/v2 v2.5.0
-	github.com/ONSdigital/dp-mongodb/v3 v3.3.0
+	github.com/ONSdigital/dp-mongodb/v3 v3.5.0
 	github.com/ONSdigital/dp-net/v2 v2.4.0
 	github.com/ONSdigital/log.go/v2 v2.2.0
 	github.com/cucumber/godog v0.12.5
@@ -38,7 +38,7 @@ require (
 
 require (
 	github.com/ONSdigital/dp-api-clients-go v1.43.0 // indirect
-	github.com/ONSdigital/dp-mongodb-in-memory v1.3.1 // indirect
+	github.com/ONSdigital/dp-mongodb-in-memory v1.5.0 // indirect
 	github.com/ONSdigital/dp-net v1.4.1 // indirect
 	github.com/ONSdigital/dp-rchttp v1.0.0 // indirect
 	github.com/ONSdigital/go-ns v0.0.0-20210916104633-ac1c1c52327e // indirect

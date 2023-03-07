@@ -16,28 +16,28 @@ var _ store.GraphDB = &GraphDBMock{}
 
 // GraphDBMock is a mock implementation of store.GraphDB.
 //
-// 	func TestSomethingThatUsesGraphDB(t *testing.T) {
+//	func TestSomethingThatUsesGraphDB(t *testing.T) {
 //
-// 		// make and configure a mocked store.GraphDB
-// 		mockedGraphDB := &GraphDBMock{
-// 			AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
-// 				panic("mock out the AddVersionDetailsToInstance method")
-// 			},
-// 			CheckerFunc: func(contextMoqParam context.Context, checkState *healthcheck.CheckState) error {
-// 				panic("mock out the Checker method")
-// 			},
-// 			CloseFunc: func(ctx context.Context) error {
-// 				panic("mock out the Close method")
-// 			},
-// 			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
-// 				panic("mock out the SetInstanceIsPublished method")
-// 			},
-// 		}
+//		// make and configure a mocked store.GraphDB
+//		mockedGraphDB := &GraphDBMock{
+//			AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
+//				panic("mock out the AddVersionDetailsToInstance method")
+//			},
+//			CheckerFunc: func(contextMoqParam context.Context, checkState *healthcheck.CheckState) error {
+//				panic("mock out the Checker method")
+//			},
+//			CloseFunc: func(ctx context.Context) error {
+//				panic("mock out the Close method")
+//			},
+//			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
+//				panic("mock out the SetInstanceIsPublished method")
+//			},
+//		}
 //
-// 		// use mockedGraphDB in code that requires store.GraphDB
-// 		// and then make assertions.
+//		// use mockedGraphDB in code that requires store.GraphDB
+//		// and then make assertions.
 //
-// 	}
+//	}
 type GraphDBMock struct {
 	// AddVersionDetailsToInstanceFunc mocks the AddVersionDetailsToInstance method.
 	AddVersionDetailsToInstanceFunc func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error
@@ -118,7 +118,8 @@ func (mock *GraphDBMock) AddVersionDetailsToInstance(ctx context.Context, instan
 
 // AddVersionDetailsToInstanceCalls gets all the calls that were made to AddVersionDetailsToInstance.
 // Check the length with:
-//     len(mockedGraphDB.AddVersionDetailsToInstanceCalls())
+//
+//	len(mockedGraphDB.AddVersionDetailsToInstanceCalls())
 func (mock *GraphDBMock) AddVersionDetailsToInstanceCalls() []struct {
 	Ctx        context.Context
 	InstanceID string
@@ -159,7 +160,8 @@ func (mock *GraphDBMock) Checker(contextMoqParam context.Context, checkState *he
 
 // CheckerCalls gets all the calls that were made to Checker.
 // Check the length with:
-//     len(mockedGraphDB.CheckerCalls())
+//
+//	len(mockedGraphDB.CheckerCalls())
 func (mock *GraphDBMock) CheckerCalls() []struct {
 	ContextMoqParam context.Context
 	CheckState      *healthcheck.CheckState
@@ -192,7 +194,8 @@ func (mock *GraphDBMock) Close(ctx context.Context) error {
 
 // CloseCalls gets all the calls that were made to Close.
 // Check the length with:
-//     len(mockedGraphDB.CloseCalls())
+//
+//	len(mockedGraphDB.CloseCalls())
 func (mock *GraphDBMock) CloseCalls() []struct {
 	Ctx context.Context
 } {
@@ -225,7 +228,8 @@ func (mock *GraphDBMock) SetInstanceIsPublished(ctx context.Context, instanceID 
 
 // SetInstanceIsPublishedCalls gets all the calls that were made to SetInstanceIsPublished.
 // Check the length with:
-//     len(mockedGraphDB.SetInstanceIsPublishedCalls())
+//
+//	len(mockedGraphDB.SetInstanceIsPublishedCalls())
 func (mock *GraphDBMock) SetInstanceIsPublishedCalls() []struct {
 	Ctx        context.Context
 	InstanceID string

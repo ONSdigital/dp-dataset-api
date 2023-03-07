@@ -18,139 +18,142 @@ var _ store.MongoDB = &MongoDBMock{}
 
 // MongoDBMock is a mock implementation of store.MongoDB.
 //
-// 	func TestSomethingThatUsesMongoDB(t *testing.T) {
+//	func TestSomethingThatUsesMongoDB(t *testing.T) {
 //
-// 		// make and configure a mocked store.MongoDB
-// 		mockedMongoDB := &MongoDBMock{
-// 			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
-// 				panic("mock out the AcquireInstanceLock method")
-// 			},
-// 			AddEventToInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
-// 				panic("mock out the AddEventToInstance method")
-// 			},
-// 			AddInstanceFunc: func(ctx context.Context, instance *models.Instance) (*models.Instance, error) {
-// 				panic("mock out the AddInstance method")
-// 			},
-// 			CheckDatasetExistsFunc: func(ctx context.Context, ID string, state string) error {
-// 				panic("mock out the CheckDatasetExists method")
-// 			},
-// 			CheckEditionExistsFunc: func(ctx context.Context, ID string, editionID string, state string) error {
-// 				panic("mock out the CheckEditionExists method")
-// 			},
-// 			CheckerFunc: func(contextMoqParam context.Context, checkState *healthcheck.CheckState) error {
-// 				panic("mock out the Checker method")
-// 			},
-// 			CloseFunc: func(contextMoqParam context.Context) error {
-// 				panic("mock out the Close method")
-// 			},
-// 			DeleteDatasetFunc: func(ctx context.Context, ID string) error {
-// 				panic("mock out the DeleteDataset method")
-// 			},
-// 			DeleteEditionFunc: func(ctx context.Context, ID string) error {
-// 				panic("mock out the DeleteEdition method")
-// 			},
-// 			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
-// 				panic("mock out the GetDataset method")
-// 			},
-// 			GetDatasetsFunc: func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
-// 				panic("mock out the GetDatasets method")
-// 			},
-// 			GetDatasetsByBasedOnFunc: func(ctx context.Context, ID string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
-// 				panic("mock out the GetDatasetsByBasedOn method")
-// 			},
-// 			GetDimensionOptionsFunc: func(ctx context.Context, version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error) {
-// 				panic("mock out the GetDimensionOptions method")
-// 			},
-// 			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
-// 				panic("mock out the GetDimensionOptionsFromIDs method")
-// 			},
-// 			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]primitive.M, error) {
-// 				panic("mock out the GetDimensions method")
-// 			},
-// 			GetDimensionsFromInstanceFunc: func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error) {
-// 				panic("mock out the GetDimensionsFromInstance method")
-// 			},
-// 			GetEditionFunc: func(ctx context.Context, ID string, editionID string, state string) (*models.EditionUpdate, error) {
-// 				panic("mock out the GetEdition method")
-// 			},
-// 			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
-// 				panic("mock out the GetEditions method")
-// 			},
-// 			GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
-// 				panic("mock out the GetInstance method")
-// 			},
-// 			GetInstancesFunc: func(ctx context.Context, states []string, datasets []string, offset int, limit int) ([]*models.Instance, int, error) {
-// 				panic("mock out the GetInstances method")
-// 			},
-// 			GetNextVersionFunc: func(ctx context.Context, datasetID string, editionID string) (int, error) {
-// 				panic("mock out the GetNextVersion method")
-// 			},
-// 			GetUniqueDimensionAndOptionsFunc: func(ctx context.Context, ID string, dimension string) ([]*string, int, error) {
-// 				panic("mock out the GetUniqueDimensionAndOptions method")
-// 			},
-// 			GetVersionFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
-// 				panic("mock out the GetVersion method")
-// 			},
-// 			GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error) {
-// 				panic("mock out the GetVersions method")
-// 			},
-// 			RemoveDatasetVersionAndEditionLinksFunc: func(ctx context.Context, id string) error {
-// 				panic("mock out the RemoveDatasetVersionAndEditionLinks method")
-// 			},
-// 			UnlockInstanceFunc: func(ctx context.Context, lockID string)  {
-// 				panic("mock out the UnlockInstance method")
-// 			},
-// 			UpdateBuildHierarchyTaskStateFunc: func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-// 				panic("mock out the UpdateBuildHierarchyTaskState method")
-// 			},
-// 			UpdateBuildSearchTaskStateFunc: func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-// 				panic("mock out the UpdateBuildSearchTaskState method")
-// 			},
-// 			UpdateDatasetFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
-// 				panic("mock out the UpdateDataset method")
-// 			},
-// 			UpdateDatasetWithAssociationFunc: func(ctx context.Context, ID string, state string, version *models.Version) error {
-// 				panic("mock out the UpdateDatasetWithAssociation method")
-// 			},
-// 			UpdateDimensionsNodeIDAndOrderFunc: func(ctx context.Context, updates []*models.DimensionOption) error {
-// 				panic("mock out the UpdateDimensionsNodeIDAndOrder method")
-// 			},
-// 			UpdateETagForOptionsFunc: func(ctx context.Context, currentInstance *models.Instance, upserts []*models.CachedDimensionOption, updates []*models.DimensionOption, eTagSelector string) (string, error) {
-// 				panic("mock out the UpdateETagForOptions method")
-// 			},
-// 			UpdateImportObservationsTaskStateFunc: func(ctx context.Context, currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
-// 				panic("mock out the UpdateImportObservationsTaskState method")
-// 			},
-// 			UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
-// 				panic("mock out the UpdateInstance method")
-// 			},
-// 			UpdateObservationInsertedFunc: func(ctx context.Context, currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error) {
-// 				panic("mock out the UpdateObservationInserted method")
-// 			},
-// 			UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
-// 				panic("mock out the UpdateVersion method")
-// 			},
-// 			UpsertContactFunc: func(ctx context.Context, ID string, update interface{}) error {
-// 				panic("mock out the UpsertContact method")
-// 			},
-// 			UpsertDatasetFunc: func(ctx context.Context, ID string, datasetDoc *models.DatasetUpdate) error {
-// 				panic("mock out the UpsertDataset method")
-// 			},
-// 			UpsertDimensionsToInstanceFunc: func(ctx context.Context, dimensions []*models.CachedDimensionOption) error {
-// 				panic("mock out the UpsertDimensionsToInstance method")
-// 			},
-// 			UpsertEditionFunc: func(ctx context.Context, datasetID string, edition string, editionDoc *models.EditionUpdate) error {
-// 				panic("mock out the UpsertEdition method")
-// 			},
-// 			UpsertVersionFunc: func(ctx context.Context, ID string, versionDoc *models.Version) error {
-// 				panic("mock out the UpsertVersion method")
-// 			},
-// 		}
+//		// make and configure a mocked store.MongoDB
+//		mockedMongoDB := &MongoDBMock{
+//			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+//				panic("mock out the AcquireInstanceLock method")
+//			},
+//			AddEventToInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
+//				panic("mock out the AddEventToInstance method")
+//			},
+//			AddInstanceFunc: func(ctx context.Context, instance *models.Instance) (*models.Instance, error) {
+//				panic("mock out the AddInstance method")
+//			},
+//			CheckDatasetExistsFunc: func(ctx context.Context, ID string, state string) error {
+//				panic("mock out the CheckDatasetExists method")
+//			},
+//			CheckEditionExistsFunc: func(ctx context.Context, ID string, editionID string, state string) error {
+//				panic("mock out the CheckEditionExists method")
+//			},
+//			CheckerFunc: func(contextMoqParam context.Context, checkState *healthcheck.CheckState) error {
+//				panic("mock out the Checker method")
+//			},
+//			CloseFunc: func(contextMoqParam context.Context) error {
+//				panic("mock out the Close method")
+//			},
+//			DeleteDatasetFunc: func(ctx context.Context, ID string) error {
+//				panic("mock out the DeleteDataset method")
+//			},
+//			DeleteEditionFunc: func(ctx context.Context, ID string) error {
+//				panic("mock out the DeleteEdition method")
+//			},
+//			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
+//				panic("mock out the GetDataset method")
+//			},
+//			GetDatasetsFunc: func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+//				panic("mock out the GetDatasets method")
+//			},
+//			GetDatasetsByBasedOnFunc: func(ctx context.Context, ID string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+//				panic("mock out the GetDatasetsByBasedOn method")
+//			},
+//			GetDimensionOptionsFunc: func(ctx context.Context, version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error) {
+//				panic("mock out the GetDimensionOptions method")
+//			},
+//			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
+//				panic("mock out the GetDimensionOptionsFromIDs method")
+//			},
+//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]primitive.M, error) {
+//				panic("mock out the GetDimensions method")
+//			},
+//			GetDimensionsFromInstanceFunc: func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error) {
+//				panic("mock out the GetDimensionsFromInstance method")
+//			},
+//			GetEditionFunc: func(ctx context.Context, ID string, editionID string, state string) (*models.EditionUpdate, error) {
+//				panic("mock out the GetEdition method")
+//			},
+//			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+//				panic("mock out the GetEditions method")
+//			},
+//			GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+//				panic("mock out the GetInstance method")
+//			},
+//			GetInstancesFunc: func(ctx context.Context, states []string, datasets []string, offset int, limit int) ([]*models.Instance, int, error) {
+//				panic("mock out the GetInstances method")
+//			},
+//			GetNextVersionFunc: func(ctx context.Context, datasetID string, editionID string) (int, error) {
+//				panic("mock out the GetNextVersion method")
+//			},
+//			GetUniqueDimensionAndOptionsFunc: func(ctx context.Context, ID string, dimension string) ([]*string, int, error) {
+//				panic("mock out the GetUniqueDimensionAndOptions method")
+//			},
+//			GetVersionFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
+//				panic("mock out the GetVersion method")
+//			},
+//			GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error) {
+//				panic("mock out the GetVersions method")
+//			},
+//			RemoveDatasetVersionAndEditionLinksFunc: func(ctx context.Context, id string) error {
+//				panic("mock out the RemoveDatasetVersionAndEditionLinks method")
+//			},
+//			UnlockInstanceFunc: func(ctx context.Context, lockID string)  {
+//				panic("mock out the UnlockInstance method")
+//			},
+//			UpdateBuildHierarchyTaskStateFunc: func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+//				panic("mock out the UpdateBuildHierarchyTaskState method")
+//			},
+//			UpdateBuildSearchTaskStateFunc: func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+//				panic("mock out the UpdateBuildSearchTaskState method")
+//			},
+//			UpdateDatasetFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
+//				panic("mock out the UpdateDataset method")
+//			},
+//			UpdateDatasetWithAssociationFunc: func(ctx context.Context, ID string, state string, version *models.Version) error {
+//				panic("mock out the UpdateDatasetWithAssociation method")
+//			},
+//			UpdateDimensionsNodeIDAndOrderFunc: func(ctx context.Context, updates []*models.DimensionOption) error {
+//				panic("mock out the UpdateDimensionsNodeIDAndOrder method")
+//			},
+//			UpdateETagForOptionsFunc: func(ctx context.Context, currentInstance *models.Instance, upserts []*models.CachedDimensionOption, updates []*models.DimensionOption, eTagSelector string) (string, error) {
+//				panic("mock out the UpdateETagForOptions method")
+//			},
+//			UpdateImportObservationsTaskStateFunc: func(ctx context.Context, currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+//				panic("mock out the UpdateImportObservationsTaskState method")
+//			},
+//			UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+//				panic("mock out the UpdateInstance method")
+//			},
+//			UpdateMetadataFunc: func(ctx context.Context, datasetId string, versionId string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
+//				panic("mock out the UpdateMetadata method")
+//			},
+//			UpdateObservationInsertedFunc: func(ctx context.Context, currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error) {
+//				panic("mock out the UpdateObservationInserted method")
+//			},
+//			UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
+//				panic("mock out the UpdateVersion method")
+//			},
+//			UpsertContactFunc: func(ctx context.Context, ID string, update interface{}) error {
+//				panic("mock out the UpsertContact method")
+//			},
+//			UpsertDatasetFunc: func(ctx context.Context, ID string, datasetDoc *models.DatasetUpdate) error {
+//				panic("mock out the UpsertDataset method")
+//			},
+//			UpsertDimensionsToInstanceFunc: func(ctx context.Context, dimensions []*models.CachedDimensionOption) error {
+//				panic("mock out the UpsertDimensionsToInstance method")
+//			},
+//			UpsertEditionFunc: func(ctx context.Context, datasetID string, edition string, editionDoc *models.EditionUpdate) error {
+//				panic("mock out the UpsertEdition method")
+//			},
+//			UpsertVersionFunc: func(ctx context.Context, ID string, versionDoc *models.Version) error {
+//				panic("mock out the UpsertVersion method")
+//			},
+//		}
 //
-// 		// use mockedMongoDB in code that requires store.MongoDB
-// 		// and then make assertions.
+//		// use mockedMongoDB in code that requires store.MongoDB
+//		// and then make assertions.
 //
-// 	}
+//	}
 type MongoDBMock struct {
 	// AcquireInstanceLockFunc mocks the AcquireInstanceLock method.
 	AcquireInstanceLockFunc func(ctx context.Context, instanceID string) (string, error)
@@ -253,6 +256,9 @@ type MongoDBMock struct {
 
 	// UpdateInstanceFunc mocks the UpdateInstance method.
 	UpdateInstanceFunc func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error)
+
+	// UpdateMetadataFunc mocks the UpdateMetadata method.
+	UpdateMetadataFunc func(ctx context.Context, datasetId string, versionId string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error
 
 	// UpdateObservationInsertedFunc mocks the UpdateObservationInserted method.
 	UpdateObservationInsertedFunc func(ctx context.Context, currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error)
@@ -619,6 +625,21 @@ type MongoDBMock struct {
 			// ETagSelector is the eTagSelector argument value.
 			ETagSelector string
 		}
+		// UpdateMetadata holds details about calls to the UpdateMetadata method.
+		UpdateMetadata []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DatasetId is the datasetId argument value.
+			DatasetId string
+			// VersionId is the versionId argument value.
+			VersionId string
+			// VersionEtag is the versionEtag argument value.
+			VersionEtag string
+			// UpdatedDataset is the updatedDataset argument value.
+			UpdatedDataset *models.Dataset
+			// UpdatedVersion is the updatedVersion argument value.
+			UpdatedVersion *models.Version
+		}
 		// UpdateObservationInserted holds details about calls to the UpdateObservationInserted method.
 		UpdateObservationInserted []struct {
 			// Ctx is the ctx argument value.
@@ -721,6 +742,7 @@ type MongoDBMock struct {
 	lockUpdateETagForOptions                sync.RWMutex
 	lockUpdateImportObservationsTaskState   sync.RWMutex
 	lockUpdateInstance                      sync.RWMutex
+	lockUpdateMetadata                      sync.RWMutex
 	lockUpdateObservationInserted           sync.RWMutex
 	lockUpdateVersion                       sync.RWMutex
 	lockUpsertContact                       sync.RWMutex
@@ -750,7 +772,8 @@ func (mock *MongoDBMock) AcquireInstanceLock(ctx context.Context, instanceID str
 
 // AcquireInstanceLockCalls gets all the calls that were made to AcquireInstanceLock.
 // Check the length with:
-//     len(mockedMongoDB.AcquireInstanceLockCalls())
+//
+//	len(mockedMongoDB.AcquireInstanceLockCalls())
 func (mock *MongoDBMock) AcquireInstanceLockCalls() []struct {
 	Ctx        context.Context
 	InstanceID string
@@ -789,7 +812,8 @@ func (mock *MongoDBMock) AddEventToInstance(ctx context.Context, currentInstance
 
 // AddEventToInstanceCalls gets all the calls that were made to AddEventToInstance.
 // Check the length with:
-//     len(mockedMongoDB.AddEventToInstanceCalls())
+//
+//	len(mockedMongoDB.AddEventToInstanceCalls())
 func (mock *MongoDBMock) AddEventToInstanceCalls() []struct {
 	Ctx             context.Context
 	CurrentInstance *models.Instance
@@ -828,7 +852,8 @@ func (mock *MongoDBMock) AddInstance(ctx context.Context, instance *models.Insta
 
 // AddInstanceCalls gets all the calls that were made to AddInstance.
 // Check the length with:
-//     len(mockedMongoDB.AddInstanceCalls())
+//
+//	len(mockedMongoDB.AddInstanceCalls())
 func (mock *MongoDBMock) AddInstanceCalls() []struct {
 	Ctx      context.Context
 	Instance *models.Instance
@@ -865,7 +890,8 @@ func (mock *MongoDBMock) CheckDatasetExists(ctx context.Context, ID string, stat
 
 // CheckDatasetExistsCalls gets all the calls that were made to CheckDatasetExists.
 // Check the length with:
-//     len(mockedMongoDB.CheckDatasetExistsCalls())
+//
+//	len(mockedMongoDB.CheckDatasetExistsCalls())
 func (mock *MongoDBMock) CheckDatasetExistsCalls() []struct {
 	Ctx   context.Context
 	ID    string
@@ -906,7 +932,8 @@ func (mock *MongoDBMock) CheckEditionExists(ctx context.Context, ID string, edit
 
 // CheckEditionExistsCalls gets all the calls that were made to CheckEditionExists.
 // Check the length with:
-//     len(mockedMongoDB.CheckEditionExistsCalls())
+//
+//	len(mockedMongoDB.CheckEditionExistsCalls())
 func (mock *MongoDBMock) CheckEditionExistsCalls() []struct {
 	Ctx       context.Context
 	ID        string
@@ -945,7 +972,8 @@ func (mock *MongoDBMock) Checker(contextMoqParam context.Context, checkState *he
 
 // CheckerCalls gets all the calls that were made to Checker.
 // Check the length with:
-//     len(mockedMongoDB.CheckerCalls())
+//
+//	len(mockedMongoDB.CheckerCalls())
 func (mock *MongoDBMock) CheckerCalls() []struct {
 	ContextMoqParam context.Context
 	CheckState      *healthcheck.CheckState
@@ -978,7 +1006,8 @@ func (mock *MongoDBMock) Close(contextMoqParam context.Context) error {
 
 // CloseCalls gets all the calls that were made to Close.
 // Check the length with:
-//     len(mockedMongoDB.CloseCalls())
+//
+//	len(mockedMongoDB.CloseCalls())
 func (mock *MongoDBMock) CloseCalls() []struct {
 	ContextMoqParam context.Context
 } {
@@ -1011,7 +1040,8 @@ func (mock *MongoDBMock) DeleteDataset(ctx context.Context, ID string) error {
 
 // DeleteDatasetCalls gets all the calls that were made to DeleteDataset.
 // Check the length with:
-//     len(mockedMongoDB.DeleteDatasetCalls())
+//
+//	len(mockedMongoDB.DeleteDatasetCalls())
 func (mock *MongoDBMock) DeleteDatasetCalls() []struct {
 	Ctx context.Context
 	ID  string
@@ -1046,7 +1076,8 @@ func (mock *MongoDBMock) DeleteEdition(ctx context.Context, ID string) error {
 
 // DeleteEditionCalls gets all the calls that were made to DeleteEdition.
 // Check the length with:
-//     len(mockedMongoDB.DeleteEditionCalls())
+//
+//	len(mockedMongoDB.DeleteEditionCalls())
 func (mock *MongoDBMock) DeleteEditionCalls() []struct {
 	Ctx context.Context
 	ID  string
@@ -1081,7 +1112,8 @@ func (mock *MongoDBMock) GetDataset(ctx context.Context, ID string) (*models.Dat
 
 // GetDatasetCalls gets all the calls that were made to GetDataset.
 // Check the length with:
-//     len(mockedMongoDB.GetDatasetCalls())
+//
+//	len(mockedMongoDB.GetDatasetCalls())
 func (mock *MongoDBMock) GetDatasetCalls() []struct {
 	Ctx context.Context
 	ID  string
@@ -1120,7 +1152,8 @@ func (mock *MongoDBMock) GetDatasets(ctx context.Context, offset int, limit int,
 
 // GetDatasetsCalls gets all the calls that were made to GetDatasets.
 // Check the length with:
-//     len(mockedMongoDB.GetDatasetsCalls())
+//
+//	len(mockedMongoDB.GetDatasetsCalls())
 func (mock *MongoDBMock) GetDatasetsCalls() []struct {
 	Ctx        context.Context
 	Offset     int
@@ -1165,7 +1198,8 @@ func (mock *MongoDBMock) GetDatasetsByBasedOn(ctx context.Context, ID string, of
 
 // GetDatasetsByBasedOnCalls gets all the calls that were made to GetDatasetsByBasedOn.
 // Check the length with:
-//     len(mockedMongoDB.GetDatasetsByBasedOnCalls())
+//
+//	len(mockedMongoDB.GetDatasetsByBasedOnCalls())
 func (mock *MongoDBMock) GetDatasetsByBasedOnCalls() []struct {
 	Ctx        context.Context
 	ID         string
@@ -1212,7 +1246,8 @@ func (mock *MongoDBMock) GetDimensionOptions(ctx context.Context, version *model
 
 // GetDimensionOptionsCalls gets all the calls that were made to GetDimensionOptions.
 // Check the length with:
-//     len(mockedMongoDB.GetDimensionOptionsCalls())
+//
+//	len(mockedMongoDB.GetDimensionOptionsCalls())
 func (mock *MongoDBMock) GetDimensionOptionsCalls() []struct {
 	Ctx       context.Context
 	Version   *models.Version
@@ -1257,7 +1292,8 @@ func (mock *MongoDBMock) GetDimensionOptionsFromIDs(ctx context.Context, version
 
 // GetDimensionOptionsFromIDsCalls gets all the calls that were made to GetDimensionOptionsFromIDs.
 // Check the length with:
-//     len(mockedMongoDB.GetDimensionOptionsFromIDsCalls())
+//
+//	len(mockedMongoDB.GetDimensionOptionsFromIDsCalls())
 func (mock *MongoDBMock) GetDimensionOptionsFromIDsCalls() []struct {
 	Ctx       context.Context
 	Version   *models.Version
@@ -1296,7 +1332,8 @@ func (mock *MongoDBMock) GetDimensions(ctx context.Context, versionID string) ([
 
 // GetDimensionsCalls gets all the calls that were made to GetDimensions.
 // Check the length with:
-//     len(mockedMongoDB.GetDimensionsCalls())
+//
+//	len(mockedMongoDB.GetDimensionsCalls())
 func (mock *MongoDBMock) GetDimensionsCalls() []struct {
 	Ctx       context.Context
 	VersionID string
@@ -1335,7 +1372,8 @@ func (mock *MongoDBMock) GetDimensionsFromInstance(ctx context.Context, ID strin
 
 // GetDimensionsFromInstanceCalls gets all the calls that were made to GetDimensionsFromInstance.
 // Check the length with:
-//     len(mockedMongoDB.GetDimensionsFromInstanceCalls())
+//
+//	len(mockedMongoDB.GetDimensionsFromInstanceCalls())
 func (mock *MongoDBMock) GetDimensionsFromInstanceCalls() []struct {
 	Ctx    context.Context
 	ID     string
@@ -1378,7 +1416,8 @@ func (mock *MongoDBMock) GetEdition(ctx context.Context, ID string, editionID st
 
 // GetEditionCalls gets all the calls that were made to GetEdition.
 // Check the length with:
-//     len(mockedMongoDB.GetEditionCalls())
+//
+//	len(mockedMongoDB.GetEditionCalls())
 func (mock *MongoDBMock) GetEditionCalls() []struct {
 	Ctx       context.Context
 	ID        string
@@ -1425,7 +1464,8 @@ func (mock *MongoDBMock) GetEditions(ctx context.Context, ID string, state strin
 
 // GetEditionsCalls gets all the calls that were made to GetEditions.
 // Check the length with:
-//     len(mockedMongoDB.GetEditionsCalls())
+//
+//	len(mockedMongoDB.GetEditionsCalls())
 func (mock *MongoDBMock) GetEditionsCalls() []struct {
 	Ctx        context.Context
 	ID         string
@@ -1470,7 +1510,8 @@ func (mock *MongoDBMock) GetInstance(ctx context.Context, ID string, eTagSelecto
 
 // GetInstanceCalls gets all the calls that were made to GetInstance.
 // Check the length with:
-//     len(mockedMongoDB.GetInstanceCalls())
+//
+//	len(mockedMongoDB.GetInstanceCalls())
 func (mock *MongoDBMock) GetInstanceCalls() []struct {
 	Ctx          context.Context
 	ID           string
@@ -1513,7 +1554,8 @@ func (mock *MongoDBMock) GetInstances(ctx context.Context, states []string, data
 
 // GetInstancesCalls gets all the calls that were made to GetInstances.
 // Check the length with:
-//     len(mockedMongoDB.GetInstancesCalls())
+//
+//	len(mockedMongoDB.GetInstancesCalls())
 func (mock *MongoDBMock) GetInstancesCalls() []struct {
 	Ctx      context.Context
 	States   []string
@@ -1556,7 +1598,8 @@ func (mock *MongoDBMock) GetNextVersion(ctx context.Context, datasetID string, e
 
 // GetNextVersionCalls gets all the calls that were made to GetNextVersion.
 // Check the length with:
-//     len(mockedMongoDB.GetNextVersionCalls())
+//
+//	len(mockedMongoDB.GetNextVersionCalls())
 func (mock *MongoDBMock) GetNextVersionCalls() []struct {
 	Ctx       context.Context
 	DatasetID string
@@ -1595,7 +1638,8 @@ func (mock *MongoDBMock) GetUniqueDimensionAndOptions(ctx context.Context, ID st
 
 // GetUniqueDimensionAndOptionsCalls gets all the calls that were made to GetUniqueDimensionAndOptions.
 // Check the length with:
-//     len(mockedMongoDB.GetUniqueDimensionAndOptionsCalls())
+//
+//	len(mockedMongoDB.GetUniqueDimensionAndOptionsCalls())
 func (mock *MongoDBMock) GetUniqueDimensionAndOptionsCalls() []struct {
 	Ctx       context.Context
 	ID        string
@@ -1638,7 +1682,8 @@ func (mock *MongoDBMock) GetVersion(ctx context.Context, datasetID string, editi
 
 // GetVersionCalls gets all the calls that were made to GetVersion.
 // Check the length with:
-//     len(mockedMongoDB.GetVersionCalls())
+//
+//	len(mockedMongoDB.GetVersionCalls())
 func (mock *MongoDBMock) GetVersionCalls() []struct {
 	Ctx       context.Context
 	DatasetID string
@@ -1687,7 +1732,8 @@ func (mock *MongoDBMock) GetVersions(ctx context.Context, datasetID string, edit
 
 // GetVersionsCalls gets all the calls that were made to GetVersions.
 // Check the length with:
-//     len(mockedMongoDB.GetVersionsCalls())
+//
+//	len(mockedMongoDB.GetVersionsCalls())
 func (mock *MongoDBMock) GetVersionsCalls() []struct {
 	Ctx       context.Context
 	DatasetID string
@@ -1730,7 +1776,8 @@ func (mock *MongoDBMock) RemoveDatasetVersionAndEditionLinks(ctx context.Context
 
 // RemoveDatasetVersionAndEditionLinksCalls gets all the calls that were made to RemoveDatasetVersionAndEditionLinks.
 // Check the length with:
-//     len(mockedMongoDB.RemoveDatasetVersionAndEditionLinksCalls())
+//
+//	len(mockedMongoDB.RemoveDatasetVersionAndEditionLinksCalls())
 func (mock *MongoDBMock) RemoveDatasetVersionAndEditionLinksCalls() []struct {
 	Ctx context.Context
 	ID  string
@@ -1765,7 +1812,8 @@ func (mock *MongoDBMock) UnlockInstance(ctx context.Context, lockID string) {
 
 // UnlockInstanceCalls gets all the calls that were made to UnlockInstance.
 // Check the length with:
-//     len(mockedMongoDB.UnlockInstanceCalls())
+//
+//	len(mockedMongoDB.UnlockInstanceCalls())
 func (mock *MongoDBMock) UnlockInstanceCalls() []struct {
 	Ctx    context.Context
 	LockID string
@@ -1806,7 +1854,8 @@ func (mock *MongoDBMock) UpdateBuildHierarchyTaskState(ctx context.Context, curr
 
 // UpdateBuildHierarchyTaskStateCalls gets all the calls that were made to UpdateBuildHierarchyTaskState.
 // Check the length with:
-//     len(mockedMongoDB.UpdateBuildHierarchyTaskStateCalls())
+//
+//	len(mockedMongoDB.UpdateBuildHierarchyTaskStateCalls())
 func (mock *MongoDBMock) UpdateBuildHierarchyTaskStateCalls() []struct {
 	Ctx             context.Context
 	CurrentInstance *models.Instance
@@ -1853,7 +1902,8 @@ func (mock *MongoDBMock) UpdateBuildSearchTaskState(ctx context.Context, current
 
 // UpdateBuildSearchTaskStateCalls gets all the calls that were made to UpdateBuildSearchTaskState.
 // Check the length with:
-//     len(mockedMongoDB.UpdateBuildSearchTaskStateCalls())
+//
+//	len(mockedMongoDB.UpdateBuildSearchTaskStateCalls())
 func (mock *MongoDBMock) UpdateBuildSearchTaskStateCalls() []struct {
 	Ctx             context.Context
 	CurrentInstance *models.Instance
@@ -1898,7 +1948,8 @@ func (mock *MongoDBMock) UpdateDataset(ctx context.Context, ID string, dataset *
 
 // UpdateDatasetCalls gets all the calls that were made to UpdateDataset.
 // Check the length with:
-//     len(mockedMongoDB.UpdateDatasetCalls())
+//
+//	len(mockedMongoDB.UpdateDatasetCalls())
 func (mock *MongoDBMock) UpdateDatasetCalls() []struct {
 	Ctx          context.Context
 	ID           string
@@ -1941,7 +1992,8 @@ func (mock *MongoDBMock) UpdateDatasetWithAssociation(ctx context.Context, ID st
 
 // UpdateDatasetWithAssociationCalls gets all the calls that were made to UpdateDatasetWithAssociation.
 // Check the length with:
-//     len(mockedMongoDB.UpdateDatasetWithAssociationCalls())
+//
+//	len(mockedMongoDB.UpdateDatasetWithAssociationCalls())
 func (mock *MongoDBMock) UpdateDatasetWithAssociationCalls() []struct {
 	Ctx     context.Context
 	ID      string
@@ -1980,7 +2032,8 @@ func (mock *MongoDBMock) UpdateDimensionsNodeIDAndOrder(ctx context.Context, upd
 
 // UpdateDimensionsNodeIDAndOrderCalls gets all the calls that were made to UpdateDimensionsNodeIDAndOrder.
 // Check the length with:
-//     len(mockedMongoDB.UpdateDimensionsNodeIDAndOrderCalls())
+//
+//	len(mockedMongoDB.UpdateDimensionsNodeIDAndOrderCalls())
 func (mock *MongoDBMock) UpdateDimensionsNodeIDAndOrderCalls() []struct {
 	Ctx     context.Context
 	Updates []*models.DimensionOption
@@ -2021,7 +2074,8 @@ func (mock *MongoDBMock) UpdateETagForOptions(ctx context.Context, currentInstan
 
 // UpdateETagForOptionsCalls gets all the calls that were made to UpdateETagForOptions.
 // Check the length with:
-//     len(mockedMongoDB.UpdateETagForOptionsCalls())
+//
+//	len(mockedMongoDB.UpdateETagForOptionsCalls())
 func (mock *MongoDBMock) UpdateETagForOptionsCalls() []struct {
 	Ctx             context.Context
 	CurrentInstance *models.Instance
@@ -2066,7 +2120,8 @@ func (mock *MongoDBMock) UpdateImportObservationsTaskState(ctx context.Context, 
 
 // UpdateImportObservationsTaskStateCalls gets all the calls that were made to UpdateImportObservationsTaskState.
 // Check the length with:
-//     len(mockedMongoDB.UpdateImportObservationsTaskStateCalls())
+//
+//	len(mockedMongoDB.UpdateImportObservationsTaskStateCalls())
 func (mock *MongoDBMock) UpdateImportObservationsTaskStateCalls() []struct {
 	Ctx             context.Context
 	CurrentInstance *models.Instance
@@ -2109,7 +2164,8 @@ func (mock *MongoDBMock) UpdateInstance(ctx context.Context, currentInstance *mo
 
 // UpdateInstanceCalls gets all the calls that were made to UpdateInstance.
 // Check the length with:
-//     len(mockedMongoDB.UpdateInstanceCalls())
+//
+//	len(mockedMongoDB.UpdateInstanceCalls())
 func (mock *MongoDBMock) UpdateInstanceCalls() []struct {
 	Ctx             context.Context
 	CurrentInstance *models.Instance
@@ -2125,6 +2181,58 @@ func (mock *MongoDBMock) UpdateInstanceCalls() []struct {
 	mock.lockUpdateInstance.RLock()
 	calls = mock.calls.UpdateInstance
 	mock.lockUpdateInstance.RUnlock()
+	return calls
+}
+
+// UpdateMetadata calls UpdateMetadataFunc.
+func (mock *MongoDBMock) UpdateMetadata(ctx context.Context, datasetId string, versionId string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
+	if mock.UpdateMetadataFunc == nil {
+		panic("MongoDBMock.UpdateMetadataFunc: method is nil but MongoDB.UpdateMetadata was just called")
+	}
+	callInfo := struct {
+		Ctx            context.Context
+		DatasetId      string
+		VersionId      string
+		VersionEtag    string
+		UpdatedDataset *models.Dataset
+		UpdatedVersion *models.Version
+	}{
+		Ctx:            ctx,
+		DatasetId:      datasetId,
+		VersionId:      versionId,
+		VersionEtag:    versionEtag,
+		UpdatedDataset: updatedDataset,
+		UpdatedVersion: updatedVersion,
+	}
+	mock.lockUpdateMetadata.Lock()
+	mock.calls.UpdateMetadata = append(mock.calls.UpdateMetadata, callInfo)
+	mock.lockUpdateMetadata.Unlock()
+	return mock.UpdateMetadataFunc(ctx, datasetId, versionId, versionEtag, updatedDataset, updatedVersion)
+}
+
+// UpdateMetadataCalls gets all the calls that were made to UpdateMetadata.
+// Check the length with:
+//
+//	len(mockedMongoDB.UpdateMetadataCalls())
+func (mock *MongoDBMock) UpdateMetadataCalls() []struct {
+	Ctx            context.Context
+	DatasetId      string
+	VersionId      string
+	VersionEtag    string
+	UpdatedDataset *models.Dataset
+	UpdatedVersion *models.Version
+} {
+	var calls []struct {
+		Ctx            context.Context
+		DatasetId      string
+		VersionId      string
+		VersionEtag    string
+		UpdatedDataset *models.Dataset
+		UpdatedVersion *models.Version
+	}
+	mock.lockUpdateMetadata.RLock()
+	calls = mock.calls.UpdateMetadata
+	mock.lockUpdateMetadata.RUnlock()
 	return calls
 }
 
@@ -2152,7 +2260,8 @@ func (mock *MongoDBMock) UpdateObservationInserted(ctx context.Context, currentI
 
 // UpdateObservationInsertedCalls gets all the calls that were made to UpdateObservationInserted.
 // Check the length with:
-//     len(mockedMongoDB.UpdateObservationInsertedCalls())
+//
+//	len(mockedMongoDB.UpdateObservationInsertedCalls())
 func (mock *MongoDBMock) UpdateObservationInsertedCalls() []struct {
 	Ctx                 context.Context
 	CurrentInstance     *models.Instance
@@ -2195,7 +2304,8 @@ func (mock *MongoDBMock) UpdateVersion(ctx context.Context, currentVersion *mode
 
 // UpdateVersionCalls gets all the calls that were made to UpdateVersion.
 // Check the length with:
-//     len(mockedMongoDB.UpdateVersionCalls())
+//
+//	len(mockedMongoDB.UpdateVersionCalls())
 func (mock *MongoDBMock) UpdateVersionCalls() []struct {
 	Ctx            context.Context
 	CurrentVersion *models.Version
@@ -2236,7 +2346,8 @@ func (mock *MongoDBMock) UpsertContact(ctx context.Context, ID string, update in
 
 // UpsertContactCalls gets all the calls that were made to UpsertContact.
 // Check the length with:
-//     len(mockedMongoDB.UpsertContactCalls())
+//
+//	len(mockedMongoDB.UpsertContactCalls())
 func (mock *MongoDBMock) UpsertContactCalls() []struct {
 	Ctx    context.Context
 	ID     string
@@ -2275,7 +2386,8 @@ func (mock *MongoDBMock) UpsertDataset(ctx context.Context, ID string, datasetDo
 
 // UpsertDatasetCalls gets all the calls that were made to UpsertDataset.
 // Check the length with:
-//     len(mockedMongoDB.UpsertDatasetCalls())
+//
+//	len(mockedMongoDB.UpsertDatasetCalls())
 func (mock *MongoDBMock) UpsertDatasetCalls() []struct {
 	Ctx        context.Context
 	ID         string
@@ -2312,7 +2424,8 @@ func (mock *MongoDBMock) UpsertDimensionsToInstance(ctx context.Context, dimensi
 
 // UpsertDimensionsToInstanceCalls gets all the calls that were made to UpsertDimensionsToInstance.
 // Check the length with:
-//     len(mockedMongoDB.UpsertDimensionsToInstanceCalls())
+//
+//	len(mockedMongoDB.UpsertDimensionsToInstanceCalls())
 func (mock *MongoDBMock) UpsertDimensionsToInstanceCalls() []struct {
 	Ctx        context.Context
 	Dimensions []*models.CachedDimensionOption
@@ -2351,7 +2464,8 @@ func (mock *MongoDBMock) UpsertEdition(ctx context.Context, datasetID string, ed
 
 // UpsertEditionCalls gets all the calls that were made to UpsertEdition.
 // Check the length with:
-//     len(mockedMongoDB.UpsertEditionCalls())
+//
+//	len(mockedMongoDB.UpsertEditionCalls())
 func (mock *MongoDBMock) UpsertEditionCalls() []struct {
 	Ctx        context.Context
 	DatasetID  string
@@ -2392,7 +2506,8 @@ func (mock *MongoDBMock) UpsertVersion(ctx context.Context, ID string, versionDo
 
 // UpsertVersionCalls gets all the calls that were made to UpsertVersion.
 // Check the length with:
-//     len(mockedMongoDB.UpsertVersionCalls())
+//
+//	len(mockedMongoDB.UpsertVersionCalls())
 func (mock *MongoDBMock) UpsertVersionCalls() []struct {
 	Ctx        context.Context
 	ID         string

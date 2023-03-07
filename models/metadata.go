@@ -8,17 +8,26 @@ import (
 
 // Metadata represents information (metadata) relevant to a version
 type Metadata struct {
+	EditableMetadata
+	Distribution []string       `json:"distribution,omitempty"`
+	Downloads    *DownloadList  `json:"downloads,omitempty"`
+	Links        *MetadataLinks `json:"links,omitempty"`
+	TableID      string         `json:"table_id,omitempty"`
+	CSVHeader    []string       `json:"headers,omitempty"`
+	Version      int            `json:"version,omitempty"`
+	DatasetLinks *DatasetLinks  `json:"dataset_links,omitempty"`
+}
+
+// EditableMetadata represents the metadata fields that can be edited
+type EditableMetadata struct {
 	Alerts            *[]Alert             `json:"alerts,omitempty"`
 	CanonicalTopic    string               `json:"canonical_topic,omitempty"`
 	Contacts          []ContactDetails     `json:"contacts,omitempty"`
 	Description       string               `json:"description,omitempty"`
 	Dimensions        []Dimension          `json:"dimensions,omitempty"`
-	Distribution      []string             `json:"distribution,omitempty"`
-	Downloads         *DownloadList        `json:"downloads,omitempty"`
 	Keywords          []string             `json:"keywords,omitempty"`
 	LatestChanges     *[]LatestChange      `json:"latest_changes,omitempty"`
 	License           string               `json:"license,omitempty"`
-	Links             *MetadataLinks       `json:"links,omitempty"`
 	Methodologies     []GeneralDetails     `json:"methodologies,omitempty"`
 	NationalStatistic *bool                `json:"national_statistic,omitempty"`
 	NextRelease       string               `json:"next_release,omitempty"`
@@ -31,6 +40,7 @@ type Metadata struct {
 	Temporal          *[]TemporalFrequency `json:"temporal,omitempty"`
 	Theme             string               `json:"theme,omitempty"`
 	Title             string               `json:"title,omitempty"`
+	Survey            string               `json:"survey,omitempty"`
 	Subtopics         []string             `json:"subtopics,omitempty"`
 	UnitOfMeasure     string               `json:"unit_of_measure,omitempty"`
 	URI               string               `json:"uri,omitempty"`
@@ -38,12 +48,8 @@ type Metadata struct {
 	Coverage          string               `json:"coverage,omitempty"`
 	TablePopulation   string               `json:"table_population,omitempty"`
 	AreaType          string               `json:"area_type,omitempty"`
-	TableID           string               `json:"table_id,omitempty"`
 	Classifications   string               `json:"classifications,omitempty"`
 	Source            string               `json:"source,omitempty"`
-	CSVHeader         []string             `json:"headers,omitempty"`
-	Version           int                  `json:"version,omitempty"`
-	DatasetLinks      *DatasetLinks        `json:"dataset_links,omitempty"`
 	RelatedContent    []GeneralDetails     `json:"related_content,omitempty"`
 }
 
@@ -59,31 +65,34 @@ type MetadataLinks struct {
 // CreateMetaDataDoc manages the creation of metadata across dataset and version docs
 func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url.Builder) *Metadata {
 	metaDataDoc := &Metadata{
-		Alerts:            versionDoc.Alerts,
-		CanonicalTopic:    datasetDoc.CanonicalTopic,
-		Contacts:          datasetDoc.Contacts,
-		Description:       datasetDoc.Description,
-		Dimensions:        versionDoc.Dimensions,
-		Keywords:          datasetDoc.Keywords,
-		LatestChanges:     versionDoc.LatestChanges,
-		Links:             &MetadataLinks{},
-		License:           datasetDoc.License,
-		Methodologies:     datasetDoc.Methodologies,
-		NationalStatistic: datasetDoc.NationalStatistic,
-		NextRelease:       datasetDoc.NextRelease,
-		Publications:      datasetDoc.Publications,
-		Publisher:         datasetDoc.Publisher,
-		QMI:               datasetDoc.QMI,
-		RelatedDatasets:   datasetDoc.RelatedDatasets,
-		ReleaseDate:       versionDoc.ReleaseDate,
-		ReleaseFrequency:  datasetDoc.ReleaseFrequency,
-		Subtopics:         datasetDoc.Subtopics,
-		Temporal:          versionDoc.Temporal,
-		Theme:             datasetDoc.Theme,
-		Title:             datasetDoc.Title,
-		UnitOfMeasure:     datasetDoc.UnitOfMeasure,
-		URI:               datasetDoc.URI,
-		UsageNotes:        versionDoc.UsageNotes,
+		EditableMetadata: EditableMetadata{
+			Alerts:            versionDoc.Alerts,
+			CanonicalTopic:    datasetDoc.CanonicalTopic,
+			Contacts:          datasetDoc.Contacts,
+			Description:       datasetDoc.Description,
+			Dimensions:        versionDoc.Dimensions,
+			Keywords:          datasetDoc.Keywords,
+			LatestChanges:     versionDoc.LatestChanges,
+			License:           datasetDoc.License,
+			Methodologies:     datasetDoc.Methodologies,
+			NationalStatistic: datasetDoc.NationalStatistic,
+			NextRelease:       datasetDoc.NextRelease,
+			Publications:      datasetDoc.Publications,
+			Publisher:         datasetDoc.Publisher,
+			QMI:               datasetDoc.QMI,
+			RelatedDatasets:   datasetDoc.RelatedDatasets,
+			ReleaseDate:       versionDoc.ReleaseDate,
+			ReleaseFrequency:  datasetDoc.ReleaseFrequency,
+			Subtopics:         datasetDoc.Subtopics,
+			Temporal:          versionDoc.Temporal,
+			Theme:             datasetDoc.Theme,
+			Title:             datasetDoc.Title,
+			UnitOfMeasure:     datasetDoc.UnitOfMeasure,
+			URI:               datasetDoc.URI,
+			UsageNotes:        versionDoc.UsageNotes,
+		},
+		Downloads: versionDoc.Downloads,
+		Links:     &MetadataLinks{},
 	}
 
 	// Add relevant metdata links from dataset document
@@ -169,21 +178,24 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 // note: logic to retrieve the newly-added Cantabular-specific fields to the Metadata model will be created at a later date
 func CreateCantabularMetaDataDoc(d *Dataset, v *Version, urlBuilder *url.Builder) *Metadata {
 	m := &Metadata{
-		CSVHeader:      v.Headers,
-		CanonicalTopic: d.CanonicalTopic,
-		Contacts:       d.Contacts,
-		DatasetLinks:   d.Links,
-		Description:    d.Description,
-		Dimensions:     v.Dimensions,
-		Keywords:       d.Keywords,
-		RelatedContent: d.RelatedContent,
-		ReleaseDate:    v.ReleaseDate,
-		Subtopics:      d.Subtopics,
-		Title:          d.Title,
-		UnitOfMeasure:  d.UnitOfMeasure,
-		URI:            d.URI,
-		QMI:            d.QMI,
-		Version:        v.Version,
+		EditableMetadata: EditableMetadata{
+			CanonicalTopic: d.CanonicalTopic,
+			Contacts:       d.Contacts,
+			Description:    d.Description,
+			Dimensions:     v.Dimensions,
+			Keywords:       d.Keywords,
+			RelatedContent: d.RelatedContent,
+			ReleaseDate:    v.ReleaseDate,
+			Subtopics:      d.Subtopics,
+			Title:          d.Title,
+			UnitOfMeasure:  d.UnitOfMeasure,
+			URI:            d.URI,
+			QMI:            d.QMI,
+		},
+		CSVHeader:    v.Headers,
+		DatasetLinks: d.Links,
+		Downloads:    v.Downloads,
+		Version:      v.Version,
 	}
 
 	m.Distribution = getDistribution(v.Downloads)
@@ -261,4 +273,34 @@ func getDistribution(downloads *DownloadList) []string {
 	}
 
 	return distribution
+}
+
+// UpdateMetadata updates the metadata fields for a dataset
+func (d *Dataset) UpdateMetadata(metadata EditableMetadata) {
+	d.CanonicalTopic = metadata.CanonicalTopic
+	d.Title = metadata.Title
+	d.Contacts = metadata.Contacts
+	d.NextRelease = metadata.NextRelease
+	d.License = metadata.License
+	d.Description = metadata.Description
+	d.UnitOfMeasure = metadata.UnitOfMeasure
+	d.Keywords = metadata.Keywords
+	d.Subtopics = metadata.Subtopics
+	d.RelatedContent = metadata.RelatedContent
+	d.NationalStatistic = metadata.NationalStatistic
+	d.Methodologies = metadata.Methodologies
+	d.QMI = metadata.QMI
+	d.ReleaseFrequency = metadata.ReleaseFrequency
+	d.RelatedDatasets = metadata.RelatedDatasets
+	d.Publications = metadata.Publications
+	d.Survey = metadata.Survey
+}
+
+// UpdateMetadata updates the metadata fields for a version
+func (v *Version) UpdateMetadata(metadata EditableMetadata) {
+	v.ReleaseDate = metadata.ReleaseDate
+	v.Alerts = metadata.Alerts
+	v.Dimensions = metadata.Dimensions
+	v.UsageNotes = metadata.UsageNotes
+	v.LatestChanges = metadata.LatestChanges
 }
