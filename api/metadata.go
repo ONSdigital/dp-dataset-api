@@ -180,6 +180,13 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 		// 	return err
 		// }
 
+		if version.ETag != versionEtag {
+			logData["incomingEtag"] = versionEtag
+			logData["versionEtag"] = version.ETag
+			log.Error(ctx, "ETag mismatch", errs.ErrInstanceConflict, logData)
+			return errs.ErrInstanceConflict
+		}
+
 		datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			log.Error(ctx, "putMetadata endpoint: get datastore.getDataset returned an error", err, logData)
