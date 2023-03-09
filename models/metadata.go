@@ -9,48 +9,48 @@ import (
 // Metadata represents information (metadata) relevant to a version
 type Metadata struct {
 	EditableMetadata
-	Distribution []string       `json:"distribution,omitempty"`
-	Downloads    *DownloadList  `json:"downloads,omitempty"`
-	Links        *MetadataLinks `json:"links,omitempty"`
-	TableID      string         `json:"table_id,omitempty"`
-	CSVHeader    []string       `json:"headers,omitempty"`
-	Version      int            `json:"version,omitempty"`
-	DatasetLinks *DatasetLinks  `json:"dataset_links,omitempty"`
+	Distribution    []string             `json:"distribution,omitempty"`
+	Downloads       *DownloadList        `json:"downloads,omitempty"`
+	Links           *MetadataLinks       `json:"links,omitempty"`
+	TableID         string               `json:"table_id,omitempty"`
+	CSVHeader       []string             `json:"headers,omitempty"`
+	Version         int                  `json:"version,omitempty"`
+	DatasetLinks    *DatasetLinks        `json:"dataset_links,omitempty"`
+	Publisher       *Publisher           `json:"publisher,omitempty"`
+	Temporal        *[]TemporalFrequency `json:"temporal,omitempty"`
+	Theme           string               `json:"theme,omitempty"`
+	URI             string               `json:"uri,omitempty"`
+	Coverage        string               `json:"coverage,omitempty"`
+	TablePopulation string               `json:"table_population,omitempty"`
+	AreaType        string               `json:"area_type,omitempty"`
+	Classifications string               `json:"classifications,omitempty"`
+	Source          string               `json:"source,omitempty"`
 }
 
 // EditableMetadata represents the metadata fields that can be edited
 type EditableMetadata struct {
-	Alerts            *[]Alert             `json:"alerts,omitempty"`
-	CanonicalTopic    string               `json:"canonical_topic,omitempty"`
-	Contacts          []ContactDetails     `json:"contacts,omitempty"`
-	Description       string               `json:"description,omitempty"`
-	Dimensions        []Dimension          `json:"dimensions,omitempty"`
-	Keywords          []string             `json:"keywords,omitempty"`
-	LatestChanges     *[]LatestChange      `json:"latest_changes,omitempty"`
-	License           string               `json:"license,omitempty"`
-	Methodologies     []GeneralDetails     `json:"methodologies,omitempty"`
-	NationalStatistic *bool                `json:"national_statistic,omitempty"`
-	NextRelease       string               `json:"next_release,omitempty"`
-	Publications      []GeneralDetails     `json:"publications,omitempty"`
-	Publisher         *Publisher           `json:"publisher,omitempty"`
-	QMI               *GeneralDetails      `json:"qmi,omitempty"`
-	RelatedDatasets   []GeneralDetails     `json:"related_datasets,omitempty"`
-	ReleaseDate       string               `json:"release_date,omitempty"`
-	ReleaseFrequency  string               `json:"release_frequency,omitempty"`
-	Temporal          *[]TemporalFrequency `json:"temporal,omitempty"`
-	Theme             string               `json:"theme,omitempty"`
-	Title             string               `json:"title,omitempty"`
-	Survey            string               `json:"survey,omitempty"`
-	Subtopics         []string             `json:"subtopics,omitempty"`
-	UnitOfMeasure     string               `json:"unit_of_measure,omitempty"`
-	URI               string               `json:"uri,omitempty"`
-	UsageNotes        *[]UsageNote         `json:"usage_notes,omitempty"`
-	Coverage          string               `json:"coverage,omitempty"`
-	TablePopulation   string               `json:"table_population,omitempty"`
-	AreaType          string               `json:"area_type,omitempty"`
-	Classifications   string               `json:"classifications,omitempty"`
-	Source            string               `json:"source,omitempty"`
-	RelatedContent    []GeneralDetails     `json:"related_content,omitempty"`
+	Alerts            *[]Alert         `json:"alerts,omitempty"`
+	CanonicalTopic    string           `json:"canonical_topic,omitempty"`
+	Contacts          []ContactDetails `json:"contacts,omitempty"`
+	Description       string           `json:"description,omitempty"`
+	Dimensions        []Dimension      `json:"dimensions,omitempty"`
+	Keywords          []string         `json:"keywords,omitempty"`
+	LatestChanges     *[]LatestChange  `json:"latest_changes,omitempty"`
+	License           string           `json:"license,omitempty"`
+	Methodologies     []GeneralDetails `json:"methodologies,omitempty"`
+	NationalStatistic *bool            `json:"national_statistic,omitempty"`
+	NextRelease       string           `json:"next_release,omitempty"`
+	Publications      []GeneralDetails `json:"publications,omitempty"`
+	QMI               *GeneralDetails  `json:"qmi,omitempty"`
+	RelatedDatasets   []GeneralDetails `json:"related_datasets,omitempty"`
+	ReleaseDate       string           `json:"release_date,omitempty"`
+	ReleaseFrequency  string           `json:"release_frequency,omitempty"`
+	Title             string           `json:"title,omitempty"`
+	Survey            string           `json:"survey,omitempty"`
+	Subtopics         []string         `json:"subtopics,omitempty"`
+	UnitOfMeasure     string           `json:"unit_of_measure,omitempty"`
+	UsageNotes        *[]UsageNote     `json:"usage_notes,omitempty"`
+	RelatedContent    []GeneralDetails `json:"related_content,omitempty"`
 }
 
 // MetadataLinks represents a link object to list of metadata relevant to a version
@@ -78,21 +78,20 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 			NationalStatistic: datasetDoc.NationalStatistic,
 			NextRelease:       datasetDoc.NextRelease,
 			Publications:      datasetDoc.Publications,
-			Publisher:         datasetDoc.Publisher,
 			QMI:               datasetDoc.QMI,
 			RelatedDatasets:   datasetDoc.RelatedDatasets,
 			ReleaseDate:       versionDoc.ReleaseDate,
 			ReleaseFrequency:  datasetDoc.ReleaseFrequency,
 			Subtopics:         datasetDoc.Subtopics,
-			Temporal:          versionDoc.Temporal,
-			Theme:             datasetDoc.Theme,
 			Title:             datasetDoc.Title,
 			UnitOfMeasure:     datasetDoc.UnitOfMeasure,
-			URI:               datasetDoc.URI,
 			UsageNotes:        versionDoc.UsageNotes,
 		},
-		Downloads: versionDoc.Downloads,
 		Links:     &MetadataLinks{},
+		Publisher: datasetDoc.Publisher,
+		Temporal:  versionDoc.Temporal,
+		Theme:     datasetDoc.Theme,
+		URI:       datasetDoc.URI,
 	}
 
 	// Add relevant metdata links from dataset document
@@ -189,13 +188,12 @@ func CreateCantabularMetaDataDoc(d *Dataset, v *Version, urlBuilder *url.Builder
 			Subtopics:      d.Subtopics,
 			Title:          d.Title,
 			UnitOfMeasure:  d.UnitOfMeasure,
-			URI:            d.URI,
 			QMI:            d.QMI,
 		},
 		CSVHeader:    v.Headers,
 		DatasetLinks: d.Links,
-		Downloads:    v.Downloads,
 		Version:      v.Version,
+		URI:          d.URI,
 	}
 
 	m.Distribution = getDistribution(v.Downloads)
