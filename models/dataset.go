@@ -207,7 +207,7 @@ type Version struct {
 	IsBasedOn       *IsBasedOn           `bson:"is_based_on,omitempty"      json:"is_based_on,omitempty"`
 	Version         int                  `bson:"version,omitempty"          json:"version,omitempty"`
 	Type            string               `bson:"type,omitempty"             json:"type,omitempty"`
-	ETag            string               `bson:"e_tag"                      json:"-"`
+	ETag            string               `bson:"e_tag"                      json:"e_tag,omitempty"`
 	LowestGeography string               `bson:"lowest_geography,omitempty" json:"lowest_geography,omitempty"`
 }
 
