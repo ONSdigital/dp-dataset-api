@@ -45,6 +45,7 @@ type Metadata struct {
 	Version           int                  `json:"version,omitempty"`
 	DatasetLinks      *DatasetLinks        `json:"dataset_links,omitempty"`
 	RelatedContent    []GeneralDetails     `json:"related_content,omitempty"`
+	IsBasedOn         *IsBasedOn           `json:"is_based_on,omitempty"`
 }
 
 // MetadataLinks represents a link object to list of metadata relevant to a version
@@ -84,6 +85,7 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 		UnitOfMeasure:     datasetDoc.UnitOfMeasure,
 		URI:               datasetDoc.URI,
 		UsageNotes:        versionDoc.UsageNotes,
+		IsBasedOn:         datasetDoc.IsBasedOn,
 	}
 
 	// Add relevant metdata links from dataset document
@@ -184,6 +186,7 @@ func CreateCantabularMetaDataDoc(d *Dataset, v *Version, urlBuilder *url.Builder
 		URI:            d.URI,
 		QMI:            d.QMI,
 		Version:        v.Version,
+		IsBasedOn:      d.IsBasedOn,
 	}
 
 	m.Distribution = getDistribution(v.Downloads)

@@ -37,6 +37,10 @@ func TestCreateMetadata(t *testing.T) {
 			},
 			ReleaseFrequency: "yearly",
 			Theme:            "population",
+			IsBasedOn: &IsBasedOn{
+				ID:   "UR_HH",
+				Type: "All usual residents in households",
+			},
 			Links: &DatasetLinks{
 				AccessRights: &LinkObject{
 					HRef: "href-access-rights",
@@ -154,6 +158,11 @@ func TestCreateMetadata(t *testing.T) {
 				So(metaDataDoc.Downloads.XLSX.Size, ShouldEqual, xlsxDownload.Size)
 				So(metaDataDoc.Downloads.XLSX.Private, ShouldEqual, xlsxDownload.Private) // TODO: Should it be cleared?
 				So(metaDataDoc.Downloads.XLSX.Public, ShouldEqual, xlsxDownload.Public)   // TODO: Should it be cleared?
+				So(metaDataDoc.IsBasedOn, ShouldResemble, &IsBasedOn{
+					ID:   "UR_HH",
+					Type: "All usual residents in households",
+				})
+				So(metaDataDoc.Version, ShouldEqual, 1)
 
 				// TODO: Should it include xlsx?
 				So(metaDataDoc.Distribution, ShouldResemble, []string{"json", "csv", "csvw", "xls", "txt"})
@@ -236,6 +245,10 @@ func TestCreateMetadata(t *testing.T) {
 					websiteUrl, dataset.ID, version.Links.Edition.ID, version.Version)
 				So(metaDataDoc.Links.WebsiteVersion.HRef, ShouldEqual, expectedWebsiteHref)
 				So(metaDataDoc.Links.WebsiteVersion.ID, ShouldEqual, "")
+				So(metaDataDoc.IsBasedOn, ShouldResemble, &IsBasedOn{
+					ID:   "UR_HH",
+					Type: "All usual residents in households",
+				})
 
 				// TODO: Should it include xlsx?
 				So(metaDataDoc.Distribution, ShouldResemble, []string{"json", "csv", "csvw", "xls", "txt"})
@@ -249,5 +262,4 @@ func TestCreateMetadata(t *testing.T) {
 			})
 		})
 	})
-
 }
