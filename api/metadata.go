@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -140,6 +141,11 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 
 	err := func() error {
 
+		err := validateParameters(ctx, datasetID, edition, version)
+		if err != nil {
+			return err
+		}
+
 		var metadata models.EditableMetadata
 		payload, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -253,4 +259,25 @@ func handleMetadataErr(w http.ResponseWriter, err error) {
 	}
 
 	http.Error(w, err.Error(), responseStatus)
+}
+
+// validateParameters checks that the dataset_id, edition and version are not empty strings
+func validateParameters(ctx context.Context, datasetID, edition, version string) error {
+	if datasetID == `""` {
+		err := errors.New("invalid parameter: 'dataset_id' parameter has an empty value")
+		log.Error(ctx, "putMetadata endpoint: invalid request due to unexpected 'dataset_id' parameter", err, log.Data{"dataset_id": datasetID})
+		return err
+	}
+	if edition == `""` {
+		err := errors.New("invalid parameter: 'edition' parameter has an empty value")
+		log.Error(ctx, "putMetadata endpoint: invalid request due to unexpected 'edition' parameter", err, log.Data{"edition": edition})
+		return err
+
+	}
+	if version == `""` {
+		err := errors.New("invalid parameter: 'version' parameter has an empty value")
+		log.Error(ctx, "putMetadata endpoint: invalid request due to unexpected 'version' parameter", err, log.Data{"version": version})
+		return err
+	}
+	return nil
 }
