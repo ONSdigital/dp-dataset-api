@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -141,8 +142,9 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 
 	err := func() error {
 
-		err := validateParameters(ctx, datasetID, edition, version)
+		err := validateParameters(ctx, vars)
 		if err != nil {
+			log.Error(ctx, "putMetadata endpoint: failed due to invalid parameters", err, logData)
 			return err
 		}
 
@@ -234,6 +236,10 @@ func handleMetadataErr(w http.ResponseWriter, err error) {
 		responseStatus = http.StatusNotFound
 	case err == errs.ErrInvalidVersion:
 		responseStatus = http.StatusBadRequest
+	case err == errs.ErrInvalidDatasetID:
+		responseStatus = http.StatusBadRequest
+	case err == errs.ErrInvalidEdition:
+		responseStatus = http.StatusBadRequest
 	case err == errs.ErrUnableToParseJSON:
 		responseStatus = http.StatusBadRequest
 	case err == errs.ErrUnableToReadMessage:
@@ -250,23 +256,21 @@ func handleMetadataErr(w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), responseStatus)
 }
 
-// validateParameters checks that the dataset_id, edition and version are not empty strings
-func validateParameters(ctx context.Context, datasetID, edition, version string) error {
-	if datasetID == `""` {
-		err := errors.New("invalid parameter: 'dataset_id' parameter has an empty value")
-		log.Error(ctx, "putMetadata endpoint: invalid request due to unexpected 'dataset_id' parameter", err, log.Data{"dataset_id": datasetID})
-		return err
-	}
-	if edition == `""` {
-		err := errors.New("invalid parameter: 'edition' parameter has an empty value")
-		log.Error(ctx, "putMetadata endpoint: invalid request due to unexpected 'edition' parameter", err, log.Data{"edition": edition})
-		return err
-
-	}
-	if version == `""` {
-		err := errors.New("invalid parameter: 'version' parameter has an empty value")
-		log.Error(ctx, "putMetadata endpoint: invalid request due to unexpected 'version' parameter", err, log.Data{"version": version})
-		return err
+func validateParameters(ctx context.Context, vars map[string]string) error {
+	for key, val := range vars {
+		if val == strconv.Quote("") {
+			err := errors.New("validate parameters: the parameter has an empty value")
+			log.Error(ctx, "putMetadata endpoint: invalid request due to unexpected parameter value", err, log.Data{"invalid_param": key, "value": val})
+			switch {
+			case key == "dataset_id":
+				err = errs.ErrInvalidDatasetID
+			case key == "edition":
+				err = errs.ErrInvalidEdition
+			case key == "version":
+				err = errs.ErrInvalidVersion
+			}
+			return err
+		}
 	}
 	return nil
 }
