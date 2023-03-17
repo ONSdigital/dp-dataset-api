@@ -25,6 +25,7 @@ type Metadata struct {
 	AreaType        string               `json:"area_type,omitempty"`
 	Classifications string               `json:"classifications,omitempty"`
 	Source          string               `json:"source,omitempty"`
+	IsBasedOn       *IsBasedOn           `json:"is_based_on,omitempty"`
 }
 
 // EditableMetadata represents the metadata fields that can be edited
@@ -92,6 +93,7 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 		Temporal:  versionDoc.Temporal,
 		Theme:     datasetDoc.Theme,
 		URI:       datasetDoc.URI,
+		IsBasedOn: datasetDoc.IsBasedOn,
 	}
 
 	// Add relevant metdata links from dataset document
@@ -194,6 +196,7 @@ func CreateCantabularMetaDataDoc(d *Dataset, v *Version, urlBuilder *url.Builder
 		DatasetLinks: d.Links,
 		Version:      v.Version,
 		URI:          d.URI,
+		IsBasedOn:    d.IsBasedOn,
 	}
 
 	m.Distribution = getDistribution(v.Downloads)
