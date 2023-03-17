@@ -163,12 +163,6 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		//TODO check if needed - this is only checking if the edition document exists
-		// if err = api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, ""); err != nil {
-		// 	log.Error(ctx, "putMetadata endpoint: failed to find edition for dataset", err, logData)
-		// 	return err
-		// }
-
 		version, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionNumber, "")
 		if err != nil {
 			if err == errs.ErrVersionNotFound {
@@ -178,13 +172,6 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "putMetadata endpoint: get datastore.getVersion returned an error", err, logData)
 			return err
 		}
-
-		//TODO -  check if this is needed since it is checking a state of an existing dataset doc in mongo
-		// if err = models.CheckState("version", versionDoc.State); err != nil {
-		// 	logData["state"] = versionDoc.State
-		// 	log.Error(ctx, "putMetadata endpoint: unpublished version has an invalid state", err, logData)
-		// 	return err
-		// }
 
 		if version.ETag != versionEtag {
 			logData["incomingEtag"] = versionEtag
