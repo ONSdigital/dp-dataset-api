@@ -240,6 +240,8 @@ func handleMetadataErr(w http.ResponseWriter, err error) {
 		responseStatus = http.StatusBadRequest
 	case err == errs.ErrExpectedResourceStateOfAssociated:
 		responseStatus = http.StatusForbidden
+	case err == errs.ErrInstanceConflict:
+		responseStatus = http.StatusConflict
 	default:
 		err = errs.ErrInternalServer
 		responseStatus = http.StatusInternalServerError
