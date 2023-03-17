@@ -195,7 +195,7 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		if dataset.State != models.AssociatedState && version.State != models.AssociatedState {
+		if dataset.State != models.AssociatedState || version.State != models.AssociatedState {
 			err := errors.New("invalid request: can't update a record with a state other than associated")
 			log.Error(ctx, "putMetadata endpoint: failed to update the record due to unexpected state", err, logData)
 			return errs.ErrExpectedResourceStateOfAssociated
