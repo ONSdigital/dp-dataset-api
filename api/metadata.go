@@ -1,11 +1,9 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -141,13 +139,6 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "version etag": versionEtag}
 
 	err := func() error {
-
-		err := validateParameters(ctx, vars)
-		if err != nil {
-			log.Error(ctx, "putMetadata endpoint: failed due to invalid parameters", err, logData)
-			return err
-		}
-
 		var metadata models.EditableMetadata
 		payload, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -236,10 +227,6 @@ func handleMetadataErr(w http.ResponseWriter, err error) {
 		responseStatus = http.StatusNotFound
 	case err == errs.ErrInvalidVersion:
 		responseStatus = http.StatusBadRequest
-	case err == errs.ErrInvalidDatasetID:
-		responseStatus = http.StatusBadRequest
-	case err == errs.ErrInvalidEdition:
-		responseStatus = http.StatusBadRequest
 	case err == errs.ErrUnableToParseJSON:
 		responseStatus = http.StatusBadRequest
 	case err == errs.ErrUnableToReadMessage:
@@ -254,23 +241,4 @@ func handleMetadataErr(w http.ResponseWriter, err error) {
 	}
 
 	http.Error(w, err.Error(), responseStatus)
-}
-
-func validateParameters(ctx context.Context, vars map[string]string) error {
-	for key, val := range vars {
-		if val == strconv.Quote("") {
-			err := errors.New("validate parameters: the parameter has an empty value")
-			log.Error(ctx, "putMetadata endpoint: invalid request due to unexpected parameter value", err, log.Data{"invalid_param": key, "value": val})
-			switch {
-			case key == "dataset_id":
-				err = errs.ErrInvalidDatasetID
-			case key == "edition":
-				err = errs.ErrInvalidEdition
-			case key == "version":
-				err = errs.ErrInvalidVersion
-			}
-			return err
-		}
-	}
-	return nil
 }

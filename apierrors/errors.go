@@ -48,8 +48,6 @@ var (
 	ErrVersionMissingState               = errors.New("missing state from version")
 	ErrVersionNotFound                   = errors.New("version not found")
 	ErrInvalidVersion                    = errors.New("invalid version requested")
-	ErrInvalidEdition                    = errors.New("invalid edition requested")
-	ErrInvalidDatasetID                  = errors.New("invalid dataset_id requested")
 	ErrVersionAlreadyExists              = errors.New("an unpublished version of this dataset already exists")
 	ErrNotFound                          = errors.New("not found")
 
@@ -82,8 +80,6 @@ var (
 		ErrTypeMismatch:                      true,
 		ErrDatasetTypeInvalid:                true,
 		ErrInvalidVersion:                    true,
-		ErrInvalidEdition:                    true,
-		ErrInvalidDatasetID:                  true,
 	}
 
 	ConflictRequestMap = map[error]bool{
