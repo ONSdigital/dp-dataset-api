@@ -1,12 +1,16 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"testing"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -15,6 +19,216 @@ import (
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func TestPutMetadata(t *testing.T) {
+	Convey("Given a version and a dataset stored in database", t, func() {
+		version := createUnpublishedVersionDoc()
+		version.ETag = "version-etag"
+		version.Version = 1
+		version.Edition = "2017"
+
+		dataset := createDatasetDoc()
+		dataset.ID = "123"
+		dataset.Next.State = models.AssociatedState
+
+		forceUpdateMetadataFail := false // Flag to make the UpdateMetadata function return an error
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(ctx context.Context, datasetID, edition string, versionNumber int, state string) (*models.Version, error) {
+				if versionNumber == version.Version {
+					return version, nil
+				} else {
+					return nil, errs.ErrVersionNotFound
+				}
+			},
+			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+				if datasetID == dataset.ID {
+					return dataset, nil
+				} else {
+					return nil, errs.ErrDatasetNotFound
+				}
+			},
+			UpdateMetadataFunc: func(ctx context.Context, datasetId, versionId, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
+				if datasetId != dataset.ID || versionId != version.ID || versionEtag != version.ETag || updatedDataset != dataset.Next || updatedVersion != version {
+					return errors.New("Invalid parameters!")
+				}
+
+				if forceUpdateMetadataFail {
+					return errors.New("Failed to update metadata")
+				}
+				return nil
+			},
+		}
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		edition := version.Edition
+		versionNo := strconv.Itoa(version.Version)
+
+		w := httptest.NewRecorder()
+
+		Convey("And a valid payload", func() {
+			metadata := models.EditableMetadata{
+				Title:       "new title",
+				Survey:      "new survey",
+				ReleaseDate: "new release date",
+				LatestChanges: &[]models.LatestChange{
+					{
+						Name:        "change 1",
+						Description: "change description",
+					},
+				},
+			}
+			payload, _ := json.Marshal(metadata)
+
+			Convey("And an invalid version", func() {
+				versionNo = "vvv"
+				url := fmt.Sprintf("http://localhost:22000/datasets/%s/editions/%s/versions/%s/metadata", dataset.ID, edition, versionNo)
+				r := createRequestWithAuth("PUT", url, bytes.NewBuffer(payload))
+
+				Convey("When we call the PUT metadata endpoint", func() {
+					api.Router.ServeHTTP(w, r)
+
+					Convey("Then a 400 error is returned", func() {
+						So(w.Code, ShouldEqual, http.StatusBadRequest)
+						So(w.Body.String(), ShouldEqual, "invalid version requested\n")
+					})
+				})
+			})
+
+			Convey("And a valid version that does not exist", func() {
+				versionNo = "88"
+				url := fmt.Sprintf("http://localhost:22000/datasets/%s/editions/%s/versions/%s/metadata", dataset.ID, edition, versionNo)
+				r := createRequestWithAuth("PUT", url, bytes.NewBuffer(payload))
+
+				Convey("When we call the PUT metadata endpoint", func() {
+					api.Router.ServeHTTP(w, r)
+
+					Convey("Then a 404 error is returned", func() {
+						So(w.Code, ShouldEqual, http.StatusNotFound)
+						So(w.Body.String(), ShouldEqual, "version not found\n")
+					})
+				})
+			})
+
+			Convey("And an invalid version etag", func() {
+				url := fmt.Sprintf("http://localhost:22000/datasets/%s/editions/%s/versions/%s/metadata", dataset.ID, edition, versionNo)
+				r := createRequestWithAuth("PUT", url, bytes.NewBuffer(payload))
+				r.Header.Add("If-Match", "wrong-etag")
+
+				Convey("When we call the PUT metadata endpoint", func() {
+					api.Router.ServeHTTP(w, r)
+
+					Convey("Then a 409 error is returned", func() {
+						So(w.Code, ShouldEqual, http.StatusConflict)
+						So(w.Body.String(), ShouldEqual, "instance does not match the expected eTag\n")
+					})
+				})
+			})
+
+			Convey("And a valid version etag", func() {
+				url := fmt.Sprintf("http://localhost:22000/datasets/%s/editions/%s/versions/%s/metadata", dataset.ID, edition, versionNo)
+				r := createRequestWithAuth("PUT", url, bytes.NewBuffer(payload))
+				r.Header.Add("If-Match", version.ETag)
+
+				Convey("And a dataset id that does not exist", func() {
+					dataset.ID = "changed"
+					Convey("When we call the PUT metadata endpoint", func() {
+						api.Router.ServeHTTP(w, r)
+
+						Convey("Then a 404 error is returned", func() {
+							So(w.Code, ShouldEqual, http.StatusNotFound)
+							So(w.Body.String(), ShouldEqual, "dataset not found\n")
+						})
+					})
+				})
+
+				Convey("And the dataset does not have a next object", func() {
+					dataset.Next = nil
+					Convey("When we call the PUT metadata endpoint", func() {
+						api.Router.ServeHTTP(w, r)
+
+						Convey("Then a 500 error is returned", func() {
+							So(w.Code, ShouldEqual, http.StatusInternalServerError)
+							So(w.Body.String(), ShouldEqual, "internal error\n")
+						})
+					})
+				})
+
+				Convey("And the dataset is not associated", func() {
+					dataset.Next.State = models.PublishedState
+					Convey("When we call the PUT metadata endpoint", func() {
+						api.Router.ServeHTTP(w, r)
+
+						Convey("Then a 403 error is returned", func() {
+							So(w.Code, ShouldEqual, http.StatusForbidden)
+							So(w.Body.String(), ShouldEqual, "unable to update resource, expected resource to have a state of associated\n")
+						})
+					})
+				})
+
+				Convey("And the version is not associated", func() {
+					version.State = models.PublishedState
+					Convey("When we call the PUT metadata endpoint", func() {
+						api.Router.ServeHTTP(w, r)
+
+						Convey("Then a 403 error is returned", func() {
+							So(w.Code, ShouldEqual, http.StatusForbidden)
+							So(w.Body.String(), ShouldEqual, "unable to update resource, expected resource to have a state of associated\n")
+						})
+					})
+				})
+
+				Convey("And the UpdateMetadata call fails", func() {
+					forceUpdateMetadataFail = true
+					Convey("When we call the PUT metadata endpoint", func() {
+						api.Router.ServeHTTP(w, r)
+
+						Convey("Then a 500 error is returned", func() {
+							So(w.Code, ShouldEqual, http.StatusInternalServerError)
+							So(w.Body.String(), ShouldEqual, "internal error\n")
+						})
+					})
+				})
+
+				Convey("When we call the PUT metadata endpoint", func() {
+					// Check metadata is changing
+					So(dataset.Next.Title, ShouldNotEqual, metadata.Title)
+					So(dataset.Next.Survey, ShouldNotEqual, metadata.Survey)
+					So(version.ReleaseDate, ShouldNotEqual, metadata.ReleaseDate)
+					So(version.LatestChanges, ShouldNotResemble, metadata.LatestChanges)
+
+					api.Router.ServeHTTP(w, r)
+
+					Convey("Then a 200 is returned and the metadata has changed", func() {
+						So(w.Code, ShouldEqual, http.StatusOK)
+						So(dataset.Next.Title, ShouldEqual, metadata.Title)
+						So(dataset.Next.Survey, ShouldEqual, metadata.Survey)
+						So(version.ReleaseDate, ShouldEqual, metadata.ReleaseDate)
+						So(version.LatestChanges, ShouldResemble, metadata.LatestChanges)
+					})
+				})
+			})
+		})
+
+		Convey("And an invalid payload", func() {
+			payload := "invalid"
+			url := fmt.Sprintf("http://localhost:22000/datasets/%s/editions/%s/versions/%s/metadata", dataset.ID, edition, versionNo)
+			r := createRequestWithAuth("PUT", url, bytes.NewBufferString(payload))
+
+			Convey("When we call the PUT metadata endpoint", func() {
+
+				api.Router.ServeHTTP(w, r)
+
+				Convey("Then a 400 error is returned", func() {
+					So(w.Code, ShouldEqual, http.StatusBadRequest)
+					So(w.Body.String(), ShouldEqual, "failed to parse json body\n")
+				})
+			})
+		})
+	})
+}
 
 func TestGetMetadataReturnsOk(t *testing.T) {
 	t.Parallel()
