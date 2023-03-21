@@ -95,8 +95,89 @@ Feature: Dataset API - metadata
             ]
             """
 
-    Scenario: Successful PUT metadata
+    Scenario: Successful PUT metadata with valid etag
         When I set the "If-Match" header to "versionetag"
+        And I PUT "/datasets/population-estimates/editions/hello/versions/1/metadata"
+            """
+            {
+                "title": "new title",
+                "canonical_topic": "new-canonical-topic-id",
+                "subtopics": ["a", "b"],
+                "release_date": "today"
+            }
+            """
+        Then the HTTP status code should be "200"
+        And the document in the database for id "population-estimates" should be:
+            """
+            {
+                "id": "population-estimates",
+                "canonical_topic": "new-canonical-topic-id",
+                "subtopics": ["a", "b"],
+                "state": "associated",
+                "title": "new title"
+            }
+            """
+        And the version in the database for id "test-item-1" should be:
+            """
+            {
+                "id": "test-item-1",
+                "version": 1,
+                "state": "associated",
+                "links": {
+                    "dataset": {
+                        "id": "population-estimates"
+                    },
+                    "self": {
+                        "href": "someurl"
+                    }
+                },
+                "edition": "hello",
+                "release_date": "today"
+            }
+            """
+
+    Scenario: Successful PUT metadata with no etag
+        When I PUT "/datasets/population-estimates/editions/hello/versions/1/metadata"
+            """
+            {
+                "title": "new title",
+                "canonical_topic": "new-canonical-topic-id",
+                "subtopics": ["a", "b"],
+                "release_date": "today"
+            }
+            """
+        Then the HTTP status code should be "200"
+        And the document in the database for id "population-estimates" should be:
+            """
+            {
+                "id": "population-estimates",
+                "canonical_topic": "new-canonical-topic-id",
+                "subtopics": ["a", "b"],
+                "state": "associated",
+                "title": "new title"
+            }
+            """
+        And the version in the database for id "test-item-1" should be:
+            """
+            {
+                "id": "test-item-1",
+                "version": 1,
+                "state": "associated",
+                "links": {
+                    "dataset": {
+                        "id": "population-estimates"
+                    },
+                    "self": {
+                        "href": "someurl"
+                    }
+                },
+                "edition": "hello",
+                "release_date": "today"
+            }
+            """
+
+    Scenario: Successful PUT metadata with * etag
+        When I set the "If-Match" header to "*"
         And I PUT "/datasets/population-estimates/editions/hello/versions/1/metadata"
             """
             {

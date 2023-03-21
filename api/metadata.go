@@ -7,6 +7,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/mongo"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
@@ -132,7 +133,7 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	versionEtag := r.Header.Get("If-Match")
+	versionEtag := getIfMatch(r)
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	version := vars["version"]
@@ -166,7 +167,7 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		if version.ETag != versionEtag {
+		if versionEtag != mongo.AnyETag && versionEtag != version.ETag {
 			logData["incomingEtag"] = versionEtag
 			logData["versionEtag"] = version.ETag
 			log.Error(ctx, "ETag mismatch", errs.ErrInstanceConflict, logData)
@@ -241,4 +242,12 @@ func handleMetadataErr(w http.ResponseWriter, err error) {
 	}
 
 	http.Error(w, err.Error(), responseStatus)
+}
+
+func getIfMatch(r *http.Request) string {
+	ifMatch := r.Header.Get("If-Match")
+	if ifMatch == "" {
+		return mongo.AnyETag
+	}
+	return ifMatch
 }

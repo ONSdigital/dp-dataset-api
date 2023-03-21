@@ -48,7 +48,8 @@ func TestPutMetadata(t *testing.T) {
 				}
 			},
 			UpdateMetadataFunc: func(ctx context.Context, datasetId, versionId, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
-				if datasetId != dataset.ID || versionId != version.ID || versionEtag != version.ETag || updatedDataset != dataset.Next || updatedVersion != version {
+				versionEtagMatches := versionEtag == "*" || versionEtag == version.ETag
+				if datasetId != dataset.ID || versionId != version.ID || !versionEtagMatches || updatedDataset != dataset.Next || updatedVersion != version {
 					return errors.New("Invalid parameters!")
 				}
 
@@ -123,6 +124,54 @@ func TestPutMetadata(t *testing.T) {
 					Convey("Then a 409 error is returned", func() {
 						So(w.Code, ShouldEqual, http.StatusConflict)
 						So(w.Body.String(), ShouldEqual, "instance does not match the expected eTag\n")
+					})
+				})
+			})
+
+			Convey("And a missing version etag", func() {
+				url := fmt.Sprintf("http://localhost:22000/datasets/%s/editions/%s/versions/%s/metadata", dataset.ID, edition, versionNo)
+				r := createRequestWithAuth("PUT", url, bytes.NewBuffer(payload))
+				r.Header.Del("If-Match") // no etag
+
+				Convey("When we call the PUT metadata endpoint", func() {
+					// Check metadata is changing
+					So(dataset.Next.Title, ShouldNotEqual, metadata.Title)
+					So(dataset.Next.Survey, ShouldNotEqual, metadata.Survey)
+					So(version.ReleaseDate, ShouldNotEqual, metadata.ReleaseDate)
+					So(version.LatestChanges, ShouldNotResemble, metadata.LatestChanges)
+
+					api.Router.ServeHTTP(w, r)
+
+					Convey("Then a 200 is returned and the metadata has changed", func() {
+						So(w.Code, ShouldEqual, http.StatusOK)
+						So(dataset.Next.Title, ShouldEqual, metadata.Title)
+						So(dataset.Next.Survey, ShouldEqual, metadata.Survey)
+						So(version.ReleaseDate, ShouldEqual, metadata.ReleaseDate)
+						So(version.LatestChanges, ShouldResemble, metadata.LatestChanges)
+					})
+				})
+			})
+
+			Convey("And a star version etag", func() {
+				url := fmt.Sprintf("http://localhost:22000/datasets/%s/editions/%s/versions/%s/metadata", dataset.ID, edition, versionNo)
+				r := createRequestWithAuth("PUT", url, bytes.NewBuffer(payload))
+				r.Header.Add("If-Match", "*")
+
+				Convey("When we call the PUT metadata endpoint", func() {
+					// Check metadata is changing
+					So(dataset.Next.Title, ShouldNotEqual, metadata.Title)
+					So(dataset.Next.Survey, ShouldNotEqual, metadata.Survey)
+					So(version.ReleaseDate, ShouldNotEqual, metadata.ReleaseDate)
+					So(version.LatestChanges, ShouldNotResemble, metadata.LatestChanges)
+
+					api.Router.ServeHTTP(w, r)
+
+					Convey("Then a 200 is returned and the metadata has changed", func() {
+						So(w.Code, ShouldEqual, http.StatusOK)
+						So(dataset.Next.Title, ShouldEqual, metadata.Title)
+						So(dataset.Next.Survey, ShouldEqual, metadata.Survey)
+						So(version.ReleaseDate, ShouldEqual, metadata.ReleaseDate)
+						So(version.LatestChanges, ShouldResemble, metadata.LatestChanges)
 					})
 				})
 			})
