@@ -32,6 +32,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^private endpoints are enabled$`, c.privateEndpointsAreEnabled)
 	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, c.theDocumentInTheDatabaseForIdShouldBe)
 	ctx.Step(`^the instance in the database for id "([^"]*)" should be:$`, c.theInstanceInTheDatabaseForIdShouldBe)
+	ctx.Step(`^the version in the database for id "([^"]*)" should be:$`, c.theVersionInTheDatabaseForIdShouldBe)
 	ctx.Step(`^there are no datasets$`, c.thereAreNoDatasets)
 	ctx.Step(`^I have these datasets:$`, c.iHaveTheseDatasets)
 	ctx.Step(`^I have these "([^"]*)" datasets:$`, c.iHaveTheseConditionalDatasets)
@@ -98,6 +99,35 @@ func (c *DatasetComponent) theInstanceInTheDatabaseForIdShouldBe(id string, body
 	assert.Equal(&c.ErrorFeature, expected, got)
 
 	return nil
+}
+
+func (c *DatasetComponent) theVersionInTheDatabaseForIdShouldBe(id string, body *godog.DocString) error {
+	var expected models.Version
+
+	if err := json.Unmarshal([]byte(body.Content), &expected); err != nil {
+		return fmt.Errorf("failed to unmarshal body: %w", err)
+	}
+
+	collectionName := c.MongoClient.ActualCollectionName(config.InstanceCollection)
+	var got models.Version
+
+	if err := c.MongoClient.Connection.Collection(collectionName).FindOne(context.Background(), bson.M{"_id": id}, &got); err != nil {
+		return fmt.Errorf("failed to get version from collection: %w", err)
+	}
+
+	// Remove the last updated value so to be able to compare the datasets
+	// otherwise the assertion would always fail as last updated would be "now"
+	got.LastUpdated = time.Time{}
+	got.Links.Version = nil // This can't be checked (json ommitted)
+
+	if expected.ETag == "" {
+		// Ignore generated etag if we are not concerned about it
+		expected.ETag = got.ETag
+	}
+
+	assert.Equal(&c.ErrorFeature, expected, got)
+
+	return c.ErrorFeature.StepError()
 }
 
 func (c *DatasetComponent) iHaveARealKafkaContainerWithTopic(topic string) error {
