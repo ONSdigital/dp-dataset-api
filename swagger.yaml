@@ -204,6 +204,12 @@ parameters:
     description: "A population type to search on to return datasets that are associated with that population type e.g. Usual-Residents.  This is applicable to Census 2021 datasets only."
     in: query
     type: string
+  metadata_update:
+    name: metadata_update
+    in: body
+    required: true
+    schema:
+      $ref: "#/definitions/MetadataUpdate"
 securityDefinitions:
   FlorenceAPIKey:
     name: florence-token
@@ -546,6 +552,35 @@ paths:
               * edition was incorrect
         404:
           description: "Version not found"
+        500:
+          $ref: '#/responses/InternalError'
+    put:
+      tags:
+      - "Private"
+      summary: "Update metadata for a dataset and a version"
+      description: "Update metadata for a dataset and a version. The editable metadata can be updated only if both the dataset and the version have a state of associated"
+      parameters:
+      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/version'
+      - $ref: '#/parameters/if_match'
+      - $ref: '#/parameters/metadata_update'
+      responses:
+        200:
+          description: "The editable metadata has been updated"
+        400:
+          description: |
+            Invalid request, reasons can be one of the following:
+              * invalid request body
+              * version was incorrect
+        401:
+          description: "Unauthorised to update metadata"
+        403:
+          description: "Unable to update resource, expected resource to have a state of associated"
+        404:
+          description: "Version was not found for a dataset using the id and edition provided"
+        409:
+          description: "Instance does not match the expected eTag"
         500:
           $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}/versions/{version}/observations:
@@ -2516,3 +2551,140 @@ definitions:
       id:
         description: "The version number this resource relates to"
         type: string
+  MetadataUpdate:
+    description: "An object containing all editable metadata fields on a dataset and a version resource"
+    type: object
+    properties:
+      alerts:
+        description: "A list of alerts against a version"
+        type: array
+        items:
+          $ref: '#/definitions/Alert'
+      canonical_topic:
+        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy."
+        type: string
+      contacts:
+        description: "A list containing contact details of statisticians for a dataset"
+        type: array
+        items:
+          $ref: '#/definitions/Contact'
+      description:
+        description: "A description for a dataset"
+        type: string
+      dimensions:
+        description: "A list of codelists for each dimension of this version"
+        type: array
+        items:
+          $ref: '#/definitions/Dimension'
+      keywords:
+        description: "A list of keywords for a dataset"
+        type: array
+        items:
+          type: "string"
+      latest_changes:
+        description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
+        type: array
+        items:
+          $ref: '#/definitions/LatestChange'
+      license:
+        description: "The standard Government license right text for the dataset"
+        type: string
+      methodologies:
+        description: "A list of methodologies for a dataset"
+        type: array
+        items:
+          type: object
+          properties:
+            description:
+              description: "The description of a methodology"
+              type: string
+            href:
+              description: "The url to a methodology"
+              type: string
+            title:
+              description: "The title of a methodology"
+              type: string
+      national_statistic:
+        description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
+        type: boolean
+      next_release:
+        description: "The next release date for a dataset"
+        type: string
+      publications:
+        description: "A list of publications for a dataset"
+        type: array
+        items:
+          type: object
+          properties:
+            description:
+              description: "The description of a publication"
+              type: string
+            href:
+              description: "The url to a publication"
+              type: string
+            title:
+              description: "The title of a publication"
+              type: string
+      qmi:
+        description: "Object containing information on the quality and methodology index of a dataset"
+        type: object
+        properties:
+          description:
+            description: "The description of a quality and methodology index"
+            type: string
+          href:
+            description: "The url to a quality and methodology index"
+            type: string
+          title:
+            description: "The title of a quality and methodology index"
+            type: string
+      related_content:
+        description: "A list of objects containing information of content related to a dataset"
+        type: array
+        items:
+          type: object
+          properties:
+            href:
+              description: "The url to related content"
+              type: string
+            description:
+              description: "The description of the related content"
+              type: string
+            title:
+              description: "The title of the related content"
+              type: string
+      related_datasets:
+        description: "A list of objects containing information of datasets related to a dataset"
+        type: array
+        items:
+          type: object
+          properties:
+            href:
+              description: "The url to a related dataset"
+              type: string
+            title:
+              description: "The title of a related dataset"
+              type: string
+      release_date:
+        description: "The release date of this version of the dataset"
+        type: string
+      release_frequency:
+        description: "The release frequency of a dataset"
+        type: string
+      subtopics:
+        description: "A list of subtopic ids that the dataset relates to within the website taxonomy."
+        type: array
+        items:
+          type: "string"
+      survey:
+        description: "The name of the survey the dataset was created from."
+        type: string
+      title:
+        description: "The title of the dataset"
+        example: "CPI"
+        type: string
+      unit_of_measure:
+        description: "The unit of measure for the dataset observations"
+        type: string
+      usage_notes:
+        $ref: '#/definitions/UsageNotes'
