@@ -210,7 +210,9 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setJSONContentType(w)
-	w.Header().Add("Etag", eTag)
+	if eTag != "" {
+		w.Header().Add("Etag", eTag)
+	}
 
 	_, err := w.Write(b)
 	if err != nil {
