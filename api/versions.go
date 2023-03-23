@@ -137,16 +137,16 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
-	version := vars["version"]
-	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
+	versionNumber := vars["version"]
+	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionNumber}
 
-	b, eTag, getVersionErr := func() ([]byte, string, error) {
+	v, getVersionErr := func() (*models.Version, error) {
 		authorised := api.authenticate(r, logData)
 
-		versionId, err := models.ParseAndValidateVersionNumber(ctx, version)
+		versionId, err := models.ParseAndValidateVersionNumber(ctx, versionNumber)
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: invalid version", err, logData)
-			return nil, "", err
+			return nil, err
 		}
 
 		var state string
@@ -156,52 +156,46 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 
 		if err := api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, state); err != nil {
 			log.Error(ctx, "failed to find dataset", err, logData)
-			return nil, "", err
+			return nil, err
 		}
 
 		if err := api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, state); err != nil {
 			log.Error(ctx, "failed to find edition for dataset", err, logData)
-			return nil, "", err
+			return nil, err
 		}
 
-		results, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionId, state)
+		version, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionId, state)
 		if err != nil {
 			log.Error(ctx, "failed to find version for dataset edition", err, logData)
-			return nil, "", err
+			return nil, err
 		}
-		eTag := results.ETag
-		results.Links.Self.HRef = results.Links.Version.HRef
 
-		if err = models.CheckState("version", results.State); err != nil {
-			log.Error(ctx, "unpublished version has an invalid state", err, log.Data{"state": results.State})
-			return nil, "", errs.ErrResourceState
+		version.Links.Self.HRef = version.Links.Version.HRef
+
+		if err = models.CheckState("version", version.State); err != nil {
+			log.Error(ctx, "unpublished version has an invalid state", err, log.Data{"state": version.State})
+			return nil, errs.ErrResourceState
 		}
 
 		// Only the download service should not have access to the public/private download
 		// fields
 		if r.Header.Get(downloadServiceToken) != api.downloadServiceToken {
-			if results.Downloads != nil {
-				if results.Downloads.CSV != nil {
-					results.Downloads.CSV.Private = ""
-					results.Downloads.CSV.Public = ""
+			if version.Downloads != nil {
+				if version.Downloads.CSV != nil {
+					version.Downloads.CSV.Private = ""
+					version.Downloads.CSV.Public = ""
 				}
-				if results.Downloads.XLS != nil {
-					results.Downloads.XLS.Private = ""
-					results.Downloads.XLS.Public = ""
+				if version.Downloads.XLS != nil {
+					version.Downloads.XLS.Private = ""
+					version.Downloads.XLS.Public = ""
 				}
-				if results.Downloads.CSVW != nil {
-					results.Downloads.CSVW.Private = ""
-					results.Downloads.CSVW.Public = ""
+				if version.Downloads.CSVW != nil {
+					version.Downloads.CSVW.Private = ""
+					version.Downloads.CSVW.Public = ""
 				}
 			}
 		}
-
-		b, err := json.Marshal(results)
-		if err != nil {
-			log.Error(ctx, "failed to marshal version resource into bytes", err, logData)
-			return nil, "", err
-		}
-		return b, eTag, nil
+		return version, nil
 	}()
 
 	if getVersionErr != nil {
@@ -210,11 +204,17 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setJSONContentType(w)
-	if eTag != "" {
-		w.Header().Add("Etag", eTag)
+	if v.ETag != "" {
+		w.Header().Add("Etag", v.ETag)
 	}
 
-	_, err := w.Write(b)
+	versionBytes, err := json.Marshal(v)
+	if err != nil {
+		log.Error(ctx, "failed to marshal version resource into bytes", err, logData)
+		handleVersionAPIErr(ctx, err, w, logData)
+	}
+
+	_, err = w.Write(versionBytes)
 	if err != nil {
 		log.Error(ctx, "failed writing bytes to response", err, logData)
 		handleVersionAPIErr(ctx, err, w, logData)
