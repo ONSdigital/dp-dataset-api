@@ -14,6 +14,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/utils"
+	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -75,7 +76,7 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 	}
 
 	log.Info(ctx, "successfully get dimensions for an instance resource", logData)
-	setETag(w, instance.ETag)
+	dpresponse.SetETag(w, instance.ETag)
 	return dimensions, totalCount, nil
 }
 
@@ -129,7 +130,7 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	}
 
 	log.Info(ctx, "successfully get unique dimension options for an instance resource", logData)
-	setETag(w, instance.ETag)
+	dpresponse.SetETag(w, instance.ETag)
 	return slicedOptions, totalCount, nil
 }
 
@@ -168,7 +169,7 @@ func (s *Store) AddHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Info(ctx, "added dimension to instance resource", logData)
 
-	setETag(w, newETag)
+	dpresponse.SetETag(w, newETag)
 }
 
 // PatchDimensionsHandler represents adding multiple dimensions to a specific instance
@@ -208,7 +209,7 @@ func (s *Store) PatchDimensionsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// set content type and write response body
 	setJSONPatchContentType(w)
-	setETag(w, newETag)
+	dpresponse.SetETag(w, newETag)
 	writeBody(ctx, w, b, logData)
 	log.Info(ctx, "successfully patched dimensions of an instance resource", logData)
 }
@@ -433,7 +434,7 @@ func (s *Store) PatchOptionHandler(w http.ResponseWriter, r *http.Request) {
 
 	// set content type and write response body
 	setJSONPatchContentType(w)
-	setETag(w, newETag)
+	dpresponse.SetETag(w, newETag)
 	writeBody(ctx, w, b, logData)
 	log.Info(ctx, "successfully patched dimension option of an instance resource", logData)
 }
@@ -511,5 +512,5 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	logData["action"] = AddDimensionAction
 	log.Info(ctx, "added node id to dimension of an instance resource", logData)
-	setETag(w, newETag)
+	dpresponse.SetETag(w, newETag)
 }

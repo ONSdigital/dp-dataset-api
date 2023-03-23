@@ -152,10 +152,6 @@ func setJSONPatchContentType(w http.ResponseWriter) {
 	w.Header().Add("Content-Type", "application/json-patch+json")
 }
 
-func setETag(w http.ResponseWriter, eTag string) {
-	w.Header().Add("ETag", eTag)
-}
-
 func writeBody(ctx context.Context, w http.ResponseWriter, b []byte, data log.Data) {
 	if _, err := w.Write(b); err != nil {
 		log.Error(ctx, "failed to write response body", err, data)

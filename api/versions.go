@@ -11,6 +11,7 @@ import (
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -205,7 +206,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 
 	setJSONContentType(w)
 	if v.ETag != "" {
-		w.Header().Add("Etag", v.ETag)
+		dpresponse.SetETag(w, v.ETag)
 	}
 
 	versionBytes, err := json.Marshal(v)

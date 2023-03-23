@@ -8,6 +8,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 )
@@ -73,5 +74,5 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Info(ctx, "add instance event: request successful", data)
-	setETag(w, newETag)
+	dpresponse.SetETag(w, newETag)
 }
