@@ -231,8 +231,16 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 func TestGetVersionReturnsOK(t *testing.T) {
 	t.Parallel()
-	Convey("A successful request to get version returns 200 OK response", t, func() {
-		etag := "version-etag"
+	Convey("Given a version", t, func() {
+		version := &models.Version{
+			State: models.EditionConfirmedState,
+			Links: &models.VersionLinks{
+				Self: &models.LinkObject{},
+				Version: &models.LinkObject{
+					HRef: "href",
+				},
+			},
+		}
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
 
 		w := httptest.NewRecorder()
@@ -243,32 +251,57 @@ func TestGetVersionReturnsOK(t *testing.T) {
 			CheckEditionExistsFunc: func(ctx context.Context, datasetID, editionID, state string) error {
 				return nil
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error) {
-				return &models.Version{
-					State: models.EditionConfirmedState,
-					Links: &models.VersionLinks{
-						Self: &models.LinkObject{},
-						Version: &models.LinkObject{
-							HRef: "href",
-						},
-					},
-					ETag: etag,
-				}, nil
+			GetVersionFunc: func(ctx context.Context, datasetID, editionID string, versionNumber int, state string) (*models.Version, error) {
+				return version, nil
 			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusOK)
-		So(w.Header().Get("Etag"), ShouldEqual, etag)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		Convey("With an etag", func() {
+			version.ETag = "version-etag"
+			Convey("When we call the GET version endpoint", func() {
+				api.Router.ServeHTTP(w, r)
+
+				Convey("Then it returns a 200 OK", func() {
+					So(w.Code, ShouldEqual, http.StatusOK)
+				})
+				Convey("And the etag is returned in the response header", func() {
+					So(w.Header().Get("Etag"), ShouldEqual, version.ETag)
+				})
+
+				Convey("And the relevant calls have been made", func() {
+					So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+					So(permissions.Required.Calls, ShouldEqual, 0)
+					So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+					So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+					So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+				})
+			})
+		})
+		Convey("Without an etag", func() {
+			version.ETag = ""
+			Convey("When we call the GET version endpoint", func() {
+				api.Router.ServeHTTP(w, r)
+
+				Convey("Then it returns a 200 OK", func() {
+					So(w.Code, ShouldEqual, http.StatusOK)
+				})
+				Convey("And no etag is returned in the response header", func() {
+					So(w.Header().Get("Etag"), ShouldBeEmpty)
+				})
+
+				Convey("And the relevant calls have been made", func() {
+					So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+					So(permissions.Required.Calls, ShouldEqual, 0)
+					So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+					So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+					So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+				})
+			})
+		})
 	})
 }
 
