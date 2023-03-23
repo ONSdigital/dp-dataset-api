@@ -232,6 +232,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 func TestGetVersionReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("A successful request to get version returns 200 OK response", t, func() {
+		etag := "version-etag"
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
 
 		w := httptest.NewRecorder()
@@ -251,6 +252,7 @@ func TestGetVersionReturnsOK(t *testing.T) {
 							HRef: "href",
 						},
 					},
+					ETag: etag,
 				}, nil
 			},
 		}
@@ -261,6 +263,7 @@ func TestGetVersionReturnsOK(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
+		So(w.Header().Get("Etag"), ShouldEqual, etag)
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
