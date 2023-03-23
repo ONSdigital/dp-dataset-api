@@ -247,6 +247,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	// If update was to add downloads do not try to publish/associate version
 	if vars[hasDownloads] != trueStringified {
+		data["updated_state"] = versionUpdate.State
 		if versionUpdate.State == models.PublishedState {
 			if err := api.publishVersion(ctx, currentDataset, currentVersion, versionUpdate, versionDetails); err != nil {
 				handleVersionAPIErr(ctx, err, w, data)
@@ -329,6 +330,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 		update := &models.Version{
 			State: models.DetachedState,
 		}
+		logData["updated_state"] = update.State
 		if _, err = api.dataStore.Backend.UpdateVersion(ctx, versionDoc, update, headers.IfMatchAnyETag); err != nil {
 			log.Error(ctx, "detachVersion endpoint: failed to update version document", err, logData)
 			return err
