@@ -340,18 +340,19 @@ Feature: Dataset API
             "lowest_geography": "ltla"
         }
         """
+    And the response header "ETag" should be "etag-test-item-4"
 
   Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in private mode returns the version
     Given private endpoints are enabled
     And I am identified as "user@ons.gov.uk"
     And I am authorised
-    When I GET "/datasets/population-estimates/editions/hello/versions/4"
+    When I GET "/datasets/population-estimates/editions/hello/versions/2"
     Then I should receive the following JSON response with status "200":
         """
         {
-            "id": "test-item-4",
-            "version": 4,
-            "state": "published",
+            "id": "test-item-2",
+            "version": 2,
+            "state": "associated",
             "links": {
                 "dataset": {
                     "id": "population-estimates"
@@ -360,10 +361,10 @@ Feature: Dataset API
                     "href": "someurl"
                 }
             },
-            "edition": "hello",
-            "lowest_geography": "ltla"
+            "edition": "hello"
         }
         """
+    And the response header "ETag" should be "etag-test-item-2"
 
   Scenario: PUT versions for CMD dataset produces Kafka event and returns OK
     Given private endpoints are enabled

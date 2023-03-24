@@ -314,6 +314,8 @@ func (c *DatasetComponent) iHaveTheseVersions(versionsJson *godog.DocString) err
 				HRef: version.Links.Self.HRef,
 			}
 		}
+		// Set the etag (json omitted)
+		version.ETag = "etag-" + version.ID
 
 		instanceCollection := c.MongoClient.ActualCollectionName(config.InstanceCollection)
 		if err := c.putDocumentInDatabase(version, versionID, instanceCollection, timeOffset); err != nil {
