@@ -11,6 +11,7 @@ import (
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -137,13 +138,13 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
-	version := vars["version"]
-	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
+	versionNumber := vars["version"]
+	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionNumber}
 
-	b, getVersionErr := func() ([]byte, error) {
+	v, getVersionErr := func() (*models.Version, error) {
 		authorised := api.authenticate(r, logData)
 
-		versionId, err := models.ParseAndValidateVersionNumber(ctx, version)
+		versionId, err := models.ParseAndValidateVersionNumber(ctx, versionNumber)
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: invalid version", err, logData)
 			return nil, err
@@ -164,44 +165,38 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		results, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionId, state)
+		version, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionId, state)
 		if err != nil {
 			log.Error(ctx, "failed to find version for dataset edition", err, logData)
 			return nil, err
 		}
 
-		results.Links.Self.HRef = results.Links.Version.HRef
+		version.Links.Self.HRef = version.Links.Version.HRef
 
-		if err = models.CheckState("version", results.State); err != nil {
-			log.Error(ctx, "unpublished version has an invalid state", err, log.Data{"state": results.State})
+		if err = models.CheckState("version", version.State); err != nil {
+			log.Error(ctx, "unpublished version has an invalid state", err, log.Data{"state": version.State})
 			return nil, errs.ErrResourceState
 		}
 
 		// Only the download service should not have access to the public/private download
 		// fields
 		if r.Header.Get(downloadServiceToken) != api.downloadServiceToken {
-			if results.Downloads != nil {
-				if results.Downloads.CSV != nil {
-					results.Downloads.CSV.Private = ""
-					results.Downloads.CSV.Public = ""
+			if version.Downloads != nil {
+				if version.Downloads.CSV != nil {
+					version.Downloads.CSV.Private = ""
+					version.Downloads.CSV.Public = ""
 				}
-				if results.Downloads.XLS != nil {
-					results.Downloads.XLS.Private = ""
-					results.Downloads.XLS.Public = ""
+				if version.Downloads.XLS != nil {
+					version.Downloads.XLS.Private = ""
+					version.Downloads.XLS.Public = ""
 				}
-				if results.Downloads.CSVW != nil {
-					results.Downloads.CSVW.Private = ""
-					results.Downloads.CSVW.Public = ""
+				if version.Downloads.CSVW != nil {
+					version.Downloads.CSVW.Private = ""
+					version.Downloads.CSVW.Public = ""
 				}
 			}
 		}
-
-		b, err := json.Marshal(results)
-		if err != nil {
-			log.Error(ctx, "failed to marshal version resource into bytes", err, logData)
-			return nil, err
-		}
-		return b, nil
+		return version, nil
 	}()
 
 	if getVersionErr != nil {
@@ -210,7 +205,17 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setJSONContentType(w)
-	_, err := w.Write(b)
+	if v.ETag != "" {
+		dpresponse.SetETag(w, v.ETag)
+	}
+
+	versionBytes, err := json.Marshal(v)
+	if err != nil {
+		log.Error(ctx, "failed to marshal version resource into bytes", err, logData)
+		handleVersionAPIErr(ctx, err, w, logData)
+	}
+
+	_, err = w.Write(versionBytes)
 	if err != nil {
 		log.Error(ctx, "failed writing bytes to response", err, logData)
 		handleVersionAPIErr(ctx, err, w, logData)
@@ -242,6 +247,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	// If update was to add downloads do not try to publish/associate version
 	if vars[hasDownloads] != trueStringified {
+		data["updated_state"] = versionUpdate.State
 		if versionUpdate.State == models.PublishedState {
 			if err := api.publishVersion(ctx, currentDataset, currentVersion, versionUpdate, versionDetails); err != nil {
 				handleVersionAPIErr(ctx, err, w, data)
@@ -324,6 +330,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 		update := &models.Version{
 			State: models.DetachedState,
 		}
+		logData["updated_state"] = update.State
 		if _, err = api.dataStore.Backend.UpdateVersion(ctx, versionDoc, update, headers.IfMatchAnyETag); err != nil {
 			log.Error(ctx, "detachVersion endpoint: failed to update version document", err, logData)
 			return err

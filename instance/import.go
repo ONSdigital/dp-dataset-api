@@ -11,6 +11,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
@@ -56,7 +57,7 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Info(ctx, "update imported observations: request successful", logData)
-	setETag(w, newETag)
+	dpresponse.SetETag(w, newETag)
 }
 
 // UpdateImportTask updates any task in the request body against an instance
@@ -190,7 +191,7 @@ func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Info(ctx, "updateImportTask endpoint: request successful", logData)
-	setETag(w, eTag)
+	dpresponse.SetETag(w, eTag)
 }
 
 func unmarshalImportTasks(reader io.Reader) (*models.InstanceImportTasks, error) {
