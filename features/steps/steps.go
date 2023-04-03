@@ -118,7 +118,7 @@ func (c *DatasetComponent) theVersionInTheDatabaseForIdShouldBe(id string, body 
 	// Remove the last updated value so to be able to compare the datasets
 	// otherwise the assertion would always fail as last updated would be "now"
 	got.LastUpdated = time.Time{}
-	got.Links.Version = nil // This can't be checked (json ommitted)
+	got.Links.Version = nil // This can't be checked (json omitted)
 
 	if expected.ETag == "" {
 		// Ignore generated etag if we are not concerned about it

@@ -50,11 +50,11 @@ func TestPutMetadata(t *testing.T) {
 			UpdateMetadataFunc: func(ctx context.Context, datasetId, versionId, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
 				versionEtagMatches := versionEtag == "*" || versionEtag == version.ETag
 				if datasetId != dataset.ID || versionId != version.ID || !versionEtagMatches || updatedDataset != dataset.Next || updatedVersion != version {
-					return errors.New("Invalid parameters!")
+					return errors.New("invalid parameters")
 				}
 
 				if forceUpdateMetadataFail {
-					return errors.New("Failed to update metadata")
+					return errors.New("failed to update metadata")
 				}
 				return nil
 			},
