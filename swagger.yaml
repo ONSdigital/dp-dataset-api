@@ -435,6 +435,10 @@ paths:
           description: "A json object containing the edition and version of a dataset"
           schema:
             $ref: '#/definitions/Version'
+          headers:
+            ETag:
+              type: string
+              description: "Defines the unique etag for this resource"
         400:
           description: |
             Invalid request, reasons can be one of the following:
