@@ -277,7 +277,7 @@ func (m *Mongo) UpdateDataset(ctx context.Context, id string, dataset *models.Da
 
 	updates := createDatasetUpdateQuery(ctx, id, dataset, currentState)
 	update := bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}}
-	if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateById(ctx, id, update); err != nil {
+	if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateOne(ctx, bson.M{"_id": id}, update); err != nil {
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
 			return errs.ErrDatasetNotFound
 		}
@@ -436,7 +436,7 @@ func (m *Mongo) UpdateDatasetWithAssociation(ctx context.Context, id, state stri
 		},
 	}
 
-	if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateById(ctx, id, update); err != nil {
+	if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateOne(ctx, bson.M{"_id": id}, update); err != nil {
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
 			return errs.ErrDatasetNotFound
 		}
@@ -561,7 +561,7 @@ func (m *Mongo) UpdateMetadata(ctx context.Context, datasetId string, versionId 
 
 	_, err = m.Connection.RunTransaction(ctx, false, func(transactionCtx context.Context) (interface{}, error) {
 		// Update dataset
-		if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateById(transactionCtx, datasetId, datasetUpdate); err != nil {
+		if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateOne(transactionCtx, bson.M{"_id": datasetId}, datasetUpdate); err != nil {
 			if errors.Is(err, mongodriver.ErrNoDocumentFound) {
 				return nil, errs.ErrDatasetNotFound
 			}
@@ -609,7 +609,7 @@ func (m *Mongo) RemoveDatasetVersionAndEditionLinks(ctx context.Context, id stri
 		},
 	}
 
-	if _, err := m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateById(ctx, id, update); err != nil {
+	if _, err := m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateOne(ctx, bson.M{"_id": id}, update); err != nil {
 		return fmt.Errorf("failed in query to MongoDB: %w", err)
 	}
 
