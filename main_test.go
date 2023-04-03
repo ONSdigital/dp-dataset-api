@@ -15,7 +15,6 @@ import (
 )
 
 const mongoVersion = "4.4.8"
-const mongoPort = 27017
 const databaseName = "testing"
 const replicaSetName = "rs0"
 
