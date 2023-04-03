@@ -59,8 +59,7 @@ Feature: Dataset API - metadata
                             "href": "someurl"
                         }
                     },
-                    "edition": "hello",
-                    "e_tag": "versionetag"
+                    "edition": "hello"
                 },
                 {
                     "id": "test-item-2",
@@ -74,8 +73,7 @@ Feature: Dataset API - metadata
                             "href": "someurl"
                         }
                     },
-                    "edition": "2023",
-                    "e_tag": "version-item2-etag"
+                    "edition": "2023"
                 },
                 {
                     "id": "test-item-3",
@@ -89,14 +87,13 @@ Feature: Dataset API - metadata
                             "href": "someurl"
                         }
                     },
-                    "edition": "hello",
-                    "e_tag": "version-item3-etag"
+                    "edition": "hello"
                 }
             ]
             """
 
     Scenario: Successful PUT metadata with valid etag
-        When I set the "If-Match" header to "versionetag"
+        When I set the "If-Match" header to "etag-test-item-1"
         And I PUT "/datasets/population-estimates/editions/hello/versions/1/metadata"
             """
             {
@@ -218,7 +215,7 @@ Feature: Dataset API - metadata
             """
 
     Scenario: PUT metadata on a dataset that is published
-        When I set the "If-Match" header to "version-item2-etag"
+        When I set the "If-Match" header to "etag-test-item-2"
         And I PUT "/datasets/published-dataset/editions/2023/versions/1/metadata"
             """
             {
@@ -250,13 +247,12 @@ Feature: Dataset API - metadata
                         "href": "someurl"
                     }
                 },
-                "edition": "2023",
-                "e_tag": "version-item2-etag"
+                "edition": "2023"
             }
             """
 
     Scenario: PUT metadata on a version that is published
-        When I set the "If-Match" header to "version-item3-etag"
+        When I set the "If-Match" header to "etag-test-item-3"
         And I PUT "/datasets/population-estimates/editions/hello/versions/2/metadata"
             """
             {
@@ -290,8 +286,7 @@ Feature: Dataset API - metadata
                         "href": "someurl"
                     }
                 },
-                "edition": "hello",
-                "e_tag": "version-item3-etag"
+                "edition": "hello"
             }
             """
 
@@ -330,8 +325,7 @@ Feature: Dataset API - metadata
                         "href": "someurl"
                     }
                 },
-                "edition": "hello",
-                "e_tag": "versionetag"
+                "edition": "hello"
             }
             """
 
