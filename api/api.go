@@ -36,7 +36,7 @@ var (
 	deletePermission = auth.Permissions{Delete: true}
 )
 
-//API provides an interface for the routes
+// API provides an interface for the routes
 type API interface {
 	CreateDatasetAPI(string, *mux.Router, store.DataStore) *DatasetAPI
 }
