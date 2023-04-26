@@ -15,7 +15,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
-	kafka "github.com/ONSdigital/dp-kafka/v2"
+	kafka "github.com/ONSdigital/dp-kafka/v3"
 	dphandlers "github.com/ONSdigital/dp-net/v2/handlers"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -182,8 +182,8 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 
 	// Log kafka producer errors in parallel go-routine
 	if svc.config.EnablePrivateEndpoints {
-		svc.generateCMDDownloadsProducer.Channels().LogErrors(ctx, "generate downloads producer error")
-		svc.generateCantabularDownloadsProducer.Channels().LogErrors(ctx, "generate downloads producer error")
+		svc.generateCMDDownloadsProducer.LogErrors(ctx)
+		svc.generateCantabularDownloadsProducer.LogErrors(ctx)
 	}
 
 	// Run the http server in a new go-routine

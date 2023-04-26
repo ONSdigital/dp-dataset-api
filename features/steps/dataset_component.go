@@ -14,8 +14,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storeMock "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	kafka "github.com/ONSdigital/dp-kafka/v2"
-	"github.com/ONSdigital/dp-kafka/v2/kafkatest"
+	kafka "github.com/ONSdigital/dp-kafka/v3"
+	"github.com/ONSdigital/dp-kafka/v3/kafkatest"
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
 	"github.com/ONSdigital/log.go/v2/log"
 )
@@ -136,13 +136,13 @@ func (c *DatasetComponent) setConsumer(topic string) error {
 	kafkaOffset := kafka.OffsetOldest
 	if c.consumer, err = kafka.NewConsumerGroup(
 		context.Background(),
-		c.Config.KafkaAddr,
-		topic,
-		"test-kafka-group",
-		kafka.CreateConsumerGroupChannels(1),
 		&kafka.ConsumerGroupConfig{
-			Offset:       &kafkaOffset,
-			KafkaVersion: &c.Config.KafkaVersion,
+			Offset:            &kafkaOffset,
+			KafkaVersion:      &c.Config.KafkaVersion,
+			BrokerAddrs:       c.Config.KafkaAddr,
+			Topic:             topic,
+			GroupName:         "test-kafka-group",
+			MinBrokersHealthy: &c.Config.KafkaConsumerMinBrokersHealthy,
 		},
 	); err != nil {
 		return fmt.Errorf("error creating kafka consumer: %w", err)
@@ -166,7 +166,10 @@ func (c *DatasetComponent) DoGetHTTPServer(bindAddr string, router http.Handler)
 
 func (c *DatasetComponent) DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
 	pConfig := &kafka.ProducerConfig{
-		KafkaVersion: &cfg.KafkaVersion,
+		KafkaVersion:      &cfg.KafkaVersion,
+		BrokerAddrs:       cfg.KafkaAddr,
+		Topic:             topic,
+		MinBrokersHealthy: &cfg.KafkaProducerMinBrokersHealthy,
 	}
 
 	if cfg.KafkaSecProtocol == "TLS" {
@@ -178,8 +181,7 @@ func (c *DatasetComponent) DoGetKafkaProducer(ctx context.Context, cfg *config.C
 		)
 	}
 
-	pChannels := kafka.CreateProducerChannels()
-	return kafka.NewProducer(ctx, cfg.KafkaAddr, topic, pChannels, pConfig)
+	return kafka.NewProducer(ctx, pConfig)
 }
 
 func (c *DatasetComponent) DoGetMockedKafkaProducerOk(_ context.Context, _ *config.Configuration, _ string) (kafka.IProducer, error) {
@@ -188,6 +190,9 @@ func (c *DatasetComponent) DoGetMockedKafkaProducerOk(_ context.Context, _ *conf
 			return &kafka.ProducerChannels{}
 		},
 		CloseFunc: funcClose,
+		LogErrorsFunc: func(ctx context.Context) {
+			// Do nothing
+		},
 	}, nil
 }
 

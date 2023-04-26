@@ -8,7 +8,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/service"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	kafka "github.com/ONSdigital/dp-kafka/v2"
+	kafka "github.com/ONSdigital/dp-kafka/v3"
 	"net/http"
 	"sync"
 )

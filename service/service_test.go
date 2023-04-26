@@ -14,8 +14,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storeMock "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	kafka "github.com/ONSdigital/dp-kafka/v2"
-	"github.com/ONSdigital/dp-kafka/v2/kafkatest"
+	kafka "github.com/ONSdigital/dp-kafka/v3"
+	"github.com/ONSdigital/dp-kafka/v3/kafkatest"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -110,6 +110,9 @@ func TestRun(t *testing.T) {
 			return &kafkatest.IProducerMock{
 				ChannelsFunc: func() *kafka.ProducerChannels {
 					return &kafka.ProducerChannels{}
+				},
+				LogErrorsFunc: func(ctx context.Context) {
+					// Do nothing
 				},
 			}, nil
 		}
@@ -383,6 +386,9 @@ func TestClose(t *testing.T) {
 				return &kafka.ProducerChannels{}
 			},
 			CloseFunc: funcClose,
+			LogErrorsFunc: func(ctx context.Context) {
+				// Do nothing
+			},
 		}
 
 		Convey("Closing a service does not close uninitialised dependencies", func() {

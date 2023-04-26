@@ -28,6 +28,8 @@ func TestSpec(t *testing.T) {
 				So(cfg.KafkaSecClientKey, ShouldEqual, "")
 				So(cfg.KafkaSecCACerts, ShouldEqual, "")
 				So(cfg.KafkaSecSkipVerify, ShouldBeFalse)
+				So(cfg.KafkaConsumerMinBrokersHealthy, ShouldEqual, 1)
+				So(cfg.KafkaProducerMinBrokersHealthy, ShouldEqual, 2)
 				So(cfg.GenerateDownloadsTopic, ShouldEqual, "filter-job-submitted")
 				So(cfg.CantabularExportStartTopic, ShouldEqual, "cantabular-export-start")
 				So(cfg.DatasetAPIURL, ShouldEqual, "http://localhost:22000")
