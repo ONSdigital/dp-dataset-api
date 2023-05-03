@@ -183,12 +183,26 @@ func main() {
 			State: "published",
 		}
 
-		censusEditionData.ID = uuid.NewV4().String()
+		id, err := uuid.NewV4()
+		if err != nil {
+			logData := log.Data{"json file": res}
+			log.Error(ctx, "failed to create UUID for censusEditionData.ID", err, logData)
+			fmt.Println("error")
+			return
+		}
+		censusEditionData.ID = id.String()
 		censusEditionData.Next = generalModel
 		censusEditionData.Current = generalModel
 
 		//Model to generate instances documents in mongodb
-		generateId := uuid.NewV4().String()
+		genId, err := uuid.NewV4()
+		if err != nil {
+			logData := log.Data{"json file": res}
+			log.Error(ctx, "failed to create UUID for generateId", err, logData)
+			fmt.Println("error")
+			return
+		}
+		generateId := genId.String()
 		censusInstances = models.Version{
 			Edition:     censusYear,
 			ID:          generateId,
@@ -283,7 +297,7 @@ func main() {
 	fmt.Println("\ndatasets, instances and editions have been added to datasets db")
 }
 
-//Inserts a document in the datasets collection
+// Inserts a document in the datasets collection
 func createDatasetsDocument(ctx context.Context, id string, class interface{}, conn *mongodriver.MongoConnection) {
 	var err error
 	logData := log.Data{"data": class}
@@ -293,7 +307,7 @@ func createDatasetsDocument(ctx context.Context, id string, class interface{}, c
 	}
 }
 
-//Inserts a document in the editions collection
+// Inserts a document in the editions collection
 func createEditionsDocument(ctx context.Context, id string, class interface{}, conn *mongodriver.MongoConnection) {
 	var err error
 	logData := log.Data{"data": class}
@@ -306,7 +320,7 @@ func createEditionsDocument(ctx context.Context, id string, class interface{}, c
 	}
 }
 
-//Inserts a document in the instances collection
+// Inserts a document in the instances collection
 func createInstancesDocument(ctx context.Context, id string, class interface{}, conn *mongodriver.MongoConnection) {
 	var err error
 	logData := log.Data{"data": class}
@@ -319,7 +333,7 @@ func createInstancesDocument(ctx context.Context, id string, class interface{}, 
 	}
 }
 
-//Updates document in the specific collection
+// Updates document in the specific collection
 func upsertData(ctx context.Context, selector, class interface{}, conn *mongodriver.MongoConnection, document string, logData log.Data) error {
 	var err error
 	if _, err = conn.Collection(document).Upsert(ctx, selector, bson.M{"$set": class}); err != nil {
@@ -330,7 +344,7 @@ func upsertData(ctx context.Context, selector, class interface{}, conn *mongodri
 	return err
 }
 
-//Download a file from nomis website for census 2011 data
+// Download a file from nomis website for census 2011 data
 func downloadFile(ctx context.Context) {
 	fullURLFile = "https://www.nomisweb.co.uk/api/v01/dataset/def.sdmx.json?search=*c2011*"
 

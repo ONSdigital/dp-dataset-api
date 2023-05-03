@@ -70,8 +70,8 @@ github.com/ONSdigital/dp-healthcheck v1.5.1-0.20230419121137-48b17cfe6eab/go.mod
 github.com/ONSdigital/dp-healthcheck v1.6.0/go.mod h1:3bzw2wxDlY3s0+LqBbgemUVlymyyMjqhf4SDP1ONPGw=
 github.com/ONSdigital/dp-healthcheck v1.6.1 h1:YDAnxE2fI3G2hhGC42mKI/fRhAhIYmFZGQwQ/8M65M0=
 github.com/ONSdigital/dp-healthcheck v1.6.1/go.mod h1:FURB2RUJHw3lssamKtsGsrbu31ar9yhMSDYzG9vgSIo=
-github.com/ONSdigital/dp-kafka/v2 v2.7.5 h1:M9SJ6W/W7GE2nCrp/EUrXL/GG5ylW607Pa5oO0h5R2k=
-github.com/ONSdigital/dp-kafka/v2 v2.7.5/go.mod h1:vu8Lb7GcEmrKIWJo4PjM4Y0ThW5baAgd6nGVqSWRR8w=
+github.com/ONSdigital/dp-kafka/v2 v2.8.0 h1:lpIz976VdGr0ZkpN/LeMqYAihI9ojTsxZJkTd/sjKT8=
+github.com/ONSdigital/dp-kafka/v2 v2.8.0/go.mod h1:vu8Lb7GcEmrKIWJo4PjM4Y0ThW5baAgd6nGVqSWRR8w=
 github.com/ONSdigital/dp-mocking v0.0.0-20190905163309-fee2702ad1b9/go.mod h1:BcIRgitUju//qgNePRBmNjATarTtynAgc0yV29VpLEk=
 github.com/ONSdigital/dp-mocking v0.9.1/go.mod h1:BcIRgitUju//qgNePRBmNjATarTtynAgc0yV29VpLEk=
 github.com/ONSdigital/dp-mocking v0.9.2-0.20230419122200-aef54dcf2a23/go.mod h1:3O3J2g4gB5i4Oi8dR4qaJCj64g5F/2IWQJhRT8LiKlY=
@@ -465,8 +465,8 @@ github.com/rogpeppe/go-internal v1.6.1 h1:/FiVV8dS/e+YqF2JvO3yXRFbBLTIuSDkuC7aBO
 github.com/rogpeppe/go-internal v1.6.1/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTEfhy4qGm1nDQc=
 github.com/russross/blackfriday/v2 v2.0.1/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
-github.com/satori/go.uuid v1.2.0 h1:0uYX9dsZ2yD7q2RtLRtPSdGDWzjeM3TbMJP9utgA0ww=
-github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
+github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b h1:gQZ0qzfKHQIybLANtM3mBXNUtOfsCFXeTsnBqCsx1KM=
+github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
 github.com/shurcooL/go v0.0.0-20200502201357-93f07166e636/go.mod h1:TDJrrUr11Vxrven61rcy3hJMUqaf/CLWYhHNPmT14Lk=
 github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a/go.mod h1:AuYgA5Kyo4c7HfUmvRGs/6rGlMMV/6B1bVnB9JxJEEg=
 github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29/go.mod h1:AuYgA5Kyo4c7HfUmvRGs/6rGlMMV/6B1bVnB9JxJEEg=

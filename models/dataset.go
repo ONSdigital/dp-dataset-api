@@ -366,7 +366,11 @@ func CreateVersion(reader io.Reader, datasetID string) (*Version, error) {
 
 	log.Info(context.Background(), "DEBUG", log.Data{"body_create_version": string(b)})
 	var version Version
-	version.ID = uuid.NewV4().String()
+	id, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
+	version.ID = id.String()
 	version.DatasetID = datasetID
 
 	err = json.Unmarshal(b, &version)
@@ -407,7 +411,11 @@ func CreateContact(reader io.Reader) (*Contact, error) {
 	}
 
 	// Create unique id
-	id := uuid.NewV4()
+	id, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
+
 	contact.ID = id.String()
 
 	return &contact, nil
@@ -415,7 +423,10 @@ func CreateContact(reader io.Reader) (*Contact, error) {
 
 // CreateEdition manages the creation of an edition object
 func CreateEdition(host, datasetID, edition string) (*EditionUpdate, error) {
-	id := uuid.NewV4()
+	id, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
 
 	return &EditionUpdate{
 		ID: id.String(),
