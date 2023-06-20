@@ -17,7 +17,7 @@ require (
 	github.com/ONSdigital/dp-component-test v0.9.2
 	github.com/ONSdigital/dp-graph/v2 v2.16.0
 	github.com/ONSdigital/dp-healthcheck v1.6.1
-	github.com/ONSdigital/dp-kafka/v2 v2.8.0
+	github.com/ONSdigital/dp-kafka/v3 v3.10.0
 	github.com/ONSdigital/dp-mongodb/v3 v3.6.0
 	github.com/ONSdigital/dp-net/v2 v2.9.1
 	github.com/ONSdigital/log.go/v2 v2.4.1
@@ -41,7 +41,7 @@ require (
 	github.com/ONSdigital/golang-neo4j-bolt-driver v0.0.0-20210408132126-c2323ff08bf1 // indirect
 	github.com/ONSdigital/graphson v0.3.0 // indirect
 	github.com/ONSdigital/gremgo-neptune v1.0.3 // indirect
-	github.com/Shopify/sarama v1.35.0 // indirect
+	github.com/Shopify/sarama v1.38.1 // indirect
 	github.com/chromedp/cdproto v0.0.0-20230419194459-b5ff65bc57a3 // indirect
 	github.com/chromedp/chromedp v0.9.1 // indirect
 	github.com/chromedp/sysutil v1.0.0 // indirect
@@ -84,6 +84,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
+	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/smartystreets/assertions v1.13.1 // indirect
 	github.com/spf13/afero v1.9.5 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect

@@ -22,6 +22,8 @@ func TestSpec(t *testing.T) {
 			Convey("The values should be set to the expected defaults", func() {
 				So(cfg.BindAddr, ShouldEqual, ":22000")
 				So(cfg.KafkaAddr, ShouldResemble, []string{"localhost:9092", "localhost:9093", "localhost:9094"})
+				So(cfg.KafkaConsumerMinBrokersHealthy, ShouldEqual, 1)
+				So(cfg.KafkaProducerMinBrokersHealthy, ShouldEqual, 2)
 				So(cfg.KafkaVersion, ShouldEqual, "1.0.2")
 				So(cfg.KafkaSecProtocol, ShouldEqual, "")
 				So(cfg.KafkaSecClientCert, ShouldEqual, "")

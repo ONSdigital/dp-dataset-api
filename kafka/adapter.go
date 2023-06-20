@@ -1,6 +1,6 @@
 package kafka
 
-import kafka "github.com/ONSdigital/dp-kafka/v2"
+import kafka "github.com/ONSdigital/dp-kafka/v3"
 
 // NewProducerAdapter creates a new kafka producer with access to Output function
 func NewProducerAdapter(producer kafka.IProducer) *Producer {

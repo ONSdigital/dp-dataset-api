@@ -8,7 +8,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/service"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	kafka "github.com/ONSdigital/dp-kafka/v2"
+	kafka "github.com/ONSdigital/dp-kafka/v3"
 	"net/http"
 	"sync"
 )
@@ -19,31 +19,31 @@ var _ service.Initialiser = &InitialiserMock{}
 
 // InitialiserMock is a mock implementation of service.Initialiser.
 //
-// 	func TestSomethingThatUsesInitialiser(t *testing.T) {
+//	func TestSomethingThatUsesInitialiser(t *testing.T) {
 //
-// 		// make and configure a mocked service.Initialiser
-// 		mockedInitialiser := &InitialiserMock{
-// 			DoGetGraphDBFunc: func(ctx context.Context) (store.GraphDB, service.Closer, error) {
-// 				panic("mock out the DoGetGraphDB method")
-// 			},
-// 			DoGetHTTPServerFunc: func(bindAddr string, router http.Handler) service.HTTPServer {
-// 				panic("mock out the DoGetHTTPServer method")
-// 			},
-// 			DoGetHealthCheckFunc: func(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error) {
-// 				panic("mock out the DoGetHealthCheck method")
-// 			},
-// 			DoGetKafkaProducerFunc: func(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
-// 				panic("mock out the DoGetKafkaProducer method")
-// 			},
-// 			DoGetMongoDBFunc: func(ctx context.Context, cfg config.MongoConfig) (store.MongoDB, error) {
-// 				panic("mock out the DoGetMongoDB method")
-// 			},
-// 		}
+//		// make and configure a mocked service.Initialiser
+//		mockedInitialiser := &InitialiserMock{
+//			DoGetGraphDBFunc: func(ctx context.Context) (store.GraphDB, service.Closer, error) {
+//				panic("mock out the DoGetGraphDB method")
+//			},
+//			DoGetHTTPServerFunc: func(bindAddr string, router http.Handler) service.HTTPServer {
+//				panic("mock out the DoGetHTTPServer method")
+//			},
+//			DoGetHealthCheckFunc: func(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error) {
+//				panic("mock out the DoGetHealthCheck method")
+//			},
+//			DoGetKafkaProducerFunc: func(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
+//				panic("mock out the DoGetKafkaProducer method")
+//			},
+//			DoGetMongoDBFunc: func(ctx context.Context, cfg config.MongoConfig) (store.MongoDB, error) {
+//				panic("mock out the DoGetMongoDB method")
+//			},
+//		}
 //
-// 		// use mockedInitialiser in code that requires service.Initialiser
-// 		// and then make assertions.
+//		// use mockedInitialiser in code that requires service.Initialiser
+//		// and then make assertions.
 //
-// 	}
+//	}
 type InitialiserMock struct {
 	// DoGetGraphDBFunc mocks the DoGetGraphDB method.
 	DoGetGraphDBFunc func(ctx context.Context) (store.GraphDB, service.Closer, error)
@@ -127,7 +127,8 @@ func (mock *InitialiserMock) DoGetGraphDB(ctx context.Context) (store.GraphDB, s
 
 // DoGetGraphDBCalls gets all the calls that were made to DoGetGraphDB.
 // Check the length with:
-//     len(mockedInitialiser.DoGetGraphDBCalls())
+//
+//	len(mockedInitialiser.DoGetGraphDBCalls())
 func (mock *InitialiserMock) DoGetGraphDBCalls() []struct {
 	Ctx context.Context
 } {
@@ -160,7 +161,8 @@ func (mock *InitialiserMock) DoGetHTTPServer(bindAddr string, router http.Handle
 
 // DoGetHTTPServerCalls gets all the calls that were made to DoGetHTTPServer.
 // Check the length with:
-//     len(mockedInitialiser.DoGetHTTPServerCalls())
+//
+//	len(mockedInitialiser.DoGetHTTPServerCalls())
 func (mock *InitialiserMock) DoGetHTTPServerCalls() []struct {
 	BindAddr string
 	Router   http.Handler
@@ -199,7 +201,8 @@ func (mock *InitialiserMock) DoGetHealthCheck(cfg *config.Configuration, buildTi
 
 // DoGetHealthCheckCalls gets all the calls that were made to DoGetHealthCheck.
 // Check the length with:
-//     len(mockedInitialiser.DoGetHealthCheckCalls())
+//
+//	len(mockedInitialiser.DoGetHealthCheckCalls())
 func (mock *InitialiserMock) DoGetHealthCheckCalls() []struct {
 	Cfg       *config.Configuration
 	BuildTime string
@@ -240,7 +243,8 @@ func (mock *InitialiserMock) DoGetKafkaProducer(ctx context.Context, cfg *config
 
 // DoGetKafkaProducerCalls gets all the calls that were made to DoGetKafkaProducer.
 // Check the length with:
-//     len(mockedInitialiser.DoGetKafkaProducerCalls())
+//
+//	len(mockedInitialiser.DoGetKafkaProducerCalls())
 func (mock *InitialiserMock) DoGetKafkaProducerCalls() []struct {
 	Ctx   context.Context
 	Cfg   *config.Configuration
@@ -277,7 +281,8 @@ func (mock *InitialiserMock) DoGetMongoDB(ctx context.Context, cfg config.MongoC
 
 // DoGetMongoDBCalls gets all the calls that were made to DoGetMongoDB.
 // Check the length with:
-//     len(mockedInitialiser.DoGetMongoDBCalls())
+//
+//	len(mockedInitialiser.DoGetMongoDBCalls())
 func (mock *InitialiserMock) DoGetMongoDBCalls() []struct {
 	Ctx context.Context
 	Cfg config.MongoConfig

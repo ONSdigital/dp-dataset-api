@@ -1,6 +1,6 @@
 package schema
 
-import "github.com/ONSdigital/dp-kafka/v2/avro"
+import "github.com/ONSdigital/dp-kafka/v3/avro"
 
 var generateCMDDownloads = `{
   "type": "record",

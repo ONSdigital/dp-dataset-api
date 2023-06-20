@@ -9,7 +9,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-graph/v2/graph"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	kafka "github.com/ONSdigital/dp-kafka/v2"
+	kafka "github.com/ONSdigital/dp-kafka/v3"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/log.go/v2/log"
 )
@@ -101,7 +101,10 @@ func (e *Init) DoGetHealthCheck(cfg *config.Configuration, buildTime, gitCommit,
 func (e *Init) DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
 
 	pConfig := &kafka.ProducerConfig{
-		KafkaVersion: &cfg.KafkaVersion,
+		KafkaVersion:      &cfg.KafkaVersion,
+		Topic:             topic,
+		BrokerAddrs:       cfg.KafkaAddr,
+		MinBrokersHealthy: &cfg.KafkaProducerMinBrokersHealthy,
 	}
 
 	if cfg.KafkaSecProtocol == "TLS" {
@@ -113,8 +116,7 @@ func (e *Init) DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration
 		)
 	}
 
-	pChannels := kafka.CreateProducerChannels()
-	return kafka.NewProducer(ctx, cfg.KafkaAddr, topic, pChannels, pConfig)
+	return kafka.NewProducer(ctx, pConfig)
 }
 
 // DoGetGraphDB creates a new GraphDB
