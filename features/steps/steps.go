@@ -131,8 +131,12 @@ func (c *DatasetComponent) theVersionInTheDatabaseForIdShouldBe(id string, body 
 }
 
 func (c *DatasetComponent) iHaveARealKafkaContainerWithTopic(topic string) error {
-	c.setConsumer(topic)
+	err := c.setConsumer(topic)
+	if err != nil {
+		return fmt.Errorf("failed to create kafka consumer: %w", err)
+	}
 	c.setInitialiserRealKafka()
+
 	return nil
 }
 

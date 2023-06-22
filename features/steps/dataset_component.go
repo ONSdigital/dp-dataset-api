@@ -132,10 +132,13 @@ func funcClose(_ context.Context) error {
 }
 
 func (c *DatasetComponent) setConsumer(topic string) error {
+
+	ctx := context.Background()
+
 	var err error
 	kafkaOffset := kafka.OffsetOldest
 	if c.consumer, err = kafka.NewConsumerGroup(
-		context.Background(),
+		ctx,
 		&kafka.ConsumerGroupConfig{
 			BrokerAddrs:       c.Config.KafkaAddr,
 			Topic:             topic,
@@ -147,6 +150,17 @@ func (c *DatasetComponent) setConsumer(topic string) error {
 	); err != nil {
 		return fmt.Errorf("error creating kafka consumer: %w", err)
 	}
+
+	// start consumer group
+	if err := c.consumer.Start(); err != nil {
+		return fmt.Errorf("error starting kafka consumer: %w", err)
+	}
+
+	c.consumer.LogErrors(ctx)
+
+	c.consumer.StateWait(kafka.Consuming)
+	log.Info(context.Background(), "component-test kafka consumer is in consuming state")
+
 	return nil
 }
 
