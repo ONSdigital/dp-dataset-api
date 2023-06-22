@@ -1,6 +1,6 @@
 module github.com/ONSdigital/dp-dataset-api
 
-go 1.19
+go 1.20
 
 // to avoid the following vulnerabilities:
 //     - CVE-2022-29153 # pkg:golang/github.com/hashicorp/consul/api@v1.1.0
@@ -28,7 +28,7 @@ require (
 	github.com/justinas/alice v1.2.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/pkg/errors v0.9.1
-	github.com/satori/go.uuid v1.2.0
+	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 	github.com/smartystreets/goconvey v1.8.0
 	github.com/stretchr/testify v1.8.2
 	go.mongodb.org/mongo-driver v1.11.4

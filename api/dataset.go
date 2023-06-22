@@ -45,7 +45,7 @@ var (
 
 const IsBasedOn = "is_based_on"
 
-//getDatasets returns a list of datasets, the total count of datasets and an error
+// getDatasets returns a list of datasets, the total count of datasets and an error
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	logData := log.Data{}
@@ -112,8 +112,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 				log.Info(ctx, "getDataset endpoint: published dataset not found", logData)
 				return nil, errs.ErrDatasetNotFound
 			}
-
-			log.Info(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", logData)
+			log.Info(ctx, "getDataset endpoint: caller not authorised returning dataset", logData)
 
 			dataset.Current.ID = dataset.ID
 			datasetResponse = dataset.Current
@@ -123,7 +122,8 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 				log.Info(ctx, "getDataset endpoint: published or unpublished dataset not found", logData)
 				return nil, errs.ErrDatasetNotFound
 			}
-			log.Info(ctx, "getDataset endpoint: caller not authorised returning dataset", logData)
+			log.Info(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", logData)
+
 			datasetResponse = dataset
 		}
 
