@@ -9,7 +9,6 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/service"
-	"github.com/ONSdigital/dp-dataset-api/service/mock"
 	serviceMock "github.com/ONSdigital/dp-dataset-api/service/mock"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storeMock "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
@@ -61,13 +60,13 @@ func TestRun(t *testing.T) {
 		cfg.EnablePrivateEndpoints = true
 		So(err, ShouldBeNil)
 
-		hcMock := &mock.HealthCheckerMock{
+		hcMock := &serviceMock.HealthCheckerMock{
 			AddCheckFunc: func(name string, checker healthcheck.Checker) error { return nil },
 			StartFunc:    func(ctx context.Context) {},
 		}
 
 		serverWg := &sync.WaitGroup{}
-		serverMock := &mock.HTTPServerMock{
+		serverMock := &serviceMock.HTTPServerMock{
 			ListenAndServeFunc: func() error {
 				serverWg.Done()
 				return nil
@@ -134,7 +133,7 @@ func TestRun(t *testing.T) {
 		})
 
 		Convey("Given that initialising GraphDB returns an error", func() {
-			initMock := &mock.InitialiserMock{
+			initMock := &serviceMock.InitialiserMock{
 				DoGetMongoDBFunc: funcDoGetMongoDBOk,
 				DoGetGraphDBFunc: funcDoGetGraphDBErr,
 			}
@@ -153,7 +152,7 @@ func TestRun(t *testing.T) {
 		})
 
 		Convey("Given that initialising Kafka producer returns an error", func() {
-			initMock := &mock.InitialiserMock{
+			initMock := &serviceMock.InitialiserMock{
 				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
 				DoGetGraphDBFunc:       funcDoGetGraphDBOk,
 				DoGetKafkaProducerFunc: funcDoGetKafkaProducerErr,

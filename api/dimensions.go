@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
@@ -219,7 +218,7 @@ func handleDimensionsErr(ctx context.Context, w http.ResponseWriter, msg string,
 
 	// Switch by error type
 	switch err.(type) {
-	case apierrors.ErrInvalidPatch:
+	case errs.ErrInvalidPatch:
 		data["response_status"] = http.StatusBadRequest
 		data["user_error"] = err.Error()
 		log.Error(ctx, fmt.Sprintf("request unsuccessful: %s", msg), err, data)

@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
@@ -107,7 +106,7 @@ func handleDimensionErr(ctx context.Context, w http.ResponseWriter, err error, d
 
 	// Switch by error type
 	switch err.(type) {
-	case apierrors.ErrInvalidPatch:
+	case errs.ErrInvalidPatch:
 		status = http.StatusBadRequest
 	default:
 		// Switch by error message

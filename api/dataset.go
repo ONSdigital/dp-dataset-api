@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
@@ -55,7 +54,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 	isBasedOn := r.URL.Query().Get(IsBasedOn)
 
 	if isBasedOnExists && isBasedOn == "" {
-		err := apierrors.ErrInvalidQueryParameter
+		err := errs.ErrInvalidQueryParameter
 		log.Error(ctx, "malformed is_based_on parameter", err)
 		handleDatasetAPIErr(ctx, err, w, logData)
 		return nil, 0, err
