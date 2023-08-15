@@ -267,7 +267,6 @@ func TestPutMetadata(t *testing.T) {
 			r := createRequestWithAuth("PUT", url, bytes.NewBufferString(payload))
 
 			Convey("When we call the PUT metadata endpoint", func() {
-
 				api.Router.ServeHTTP(w, r)
 
 				Convey("Then a 400 error is returned", func() {
@@ -282,7 +281,6 @@ func TestPutMetadata(t *testing.T) {
 func TestGetMetadataReturnsOk(t *testing.T) {
 	t.Parallel()
 	Convey("Successfully return metadata resource for a request without an authentication header", t, func() {
-
 		datasetDoc := createDatasetDoc()
 		versionDoc := createPublishedVersionDoc()
 
@@ -341,7 +339,6 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 	// Subtle difference between the test above and below, keywords is Not nil
 	// in response for test below while it is nil in test above
 	Convey("Successfully return metadata resource for a request with an authentication header", t, func() {
-
 		datasetDoc := createDatasetDoc()
 		versionDoc := createUnpublishedVersionDoc()
 
@@ -492,7 +489,6 @@ func TestGetMetadataReturnsError(t *testing.T) {
 	})
 
 	Convey("When the dataset document has no current or nextsub document but request is authorized return status internal server error", t, func() {
-
 		datasetDoc := createDatasetDoc()
 		versionDoc := createPublishedVersionDoc()
 		datasetDoc.Current = nil
@@ -530,7 +526,6 @@ func TestGetMetadataReturnsError(t *testing.T) {
 	})
 
 	Convey("When the edition document cannot be found for version return status not found", t, func() {
-
 		datasetDoc := createDatasetDoc()
 		versionDoc := createPublishedVersionDoc()
 
@@ -566,7 +561,6 @@ func TestGetMetadataReturnsError(t *testing.T) {
 	})
 
 	Convey("When the version document cannot be found return status not found", t, func() {
-
 		datasetDoc := createDatasetDoc()
 
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
@@ -601,7 +595,6 @@ func TestGetMetadataReturnsError(t *testing.T) {
 	})
 
 	Convey("When the version document state is invalid return an internal server error", t, func() {
-
 		datasetDoc := createDatasetDoc()
 
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
@@ -635,7 +628,6 @@ func TestGetMetadataReturnsError(t *testing.T) {
 	})
 
 	Convey("When an edition document for an invalid version is requested returns invalid version error", t, func() {
-
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/jjj/metadata", nil)
 
 		w := httptest.NewRecorder()
@@ -659,7 +651,6 @@ func TestGetMetadataReturnsError(t *testing.T) {
 	})
 
 	Convey("When an edition document for version zero is requested return an invalid version error", t, func() {
-
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/0/metadata", nil)
 
 		w := httptest.NewRecorder()
@@ -683,7 +674,6 @@ func TestGetMetadataReturnsError(t *testing.T) {
 	})
 
 	Convey("When an edition document for a negative version is requested return an invalid version error", t, func() {
-
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/-1/metadata", nil)
 
 		w := httptest.NewRecorder()
@@ -705,7 +695,6 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 	})
-
 }
 
 // createDatasetDoc returns a datasetUpdate doc containing minimal fields but

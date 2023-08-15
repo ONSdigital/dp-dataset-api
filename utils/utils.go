@@ -11,7 +11,6 @@ import (
 
 // ValidatePositiveInt obtains the positive int value of query var defined by the provided varKey
 func ValidatePositiveInt(parameter string) (val int, err error) {
-
 	val, err = strconv.Atoi(parameter)
 	if err != nil {
 		return -1, errs.ErrInvalidQueryParameter

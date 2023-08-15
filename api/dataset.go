@@ -259,7 +259,6 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	data := log.Data{"dataset_id": datasetID}
 
 	err := func() error {
-
 		dataset, err := models.CreateDataset(r.Body)
 		if err != nil {
 			log.Error(ctx, "putDataset endpoint: failed to model dataset resource based on request", err, data)

@@ -44,7 +44,6 @@ type Option struct {
 
 // CreateObservationsDoc manages the creation of metadata across dataset and version docs
 func CreateObservationsDoc(rawQuery string, versionDoc *Version, datasetDoc *Dataset, observations []Observation, queryParameters map[string]string, offset, limit int) *ObservationsDoc {
-
 	observationsDoc := &ObservationsDoc{
 		Limit: limit,
 		Links: &ObservationLinks{
@@ -73,12 +72,10 @@ func CreateObservationsDoc(rawQuery string, versionDoc *Version, datasetDoc *Dat
 		for _, dimension := range versionDoc.Dimensions {
 			var linkObjects []*LinkObject
 			if dimension.Name == paramKey && paramValue != wildcard {
-
 				linkObject := &LinkObject{
 					HRef: dimension.HRef + "/codes/" + paramValue,
 					ID:   paramValue,
 				}
-				linkObjects = append(linkObjects, linkObject)
 				dimensions[paramKey] = Option{
 					LinkObject: linkObject,
 				}

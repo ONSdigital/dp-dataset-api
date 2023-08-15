@@ -146,9 +146,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 }
 
 func TestGetDimensionOptionsReturnsOk(t *testing.T) {
-
 	Convey("Given a store with a dimension with 5 options", t, func() {
-
 		// testing DataStore with 5 dimension options
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
@@ -293,7 +291,6 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 	MaxIDs = func() int { return 5 }
 
 	Convey("Given a set of mocked dependencies", t, func() {
-
 		Convey("Then providing more IDs than the maximum allowed results in 400 BadRequest response", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=id1,id2,id3&id=id4,id5,id6", nil)
 			w := httptest.NewRecorder()

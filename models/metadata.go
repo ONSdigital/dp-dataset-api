@@ -103,7 +103,6 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 
 	// Add relevant metdata links from version document
 	if versionDoc.Links != nil {
-
 		if versionDoc.Links.Version != nil && versionDoc.Links.Version.HRef != "" {
 			metaDataDoc.Links.Self = &LinkObject{
 				HRef: versionDoc.Links.Version.HRef + "/metadata",

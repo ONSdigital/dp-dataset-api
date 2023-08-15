@@ -15,7 +15,6 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 	var err error
 
 	if editionDoc, action, err = func() (*models.EditionUpdate, string, error) {
-
 		log.Info(ctx, "confirm edition: getting edition", logData)
 
 		editionDoc, err := s.GetEdition(ctx, datasetID, edition, "")
@@ -33,7 +32,6 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 
 			log.Info(ctx, "confirm edition: created new edition", logData)
 		} else {
-
 			// TODO - feature flag. Will need removing eventually.
 			if s.EnableDetachDataset {
 				// Abort if a new/next version is already in flight

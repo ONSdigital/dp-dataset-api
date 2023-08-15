@@ -132,7 +132,6 @@ func funcClose(_ context.Context) error {
 }
 
 func (c *DatasetComponent) setConsumer(topic string) error {
-
 	ctx := context.Background()
 
 	var err error

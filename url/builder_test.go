@@ -16,9 +16,7 @@ const (
 )
 
 func TestBuilder_BuildWebsiteDatasetVersionURL(t *testing.T) {
-
 	Convey("Given a URL builder", t, func() {
-
 		urlBuilder := url.NewBuilder(websiteURL)
 
 		Convey("When BuildWebsiteDatasetVersionURL is called", func() {

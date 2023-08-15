@@ -10,7 +10,6 @@ import (
 )
 
 func TestSelector(t *testing.T) {
-
 	Convey("Given some testing values to provide as selector paramters", t, func() {
 		var testInstanceID = "instanceID"
 		var testETag = "testETag"

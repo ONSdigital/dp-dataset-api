@@ -16,7 +16,6 @@ import (
 // UpdateDimension updates label and/or description
 // for a specific dimension within an instance
 func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
-
 	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()
@@ -70,7 +69,6 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	// Update instance-dimension
 	notFound := true
 	for i := range instance.Dimensions {
-
 		// For the chosen dimension
 		if instance.Dimensions[i].Name == dimension {
 			notFound = false

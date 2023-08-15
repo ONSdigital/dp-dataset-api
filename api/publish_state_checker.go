@@ -23,7 +23,6 @@ type PublishCheck struct {
 // Check wraps a HTTP handle. Checks that the state is not published
 func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), action string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		ctx := r.Context()
 		vars := mux.Vars(r)
 		datasetID := vars["dataset_id"]
@@ -53,7 +52,6 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 
 		if currentVersion != nil {
 			if currentVersion.State == models.PublishedState {
-
 				// We can allow public download links to be modified by the exporter
 				// services when a version is published. Note that a new version will be
 				// created which contain only the download information to prevent any

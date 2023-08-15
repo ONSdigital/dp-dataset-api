@@ -48,7 +48,6 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 
 func (c *DatasetComponent) thereAreNoDatasets() error {
 	return c.MongoClient.Connection.DropDatabase(context.Background())
-
 }
 
 func (c *DatasetComponent) privateEndpointsAreEnabled() error {
@@ -153,7 +152,6 @@ func (c *DatasetComponent) theseGenerateDownloadsEventsAreProduced(events *godog
 
 	for listen {
 		select {
-
 		// ToDo: Set timeout variable
 
 		case <-time.After(time.Second * 15):
@@ -215,7 +213,6 @@ func (c *DatasetComponent) theseCantabularGeneratorDownloadsEventsAreProduced(ev
 
 	for listen {
 		select {
-
 		// ToDo: Set timeout variable
 
 		case <-time.After(time.Second * 15):

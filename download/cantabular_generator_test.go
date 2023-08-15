@@ -27,7 +27,6 @@ func TestGenerator_GenerateFullCantabularDatasetDownloadsValidationErrors(t *tes
 	}
 
 	Convey("Given an invalid datasetID", t, func() {
-
 		Convey("When the generator is called", func() {
 			err := gen.Generate(testContext, "", "", "", "")
 
@@ -190,7 +189,6 @@ func TestCantabularGenerator_Generate(t *testing.T) {
 				producerOut := <-output
 				So(producerOut, ShouldResemble, avroBytes)
 			})
-
 		})
 	})
 }

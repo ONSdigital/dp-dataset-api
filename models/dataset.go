@@ -616,7 +616,6 @@ func ValidateNomisURL(ctx context.Context, datasetType string, nomisURL string) 
 
 // ValidateVersion checks the content of the version structure
 func ValidateVersion(version *Version) error {
-
 	switch version.State {
 	case "":
 		return errs.ErrVersionMissingState

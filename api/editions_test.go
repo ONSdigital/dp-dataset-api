@@ -14,7 +14,6 @@ import (
 )
 
 func TestGetEditionsReturnsOK(t *testing.T) {
-
 	t.Parallel()
 	Convey("get editions delegates offset and limit to db func and returns results list", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", nil)

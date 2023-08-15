@@ -63,7 +63,6 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 		So(list, ShouldResemble, results)
 		So(totalCount, ShouldEqual, 2)
 		So(err, ShouldEqual, nil)
-
 	})
 }
 
@@ -748,7 +747,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		})
 
 		Convey("put version with Cantabular type and CMD mock", func() {
-
 			mockedDataStore := &storetest.StorerMock{
 				GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
 					return &models.DatasetUpdate{}, nil
@@ -854,7 +852,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				So(err, ShouldEqual, io.EOF)
 			})
 		})
-
 	})
 
 	Convey("When state is set to edition-confirmed", t, func() {
@@ -1193,7 +1190,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				So(err, ShouldEqual, io.EOF)
 			})
 		})
-
 	})
 
 	Convey("When version is already published and update includes downloads object only", t, func() {
@@ -1335,7 +1331,6 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
-
 				return &v, nil
 			},
 			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
@@ -2408,7 +2403,6 @@ func TestCreateNewVersionDoc(t *testing.T) {
 }
 
 func TestDetachVersionReturnOK(t *testing.T) {
-
 	// TODO conditional test for feature flagged functionality. Will need tidying up eventually.
 	featureEnvString := os.Getenv("ENABLE_DETACH_DATASET")
 	featureOn, _ := strconv.ParseBool(featureEnvString)
@@ -2536,7 +2530,6 @@ func TestDetachVersionReturnOK(t *testing.T) {
 }
 
 func TestDetachVersionReturnsError(t *testing.T) {
-
 	// TODO conditional test for feature flagged functionality. Will need tidying up eventually.
 	featureEnvString := os.Getenv("ENABLE_DETACH_DATASET")
 	featureOn, _ := strconv.ParseBool(featureEnvString)
@@ -2911,7 +2904,6 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 	})
-
 }
 
 func assertInternalServerErr(w *httptest.ResponseRecorder) {

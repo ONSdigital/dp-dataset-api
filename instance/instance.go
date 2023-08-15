@@ -135,7 +135,6 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 // Note that this method doesn't need to acquire the instance lock because it creates a new instance,
 // so it is not possible that any other call is concurrently trying to access the same instance
 func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
-
 	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()
@@ -179,7 +178,6 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 
 // Update a specific instance
 func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
-
 	// We don't set up the: "defer dphttp.DrainBody(r)" here, as the body is fully read in function unmarshalInstance() below
 	// and a call to DrainBody() puts this error: "invalid Read on closed Body" into the logs - to no good effect
 	// because there is no more body to be read - so instead we just set up the usual Close() on the Body.

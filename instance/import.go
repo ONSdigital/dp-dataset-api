@@ -62,7 +62,6 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 
 // UpdateImportTask updates any task in the request body against an instance
 func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {
-
 	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()

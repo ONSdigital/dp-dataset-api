@@ -768,7 +768,6 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
-
 }
 
 func TestPutDatasetReturnsSuccessfully(t *testing.T) {
@@ -1000,7 +999,6 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 }
 
 func TestPutDatasetReturnsError(t *testing.T) {
-
 	t.Parallel()
 	Convey("When the request contain malformed json a bad request status is returned", t, func() {
 		b := "{"

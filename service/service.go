@@ -89,7 +89,6 @@ func (svc *Service) SetGraphDBErrorConsumer(graphDBErrorConsumer Closer) {
 
 // Run the service
 func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version string, svcErrors chan error) (err error) {
-
 	// Get MongoDB connection
 	svc.mongoDB, err = svc.serviceList.GetMongoDB(ctx, svc.config.MongoConfig)
 	if err != nil {
@@ -227,7 +226,6 @@ func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (a
 // CreateMiddleware creates an Alice middleware chain of handlers
 // to forward collectionID from cookie from header
 func (svc *Service) createMiddleware(cfg *config.Configuration) alice.Chain {
-
 	// healthcheck
 	healthcheckHandler := newMiddleware(svc.healthCheck.Handler, "/health")
 	middleware := alice.New(healthcheckHandler)
@@ -247,7 +245,6 @@ func (svc *Service) createMiddleware(cfg *config.Configuration) alice.Chain {
 func newMiddleware(healthcheckHandler func(http.ResponseWriter, *http.Request), path string) func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-
 			if req.Method == "GET" && req.URL.Path == path {
 				healthcheckHandler(w, req)
 				return

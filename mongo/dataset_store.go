@@ -54,7 +54,6 @@ func (m *Mongo) GetDatasetsByBasedOn(ctx context.Context, id string, offset, lim
 
 // GetDatasets retrieves all dataset documents
 func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised bool) (values []*models.DatasetUpdate, totalCount int, err error) {
-
 	var filter interface{}
 	if authorised {
 		filter = bson.M{}
@@ -74,7 +73,6 @@ func (m *Mongo) GetDatasets(ctx context.Context, offset, limit int, authorised b
 
 // GetDataset retrieves a dataset document
 func (m *Mongo) GetDataset(ctx context.Context, id string) (*models.DatasetUpdate, error) {
-
 	var dataset models.DatasetUpdate
 	err := m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).FindOne(ctx, bson.M{"_id": id}, &dataset)
 	if err != nil {
@@ -161,7 +159,6 @@ func buildEditionQuery(id, editionID, state string) bson.M {
 
 // GetNextVersion retrieves the latest version for an edition of a dataset
 func (m *Mongo) GetNextVersion(ctx context.Context, datasetID, edition string) (int, error) {
-
 	var version models.Version
 	var nextVersion int
 
@@ -186,7 +183,6 @@ func (m *Mongo) GetNextVersion(ctx context.Context, datasetID, edition string) (
 
 // GetVersions retrieves all version documents for a dataset edition
 func (m *Mongo) GetVersions(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
-
 	selector := buildVersionsQuery(datasetID, editionID, state)
 	// get total count and paginated values according to provided offset and limit
 	results := []models.Version{}
@@ -211,7 +207,6 @@ func (m *Mongo) GetVersions(ctx context.Context, datasetID, editionID, state str
 }
 
 func buildVersionsQuery(datasetID, editionID, state string) bson.M {
-
 	var selector bson.M
 	if state == "" {
 		selector = bson.M{
@@ -236,7 +231,6 @@ func buildVersionsQuery(datasetID, editionID, state string) bson.M {
 
 // GetVersion retrieves a version document for a dataset edition
 func (m *Mongo) GetVersion(ctx context.Context, id, editionID string, versionID int, state string) (*models.Version, error) {
-
 	selector := buildVersionQuery(id, editionID, state, versionID)
 
 	var version models.Version
@@ -252,7 +246,6 @@ func (m *Mongo) GetVersion(ctx context.Context, id, editionID string, versionID 
 }
 
 func buildVersionQuery(id, editionID, state string, versionID int) bson.M {
-
 	var selector bson.M
 	if state != models.PublishedState {
 		selector = bson.M{
@@ -274,7 +267,6 @@ func buildVersionQuery(id, editionID, state string, versionID int) bson.M {
 
 // UpdateDataset updates an existing dataset document
 func (m *Mongo) UpdateDataset(ctx context.Context, id string, dataset *models.Dataset, currentState string) (err error) {
-
 	updates := createDatasetUpdateQuery(ctx, id, dataset, currentState)
 	update := bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}}
 	if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateOne(ctx, bson.M{"_id": id}, update); err != nil {
@@ -468,7 +460,6 @@ func (m *Mongo) UpdateVersion(ctx context.Context, currentVersion *models.Versio
 }
 
 func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
-
 	setUpdates := make(bson.M)
 
 	/*
@@ -584,7 +575,6 @@ func (m *Mongo) UpdateMetadata(ctx context.Context, datasetId string, versionId 
 
 // UpsertDataset adds or overrides an existing dataset document
 func (m *Mongo) UpsertDataset(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) (err error) {
-
 	update := bson.M{
 		"$set": datasetDoc,
 		"$setOnInsert": bson.M{
@@ -598,7 +588,6 @@ func (m *Mongo) UpsertDataset(ctx context.Context, id string, datasetDoc *models
 }
 
 func (m *Mongo) RemoveDatasetVersionAndEditionLinks(ctx context.Context, id string) error {
-
 	update := bson.M{
 		"$unset": bson.M{
 			"next.links.editions":       "",
@@ -618,7 +607,6 @@ func (m *Mongo) RemoveDatasetVersionAndEditionLinks(ctx context.Context, id stri
 
 // UpsertEdition adds or overrides an existing edition document
 func (m *Mongo) UpsertEdition(ctx context.Context, datasetID, edition string, editionDoc *models.EditionUpdate) (err error) {
-
 	selector := bson.M{
 		"next.edition":          edition,
 		"next.links.dataset.id": datasetID,
@@ -637,7 +625,6 @@ func (m *Mongo) UpsertEdition(ctx context.Context, datasetID, edition string, ed
 
 // UpsertVersion adds or overrides an existing version document
 func (m *Mongo) UpsertVersion(ctx context.Context, id string, version *models.Version) (err error) {
-
 	update := bson.M{
 		"$set": version,
 		"$setOnInsert": bson.M{
@@ -652,7 +639,6 @@ func (m *Mongo) UpsertVersion(ctx context.Context, id string, version *models.Ve
 
 // UpsertContact adds or overrides an existing contact document
 func (m *Mongo) UpsertContact(ctx context.Context, id string, update interface{}) (err error) {
-
 	_, err = m.Connection.Collection(m.ActualCollectionName(config.ContactsCollection)).UpsertById(ctx, id, update)
 
 	return err
@@ -660,7 +646,6 @@ func (m *Mongo) UpsertContact(ctx context.Context, id string, update interface{}
 
 // CheckDatasetExists checks that the dataset exists
 func (m *Mongo) CheckDatasetExists(ctx context.Context, id, state string) error {
-
 	query := bson.M{"_id": id}
 	if state != "" {
 		query["current.state"] = state
@@ -679,7 +664,6 @@ func (m *Mongo) CheckDatasetExists(ctx context.Context, id, state string) error 
 
 // CheckEditionExists checks that the edition of a dataset exists
 func (m *Mongo) CheckEditionExists(ctx context.Context, id, editionID, state string) error {
-
 	var query bson.M
 	if state == "" {
 		query = bson.M{
@@ -707,7 +691,6 @@ func (m *Mongo) CheckEditionExists(ctx context.Context, id, editionID, state str
 
 // DeleteDataset deletes an existing dataset document
 func (m *Mongo) DeleteDataset(ctx context.Context, id string) (err error) {
-
 	if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().DeleteById(ctx, id); err != nil {
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
 			return errs.ErrDatasetNotFound
@@ -720,7 +703,6 @@ func (m *Mongo) DeleteDataset(ctx context.Context, id string) (err error) {
 
 // DeleteEdition deletes an existing edition document
 func (m *Mongo) DeleteEdition(ctx context.Context, id string) (err error) {
-
 	if _, err = m.Connection.Collection(m.ActualCollectionName(config.EditionsCollection)).Must().Delete(ctx, bson.D{{Key: "id", Value: id}}); err != nil {
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
 			return errs.ErrEditionNotFound

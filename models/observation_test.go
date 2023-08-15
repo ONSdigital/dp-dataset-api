@@ -16,7 +16,6 @@ func TestCreateObservationsDoc(t *testing.T) {
 
 	t.Parallel()
 	Convey("Successfully create observations document with all fields", t, func() {
-
 		// Setup test data
 		datasetDoc := &Dataset{
 			UnitOfMeasure: "Pounds Sterling",
@@ -110,7 +109,6 @@ func setUpTestVersionDoc() *Version {
 }
 
 func setUpTestObservations() []Observation {
-
 	ageDimensionOver30 := &DimensionObject{
 		HRef:  "http://localhost:8080/codelists/456/codes/UTR567",
 		ID:    "UTR567",

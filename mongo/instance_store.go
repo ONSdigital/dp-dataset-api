@@ -81,7 +81,6 @@ func (m *Mongo) GetInstance(ctx context.Context, ID, eTagSelector string) (*mode
 
 // AddInstance to the instance collection
 func (m *Mongo) AddInstance(ctx context.Context, instance *models.Instance) (inst *models.Instance, err error) {
-
 	instance.LastUpdated = time.Now().UTC()
 	instance.UniqueTimestamp = bsonprim.Timestamp{T: uint32(instance.LastUpdated.Unix())}
 
@@ -101,7 +100,6 @@ func (m *Mongo) AddInstance(ctx context.Context, instance *models.Instance) (ins
 
 // UpdateInstance with new properties
 func (m *Mongo) UpdateInstance(ctx context.Context, currentInstance, updatedInstance *models.Instance, eTagSelector string) (newETag string, err error) {
-
 	// set lastUpdate value to now
 	updatedInstance.LastUpdated = time.Now().UTC()
 
@@ -135,7 +133,6 @@ func (m *Mongo) UpdateInstance(ctx context.Context, currentInstance, updatedInst
 }
 
 func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance *models.Instance) bson.M {
-
 	updates := make(bson.M)
 
 	logData := log.Data{"instance_id": instanceID}
@@ -279,7 +276,6 @@ func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance 
 
 // AddEventToInstance to the instance collection
 func (m *Mongo) AddEventToInstance(ctx context.Context, currentInstance *models.Instance, event *models.Event, eTagSelector string) (newETag string, err error) {
-
 	// calculate the new eTag hash for the instance that would result from adding the event
 	newETag, err = newETagForAddEvent(currentInstance, event)
 	if err != nil {
@@ -309,7 +305,6 @@ func (m *Mongo) AddEventToInstance(ctx context.Context, currentInstance *models.
 
 // UpdateObservationInserted by incrementing the stored value
 func (m *Mongo) UpdateObservationInserted(ctx context.Context, currentInstance *models.Instance, observationInserted int64, eTagSelector string) (newETag string, err error) {
-
 	// calculate the new eTag hash for the instance that would result from inceasing the observations
 	newETag, err = newETagForObservationsInserted(currentInstance, observationInserted)
 	if err != nil {
@@ -337,7 +332,6 @@ func (m *Mongo) UpdateObservationInserted(ctx context.Context, currentInstance *
 
 // UpdateImportObservationsTaskState to the given state.
 func (m *Mongo) UpdateImportObservationsTaskState(ctx context.Context, currentInstance *models.Instance, state, eTagSelector string) (newETag string, err error) {
-
 	// calculate the new eTag hash for the instance that would result from inceasing the observations
 	newETag, err = newETagForStateUpdate(currentInstance, state)
 	if err != nil {
@@ -366,7 +360,6 @@ func (m *Mongo) UpdateImportObservationsTaskState(ctx context.Context, currentIn
 
 // UpdateBuildHierarchyTaskState updates the state of a build hierarchy task.
 func (m *Mongo) UpdateBuildHierarchyTaskState(ctx context.Context, currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error) {
-
 	// calculate the new eTag hash for the instance that would result from inceasing the observations
 	newETag, err = newETagForHierarchyTaskStateUpdate(currentInstance, dimension, state)
 	if err != nil {
@@ -393,7 +386,6 @@ func (m *Mongo) UpdateBuildHierarchyTaskState(ctx context.Context, currentInstan
 
 // UpdateBuildSearchTaskState updates the state of a build search task.
 func (m *Mongo) UpdateBuildSearchTaskState(ctx context.Context, currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error) {
-
 	// calculate the new eTag hash for the instance that would result from inceasing the observations
 	newETag, err = newETagForBuildSearchTaskStateUpdate(currentInstance, dimension, state)
 	if err != nil {
@@ -420,7 +412,6 @@ func (m *Mongo) UpdateBuildSearchTaskState(ctx context.Context, currentInstance 
 
 // UpdateETagForOptions updates the eTag value for an instance according to the provided dimension options upserts and updates
 func (m *Mongo) UpdateETagForOptions(ctx context.Context, currentInstance *models.Instance, upserts []*models.CachedDimensionOption, updates []*models.DimensionOption, eTagSelector string) (newETag string, err error) {
-
 	// calculate the new eTag hash by calculating the hash of the current instance plus the provided option upserts and updates
 	newETag, err = newETagForOptions(currentInstance, upserts, updates)
 	if err != nil {
@@ -448,7 +439,6 @@ func (m *Mongo) UpdateETagForOptions(ctx context.Context, currentInstance *model
 // - timestamp is a unique MongoDB timestamp to be matched to prevent race conditions. Optional.
 // - eTagselector is a unique hash of an instance document to be matched to prevent race conditions. Optional.
 func selector(instanceID string, timestamp bsonprim.Timestamp, eTagSelector string) bson.M {
-
 	selector := bson.M{"id": instanceID}
 	if !timestamp.IsZero() {
 		selector[mongodriver.UniqueTimestampKey] = timestamp

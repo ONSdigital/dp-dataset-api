@@ -48,7 +48,6 @@ func createDataset() Dataset {
 			Title:       "some publication title",
 		}},
 	}
-
 }
 
 var testContext = context.Background()
@@ -65,7 +64,6 @@ func TestString(t *testing.T) {
 			So(datasetTypes[4], ShouldEqual, "cantabular_flexible_table")
 			So(datasetTypes[5], ShouldEqual, "cantabular_multivariate_table")
 			So(datasetTypes[6], ShouldEqual, "invalid")
-
 		})
 	})
 }
@@ -140,9 +138,7 @@ func TestCreateDataset(t *testing.T) {
 	t.Parallel()
 
 	Convey("Successfully return without any errors", t, func() {
-
 		Convey("when the dataset has all fields for PUT request", func() {
-
 			inputDataset := createTestDataset()
 
 			b, err := json.Marshal(inputDataset)
@@ -184,9 +180,7 @@ func TestCreateDataset(t *testing.T) {
 	})
 
 	Convey("Successfully return without any errors", t, func() {
-
 		Convey("when the dataset has all fields for PUT request", func() {
-
 			inputDataset := createTestDataset()
 			expectedDataset := expectedDataset()
 
@@ -360,7 +354,6 @@ func TestCleanDataset(t *testing.T) {
 			So(dataset.RelatedDatasets[0].HRef, ShouldEqual, validHref)
 			So(dataset.RelatedDatasets[1].HRef, ShouldEqual, validHref)
 		})
-
 	})
 }
 
@@ -368,7 +361,6 @@ func TestValidateDataset(t *testing.T) {
 	t.Parallel()
 
 	Convey("Successful validation (true) returned", t, func() {
-
 		Convey("when dataset.URI contains its path in appropriate url format", func() {
 			dataset := createDataset()
 			validationErr := ValidateDataset(&dataset)
@@ -405,7 +397,6 @@ func TestValidateDataset(t *testing.T) {
 	})
 
 	Convey("Unsuccessful validation (false) returned", t, func() {
-
 		Convey("when dataset.URI is unable to be parsed into url format", func() {
 			dataset := createDataset()
 			dataset.URI = ":foo"
@@ -480,28 +471,23 @@ func TestValidateDataset(t *testing.T) {
 			So(validationErr, ShouldNotBeNil)
 			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI Publications[0].HRef RelatedDatasets[0].HRef Methodologies[0].HRef]").Error())
 		})
-
 	})
-
 }
 
 func TestValidateVersion(t *testing.T) {
 	t.Parallel()
 	Convey("Successfully return without any errors", t, func() {
 		Convey("when the version state is created", func() {
-
 			err := ValidateVersion(&editionConfirmedVersion)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("when the version state is associated", func() {
-
 			err := ValidateVersion(&associatedVersion)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("when the version state is published", func() {
-
 			err := ValidateVersion(&publishedVersion)
 			So(err, ShouldBeNil)
 		})
@@ -509,21 +495,18 @@ func TestValidateVersion(t *testing.T) {
 
 	Convey("Return with errors", t, func() {
 		Convey("when the version state is empty", func() {
-
 			err := ValidateVersion(&Version{State: ""})
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldResemble, errors.New("missing state from version").Error())
 		})
 
 		Convey("when the version state is set to an invalid value", func() {
-
 			err := ValidateVersion(&Version{State: SubmittedState})
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldResemble, errors.New("incorrect state, can be one of the following: edition-confirmed, associated or published").Error())
 		})
 
 		Convey("when mandatory fields are missing from version document when state is set to created", func() {
-
 			err := ValidateVersion(&Version{State: EditionConfirmedState})
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldResemble, errors.New("missing mandatory fields: [release_date]").Error())
@@ -716,7 +699,6 @@ func TestCreateDownloadList(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(dl, ShouldResemble, expected)
 	})
-
 }
 
 func TestUpdateLinks(t *testing.T) {
@@ -1015,11 +997,9 @@ func TestPublishLinks(t *testing.T) {
 			})
 		})
 	})
-
 }
 
 func TestValidateVersionNumberSuccess(t *testing.T) {
-
 	Convey("Given valid version number above 0 in string format", t, func() {
 		versionStr := "5"
 
@@ -1033,14 +1013,12 @@ func TestValidateVersionNumberSuccess(t *testing.T) {
 					So(versionNumber, ShouldEqual, 5)
 					So(fmt.Sprintf("%T", versionNumber), ShouldEqual, "int")
 				})
-
 			})
 		})
 	})
 }
 
 func TestValidateVersionNumberFailure(t *testing.T) {
-
 	Convey("Given invalid version number in string format", t, func() {
 		versionStr := "abc"
 

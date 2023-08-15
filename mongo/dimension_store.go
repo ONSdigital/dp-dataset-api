@@ -21,7 +21,6 @@ const maxIDs = 1000
 // Note that all dimension options for all dimensions are returned as high level items, hence there can be duplicate dimension names,
 // which correspond to different options.
 func (m *Mongo) GetDimensionsFromInstance(ctx context.Context, id string, offset, limit int) ([]*models.DimensionOption, int, error) {
-
 	dimensions := []*models.DimensionOption{}
 	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.DimensionOptionsCollection)).Find(ctx, bson.M{"instance_id": id}, &dimensions,
 		mongodriver.Projection(bson.M{"id": 0, "last_updated": 0, "instance_id": 0}),
@@ -58,7 +57,6 @@ func (m *Mongo) GetUniqueDimensionAndOptions(ctx context.Context, id, dimension 
 
 // UpsertDimensionsToInstance to the dimension collection
 func (m *Mongo) UpsertDimensionsToInstance(ctx context.Context, opts []*models.CachedDimensionOption) error {
-
 	now := time.Now().UTC()
 	for _, opt := range opts {
 		option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name, Label: opt.Label}
@@ -78,7 +76,6 @@ func (m *Mongo) UpsertDimensionsToInstance(ctx context.Context, opts []*models.C
 
 // GetDimensions returns a list of all dimensions from a dataset
 func (m *Mongo) GetDimensions(ctx context.Context, versionID string) ([]bson.M, error) {
-
 	// To get all unique values an aggregation is needed, as using distinct() will only return the distinct values and
 	// not the documents.
 	// Match by instance_id
@@ -101,7 +98,6 @@ func (m *Mongo) GetDimensions(ctx context.Context, versionID string) ([]bson.M, 
 // GetDimensionOptions returns dimension options for a dimensions within a dataset, according to the provided limit and offset.
 // Offset and limit need to be positive or zero
 func (m *Mongo) GetDimensionOptions(ctx context.Context, version *models.Version, dimension string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
-
 	// define selector to obtain all the dimension options for an instance
 	selector := bson.M{"instance_id": version.ID, "name": dimension}
 
@@ -166,7 +162,6 @@ func (m *Mongo) GetDimensionOptionsFromIDs(ctx context.Context, version *models.
 
 // UpdateDimensionsNodeIDAndOrder to cache the id and order (optional) for other import processes
 func (m *Mongo) UpdateDimensionsNodeIDAndOrder(ctx context.Context, dimensions []*models.DimensionOption) error {
-
 	// validate that there is something to update
 	isUpdate := false
 	for _, dim := range dimensions {
@@ -207,7 +202,6 @@ func (m *Mongo) UpdateDimensionsNodeIDAndOrder(ctx context.Context, dimensions [
 // if the order property exists, it will be used to determine the order
 // otherwise, the items will be sorted alphabetically by option
 func (m *Mongo) sortOrder(ctx context.Context, selector bson.M) (mongodriver.FindOption, error) {
-
 	selector["order"] = bson.M{"$exists": true}
 	orderCount, err := m.Connection.Collection(m.ActualCollectionName(config.DimensionOptionsCollection)).Count(ctx, selector)
 	if err != nil {

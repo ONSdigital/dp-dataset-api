@@ -90,7 +90,6 @@ func unmarshalDimensionCache(reader io.Reader) (*models.CachedDimensionOption, e
 	err = json.Unmarshal(b, &option)
 	if err != nil {
 		return nil, errs.ErrUnableToParseJSON
-
 	}
 	if option.Name == "" || (option.Option == "" && option.CodeList == "") {
 		return nil, errs.ErrMissingParameters

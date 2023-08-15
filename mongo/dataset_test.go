@@ -32,7 +32,6 @@ func TestBuildEditionsQuery(t *testing.T) {
 		So(selector, ShouldHaveLength, 2)
 		So(selector["next.links.dataset.id"], ShouldEqual, id)
 		So(selector["current"], ShouldResemble, bson.M{"$exists": true})
-
 	})
 
 	Convey("When state was set to published and request is authorised then the selector queries by id and state", t, func() {
@@ -56,7 +55,6 @@ func TestBuildEditionsQuery(t *testing.T) {
 func TestBuildEditionQuery(t *testing.T) {
 	t.Parallel()
 	Convey("When no state was set", t, func() {
-
 		expectedSelector := bson.M{
 			"next.links.dataset.id": id,
 			"next.edition":          editionID,
@@ -68,7 +66,6 @@ func TestBuildEditionQuery(t *testing.T) {
 	})
 
 	Convey("When state was set to published", t, func() {
-
 		expectedSelector := bson.M{
 			"current.links.dataset.id": id,
 			"current.edition":          editionID,
@@ -84,7 +81,6 @@ func TestBuildEditionQuery(t *testing.T) {
 func TestBuildVersionsQuery(t *testing.T) {
 	t.Parallel()
 	Convey("When no state was set", t, func() {
-
 		expectedSelector := bson.M{
 			"links.dataset.id": id,
 			"edition":          editionID,
@@ -101,7 +97,6 @@ func TestBuildVersionsQuery(t *testing.T) {
 	})
 
 	Convey("When state was set to published", t, func() {
-
 		expectedSelector := bson.M{
 			"links.dataset.id": id,
 			"edition":          editionID,
@@ -117,7 +112,6 @@ func TestBuildVersionsQuery(t *testing.T) {
 func TestBuildVersionQuery(t *testing.T) {
 	t.Parallel()
 	Convey("When no state was set", t, func() {
-
 		expectedSelector := bson.M{
 			"links.dataset.id": id,
 			"edition":          editionID,
@@ -130,7 +124,6 @@ func TestBuildVersionQuery(t *testing.T) {
 	})
 
 	Convey("When state was set to published", t, func() {
-
 		expectedSelector := bson.M{
 			"links.dataset.id": id,
 			"edition":          editionID,
@@ -289,7 +282,6 @@ func TestDatasetUpdateQuery(t *testing.T) {
 func TestVersionUpdateQuery(t *testing.T) {
 	t.Parallel()
 	Convey("When all possible fields exist", t, func() {
-
 		temporal := models.TemporalFrequency{
 			EndDate:   "2017-09-09",
 			Frequency: "monthly",

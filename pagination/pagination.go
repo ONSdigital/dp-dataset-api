@@ -28,7 +28,6 @@ type Paginator struct {
 }
 
 func NewPaginator(defaultLimit, defaultOffset, defaultMaxLimit int) *Paginator {
-
 	return &Paginator{
 		DefaultLimit:    defaultLimit,
 		DefaultOffset:   defaultOffset,
@@ -92,7 +91,6 @@ func listLength(list interface{}) int {
 
 // Paginate wraps a http endpoint to return a paginated list from the list returned by the provided function
 func (p *Paginator) Paginate(paginatedHandler PaginatedHandler) func(w http.ResponseWriter, r *http.Request) {
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		offset, limit, err := p.getPaginationParameters(r)
 		if err != nil {
@@ -111,7 +109,6 @@ func (p *Paginator) Paginate(paginatedHandler PaginatedHandler) func(w http.Resp
 }
 
 func returnPaginatedResults(w http.ResponseWriter, r *http.Request, list page) {
-
 	logData := log.Data{"path": r.URL.Path, "method": r.Method}
 
 	b, err := json.Marshal(list)

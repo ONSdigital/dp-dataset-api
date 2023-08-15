@@ -18,7 +18,6 @@ import (
 const testLockID = "testLock"
 
 func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
-
 	Convey("Given a dataset API with auth and a successful store mock with a 'completed' generic instance", t, func() {
 		i := completedInstance()
 
@@ -114,7 +113,6 @@ func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 	t.Parallel()
 	Convey("Given a PUT request to update state of an instance resource is made", t, func() {
-
 		Convey(`When request updates state to 'edition-confirmed'
         but fails to update instance with version details`, func() {
 			Convey("Then return status internal server error (500)", func() {

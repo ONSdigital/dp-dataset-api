@@ -72,7 +72,6 @@ func TestGetPaginationParametersReturnsDefaultValuesWhenNotProvided(t *testing.T
 }
 
 func TestRenderPageReturnsPageStrucWithFilledValues(t *testing.T) {
-
 	expectedPage := page{
 		Items:      []int{1, 2, 3},
 		Count:      3,
@@ -87,7 +86,6 @@ func TestRenderPageReturnsPageStrucWithFilledValues(t *testing.T) {
 }
 
 func TestRenderPageTakesListOfAnyType(t *testing.T) {
-
 	type custom struct {
 		name string
 	}
@@ -106,7 +104,6 @@ func TestRenderPageTakesListOfAnyType(t *testing.T) {
 }
 
 func TestNewPaginatorReturnsPaginatorStructWithFilledValues(t *testing.T) {
-
 	expectedPaginator := &Paginator{
 		DefaultLimit:    10,
 		DefaultOffset:   5,

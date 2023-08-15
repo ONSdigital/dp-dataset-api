@@ -99,7 +99,6 @@ func (e *Init) DoGetHealthCheck(cfg *config.Configuration, buildTime, gitCommit,
 
 // DoGetKafkaProducer creates a new Kafka Producer
 func (e *Init) DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
-
 	pConfig := &kafka.ProducerConfig{
 		KafkaVersion:      &cfg.KafkaVersion,
 		Topic:             topic,

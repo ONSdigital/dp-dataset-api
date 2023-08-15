@@ -56,9 +56,7 @@ var funcDoGetKafkaProducerErr = func(ctx context.Context, cfg *config.Configurat
 }
 
 func TestRun(t *testing.T) {
-
 	Convey("Having a set of mocked dependencies", t, func() {
-
 		cfg, err := config.Get()
 		cfg.EnablePrivateEndpoints = true
 		So(err, ShouldBeNil)
@@ -196,7 +194,6 @@ func TestRun(t *testing.T) {
 		})
 
 		Convey("Given that Checkers cannot be registered", func() {
-
 			errAddheckFail := errors.New("Error(s) registering checkers for healthcheck")
 			hcMockAddFail := &serviceMock.HealthCheckerMock{
 				AddCheckFunc: func(name string, checker healthcheck.Checker) error { return errAddheckFail },
@@ -303,7 +300,6 @@ func TestRun(t *testing.T) {
 		})
 
 		Convey("Given that all dependencies are successfully initialised but the http server fails", func() {
-
 			initMock := &serviceMock.InitialiserMock{
 				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
 				DoGetGraphDBFunc:       funcDoGetGraphDBOk,

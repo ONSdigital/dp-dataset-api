@@ -42,9 +42,7 @@ func testVersion() *models.Version {
 }
 
 func TestNewETagForUpdate(t *testing.T) {
-
 	Convey("Given an instance", t, func() {
-
 		currentInstance := testInstance()
 
 		update := &models.Instance{
@@ -78,7 +76,6 @@ func TestNewETagForUpdate(t *testing.T) {
 
 func TestNewETagForVersionUpdate(t *testing.T) {
 	Convey("Given a version", t, func() {
-
 		currentVersion := testVersion()
 
 		update := &models.Version{
@@ -111,9 +108,7 @@ func TestNewETagForVersionUpdate(t *testing.T) {
 }
 
 func TestNewETagForAddEvent(t *testing.T) {
-
 	Convey("Given an instance", t, func() {
-
 		currentInstance := testInstance()
 
 		event := models.Event{
@@ -146,9 +141,7 @@ func TestNewETagForAddEvent(t *testing.T) {
 }
 
 func TestNewETagForObservationsInserted(t *testing.T) {
-
 	Convey("Given an instance", t, func() {
-
 		currentInstance := testInstance()
 
 		var obsInserted int64 = 12345
@@ -177,9 +170,7 @@ func TestNewETagForObservationsInserted(t *testing.T) {
 }
 
 func TestNewETagForStateUpdate(t *testing.T) {
-
 	Convey("Given an instance", t, func() {
-
 		currentInstance := testInstance()
 
 		Convey("newETagForStateUpdate returns an eTag that is different from the original instance ETag", func() {
@@ -205,9 +196,7 @@ func TestNewETagForStateUpdate(t *testing.T) {
 }
 
 func TestNewETagForHierarchyTaskStateUpdate(t *testing.T) {
-
 	Convey("Given an instance", t, func() {
-
 		currentInstance := testInstance()
 		dimension := "dim1"
 
@@ -234,9 +223,7 @@ func TestNewETagForHierarchyTaskStateUpdate(t *testing.T) {
 }
 
 func TestNewETagForBuildSearchTaskStateUpdate(t *testing.T) {
-
 	Convey("Given an instance", t, func() {
-
 		currentInstance := testInstance()
 		dimension := "dim1"
 
@@ -263,9 +250,7 @@ func TestNewETagForBuildSearchTaskStateUpdate(t *testing.T) {
 }
 
 func TestNewETagForOptions(t *testing.T) {
-
 	Convey("Given an instance", t, func() {
-
 		currentInstance := testInstance()
 
 		optionUpsert := models.CachedDimensionOption{

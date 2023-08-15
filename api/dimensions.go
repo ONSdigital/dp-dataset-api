@@ -90,7 +90,6 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 }
 
 func (api *DatasetAPI) createListOfDimensions(versionDoc *models.Version, dimensions []bson.M) ([]models.Dimension, error) {
-
 	// Get dimension description from the version document and add to hash map
 	dimensionDescriptions := make(map[string]string)
 	dimensionLabels := make(map[string]string)
@@ -167,7 +166,6 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		logData["query_params"] = r.URL.RawQuery
 		handleDimensionsErr(ctx, w, "failed to obtain list of IDs from request query parameters", err, logData)
 		return nil, 0, err
-
 	}
 
 	// ger version for provided dataset, edition and versionID
