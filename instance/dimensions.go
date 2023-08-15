@@ -2,7 +2,7 @@ package instance
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -50,7 +50,7 @@ func (s *Store) UpdateDimension(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Read and unmarshal request body
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error(ctx, "update instance dimension: error reading request.body", err, logData)
 		handleInstanceErr(ctx, errs.ErrUnableToReadMessage, w, logData)

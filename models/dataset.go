@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"strconv"
 	"strings"
@@ -342,7 +341,7 @@ type IsBasedOn struct {
 
 // CreateDataset manages the creation of a dataset from a reader
 func CreateDataset(reader io.Reader) (*Dataset, error) {
-	b, err := ioutil.ReadAll(reader)
+	b, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, errs.ErrUnableToReadMessage
 	}
@@ -359,7 +358,7 @@ func CreateDataset(reader io.Reader) (*Dataset, error) {
 
 // CreateVersion manages the creation of a version from a reader
 func CreateVersion(reader io.Reader, datasetID string) (*Version, error) {
-	b, err := ioutil.ReadAll(reader)
+	b, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, errs.ErrUnableToReadMessage
 	}
@@ -385,7 +384,7 @@ func CreateVersion(reader io.Reader, datasetID string) (*Version, error) {
 
 // CreateDownloadList manages the creation of a list downloadable items from a reader
 func CreateDownloadList(reader io.Reader) (*DownloadList, error) {
-	b, err := ioutil.ReadAll(reader)
+	b, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response body")
 	}
@@ -400,7 +399,7 @@ func CreateDownloadList(reader io.Reader) (*DownloadList, error) {
 
 // CreateContact manages the creation of a contact from a reader
 func CreateContact(reader io.Reader) (*Contact, error) {
-	b, err := ioutil.ReadAll(reader)
+	b, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, errs.ErrUnableToReadMessage
 	}

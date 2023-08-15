@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"regexp"
 
@@ -79,7 +78,7 @@ func getOptionsArrayFromInterface(elements interface{}) ([]*models.CachedDimensi
 }
 
 func unmarshalDimensionCache(reader io.Reader) (*models.CachedDimensionOption, error) {
-	b, err := ioutil.ReadAll(reader)
+	b, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, errs.ErrUnableToReadMessage
 	}

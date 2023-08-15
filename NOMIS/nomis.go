@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -112,7 +111,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	b, err := ioutil.ReadAll(f)
+	b, err := io.ReadAll(f)
 	if err != nil {
 		log.Error(ctx, "failed to read json file as a byte array", err)
 		os.Exit(1)

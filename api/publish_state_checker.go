@@ -3,7 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -127,7 +127,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 							// Set variable `has_downloads` to true to prevent request
 							// triggering version from being republished
 							vars[hasDownloads] = trueStringified
-							r.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+						r.Body = io.NopCloser(bytes.NewBuffer(b))
 							handle(w, r)
 							return
 						}

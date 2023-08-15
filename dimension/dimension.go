@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -380,7 +379,7 @@ func (s *Store) upsertAndUpdateDimensionOptions(ctx context.Context, instanceID 
 func createPatches(reader io.Reader, supportedOps ...dprequest.PatchOp) ([]dprequest.Patch, error) {
 	patches := []dprequest.Patch{}
 
-	bytes, err := ioutil.ReadAll(reader)
+	bytes, err := io.ReadAll(reader)
 	if err != nil {
 		return []dprequest.Patch{}, apierrors.ErrInvalidBody
 	}

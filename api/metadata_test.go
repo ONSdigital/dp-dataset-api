@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -312,14 +312,14 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 
-		bytes, err := ioutil.ReadAll(w.Body)
+		responseBytes, err := io.ReadAll(w.Body)
 		if err != nil {
 			os.Exit(1)
 		}
 
 		var metaData models.Metadata
 
-		err = json.Unmarshal(bytes, &metaData)
+		err = json.Unmarshal(responseBytes, &metaData)
 		if err != nil {
 			os.Exit(1)
 		}
@@ -371,14 +371,14 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 
-		bytes, err := ioutil.ReadAll(w.Body)
+		responseBytes, err := io.ReadAll(w.Body)
 		if err != nil {
 			os.Exit(1)
 		}
 
 		var metaData models.Metadata
 
-		err = json.Unmarshal(bytes, &metaData)
+		err = json.Unmarshal(responseBytes, &metaData)
 		if err != nil {
 			os.Exit(1)
 		}

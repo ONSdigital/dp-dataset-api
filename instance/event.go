@@ -3,7 +3,6 @@ package instance
 import (
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -17,7 +16,7 @@ import (
 const AddInstanceEventAction = "addInstanceEvent"
 
 func unmarshalEvent(reader io.Reader) (*models.Event, error) {
-	b, err := ioutil.ReadAll(reader)
+	b, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, errs.ErrUnableToReadMessage
 	}

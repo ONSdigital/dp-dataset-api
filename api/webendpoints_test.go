@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -45,7 +45,7 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 			api := GetWebAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, nil, nil)
 
 			api.Router.ServeHTTP(w, r)
-			a, _ := ioutil.ReadAll(w.Body)
+			a, _ := io.ReadAll(w.Body)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
 			type datasetResults struct {
@@ -85,7 +85,7 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 			api := GetWebAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, nil, nil)
 
 			api.Router.ServeHTTP(w, r)
-			a, _ := ioutil.ReadAll(w.Body)
+			a, _ := io.ReadAll(w.Body)
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 			var result models.Dataset

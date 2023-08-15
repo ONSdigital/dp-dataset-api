@@ -3,7 +3,7 @@ package pagination
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -128,7 +128,7 @@ func TestReturnPaginatedResultsWritesJSONPageToHTTPResponseBody(t *testing.T) {
 	}
 	returnPaginatedResults(w, r, inputPage)
 
-	content, _ := ioutil.ReadAll(w.Body)
+	content, _ := io.ReadAll(w.Body)
 	expectedContent, _ := json.Marshal(expectedPage)
 	assert.Equal(t, expectedContent, content)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
@@ -147,7 +147,7 @@ func TestReturnPaginatedResultsReturnsErrorIfCanNotMarshalJSON(t *testing.T) {
 	}
 
 	returnPaginatedResults(w, r, inputPage)
-	content, _ := ioutil.ReadAll(w.Body)
+	content, _ := io.ReadAll(w.Body)
 
 	assert.Equal(t, "internal error\n", string(content))
 	assert.Equal(t, 500, w.Code)
@@ -179,7 +179,7 @@ func TestPaginateFunctionPassesParametersDownToProvidedFunction(t *testing.T) {
 
 	paginatedHandler(w, r)
 
-	content, _ := ioutil.ReadAll(w.Body)
+	content, _ := io.ReadAll(w.Body)
 	expectedContent, _ := json.Marshal(expectedPage)
 
 	assert.Equal(t, string(expectedContent), string(content))
@@ -197,7 +197,7 @@ func TestPaginateFunctionReturnsBadRequestWhenInvalidQueryParametersAreGiven(t *
 	paginatedHandler := paginator.Paginate(fetchListFunc)
 
 	paginatedHandler(w, r)
-	content, _ := ioutil.ReadAll(w.Body)
+	content, _ := io.ReadAll(w.Body)
 	assert.Equal(t, 400, w.Code)
 	assert.Equal(t, "invalid query parameter\n", string(content))
 }
@@ -214,7 +214,7 @@ func TestPaginateFunctionReturnsListFuncImplementedHttpErrorIfListFuncReturnsAnE
 	paginatedHandler := paginator.Paginate(fetchListFunc)
 
 	paginatedHandler(w, r)
-	content, _ := ioutil.ReadAll(w.Body)
+	content, _ := io.ReadAll(w.Body)
 	assert.Equal(t, 500, w.Code)
 	assert.Equal(t, "internal error\n", string(content))
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -392,7 +391,7 @@ func validateInstanceStateUpdate(instance, currentInstance *models.Instance) (er
 }
 
 func unmarshalInstance(ctx context.Context, reader io.Reader, post bool) (*models.Instance, error) {
-	b, err := ioutil.ReadAll(reader)
+	b, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, errs.ErrUnableToReadMessage
 	}
