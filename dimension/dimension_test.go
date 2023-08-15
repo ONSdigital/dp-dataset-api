@@ -653,7 +653,7 @@ func TestPatchOptionReturnsForbidden(t *testing.T) {
 func TestAddNodeIDToDimensionReturnsUnauthorized(t *testing.T) {
 	t.Parallel()
 	Convey("Add node id to a dimension of an instance returns unauthorized", t, func() {
-		r, err := http.NewRequest("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
+		r, err := http.NewRequest("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", http.NoBody)
 		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()

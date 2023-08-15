@@ -26,7 +26,7 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 	t.Parallel()
 
 	Convey("When the request contain valid ids return dimension information", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
@@ -54,7 +54,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 	t.Parallel()
 
 	Convey("When the api cannot connect to datastore to get dimension resource return an internal server error", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
@@ -72,7 +72,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 	})
 
 	Convey("When the request contain an invalid version return not found", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
@@ -90,7 +90,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 	})
 
 	Convey("When the request contains an invalid, non-numeric version, return 400 bad request", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/abcd/dimensions", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/abcd/dimensions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
@@ -106,7 +106,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 	})
 
 	Convey("When there are no dimensions then return not found error", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
@@ -127,7 +127,7 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 	})
 
 	Convey("When the version has an invalid state return internal server error", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
@@ -228,7 +228,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 		}
 
 		Convey("When a valid dimension is provided without any query parameters", func() {
-			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", http.NoBody)
 			r = setExpectedUrlVars(r)
 			list, totalCount, err := callOptions(r)
 
@@ -248,7 +248,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 		})
 
 		Convey("When a valid dimension and list of existing IDs is provided in more than one parameter, in comma-separated format", func() {
-			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=op1,op3&id=op5", nil)
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=op1,op3&id=op5", http.NoBody)
 			r = setExpectedUrlVars(r)
 			list, totalCount, err := callOptionsWithIDs(r)
 
@@ -266,7 +266,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 		})
 
 		Convey("When a valid offset, limit and dimension and list of existing IDs are provided", func() {
-			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=op1,op3&offset=0&limit=1", nil)
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=op1,op3&offset=0&limit=1", http.NoBody)
 			r = setExpectedUrlVars(r)
 			list, totalCount, err := callOptionsWithIDs(r)
 
@@ -292,7 +292,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 
 	Convey("Given a set of mocked dependencies", t, func() {
 		Convey("Then providing more IDs than the maximum allowed results in 400 BadRequest response", func() {
-			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=id1,id2,id3&id=id4,id5,id6", nil)
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=id1,id2,id3&id=id4,id5,id6", http.NoBody)
 			w := httptest.NewRecorder()
 
 			api := initAPIWithMockedStore(&storetest.StorerMock{})
@@ -304,7 +304,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 	})
 
 	Convey("When the version doesn't exist in a request for dimension options, then return not found", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
@@ -321,7 +321,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 	})
 
 	Convey("When an internal error causes failure to retrieve dimension options, then return internal server error", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
@@ -342,7 +342,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 	})
 
 	Convey("When an internal error causes failure to retrieve dimension options from IDs, then return internal server error", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=id1", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=id1", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
@@ -363,7 +363,7 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 	})
 
 	Convey("When the version has an invalid state return internal server error", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {

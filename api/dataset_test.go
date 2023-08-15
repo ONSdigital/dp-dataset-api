@@ -153,7 +153,7 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 func TestGetDatasetReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("When dataset document has a current sub document return status 200", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
@@ -197,7 +197,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 func TestGetDatasetReturnsError(t *testing.T) {
 	t.Parallel()
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
@@ -217,7 +217,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When dataset document has only a next sub document return status 404", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
@@ -237,7 +237,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When there is no dataset document return status 404", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", http.NoBody)
 		r.Header.Add("internal-token", "coffee")
 		w := httptest.NewRecorder()
 

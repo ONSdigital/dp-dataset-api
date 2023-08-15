@@ -12,8 +12,7 @@ import (
 )
 
 func TestGetPaginationParametersReturnsErrorWhenOffsetIsNegative(t *testing.T) {
-
-	r := httptest.NewRequest("GET", "/test?offset=-1", nil)
+	r := httptest.NewRequest("GET", "/test?offset=-1", http.NoBody)
 	paginator := &Paginator{}
 
 	offset, limit, err := paginator.getPaginationParameters(r)
@@ -24,8 +23,7 @@ func TestGetPaginationParametersReturnsErrorWhenOffsetIsNegative(t *testing.T) {
 }
 
 func TestGetPaginationParametersReturnsErrorWhenLimitIsNegative(t *testing.T) {
-
-	r := httptest.NewRequest("GET", "/test?limit=-1", nil)
+	r := httptest.NewRequest("GET", "/test?limit=-1", http.NoBody)
 	paginator := &Paginator{}
 
 	offset, limit, err := paginator.getPaginationParameters(r)
@@ -36,8 +34,7 @@ func TestGetPaginationParametersReturnsErrorWhenLimitIsNegative(t *testing.T) {
 }
 
 func TestGetPaginationParametersReturnsErrorWhenLimitIsGreaterThanMaxLimit(t *testing.T) {
-
-	r := httptest.NewRequest("GET", "/test?limit=1001", nil)
+	r := httptest.NewRequest("GET", "/test?limit=1001", http.NoBody)
 	paginator := &Paginator{DefaultMaxLimit: 1000}
 
 	offset, limit, err := paginator.getPaginationParameters(r)
@@ -48,8 +45,7 @@ func TestGetPaginationParametersReturnsErrorWhenLimitIsGreaterThanMaxLimit(t *te
 }
 
 func TestGetPaginationParametersReturnsLimitAndOffsetProvidedFromQuery(t *testing.T) {
-
-	r := httptest.NewRequest("GET", "/test?limit=10&offset=5", nil)
+	r := httptest.NewRequest("GET", "/test?limit=10&offset=5", http.NoBody)
 	paginator := &Paginator{DefaultMaxLimit: 1000}
 
 	offset, limit, err := paginator.getPaginationParameters(r)
@@ -60,8 +56,7 @@ func TestGetPaginationParametersReturnsLimitAndOffsetProvidedFromQuery(t *testin
 }
 
 func TestGetPaginationParametersReturnsDefaultValuesWhenNotProvided(t *testing.T) {
-
-	r := httptest.NewRequest("GET", "/test", nil)
+	r := httptest.NewRequest("GET", "/test", http.NoBody)
 	paginator := &Paginator{DefaultLimit: 20, DefaultOffset: 1, DefaultMaxLimit: 1000}
 
 	offset, limit, err := paginator.getPaginationParameters(r)
@@ -115,8 +110,7 @@ func TestNewPaginatorReturnsPaginatorStructWithFilledValues(t *testing.T) {
 }
 
 func TestReturnPaginatedResultsWritesJSONPageToHTTPResponseBody(t *testing.T) {
-
-	r := httptest.NewRequest("GET", "/test", nil)
+	r := httptest.NewRequest("GET", "/test", http.NoBody)
 	w := httptest.NewRecorder()
 	inputPage := page{
 		Items:      []int{1, 2, 3},
@@ -142,8 +136,7 @@ func TestReturnPaginatedResultsWritesJSONPageToHTTPResponseBody(t *testing.T) {
 }
 
 func TestReturnPaginatedResultsReturnsErrorIfCanNotMarshalJSON(t *testing.T) {
-
-	r := httptest.NewRequest("GET", "/test", nil)
+	r := httptest.NewRequest("GET", "/test", http.NoBody)
 	w := httptest.NewRecorder()
 	inputPage := page{
 		Items:      make(chan int),
@@ -161,7 +154,7 @@ func TestReturnPaginatedResultsReturnsErrorIfCanNotMarshalJSON(t *testing.T) {
 }
 
 func TestPaginateFunctionPassesParametersDownToProvidedFunction(t *testing.T) {
-	r := httptest.NewRequest("GET", "/test?limit=1&offset=2", nil)
+	r := httptest.NewRequest("GET", "/test?limit=1&offset=2", http.NoBody)
 	w := httptest.NewRecorder()
 
 	fetchListFunc := func(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
@@ -194,7 +187,7 @@ func TestPaginateFunctionPassesParametersDownToProvidedFunction(t *testing.T) {
 }
 
 func TestPaginateFunctionReturnsBadRequestWhenInvalidQueryParametersAreGiven(t *testing.T) {
-	r := httptest.NewRequest("GET", "/test?limit=-1", nil)
+	r := httptest.NewRequest("GET", "/test?limit=-1", http.NoBody)
 	w := httptest.NewRecorder()
 	fetchListFunc := func(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
 		return []int{}, 0, nil
@@ -210,7 +203,7 @@ func TestPaginateFunctionReturnsBadRequestWhenInvalidQueryParametersAreGiven(t *
 }
 
 func TestPaginateFunctionReturnsListFuncImplementedHttpErrorIfListFuncReturnsAnError(t *testing.T) {
-	r := httptest.NewRequest("GET", "/test", nil)
+	r := httptest.NewRequest("GET", "/test", http.NoBody)
 	w := httptest.NewRecorder()
 	fetchListFunc := func(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
 		http.Error(w, "internal error", http.StatusInternalServerError)

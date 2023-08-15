@@ -47,7 +47,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("Given a GET request to retrieve a list of instance resources is made", t, func() {
 		Convey("Then return status ok (200)", func() {
-			r := httptest.NewRequest("GET", "http://foo/instances", nil)
+			r := httptest.NewRequest("GET", "http://foo/instances", http.NoBody)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
@@ -66,7 +66,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 		})
 
 		Convey("When the request includes a filter by state of 'completed' this is delegated to the database function", func() {
-			r := httptest.NewRequest("GET", "http://foo/instances?state=completed", nil)
+			r := httptest.NewRequest("GET", "http://foo/instances?state=completed", http.NoBody)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
@@ -86,7 +86,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 		})
 
 		Convey("When the request includes a filter by dataset of 'test' this is delegated to the database function", func() {
-			r := httptest.NewRequest("GET", "http://foo/instances?dataset=test", nil)
+			r := httptest.NewRequest("GET", "http://foo/instances?dataset=test", http.NoBody)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
@@ -103,7 +103,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 		})
 
 		Convey("When the request includes a filter by state of multiple values 'completed,edition-confirmed' these are all delegated to the database function", func() {
-			r := httptest.NewRequest("GET", "http://foo/instances?state=completed,edition-confirmed", nil)
+			r := httptest.NewRequest("GET", "http://foo/instances?state=completed,edition-confirmed", http.NoBody)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
@@ -120,7 +120,7 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 		})
 
 		Convey("When the request includes a filter by state of 'completed' and dataset 'test'", func() {
-			r := httptest.NewRequest("GET", "http://foo/instances?state=completed&dataset=test", nil)
+			r := httptest.NewRequest("GET", "http://foo/instances?state=completed&dataset=test", http.NoBody)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
@@ -144,7 +144,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 	Convey("Given a GET request to retrieve a list of instance resources is made", t, func() {
 		Convey("When the service is unable to connect to the datastore", func() {
 			Convey("Then return status internal server error (500)", func() {
-				r := httptest.NewRequest("GET", "http://localhost:21800/instances", nil)
+				r := httptest.NewRequest("GET", "http://localhost:21800/instances", http.NoBody)
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
@@ -164,7 +164,7 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 
 		Convey("When the request contains an invalid state to filter on", func() {
 			Convey("Then return status bad request (400)", func() {
-				r := httptest.NewRequest("GET", "http://foo/instances?state=foo", nil)
+				r := httptest.NewRequest("GET", "http://foo/instances?state=foo", http.NoBody)
 				w := httptest.NewRecorder()
 
 				api := initAPIWithMockedStore(&storetest.StorerMock{})
@@ -194,7 +194,7 @@ func Test_GetInstanceReturnsOK(t *testing.T) {
 		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 
 		Convey("When a GET request to retrieve an instance resource is made, with a valid If-Match header", func() {
-			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", http.NoBody)
 			r.Header.Set("If-Match", testIfMatch)
 			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
@@ -216,7 +216,7 @@ func Test_GetInstanceReturnsOK(t *testing.T) {
 		})
 
 		Convey("When a GET request to retrieve an instance resource is made, without an If-Match header", func() {
-			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", http.NoBody)
 			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 
@@ -243,7 +243,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 	Convey("Given a GET request to retrieve an instance resource is made", t, func() {
 		Convey("When the service is unable to connect to the datastore", func() {
 			Convey("Then return status internal server error (500)", func() {
-				r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+				r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", http.NoBody)
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
@@ -269,7 +269,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 
 		Convey("When the current instance state is invalid", func() {
 			Convey("Then return status internal server error (500)", func() {
-				r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+				r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", http.NoBody)
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
@@ -294,7 +294,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 
 		Convey("When the instance resource does not exist", func() {
 			Convey("Then return status not found (404)", func() {
-				r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+				r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", http.NoBody)
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
@@ -320,7 +320,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 
 		Convey("When the instance resource eTag does not match the provided If-Match header value", func() {
 			Convey("Then return status conflict (409)", func() {
-				r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", nil)
+				r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", http.NoBody)
 				r.Header.Set("If-Match", "wrong")
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()

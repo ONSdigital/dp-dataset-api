@@ -284,7 +284,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		datasetDoc := createDatasetDoc()
 		versionDoc := createPublishedVersionDoc()
 
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", http.NoBody)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -399,8 +399,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 func TestGetMetadataReturnsError(t *testing.T) {
 	t.Parallel()
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
-
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", http.NoBody)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -425,8 +424,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 	})
 
 	Convey("When the dataset document cannot be found return status not found", t, func() {
-
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", http.NoBody)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -453,12 +451,11 @@ func TestGetMetadataReturnsError(t *testing.T) {
 	})
 
 	Convey("When the dataset document has no current sub document return status not found", t, func() {
-
 		datasetDoc := createDatasetDoc()
 		versionDoc := createPublishedVersionDoc()
 		datasetDoc.Current = nil
 
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", http.NoBody)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -529,7 +526,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		datasetDoc := createDatasetDoc()
 		versionDoc := createPublishedVersionDoc()
 
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", http.NoBody)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -563,7 +560,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 	Convey("When the version document cannot be found return status not found", t, func() {
 		datasetDoc := createDatasetDoc()
 
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", http.NoBody)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{

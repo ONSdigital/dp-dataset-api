@@ -35,7 +35,7 @@ const (
 func TestGetVersionsReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("get versions delegates offset and limit to db func and returns results list", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", http.NoBody)
 		w := httptest.NewRecorder()
 		results := []models.Version{}
 		mockedDataStore := &storetest.StorerMock{
@@ -70,7 +70,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 	t.Parallel()
 
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
@@ -91,7 +91,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 	})
 
 	Convey("When the dataset does not exist return status not found", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
@@ -113,7 +113,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 	})
 
 	Convey("When the edition of a dataset does not exist return status not found", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
@@ -138,7 +138,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 	})
 
 	Convey("When version does not exist for an edition of a dataset returns status not found", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", http.NoBody)
 		r.Header.Add("internal_token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -167,7 +167,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 	})
 
 	Convey("When version is not published against an edition of a dataset return status not found", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
@@ -195,7 +195,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 	})
 
 	Convey("When a published version has an incorrect state for an edition of a dataset return an internal error", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", http.NoBody)
 		w := httptest.NewRecorder()
 
 		version := models.Version{State: "gobbly-gook"}
@@ -240,7 +240,7 @@ func TestGetVersionReturnsOK(t *testing.T) {
 				},
 			},
 		}
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", http.NoBody)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -307,7 +307,7 @@ func TestGetVersionReturnsOK(t *testing.T) {
 func TestGetVersionReturnsError(t *testing.T) {
 	t.Parallel()
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
@@ -327,7 +327,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 	})
 
 	Convey("When the dataset does not exist for return status not found", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", http.NoBody)
 		r.Header.Add("internal_token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -352,7 +352,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 	})
 
 	Convey("When the edition of a dataset does not exist return status not found", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", http.NoBody)
 		r.Header.Add("internal_token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -380,7 +380,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 	})
 
 	Convey("When version does not exist for an edition of a dataset return status not found", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", http.NoBody)
 		r.Header.Add("internal_token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -411,7 +411,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 	})
 
 	Convey("When version is not published for an edition of a dataset return status not found", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
@@ -441,7 +441,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 	})
 
 	Convey("When an invalid version is requested return invalid version error", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/jjj", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/jjj", http.NoBody)
 		r.Header.Add("internal_token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
@@ -462,7 +462,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 	})
 
 	Convey("A request to get version zero returns an invalid version error response", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/-1", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/-1", http.NoBody)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
@@ -481,7 +481,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 	})
 
 	Convey("A request to get a negative version returns an error response", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/0", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/0", http.NoBody)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
@@ -500,7 +500,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 	})
 
 	Convey("When an unpublished version has an incorrect state for an edition of a dataset return an internal error", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", nil)
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", http.NoBody)
 		r.Header.Add("internal_token", "coffee")
 		w := httptest.NewRecorder()
 
