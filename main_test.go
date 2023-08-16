@@ -24,7 +24,7 @@ type ComponentTest struct {
 	MongoFeature *componenttest.MongoFeature
 }
 
-func (f *ComponentTest) InitializeScenario(ctx *godog.ScenarioContext) {
+func (f *ComponentTest) InitializeScenario(godogCtx *godog.ScenarioContext) {
 	authorizationFeature := componenttest.NewAuthorizationFeature()
 	datasetFeature, err := steps.NewDatasetComponent(f.MongoFeature.Server.URI(), authorizationFeature.FakeAuthService.ResolveURL(""))
 	if err != nil {
@@ -33,7 +33,7 @@ func (f *ComponentTest) InitializeScenario(ctx *godog.ScenarioContext) {
 
 	apiFeature := componenttest.NewAPIFeature(datasetFeature.InitialiseService)
 
-	ctx.BeforeScenario(func(*godog.Scenario) {
+	godogCtx.Before(func(ctx context.Context, _ *godog.Scenario) (context.Context, error) {
 		apiFeature.Reset()
 		if err := datasetFeature.Reset(); err != nil {
 			panic(err)
@@ -42,16 +42,18 @@ func (f *ComponentTest) InitializeScenario(ctx *godog.ScenarioContext) {
 			log.Error(context.Background(), "failed to reset mongo feature", err)
 		}
 		authorizationFeature.Reset()
+		return ctx, nil
 	})
 
-	ctx.AfterScenario(func(*godog.Scenario, error) {
+	godogCtx.After(func(ctx context.Context, _ *godog.Scenario, _ error) (context.Context, error) {
 		datasetFeature.Close()
 		authorizationFeature.Close()
+		return ctx, nil
 	})
 
-	datasetFeature.RegisterSteps(ctx)
-	apiFeature.RegisterSteps(ctx)
-	authorizationFeature.RegisterSteps(ctx)
+	datasetFeature.RegisterSteps(godogCtx)
+	apiFeature.RegisterSteps(godogCtx)
+	authorizationFeature.RegisterSteps(godogCtx)
 }
 
 func (f *ComponentTest) InitializeTestSuite(ctx *godog.TestSuiteContext) {
