@@ -175,6 +175,8 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 }
 
 // Update a specific instance
+//
+//nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 	// We don't set up the: "defer dphttp.DrainBody(r)" here, as the body is fully read in function unmarshalInstance() below
 	// and a call to DrainBody() puts this error: "invalid Read on closed Body" into the logs - to no good effect

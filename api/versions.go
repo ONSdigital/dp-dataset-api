@@ -483,6 +483,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	return currentDataset, currentVersion, combinedVersionUpdate, nil
 }
 
+//nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func (api *DatasetAPI) publishVersion(
 	ctx context.Context,
 	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
