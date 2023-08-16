@@ -606,8 +606,7 @@ func ValidateDatasetType(ctx context.Context, datasetType string) (*DatasetType,
 }
 
 // ValidateNomisURL checks for the nomis type when the dataset has nomis URL
-func ValidateNomisURL(ctx context.Context, datasetType string, nomisURL string) (string, error) {
-
+func ValidateNomisURL(ctx context.Context, datasetType, nomisURL string) (string, error) {
 	if nomisURL != "" && datasetType != Nomis.String() {
 		log.Error(ctx, "error Type mismatch", errs.ErrDatasetTypeInvalid)
 		return "", errs.ErrTypeMismatch

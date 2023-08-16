@@ -22,7 +22,7 @@ type CantabularGenerator struct {
 }
 
 // Generate the full file download files for the specified dataset/edition/version
-func (gen *CantabularGenerator) Generate(ctx context.Context, datasetID string, instanceID string, edition string, version string) error {
+func (gen *CantabularGenerator) Generate(ctx context.Context, datasetID, instanceID, edition, version string) error {
 	if datasetID == "" {
 		return datasetIDEmptyErr
 	}

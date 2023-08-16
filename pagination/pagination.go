@@ -35,8 +35,7 @@ func NewPaginator(defaultLimit, defaultOffset, defaultMaxLimit int) *Paginator {
 	}
 }
 
-func (p *Paginator) getPaginationParameters(r *http.Request) (offset int, limit int, err error) {
-
+func (p *Paginator) getPaginationParameters(r *http.Request) (offset, limit int, err error) {
 	logData := log.Data{}
 	offsetParameter := r.URL.Query().Get("offset")
 	limitParameter := r.URL.Query().Get("limit")
@@ -70,11 +69,10 @@ func (p *Paginator) getPaginationParameters(r *http.Request) (offset int, limit 
 		log.Error(r.Context(), "limit is greater than the maximum allowed", err, logData)
 		return 0, 0, err
 	}
-	return
+	return offset, limit, err
 }
 
-func renderPage(list interface{}, offset int, limit int, totalCount int) page {
-
+func renderPage(list interface{}, offset, limit, totalCount int) page {
 	return page{
 		Items:      list,
 		Count:      listLength(list),

@@ -195,7 +195,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	return nil
 }
 
-func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (api.AuthHandler, api.AuthHandler) {
+func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (datasetPermissions, permissions api.AuthHandler) {
 	if !cfg.EnablePermissionsAuth {
 		log.Info(ctx, "feature flag not enabled defaulting to nop auth impl", log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
 		return &auth.NopHandler{}, &auth.NopHandler{}
@@ -207,14 +207,14 @@ func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (a
 	authVerifier := auth.DefaultPermissionsVerifier()
 
 	// for checking caller permissions when we have a datasetID, collection ID and user/service token
-	datasetPermissions := auth.NewHandler(
+	datasetPermissions = auth.NewHandler(
 		auth.NewDatasetPermissionsRequestBuilder(cfg.ZebedeeURL, "dataset_id", mux.Vars),
 		authClient,
 		authVerifier,
 	)
 
 	// for checking caller permissions when we only have a user/service token
-	permissions := auth.NewHandler(
+	permissions = auth.NewHandler(
 		auth.NewPermissionsRequestBuilder(cfg.ZebedeeURL),
 		authClient,
 		authVerifier,
