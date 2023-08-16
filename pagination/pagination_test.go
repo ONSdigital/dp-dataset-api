@@ -205,7 +205,7 @@ func TestPaginateFunctionReturnsBadRequestWhenInvalidQueryParametersAreGiven(t *
 func TestPaginateFunctionReturnsListFuncImplementedHttpErrorIfListFuncReturnsAnError(t *testing.T) {
 	r := httptest.NewRequest("GET", "/test", http.NoBody)
 	w := httptest.NewRecorder()
-	fetchListFunc := func(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
+	fetchListFunc := func(w http.ResponseWriter, _ *http.Request, _ int, _ int) (interface{}, int, error) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return 0, 0, errors.New("internal error")
 	}
