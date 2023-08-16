@@ -38,10 +38,6 @@ var funcDoGetHealthcheckErr = func(cfg *config.Configuration, buildTime string, 
 	return nil, errHealthcheck
 }
 
-var funcDoGetHTTPServerNil = func(bindAddr string, router http.Handler) service.HTTPServer {
-	return nil
-}
-
 var funcDoGetMongoDBErr = func(ctx context.Context, cfg config.MongoConfig) (store.MongoDB, error) {
 	return nil, errMongo
 }

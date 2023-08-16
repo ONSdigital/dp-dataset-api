@@ -396,20 +396,6 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "delete dataset", logData)
 }
 
-// utility function to cut a slice according to the provided offset and limit.
-// limit=0 means no limit, and values higher than the slice length are ignored
-func slice(full []string, offset, limit int) (sliced []string) {
-	end := offset + limit
-	if limit == 0 || end > len(full) {
-		end = len(full)
-	}
-
-	if offset > len(full) {
-		return []string{}
-	}
-	return full[offset:end]
-}
-
 func mapResults(results []*models.DatasetUpdate) []*models.Dataset {
 	items := []*models.Dataset{}
 	for _, item := range results {
