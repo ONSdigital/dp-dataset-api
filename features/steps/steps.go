@@ -187,7 +187,7 @@ func (c *DatasetComponent) theseGenerateDownloadsEventsAreProduced(events *godog
 // we are passing the string array as [xxxx,yyyy,zzz]
 // this is required to support array being used in kafka messages
 func arrayParser(raw string) (interface{}, error) {
-	//remove the starting and trailing brackets
+	// remove the starting and trailing brackets
 	str := strings.Trim(raw, "[]")
 	if str == "" {
 		return []string{}, nil

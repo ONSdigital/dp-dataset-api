@@ -234,7 +234,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 	datasetID := currentInstance.Links.Dataset.ID
 
-	//edition confirmation is a one time process - cannot be edited for an instance once done
+	// edition confirmation is a one time process - cannot be edited for an instance once done
 	if instance.State == models.EditionConfirmedState && instance.Version == 0 {
 		if instance.Edition == "" {
 			instance.Edition = currentInstance.Edition
@@ -250,7 +250,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		//update instance with confirmed edition details
+		// update instance with confirmed edition details
 		instance.Links = currentInstance.Links
 		instance.Links.Edition = &models.LinkObject{
 			ID:   instance.Edition,

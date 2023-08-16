@@ -21,7 +21,7 @@ var MaxIDs = func() int {
 	return maxIDs
 }
 
-//getDimensions returns a list of dimensions, the total count of dimensions that match the query parameters and an error
+// getDimensions returns a list of dimensions, the total count of dimensions that match the query parameters and an error
 func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
