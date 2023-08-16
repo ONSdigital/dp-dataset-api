@@ -30,7 +30,7 @@ func (a AuthHandlerMock) Require(_ auth.Permissions, handler http.HandlerFunc) h
 
 func (c *PermissionCheckCalls) checkPermissions(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		c.Calls += 1
+		c.Calls++
 		h.ServeHTTP(w, r)
 	}
 }
