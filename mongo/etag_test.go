@@ -1,18 +1,23 @@
 package mongo
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func instanceID(number int) string {
+	return "instanceID" + strconv.Itoa(number)
+}
+
 func testInstance() *models.Instance {
 	i := &models.Instance{
 		CollectionID: "testCollection",
 		Dimensions:   []models.Dimension{{Name: "dim1"}, {Name: "dim2"}},
 		Edition:      "testEdition",
-		InstanceID:   "123",
+		InstanceID:   instanceID(1),
 		State:        models.CreatedState,
 	}
 	eTag0, err := i.Hash(nil)
@@ -56,7 +61,7 @@ func TestNewETagForUpdate(t *testing.T) {
 
 			Convey("Applying the same update to a different instance results in a different ETag", func() {
 				instance2 := testInstance()
-				instance2.InstanceID = "otherInstance"
+				instance2.InstanceID = instanceID(2)
 				eTag2, err := newETagForUpdate(instance2, update)
 				So(err, ShouldBeNil)
 				So(eTag2, ShouldNotEqual, eTag1)
@@ -64,7 +69,7 @@ func TestNewETagForUpdate(t *testing.T) {
 
 			Convey("Applying a different update to the same instance results in a different ETag", func() {
 				update2 := &models.Instance{
-					InstanceID: "anotherInstanceID",
+					InstanceID: instanceID(3),
 				}
 				eTag3, err := newETagForUpdate(currentInstance, update2)
 				So(err, ShouldBeNil)
@@ -122,7 +127,7 @@ func TestNewETagForAddEvent(t *testing.T) {
 
 			Convey("Applying the same update to a different instance results in a different ETag", func() {
 				instance2 := testInstance()
-				instance2.InstanceID = "otherInstance"
+				instance2.InstanceID = instanceID(2)
 				eTag2, err := newETagForAddEvent(instance2, &event)
 				So(err, ShouldBeNil)
 				So(eTag2, ShouldNotEqual, eTag1)
@@ -153,7 +158,7 @@ func TestNewETagForObservationsInserted(t *testing.T) {
 
 			Convey("Applying the same update to a different instance results in a different ETag", func() {
 				instance2 := testInstance()
-				instance2.InstanceID = "otherInstance"
+				instance2.InstanceID = instanceID(2)
 				eTag2, err := newETagForObservationsInserted(instance2, obsInserted)
 				So(err, ShouldBeNil)
 				So(eTag2, ShouldNotEqual, eTag1)
@@ -180,7 +185,7 @@ func TestNewETagForStateUpdate(t *testing.T) {
 
 			Convey("Applying the same update to a different instance results in a different ETag", func() {
 				instance2 := testInstance()
-				instance2.InstanceID = "otherInstance"
+				instance2.InstanceID = instanceID(2)
 				eTag2, err := newETagForStateUpdate(instance2, models.CompletedState)
 				So(err, ShouldBeNil)
 				So(eTag2, ShouldNotEqual, eTag1)
@@ -207,7 +212,7 @@ func TestNewETagForHierarchyTaskStateUpdate(t *testing.T) {
 
 			Convey("Applying the same update to a different instance results in a different ETag", func() {
 				instance2 := testInstance()
-				instance2.InstanceID = "otherInstance"
+				instance2.InstanceID = instanceID(2)
 				eTag2, err := newETagForHierarchyTaskStateUpdate(instance2, dimension, models.CompletedState)
 				So(err, ShouldBeNil)
 				So(eTag2, ShouldNotEqual, eTag1)
@@ -234,7 +239,7 @@ func TestNewETagForBuildSearchTaskStateUpdate(t *testing.T) {
 
 			Convey("Applying the same update to a different instance results in a different ETag", func() {
 				instance2 := testInstance()
-				instance2.InstanceID = "otherInstance"
+				instance2.InstanceID = instanceID(2)
 				eTag2, err := newETagForBuildSearchTaskStateUpdate(instance2, dimension, models.CompletedState)
 				So(err, ShouldBeNil)
 				So(eTag2, ShouldNotEqual, eTag1)
@@ -280,7 +285,7 @@ func TestNewETagForOptions(t *testing.T) {
 
 			Convey("Applying the same upsert to a different instance results in a different ETag", func() {
 				instance2 := testInstance()
-				instance2.InstanceID = "otherInstance"
+				instance2.InstanceID = instanceID(2)
 				eTag2, err := newETagForOptions(instance2, []*models.CachedDimensionOption{&optionUpsert}, nil)
 				So(err, ShouldBeNil)
 				So(eTag2, ShouldNotEqual, eTag1)
@@ -316,7 +321,7 @@ func TestNewETagForOptions(t *testing.T) {
 
 			Convey("Applying the same update to a different instance results in a different ETag", func() {
 				instance2 := testInstance()
-				instance2.InstanceID = "otherInstance"
+				instance2.InstanceID = instanceID(2)
 				eTag2, err := newETagForOptions(instance2, nil, []*models.DimensionOption{&optionUpdate})
 				So(err, ShouldBeNil)
 				So(eTag2, ShouldNotEqual, eTag1)
