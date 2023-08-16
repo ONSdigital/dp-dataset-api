@@ -187,8 +187,8 @@ func TestCreateMetadata(t *testing.T) {
 		})
 
 		Convey("When we call CreateMetaDataDoc", func() {
-			websiteUrl := "http://localhost:20000"
-			metaDataDoc := CreateMetaDataDoc(&dataset, &version, url.NewBuilder(websiteUrl))
+			websiteURL := "http://localhost:20000"
+			metaDataDoc := CreateMetaDataDoc(&dataset, &version, url.NewBuilder(websiteURL))
 
 			Convey("Then it returns a metadata object with all the CMD fields populated", func() {
 				So(metaDataDoc.Description, ShouldEqual, dataset.Description)
@@ -242,7 +242,7 @@ func TestCreateMetadata(t *testing.T) {
 				So(metaDataDoc.Links.Spatial, ShouldEqual, version.Links.Spatial)
 				So(metaDataDoc.Links.Version, ShouldEqual, version.Links.Version)
 				expectedWebsiteHref := fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d",
-					websiteUrl, dataset.ID, version.Links.Edition.ID, version.Version)
+					websiteURL, dataset.ID, version.Links.Edition.ID, version.Version)
 				So(metaDataDoc.Links.WebsiteVersion.HRef, ShouldEqual, expectedWebsiteHref)
 				So(metaDataDoc.Links.WebsiteVersion.ID, ShouldEqual, "")
 				So(metaDataDoc.IsBasedOn, ShouldResemble, &IsBasedOn{
@@ -355,8 +355,8 @@ func TestUpdateMetadata(t *testing.T) {
 			}},
 		}
 
-		collectionId := "collection-id"
-		datasetId := "dataset-id"
+		collectionID := "collection-id"
+		datasetID := "dataset-id"
 
 		Convey("And a dataset", func() {
 			lastUpdated := time.Now()
@@ -364,7 +364,7 @@ func TestUpdateMetadata(t *testing.T) {
 			state := PublishedState
 			theme := "population"
 			uri := "dataset-uri"
-			nomisUrl := "nomis-reference-url"
+			nomisURL := "nomis-reference-url"
 			links := DatasetLinks{
 				AccessRights: &LinkObject{
 					HRef: "href-access-rights",
@@ -392,8 +392,8 @@ func TestUpdateMetadata(t *testing.T) {
 				Type: "All usual residents in households",
 			}
 			dataset := Dataset{
-				CollectionID:      collectionId,
-				ID:                datasetId,
+				CollectionID:      collectionID,
+				ID:                datasetID,
 				LastUpdated:       lastUpdated,
 				Links:             &links,
 				Publisher:         &publisher,
@@ -401,7 +401,7 @@ func TestUpdateMetadata(t *testing.T) {
 				Theme:             theme,
 				URI:               uri,
 				Type:              datasetType,
-				NomisReferenceURL: nomisUrl,
+				NomisReferenceURL: nomisURL,
 				IsBasedOn:         &isBasedOn,
 			}
 
@@ -428,8 +428,8 @@ func TestUpdateMetadata(t *testing.T) {
 					So(dataset.Survey, ShouldEqual, metadata.Survey)
 				})
 				Convey("And none of the non-metadata fields is updated", func() {
-					So(dataset.CollectionID, ShouldEqual, collectionId)
-					So(dataset.ID, ShouldEqual, datasetId)
+					So(dataset.CollectionID, ShouldEqual, collectionID)
+					So(dataset.ID, ShouldEqual, datasetID)
 					So(dataset.LastUpdated, ShouldEqual, lastUpdated)
 					So(dataset.Links, ShouldEqual, &links)
 					So(dataset.Publisher, ShouldEqual, &publisher)
@@ -437,7 +437,7 @@ func TestUpdateMetadata(t *testing.T) {
 					So(dataset.Theme, ShouldEqual, theme)
 					So(dataset.URI, ShouldEqual, uri)
 					So(dataset.Type, ShouldEqual, datasetType)
-					So(dataset.NomisReferenceURL, ShouldEqual, nomisUrl)
+					So(dataset.NomisReferenceURL, ShouldEqual, nomisURL)
 					So(dataset.IsBasedOn, ShouldEqual, &isBasedOn)
 				})
 			})
@@ -463,7 +463,7 @@ func TestUpdateMetadata(t *testing.T) {
 			state := PublishedState
 			temporalFrequencies := []TemporalFrequency{temporal}
 			versionNumber := 1
-			versionId := "65417"
+			versionID := "65417"
 			lastUpdated := time.Now()
 			isBasedOn := IsBasedOn{
 				ID:   "UR_HH",
@@ -473,12 +473,12 @@ func TestUpdateMetadata(t *testing.T) {
 			etag := "v-etag"
 			lowestGeography := "low"
 			version := Version{
-				CollectionID:    collectionId,
-				DatasetID:       datasetId,
+				CollectionID:    collectionID,
+				DatasetID:       datasetID,
 				Downloads:       &downloads,
 				Edition:         edition,
 				Headers:         headers,
-				ID:              versionId,
+				ID:              versionID,
 				LastUpdated:     lastUpdated,
 				Links:           &links,
 				State:           state,
@@ -502,12 +502,12 @@ func TestUpdateMetadata(t *testing.T) {
 				})
 
 				Convey("And none of the non-metadata fields is updated", func() {
-					So(version.CollectionID, ShouldEqual, collectionId)
-					So(version.DatasetID, ShouldEqual, datasetId)
+					So(version.CollectionID, ShouldEqual, collectionID)
+					So(version.DatasetID, ShouldEqual, datasetID)
 					So(version.Downloads, ShouldEqual, &downloads)
 					So(version.Edition, ShouldEqual, edition)
 					So(version.Headers, ShouldResemble, headers)
-					So(version.ID, ShouldEqual, versionId)
+					So(version.ID, ShouldEqual, versionID)
 					So(version.LastUpdated, ShouldEqual, lastUpdated)
 					So(version.Links, ShouldEqual, &links)
 					So(version.State, ShouldEqual, state)

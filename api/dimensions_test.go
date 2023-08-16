@@ -195,7 +195,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 			return api.getDimensionOptions(w, r, 20, 0)
 		}
 
-		setExpectedUrlVars := func(r *http.Request) *http.Request {
+		setExpectedURLVars := func(r *http.Request) *http.Request {
 			return mux.SetURLVars(r,
 				map[string]string{
 					"dataset_id": "123",
@@ -229,7 +229,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 
 		Convey("When a valid dimension is provided without any query parameters", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", http.NoBody)
-			r = setExpectedUrlVars(r)
+			r = setExpectedURLVars(r)
 			list, totalCount, err := callOptions(r)
 
 			Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
@@ -249,7 +249,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 
 		Convey("When a valid dimension and list of existing IDs is provided in more than one parameter, in comma-separated format", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=op1,op3&id=op5", http.NoBody)
-			r = setExpectedUrlVars(r)
+			r = setExpectedURLVars(r)
 			list, totalCount, err := callOptionsWithIDs(r)
 
 			Convey("Then the call succeeds with 200 OK code, expected body and calls", func() {
@@ -267,7 +267,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 
 		Convey("When a valid offset, limit and dimension and list of existing IDs are provided", func() {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=op1,op3&offset=0&limit=1", http.NoBody)
-			r = setExpectedUrlVars(r)
+			r = setExpectedURLVars(r)
 			list, totalCount, err := callOptionsWithIDs(r)
 
 			Convey("Then the call succeeds with 200 OK code, the list of IDs take precedence (offset and limit are ignored), and the expected body and calls are performed", func() {

@@ -34,8 +34,8 @@ var (
 	testMaxRequestOptions = 10
 )
 
-func createRequestWithToken(method, url string, body io.Reader) (*http.Request, error) {
-	r, err := http.NewRequest(method, url, body)
+func createRequestWithToken(method, requestURL string, body io.Reader) (*http.Request, error) {
+	r, err := http.NewRequest(method, requestURL, body)
 	ctx := r.Context()
 	ctx = dprequest.SetCaller(ctx, "someone@ons.gov.uk")
 	r = r.WithContext(ctx)

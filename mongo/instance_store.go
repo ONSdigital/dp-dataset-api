@@ -60,11 +60,10 @@ func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []st
 }
 
 // GetInstance returns a single instance from an ID
-func (m *Mongo) GetInstance(ctx context.Context, ID, eTagSelector string) (*models.Instance, error) {
-
+func (m *Mongo) GetInstance(ctx context.Context, id, eTagSelector string) (*models.Instance, error) {
 	// get instance from DB
 	var instance models.Instance
-	if err := m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).FindOne(ctx, bson.M{"id": ID}, &instance); err != nil {
+	if err := m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).FindOne(ctx, bson.M{"id": id}, &instance); err != nil {
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
 			return nil, errs.ErrInstanceNotFound
 		}

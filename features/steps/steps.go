@@ -29,9 +29,9 @@ func WellKnownTestTime() time.Time {
 
 func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^private endpoints are enabled$`, c.privateEndpointsAreEnabled)
-	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, c.theDocumentInTheDatabaseForIdShouldBe)
-	ctx.Step(`^the instance in the database for id "([^"]*)" should be:$`, c.theInstanceInTheDatabaseForIdShouldBe)
-	ctx.Step(`^the version in the database for id "([^"]*)" should be:$`, c.theVersionInTheDatabaseForIdShouldBe)
+	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, c.theDocumentInTheDatabaseForIDShouldBe)
+	ctx.Step(`^the instance in the database for id "([^"]*)" should be:$`, c.theInstanceInTheDatabaseForIDShouldBe)
+	ctx.Step(`^the version in the database for id "([^"]*)" should be:$`, c.theVersionInTheDatabaseForIDShouldBe)
 	ctx.Step(`^there are no datasets$`, c.thereAreNoDatasets)
 	ctx.Step(`^I have these datasets:$`, c.iHaveTheseDatasets)
 	ctx.Step(`^I have these "([^"]*)" datasets:$`, c.iHaveTheseConditionalDatasets)
@@ -54,20 +54,20 @@ func (c *DatasetComponent) privateEndpointsAreEnabled() error {
 	return nil
 }
 
-func (c *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId string, documentJson *godog.DocString) error {
+func (c *DatasetComponent) theDocumentInTheDatabaseForIDShouldBe(documentID string, documentJSON *godog.DocString) error {
 	var expectedDataset models.Dataset
 
-	if err := json.Unmarshal([]byte(documentJson.Content), &expectedDataset); err != nil {
+	if err := json.Unmarshal([]byte(documentJSON.Content), &expectedDataset); err != nil {
 		return err
 	}
 
 	collectionName := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
 	var link models.DatasetUpdate
-	if err := c.MongoClient.Connection.Collection(collectionName).FindOne(context.Background(), bson.M{"_id": documentId}, &link); err != nil {
+	if err := c.MongoClient.Connection.Collection(collectionName).FindOne(context.Background(), bson.M{"_id": documentID}, &link); err != nil {
 		return err
 	}
 
-	assert.Equal(&c.ErrorFeature, documentId, link.ID)
+	assert.Equal(&c.ErrorFeature, documentID, link.ID)
 
 	document := link.Next
 
@@ -80,7 +80,7 @@ func (c *DatasetComponent) theDocumentInTheDatabaseForIdShouldBe(documentId stri
 	return c.ErrorFeature.StepError()
 }
 
-func (c *DatasetComponent) theInstanceInTheDatabaseForIdShouldBe(id string, body *godog.DocString) error {
+func (c *DatasetComponent) theInstanceInTheDatabaseForIDShouldBe(id string, body *godog.DocString) error {
 	var expected models.Instance
 
 	if err := json.Unmarshal([]byte(body.Content), &expected); err != nil {
@@ -99,7 +99,7 @@ func (c *DatasetComponent) theInstanceInTheDatabaseForIdShouldBe(id string, body
 	return nil
 }
 
-func (c *DatasetComponent) theVersionInTheDatabaseForIdShouldBe(id string, body *godog.DocString) error {
+func (c *DatasetComponent) theVersionInTheDatabaseForIDShouldBe(id string, body *godog.DocString) error {
 	var expected models.Version
 
 	if err := json.Unmarshal([]byte(body.Content), &expected); err != nil {
@@ -245,10 +245,10 @@ func (c *DatasetComponent) theseCantabularGeneratorDownloadsEventsAreProduced(ev
 	return nil
 }
 
-func (c *DatasetComponent) iHaveTheseEditions(editionsJson *godog.DocString) error {
+func (c *DatasetComponent) iHaveTheseEditions(editionsJSON *godog.DocString) error {
 	editions := []models.Edition{}
 
-	err := json.Unmarshal([]byte(editionsJson.Content), &editions)
+	err := json.Unmarshal([]byte(editionsJSON.Content), &editions)
 	if err != nil {
 		return err
 	}
@@ -273,11 +273,10 @@ func (c *DatasetComponent) iHaveTheseEditions(editionsJson *godog.DocString) err
 	return nil
 }
 
-func (c *DatasetComponent) iHaveTheseDatasets(datasetsJson *godog.DocString) error {
-
+func (c *DatasetComponent) iHaveTheseDatasets(datasetsJSON *godog.DocString) error {
 	datasets := []models.Dataset{}
 
-	err := json.Unmarshal([]byte(datasetsJson.Content), &datasets)
+	err := json.Unmarshal([]byte(datasetsJSON.Content), &datasets)
 	if err != nil {
 		return err
 	}
@@ -300,10 +299,10 @@ func (c *DatasetComponent) iHaveTheseDatasets(datasetsJson *godog.DocString) err
 }
 
 // Done for GET /datastes?is_based_on so that we can condition a dataset on whether it is published or not.
-func (c *DatasetComponent) iHaveTheseConditionalDatasets(status string, datasetsJson *godog.DocString) error {
+func (c *DatasetComponent) iHaveTheseConditionalDatasets(status string, datasetsJSON *godog.DocString) error {
 	datasets := []models.Dataset{}
 
-	err := json.Unmarshal([]byte(datasetsJson.Content), &datasets)
+	err := json.Unmarshal([]byte(datasetsJSON.Content), &datasets)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal: %w", err)
 	}
@@ -328,15 +327,16 @@ func (c *DatasetComponent) iHaveTheseConditionalDatasets(status string, datasets
 	return nil
 }
 
-func (c *DatasetComponent) iHaveTheseVersions(versionsJson *godog.DocString) error {
+func (c *DatasetComponent) iHaveTheseVersions(versionsJSON *godog.DocString) error {
 	versions := []models.Version{}
 
-	err := json.Unmarshal([]byte(versionsJson.Content), &versions)
+	err := json.Unmarshal([]byte(versionsJSON.Content), &versions)
 	if err != nil {
 		return err
 	}
 
-	for timeOffset, version := range versions {
+	for timeOffset := range versions {
+		version := &versions[timeOffset]
 		versionID := version.ID
 		// Some tests need to specify the version links document
 		if version.Links.Version == nil {
@@ -358,7 +358,7 @@ func (c *DatasetComponent) iHaveTheseVersions(versionsJson *godog.DocString) err
 
 func (c *DatasetComponent) theseVersionsNeedToBePublished(idsJSON *godog.DocString) error {
 	var versions []struct {
-		VersionId     string `json:"version_id"`
+		VersionID     string `json:"version_id"`
 		VersionNumber string `json:"version_number"`
 	}
 
@@ -372,7 +372,7 @@ func (c *DatasetComponent) theseVersionsNeedToBePublished(idsJSON *godog.DocStri
 		verDoc["links.version.id"] = v.VersionNumber
 
 		instanceCollection := c.MongoClient.ActualCollectionName(config.InstanceCollection)
-		if err := c.updateDocumentInDatabase(verDoc, v.VersionId, instanceCollection, i); err != nil {
+		if err := c.updateDocumentInDatabase(verDoc, v.VersionID, instanceCollection, i); err != nil {
 			return fmt.Errorf("failed to update database: %w", err)
 		}
 	}
@@ -380,12 +380,12 @@ func (c *DatasetComponent) theseVersionsNeedToBePublished(idsJSON *godog.DocStri
 	return nil
 }
 
-func (c *DatasetComponent) iHaveTheseDimensions(dimensionsJson *godog.DocString) error {
+func (c *DatasetComponent) iHaveTheseDimensions(dimensionsJSON *godog.DocString) error {
 	dimensions := []models.DimensionOption{}
 
-	err := json.Unmarshal([]byte(dimensionsJson.Content), &dimensions)
+	err := json.Unmarshal([]byte(dimensionsJSON.Content), &dimensions)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal dimensionsJson: %w", err)
+		return fmt.Errorf("failed to unmarshal dimensionsJSON: %w", err)
 	}
 
 	for timeOffset, dimension := range dimensions {
@@ -400,10 +400,10 @@ func (c *DatasetComponent) iHaveTheseDimensions(dimensionsJson *godog.DocString)
 	return nil
 }
 
-func (c *DatasetComponent) iHaveTheseInstances(instancesJson *godog.DocString) error {
+func (c *DatasetComponent) iHaveTheseInstances(instancesJSON *godog.DocString) error {
 	instances := []models.Instance{}
 
-	err := json.Unmarshal([]byte(instancesJson.Content), &instances)
+	err := json.Unmarshal([]byte(instancesJSON.Content), &instances)
 	if err != nil {
 		return err
 	}

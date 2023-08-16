@@ -24,14 +24,13 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	b, err := func() ([]byte, error) {
-
-		versionId, err := models.ParseAndValidateVersionNumber(ctx, version)
+		versionID, err := models.ParseAndValidateVersionNumber(ctx, version)
 		if err != nil {
 			log.Error(ctx, "failed due to invalid version request", err, logData)
 			return nil, err
 		}
 
-		versionDoc, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionId, "")
+		versionDoc, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionID, "")
 		if err != nil {
 			if err == errs.ErrVersionNotFound {
 				log.Error(ctx, "getMetadata endpoint: failed to find version for dataset edition", err, logData)

@@ -31,7 +31,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 		edition := vars["edition"]
 		version := vars["version"]
 		data := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
-		versionId, err := models.ParseAndValidateVersionNumber(ctx, version)
+		versionID, err := models.ParseAndValidateVersionNumber(ctx, version)
 		if err != nil {
 			log.Error(ctx, "failed due to invalid version request", err, data)
 			dphttp.DrainBody(r)
@@ -39,7 +39,7 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 			return
 		}
 
-		currentVersion, err := d.Datastore.GetVersion(ctx, datasetID, edition, versionId, "")
+		currentVersion, err := d.Datastore.GetVersion(ctx, datasetID, edition, versionID, "")
 		if err != nil {
 			if err != errs.ErrVersionNotFound {
 				log.Error(ctx, "errored whilst retrieving version resource", err, data)

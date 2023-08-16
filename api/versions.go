@@ -147,7 +147,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	v, getVersionErr := func() (*models.Version, error) {
 		authorised := api.authenticate(r, logData)
 
-		versionId, err := models.ParseAndValidateVersionNumber(ctx, versionNumber)
+		versionID, err := models.ParseAndValidateVersionNumber(ctx, versionNumber)
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: invalid version", err, logData)
 			return nil, err
@@ -168,7 +168,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		version, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionId, state)
+		version, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionID, state)
 		if err != nil {
 			log.Error(ctx, "failed to find version for dataset edition", err, logData)
 			return nil, err
@@ -293,7 +293,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrNotFound
 		}
 
-		versionId, err := models.ParseAndValidateVersionNumber(ctx, version)
+		versionID, err := models.ParseAndValidateVersionNumber(ctx, version)
 		if err != nil {
 			log.Error(ctx, "detachVersion endpoint: invalid version request", err, logData)
 			return err
@@ -318,7 +318,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrIncorrectStateToDetach
 		}
 
-		versionDoc, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionId, editionDoc.Next.State)
+		versionDoc, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionID, editionDoc.Next.State)
 		if err != nil {
 			log.Error(ctx, "detachVersion endpoint: Cannot find the specified version", errs.ErrVersionNotFound, logData)
 			return errs.ErrVersionNotFound

@@ -123,14 +123,13 @@ func (m *Mongo) GetDimensionOptions(ctx context.Context, version *models.Version
 }
 
 // GetDimensionOptionsFromIDs returns dimension options for a dimension within a dataset, whose IDs match the provided list of IDs
-func (m *Mongo) GetDimensionOptionsFromIDs(ctx context.Context, version *models.Version, dimension string, IDs []string) ([]*models.PublicDimensionOption, int, error) {
-
-	if len(IDs) > maxIDs {
+func (m *Mongo) GetDimensionOptionsFromIDs(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
+	if len(ids) > maxIDs {
 		return nil, 0, errors.New("too many IDs provided")
 	}
 
 	selectorAll := bson.M{"instance_id": version.ID, "name": dimension}
-	selectorInList := bson.M{"instance_id": version.ID, "name": dimension, "option": bson.M{"$in": IDs}}
+	selectorInList := bson.M{"instance_id": version.ID, "name": dimension, "option": bson.M{"$in": ids}}
 
 	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.DimensionOptionsCollection)).Count(ctx, selectorAll)
 	if err != nil {

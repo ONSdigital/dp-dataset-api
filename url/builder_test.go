@@ -20,14 +20,13 @@ func TestBuilder_BuildWebsiteDatasetVersionURL(t *testing.T) {
 		urlBuilder := url.NewBuilder(websiteURL)
 
 		Convey("When BuildWebsiteDatasetVersionURL is called", func() {
-
-			builtUrl := urlBuilder.BuildWebsiteDatasetVersionURL(datasetID, edition, version)
+			builtURL := urlBuilder.BuildWebsiteDatasetVersionURL(datasetID, edition, version)
 
 			expectedURL := fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s",
 				websiteURL, datasetID, edition, version)
 
 			Convey("Then the expected URL is returned", func() {
-				So(builtUrl, ShouldEqual, expectedURL)
+				So(builtURL, ShouldEqual, expectedURL)
 			})
 		})
 	})

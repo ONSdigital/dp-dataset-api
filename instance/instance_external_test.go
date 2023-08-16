@@ -28,8 +28,8 @@ var (
 	testContext = context.Background()
 )
 
-func createRequestWithToken(method, url string, body io.Reader) (*http.Request, error) {
-	r, err := http.NewRequest(method, url, body)
+func createRequestWithToken(method, requestURL string, body io.Reader) (*http.Request, error) {
+	r, err := http.NewRequest(method, requestURL, body)
 	ctx := r.Context()
 	ctx = dprequest.SetCaller(ctx, "someone@ons.gov.uk")
 	r = r.WithContext(ctx)
@@ -37,10 +37,10 @@ func createRequestWithToken(method, url string, body io.Reader) (*http.Request, 
 }
 
 func initAPIWithMockedStore(mockedStore *storetest.StorerMock) *instance.Store {
-	api := &instance.Store{
+	instanceAPI := &instance.Store{
 		Storer: mockedStore,
 	}
-	return api
+	return instanceAPI
 }
 
 func Test_GetInstancesReturnsOK(t *testing.T) {
@@ -56,8 +56,8 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				},
 			}
 
-			api := initAPIWithMockedStore(mockedDataStore)
-			list, totalCount, err := api.GetList(w, r, 20, 0)
+			instanceAPI := initAPIWithMockedStore(mockedDataStore)
+			list, totalCount, err := instanceAPI.GetList(w, r, 20, 0)
 
 			So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 			So(totalCount, ShouldEqual, 0)
@@ -75,8 +75,8 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				},
 			}
 
-			api := initAPIWithMockedStore(mockedDataStore)
-			list, totalCount, err := api.GetList(w, r, 20, 0)
+			instanceAPI := initAPIWithMockedStore(mockedDataStore)
+			list, totalCount, err := instanceAPI.GetList(w, r, 20, 0)
 
 			So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
 			So(mockedDataStore.GetInstancesCalls()[0].States, ShouldResemble, []string{"completed"})
@@ -95,8 +95,8 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				},
 			}
 
-			api := initAPIWithMockedStore(mockedDataStore)
-			_, _, _ = api.GetList(w, r, 20, 0)
+			instanceAPI := initAPIWithMockedStore(mockedDataStore)
+			_, _, _ = instanceAPI.GetList(w, r, 20, 0)
 
 			So(mockedDataStore.GetInstancesCalls()[0].Datasets, ShouldResemble, []string{"test"})
 			So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
@@ -112,8 +112,8 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				},
 			}
 
-			api := initAPIWithMockedStore(mockedDataStore)
-			_, _, _ = api.GetList(w, r, 20, 0)
+			instanceAPI := initAPIWithMockedStore(mockedDataStore)
+			_, _, _ = instanceAPI.GetList(w, r, 20, 0)
 
 			So(mockedDataStore.GetInstancesCalls()[0].States, ShouldResemble, []string{"completed", "edition-confirmed"})
 			So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
@@ -129,8 +129,8 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 				},
 			}
 
-			api := initAPIWithMockedStore(mockedDataStore)
-			_, _, _ = api.GetList(w, r, 20, 0)
+			instanceAPI := initAPIWithMockedStore(mockedDataStore)
+			_, _, _ = instanceAPI.GetList(w, r, 20, 0)
 
 			So(mockedDataStore.GetInstancesCalls()[0].States, ShouldResemble, []string{"completed"})
 			So(mockedDataStore.GetInstancesCalls()[0].Datasets, ShouldResemble, []string{"test"})
@@ -153,8 +153,8 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 					},
 				}
 
-				api := initAPIWithMockedStore(mockedDataStore)
-				_, _, _ = api.GetList(w, r, 20, 0)
+				instanceAPI := initAPIWithMockedStore(mockedDataStore)
+				_, _, _ = instanceAPI.GetList(w, r, 20, 0)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
@@ -167,8 +167,8 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 				r := httptest.NewRequest("GET", "http://foo/instances?state=foo", http.NoBody)
 				w := httptest.NewRecorder()
 
-				api := initAPIWithMockedStore(&storetest.StorerMock{})
-				_, _, _ = api.GetList(w, r, 20, 0)
+				instanceAPI := initAPIWithMockedStore(&storetest.StorerMock{})
+				_, _, _ = instanceAPI.GetList(w, r, 20, 0)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "bad request - invalid filter state values: [foo]")

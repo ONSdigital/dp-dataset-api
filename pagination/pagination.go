@@ -102,9 +102,9 @@ func (p *Paginator) Paginate(paginatedHandler PaginatedHandler) func(w http.Resp
 			return
 		}
 
-		page := renderPage(list, offset, limit, totalCount)
+		renderedPage := renderPage(list, offset, limit, totalCount)
 
-		returnPaginatedResults(w, r, page)
+		returnPaginatedResults(w, r, renderedPage)
 	}
 }
 

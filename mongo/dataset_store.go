@@ -518,8 +518,7 @@ func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 	return setUpdates
 }
 
-func (m *Mongo) UpdateMetadata(ctx context.Context, datasetId string, versionId string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
-
+func (m *Mongo) UpdateMetadata(ctx context.Context, datasetID, versionID, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
 	updatedDataset.LastUpdated = time.Now()
 	datasetUpdate := bson.M{
 		"$set": bson.M{
@@ -534,7 +533,7 @@ func (m *Mongo) UpdateMetadata(ctx context.Context, datasetId string, versionId 
 		return err
 	}
 
-	versionSelector := selector(versionId, bsonprim.Timestamp{}, versionEtag)
+	versionSelector := selector(versionID, bsonprim.Timestamp{}, versionEtag)
 
 	// We can't update the whole version as it would lose instance fields (not in the version struct)
 	versionUpdate := bson.M{
@@ -551,7 +550,7 @@ func (m *Mongo) UpdateMetadata(ctx context.Context, datasetId string, versionId 
 
 	_, err = m.Connection.RunTransaction(ctx, false, func(transactionCtx context.Context) (interface{}, error) {
 		// Update dataset
-		if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateOne(transactionCtx, bson.M{"_id": datasetId}, datasetUpdate); err != nil {
+		if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateOne(transactionCtx, bson.M{"_id": datasetID}, datasetUpdate); err != nil {
 			if errors.Is(err, mongodriver.ErrNoDocumentFound) {
 				return nil, errs.ErrDatasetNotFound
 			}
