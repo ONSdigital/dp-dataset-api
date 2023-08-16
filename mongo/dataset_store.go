@@ -364,10 +364,8 @@ func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Da
 
 	if dataset.State != "" {
 		updates["next.state"] = dataset.State
-	} else {
-		if currentState == models.PublishedState {
-			updates["next.state"] = models.CreatedState
-		}
+	} else if currentState == models.PublishedState {
+		updates["next.state"] = models.CreatedState
 	}
 
 	if dataset.Theme != "" {
@@ -469,10 +467,8 @@ func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 	if version.State == models.DetachedState {
 		setUpdates["collection_id"] = nil
 		setUpdates["version"] = nil
-	} else {
-		if version.CollectionID != "" {
-			setUpdates["collection_id"] = version.CollectionID
-		}
+	} else if version.CollectionID != "" {
+		setUpdates["collection_id"] = version.CollectionID
 	}
 
 	if version.Alerts != nil {

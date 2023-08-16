@@ -36,18 +36,16 @@ func TestPutMetadata(t *testing.T) {
 			GetVersionFunc: func(_ context.Context, _, _ string, versionNumber int, _ string) (*models.Version, error) {
 				if versionNumber == version.Version {
 					return version, nil
-				} else {
-					return nil, errs.ErrVersionNotFound
 				}
+				return nil, errs.ErrVersionNotFound
 			},
 			GetDatasetFunc: func(_ context.Context, datasetID string) (*models.DatasetUpdate, error) {
 				if datasetID == dataset.ID {
 					return dataset, nil
-				} else {
-					return nil, errs.ErrDatasetNotFound
 				}
+				return nil, errs.ErrDatasetNotFound
 			},
-			UpdateMetadataFunc: func(ctx context.Context, datasetId, versionId, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
+			UpdateMetadataFunc: func(_ context.Context, datasetId, versionId, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
 				versionEtagMatches := versionEtag == "*" || versionEtag == version.ETag
 				if datasetId != dataset.ID || versionId != version.ID || !versionEtagMatches || updatedDataset != dataset.Next || updatedVersion != version {
 					return errors.New("invalid parameters")
