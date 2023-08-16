@@ -614,6 +614,8 @@ func ValidateNomisURL(ctx context.Context, datasetType string, nomisURL string) 
 }
 
 // ValidateVersion checks the content of the version structure
+//
+//nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func ValidateVersion(version *Version) error {
 	switch version.State {
 	case "":

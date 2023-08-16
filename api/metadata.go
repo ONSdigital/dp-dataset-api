@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+//nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)

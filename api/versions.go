@@ -59,6 +59,8 @@ func (v VersionDetails) baseLogData() log.Data {
 }
 
 // getVersions returns a list of versions, the total count of versions that match the query parameters and an error
+//
+//nolint:gocyclo,gocognit,gocritic // high cyclomactic & cognitive complexity not in scope for maintenance. Named results requires refactoring.
 func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -133,6 +135,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 	return list, totalCount, nil
 }
 
+//nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -268,6 +271,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "putVersion endpoint: request successful", data)
 }
 
+//nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 	defer dphttp.DrainBody(r)
 
@@ -604,7 +608,8 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion, ver
 	return associateVersionErr
 }
 
-func populateNewVersionDoc(currentVersion *models.Version, originalVersion *models.Version) (*models.Version, error) {
+//nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
+func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*models.Version, error) {
 	var version models.Version
 	copier.Copy(&version, originalVersion) // create local copy that escapes to the HEAP at the end of this function
 

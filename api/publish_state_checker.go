@@ -21,6 +21,8 @@ type PublishCheck struct {
 }
 
 // Check wraps a HTTP handle. Checks that the state is not published
+//
+//nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), action string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

@@ -278,8 +278,8 @@ func (m *Mongo) UpdateDataset(ctx context.Context, id string, dataset *models.Da
 	return nil
 }
 
+//nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Dataset, currentState string) bson.M {
-
 	updates := make(bson.M)
 
 	log.Info(ctx, "building update query for dataset resource", log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
