@@ -112,27 +112,25 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 							}
 						}
 
-						if newVersion != nil {
-							var b []byte
-							b, err = json.Marshal(newVersion)
-							if err != nil {
-								log.Error(ctx, "failed to marshal new version resource based on request", err, data)
-								dphttp.DrainBody(r)
-								http.Error(w, err.Error(), http.StatusForbidden)
-								return
-							}
-
-							if err = r.Body.Close(); err != nil {
-								log.Error(ctx, "could not close response body", err, data)
-							}
-
-							// Set variable `has_downloads` to true to prevent request
-							// triggering version from being republished
-							vars[hasDownloads] = trueStringified
-						r.Body = io.NopCloser(bytes.NewBuffer(b))
-							handle(w, r)
+						var b []byte
+						b, err = json.Marshal(newVersion)
+						if err != nil {
+							log.Error(ctx, "failed to marshal new version resource based on request", err, data)
+							dphttp.DrainBody(r)
+							http.Error(w, err.Error(), http.StatusForbidden)
 							return
 						}
+
+						if err = r.Body.Close(); err != nil {
+							log.Error(ctx, "could not close response body", err, data)
+						}
+
+						// Set variable `has_downloads` to true to prevent request
+						// triggering version from being republished
+						vars[hasDownloads] = trueStringified
+						r.Body = io.NopCloser(bytes.NewBuffer(b))
+						handle(w, r)
+						return
 					}
 				}
 
