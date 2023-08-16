@@ -163,7 +163,7 @@ func (c *DatasetComponent) setConsumer(topic string) error {
 	return nil
 }
 
-func (c *DatasetComponent) DoGetHealthcheckOk(_ *config.Configuration, _ string, _ string, _ string) (service.HealthChecker, error) {
+func (c *DatasetComponent) DoGetHealthcheckOk(_ *config.Configuration, _, _, _ string) (service.HealthChecker, error) {
 	return &serviceMock.HealthCheckerMock{
 		AddCheckFunc: func(name string, checker healthcheck.Checker) error { return nil },
 		StartFunc:    func(ctx context.Context) {},

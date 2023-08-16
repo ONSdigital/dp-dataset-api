@@ -36,8 +36,7 @@ func (m *Mongo) UnlockInstance(ctx context.Context, lockID string) {
 }
 
 // GetInstances from a mongo collection
-func (m *Mongo) GetInstances(ctx context.Context, states []string, datasets []string, offset, limit int) ([]*models.Instance, int, error) {
-
+func (m *Mongo) GetInstances(ctx context.Context, states, datasets []string, offset, limit int) ([]*models.Instance, int, error) {
 	selector := bson.M{}
 	if len(states) > 0 {
 		selector["state"] = bson.M{"$in": states}

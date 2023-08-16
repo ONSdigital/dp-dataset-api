@@ -11,7 +11,7 @@ import (
 // AnyETag represents the wildchar that corresponds to not check the ETag value for update requests
 const AnyETag = "*"
 
-func newETagForUpdate(currentInstance *models.Instance, update *models.Instance) (eTag string, err error) {
+func newETagForUpdate(currentInstance, update *models.Instance) (eTag string, err error) {
 	b, err := bson.Marshal(update)
 	if err != nil {
 		return "", err
@@ -19,7 +19,7 @@ func newETagForUpdate(currentInstance *models.Instance, update *models.Instance)
 	return currentInstance.Hash(b)
 }
 
-func newETagForVersionUpdate(currentVersion *models.Version, update *models.Version) (eTag string, err error) {
+func newETagForVersionUpdate(currentVersion, update *models.Version) (eTag string, err error) {
 	b, err := bson.Marshal(update)
 	if err != nil {
 		return "", err
