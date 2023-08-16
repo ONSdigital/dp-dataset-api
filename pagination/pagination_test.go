@@ -82,6 +82,7 @@ func TestRenderPageReturnsPageStrucWithFilledValues(t *testing.T) {
 
 func TestRenderPageTakesListOfAnyType(t *testing.T) {
 	type custom struct {
+		//nolint:unused // This test demos that renderPage takes any type
 		name string
 	}
 
