@@ -118,8 +118,7 @@ func TestCreateMetadata(t *testing.T) {
 		}
 
 		Convey("When we call CreateCantabularMetaDataDoc", func() {
-			var urlBuilder *url.Builder = nil // Not used for cantabular
-			metaDataDoc := CreateCantabularMetaDataDoc(&dataset, &version, urlBuilder)
+			metaDataDoc := CreateCantabularMetaDataDoc(&dataset, &version)
 
 			Convey("Then it returns a metadata object with all the Cantabular fields populated", func() {
 				So(metaDataDoc.Description, ShouldEqual, dataset.Description)

@@ -176,7 +176,7 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 
 // CreateCantabularMetaDataDoc manages the creation of metadata across dataset and version docs for cantabular datasets
 // note: logic to retrieve the newly-added Cantabular-specific fields to the Metadata model will be created at a later date
-func CreateCantabularMetaDataDoc(d *Dataset, v *Version, urlBuilder *url.Builder) *Metadata {
+func CreateCantabularMetaDataDoc(d *Dataset, v *Version) *Metadata {
 	m := &Metadata{
 		EditableMetadata: EditableMetadata{
 			CanonicalTopic: d.CanonicalTopic,
