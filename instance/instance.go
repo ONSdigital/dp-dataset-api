@@ -458,7 +458,7 @@ func getIfMatch(r *http.Request) string {
 
 func writeBody(ctx context.Context, w http.ResponseWriter, b []byte, logData log.Data) {
 	if _, err := w.Write(b); err != nil {
-		log.Fatal(ctx, "failed to write http response body", err, logData)
+		log.Error(ctx, "failed to write http response body", err, logData)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
