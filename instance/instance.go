@@ -41,14 +41,13 @@ func (e taskError) Error() string {
 }
 
 // GetList returns a list of instances, the total count of instances that match the query parameters and an error
-func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
+func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit, offset int) (results interface{}, totalCount int, err error) {
 	ctx := r.Context()
 	stateFilterQuery := r.URL.Query().Get("state")
 	datasetFilterQuery := r.URL.Query().Get("dataset")
 	var stateFilterList []string
 	var datasetFilterList []string
 	logData := log.Data{}
-	var err error
 
 	if stateFilterQuery != "" {
 		logData["state_query"] = stateFilterQuery
@@ -62,7 +61,7 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit int, offse
 
 	log.Info(ctx, "get list of instances", logData)
 
-	results, totalCount, err := func() ([]*models.Instance, int, error) {
+	results, totalCount, err = func() ([]*models.Instance, int, error) {
 		if len(stateFilterList) > 0 {
 			if err := models.ValidateStateFilter(stateFilterList); err != nil {
 				log.Error(ctx, "get instances: filter state invalid", err, logData)
@@ -70,13 +69,13 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit int, offse
 			}
 		}
 
-		results, totalCount, err := s.GetInstances(ctx, stateFilterList, datasetFilterList, offset, limit)
+		instancesResults, instancesTotalCount, err := s.GetInstances(ctx, stateFilterList, datasetFilterList, offset, limit)
 		if err != nil {
 			log.Error(ctx, "get instances: store.GetInstances returned an error", err, logData)
 			return nil, 0, err
 		}
 
-		return results, totalCount, nil
+		return instancesResults, instancesTotalCount, nil
 	}()
 
 	if err != nil {

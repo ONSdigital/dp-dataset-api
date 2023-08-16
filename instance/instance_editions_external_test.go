@@ -212,8 +212,8 @@ func validateLock(mockedDataStore *storetest.StorerMock, expectedInstanceID stri
 	So(mockedDataStore.UnlockInstanceCalls()[0].LockID, ShouldEqual, testLockID)
 }
 
-func storeMockEditionCompleteWithLock(instance *models.Instance, expectFirstGetUnlocked bool) (*storetest.StorerMock, *bool) {
-	mockedDataStore, isLocked := storeMockWithLock(instance, expectFirstGetUnlocked)
+func storeMockEditionCompleteWithLock(instance *models.Instance, expectFirstGetUnlocked bool) (mockedDataStore *storetest.StorerMock, isLocked *bool) {
+	mockedDataStore, isLocked = storeMockWithLock(instance, expectFirstGetUnlocked)
 	mockedDataStore.GetEditionFunc = func(_ context.Context, _ string, _ string, _ string) (*models.EditionUpdate, error) {
 		So(*isLocked, ShouldBeTrue)
 		return nil, errs.ErrEditionNotFound
@@ -257,10 +257,10 @@ func completedInstance() *models.Instance {
 	}
 }
 
-func storeMockWithLock(instance *models.Instance, expectFirstGetUnlocked bool) (*storetest.StorerMock, *bool) {
+func storeMockWithLock(instance *models.Instance, expectFirstGetUnlocked bool) (mockedDataStore *storetest.StorerMock, isLockedPointer *bool) {
 	isLocked := false
 	numGetCall := 0
-	return &storetest.StorerMock{
+	mockedDataStore = &storetest.StorerMock{
 		AcquireInstanceLockFunc: func(_ context.Context, _ string) (string, error) {
 			isLocked = true
 			return testLockID, nil
@@ -279,5 +279,6 @@ func storeMockWithLock(instance *models.Instance, expectFirstGetUnlocked bool) (
 			numGetCall++
 			return instance, nil
 		},
-	}, &isLocked
+	}
+	return mockedDataStore, &isLocked
 }

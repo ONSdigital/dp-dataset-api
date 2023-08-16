@@ -380,7 +380,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "detachVersion endpoint: request successful", logData)
 }
 
-func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, versionDetails VersionDetails) (*models.DatasetUpdate, *models.Version, *models.Version, error) {
+func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, versionDetails VersionDetails) (currentDataset *models.DatasetUpdate, currentVersion, combinedVersionUpdate *models.Version, err error) {
 	data := versionDetails.baseLogData()
 
 	reqID := ctx.Value(dprequest.RequestIdKey) // used to differentiate logs of concurrent calls to this function from different services
@@ -398,7 +398,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		return nil, nil, nil, errs.ErrUnableToParseJSON
 	}
 
-	currentDataset, err := api.dataStore.Backend.GetDataset(ctx, versionDetails.datasetID)
+	currentDataset, err = api.dataStore.Backend.GetDataset(ctx, versionDetails.datasetID)
 	if err != nil {
 		log.Error(ctx, "putVersion endpoint: datastore.getDataset returned an error", err, data)
 		return nil, nil, nil, err
@@ -409,13 +409,11 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		return nil, nil, nil, err
 	}
 
-	currentVersion, err := api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+	currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
 	if err != nil {
 		log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
 		return nil, nil, nil, err
 	}
-
-	var combinedVersionUpdate *models.Version
 
 	// doUpdate is an aux function that combines the existing version document with the update received in the body request,
 	// then it validates the new model, and performs the update in MongoDB, passing the existing model ETag (if it exists) to be used in the query selector

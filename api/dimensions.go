@@ -22,14 +22,13 @@ var MaxIDs = func() int {
 }
 
 // getDimensions returns a list of dimensions, the total count of dimensions that match the query parameters and an error
-func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
+func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, limit, offset int) (dimensionsList interface{}, totalCount int, err error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	version := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "func": "getDimensions"}
-	var err error
 
 	versionNumber, err := models.ParseAndValidateVersionNumber(ctx, version)
 	if err != nil {

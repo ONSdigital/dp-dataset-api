@@ -95,10 +95,10 @@ func validateLock(mockedDataStore *storetest.StorerMock, expectedInstanceID stri
 	So(mockedDataStore.UnlockInstanceCalls()[0].LockID, ShouldEqual, testLockID)
 }
 
-func storeMockWithLock(expectFirstGetUnlocked bool) (*storetest.StorerMock, *bool) {
+func storeMockWithLock(expectFirstGetUnlocked bool) (storerTestMock *storetest.StorerMock, isLockedPointer *bool) {
 	isLocked := false
 	numGetCall := 0
-	return &storetest.StorerMock{
+	storerTestMock = &storetest.StorerMock{
 		AcquireInstanceLockFunc: func(_ context.Context, _ string) (string, error) {
 			isLocked = true
 			return testLockID, nil
@@ -121,7 +121,8 @@ func storeMockWithLock(expectFirstGetUnlocked bool) (*storetest.StorerMock, *boo
 				ETag:       testETag,
 			}, nil
 		},
-	}, &isLocked
+	}
+	return storerTestMock, &isLocked
 }
 
 // Deprecated

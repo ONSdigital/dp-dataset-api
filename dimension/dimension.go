@@ -34,8 +34,7 @@ const (
 )
 
 // GetDimensionsHandler returns a list of all dimensions and their options for an instance resource
-func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
-
+func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, limit, offset int) (dimensions interface{}, totalCount int, err error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
@@ -67,7 +66,7 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 	}
 
 	// Get dimensions corresponding to the instance in the right state
-	dimensions, totalCount, err := s.GetDimensionsFromInstance(ctx, instanceID, offset, limit)
+	dimensions, totalCount, err = s.GetDimensionsFromInstance(ctx, instanceID, offset, limit)
 	if err != nil {
 		log.Error(ctx, "failed to get dimension options for instance", err, logData)
 		handleDimensionErr(ctx, w, err, logData)
@@ -80,8 +79,7 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 }
 
 // GetUniqueDimensionAndOptionsHandler returns a list of dimension options for a dimension of an instance
-func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
-
+func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *http.Request, limit, offset int) (slicedOptions interface{}, totalCount int, err error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
@@ -123,7 +121,7 @@ func (s *Store) GetUniqueDimensionAndOptionsHandler(w http.ResponseWriter, r *ht
 	}
 
 	// create the paginated result by cutting the slice
-	slicedOptions := []*string{}
+	slicedOptions = []*string{}
 	if limit > 0 {
 		slicedOptions = utils.SliceStr(options, offset, limit)
 	}

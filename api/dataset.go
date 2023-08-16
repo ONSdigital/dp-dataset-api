@@ -45,7 +45,7 @@ var (
 const IsBasedOn = "is_based_on"
 
 // getDatasets returns a list of datasets, the total count of datasets and an error
-func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
+func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit, offset int) (mappedDatasets interface{}, totalCount int, err error) {
 	ctx := r.Context()
 	logData := log.Data{}
 	authorised := api.authenticate(r, logData)
@@ -61,8 +61,6 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 	}
 
 	var datasets []*models.DatasetUpdate
-	var totalCount int
-	var err error
 
 	if isBasedOnExists {
 		datasets, totalCount, err = api.dataStore.Backend.GetDatasetsByBasedOn(ctx, isBasedOn, offset, limit, authorised)

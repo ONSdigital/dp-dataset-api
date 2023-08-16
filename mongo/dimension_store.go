@@ -34,8 +34,7 @@ func (m *Mongo) GetDimensionsFromInstance(ctx context.Context, id string, offset
 }
 
 // GetUniqueDimensionAndOptions returns a list of dimension options for an instance resource
-func (m *Mongo) GetUniqueDimensionAndOptions(ctx context.Context, id, dimension string) ([]*string, int, error) {
-
+func (m *Mongo) GetUniqueDimensionAndOptions(ctx context.Context, id, dimension string) (uniqueValues []*string, countOfValues int, err error) {
 	vals, err := m.Connection.Collection(m.ActualCollectionName(config.DimensionOptionsCollection)).Distinct(ctx, "option", bson.M{"instance_id": id, "name": dimension})
 	if err != nil {
 		return nil, 0, err
