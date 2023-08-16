@@ -1,14 +1,11 @@
 package main_test
 
 import (
-	"context"
 	"testing"
 
 	nomis "github.com/ONSdigital/dp-dataset-api/NOMIS"
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-var ctx context.Context
 
 func TestCheckSubString(t *testing.T) {
 	cases := []struct {
