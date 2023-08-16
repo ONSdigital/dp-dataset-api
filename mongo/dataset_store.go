@@ -414,7 +414,6 @@ func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Da
 
 // UpdateDatasetWithAssociation updates an existing dataset document with collection data
 func (m *Mongo) UpdateDatasetWithAssociation(ctx context.Context, id, state string, version *models.Version) (err error) {
-
 	update := bson.M{
 		"$set": bson.M{
 			"next.state":                     state,
