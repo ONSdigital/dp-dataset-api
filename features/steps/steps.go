@@ -22,10 +22,9 @@ import (
 	assistdog "github.com/ONSdigital/dp-assistdog"
 )
 
-var WellKnownTestTime time.Time
-
-func init() {
-	WellKnownTestTime, _ = time.Parse("2006-01-02T15:04:05Z", "2021-01-01T00:00:00Z")
+func WellKnownTestTime() time.Time {
+	testTime, _ := time.Parse("2006-01-02T15:04:05Z", "2021-01-01T00:00:00Z")
+	return testTime
 }
 
 func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
@@ -437,7 +436,7 @@ func (c *DatasetComponent) putDocumentInDatabase(document interface{}, id, colle
 	update := bson.M{
 		"$set": document,
 		"$setOnInsert": bson.M{
-			"last_updated": WellKnownTestTime.Add(time.Second * time.Duration(timeOffset)),
+			"last_updated": WellKnownTestTime().Add(time.Second * time.Duration(timeOffset)),
 		},
 	}
 
