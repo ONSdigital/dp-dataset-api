@@ -54,7 +54,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 		return results, totalCount, nil
 	}
 
-	var publicResults []*models.Edition
+	publicResults := make([]*models.Edition, 0, len(results))
 	for i := range results {
 		publicResults = append(publicResults, results[i].Current)
 	}
