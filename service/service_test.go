@@ -96,7 +96,7 @@ func TestRun(t *testing.T) {
 			return &storeMock.MongoDBMock{}, nil
 		}
 
-		funcDoGetGraphDBOk := func(ctx context.Context) (store.GraphDB, service.Closer, error) {
+		funcDoGetGraphDBOk := func(_ context.Context) (store.GraphDB, service.Closer, error) {
 			var funcClose = func(ctx context.Context) error {
 				return nil
 			}
@@ -342,7 +342,7 @@ func TestClose(t *testing.T) {
 		// server Shutdown will fail if healthcheck is not stopped
 		serverMock := &serviceMock.HTTPServerMock{
 			ListenAndServeFunc: func() error { return nil },
-			ShutdownFunc: func(ctx context.Context) error {
+			ShutdownFunc: func(_ context.Context) error {
 				if !hcStopped {
 					return errors.New("Server was stopped before healthcheck")
 				}
@@ -351,7 +351,7 @@ func TestClose(t *testing.T) {
 			},
 		}
 
-		funcClose := func(ctx context.Context) error {
+		funcClose := func(_ context.Context) error {
 			if !hcStopped {
 				return errors.New("Dependency was closed before healthcheck")
 			}

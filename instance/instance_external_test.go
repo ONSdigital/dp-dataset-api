@@ -484,7 +484,7 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 			ETag:  testETag,
 		}, true)
 
-		mockedDataStore.UpdateInstanceFunc = func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+		mockedDataStore.UpdateInstanceFunc = func(_ context.Context, _ *models.Instance, _ *models.Instance, _ string) (string, error) {
 			So(*isLocked, ShouldBeTrue)
 			return testETag, nil
 		}

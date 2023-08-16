@@ -15,7 +15,7 @@ type Reader struct {
 }
 
 // Read a function used to mock errors
-func (f Reader) Read(bytes []byte) (int, error) {
+func (f Reader) Read(_ []byte) (int, error) {
 	return 0, fmt.Errorf("Reader failed")
 }
 

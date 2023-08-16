@@ -152,7 +152,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
 				return &models.Version{State: models.AssociatedState, ID: "v1"}, nil
 			},
-			GetDimensionOptionsFunc: func(ctx context.Context, version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error) {
+			GetDimensionOptionsFunc: func(context.Context, *models.Version, string, int, int) ([]*models.PublicDimensionOption, int, error) {
 				allItems := []*models.PublicDimensionOption{
 					{Option: "op1"},
 					{Option: "op2"},
@@ -161,7 +161,7 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 					{Option: "op5"}}
 				return allItems, 5, nil
 			},
-			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
+			GetDimensionOptionsFromIDsFunc: func(_ context.Context, _ *models.Version, _ string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 				ret := []*models.PublicDimensionOption{}
 				sort.Strings(ids)
 				for _, id := range ids {

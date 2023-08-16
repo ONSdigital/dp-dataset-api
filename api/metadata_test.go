@@ -33,14 +33,14 @@ func TestPutMetadata(t *testing.T) {
 
 		forceUpdateMetadataFail := false // Flag to make the UpdateMetadata function return an error
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, versionNumber int, state string) (*models.Version, error) {
+			GetVersionFunc: func(_ context.Context, _, _ string, versionNumber int, _ string) (*models.Version, error) {
 				if versionNumber == version.Version {
 					return version, nil
 				} else {
 					return nil, errs.ErrVersionNotFound
 				}
 			},
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(_ context.Context, datasetID string) (*models.DatasetUpdate, error) {
 				if datasetID == dataset.ID {
 					return dataset, nil
 				} else {

@@ -585,15 +585,15 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 					ETag:        testETag,
 				}, nil
 			},
-			UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
+			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				So(isLocked, ShouldBeTrue)
 				return "", nil
 			},
-			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 				isLocked = true
 				return testLockID, nil
 			},
-			UnlockInstanceFunc: func(ctx context.Context, lockID string) {
+			UnlockInstanceFunc: func(context.Context, string) {
 				isLocked = false
 			},
 		}
@@ -633,7 +633,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		})
 
 		Convey("Given a valid request is executed, but the firstUpdate call returns ErrDatasetNotFound", func() {
-			mockedDataStore.UpdateVersionFunc = func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
+			mockedDataStore.UpdateVersionFunc = func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				So(isLocked, ShouldBeTrue)
 				if len(mockedDataStore.UpdateVersionCalls()) == 1 {
 					return "", errs.ErrDatasetNotFound
@@ -703,18 +703,18 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 						Type: models.Filterable.String(),
 					}, nil
 				},
-				UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
+				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 					So(isLocked, ShouldBeTrue)
 					return "", nil
 				},
 				UpdateDatasetWithAssociationFunc: func(context.Context, string, string, *models.Version) error {
 					return nil
 				},
-				AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+				AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 					isLocked = true
 					return testLockID, nil
 				},
-				UnlockInstanceFunc: func(ctx context.Context, lockID string) {
+				UnlockInstanceFunc: func(context.Context, string) {
 					isLocked = false
 				},
 			}
@@ -768,9 +768,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 					return "", nil
 				},
-				UnlockInstanceFunc: func(context.Context, string) {
-					return
-				},
+				UnlockInstanceFunc: func(context.Context, string) {},
 			}
 
 			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
@@ -810,18 +808,18 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 						Type: models.CantabularTable.String(),
 					}, nil
 				},
-				UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
+				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 					So(isLocked, ShouldBeTrue)
 					return "", nil
 				},
 				UpdateDatasetWithAssociationFunc: func(context.Context, string, string, *models.Version) error {
 					return nil
 				},
-				AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+				AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 					isLocked = true
 					return testLockID, nil
 				},
-				UnlockInstanceFunc: func(ctx context.Context, lockID string) {
+				UnlockInstanceFunc: func(context.Context, string) {
 					isLocked = false
 				},
 			}
@@ -883,18 +881,18 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 					State: models.EditionConfirmedState,
 				}, nil
 			},
-			UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
+			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				So(isLocked, ShouldBeTrue)
 				return "", nil
 			},
 			UpdateDatasetWithAssociationFunc: func(context.Context, string, string, *models.Version) error {
 				return nil
 			},
-			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 				isLocked = true
 				return testLockID, nil
 			},
-			UnlockInstanceFunc: func(ctx context.Context, lockID string) {
+			UnlockInstanceFunc: func(context.Context, string) {
 				isLocked = false
 			},
 		}
@@ -994,7 +992,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 						Type:  models.Filterable.String(),
 					}, nil
 				},
-				UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
+				UpdateVersionFunc: func(_ context.Context, _ *models.Version, _ *models.Version, _ string) (string, error) {
 					So(isLocked, ShouldBeTrue)
 					return "", nil
 				},
@@ -1029,14 +1027,14 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				UpsertEditionFunc: func(context.Context, string, string, *models.EditionUpdate) error {
 					return nil
 				},
-				SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
+				SetInstanceIsPublishedFunc: func(context.Context, string) error {
 					return nil
 				},
-				AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+				AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 					isLocked = true
 					return testLockID, nil
 				},
-				UnlockInstanceFunc: func(ctx context.Context, lockID string) {
+				UnlockInstanceFunc: func(context.Context, string) {
 					isLocked = false
 				},
 			}
@@ -1113,7 +1111,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 						Type:  models.CantabularTable.String(),
 					}, nil
 				},
-				UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
+				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 					So(isLocked, ShouldBeTrue)
 					return "", nil
 				},
@@ -1151,11 +1149,11 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
 					return nil
 				},
-				AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+				AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 					isLocked = true
 					return testLockID, nil
 				},
-				UnlockInstanceFunc: func(ctx context.Context, lockID string) {
+				UnlockInstanceFunc: func(context.Context, string) {
 					isLocked = false
 				},
 			}
@@ -1273,7 +1271,7 @@ func updateVersionDownloadTest(r *http.Request) {
 				State: models.PublishedState,
 			}, nil
 		},
-		UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
+		UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 			So(isLocked, ShouldBeTrue)
 			return "", nil
 		},
@@ -1286,11 +1284,11 @@ func updateVersionDownloadTest(r *http.Request) {
 				Current: &models.Edition{},
 			}, nil
 		},
-		AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+		AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 			isLocked = true
 			return testLockID, nil
 		},
-		UnlockInstanceFunc: func(ctx context.Context, lockID string) {
+		UnlockInstanceFunc: func(context.Context, string) {
 			isLocked = false
 		},
 	}
@@ -1339,18 +1337,18 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 			CheckEditionExistsFunc: func(ctx context.Context, ID string, editionID string, state string) error {
 				return nil
 			},
-			UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
+			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				So(isLocked, ShouldBeTrue)
 				return "", nil
 			},
 			UpdateDatasetWithAssociationFunc: func(ctx context.Context, ID string, state string, version *models.Version) error {
 				return nil
 			},
-			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 				isLocked = true
 				return testLockID, nil
 			},
-			UnlockInstanceFunc: func(ctx context.Context, lockID string) {
+			UnlockInstanceFunc: func(context.Context, string) {
 				isLocked = false
 			},
 		}
@@ -1443,15 +1441,15 @@ func TestPutEmptyVersion(t *testing.T) {
 			CheckEditionExistsFunc: func(ctx context.Context, ID string, editionID string, state string) error {
 				return nil
 			},
-			UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
+			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				So(isLocked, ShouldBeTrue)
 				return "", nil
 			},
-			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 				isLocked = true
 				return testLockID, nil
 			},
-			UnlockInstanceFunc: func(ctx context.Context, lockID string) {
+			UnlockInstanceFunc: func(context.Context, string) {
 				isLocked = false
 			},
 		}
@@ -1488,7 +1486,7 @@ func TestPutEmptyVersion(t *testing.T) {
 		v := getVersionAssociatedModel(models.CantabularBlob)
 		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				v.Downloads = xlsDownload
 				return &v, nil
 			},
@@ -1498,15 +1496,15 @@ func TestPutEmptyVersion(t *testing.T) {
 			CheckEditionExistsFunc: func(ctx context.Context, ID string, editionID string, state string) error {
 				return nil
 			},
-			UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
+			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				So(isLocked, ShouldBeTrue)
 				return "", nil
 			},
-			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 				isLocked = true
 				return testLockID, nil
 			},
-			UnlockInstanceFunc: func(ctx context.Context, lockID string) {
+			UnlockInstanceFunc: func(context.Context, string) {
 				isLocked = false
 			},
 		}
@@ -1995,15 +1993,15 @@ func TestPutVersionReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
+			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				So(isLocked, ShouldBeTrue)
 				return "", nil
 			},
-			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 				isLocked = true
 				return testLockID, nil
 			},
-			UnlockInstanceFunc: func(ctx context.Context, lockID string) {
+			UnlockInstanceFunc: func(context.Context, string) {
 				isLocked = false
 			},
 		}
@@ -2086,7 +2084,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 					State: models.EditionConfirmedState,
 				}, nil
 			},
-			UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
+			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				So(isLocked, ShouldBeTrue)
 				return "", nil
 			},
@@ -2125,11 +2123,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
 				return errors.New("failed to set is_published on the instance node")
 			},
-			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 				isLocked = true
 				return testLockID, nil
 			},
-			UnlockInstanceFunc: func(ctx context.Context, lockID string) {
+			UnlockInstanceFunc: func(context.Context, string) {
 				isLocked = false
 			},
 		}

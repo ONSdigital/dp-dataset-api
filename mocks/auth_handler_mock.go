@@ -24,7 +24,7 @@ func NewAuthHandlerMock() *AuthHandlerMock {
 	}
 }
 
-func (a AuthHandlerMock) Require(required auth.Permissions, handler http.HandlerFunc) http.HandlerFunc {
+func (a AuthHandlerMock) Require(_ auth.Permissions, handler http.HandlerFunc) http.HandlerFunc {
 	return a.Required.checkPermissions(handler)
 }
 

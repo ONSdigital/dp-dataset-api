@@ -105,11 +105,11 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ctx context.Context, ID, state string) error {
+			CheckDatasetExistsFunc: func(_ context.Context, _, state string) error {
 				datasetSearchState = state
 				return nil
 			},
-			GetEditionsFunc: func(ctx context.Context, ID, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(_ context.Context, _, state string, _, _ int, _ bool) ([]*models.EditionUpdate, int, error) {
 				editionSearchState = state
 				return []*models.EditionUpdate{&edition}, 0, nil
 			},
@@ -134,11 +134,11 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ctx context.Context, ID, state string) error {
+			CheckDatasetExistsFunc: func(_ context.Context, _, state string) error {
 				datasetSearchState = state
 				return nil
 			},
-			GetEditionFunc: func(ctx context.Context, ID, editionID, state string) (*models.EditionUpdate, error) {
+			GetEditionFunc: func(_ context.Context, _, _, state string) (*models.EditionUpdate, error) {
 				editionSearchState = state
 				return edition, nil
 			},
@@ -161,15 +161,15 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 		var versionSearchState, editionSearchState, datasetSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ctx context.Context, ID, state string) error {
+			CheckDatasetExistsFunc: func(_ context.Context, _, state string) error {
 				datasetSearchState = state
 				return nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, ID, editionID, state string) error {
+			CheckEditionExistsFunc: func(_ context.Context, _, _, state string) error {
 				editionSearchState = state
 				return nil
 			},
-			GetVersionsFunc: func(ctx context.Context, id string, editionID string, state string, offset, limit int) ([]models.Version, int, error) {
+			GetVersionsFunc: func(_ context.Context, _ string, _ string, state string, _, _ int) ([]models.Version, int, error) {
 				versionSearchState = state
 				return []models.Version{{ID: "124", State: models.PublishedState}}, 1, nil
 			},
@@ -193,15 +193,15 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 		var versionSearchState, editionSearchState, datasetSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ctx context.Context, ID, state string) error {
+			CheckDatasetExistsFunc: func(_ context.Context, _, state string) error {
 				datasetSearchState = state
 				return nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, ID, editionID, state string) error {
+			CheckEditionExistsFunc: func(_ context.Context, _, _, state string) error {
 				editionSearchState = state
 				return nil
 			},
-			GetVersionFunc: func(ctx context.Context, id string, editionID string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(_ context.Context, _ string, _ string, _ int, state string) (*models.Version, error) {
 				versionSearchState = state
 				return &models.Version{ID: "124", State: models.PublishedState,
 					Links: &models.VersionLinks{
@@ -228,7 +228,7 @@ func TestWebSubnetDimensionsEndpoint(t *testing.T) {
 		var versionSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(ctx context.Context, id string, editionID string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(_ context.Context, _ string, _ string, _ int, state string) (*models.Version, error) {
 				versionSearchState = state
 				return &models.Version{ID: "124", State: models.PublishedState,
 					Links: &models.VersionLinks{
@@ -256,7 +256,7 @@ func TestWebSubnetDimensionOptionsEndpoint(t *testing.T) {
 		var versionSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(ctx context.Context, id string, editionID string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(_ context.Context, _ string, _ string, _ int, state string) (*models.Version, error) {
 				versionSearchState = state
 				return &models.Version{ID: "124", State: models.PublishedState,
 					Links: &models.VersionLinks{
