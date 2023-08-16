@@ -69,8 +69,8 @@ func CreateObservationsDoc(rawQuery string, versionDoc *Version, datasetDoc *Dat
 
 	// add the dimension codes
 	for paramKey, paramValue := range queryParameters {
-		for _, dimension := range versionDoc.Dimensions {
-			var linkObjects []*LinkObject
+		for i := range versionDoc.Dimensions {
+			dimension := &versionDoc.Dimensions[i]
 			if dimension.Name == paramKey && paramValue != wildcard {
 				linkObject := &LinkObject{
 					HRef: dimension.HRef + "/codes/" + paramValue,
