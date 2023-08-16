@@ -14,8 +14,14 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func Test_ConfirmEditionReturnsOK(t *testing.T) {
+var (
+	testDatasetID   = "1234"
+	testEditionName = "test-edition"
+	testHost        = "example.com"
+	testInstanceID  = "new-instance-1234"
+)
 
+func Test_ConfirmEditionReturnsOK(t *testing.T) {
 	Convey("given no edition exists", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(ctx context.Context, dataset, edition, state string) (*models.EditionUpdate, error) {
@@ -26,18 +32,13 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 			},
 		}
 
-		host := "example.com"
 		s := Store{
 			Storer: mockedDataStore,
-			Host:   host,
+			Host:   testHost,
 		}
 
 		Convey("when confirmEdition is called", func() {
-			datasetID := "1234"
-			editionName := "not-exist"
-			instanceID := "new-instance-1234"
-
-			edition, err := s.confirmEdition(ctx, datasetID, editionName, instanceID)
+			edition, err := s.confirmEdition(ctx, testDatasetID, testEditionName, testInstanceID)
 
 			Convey("then an edition is created and the version ID is 1", func() {
 				So(edition, ShouldNotBeNil)
@@ -48,26 +49,25 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 				So(edition.Next, ShouldNotBeNil)
 
 				So(edition.Next, ShouldResemble, &models.Edition{
-					Edition: editionName,
+					Edition: testEditionName,
 					State:   models.EditionConfirmedState,
 					Links: &models.EditionUpdateLinks{
 						Dataset: &models.LinkObject{
-							ID:   datasetID,
-							HRef: fmt.Sprintf("%s/datasets/%s", s.Host, datasetID),
+							ID:   testDatasetID,
+							HRef: fmt.Sprintf("%s/datasets/%s", s.Host, testDatasetID),
 						},
 						Self: &models.LinkObject{
-							HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", s.Host, datasetID, editionName),
+							HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", s.Host, testDatasetID, testEditionName),
 						},
 						Versions: &models.LinkObject{
-							HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, datasetID, editionName),
+							HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions", s.Host, testDatasetID, testEditionName),
 						},
 						LatestVersion: &models.LinkObject{
 							ID:   "1",
-							HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/1", s.Host, datasetID, editionName),
+							HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/1", s.Host, testDatasetID, testEditionName),
 						},
 					},
 				})
-
 			})
 		})
 	})
@@ -94,19 +94,16 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 				},
 			}
 
-			host := "example.com"
 			s := Store{
 				EnableDetachDataset: true,
 				Storer:              mockedDataStore,
-				Host:                host,
+				Host:                testHost,
 			}
 
 			Convey("when confirmEdition is called again", func() {
-				datasetID := "1234"
 				editionName := "unpublished-only"
-				instanceID := "new-instance-1234"
 
-				_, err := s.confirmEdition(context.Background(), datasetID, editionName, instanceID)
+				_, err := s.confirmEdition(context.Background(), testDatasetID, editionName, testInstanceID)
 
 				Convey("then an internal server error is returned.", func() {
 					So(err, ShouldEqual, errs.ErrVersionAlreadyExists)
@@ -161,17 +158,12 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 			},
 		}
 
-		host := "example.com"
 		s := Store{
 			Storer: mockedDataStore,
-			Host:   host,
+			Host:   testHost,
 		}
 		Convey("when confirmEdition is called", func() {
-			datasetID := "1234"
-			editionName := "published-data"
-			instanceID := "new-instance-1234"
-
-			edition, err := s.confirmEdition(ctx, datasetID, editionName, instanceID)
+			edition, err := s.confirmEdition(ctx, testDatasetID, testEditionName, testInstanceID)
 
 			Convey("then the edition is updated and the latest version ID is 11", func() {
 				So(err, ShouldBeNil)
@@ -199,17 +191,12 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		host := "example.com"
 		s := Store{
 			Storer: mockedDataStore,
-			Host:   host,
+			Host:   testHost,
 		}
 		Convey("when confirmEdition is called", func() {
-			datasetID := "1234"
-			editionName := "failure"
-			instanceID := "new-instance-1234"
-
-			_, err := s.confirmEdition(ctx, datasetID, editionName, instanceID)
+			_, err := s.confirmEdition(ctx, testDatasetID, testEditionName, testInstanceID)
 
 			Convey("then an error is returned", func() {
 				So(err, ShouldNotBeNil)
@@ -239,18 +226,13 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		host := "example.com"
 		s := Store{
 			Storer: mockedDataStore,
-			Host:   host,
+			Host:   testHost,
 		}
 
 		Convey("when confirmEdition is called", func() {
-			datasetID := "1234"
-			editionName := "failure"
-			instanceID := "new-instance-1234"
-
-			_, err := s.confirmEdition(ctx, datasetID, editionName, instanceID)
+			_, err := s.confirmEdition(ctx, testDatasetID, testEditionName, testInstanceID)
 
 			Convey("then updating links fails and an error is returned", func() {
 				So(err, ShouldNotBeNil)
@@ -274,19 +256,14 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		host := "example.com"
 		s := Store{
 			Storer:              mockedDataStore,
-			Host:                host,
+			Host:                testHost,
 			EnableDetachDataset: true,
 		}
 
 		Convey("when confirmEdition is called", func() {
-			datasetID := "1234"
-			editionName := "failure"
-			instanceID := "new-instance-1234"
-
-			_, err := s.confirmEdition(ctx, datasetID, editionName, instanceID)
+			_, err := s.confirmEdition(ctx, testDatasetID, testEditionName, testInstanceID)
 
 			Convey("then updating links fails and an error is returned", func() {
 				So(err, ShouldNotBeNil)
@@ -310,19 +287,14 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		host := "example.com"
 		s := Store{
 			Storer:              mockedDataStore,
-			Host:                host,
+			Host:                testHost,
 			EnableDetachDataset: true,
 		}
 
 		Convey("when confirmEdition is called", func() {
-			datasetID := "1234"
-			editionName := "failure"
-			instanceID := "new-instance-1234"
-
-			_, err := s.confirmEdition(ctx, datasetID, editionName, instanceID)
+			_, err := s.confirmEdition(ctx, testDatasetID, testEditionName, testInstanceID)
 
 			Convey("then updating links fails and an error is returned", func() {
 				So(err, ShouldNotBeNil)
@@ -377,18 +349,13 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		host := "example.com"
 		s := Store{
 			Storer: mockedDataStore,
-			Host:   host,
+			Host:   testHost,
 		}
 
 		Convey("when confirmEdition is called and updating the datastore for the edition fails", func() {
-			datasetID := "1234"
-			editionName := "failure"
-			instanceID := "new-instance-1234"
-
-			_, err := s.confirmEdition(ctx, datasetID, editionName, instanceID)
+			_, err := s.confirmEdition(ctx, testDatasetID, testEditionName, testInstanceID)
 
 			Convey("then an error is returned", func() {
 				So(err, ShouldNotBeNil)
