@@ -178,7 +178,7 @@ func (c *DatasetComponent) theseGenerateDownloadsEventsAreProduced(events *godog
 		}
 	}
 	if diff := cmp.Diff(got, expected); diff != "" {
-		return fmt.Errorf("-got +expected)\n%s\n", diff)
+		return fmt.Errorf("-got +expected)\n%s", diff)
 	}
 
 	return nil
@@ -239,7 +239,7 @@ func (c *DatasetComponent) theseCantabularGeneratorDownloadsEventsAreProduced(ev
 		}
 	}
 	if diff := cmp.Diff(got, expected); diff != "" {
-		return fmt.Errorf("-got +expected)\n%s\n", diff)
+		return fmt.Errorf("-got +expected)\n%s", diff)
 	}
 
 	return nil
