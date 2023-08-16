@@ -17,7 +17,7 @@ func (s *Store) confirmEdition(ctx context.Context, datasetID, edition, instance
 	if editionDoc, action, err = func() (*models.EditionUpdate, string, error) {
 		log.Info(ctx, "confirm edition: getting edition", logData)
 
-		editionDoc, err := s.GetEdition(ctx, datasetID, edition, "")
+		editionDoc, err = s.GetEdition(ctx, datasetID, edition, "")
 		if err != nil {
 			if err != errs.ErrEditionNotFound {
 				log.Error(ctx, "confirm edition: failed to confirm edition", err, logData)
