@@ -97,7 +97,7 @@ func (api *DatasetAPI) createListOfDimensions(versionDoc *models.Version, dimens
 		dimensionLabels[details.Name] = details.Label
 	}
 
-	var results []models.Dimension
+	results := make([]models.Dimension, 0, len(dimensions))
 	for _, dim := range dimensions {
 		opt, err := convertBSONToDimensionOption(dim["doc"])
 		if err != nil {
