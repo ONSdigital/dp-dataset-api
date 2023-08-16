@@ -76,7 +76,7 @@ const (
 // Regular expressions
 var (
 	httpRegex  = regexp.MustCompile(`(http[^\[]*)(\[[^\[]*\])`)
-	titleRegex = regexp.MustCompile(`^[\d|\D].*?\-\s*([\d|\D].*)$`)
+	titleRegex = regexp.MustCompile(`^[\d\D].*?\-\s*([\d\D].*)$`)
 )
 
 // CensusContactDetails returns the default values for contact details
@@ -89,41 +89,47 @@ func CensusContactDetails() models.ContactDetails {
 }
 
 func main() {
+	os.Exit(uploadNomisData())
+}
 
+//nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
+func uploadNomisData() int {
 	var mongoURL string
 	flag.StringVar(&mongoURL, "mongo-url", "localhost:27017", "mongoDB URL")
 	flag.Parse()
 
 	ctx := context.Background()
-	downloadFile(ctx)
+	err := downloadFile(ctx)
+	if err != nil {
+		log.Error(ctx, "error downloading file", err)
+		return 1
+	}
 
 	conn, err := mongodriver.Open(&mongodriver.MongoDriverConfig{ClusterEndpoint: mongoURL, Database: "datasets", ConnectTimeout: 5 * time.Second})
 	if err != nil {
-		log.Fatal(ctx, "failed to initialise mongo", err)
-		os.Exit(1)
+		log.Error(ctx, "failed to initialise mongo", err)
+		return 1
 	}
 	defer func(conn *mongodriver.MongoConnection) { _ = conn.Close(ctx) }(conn)
 
 	fileLocation := "./NOMIS/def.sdmx.json"
 	f, err := os.Open(fileLocation)
 	if err != nil {
-		log.Fatal(ctx, "failed to open file", err)
-		os.Exit(1)
+		log.Error(ctx, "failed to open file", err)
+		return 1
 	}
 
 	b, err := io.ReadAll(f)
 	if err != nil {
 		log.Error(ctx, "failed to read json file as a byte array", err)
-		os.Exit(1)
+		return 1
 	}
 
-	// var censusData CenStructure
 	res := CenStructure{}
 	if err := json.Unmarshal(b, &res); err != nil {
 		logData := log.Data{"json file": res}
 		log.Error(ctx, "failed to unmarshal json", err, logData)
-		fmt.Println("error")
-		return
+		return 1
 	}
 
 	for keyIndex := range res.Structure.Keyfamilies.Keyfamily {
@@ -131,33 +137,33 @@ func main() {
 		censusEditionData := models.EditionUpdate{}
 		censusInstances := models.Version{}
 		mapData := models.Dataset{}
-		var cenId string
-		for censusId := range annotations {
-			annoIndex := res.Structure.Keyfamilies.Keyfamily[keyIndex].Annotations.Annotation[censusId]
+		var cenID string
+		for censusID := range annotations {
+			annoIndex := res.Structure.Keyfamilies.Keyfamily[keyIndex].Annotations.Annotation[censusID]
 			if annoIndex.Title == "Mnemonic" {
 				ref := annoIndex.Text.(string)
-				extractId := strings.Split(ref, census2011)
-				if len(extractId) < 2 {
+				extractID := strings.Split(ref, census2011)
+				if len(extractID) < 2 {
 					log.Error(ctx, "error mnemonic length invalid", errors.New("error mnemonic length invalid"))
-					os.Exit(1)
+					return 1
 				}
-				cenId = extractId[1]
+				cenID = extractID[1]
 			}
 		}
 		title := res.Structure.Keyfamilies.Keyfamily[keyIndex].Name.Value
 
 		mapData.Title = CheckTitle(title)
-		datasetUrl := "http://127.0.0.1:12345/datasets/"
-		instanceUrl := "http://127.0.0.1:12345/instances/"
-		editionUrl := "/editions"
-		versionUrl := "/versions"
+		datasetURL := "http://127.0.0.1:12345/datasets/"
+		instanceURL := "http://127.0.0.1:12345/instances/"
+		editionURL := "/editions"
+		versionURL := "/versions"
 
-		createEditionLink := fmt.Sprintf("%s%s%s", datasetUrl, cenId, editionUrl)
-		createLatestVersion := fmt.Sprintf("%s%s%s%s%s%s", datasetUrl, cenId, editionUrl, "/"+censusYear, versionUrl, "/"+censusVersion)
+		createEditionLink := fmt.Sprintf("%s%s%s", datasetURL, cenID, editionURL)
+		createLatestVersion := fmt.Sprintf("%s%s%s%s%s%s", datasetURL, cenID, editionURL, "/"+censusYear, versionURL, "/"+censusVersion)
 		mapData.Links = &models.DatasetLinks{
 			Editions:      &models.LinkObject{HRef: createEditionLink},
 			LatestVersion: &models.LinkObject{HRef: createLatestVersion},
-			Self:          &models.LinkObject{HRef: fmt.Sprintf("%s%s", datasetUrl, cenId)},
+			Self:          &models.LinkObject{HRef: fmt.Sprintf("%s%s", datasetURL, cenID)},
 		}
 		mapData.Contacts = []models.ContactDetails{
 			CensusContactDetails(),
@@ -174,10 +180,10 @@ func main() {
 		generalModel := &models.Edition{
 			Edition: censusYear,
 			Links: &models.EditionUpdateLinks{
-				Dataset:       &models.LinkObject{HRef: fmt.Sprintf("%s%s", datasetUrl, cenId), ID: cenId},
-				LatestVersion: &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s%s%s", datasetUrl, cenId, editionUrl, "/"+censusYear, versionUrl, "/", censusVersion), ID: censusVersion},
-				Self:          &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s", datasetUrl, cenId, "/editions/", censusYear)},
-				Versions:      &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s", datasetUrl, cenId, editionUrl, "/"+censusYear, versionUrl)},
+				Dataset:       &models.LinkObject{HRef: fmt.Sprintf("%s%s", datasetURL, cenID), ID: cenID},
+				LatestVersion: &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s%s%s", datasetURL, cenID, editionURL, "/"+censusYear, versionURL, "/", censusVersion), ID: censusVersion},
+				Self:          &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s", datasetURL, cenID, "/editions/", censusYear)},
+				Versions:      &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s", datasetURL, cenID, editionURL, "/"+censusYear, versionURL)},
 			},
 			State: "published",
 		}
@@ -186,31 +192,29 @@ func main() {
 		if err != nil {
 			logData := log.Data{"json file": res}
 			log.Error(ctx, "failed to create UUID for censusEditionData.ID", err, logData)
-			fmt.Println("error")
-			return
+			return 1
 		}
 		censusEditionData.ID = id.String()
 		censusEditionData.Next = generalModel
 		censusEditionData.Current = generalModel
 
-		//Model to generate instances documents in mongodb
-		genId, err := uuid.NewV4()
+		// Model to generate instances documents in mongodb
+		genID, err := uuid.NewV4()
 		if err != nil {
 			logData := log.Data{"json file": res}
-			log.Error(ctx, "failed to create UUID for generateId", err, logData)
-			fmt.Println("error")
-			return
+			log.Error(ctx, "failed to create UUID for generateID", err, logData)
+			return 1
 		}
-		generateId := genId.String()
+		generateID := genID.String()
 		censusInstances = models.Version{
 			Edition:     censusYear,
-			ID:          generateId,
+			ID:          generateID,
 			LastUpdated: mapData.LastUpdated,
 			Links: &models.VersionLinks{
-				Dataset: &models.LinkObject{HRef: fmt.Sprintf("%s%s", datasetUrl, cenId), ID: cenId},
-				Edition: &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s", datasetUrl, cenId, editionUrl, "/", censusYear), ID: censusYear},
-				Self:    &models.LinkObject{HRef: fmt.Sprintf("%s%s", instanceUrl, generateId)},
-				Version: &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s%s", datasetUrl, cenId, "/editions/", censusYear, versionUrl, "/"+censusVersion), ID: censusVersion},
+				Dataset: &models.LinkObject{HRef: fmt.Sprintf("%s%s", datasetURL, cenID), ID: cenID},
+				Edition: &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s", datasetURL, cenID, editionURL, "/", censusYear), ID: censusYear},
+				Self:    &models.LinkObject{HRef: fmt.Sprintf("%s%s", instanceURL, generateID)},
+				Version: &models.LinkObject{HRef: fmt.Sprintf("%s%s%s%s%s%s", datasetURL, cenID, "/editions/", censusYear, versionURL, "/"+censusVersion), ID: censusVersion},
 			},
 			State:      "published",
 			Version:    1,
@@ -248,21 +252,21 @@ func main() {
 				t, parseErr := time.Parse("2006-01-02 15:04:05", tt)
 				if parseErr != nil {
 					log.Error(ctx, "error parsing date", err)
-					os.Exit(1)
+					return 1
 				}
 				mapData.LastUpdated = t
 				generalModel.LastUpdated = mapData.LastUpdated
 			case "Units":
 				mapData.UnitOfMeasure = annotation.Text.(string)
 			case "Mnemonic":
-				mapData.NomisReferenceURL = "https://www.nomisweb.co.uk/census/2011/" + cenId
-				mapData.ID = cenId
+				mapData.NomisReferenceURL = "https://www.nomisweb.co.uk/census/2011/" + cenID
+				mapData.ID = cenID
 			case "FirstReleased":
 				releaseDt := annotation.Text.(string)
 				rd, err := time.Parse("2006-01-02 15:04:05", releaseDt)
 				if err != nil {
 					log.Error(ctx, "failed to parse date correctly", err)
-					os.Exit(1)
+					return 1
 				}
 				censusInstances.ReleaseDate = rd.Format("2006-01-02T15:04:05.000Z")
 			}
@@ -289,25 +293,39 @@ func main() {
 			Next:    &mapData,
 		}
 
-		createDatasetsDocument(ctx, cenId, datasetDoc, conn)
-		createEditionsDocument(ctx, cenId, censusEditionData, conn)
-		createInstancesDocument(ctx, cenId, censusInstances, conn)
+		err = createDatasetsDocument(ctx, cenID, datasetDoc, conn)
+		if err != nil {
+			log.Error(ctx, "error creating datasets document", err)
+			return 1
+		}
+		err = createEditionsDocument(ctx, cenID, censusEditionData, conn)
+		if err != nil {
+			log.Error(ctx, "error creating editions document", err)
+			return 1
+		}
+		err = createInstancesDocument(ctx, cenID, censusInstances, conn)
+		if err != nil {
+			log.Error(ctx, "error creating instances document", err)
+			return 1
+		}
 	}
 	fmt.Println("\ndatasets, instances and editions have been added to datasets db")
+	return 0
 }
 
 // Inserts a document in the datasets collection
-func createDatasetsDocument(ctx context.Context, id string, class interface{}, conn *mongodriver.MongoConnection) {
+func createDatasetsDocument(ctx context.Context, id string, class interface{}, conn *mongodriver.MongoConnection) error {
 	var err error
 	logData := log.Data{"data": class}
 	if _, err = conn.Collection("datasets").UpsertById(ctx, id, bson.M{"$set": class}); err != nil {
 		log.Error(ctx, "failed to upsert data in dataset collection", err, logData)
-		os.Exit(1)
+		return err
 	}
+	return nil
 }
 
 // Inserts a document in the editions collection
-func createEditionsDocument(ctx context.Context, id string, class interface{}, conn *mongodriver.MongoConnection) {
+func createEditionsDocument(ctx context.Context, id string, class interface{}, conn *mongodriver.MongoConnection) error {
 	var err error
 	logData := log.Data{"data": class}
 	selector := bson.M{
@@ -315,12 +333,13 @@ func createEditionsDocument(ctx context.Context, id string, class interface{}, c
 	}
 	if err = upsertData(ctx, selector, class, conn, "editions", logData); err != nil {
 		log.Error(ctx, " failed to insert data in collection", err, logData)
-		os.Exit(1)
+		return err
 	}
+	return nil
 }
 
 // Inserts a document in the instances collection
-func createInstancesDocument(ctx context.Context, id string, class interface{}, conn *mongodriver.MongoConnection) {
+func createInstancesDocument(ctx context.Context, id string, class interface{}, conn *mongodriver.MongoConnection) error {
 	var err error
 	logData := log.Data{"data": class}
 	selector := bson.M{
@@ -328,8 +347,9 @@ func createInstancesDocument(ctx context.Context, id string, class interface{}, 
 	}
 	if err = upsertData(ctx, selector, class, conn, "instances", logData); err != nil {
 		log.Error(ctx, " failed to insert data in collection", err, logData)
-		os.Exit(1)
+		return err
 	}
+	return nil
 }
 
 // Updates document in the specific collection
@@ -344,14 +364,14 @@ func upsertData(ctx context.Context, selector, class interface{}, conn *mongodri
 }
 
 // Download a file from nomis website for census 2011 data
-func downloadFile(ctx context.Context) {
+func downloadFile(ctx context.Context) error {
 	fullURLFile = "https://www.nomisweb.co.uk/api/v01/dataset/def.sdmx.json?search=*c2011*"
 
 	// Build fileName from fullPath
 	fileURL, err := url.Parse(fullURLFile)
 	if err != nil {
 		log.Error(ctx, "error parsing the file", err)
-		os.Exit(1)
+		return err
 	}
 	path := fileURL.Path
 	segments := strings.Split(path, "/")
@@ -362,10 +382,10 @@ func downloadFile(ctx context.Context) {
 	file, err := os.Create(newFileName)
 	if err != nil {
 		log.Error(ctx, "error creating the file", err)
-		os.Exit(1)
+		return err
 	}
 	client := http.Client{
-		CheckRedirect: func(r *http.Request, via []*http.Request) error {
+		CheckRedirect: func(r *http.Request, _ []*http.Request) error {
 			r.URL.Opaque = r.URL.Path
 			return nil
 		},
@@ -376,16 +396,17 @@ func downloadFile(ctx context.Context) {
 
 	if err != nil {
 		log.Error(ctx, "error writing the file", err)
-		os.Exit(1)
+		return err
 	}
 	defer closeBody(ctx, resp.Body)
 	size, err := io.Copy(file, resp.Body)
 	if err != nil {
 		log.Error(ctx, "error copying a file", err)
-		os.Exit(1)
+		return err
 	}
 	defer closeFile(ctx, file)
 	fmt.Printf("Downloaded a file %s with size %d", fileName, size)
+	return nil
 }
 
 func closeBody(ctx context.Context, b io.ReadCloser) {
@@ -411,14 +432,14 @@ func CheckTitle(sourceStr string) string {
 	return titleRegex.ReplaceAllString(sourceStr, `$1`)
 }
 
-func ReplaceStatDis(note string, title string) (string, string) {
+func ReplaceStatDis(note, title string) (modifiedNote, modifiedTitle string) {
 	if title == "Statistical Disclosure Control" {
 		note = censusPersonalData
 		title = "Protecting personal data"
 	}
 	return note, title
 }
-func appendUsageNote(cenInst *[]models.UsageNote, note string, title string) *[]models.UsageNote {
+func appendUsageNote(cenInst *[]models.UsageNote, note, title string) *[]models.UsageNote {
 	*cenInst = append(*cenInst, models.UsageNote{
 		Note:  note,
 		Title: title,
