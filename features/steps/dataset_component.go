@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	componenttest "github.com/ONSdigital/dp-component-test"
 	"github.com/ONSdigital/dp-component-test/utils"
@@ -33,9 +34,11 @@ type DatasetComponent struct {
 	initialiser    service.Initialiser
 }
 
-func NewDatasetComponent(mongoURI string, zebedeeURL string) (*DatasetComponent, error) {
+func NewDatasetComponent(mongoURI, zebedeeURL string) (*DatasetComponent, error) {
 	c := &DatasetComponent{
-		HTTPServer:     &http.Server{},
+		HTTPServer: &http.Server{
+			ReadHeaderTimeout: 60 * time.Second,
+		},
 		errorChan:      make(chan error),
 		ServiceRunning: false,
 	}
