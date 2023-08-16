@@ -22,6 +22,7 @@ import (
 )
 
 const (
+	//nolint:gosec // This is not a hardcoded credential.
 	downloadServiceToken = "X-Download-Service-Token"
 	updateVersionAction  = "updateVersion"
 	hasDownloads         = "has_downloads"
