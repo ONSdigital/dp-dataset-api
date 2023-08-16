@@ -319,9 +319,7 @@ func TestRun(t *testing.T) {
 }
 
 func TestClose(t *testing.T) {
-
-	Convey("Having a correctly initialised service", t, func(c C) {
-
+	Convey("Having a correctly initialised service", t, func() {
 		cfg, err := config.Get()
 		So(err, ShouldBeNil)
 
