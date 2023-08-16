@@ -3,13 +3,13 @@ package mongo
 import (
 	"context"
 	"errors"
-	"github.com/ONSdigital/dp-dataset-api/config"
 	"time"
+
+	"github.com/ONSdigital/dp-dataset-api/config"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 
-	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
 
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
@@ -21,17 +21,11 @@ import (
 // If the instance is already locked, this function will block until it's released,
 // at which point we acquire the lock and return.
 func (m *Mongo) AcquireInstanceLock(ctx context.Context, instanceID string) (lockID string, err error) {
-
-	caller := dprequest.User(ctx)
-	if caller == "" {
-		caller = dprequest.Caller(ctx)
-	}
 	return m.lockClient.Acquire(ctx, instanceID)
 }
 
 // UnlockInstance releases an exclusive mongoDB lock for the provided lockId (if it exists)
 func (m *Mongo) UnlockInstance(ctx context.Context, lockID string) {
-
 	m.lockClient.Unlock(ctx, lockID)
 }
 
