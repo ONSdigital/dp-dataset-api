@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	//nolint:gosec // not used for secure purposes.
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
@@ -216,6 +217,7 @@ type Version struct {
 // An optional byte array can be provided to append to the hash.
 // This can be used, for example, to calculate a hash of this version and an update applied to it.
 func (v *Version) Hash(extraBytes []byte) (string, error) {
+	//nolint:gosec // sha1 not used for secure purposes
 	h := sha1.New()
 
 	// copy by value to ignore ETag without affecting v

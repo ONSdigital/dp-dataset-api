@@ -1,6 +1,7 @@
 package models
 
 import (
+	//nolint:gosec //not used for secure purposes
 	"crypto/sha1"
 	"fmt"
 	"time"
@@ -42,6 +43,7 @@ type Instance struct {
 // An optional byte array can be provided to append to the hash.
 // This can be used, for example, to calculate a hash of this instance and an update applied to it.
 func (i *Instance) Hash(extraBytes []byte) (string, error) {
+	//nolint:gosec // not being used for secure purposes
 	h := sha1.New()
 
 	// copy by value to ignore ETag without affecting i
