@@ -610,7 +610,10 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion, ver
 //nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*models.Version, error) {
 	var version models.Version
-	copier.Copy(&version, originalVersion) // create local copy that escapes to the HEAP at the end of this function
+	err := copier.Copy(&version, originalVersion) // create local copy that escapes to the HEAP at the end of this function
+	if err != nil {
+		return nil, err
+	}
 
 	var alerts []models.Alert
 
