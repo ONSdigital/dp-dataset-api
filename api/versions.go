@@ -94,7 +94,8 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 		}
 
 		var hasInvalidState bool
-		for _, item := range results {
+		for i := range results {
+			item := &results[i]
 			if err = models.CheckState("version", item.State); err != nil {
 				hasInvalidState = true
 				log.Error(ctx, "unpublished version has an invalid state", err, log.Data{"state": item.State})

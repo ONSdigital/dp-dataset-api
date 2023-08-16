@@ -91,7 +91,8 @@ func (api *DatasetAPI) createListOfDimensions(versionDoc *models.Version, dimens
 	// Get dimension description from the version document and add to hash map
 	dimensionDescriptions := make(map[string]string)
 	dimensionLabels := make(map[string]string)
-	for _, details := range versionDoc.Dimensions {
+	for i := range versionDoc.Dimensions {
+		details := &versionDoc.Dimensions[i]
 		dimensionDescriptions[details.Name] = details.Description
 		dimensionLabels[details.Name] = details.Label
 	}

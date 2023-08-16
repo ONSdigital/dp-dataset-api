@@ -281,12 +281,13 @@ func (c *DatasetComponent) iHaveTheseDatasets(datasetsJSON *godog.DocString) err
 		return err
 	}
 
-	for timeOffset, datasetDoc := range datasets {
+	for timeOffset := range datasets {
+		datasetDoc := &datasets[timeOffset]
 		datasetID := datasetDoc.ID
 		datasetUp := models.DatasetUpdate{
 			ID:      datasetID,
-			Next:    &datasets[timeOffset],
-			Current: &datasets[timeOffset],
+			Next:    datasetDoc,
+			Current: datasetDoc,
 		}
 
 		datasetsCollection := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
@@ -307,15 +308,17 @@ func (c *DatasetComponent) iHaveTheseConditionalDatasets(status string, datasets
 		return fmt.Errorf("failed to unmarshal: %w", err)
 	}
 
-	for timeOffset, datasetDoc := range datasets {
+	for timeOffset := range datasets {
+		datasetDoc := &datasets[timeOffset]
+
 		datasetID := datasetDoc.ID
 		datasetUp := models.DatasetUpdate{
 			ID: datasetID,
 		}
 
-		datasetUp.Current = &datasets[timeOffset]
+		datasetUp.Current = datasetDoc
 		if status == "private" {
-			datasetUp.Next = &datasets[timeOffset]
+			datasetUp.Next = datasetDoc
 		}
 
 		datasetsCollection := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
@@ -388,7 +391,8 @@ func (c *DatasetComponent) iHaveTheseDimensions(dimensionsJSON *godog.DocString)
 		return fmt.Errorf("failed to unmarshal dimensionsJSON: %w", err)
 	}
 
-	for timeOffset, dimension := range dimensions {
+	for timeOffset := range dimensions {
+		dimension := &dimensions[timeOffset]
 		dimensionID := dimension.Option
 
 		dimensionOptionsCollection := c.MongoClient.ActualCollectionName(config.DimensionOptionsCollection)
@@ -408,7 +412,8 @@ func (c *DatasetComponent) iHaveTheseInstances(instancesJSON *godog.DocString) e
 		return err
 	}
 
-	for timeOffset, instance := range instances {
+	for timeOffset := range instances {
+		instance := &instances[timeOffset]
 		instanceID := instance.InstanceID
 
 		instanceCollection := c.MongoClient.ActualCollectionName(config.InstanceCollection)
