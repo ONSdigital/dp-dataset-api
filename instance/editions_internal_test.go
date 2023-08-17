@@ -14,7 +14,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-var (
+const (
 	testDatasetID   = "1234"
 	testEditionName = "test-edition"
 	testHost        = "example.com"
