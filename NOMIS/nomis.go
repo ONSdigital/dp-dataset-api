@@ -92,6 +92,8 @@ func main() {
 	os.Exit(uploadNomisData())
 }
 
+// TODO: Refactor this to reduce the complexity
+//
 //nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func uploadNomisData() int {
 	var mongoURL string

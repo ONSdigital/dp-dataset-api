@@ -175,6 +175,7 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 }
 
 // Update a specific instance
+// TODO: Refactor this to reduce the complexity
 //
 //nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func (s *Store) Update(w http.ResponseWriter, r *http.Request) {

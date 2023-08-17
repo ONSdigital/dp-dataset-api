@@ -60,6 +60,7 @@ func (s *Store) UpdateObservations(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateImportTask updates any task in the request body against an instance
+// TODO: Refactor this to reduce the complexity
 //
 //nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func (s *Store) UpdateImportTask(w http.ResponseWriter, r *http.Request) {

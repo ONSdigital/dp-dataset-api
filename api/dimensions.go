@@ -137,7 +137,9 @@ func convertBSONToDimensionOption(data interface{}) (*models.DimensionOption, er
 
 // getDimensionOptions returns a list of options, the total count of options that match the query parameters and an error
 //
-//nolint:gocritic // Naming results requires some refactoring here
+// TODO: Refactor this to have named results
+//
+//nolint:gocritic
 func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)

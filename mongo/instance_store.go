@@ -124,6 +124,8 @@ func (m *Mongo) UpdateInstance(ctx context.Context, currentInstance, updatedInst
 	return newETag, nil
 }
 
+// TODO: Refactor this to reduce the complexity
+//
 //nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance *models.Instance) bson.M {
 	updates := make(bson.M)

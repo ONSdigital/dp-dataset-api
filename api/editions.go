@@ -11,6 +11,7 @@ import (
 )
 
 // This function returns a list of editions, the total count of editions that match the query parameters and an error
+// TODO: Refactor this to have named results
 //
 //nolint:gocritic // Naming results requires some refactoring here.
 func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {

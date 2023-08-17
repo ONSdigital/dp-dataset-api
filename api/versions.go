@@ -59,6 +59,7 @@ func (v VersionDetails) baseLogData() log.Data {
 }
 
 // getVersions returns a list of versions, the total count of versions that match the query parameters and an error
+// TODO: Refactor this to reduce the complexity
 //
 //nolint:gocyclo,gocognit,gocritic // high cyclomactic & cognitive complexity not in scope for maintenance. Named results requires similar levels of refactoring.
 func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
@@ -136,6 +137,8 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 	return list, totalCount, nil
 }
 
+// TODO: Refactor this to reduce the complexity
+//
 //nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -272,6 +275,8 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "putVersion endpoint: request successful", data)
 }
 
+// TODO: Refactor this to reduce the complexity
+//
 //nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 	defer dphttp.DrainBody(r)
@@ -483,6 +488,8 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	return currentDataset, currentVersion, combinedVersionUpdate, nil
 }
 
+// TODO: Refactor this to reduce the complexity
+//
 //nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func (api *DatasetAPI) publishVersion(
 	ctx context.Context,
@@ -608,6 +615,8 @@ func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion, ver
 	return associateVersionErr
 }
 
+// TODO: Refactor this to reduce the complexity
+//
 //nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*models.Version, error) {
 	var version models.Version
