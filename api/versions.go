@@ -60,7 +60,7 @@ func (v VersionDetails) baseLogData() log.Data {
 
 // getVersions returns a list of versions, the total count of versions that match the query parameters and an error
 //
-//nolint:gocyclo,gocognit,gocritic // high cyclomactic & cognitive complexity not in scope for maintenance. Named results requires refactoring.
+//nolint:gocyclo,gocognit,gocritic // high cyclomactic & cognitive complexity not in scope for maintenance. Named results requires similar levels of refactoring.
 func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
