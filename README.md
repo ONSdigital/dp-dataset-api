@@ -107,11 +107,15 @@ Notes:
    and can use `\n` (sic) instead of newlines (they will be converted to newlines before use). Any other value will be
    treated as a path to the given PEM file.
 
-### Audit vulnerability
+#### Graph / Neptune Configuration
 
-The current version of jwt-go (4.0.0-preview1) is a preview release. This is a known vulnerability which has been
-excluded using the CVE-ID when running the audit command and should be updated when a stable version of the library is
-released.
+| Environment variable    | Default | Description
+| ------------------------| ------- | -----------
+| GRAPH_DRIVER_TYPE       | ""      | string identifier for the implementation to be used (e.g. 'neptune' or 'mock')
+| GRAPH_ADDR              | ""      | address of the database matching the chosen driver type (web socket)
+| NEPTUNE_TLS_SKIP_VERIFY | false   | flag to skip TLS certificate verification, should only be true when run locally
+
+:warning: to connect to a remote Neptune environment on MacOSX using Go 1.18 or higher you must set `NEPTUNE_TLS_SKIP_VERIFY` to true. See our [Neptune guide](https://github.com/ONSdigital/dp/blob/main/guides/NEPTUNE.md) for more details.
 
 ### Contributing
 
