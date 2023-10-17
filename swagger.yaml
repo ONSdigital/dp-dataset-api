@@ -1,5 +1,4 @@
 swagger: "2.0"
-host: ons.gov.uk
 info:
   description: "Used to find information about data published by the ONS.
   `Datasets` are published in unique `versions`, which are categorized by `edition`.
@@ -7,7 +6,6 @@ info:
   of dimension `options` in a version can be used to retrieve `observation` level data."
   version: "1.0.0"
   title: "Explore our data"
-  contact: me
   license:
     name: "Open Government Licence v3.0"
     url: "http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
@@ -645,131 +643,104 @@ definitions:
   Dataset:
     description: "The dataset"
     type: object
-    required: ["id", "contacts", "description", "license", "links", "national_statistics", "title"]
+    required: ["identifier", "@context", "contact_point", "creator", "description", "@id", "issued", "license", "editions", "latest_version", "publisher", "frequency", "spatial_coverage", "spatial_resolution", "state", "temporal_coverage", "temporal_resolution", "title", "type", "@type"]
     properties:
+      "@context":
+        description: "The URL for the JSON-LD context. The field name will be '@context'"
+        type: string
+        format: uri
       canonical_topic:
         description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy."
         type: string
       collection_id:
         $ref: '#/definitions/CollectionID'
-      contacts:
-        description: "A list containing contact details of staticians for a dataset"
-        type: array
-        items:
-          $ref: '#/definitions/Contact'
+      contact_point:
+        $ref: '#/definitions/Contact'
+      creator:
+        type: string
+        format: uri
       description:
-        description: "A description for a dataset"
+        description: "A description for a dataset. Could contain markdown"
+        type: string
+      "@id":
+        description: "The URL of the current resource, the same as links.self"
+        type: string
+        format: uri
+      identifier:
+        description: "The identifier for this dataset. This will form the last part of the URI for this resource"
         type: string
       is_based_on:
         $ref: '#/definitions/IsBasedOn'
+      issued:
+        description: "The date the dataset was first issued"
+        type: string
+        format: date-time
       keywords:
-        description: "A list of keywords for a dataset"
+        description: "A list of keywords for a dataset, typically to help with Search Engine Optimisation"
         type: array
         items:
           type: "string"
       license:
         description: "The standard Government license right text for the dataset"
         type: string
-      links:
-        $ref: '#/definitions/DatasetLinks'
-      methodologies:
-        description: "A list of methodologies for a dataset"
-        type: array
-        items:
-          type: object
-          properties:
-            description:
-              description: "The description of a methodology"
-              type: string
-            href:
-              description: "The url to a methodology"
-              type: string
-            title:
-              description: "The title of a methodology"
-              type: string
+        default: "http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+      editions_url:
+        description: "Link to the list of editions for this dataset"
+        type: string
+        format: uri
+      latest_version_url: 
+        description: "Link to the latest published version of this dataset"
+        type: string
+        format: uri
       national_statistic:
         description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
         type: boolean
       next_release:
         description: "The next release date for a dataset"
         type: string
+        format: date-time
       nomis_ref_url:
         description: "The NOMIS reference url for the dataset"
         type: string
         example: "https://www.nomisweb.co.uk/census/2011/ks106ew"
-      publications:
-        description: "A list of publications for a dataset"
-        type: array
-        items:
-          type: object
-          properties:
-            description:
-              description: "The description of a publication"
-              type: string
-            href:
-              description: "The url to a publication"
-              type: string
-            title:
-              description: "The title of a publication"
-              type: string
       publisher:
-        $ref: '#/definitions/Publisher'
-      qmi:
-        description: "Object containing information on the quality and methodology index of a dataset"
-        type: object
-        properties:
-          description:
-            description: "The description of a quality and methodology index"
-            type: string
-          href:
-            description: "The url to a quality and methodology index"
-            type: string
-          title:
-            description: "The title of a quality and methodology index"
-            type: string
-      related_datasets:
-        description: "A list of objects containing information of datasets related to a dataset"
-        type: array
-        items:
-          type: object
-          properties:
-            href:
-              description: "The url to a related dataset"
-              type: string
-            title:
-              description: "The title of a related dataset"
-              type: string
-      related_content:
-        description: "A list of objects containing information of content related to a dataset"
-        type: array
-        items:
-          type: object
-          properties:
-            href:
-              description: "The url to related content"
-              type: string
-            description:
-              description: "The description of the related content"
-              type: string
-            title:
-              description: "The title of the related content"
-              type: string
-      release_frequency:
+        #$ref: '#/definitions/Publisher'
+        type: string
+        format: uri
+      frequency:
         description: "The release frequency of a dataset"
         type: string
-      state:
-        $ref: '#/definitions/State'
-      subtopics:
-        description: "A list of subtopic ids that the dataset relates to within the website taxonomy."
+      spatial_coverage:
+        description: "The spatial area covered by the dataset, typically a code defining a geographic area which contains all the observed areas"
+        type: string
+      spatial_resolution:
+        description: "A list of the types geographic areas contained in the dataset"
         type: array
         items:
           type: "string"
+      state:
+        $ref: '#/definitions/State'
+      summary:
+        description: "A short summary of a dataset."
+        type: string
       survey:
         description: "The name of the survey the dataset was created from."
         type: string
-      theme:
-        description: "The theme for a dataset"
-        type: string
+      temporal_coverage:
+        description: "The overall time period covered by the dataset"
+        type: "string"
+        format: duration
+      temporal_resolution:
+        description: "A list of the types time periods contained in the dataset"
+        type: array
+        items:
+          type: "string"
+          format: duration
+      themes:
+        description: "The themes a dataset relates to. These will be the identifiers for what may be referred to as 'topics' on the website, and used for navigation and breadcrumbs"
+        type: array
+        items:
+          type: string
       title:
         description: "The title of the dataset"
         example: "CPI"
@@ -778,17 +749,16 @@ definitions:
         description: "The type of dataset"
         example: "cantabular_flexible_table"
         type: string
-      unit_of_measure:
-        description: "The unit of measure for the dataset observations"
+      "@type":
+        description: "The linked data vocabulary term for a dataset"
+        default: "dcat:datasetSeries"
         type: string
-      uri:
-        description: "The uri to the location of this resource on the web"
-        type: string
+
   Type:
     description: "The type for a dataset" 
     type: string
-    enum: [filterable, nomis]
-    default: "filterable"    
+    enum: [filterable, nomis, cantabular_flexible_table, static]
+    default: "static"    
   IsBasedOn:
     description: "Information about the population-type that the dataset is based on (census 2021 only)" 
     type: object
@@ -813,20 +783,101 @@ definitions:
         type: string
   Edition:
     type: object
+    required: ["identifier", "@context", "contact_point", "creator", "description", "@id", "issued", "license", "editions", "latest_version", "publisher", "frequency", "spatial_coverage", "spatial_resolution", "state", "temporal_coverage", "temporal_resolution", "title", "@type"]
     properties:
-      edition:
-        description: "The edition of the dataset"
-        example: "2017"
-        readOnly: true
+      "@context":
+        description: "The URL for the JSON-LD context. The field name will be '@context'"
         type: string
-      id:
-        description: "An unique id for a dataset edition"
-        readOnly: true
+        format: uri
+      collection_id:
+        $ref: '#/definitions/CollectionID'
+      contact_point:
+        $ref: '#/definitions/Contact'
+      creator:
         type: string
-      links:
-        $ref: '#/definitions/EditionLinks'
+        format: uri
+      dataset_url:
+        description: "Link to the dataset which contains this edition"
+        type: string
+        format: uri
+      description:
+        description: "A description for an edition. Could contain markdown"
+        type: string
+      "@id":
+        description: "The URL of the current resource, the same as links.self"
+        type: string
+        format: uri
+      identifier:
+        description: "The identifier for this edition. This will form the last part of the URI for this resource"
+        type: string
+      issued:
+        description: "The date the edition was first issued"
+        type: string
+        format: date-time
+      keywords:
+        description: "A list of keywords for an edition, typically to help with Search Engine Optimisation"
+        type: array
+        items:
+          type: "string"
+      license:
+        description: "The standard Government license right text for the dataset"
+        type: string
+        default: "http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+      national_statistic:
+        description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
+        type: boolean
+      next_release:
+        description: "The next release date for a edition"
+        type: string
+        format: date-time
+      publisher:
+        #$ref: '#/definitions/Publisher'
+        type: string
+        format: uri
+      frequency:
+        description: "The release frequency of a edition"
+        type: string
+      spatial_coverage:
+        description: "The spatial area covered by the edition, typically a code defining a geographic area which contains all the observed areas"
+        type: string
+      spatial_resolution:
+        description: "A list of the types geographic areas contained in the edition"
+        type: array
+        items:
+          type: "string"
       state:
         $ref: '#/definitions/State'
+      summary:
+        description: "A short summary of a edition."
+        type: string
+      temporal_coverage:
+        description: "The overall time period covered by the edition"
+        type: "string"
+        format: duration
+      temporal_resolution:
+        description: "A list of the types time periods contained in the edition"
+        type: array
+        items:
+          type: "string"
+          format: duration
+      themes:
+        description: "The themes an edition relates to. These will be the identifiers for what may be referred to as 'topics' on the website, and used for navigation and breadcrumbs"
+        type: array
+        items:
+          type: string
+      title:
+        description: "The title of the edition"
+        example: "CPI"
+        type: string
+      "@type":
+        description: "The linked data vocabulary term for an edition"
+        default: "dcat:dataset"
+        type: string
+      versions_url:
+        description: "Link to the list of versions for this edition"
+        type: string
+        format: uri
+
   Editions:
     type: object
     properties:
@@ -869,28 +920,32 @@ definitions:
   Instance:
     type: object
     properties:
-      alerts:
-        description: "A list of alerts against an instance"
+      version_notes:
+        description: "Notes describing what is unique to this particular version"
         readOnly: true
-        type: array
         items:
-          $ref: '#/definitions/Alert'
-      id:
+          type: string
+      identifier:
         description: "A unique id for an instance"
         readOnly: true
         type: string
       collection_id:
         $ref: '#/definitions/CollectionID'
+      creator:
+        type: string
+        format: url
       downloads:
         description: "A selection of download objects containing information of downloadable files."
         type: object
         properties:
-          csv:
+          text/csv:
             $ref: '#/definitions/DownloadObject'
-          xls:
+          application/vnd.ms-excel:
             $ref: '#/definitions/DownloadObject'
       edition:
         description: "The edition of the dataset version"
+        type: string
+      etag:
         type: string
       events:
         description: "A list of events took place for this job"
@@ -898,11 +953,10 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Event'
-      headers:
-        description: "The header information from a V4 file"
-        type: array
-        items:
-          type: string
+      issued:
+        description: "The time when this instance was published"
+        type: string
+        format: date-time
       last_updated:
         description: "The last time an event happened"
         readOnly: true
@@ -935,20 +989,6 @@ definitions:
               id:
                 description: "The ID for the dataset edition associated with this instance"
                 type: string
-          job:
-            description: "An object describing the ID and URL of the job containing this instance"
-            readOnly: true
-            required: ["id", "href"]
-            type: object
-            properties:
-              href:
-                description: "The URL for the job containing this instance"
-                example: "http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35"
-                type: string
-              id:
-                description: "The ID of the job containing this instance"
-                example: 042e216a-7822-4fa0-a3d6-e3f5248ffc35
-                type: string
           self:
             description: "An object describing the ID and URL for a dataset which is associated with this instance"
             readOnly: true
@@ -958,7 +998,7 @@ definitions:
                 description: "The URL for this resource"
                 example: "http://localhost:22000/instances/45c4669b-3ae9-4ba7-b690-87e890a1c67f"
                 type: string
-          spatial:
+          spatial_resolution:
             description: "A link object describing the url to a list of geography ranges for the version of the dataset"
             type: object
             properties:
@@ -978,16 +1018,33 @@ definitions:
                 description: "The ID of the dataset version associated with this instance"
                 example: "042e216a-7822-4fa0-a3d6-e3f5248ffc35"
                 type: string
+          next_version:
+            type: string
+            format: url
+          previous_version:
+            type: string
+            format: url
+          derived_from:
+            type: string
+            format: url
+          generated_by:
+            type: string
+            format: url
+          described_by:
+            type: string
+            format: url
       release_date:
         description: "The release date of this version of the dataset"
         type: string
       state:
         $ref: '#/definitions/State'
-      temporal:
+      temporal_coverage:
         $ref: '#/definitions/Temporal'
-      total_observations:
-        description: "The number of observations in this instance"
-        type: integer
+      temporal_resolution:
+        description: ""
+        type: string
+      table_schema:
+        $ref: '#/definitions/TableSchema'
       version:
         description: "The dataset version number that this instance is associated with, this will only be set once the state has been updated to `edition-confirmed`"
         readOnly: true
@@ -1057,6 +1114,11 @@ definitions:
     description: "A model for the request and response body for creating a new instance"
     type: object
     properties:
+      dimensions:
+        description: "A list of codelists for each dimension of this instance"
+        type: array
+        items:
+          $ref: '#/definitions/Codelist'
       id:
         description: "A unique id for an instance"
         readOnly: true
@@ -1114,19 +1176,19 @@ definitions:
             description: "An unique id for a dataset"
             example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91CD"
       - $ref: "#/definitions/Version"
-  Publisher:
-    description: "The publisher of the dataset"
-    type: object
-    properties:
-      name:
-        description: "The name of the publisher"
-        type: string
-      type:
-        description: "The type of publisher"
-        type: string
-      href:
-        description: "A link to the publishers homepage"
-        type: string
+  # Publisher:
+  #   description: "The publisher of the dataset"
+  #   type: object
+  #   properties:
+  #     name:
+  #       description: "The name of the publisher"
+  #       type: string
+  #     type:
+  #       description: "The type of publisher"
+  #       type: string
+  #     href:
+  #       description: "A link to the publishers homepage"
+  #       type: string
   State:
     description: |
       The state of the resource, can only be one of the following:
@@ -1137,6 +1199,35 @@ definitions:
         * associated (not editions)
         * published
     type: string
+  TableSchema:
+    description: "The schema defining a CSV on the Web distribution of a dataset version"
+    type: object
+    properties:
+      about_url:
+        type: string
+        format: url
+      column:
+        type: array
+        items:
+          properties:
+            type:
+              type: string
+            datatype:
+              type: string
+            name:
+              type: string
+            label:
+              type: string
+            description:
+              type: string
+            title:
+              type: string
+            property_url:
+              type: string
+              format: url
+            value_url:
+              type: string
+              format: url
   Temporal:
     description: "A list of frequencies the dataset covers for a particular period of time"
     type: array
@@ -1272,54 +1363,45 @@ definitions:
     ]
     type: object
     properties:
-      alerts:
-        description: "A list of alerts, for example corrections after the resource has been published"
+      version_notes:
+        description: "A list of notes, for example corrections after the resource has been published"
         type: array
-        items:
-          $ref: '#/definitions/Alert'
+        items: 
+          type: string
       collection_id:
         $ref: '#/definitions/CollectionID'
+      "@context":
+        type: string
+        format: url
+      creator:
+        type: string
+        format: url
       downloads:
         description: "A selection of download objects containing information of downloadable files."
         type: object
         properties:
-          csv:
+          text/csv:
             $ref: '#/definitions/DownloadObject'
-          csvw:
+          application/json+csvm:
             $ref: '#/definitions/DownloadObject'
-          txt:
+          application/vnd.ms-excel:
             $ref: '#/definitions/DownloadObject'
-          xls:
-            $ref: '#/definitions/DownloadObject'
-      edition:
-        description: "The dataset edition for this version"
-        readOnly: true
+      etag:
         type: string
-      id:
+      identifier:
         description: "The identifier for this version of an edition for a dataset"
         type: string
       is_based_on:
         $ref: '#/definitions/IsBasedOn'
-      dataset_id:
-        description: "The identifier for the dataset."
-        type: string
-      latest_changes:
-        description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
-        type: array
-        items:
-          $ref: '#/definitions/LatestChange'
       links:
         $ref: '#/definitions/VersionLinks'
-      lowest_geography:
-        description: "The lowest geography this dataset is available at (Census datasets only)"
-        type: string
       release_date:
         description: "The release date of this version of the dataset"
         type: string
       state:
         $ref: '#/definitions/State'
-      temporal:
-        $ref: '#/definitions/Temporal'
+      table_schema:
+        $ref: '#/definitions/TableSchema'
       type:
         description: "The type of dataset - e.g. cantabular_flexible_table"
         type: string
@@ -1328,11 +1410,6 @@ definitions:
         example: 1
         readOnly: true
         type: integer
-      usage_notes:
-        description: "A list of usage notes relating to the dataset"
-        type: array
-        items:
-          $ref: '#/definitions/UsageNotes'
   # Link objects
   DatasetLinks:
     description: "A list of links related to this resource"
@@ -1382,8 +1459,21 @@ definitions:
         $ref: '#/definitions/EditionLink'
       self:
         $ref: '#/definitions/SelfLink'
-      spatial:
-        $ref: '#/definitions/SpatialLink'
+      next_version:
+        type: string
+        format: url
+      previous_version:
+        type: string
+        format: url
+      derived_from:
+        type: string
+        format: url
+      generated_by:
+        type: string
+        format: url
+      described_by:
+        type: string
+        format: url
   DatasetLink:
     description: "An object containing the dataset id and link"
     readOnly: true
