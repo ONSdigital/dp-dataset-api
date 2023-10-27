@@ -214,11 +214,15 @@ paths:
       description: "The dataset contains all high level information, for additional details see editions or versions of a dataset. "
       parameters:
       - $ref: '#/parameters/id'
+      produces:
+      - "application/hal+json"
+      - "application/ld+json"
+      - "application/json"
       responses:
         200:
           description: "A json object for a single Dataset"
           schema:
-            $ref: '#/definitions/DatasetResponse'
+            $ref: '#/definitions/Dataset'
         404:
           description: "No dataset was found using the id provided"
         500:
@@ -268,6 +272,10 @@ paths:
       - $ref: '#/parameters/id'
       - $ref: '#/parameters/limit'
       - $ref: '#/parameters/offset'
+      produces:
+      - "application/hal+json"
+      - "application/ld+json"
+      - "application/json"
       responses:
         200:
           description: "A json list containing all editions for a dataset"
@@ -288,6 +296,10 @@ paths:
       parameters:
       - $ref: '#/parameters/edition'
       - $ref: '#/parameters/id'
+      produces:
+      - "application/hal+json"
+      - "application/ld+json"
+      - "application/json"
       responses:
         200:
           description: "A json object containing an edition"
@@ -310,6 +322,10 @@ paths:
       - $ref: '#/parameters/id'
       - $ref: '#/parameters/limit'
       - $ref: '#/parameters/offset'
+      produces:
+      - "application/hal+json"
+      - "application/ld+json"
+      - "application/json"
       responses:
         200:
           description: "A json list containing all versions for a set type of dataset and edition"
@@ -363,6 +379,10 @@ paths:
       - $ref: '#/parameters/edition'
       - $ref: '#/parameters/id'
       - $ref: '#/parameters/version'
+      produces:
+      - "application/hal+json"
+      - "application/ld+json"
+      - "application/json"
       responses:
         200:
           description: "A json object containing the edition and version of a dataset"
@@ -571,12 +591,6 @@ responses:
   UnauthorisedError:
     description: "The token provided is unauthorised to carry out this operation"
 definitions:
-  AccessRightsLink:
-    type: object
-    properties:
-      href:
-        description: "A url to the standard Government access right text for the dataset"
-        type: string
   Alert:
     description: "Important information relating to a version of a dataset"
     type: object
@@ -663,7 +677,7 @@ definitions:
         example: "CPI"
         type: string
   dcatSeriesFull:
-    description: "Core properties needed for dcat:Dataset and dcat:DatasetSeries objects"
+    description: "All properties needed for full dcat:DatasetSeries or dcat:Dataset objects"
     allOf:
     - $ref: '#/definitions/dcatSeriesCore'
     - type: object
@@ -706,7 +720,7 @@ definitions:
         items: 
           type: string
   dcatVersionFull:
-    description: "Core properties needed for dcat:Dataset version objects"
+    description: "All properties needed for complete dcat:Dataset version objects"
     allOf:
     - $ref: '#/definitions/dcatVersionCore'
     - type: object
@@ -727,65 +741,39 @@ definitions:
   Datasets:
     description: "A list of datasets"
     type: object
-    properties:
-      "@context":
-        $ref: '#/definitions/LDContext'
-      count:
-        description: "The number of datasets returned"
-        readOnly: true
-        type: integer
-      items:
-        type: array
-        items:
-          allOf:
-          - $ref: '#/definitions/dcatSeriesCore'
-          - type: object
-            properties:
-              "@id":
-                $ref: '#/definitions/LDID'
-              "@type":
-                allOf:
-                - $ref: '#/definitions/LDType'
-                - default: "dcat:datasetSeries"
-              is_based_on:
-                $ref: '#/definitions/IsBasedOn'
-              _links:
-                $ref: '#/definitions/DatasetListLinks'
-              national_statistic:
-                description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
-                type: boolean
-              state:
-                $ref: '#/definitions/State'
-              survey:
-                description: "The name of the survey the dataset was created from."
-                type: string
-              type:
-                $ref: '#/definitions/Type'
-      _links:
-        $ref: '#/definitions/ListLinks'
-      limit:
-        description: "The number of datasets requested"
-        type: integer
-      offset:
-        description: "The first row of datasets to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
-        type: integer
-      total_count:
-        description: "The total number of datasets"
-        readOnly: true
-        type: integer
-  # DatasetResponse:
-  #   description: "A model for the response body when getting a dataset"
-  #   allOf:
-  #   - type: object
-  #     properties:
-  #       id:
-  #         description: "An unique id for a dataset"
-  #         example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
-  #         readOnly: true
-  #         type: string
-  #       type:
-  #         $ref: "#/definitions/Type"
-  #   - $ref: "#/definitions/Dataset"
+    allOf:
+      - $ref: '#/definitions/ListPagination'
+      - type: object
+        properties:
+          "@context":
+            $ref: '#/definitions/LDContext'
+          items:
+            type: array
+            items:
+              allOf:
+              - $ref: '#/definitions/dcatSeriesCore'
+              - type: object
+                properties:
+                  "@id":
+                    $ref: '#/definitions/LDID'
+                  "@type":
+                    allOf:
+                    - $ref: '#/definitions/LDType'
+                    - default: "dcat:datasetSeries"
+                  is_based_on:
+                    $ref: '#/definitions/IsBasedOn'
+                  _links:
+                    $ref: '#/definitions/DatasetListLinks'
+                  national_statistic:
+                    description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
+                    type: boolean
+                  state:
+                    $ref: '#/definitions/State'
+                  survey:
+                    description: "The name of the survey the dataset was created from."
+                    type: string
+                  type:
+                    $ref: '#/definitions/Type'
   LDContext:
     description: "The URL for the JSON-LD context. The field name will be '@context'"
     type: string
@@ -907,59 +895,50 @@ definitions:
         "@id":
           $ref: '#/definitions/LDID'
         "@type":
-          allOf:
-          - $ref: '#/definitions/LDType'
-          - default: 'dcat:dataset'
-        collection_id:
-          $ref: '#/definitions/CollectionID'
+          $ref: '#/definitions/LDType'
+        etag:
+          type: string
+        is_based_on:
+          $ref: '#/definitions/IsBasedOn'
         _links:
           $ref: '#/definitions/EditionLinks'
-        national_statistic:
-          description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
-          type: boolean
+        type:
+          $ref: '#/definitions/Type'
+        next_edition:
+          type: string
+          format: uri
+        previous_edition:
+          type: string
+          format: uri
         state:
           $ref: '#/definitions/State'
+        
   Editions:
     type: object
-    properties:
-      "@context":
-        $ref: '#/definitions/LDContext'
-      count:
-        description: "The number of editions returned for a dataset"
-        readOnly: true
-        type: integer
-      items:
-        type: array
-        items:
-          allOf:
-          - $ref: '#/definitions/dcatSeriesCore'
-          - $ref: '#/definitions/dcatVersionCore'
-          - type: object
-            properties:
-              "@id":
-                $ref: '#/definitions/LDID'
-              "@type":
-                allOf:
-                - $ref: '#/definitions/LDType'
-                - default: "dcat:dataset"
-              _links:
-                $ref: '#/definitions/DatasetListLinks'
-              state:
-                $ref: '#/definitions/State'
-              type:
-                $ref: '#/definitions/Type'
-      _links:
-        $ref: '#/definitions/ListLinks'
-      limit:
-        description: "The number of editions requested for a dataset"
-        type: integer
-      offset:
-        description: "The first row of editions for a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
-        type: integer
-      total_count:
-        description: "The total number of editions against a dataset"
-        readOnly: true
-        type: integer
+    allOf:
+      - $ref: '#/definitions/ListPagination'
+      - type: object
+        properties:
+          "@context":
+            $ref: '#/definitions/LDContext'
+          items:
+            type: array
+            items:
+              allOf:
+              - $ref: '#/definitions/dcatSeriesCore'
+              - $ref: '#/definitions/dcatVersionCore'
+              - type: object
+                properties:
+                  etag:
+                    type: string
+                  "@id":
+                    $ref: '#/definitions/LDID'
+                  "@type":
+                    $ref: '#/definitions/LDType'
+                  _links:
+                    $ref: '#/definitions/SelfLink'
+                  state:
+                    $ref: '#/definitions/State'
   Event:
     type: object
     properties:
@@ -1154,6 +1133,25 @@ definitions:
         properties:
           href: 
             type: string
+  ListPagination:
+    description: "The fields required on a list endpoint to facilitate pagination"
+    properties:
+      _links:
+        $ref: '#/definitions/ListLinks'
+      count:
+        description: "The number of versions returned for an edition of a dataset"
+        readOnly: true
+        type: integer
+      limit:
+        description: "The number of editions requested for a dataset"
+        type: integer
+      offset:
+        description: "The first row of editions for a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
+        type: integer
+      total_count:
+        description: "The total number of editions against a dataset"
+        readOnly: true
+        type: integer
   NewDatasetResponse:
     description: "A model for the response body when creating a new dataset"
     type: object
@@ -1382,48 +1380,32 @@ definitions:
         readOnly: true
         type: integer
   Versions:
-    type: object
-    properties:
-      "@context":
-        $ref: '#/definitions/LDContext'
-      count:
-        description: "The number of versions returned for an edition of a dataset"
-        readOnly: true
-        type: integer
-      items:
-        description: "An array of Datasets"
-        type: array
-        items:
-          allOf:
-          - $ref: '#/definitions/dcatSeriesCore'
-          - $ref: '#/definitions/dcatVersionCore'
-          - type: object
-            properties:
-              etag:
-                type: string
-              "@id":
-                $ref: '#/definitions/LDID'
-              "@type":
-                $ref: '#/definitions/LDType'
-              _links:
-                type: object
+    # type: object
+    allOf:
+      - $ref: '#/definitions/ListPagination'
+      - type: object
+        properties:
+          "@context":
+            $ref: '#/definitions/LDContext'
+          items:
+            description: "An array of Datasets"
+            type: array
+            items:
+              allOf:
+              - $ref: '#/definitions/dcatSeriesCore'
+              - $ref: '#/definitions/dcatVersionCore'
+              - type: object
                 properties:
-                  self:
+                  etag:
+                    type: string
+                  "@id":
+                    $ref: '#/definitions/LDID'
+                  "@type":
+                    $ref: '#/definitions/LDType'
+                  _links:
                     $ref: '#/definitions/SelfLink'
-              state:
-                $ref: '#/definitions/State'
-      _links:
-        $ref: '#/definitions/ListLinks'
-      limit:
-        description: "The number of versions requested for an edition of a dataset"
-        type: integer
-      offset:
-        description: "The first row of versions for an edition of a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
-        type: integer
-      total_count:
-        description: "The total number of versions for an edition of a dataset"
-        readOnly: true
-        type: integer
+                  state:
+                    $ref: '#/definitions/State'
   Version:
     description: "An object containing information about published datasets from the ONS"
     required: [
@@ -1489,6 +1471,14 @@ definitions:
     properties:
       dataset:
         $ref: '#/definitions/DatasetLink'
+      editions:
+        readOnly: true
+        type: object
+        properties:
+          href:
+            description: "A URL to all editions for this dataset"
+            example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions"
+            type: string
       latest_version:
         $ref: '#/definitions/LatestVersionLink'
       self:
@@ -1500,6 +1490,22 @@ definitions:
             description: "A URL to all versions dor an edition of a dataset"
             example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/edition/2017/versions"
             type: string
+      next:
+        type: object
+        properties:
+          href:
+            type: string
+            format: url
+          id:
+            type: string
+      prev:
+        type: object
+        properties:
+          href:
+            type: string
+            format: url
+          id:
+            type: string
   VersionLinks:
     description: "A list of links related to this resource"
     type: object
@@ -1510,6 +1516,13 @@ definitions:
         $ref: '#/definitions/EditionLink'
       self:
         $ref: '#/definitions/SelfLink'
+      versions:
+        type: object
+        properties:
+          href:
+            description: "A URL to all versions dor an edition of a dataset"
+            example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/edition/2017/versions"
+            type: string
       next:
         type: object
         properties:
