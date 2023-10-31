@@ -109,6 +109,12 @@ parameters:
     required: true
     schema:
       $ref: '#/definitions/NewInstance'
+  option:
+    name: option
+    description: "A option to set within a type"
+    in: path
+    required: true
+    type: string
   state:
     name: "state"
     description: "A comma separated list of state values to filter on (e.g. ‘completed,edition-confirmed’)"
@@ -823,6 +829,44 @@ paths:
           $ref: '#/responses/ForbiddenError'
         404:
           description: "dimension does not match any dimensions within the instance"
+        409:
+          $ref: '#/responses/ConflictError'
+        500:
+          $ref: '#/responses/InternalError'
+  /instances/{instance_id}/dimensions/{dimension}/options/{option}:
+    patch:
+      tags:
+      - "Private"
+      summary: "Modify a dimension option for an instance"
+      description: |
+        Modify a dimension option for an instance by setting values for node_id or order
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/dimension'
+      - $ref: '#/parameters/option'
+      - $ref: '#/parameters/patch_options'
+      - $ref: '#/parameters/if_match'
+      produces:
+      - "application/json-patch+json"
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "The dimension option was modified and the successfully applied patch operations are returned"
+          schema:
+            $ref: '#/definitions/PatchOptions'
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
+        400:
+          $ref: '#/responses/InvalidRequestError'
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
+        404:
+          description: "InstanceId does not match any instances"
         409:
           $ref: '#/responses/ConflictError'
         500:
