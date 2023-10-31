@@ -1,11 +1,8 @@
 swagger: "2.0"
 info:
-  description: "Used to find information about data published by the ONS.
-  `Datasets` are published in unique `versions`, which are categorized by `edition`.
-  Data in each version is broken down by `dimensions`, and a unique combination
-  of dimension `options` in a version can be used to retrieve `observation` level data."
-  version: "1.0.0"
   title: "Explore our data"
+  description: "Used to find information about data published by the ONS. `Datasets` are published in unique `versions`, which are categorized by `edition`. Data in each version is broken down by `dimensions`, and a unique combination of dimension `options` in a version can be used to retrieve `observation` level data."
+  version: "1.0.0"
   license:
     name: "Open Government Licence v3.0"
     url: "http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
@@ -22,6 +19,32 @@ parameters:
     description: "A unique id for a dataset to filter on"
     in: query
     type: string
+  dimension:
+    name: dimension
+    description: "A dimension from a dataset"
+    in: path
+    required: true
+    type: string
+  dimension_options:
+    description: "The name of the dimension option and a single value; each option (dimension) and corresponding value (code) must exist against the version - e.g. `age=30` or one of the dimension options can be represented by a wildcard value `*` e.g. `geography=*`"
+    name: "<dimension_options>"
+    in: query
+    required: true
+    type: string
+  patch_options:
+    required: true
+    name: patch
+    schema:
+      $ref: '#/definitions/PatchOptions'
+    description: "A list of patch operations for a dimension option"
+    in: body
+  patch_dimensions:
+    required: true
+    name: patch
+    schema:
+      $ref: '#/definitions/PatchDimensions'
+    description: "A list of patch operations for a dimension"
+    in: body
   edition:
     name: edition
     description: "An edition of a dataset"
@@ -451,6 +474,65 @@ paths:
           description: "No version was found for an edition of a dataset using the id, edition and version provided"
         500:
           $ref: '#/responses/InternalError'
+  /datasets/{identifier}/editions/{edition}/versions/{version}/dimensions:
+    get:
+      tags:
+      - "Public"
+      summary: "Get a list of dimensions from a dataset"
+      description: "Get all dimensions which are used in the dataset"
+      parameters:
+      - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/identifier'
+      - $ref: '#/parameters/version'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      responses:
+        200:
+          description: "A json list of dimensions"
+          schema:
+            $ref: '#/definitions/Dimensions'
+        400:
+          description: |
+            Invalid request, reasons can be one of the following:
+              * dataset id was incorrect
+              * edition was incorrect
+              * version was incorrect
+        404:
+          description: "No dimensions found for version of an edition of a dataset using the id, edition and version provided"
+        500:
+          $ref: '#/responses/InternalError'
+  /datasets/{identifier}/editions/{edition}/versions/{version}/dimensions/{dimension}/options:
+    get:
+      tags:
+      - "Public"
+      summary: "Get a list of options from a dimension"
+      description: "Get a list of options which appear in this dimension and dataset. By default all options are returned, but a subset can be requested by providing offset and limit query parameters, or by providing the list of option IDs, only the IDs that are found will be returned."
+      parameters:
+      - $ref: '#/parameters/dimension'
+      - $ref: '#/parameters/edition'
+      - $ref: '#/parameters/identifier'
+      - $ref: '#/parameters/version'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/ids'
+      responses:
+        200:
+          description: "Json object containing all options for a dimension"
+          schema:
+            $ref: '#/definitions/DimensionOptions'
+        400:
+          description: |
+            Invalid request, reasons can be one of the following:
+              * dataset id was incorrect
+              * edition was incorrect
+              * version was incorrect
+              * dimension was incorrect
+              * query parameters incorrect offset provided
+              * query parameters incorrect limit provided
+        404:
+          description: "No dimension options were found for dimension"
+        500:
+          $ref: '#/responses/InternalError'
   /instances:
     get:
       tags:
@@ -600,6 +682,147 @@ paths:
           $ref: '#/responses/ConflictError'
         500:
           $ref: '#/responses/InternalError'
+  /instances/{instance_id}/dimensions:
+    get:
+      tags:
+      - "Private user"
+      summary: "Get a list of dimensions for an instance"
+      description: "Get all dimensions from an instance"
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/if_match'
+      produces:
+      - "application/json"
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "Return a list of dimensions"
+          schema:
+            $ref: '#/definitions/Dimensions'
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
+        400:
+          $ref: '#/responses/InvalidRequestError'
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
+        404:
+          $ref: '#/responses/InstanceNotFound'
+        409:
+          $ref: '#/responses/ConflictError'
+        500:
+          $ref: '#/responses/InternalError'
+    patch:
+      tags:
+      - "Private"
+      summary: "Create one or more dimensions"
+      description: "Create one or more dimensions which are related to an instance"
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/patch_dimensions'
+      - $ref: '#/parameters/if_match'
+      produces:
+      - "application/json-patch+json"
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "All dimensions were successfully created"
+          schema:
+            $ref: '#/definitions/PatchDimensions'
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
+        400:
+          $ref: '#/responses/InvalidRequestError'
+        404:
+          $ref: '#/responses/InstanceNotFound'
+        409:
+          $ref: '#/responses/ConflictError'
+        500:
+          $ref: '#/responses/InternalError'
+
+  /instances/{instance_id}/dimensions/{dimension}:
+    put:
+      tags:
+      - "Private user"
+      summary: "Update dimension"
+      description: "Update the label and/or description of a dimension within an instance, by providing dimension name and properties to over write"
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/dimension'
+      - $ref: '#/parameters/update_dimension'
+      - $ref: '#/parameters/if_match'
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "The instance has been updated"
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
+        400:
+          $ref: '#/responses/InvalidRequestError'
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
+        404:
+          $ref: '#/responses/InstanceNotFound'
+        409:
+          $ref: '#/responses/ConflictError'
+        500:
+          $ref: '#/responses/InternalError'
+  /instances/{instance_id}/dimensions/{dimension}/options:
+    get:
+      tags:
+      - "Private user"
+      summary: "Get a list of options for a dimension"
+      description: "Get all unique options from a dimension. This response is designed for efficient data transfer of incredibly long lists, and as such breaks several API conventions"
+      parameters:
+      - $ref: '#/parameters/instance_id'
+      - $ref: '#/parameters/dimension'
+      - $ref: '#/parameters/if_match'
+      produces:
+      - "application/json"
+      security:
+      - InternalAPIKey: []
+      responses:
+        200:
+          description: "Return a list of unique options"
+          schema:
+            type: object
+            properties:
+              dimension:
+                description: "The name of the dimension"
+                type: string
+              options:
+                description: "A list of all unique options within a dimension"
+                type: array
+                items:
+                  type: string
+          headers:
+            ETag:
+              type: string
+              description: "Defines a unique instance resource version"
+        400:
+          $ref: '#/responses/InvalidRequestError'
+        401:
+          $ref: '#/responses/UnauthorisedError'
+        403:
+          $ref: '#/responses/ForbiddenError'
+        404:
+          description: "dimension does not match any dimensions within the instance"
+        409:
+          $ref: '#/responses/ConflictError'
+        500:
+          $ref: '#/responses/InternalError'
 responses:
   ConflictError:
     description: "Failed to process the request due to a conflict"
@@ -627,6 +850,24 @@ definitions:
       type:
         description: "The type of alert"
         example: "correction"
+        type: string
+  Codelist:
+    type: object
+    properties:
+      href:
+        description: "A link to the codelist corresponding to this dimension"
+        type: string
+      id:
+        description: "The codelist id corresponding to this dimension"
+        type: string
+      name:
+        description: "The dimension name"
+        type: string
+      description:
+        description: "The dimension description"
+        type: string
+      label:
+        description: "A human readable label for dimension"
         type: string
   CollectionID:
     description: "The id of the unpublished collection (of datasets) that this dataset is associated with"
@@ -880,6 +1121,183 @@ definitions:
         description: "The type of the dataset"
         type: string
         example: "cantabular_table"
+  DimensionCore:
+    description: "Core fields to disambiguate dimensions, used for embedding or as a base for the Dimension object"
+    type: object
+    properties:
+      code_list:
+        description: "A link to the code-list entry for the dimension"
+        type: string
+      identifier:
+        description: "The identifier of the dimension"
+        type: string
+      label:
+        description: ""
+        type: string
+      name:
+        description: "The name of the dimension"
+        type: string
+  Dimension:
+    description: "A single dimension within a dataset"
+    allOf:
+      - $ref: '#/definitions/DimensionCore'
+      - type: object
+        properties:
+          "@context":
+              $ref: '#/definitions/LDContext'
+          "@id":
+            $ref: '#/definitions/LDID'
+          "@type":
+            allOf:
+            - $ref: '#/definitions/LDType'
+            - default: "csvw:column"
+          description:
+            description: ""
+            type: string
+          is_area_type:
+            description: "Indicates if a dimension is an area-type (census datasets only)"
+            type: boolean
+          _links:
+            type: object
+            properties:
+              code_list:
+                description: "The code list related to this dimension"
+                type: object
+                properties:
+                  href:
+                    description: "A URL to the code list"
+                    type: string
+                  id:
+                    description: "The unique id for the code list"
+                    type: string
+              options:
+                $ref: '#/definitions/OptionsLink'
+              version:
+                $ref: '#/definitions/VersionLink'
+              self:
+                $ref: '#/definitions/SelfLink'
+          number_of_options:
+            description: "The number of options available for this dimension"
+            type: integer
+          variable:
+            description: "The variable name (census datasets only)"
+            type: string
+  Dimensions:
+    allOf:
+      - $ref: '#/definitions/ListPagination'
+      - type: object
+        properties:
+          "@context":
+              $ref: '#/definitions/LDContext'
+          items:
+            description: "An array of dimensions"
+            type: array
+            items:
+              $ref: '#/definitions/Dimension'  
+  DimensionOptions:
+    allOf:
+      - $ref: '#/definitions/ListPagination'
+      - type: object
+        properties:
+          "@context":
+              $ref: '#/definitions/LDContext'
+          items:
+            description: "An array of dimension options"
+            type: array
+            items:
+              $ref: '#/definitions/DimensionOption'
+  DimensionOption:
+    type: object
+    properties:
+      "@context":
+          $ref: '#/definitions/LDContext'
+      "@id":
+        $ref: '#/definitions/LDID'
+      dimension:
+        description: "The name of the dimension"
+        type: string
+      instance_id:
+        description: "The unique identifier for the instance in which this dimension option is associated to"
+        type: string
+      label:
+        description: "A label given to a dimension option"
+        type: string
+      _links:
+        description: "A object with all resources related to a dimension option"
+        type: object
+        properties:
+          code:
+            description: "A link to the code of the dimension for this option"
+            type: object
+            properties:
+              href:
+                description: "The url of the code that refers to the dimension for this option"
+                type: string
+              id:
+                description: "The id of the code that refers to the dimension for this option"
+                type: string
+          code_list:
+            description: "A link to the code list the dimension for this option belongs to"
+            type: object
+            properties:
+              href:
+                description: "The url of the code list that the dimension for this option belongs to"
+                type: string
+              id:
+                description: "The id of the code list that the dimension for this option belongs to"
+                type: string
+          version:
+            $ref: '#/definitions/VersionLink'
+          self:
+            $ref: '#/definitions/SelfLink'
+      node_id:
+        description: "The id of the node"
+        type: string
+      option:
+        description: "An option for a dimension"
+        type: string
+  PatchOptions:
+    description: "A list of operations to patch a dimension option. Can only handle adding values for /node_id and /order. Each element in the array is processed in sequential order."
+    type: array
+    items:
+      type: object
+      description: "Item containing all necessary information to make a single operation on the resource."
+      properties:
+        op:
+          description: |
+            The operation to be made on path.
+            * add - Sets the value for the provided path
+          type: string
+          enum: [add]
+        path:
+          description: "Path to value that needs to be operated on."
+          type: string
+          example: "/node_id"
+          enum: [/node_id, /order]
+        value:
+          description: "A value that will be set for the provided path. /node_id accepts string values, and /order accepts integer values."
+          example: "node_123"
+  PatchDimensions:
+    description: "A list of operations to patch dimensions. Can only handle adding lists of dimension values, and modifying order and node_id values for existing dimension options. The patch operations are executed in bulk to improve performance, and they are idempotent. If at least one of the provided dimensions and/or options in a patch path cannot be matched against existing dimension options, the request will fail with 404."
+    type: array
+    items:
+      type: object
+      description: "Item containing all necessary information to make a single operation on the resource."
+      properties:
+        op:
+          description: |
+            The operation to be made on path.
+            * add - Sets the value for the provided path
+          type: string
+          enum: ["add"]
+        path:
+          description: "Path to value that needs to be operated on."
+          type: string
+          example: "/-"
+          enum: ["/-", "/{dimension}/options/{option}/order", "/{dimension}/options/{option}/node_id"]
+        value:
+          description: "A list of dimenions that will be added to the instance."
+          example: "[{\"dimension\": \"dim1\", \"option\": \"op1\"}, {\"dimension\": \"dim1\", \"option\": \"op2\"}, {\"op\": \"add\", \"path\": \"/dim1/options/op1/order\", \"value\": 3}, {\"op\": \"add\", \"path\": \"/dim1/options/op2/node_id\", \"value\": \"node123\"}]"
   CSVDownload:
     description: "Additional fields available for CSV downloads"
     type: object
@@ -964,7 +1382,6 @@ definitions:
           format: uri
         state:
           $ref: '#/definitions/State'
-        
   Editions:
     type: object
     allOf:
@@ -1267,9 +1684,7 @@ definitions:
                     $ref: '#/definitions/State'
   Version:
     description: "An object containing information about published datasets from the ONS"
-    required: [
-      release_date,
-    ]
+    required: [release_date]
     allOf:
     - $ref: '#/definitions/dcatSeriesFull'
     - $ref: '#/definitions/dcatVersionFull'
@@ -1285,6 +1700,10 @@ definitions:
           type: string
         is_based_on:
           $ref: '#/definitions/IsBasedOn'
+        _embedded:
+          type: array
+          items:
+              $ref: '#/definitions/DimensionCore'
         _links:
           $ref: '#/definitions/VersionLinks'
         type:
@@ -1450,6 +1869,13 @@ definitions:
       id:
         description: "The unique id for the latest version of a dataset"
         type: "string"
+  OptionsLink:
+    description: "A list of links related to this dimension"
+    type: object
+    properties:
+      href:
+        description: "A URL to a list of options for this dimension"
+        type: string
   SelfLink:
     description: "A link to this resource"
     readOnly: true
