@@ -34,9 +34,9 @@ parameters:
     in: body
     schema:
       $ref: '#/definitions/Event'
-  id:
-    name: id
-    description: "Id that represents a dataset"
+  identifier:
+    name: identifier
+    description: "Identifier that represents a dataset"
     in: path
     required: true
     type: string
@@ -183,14 +183,14 @@ paths:
           description: "No dataset was found with the popultation-type provided"
         500:
           $ref: '#/responses/InternalError'
-  /datasets/{id}:
+  /datasets/{identifier}:
     post:
       tags:
       - "Private user"
       summary: "Create a dataset"
       description: "Create a dataset provided by the ONS that can be filtered using the filter API"
       parameters:
-      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/identifier'
       - $ref: '#/parameters/new_dataset'
       produces:
       - "application/json"
@@ -213,7 +213,7 @@ paths:
       summary: "Get a dataset"
       description: "The dataset contains all high level information, for additional details see editions or versions of a dataset. "
       parameters:
-      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/identifier'
       produces:
       - "application/hal+json"
       - "application/ld+json"
@@ -233,7 +233,7 @@ paths:
       summary: "Update a dataset"
       description: "Update the metadata for the next release of the dataset. The dataset contains all high level information, for additional details see editions or versions of a dataset."
       parameters:
-      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/identifier'
       - $ref: '#/parameters/update_dataset'
       responses:
         200:
@@ -252,7 +252,7 @@ paths:
       summary: "Delete a dataset"
       description: "Delete an existing dataset"
       parameters:
-      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/identifier'
       responses:
         204:
           description: "The dataset was successfully deleted"
@@ -262,14 +262,37 @@ paths:
           description: "Forbidden to delete dataset, already published"
         500:
           $ref: '#/responses/InternalError'
-  /datasets/{id}/editions:
+  /datasets/{identifier}/editions:
+    post:
+      tags:
+      - "Private user"
+      summary: "Create an edition of a dataset"
+      description: "Create an edition of a dataset"
+      parameters:
+      - $ref: '#/parameters/identifier'
+      - $ref: '#/parameters/new_dataset'
+      produces:
+      - "application/json"
+      responses:
+        201:
+          description: "A json object containing an edition which has been created"
+          schema:
+            $ref: '#/definitions/Edition'
+        400:
+          description: "Invalid request body"
+        401:
+          description: "Unauthorised to create/overwrite edition"
+        403:
+          description: "Forbidden to overwrite edition, already published"
+        500:
+          $ref: '#/responses/InternalError'
     get:
       tags:
       - "Public"
       summary: "Get a list of editions of a dataset"
       description: "Get a list of editions of a type of dataset"
       parameters:
-      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/identifier'
       - $ref: '#/parameters/limit'
       - $ref: '#/parameters/offset'
       produces:
@@ -287,7 +310,7 @@ paths:
           description: "No editions were found for the id provided"
         500:
           $ref: '#/responses/InternalError'
-  /datasets/{id}/editions/{edition}:
+  /datasets/{identifier}/editions/{edition}:
     get:
       tags:
       - "Public"
@@ -295,7 +318,7 @@ paths:
       description: "The edition contains a link to all versions"
       parameters:
       - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/identifier'
       produces:
       - "application/hal+json"
       - "application/ld+json"
@@ -311,7 +334,7 @@ paths:
           description: "No edition of a dataset was found using the id and edition provided"
         500:
           $ref: '#/responses/InternalError'
-  /datasets/{id}/editions/{edition}/versions:
+  /datasets/{identifier}/editions/{edition}/versions:
     get:
       tags:
       - "Public"
@@ -319,7 +342,7 @@ paths:
       description: "Get a list of all versions for an edition of a dataset"
       parameters:
       - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/identifier'
       - $ref: '#/parameters/limit'
       - $ref: '#/parameters/offset'
       produces:
@@ -340,14 +363,14 @@ paths:
           description: "No versions found using the id and edition provided"
         500:
           $ref: '#/responses/InternalError'
-  /datasets/{id}/editions/{edition}/versions/{version}:
+  /datasets/{identifier}/editions/{edition}/versions/{version}:
     put:
       tags:
       - "Private user"
       summary: "Update a version"
       description: "Update a version for an edition of a dataset, if the state is changed to associated or published, the parent documents(dataset and edition resources) will also be updated. A version can only be updated if the state is not published"
       parameters:
-      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/identifier'
       - $ref: '#/parameters/edition'
       - $ref: '#/parameters/version'
       - $ref: '#/parameters/version_update'
@@ -377,7 +400,7 @@ paths:
       description: "Get a specific version of an edition of a dataset"
       parameters:
       - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/identifier'
       - $ref: '#/parameters/version'
       produces:
       - "application/hal+json"
@@ -408,7 +431,7 @@ paths:
       description: "detaches a version from a collection. Effectively a soft delete."
       parameters:
       - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/id'
+      - $ref: '#/parameters/identifier'
       - $ref: '#/parameters/version'
       security:
             - InternalAPIKey: []
@@ -988,149 +1011,51 @@ definitions:
         type: string
   Instance:
     type: object
-    properties:
-      version_notes:
-        description: "Notes describing what is unique to this particular version"
-        readOnly: true
-        items:
+    allOf:
+    - $ref: '#/definitions/dcatSeriesFull'
+    - $ref: '#/definitions/dcatVersionFull'
+    - type: object
+      properties:
+        collection_id:
+          $ref: '#/definitions/CollectionID'
+        etag:
           type: string
-      identifier:
-        description: "A unique id for an instance"
-        readOnly: true
-        type: string
-      collection_id:
-        $ref: '#/definitions/CollectionID'
-      creator:
-        type: string
-        format: url
-      downloads:
-        description: "A selection of download objects containing information of downloadable files."
-        type: object
-        properties:
-          text/csv:
-            $ref: '#/definitions/DownloadObject'
-          application/vnd.ms-excel:
-            $ref: '#/definitions/DownloadObject'
-      edition:
-        description: "The edition of the dataset version"
-        type: string
-      etag:
-        type: string
-      events:
-        description: "A list of events took place for this job"
-        readOnly: true
-        type: array
-        items:
-          $ref: '#/definitions/Event'
-      issued:
-        description: "The time when this instance was published"
-        type: string
-        format: date-time
-      last_updated:
-        description: "The last time an event happened"
-        readOnly: true
-        type: string
-      _links:
-        type: object
-        properties:
-          dataset:
-            description: "An object describing the ID and URL for a dataset which is associated with this instance"
-            readOnly: true
-            type: object
+        events:
+          description: "A list of events took place for this job"
+          readOnly: true
+          type: array
+          items:
+            $ref: '#/definitions/Event'
+        last_updated:
+          description: "The last time an event happened"
+          readOnly: true
+          type: string
+        _links:
+          allOf:
+          - $ref: '#/definitions/VersionLinks'
+          - type: object
             properties:
-              href:
-                description: "The URL for the dataset associated with this instance"
-                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
-                type: string
-              id:
-                description: "The ID of the dataset associated with this instance"
-                example: "95c4669b-3ae9-4ba7-b690-87e890a1c67c"
-                type: string
-          edition:
-            description: "An object describing the ID and URL for the dataset edition that is associated with this instance"
-            readOnly: true
-            type: object
-            properties:
-              href:
-                description: "The URL for the dataset edition associated with this instance"
-                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017"
-                type: string
-              id:
-                description: "The ID for the dataset edition associated with this instance"
-                type: string
-          self:
-            description: "An object describing the ID and URL for a dataset which is associated with this instance"
-            readOnly: true
-            type: object
-            properties:
-              href:
-                description: "The URL for this resource"
-                example: "http://localhost:22000/instances/45c4669b-3ae9-4ba7-b690-87e890a1c67f"
-                type: string
-          spatial_resolution:
-            description: "A link object describing the url to a list of geography ranges for the version of the dataset"
-            type: object
-            properties:
-              href:
-                description: "A url to a list of geography ranges for the version of the dataset"
-                type: string
-          version:
-            description: "An object describing the ID and URL of the dataset version associated with this instance"
-            readOnly: true
-            type: object
-            properties:
-              href:
-                description: "The URL for the dataset version associated with this instance"
-                example: 'http://localhost:21800/dataset/042e216a-7822-4fa0-a3d6-e3f5248ffc35/edition/2017/version/1'
-                type: string
-              id:
-                description: "The ID of the dataset version associated with this instance"
-                example: "042e216a-7822-4fa0-a3d6-e3f5248ffc35"
-                type: string
-          next_version:
-            type: string
-            format: url
-          previous_version:
-            type: string
-            format: url
-      release_date:
-        description: "The release date of this version of the dataset"
-        type: string
-      state:
-        $ref: '#/definitions/State'
-      temporal_coverage:
-        $ref: '#/definitions/Temporal'
-      temporal_resolution:
-        description: ""
-        type: string
-      table_schema:
-        $ref: '#/definitions/TableSchema'
-      version:
-        description: "The dataset version number that this instance is associated with, this will only be set once the state has been updated to `edition-confirmed`"
-        readOnly: true
-        type: integer
+              version:
+                description: "Version link is needed separately on an Instance as the self link will use the instance ID rather than version path."
+                type: object
+                readOnly: true
+                properties:
+                  href: 
+                    type: string
+              job:
+                $ref: '#/definitions/JobLink'
+        state:
+          $ref: '#/definitions/State'
   Instances:
     description: "A list of instance resources, if query parameter state is set return all instances with that state"
     type: object
     properties:
-      count:
-        description: "The number of instances returned"
-        type: integer
       items:
         type: array
         items:
           $ref: '#/definitions/Instance'
       _links:
         $ref: '#/definitions/ListLinks'
-      limit:
-        description: "The number of instances requested"
-        type: integer
-      offset:
-        description: "The first row of instances to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
-        type: integer
-      total_count:
-        description: "The total number of instances"
-        type: integer
   LatestChange:
     description: "A single change between this version and the previous version of an edition for a dataset"
     type: object
@@ -1210,57 +1135,16 @@ definitions:
   NewInstance:
     description: "A model for the request and response body for creating a new instance"
     type: object
-    properties:
-      dimensions:
-        description: "A list of codelists for each dimension of this instance"
-        type: array
-        items:
-          $ref: '#/definitions/Codelist'
-      id:
-        description: "A unique id for an instance"
-        readOnly: true
-        type: string
-      links:
-        type: object
+    allOf:
+      - $ref: '#/definitions/Instance'
+      - type: object
         properties:
-          dataset:
-            description: "An object describing the ID and URL for a dataset which is associated with this instance"
-            type: object
-            properties:
-              href:
-                description: "The URL for the dataset associated with this instance"
-                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
-                type: string
-              id:
-                description: "The ID of the dataset associated with this instance"
-                example: "95c4669b-3ae9-4ba7-b690-87e890a1c67c"
-                type: string
-          job:
-            description: "An object describing the ID and URL of the job containing this instance"
-            required: ["id", "href"]
-            type: object
-            properties:
-              href:
-                description: "The URL for the job containing this instance"
-                example: "http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35"
-                type: string
-              id:
-                description: "The ID of the job containing this instance"
-                example: 042e216a-7822-4fa0-a3d6-e3f5248ffc35
-                type: string
-          self:
-            description: "An object describing the ID and URL for a dataset which is associated with this instance"
-            readOnly: true
-            type: object
-            properties:
-              href:
-                description: "The URL for this resource"
-                example: "http://localhost:22000/instances/45c4669b-3ae9-4ba7-b690-87e890a1c67f"
-                type: string
-      state:
-        description: "The state of the resource, this can only have a value of `created`"
-        type: string
-        readOnly: true
+          dimensions:
+            description: "A list of codelists for each dimension of this instance"
+            type: array
+            items:
+              $ref: '#/definitions/Codelist'
+      
   NewVersionResponse:
     description: "A model for the response body when creating a new version for an edition of a dataset"
     allOf:
@@ -1268,10 +1152,6 @@ definitions:
         properties:
           collection_id:
             $ref: '#/definitions/CollectionID'
-          id:
-            type: string
-            description: "An unique id for a dataset"
-            example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91CD"
       - $ref: "#/definitions/Version"
   State:
     description: |
@@ -1354,62 +1234,12 @@ definitions:
             collection_id:
               $ref: '#/definitions/CollectionID'
         - $ref: "#/definitions/Dataset"
-  UpdateDownloadObject:
-    description: "Object containing information of a downloadable file"
-    type: object
-    properties:
-      href:
-        description: "The URL to the generated file"
-        type: string
-      size:
-        description: "The size of the file in bytes"
-        type: string
-      public:
-        description: "The URL to a public-accessible download"
-        type: string
-      private:
-        description: "The URL to a non public-accessible download"
-        type: string
   UpdateVersion:
     description: "An object containing information to be updated on a version resource"
     type: object
     properties:
-      alerts:
-        description: "A list of alerts, for example corrections after the resource has been published"
-        type: array
-        items:
-          $ref: '#/definitions/Alert'
-      collection_id:
-        $ref: '#/definitions/CollectionID'
-      downloads:
-        description: "A selection of download objects containing information of downloadable files. These can only be updated via an authorised caller."
-        type: object
-        properties:
-          csv:
-            $ref: '#/definitions/DownloadObject'
-          xls:
-            $ref: '#/definitions/DownloadObject'
-      latest_changes:
-        description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
-        type: array
-        items:
-          $ref: '#/definitions/LatestChange'
-      links:
-        $ref: '#/definitions/VersionLinks'
-      release_date:
-        description: "The release date of this version of the dataset"
-        type: string
-      state:
-        $ref: '#/definitions/State'
-      temporal:
-        $ref: '#/definitions/Temporal'
-      version:
-        description: "A number identifying the version for an edition from a dataset"
-        example: 1
-        readOnly: true
-        type: integer
+      $ref: '#/definitions/Version'
   Versions:
-    # type: object
     allOf:
       - $ref: '#/definitions/ListPagination'
       - type: object
@@ -1462,9 +1292,11 @@ definitions:
         next_version:
           type: string
           format: uri
+          readOnly: true
         previous_version:
           type: string
           format: uri
+          readOnly: true
         state:
           $ref: '#/definitions/State'
  
@@ -1538,6 +1370,7 @@ definitions:
   VersionLinks:
     description: "A list of links related to this resource"
     type: object
+    readOnly: true
     properties:
       dataset:
         $ref: '#/definitions/DatasetLink'
@@ -1591,6 +1424,19 @@ definitions:
         type: string
       id:
         description: "The unique id for the dataset edition for a version"
+        type: string
+  JobLink:
+    description: "An object describing the ID and URL of the job containing this instance"
+    required: ["id", "href"]
+    type: object
+    properties:
+      href:
+        description: "The URL for the job containing this instance"
+        example: "http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35"
+        type: string
+      id:
+        description: "The ID of the job containing this instance"
+        example: 042e216a-7822-4fa0-a3d6-e3f5248ffc35
         type: string
   LatestVersionLink:
     description: "An object containing the latest version id and link"
