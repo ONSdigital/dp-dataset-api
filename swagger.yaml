@@ -121,6 +121,13 @@ parameters:
     required: true
     schema:
       $ref: "#/definitions/Dataset"
+  update_dimension:
+    name: dimension
+    description: "A dimension object to update for a given instance"
+    in: body
+    required: true
+    schema:
+      $ref: '#/definitions/Dimension'
   version:
     name: version
     description: "A version of a dataset"
@@ -133,7 +140,7 @@ parameters:
     in: body
     required: true
     schema:
-      $ref: '#/definitions/UpdateVersion'
+      $ref: '#/definitions/Version'
   limit:
     name: limit
     description: "Maximum number of items that will be returned. A value of zero will return zero items. The default value is 20, and the maximum limit allowed is 1000"
@@ -173,11 +180,6 @@ securityDefinitions:
   InternalAPIKey:
     name: internal-token
     description: "API key used to allow only internal services to update the state of an import job"
-    in: header
-    type: apiKey
-  DownloadServiceAPIKey:
-    name: x-download-service-token
-    description: "API key used to allow the download service to access public and private links to a download"
     in: header
     type: apiKey
 paths:
@@ -261,6 +263,8 @@ paths:
       responses:
         200:
           description: "A json object for a single Dataset"
+          schema:
+            $ref: '#/definitions/UpdateDatasetResponse'
         400:
           description: "Bad Request due to invalid json in the request body"
         401:
@@ -837,20 +841,6 @@ responses:
   UnauthorisedError:
     description: "The token provided is unauthorised to carry out this operation"
 definitions:
-  Alert:
-    description: "Important information relating to a version of a dataset"
-    type: object
-    properties:
-      date:
-        description: "The date and time of when an alert took place"
-        type: string
-      description:
-        description: "Detail of what a user needs to be aware of for this dataset"
-        type: string
-      type:
-        description: "The type of alert"
-        example: "correction"
-        type: string
   Codelist:
     type: object
     properties:
@@ -1027,7 +1017,7 @@ definitions:
                   is_based_on:
                     $ref: '#/definitions/IsBasedOn'
                   _links:
-                    $ref: '#/definitions/DatasetListLinks'
+                    $ref: '#/links/DatasetListLinks'
                   national_statistic:
                     description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
                     type: boolean
@@ -1093,7 +1083,7 @@ definitions:
         is_based_on:
           $ref: '#/definitions/IsBasedOn'
         _links:
-          $ref: '#/definitions/DatasetLinks'
+          $ref: '#/links/DatasetLinks'
         national_statistic:
           description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
           type: boolean
@@ -1171,11 +1161,11 @@ definitions:
                     description: "The unique id for the code list"
                     type: string
               options:
-                $ref: '#/definitions/OptionsLink'
+                $ref: '#/links/Options'
               version:
-                $ref: '#/definitions/VersionLink'
+                $ref: '#/links/Version'
               self:
-                $ref: '#/definitions/SelfLink'
+                $ref: '#/links/Self'
           number_of_options:
             description: "The number of options available for this dimension"
             type: integer
@@ -1247,9 +1237,9 @@ definitions:
                 description: "The id of the code list that the dimension for this option belongs to"
                 type: string
           version:
-            $ref: '#/definitions/VersionLink'
+            $ref: '#/links/Version'
           self:
-            $ref: '#/definitions/SelfLink'
+            $ref: '#/links/Self'
       node_id:
         description: "The id of the node"
         type: string
@@ -1371,7 +1361,7 @@ definitions:
         is_based_on:
           $ref: '#/definitions/IsBasedOn'
         _links:
-          $ref: '#/definitions/EditionLinks'
+          $ref: '#/links/EditionLinks'
         type:
           $ref: '#/definitions/Type'
         next_edition:
@@ -1405,7 +1395,7 @@ definitions:
                   "@type":
                     $ref: '#/definitions/LDType'
                   _links:
-                    $ref: '#/definitions/SelfLink'
+                    $ref: '#/links/Self'
                   state:
                     $ref: '#/definitions/State'
   Event:
@@ -1449,7 +1439,7 @@ definitions:
           type: string
         _links:
           allOf:
-          - $ref: '#/definitions/VersionLinks'
+          - $ref: '#/links/VersionLinks'
           - type: object
             properties:
               version:
@@ -1460,7 +1450,7 @@ definitions:
                   href: 
                     type: string
               job:
-                $ref: '#/definitions/JobLink'
+                $ref: '#/links/Job'
         state:
           $ref: '#/definitions/State'
   Instances:
@@ -1472,43 +1462,12 @@ definitions:
         items:
           $ref: '#/definitions/Instance'
       _links:
-        $ref: '#/definitions/ListLinks'
-  LatestChange:
-    description: "A single change between this version and the previous version of an edition for a dataset"
-    type: object
-    properties:
-      description:
-        description: "A description of what has changed between versions"
-        type: string
-      name:
-        description: "The name of the change that has occurred between versions"
-        type: string
-        example: "changes in classification"
-      type:
-        description: "The type of change"
-        type: string
-        example: "summary of changes"
-  ListLinks:
-    description: "The _links structure provided on all list endpoints"
-    type: object
-    properties:
-      self:
-        $ref: '#/definitions/SelfLink'
-      next:
-        type: object
-        properties:
-          href: 
-            type: string
-      prev:
-        type: object
-        properties:
-          href: 
-            type: string
+        $ref: '#/links/ListLinks'
   ListPagination:
     description: "The fields required on a list endpoint to facilitate pagination"
     properties:
       _links:
-        $ref: '#/definitions/ListLinks'
+        $ref: '#/links/ListLinks'
       count:
         description: "The number of versions returned for an edition of a dataset"
         readOnly: true
@@ -1614,21 +1573,6 @@ definitions:
               format: url
             sub_property_of:
               type: string
-  Temporal:
-    description: "A list of frequencies the dataset covers for a particular period of time"
-    type: array
-    items:
-      type: object
-      properties:
-        start_date:
-          description: "The start date of the time period in which the version of the dataset covers this frequency"
-          type: string
-        end_date:
-          description: "The end date of the time period in which the version of the dataset covers this frequency"
-          type: string
-        frequency:
-          description: "The time frequency the version of the dataset covers for the period of time between start_date and end_date"
-          type: string
   UpdateDatasetResponse:
     description: "A model for the response body when creating a new dataset"
     type: object
@@ -1651,11 +1595,6 @@ definitions:
             collection_id:
               $ref: '#/definitions/CollectionID'
         - $ref: "#/definitions/Dataset"
-  UpdateVersion:
-    description: "An object containing information to be updated on a version resource"
-    type: object
-    properties:
-      $ref: '#/definitions/Version'
   Versions:
     allOf:
       - $ref: '#/definitions/ListPagination'
@@ -1679,7 +1618,7 @@ definitions:
                   "@type":
                     $ref: '#/definitions/LDType'
                   _links:
-                    $ref: '#/definitions/SelfLink'
+                    $ref: '#/links/Self'
                   state:
                     $ref: '#/definitions/State'
   Version:
@@ -1705,7 +1644,7 @@ definitions:
           items:
               $ref: '#/definitions/DimensionCore'
         _links:
-          $ref: '#/definitions/VersionLinks'
+          $ref: '#/links/VersionLinks'
         type:
           $ref: '#/definitions/Type'
         next_version:
@@ -1718,8 +1657,7 @@ definitions:
           readOnly: true
         state:
           $ref: '#/definitions/State'
- 
-  # Link objects
+links:
   DatasetLinks:
     description: "A list of links related to this resource"
     type: object
@@ -1733,24 +1671,24 @@ definitions:
             example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions"
             type: string
       latest_version:
-        $ref: '#/definitions/LatestVersionLink'
+        $ref: '#/links/LatestVersion'
       self:
-        $ref: '#/definitions/SelfLink'
+        $ref: '#/links/Self'
   DatasetListLinks:
     description: "A list of links related to this resource, in the context of a list of datasets"
     type: object
     properties:
       latest_version:
-        $ref: '#/definitions/LatestVersionLink'
+        $ref: '#/links/LatestVersion'
       self:
-        $ref: '#/definitions/SelfLink'
+        $ref: '#/links/Self'
   EditionLinks:
     description: "A list of links related to this resource"
     readOnly: true
     type: object
     properties:
       dataset:
-        $ref: '#/definitions/DatasetLink'
+        $ref: '#/links/Dataset'
       editions:
         readOnly: true
         type: object
@@ -1760,14 +1698,14 @@ definitions:
             example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions"
             type: string
       latest_version:
-        $ref: '#/definitions/LatestVersionLink'
+        $ref: '#/links/LatestVersion'
       self:
-        $ref: '#/definitions/SelfLink'
+        $ref: '#/links/Self'
       versions:
         type: object
         properties:
           href:
-            description: "A URL to all versions dor an edition of a dataset"
+            description: "A URL to all versions for an edition of a dataset"
             example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/edition/2017/versions"
             type: string
       next:
@@ -1792,11 +1730,11 @@ definitions:
     readOnly: true
     properties:
       dataset:
-        $ref: '#/definitions/DatasetLink'
+        $ref: '#/links/Dataset'
       edition:
-        $ref: '#/definitions/EditionLink'
+        $ref: '#/links/Edition'
       self:
-        $ref: '#/definitions/SelfLink'
+        $ref: '#/links/Self'
       versions:
         type: object
         properties:
@@ -1820,7 +1758,23 @@ definitions:
             format: url
           id:
             type: string
-  DatasetLink:
+  ListLinks:
+    description: "The _links structure provided on all list endpoints"
+    type: object
+    properties:
+      self:
+        $ref: '#/links/Self'
+      next:
+        type: object
+        properties:
+          href: 
+            type: string
+      prev:
+        type: object
+        properties:
+          href: 
+            type: string
+  Dataset:
     description: "An object containing the dataset id and link"
     readOnly: true
     type: object
@@ -1832,7 +1786,7 @@ definitions:
       id:
         description: "The unique id for the dataset of this version"
         type: string
-  EditionLink:
+  Edition:
     description: "An object containing the edition and link"
     readOnly: true
     type: object
@@ -1844,7 +1798,7 @@ definitions:
       id:
         description: "The unique id for the dataset edition for a version"
         type: string
-  JobLink:
+  Job:
     description: "An object describing the ID and URL of the job containing this instance"
     required: ["id", "href"]
     type: object
@@ -1857,7 +1811,7 @@ definitions:
         description: "The ID of the job containing this instance"
         example: 042e216a-7822-4fa0-a3d6-e3f5248ffc35
         type: string
-  LatestVersionLink:
+  LatestVersion:
     description: "An object containing the latest version id and link"
     type: object
     readOnly: true
@@ -1869,14 +1823,14 @@ definitions:
       id:
         description: "The unique id for the latest version of a dataset"
         type: "string"
-  OptionsLink:
+  Options:
     description: "A list of links related to this dimension"
     type: object
     properties:
       href:
         description: "A URL to a list of options for this dimension"
         type: string
-  SelfLink:
+  Self:
     description: "A link to this resource"
     readOnly: true
     type: object
@@ -1884,20 +1838,7 @@ definitions:
       href:
         description: "A URL to this resource"
         type: string
-  SpatialLink:
-    type: object
-    properties:
-      href:
-        description: "A url to a list of geography ranges for the version of the dataset"
-        type: string
-  TaxonomyLink:
-    description: "A link to the taxonomy of the dataset"
-    type: object
-    properties:
-      href:
-        description: "A url to the taxonomy of the dataset"
-        type: string
-  VersionLink:
+  Version:
     description: "The dataset version this resource belongs to"
     type: object
     properties:
