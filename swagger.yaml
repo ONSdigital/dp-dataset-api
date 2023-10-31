@@ -622,7 +622,7 @@ definitions:
         description: "Telephone number to contact the statistician"
         type: string
   dcatSeriesCore:
-    description: "Core properties needed for dcat:Dataset and dcat:DatasetSeries objects"
+    description: "Core properties needed for dcat:Dataset and dcat:DatasetSeries objects.  Used by both list and resource endpoints"
     properties:
       description:
         description: "A description for a dataset. Could contain markdown"
@@ -677,7 +677,7 @@ definitions:
         example: "CPI"
         type: string
   dcatSeriesFull:
-    description: "All properties needed for full dcat:DatasetSeries or dcat:Dataset objects"
+    description: "All properties needed for full dcat:DatasetSeries or dcat:Dataset objects. Used only by resource endpoints, not lists"
     allOf:
     - $ref: '#/definitions/dcatSeriesCore'
     - type: object
@@ -695,7 +695,7 @@ definitions:
           items:
             type: string
   dcatVersionCore:
-    description: "core quality, mangement and relationship fields for describing a dcat:dataset version"
+    description: "core quality, mangement and relationship fields for describing a dcat:dataset version. Used by both list and resource endpoints"
     type: object
     properties:
       distributions:
@@ -720,7 +720,7 @@ definitions:
         items: 
           type: string
   dcatVersionFull:
-    description: "All properties needed for complete dcat:Dataset version objects"
+    description: "All properties needed for complete dcat:Dataset version objects. Used only by resource endpoints, not lists"
     allOf:
     - $ref: '#/definitions/dcatVersionCore'
     - type: object
@@ -784,7 +784,7 @@ definitions:
     format: uri
   LDType:
     description: "The linked data vocabulary term for a dataset"
-    default: "dcat:datasetSeries"
+    default: "dcat:dataset"
     type: string
   Dataset:
     description: "The dataset"
@@ -799,7 +799,9 @@ definitions:
         "@id":
           $ref: '#/definitions/LDID'
         "@type":
-          $ref: '#/definitions/LDType'
+          allOf:
+          - $ref: '#/definitions/LDType'
+          - default: "dcat:datasetSeries"
         canonical_topic:
           description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy."
           type: string
@@ -898,6 +900,33 @@ definitions:
           $ref: '#/definitions/LDType'
         etag:
           type: string
+        _embedded:
+          type: object
+          properties:
+            versions:
+              description: "Likely described as a 'seeAlso' term"
+              type: array
+              items:
+                type: object
+                properties:
+                  "@id":
+                    $ref: '#/definitions/LDID'
+                  issued:
+                    description: "The date the edition was first issued"
+                    type: string
+                    format: date-time
+                  etag:
+                    type: string
+                  version:
+                    description: "A number identifying the version for an edition from a dataset"
+                    example: 1
+                    readOnly: true
+                    type: integer
+                  version_notes:
+                    description: "A list of notes, for example corrections after the resource has been published"
+                    type: array
+                    items: 
+                      type: string
         is_based_on:
           $ref: '#/definitions/IsBasedOn'
         _links:
