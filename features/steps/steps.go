@@ -42,7 +42,6 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I have these instances:$`, c.iHaveTheseInstances)
 	ctx.Step(`^I have a real kafka container with topic "([^"]*)"$`, c.iHaveARealKafkaContainerWithTopic)
 	ctx.Step(`^these cantabular generator downloads events are produced:$`, c.theseCantabularGeneratorDownloadsEventsAreProduced)
-	ctx.Step(`^these generate downloads events are produced:$`, c.theseGenerateDownloadsEventsAreProduced)
 }
 
 func (c *DatasetComponent) thereAreNoDatasets() error {
@@ -134,52 +133,6 @@ func (c *DatasetComponent) iHaveARealKafkaContainerWithTopic(topic string) error
 		return fmt.Errorf("failed to create kafka consumer: %w", err)
 	}
 	c.setInitialiserRealKafka()
-
-	return nil
-}
-
-// theseCsvCreatedEventsAreProduced consumes kafka messages that are expected to be produced by the service under test
-// and validates that they match the expected values in the test
-func (c *DatasetComponent) theseGenerateDownloadsEventsAreProduced(events *godog.Table) error {
-	expected, err := assistdog.NewDefault().CreateSlice(new(download.GenerateDownloads), events)
-	if err != nil {
-		return fmt.Errorf("failed to create slice from godog table: %w", err)
-	}
-
-	var got []*download.GenerateDownloads
-	listen := true
-
-	for listen {
-		select {
-		// ToDo: Set timeout variable
-
-		case <-time.After(time.Second * 15):
-			listen = false
-		case <-c.consumer.Channels().Closer:
-			return errors.New("closer channel closed")
-		case msg, ok := <-c.consumer.Channels().Upstream:
-			if !ok {
-				return errors.New("upstream channel closed")
-			}
-
-			var e download.GenerateDownloads
-			var s = schema.GenerateCMDDownloadsEvent
-
-			if err := s.Unmarshal(msg.GetData(), &e); err != nil {
-				msg.Commit()
-				msg.Release()
-				return fmt.Errorf("error unmarshalling message: %w", err)
-			}
-
-			msg.Commit()
-			msg.Release()
-
-			got = append(got, &e)
-		}
-	}
-	if diff := cmp.Diff(got, expected); diff != "" {
-		return fmt.Errorf("-got +expected)\n%s", diff)
-	}
 
 	return nil
 }

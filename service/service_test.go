@@ -42,10 +42,6 @@ var funcDoGetMongoDBErr = func(ctx context.Context, cfg config.MongoConfig) (sto
 	return nil, errMongo
 }
 
-var funcDoGetGraphDBErr = func(ctx context.Context) (store.GraphDB, service.Closer, error) {
-	return nil, nil, errGraph
-}
-
 var funcDoGetKafkaProducerErr = func(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
 	return nil, errKafka
 }
@@ -92,13 +88,6 @@ func TestRun(t *testing.T) {
 			return &storeMock.MongoDBMock{}, nil
 		}
 
-		funcDoGetGraphDBOk := func(_ context.Context) (store.GraphDB, service.Closer, error) {
-			var funcClose = func(ctx context.Context) error {
-				return nil
-			}
-			return &storeMock.GraphDBMock{}, &serviceMock.CloserMock{CloseFunc: funcClose}, nil
-		}
-
 		funcDoGetKafkaProducerOk := func(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
 			return &kafkatest.IProducerMock{
 				ChannelsFunc: func() *kafka.ProducerChannels {
@@ -122,7 +111,6 @@ func TestRun(t *testing.T) {
 			Convey("Then service Run fails with the same error and the flag is not set. No further initialisations are attempted", func() {
 				So(err, ShouldResemble, errMongo)
 				So(svcList.MongoDB, ShouldBeFalse)
-				So(svcList.Graph, ShouldBeFalse)
 				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
@@ -131,7 +119,6 @@ func TestRun(t *testing.T) {
 		Convey("Given that initialising GraphDB returns an error", func() {
 			initMock := &serviceMock.InitialiserMock{
 				DoGetMongoDBFunc: funcDoGetMongoDBOk,
-				DoGetGraphDBFunc: funcDoGetGraphDBErr,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -141,7 +128,6 @@ func TestRun(t *testing.T) {
 			Convey("Then service Run fails with the same error and the flag is not set. No further initialisations are attempted", func() {
 				So(err, ShouldResemble, errGraph)
 				So(svcList.MongoDB, ShouldBeTrue)
-				So(svcList.Graph, ShouldBeFalse)
 				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
@@ -150,7 +136,6 @@ func TestRun(t *testing.T) {
 		Convey("Given that initialising Kafka producer returns an error", func() {
 			initMock := &serviceMock.InitialiserMock{
 				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
-				DoGetGraphDBFunc:       funcDoGetGraphDBOk,
 				DoGetKafkaProducerFunc: funcDoGetKafkaProducerErr,
 			}
 			svcErrors := make(chan error, 1)
@@ -161,7 +146,6 @@ func TestRun(t *testing.T) {
 			Convey("Then service Run fails with the same error and the flag is not set. No further initialisations are attempted", func() {
 				So(err, ShouldResemble, errKafka)
 				So(svcList.MongoDB, ShouldBeTrue)
-				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
@@ -170,7 +154,6 @@ func TestRun(t *testing.T) {
 		Convey("Given that initialising Helthcheck returns an error", func() {
 			initMock := &serviceMock.InitialiserMock{
 				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
-				DoGetGraphDBFunc:       funcDoGetGraphDBOk,
 				DoGetKafkaProducerFunc: funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:   funcDoGetHealthcheckErr,
 			}
@@ -182,7 +165,6 @@ func TestRun(t *testing.T) {
 			Convey("Then service Run fails with the same error and the flag is not set. No further initialisations are attempted", func() {
 				So(err, ShouldResemble, errHealthcheck)
 				So(svcList.MongoDB, ShouldBeTrue)
-				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.GenerateDownloadsProducer, ShouldBeTrue)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
@@ -197,7 +179,6 @@ func TestRun(t *testing.T) {
 
 			initMock := &serviceMock.InitialiserMock{
 				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
-				DoGetGraphDBFunc:       funcDoGetGraphDBOk,
 				DoGetKafkaProducerFunc: funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc: func(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error) {
 					return hcMockAddFail, nil
@@ -212,7 +193,6 @@ func TestRun(t *testing.T) {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldResemble, fmt.Sprintf("unable to register checkers: %s", errAddheckFail.Error()))
 				So(svcList.MongoDB, ShouldBeTrue)
-				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.GenerateDownloadsProducer, ShouldBeTrue)
 				So(svcList.HealthCheck, ShouldBeTrue)
 				So(len(hcMockAddFail.AddCheckCalls()), ShouldEqual, 5)
@@ -227,7 +207,6 @@ func TestRun(t *testing.T) {
 		Convey("Given that all dependencies are successfully initialised", func() {
 			initMock := &serviceMock.InitialiserMock{
 				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
-				DoGetGraphDBFunc:       funcDoGetGraphDBOk,
 				DoGetKafkaProducerFunc: funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:   funcDoGetHealthcheckOk,
 				DoGetHTTPServerFunc:    funcDoGetHTTPServer,
@@ -241,7 +220,6 @@ func TestRun(t *testing.T) {
 			Convey("Then service Run succeeds and all the flags are set", func() {
 				So(err, ShouldBeNil)
 				So(svcList.MongoDB, ShouldBeTrue)
-				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.GenerateDownloadsProducer, ShouldBeTrue)
 				So(svcList.HealthCheck, ShouldBeTrue)
 			})
@@ -278,7 +256,6 @@ func TestRun(t *testing.T) {
 			Convey("Then service Run succeeds and all the flags except Graph are set", func() {
 				So(err, ShouldBeNil)
 				So(svcList.MongoDB, ShouldBeTrue)
-				So(svcList.Graph, ShouldBeFalse)
 				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeTrue)
 			})
@@ -297,7 +274,6 @@ func TestRun(t *testing.T) {
 		Convey("Given that all dependencies are successfully initialised but the http server fails", func() {
 			initMock := &serviceMock.InitialiserMock{
 				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
-				DoGetGraphDBFunc:       funcDoGetGraphDBOk,
 				DoGetKafkaProducerFunc: funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:   funcDoGetHealthcheckOk,
 				DoGetHTTPServerFunc:    funcDoGetFailingHTTPSerer,
@@ -360,15 +336,6 @@ func TestClose(t *testing.T) {
 			CloseFunc: funcClose,
 		}
 
-		// graphDB will fail if healthcheck or http server are not stopped
-		graphMock := &storeMock.GraphDBMock{
-			CloseFunc: funcClose,
-		}
-
-		graphErrorConsumerMock := &serviceMock.CloserMock{
-			CloseFunc: funcClose,
-		}
-
 		// Kafka producer will fail if healthcheck or http server are not stopped
 		kafkaProducerMock := &kafkatest.IProducerMock{
 			ChannelsFunc: func() *kafka.ProducerChannels {
@@ -394,7 +361,6 @@ func TestClose(t *testing.T) {
 
 		fullSvcList := &service.ExternalServiceList{
 			GenerateDownloadsProducer: true,
-			Graph:                     true,
 			HealthCheck:               true,
 			MongoDB:                   true,
 			Init:                      nil,
@@ -406,15 +372,11 @@ func TestClose(t *testing.T) {
 			svc.SetHealthCheck(hcMock)
 			svc.SetDownloadsProducer(kafkaProducerMock)
 			svc.SetMongoDB(mongoMock)
-			svc.SetGraphDB(graphMock)
-			svc.SetGraphDBErrorConsumer(graphErrorConsumerMock)
 			err = svc.Close(context.Background())
 			So(err, ShouldBeNil)
 			So(len(hcMock.StopCalls()), ShouldEqual, 1)
 			So(len(serverMock.ShutdownCalls()), ShouldEqual, 1)
 			So(len(mongoMock.CloseCalls()), ShouldEqual, 1)
-			So(len(graphMock.CloseCalls()), ShouldEqual, 1)
-			So(len(graphErrorConsumerMock.CloseCalls()), ShouldEqual, 1)
 			So(len(kafkaProducerMock.CloseCalls()), ShouldEqual, 1)
 		})
 
@@ -431,16 +393,12 @@ func TestClose(t *testing.T) {
 			svc.SetHealthCheck(hcMock)
 			svc.SetDownloadsProducer(kafkaProducerMock)
 			svc.SetMongoDB(mongoMock)
-			svc.SetGraphDB(graphMock)
-			svc.SetGraphDBErrorConsumer(graphErrorConsumerMock)
 			err = svc.Close(context.Background())
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldResemble, "failed to shutdown gracefully")
 			So(len(hcMock.StopCalls()), ShouldEqual, 1)
 			So(len(failingserverMock.ShutdownCalls()), ShouldEqual, 1)
 			So(len(mongoMock.CloseCalls()), ShouldEqual, 1)
-			So(len(graphMock.CloseCalls()), ShouldEqual, 1)
-			So(len(graphErrorConsumerMock.CloseCalls()), ShouldEqual, 1)
 			So(len(kafkaProducerMock.CloseCalls()), ShouldEqual, 1)
 		})
 	})

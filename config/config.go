@@ -90,7 +90,6 @@ func Get() (*Configuration, error) {
 		EnableDetachDataset:            false,
 		EnablePermissionsAuth:          false,
 		EnableObservationEndpoint:      true,
-		DisableGraphDBDependency:       false,
 		KafkaVersion:                   "1.0.2",
 		DefaultMaxLimit:                1000,
 		DefaultLimit:                   20,

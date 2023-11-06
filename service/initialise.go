@@ -7,7 +7,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"github.com/ONSdigital/dp-graph/v2/graph"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka/v3"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
@@ -17,7 +16,6 @@ import (
 // ExternalServiceList holds the initialiser and initialisation state of external services.
 type ExternalServiceList struct {
 	GenerateDownloadsProducer bool
-	Graph                     bool
 	HealthCheck               bool
 	MongoDB                   bool
 	Init                      Initialiser
@@ -57,16 +55,6 @@ func (e *ExternalServiceList) GetProducer(ctx context.Context, cfg *config.Confi
 	}
 	e.GenerateDownloadsProducer = true
 	return
-}
-
-// GetGraphDB returns a graphDB (only if observation and private endpoint are enabled)
-func (e *ExternalServiceList) GetGraphDB(ctx context.Context) (store.GraphDB, Closer, error) {
-	graphDB, graphDBErrorConsumer, err := e.Init.DoGetGraphDB(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	e.Graph = true
-	return graphDB, graphDBErrorConsumer, nil
 }
 
 // GetMongoDB returns a mongodb health client and dataset mongo object
@@ -116,18 +104,6 @@ func (e *Init) DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration
 	}
 
 	return kafka.NewProducer(ctx, pConfig)
-}
-
-// DoGetGraphDB creates a new GraphDB
-func (e *Init) DoGetGraphDB(ctx context.Context) (store.GraphDB, Closer, error) {
-	graphDB, err := graph.New(ctx, graph.Subsets{Observation: true, Instance: true})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	graphDBErrorConsumer := graph.NewLoggingErrorConsumer(ctx, graphDB.ErrorChan())
-
-	return graphDB, graphDBErrorConsumer, nil
 }
 
 // DoGetMongoDB returns a MongoDB

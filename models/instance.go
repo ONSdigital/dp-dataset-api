@@ -20,7 +20,6 @@ type Instance struct {
 	Edition           string               `bson:"edition,omitempty"                     json:"edition,omitempty"`
 	Events            *[]Event             `bson:"events,omitempty"                      json:"events,omitempty"`
 	Headers           *[]string            `bson:"headers,omitempty"                     json:"headers,omitempty"`
-	ImportTasks       *InstanceImportTasks `bson:"import_tasks,omitempty"                json:"import_tasks"`
 	InstanceID        string               `bson:"id,omitempty"                          json:"id,omitempty"`
 	LastUpdated       time.Time            `bson:"last_updated,omitempty"                json:"last_updated,omitempty"`
 	ETag              string               `bson:"e_tag"                                 json:"-"`
@@ -62,35 +61,6 @@ func (i *Instance) Hash(extraBytes []byte) (string, error) {
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
-// InstanceImportTasks represents all of the tasks required to complete an import job.
-type InstanceImportTasks struct {
-	BuildHierarchyTasks   []*BuildHierarchyTask   `bson:"build_hierarchies,omitempty"    json:"build_hierarchies"`
-	BuildSearchIndexTasks []*BuildSearchIndexTask `bson:"build_search_indexes,omitempty" json:"build_search_indexes"`
-	ImportObservations    *ImportObservationsTask `bson:"import_observations,omitempty"  json:"import_observations"`
-}
-
-// ImportObservationsTask represents the task of importing instance observation data into the database.
-type ImportObservationsTask struct {
-	InsertedObservations int64  `bson:"total_inserted_observations" json:"total_inserted_observations"`
-	State                string `bson:"state,omitempty"             json:"state,omitempty"`
-}
-
-// BuildHierarchyTask represents a task of importing a single hierarchy.
-type BuildHierarchyTask struct {
-	DimensionID        string `bson:"code_list_id,omitempty"   json:"code_list_id,omitempty"`
-	GenericTaskDetails `bson:",inline"`
-}
-
-type GenericTaskDetails struct {
-	DimensionName string `bson:"dimension_name,omitempty" json:"dimension_name,omitempty"`
-	State         string `bson:"state,omitempty"          json:"state,omitempty"`
-}
-
-// BuildSearchIndexTask represents a task of importing a single search index into search.
-type BuildSearchIndexTask struct {
-	GenericTaskDetails `bson:",inline"`
-}
-
 // InstanceLinks holds all links for an instance
 type InstanceLinks struct {
 	Dataset    *LinkObject `bson:"dataset,omitempty"    json:"dataset,omitempty"`
@@ -115,28 +85,5 @@ func (e *Event) Validate() error {
 	if e.Message == "" || e.MessageOffset == "" || e.Time == nil || e.Type == "" {
 		return errs.ErrMissingParameters
 	}
-	return nil
-}
-
-// ValidateImportTask checks the task contains mandatory fields
-func ValidateImportTask(task GenericTaskDetails) error {
-	var missingFields []string
-
-	if task.DimensionName == "" {
-		missingFields = append(missingFields, "dimension_name")
-	}
-
-	if task.State == "" {
-		missingFields = append(missingFields, "state")
-	}
-
-	if len(missingFields) > 0 {
-		return fmt.Errorf("bad request - missing mandatory fields: %v", missingFields)
-	}
-
-	if task.State != CompletedState {
-		return fmt.Errorf("bad request - invalid task state value: %v", task.State)
-	}
-
 	return nil
 }

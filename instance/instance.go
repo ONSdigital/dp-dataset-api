@@ -267,18 +267,6 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// update dp-graph instance node (only for non-cantabular types)
-		if currentInstance.Type == models.CantabularBlob.String() || currentInstance.Type == models.CantabularTable.String() || currentInstance.Type == models.CantabularFlexibleTable.String() || currentInstance.Type == models.CantabularMultivariateTable.String() {
-			editionLogData["instance_type"] = instance.Type
-			log.Info(ctx, "skipping dp-graph instance update because it is not required by instance type", editionLogData)
-		} else {
-			if versionErr := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); versionErr != nil {
-				log.Error(ctx, "update instance: datastore.AddVersionDetailsToInstance returned an error", versionErr, editionLogData)
-				handleInstanceErr(ctx, versionErr, w, logData)
-				return
-			}
-		}
-
 		log.Info(ctx, "update instance: added version details to instance", editionLogData)
 	}
 
@@ -534,4 +522,10 @@ func handleInstanceErr(ctx context.Context, err error, w http.ResponseWriter, lo
 	logData["responseStatus"] = status
 	log.Error(ctx, "request unsuccessful", err, logData)
 	http.Error(w, response.Error(), status)
+}
+
+func closeBody(ctx context.Context, b io.ReadCloser) {
+	if err := b.Close(); err != nil {
+		log.Error(ctx, "error closing response body", err)
+	}
 }

@@ -194,18 +194,6 @@ func createInstanceUpdateQuery(ctx context.Context, instanceID string, instance 
 		updates["headers"] = instance.Headers
 	}
 
-	if instance.ImportTasks != nil {
-		if instance.ImportTasks.BuildHierarchyTasks != nil {
-			updates["import_tasks.build_hierarchies"] = instance.ImportTasks.BuildHierarchyTasks
-		}
-		if instance.ImportTasks.BuildSearchIndexTasks != nil {
-			updates["import_tasks.build_search_indexes"] = instance.ImportTasks.BuildSearchIndexTasks
-		}
-		if instance.ImportTasks.ImportObservations != nil {
-			updates["import_tasks.import_observations"] = instance.ImportTasks.ImportObservations
-		}
-	}
-
 	if instance.LatestChanges != nil {
 		updates["latest_changes"] = instance.LatestChanges
 	}
@@ -292,113 +280,6 @@ func (m *Mongo) AddEventToInstance(ctx context.Context, currentInstance *models.
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
 			return "", errs.ErrInstanceNotFound
 		}
-		return "", err
-	}
-
-	return newETag, nil
-}
-
-// UpdateObservationInserted by incrementing the stored value
-func (m *Mongo) UpdateObservationInserted(ctx context.Context, currentInstance *models.Instance, observationInserted int64, eTagSelector string) (newETag string, err error) {
-	// calculate the new eTag hash for the instance that would result from inceasing the observations
-	newETag, err = newETagForObservationsInserted(currentInstance, observationInserted)
-	if err != nil {
-		return "", err
-	}
-
-	sel := selector(currentInstance.InstanceID, bsonprim.Timestamp{}, eTagSelector)
-	if _, err = m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Must().Update(ctx, sel,
-		bson.M{
-			"$inc": bson.M{"import_tasks.import_observations.total_inserted_observations": observationInserted},
-			"$set": bson.M{
-				"last_updated": time.Now().UTC(),
-				"e_tag":        newETag,
-			},
-		},
-	); err != nil {
-		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
-			return "", errs.ErrInstanceNotFound
-		}
-		return "", err
-	}
-
-	return newETag, nil
-}
-
-// UpdateImportObservationsTaskState to the given state.
-func (m *Mongo) UpdateImportObservationsTaskState(ctx context.Context, currentInstance *models.Instance, state, eTagSelector string) (newETag string, err error) {
-	// calculate the new eTag hash for the instance that would result from inceasing the observations
-	newETag, err = newETagForStateUpdate(currentInstance, state)
-	if err != nil {
-		return "", err
-	}
-
-	sel := selector(currentInstance.InstanceID, bsonprim.Timestamp{}, eTagSelector)
-
-	if _, err = m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Must().Update(ctx, sel,
-		bson.M{
-			"$set": bson.M{
-				"import_tasks.import_observations.state": state,
-				"e_tag":                                  newETag,
-			},
-			"$currentDate": bson.M{"last_updated": true},
-		},
-	); err != nil {
-		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
-			return "", errs.ErrInstanceNotFound
-		}
-		return "", err
-	}
-
-	return newETag, nil
-}
-
-// UpdateBuildHierarchyTaskState updates the state of a build hierarchy task.
-func (m *Mongo) UpdateBuildHierarchyTaskState(ctx context.Context, currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error) {
-	// calculate the new eTag hash for the instance that would result from inceasing the observations
-	newETag, err = newETagForHierarchyTaskStateUpdate(currentInstance, dimension, state)
-	if err != nil {
-		return "", err
-	}
-
-	sel := selector(currentInstance.InstanceID, bsonprim.Timestamp{}, eTagSelector)
-	sel["import_tasks.build_hierarchies.dimension_name"] = dimension
-
-	update := bson.M{
-		"$set": bson.M{
-			"import_tasks.build_hierarchies.$.state": state,
-			"e_tag":                                  newETag,
-		},
-		"$currentDate": bson.M{"last_updated": true},
-	}
-
-	if _, err = m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Must().Update(ctx, sel, update); err != nil {
-		return "", err
-	}
-
-	return newETag, nil
-}
-
-// UpdateBuildSearchTaskState updates the state of a build search task.
-func (m *Mongo) UpdateBuildSearchTaskState(ctx context.Context, currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error) {
-	// calculate the new eTag hash for the instance that would result from inceasing the observations
-	newETag, err = newETagForBuildSearchTaskStateUpdate(currentInstance, dimension, state)
-	if err != nil {
-		return "", err
-	}
-
-	sel := selector(currentInstance.InstanceID, bsonprim.Timestamp{}, eTagSelector)
-	sel["import_tasks.build_search_indexes.dimension_name"] = dimension
-
-	update := bson.M{
-		"$set": bson.M{
-			"import_tasks.build_search_indexes.$.state": state,
-			"e_tag": newETag,
-		},
-		"$currentDate": bson.M{"last_updated": true},
-	}
-
-	if _, err = m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Must().Update(ctx, sel, update); err != nil {
 		return "", err
 	}
 

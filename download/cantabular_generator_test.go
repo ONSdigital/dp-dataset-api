@@ -1,12 +1,15 @@
 package download
 
 import (
+	"context"
 	"testing"
 
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+var testContext = context.Background()
 
 func TestGenerator_GenerateFullCantabularDatasetDownloadsValidationErrors(t *testing.T) {
 	producerMock := &mocks.KafkaProducerMock{

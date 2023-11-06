@@ -13,7 +13,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/service"
 	serviceMock "github.com/ONSdigital/dp-dataset-api/service/mock"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	storeMock "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka/v3"
 	"github.com/ONSdigital/dp-kafka/v3/kafkatest"
@@ -216,23 +215,9 @@ func (c *DatasetComponent) DoGetMongoDB(_ context.Context, _ config.MongoConfig)
 	return c.MongoClient, nil
 }
 
-func (c *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, service.Closer, error) {
-	return &storeMock.GraphDBMock{
-			SetInstanceIsPublishedFunc: func(context.Context, string) error {
-				return nil
-			},
-			CloseFunc: funcClose,
-		},
-		&serviceMock.CloserMock{
-			CloseFunc: funcClose,
-		},
-		nil
-}
-
 func (c *DatasetComponent) setInitialiserMock() {
 	c.initialiser = &serviceMock.InitialiserMock{
 		DoGetMongoDBFunc:       c.DoGetMongoDB,
-		DoGetGraphDBFunc:       c.DoGetGraphDBOk,
 		DoGetKafkaProducerFunc: c.DoGetMockedKafkaProducerOk,
 		DoGetHealthCheckFunc:   c.DoGetHealthcheckOk,
 		DoGetHTTPServerFunc:    c.DoGetHTTPServer,
@@ -241,7 +226,6 @@ func (c *DatasetComponent) setInitialiserMock() {
 func (c *DatasetComponent) setInitialiserRealKafka() {
 	c.initialiser = &serviceMock.InitialiserMock{
 		DoGetMongoDBFunc:       c.DoGetMongoDB,
-		DoGetGraphDBFunc:       c.DoGetGraphDBOk,
 		DoGetKafkaProducerFunc: c.DoGetKafkaProducer,
 		DoGetHealthCheckFunc:   c.DoGetHealthcheckOk,
 		DoGetHTTPServerFunc:    c.DoGetHTTPServer,

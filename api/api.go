@@ -131,7 +131,6 @@ func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
 	api.get("/datasets/{dataset_id}/editions/{edition}", api.getEdition)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions", paginator.Paginate(api.getVersions))
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}", api.getVersion)
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata", api.getMetadata)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", paginator.Paginate(api.getDimensions))
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", paginator.Paginate(api.getDimensionOptions))
 }
@@ -174,12 +173,6 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 	)
 
 	api.get(
-		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata",
-		api.isAuthorisedForDatasets(readPermission,
-			api.getMetadata),
-	)
-
-	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions",
 		api.isAuthorisedForDatasets(readPermission,
 			paginator.Paginate(api.getDimensions)),
@@ -218,13 +211,6 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 			api.isAuthorisedForDatasets(updatePermission,
 				api.isVersionPublished(updateVersionAction,
 					api.putVersion))),
-	)
-
-	api.put(
-		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata",
-		api.isAuthenticated(
-			api.isAuthorisedForDatasets(updatePermission,
-				api.putMetadata)),
 	)
 
 	if api.enableDetachDataset {
@@ -281,20 +267,6 @@ func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI *instance.Sto
 			api.isAuthorised(createPermission,
 				instanceAPI.AddEvent)),
 	)
-
-	api.put(
-		"/instances/{instance_id}/inserted_observations/{inserted_observations}",
-		api.isAuthenticated(
-			api.isAuthorised(updatePermission,
-				api.isInstancePublished(instanceAPI.UpdateObservations))),
-	)
-
-	api.put(
-		"/instances/{instance_id}/import_tasks",
-		api.isAuthenticated(
-			api.isAuthorised(updatePermission,
-				api.isInstancePublished(instanceAPI.UpdateImportTask))),
-	)
 }
 
 // enablePrivateDatasetEndpoints register the dimenions endpoints with the appropriate authentication and authorisation
@@ -334,14 +306,6 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.
 		api.isAuthenticated(
 			api.isAuthorised(updatePermission,
 				api.isInstancePublished(dimensionAPI.PatchOptionHandler))),
-	)
-
-	// Deprecated (use patch /instances/{instance_id}/dimensions/{dimension}/options/{option} instead)
-	api.put(
-		"/instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}",
-		api.isAuthenticated(
-			api.isAuthorised(updatePermission,
-				api.isInstancePublished(dimensionAPI.AddNodeIDHandler))),
 	)
 }
 

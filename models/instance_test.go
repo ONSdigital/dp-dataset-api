@@ -186,63 +186,6 @@ func TestValidateInstanceState(t *testing.T) {
 	})
 }
 
-func TestValidateImportTask(t *testing.T) {
-	t.Parallel()
-	Convey("Given an import task contains all mandatory fields and state is set to 'completed'", t, func() {
-		Convey("Then successfully return without any errors", func() {
-			task := GenericTaskDetails{
-				DimensionName: "geography",
-				State:         CompletedState,
-			}
-			err := ValidateImportTask(task)
-			So(err, ShouldBeNil)
-		})
-	})
-
-	Convey("Given an import task is missing mandatory field 'dimension_name'", t, func() {
-		Convey("Then import task fails validation and returns an error", func() {
-			task := GenericTaskDetails{
-				State: CompletedState,
-			}
-			err := ValidateImportTask(task)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "bad request - missing mandatory fields: [dimension_name]")
-		})
-	})
-
-	Convey("Given an import task is missing mandatory field 'state'", t, func() {
-		Convey("Then import task fails validation and returns error", func() {
-			task := GenericTaskDetails{
-				DimensionName: "geography",
-			}
-			err := ValidateImportTask(task)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "bad request - missing mandatory fields: [state]")
-		})
-	})
-
-	Convey("Given an import task is missing mandatory field 'state' and 'dimension_name'", t, func() {
-		Convey("Then import task fails validation and returns an error", func() {
-			task := GenericTaskDetails{}
-			err := ValidateImportTask(task)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "bad request - missing mandatory fields: [dimension_name state]")
-		})
-	})
-
-	Convey("Given an import task contains an invalid state, 'submitted'", t, func() {
-		Convey("Then import task fails validation and returns an error", func() {
-			task := GenericTaskDetails{
-				DimensionName: "geography",
-				State:         SubmittedState,
-			}
-			err := ValidateImportTask(task)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "bad request - invalid task state value: submitted")
-		})
-	})
-}
-
 func TestInstanceHash(t *testing.T) {
 	testInstance := func() Instance {
 		return Instance{
@@ -258,21 +201,6 @@ func TestInstanceHash(t *testing.T) {
 				{
 					HRef: "http://dimensions.co.uk/dim2",
 					Name: "dim2",
-				},
-			},
-			ImportTasks: &InstanceImportTasks{
-				BuildHierarchyTasks: []*BuildHierarchyTask{
-					{DimensionID: "dim1"},
-				},
-				BuildSearchIndexTasks: []*BuildSearchIndexTask{
-					{GenericTaskDetails{
-						DimensionName: "dim2",
-						State:         CreatedState,
-					}},
-				},
-				ImportObservations: &ImportObservationsTask{
-					InsertedObservations: 7,
-					State:                CreatedState,
 				},
 			},
 		}
@@ -328,27 +256,6 @@ func TestInstanceHash(t *testing.T) {
 						Name: "dim1",
 					},
 				}
-				hash, err := instance.Hash(nil)
-				So(err, ShouldBeNil)
-				So(hash, ShouldNotEqual, h)
-			})
-
-			Convey("Then if a BuildHierarchyTasks changes, its hash changes", func() {
-				instance.ImportTasks.BuildHierarchyTasks[0].State = CompletedState
-				hash, err := instance.Hash(nil)
-				So(err, ShouldBeNil)
-				So(hash, ShouldNotEqual, h)
-			})
-
-			Convey("Then if a BuildSearchIndexTasks changes, its hash changes", func() {
-				instance.ImportTasks.BuildSearchIndexTasks[0].State = CompletedState
-				hash, err := instance.Hash(nil)
-				So(err, ShouldBeNil)
-				So(hash, ShouldNotEqual, h)
-			})
-
-			Convey("Then if the ImportObservations changes, its hash changes", func() {
-				instance.ImportTasks.ImportObservations.State = CompletedState
 				hash, err := instance.Hash(nil)
 				So(err, ShouldBeNil)
 				So(hash, ShouldNotEqual, h)

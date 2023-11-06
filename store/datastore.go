@@ -14,7 +14,6 @@ type DataStore struct {
 }
 
 //go:generate moq -out datastoretest/mongo.go -pkg storetest . MongoDB
-//go:generate moq -out datastoretest/graph.go -pkg storetest . GraphDB
 //go:generate moq -out datastoretest/datastore.go -pkg storetest . Storer
 
 // dataMongoDB represents the required methos to access data from mongoDB
@@ -43,13 +42,8 @@ type dataMongoDB interface {
 	UpdateDatasetWithAssociation(ctx context.Context, ID, state string, version *models.Version) error
 	UpdateDimensionsNodeIDAndOrder(ctx context.Context, updates []*models.DimensionOption) error
 	UpdateInstance(ctx context.Context, currentInstance, updatedInstance *models.Instance, eTagSelector string) (newETag string, err error)
-	UpdateObservationInserted(ctx context.Context, currentInstance *models.Instance, observationInserted int64, eTagSelector string) (newETag string, err error)
-	UpdateImportObservationsTaskState(ctx context.Context, currentInstance *models.Instance, state, eTagSelector string) (newETag string, err error)
-	UpdateBuildHierarchyTaskState(ctx context.Context, currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error)
-	UpdateBuildSearchTaskState(ctx context.Context, currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error)
 	UpdateETagForOptions(ctx context.Context, currentInstance *models.Instance, upserts []*models.CachedDimensionOption, updates []*models.DimensionOption, eTagSelector string) (newETag string, err error)
 	UpdateVersion(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (newETag string, err error)
-	UpdateMetadata(ctx context.Context, datasetID string, versionID string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error
 	UpsertContact(ctx context.Context, ID string, update interface{}) error
 	UpsertDataset(ctx context.Context, ID string, datasetDoc *models.DatasetUpdate) error
 	UpsertEdition(ctx context.Context, datasetID, edition string, editionDoc *models.EditionUpdate) error
@@ -68,21 +62,7 @@ type MongoDB interface {
 	Checker(context.Context, *healthcheck.CheckState) error
 }
 
-// dataGraphDB represents the required methods to access data from GraphDB
-type dataGraphDB interface {
-	AddVersionDetailsToInstance(ctx context.Context, instanceID string, datasetID string, edition string, version int) error
-	SetInstanceIsPublished(ctx context.Context, instanceID string) error
-}
-
-// GraphDB represents all the required methods from graph DB
-type GraphDB interface {
-	dataGraphDB
-	Close(ctx context.Context) error
-	Checker(context.Context, *healthcheck.CheckState) error
-}
-
 // Storer represents basic data access via Get, Remove and Upsert methods, abstracting it from mongoDB or graphDB
 type Storer interface {
 	dataMongoDB
-	dataGraphDB
 }

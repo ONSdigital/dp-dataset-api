@@ -17,7 +17,6 @@ import (
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -185,7 +184,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 			return nil, errs.ErrResourceState
 		}
 
-		// Only the download service should not have access to the public/private download
+		// Only the download service should have access to the public/private download
 		// fields
 		if r.Header.Get(downloadServiceToken) != api.downloadServiceToken {
 			if version.Downloads != nil {
@@ -517,18 +516,6 @@ func (api *DatasetAPI) publishVersion(
 
 		if err := api.dataStore.Backend.UpsertEdition(ctx, versionDetails.datasetID, versionDetails.edition, editionDoc); err != nil {
 			log.Error(ctx, "putVersion endpoint: failed to update edition during publishing", err, data)
-			return err
-		}
-
-		if err := api.dataStore.Backend.SetInstanceIsPublished(ctx, versionUpdate.ID); err != nil {
-			if user := dprequest.User(ctx); user != "" {
-				data[reqUser] = user
-			}
-			if caller := dprequest.Caller(ctx); caller != "" {
-				data[reqCaller] = caller
-			}
-			err := errors.WithMessage(err, "putVersion endpoint: failed to set instance node is_published")
-			log.Error(ctx, "failed to publish instance version", err, data)
 			return err
 		}
 

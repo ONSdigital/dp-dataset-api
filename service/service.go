@@ -13,7 +13,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/schema"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	kafka "github.com/ONSdigital/dp-kafka/v3"
 	dphandlers "github.com/ONSdigital/dp-net/v2/handlers"
@@ -30,15 +29,12 @@ var _ store.Storer = (*DatsetAPIStore)(nil)
 // DatsetAPIStore is a wrapper which embeds Neo4j Mongo structs which between them satisfy the store.Storer interface.
 type DatsetAPIStore struct {
 	store.MongoDB
-	store.GraphDB
 }
 
 // Service contains all the configs, server and clients to run the Dataset API
 type Service struct {
 	config                              *config.Configuration
 	serviceList                         *ExternalServiceList
-	graphDB                             store.GraphDB
-	graphDBErrorConsumer                Closer
 	mongoDB                             store.MongoDB
 	generateCMDDownloadsProducer        kafka.IProducer
 	generateCantabularDownloadsProducer kafka.IProducer
@@ -77,16 +73,6 @@ func (svc *Service) SetMongoDB(mongoDB store.MongoDB) {
 	svc.mongoDB = mongoDB
 }
 
-// SetGraphDB sets the graphDB connection for a service
-func (svc *Service) SetGraphDB(graphDB store.GraphDB) {
-	svc.graphDB = graphDB
-}
-
-// SetGraphDBErrorConsumer sets the graphDB error consumer for a service
-func (svc *Service) SetGraphDBErrorConsumer(graphDBErrorConsumer Closer) {
-	svc.graphDBErrorConsumer = graphDBErrorConsumer
-}
-
 // Run the service
 func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version string, svcErrors chan error) (err error) {
 	// Get MongoDB connection
@@ -96,24 +82,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		return err
 	}
 
-	// Get graphDB connection for observation store
-	if !svc.config.EnablePrivateEndpoints || svc.config.DisableGraphDBDependency {
-		log.Info(ctx, "skipping graph DB client creation, because it is not required by the enabled endpoints", log.Data{
-			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
-		})
-		svc.graphDB = &storetest.GraphDBMock{
-			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
-				return nil
-			},
-		}
-	} else {
-		svc.graphDB, svc.graphDBErrorConsumer, err = svc.serviceList.GetGraphDB(ctx)
-		if err != nil {
-			log.Fatal(ctx, "failed to initialise graph driver", err)
-			return err
-		}
-	}
-	ds := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB}}
+	ds := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB}}
 
 	// Get GenerateDownloads Kafka Producer
 	if !svc.config.EnablePrivateEndpoints {
@@ -121,11 +90,6 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
 		})
 	} else {
-		svc.generateCMDDownloadsProducer, err = svc.serviceList.GetProducer(ctx, svc.config, svc.config.GenerateDownloadsTopic)
-		if err != nil {
-			log.Fatal(ctx, "could not obtain generate downloads producer for CMD", err)
-			return err
-		}
 		svc.generateCantabularDownloadsProducer, err = svc.serviceList.GetProducer(ctx, svc.config, svc.config.CantabularExportStartTopic)
 		if err != nil {
 			log.Fatal(ctx, "could not obtain generate downloads producer for cantabular", err)
@@ -138,18 +102,11 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		Marshaller: schema.GenerateCantabularDownloadsEvent,
 	}
 
-	downloadGeneratorCMD := &download.CMDGenerator{
-		Producer:   adapter.NewProducerAdapter(svc.generateCMDDownloadsProducer),
-		Marshaller: schema.GenerateCMDDownloadsEvent,
-	}
-
 	downloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
 		models.CantabularBlob:              downloadGeneratorCantabular,
 		models.CantabularTable:             downloadGeneratorCantabular,
 		models.CantabularFlexibleTable:     downloadGeneratorCantabular,
 		models.CantabularMultivariateTable: downloadGeneratorCantabular,
-		models.Filterable:                  downloadGeneratorCMD,
-		models.Nomis:                       downloadGeneratorCMD,
 	}
 
 	// Get Identity Client (only if private endpoints are enabled)
@@ -181,7 +138,6 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 
 	// Log kafka producer errors in parallel go-routine
 	if svc.config.EnablePrivateEndpoints {
-		svc.generateCMDDownloadsProducer.LogErrors(ctx)
 		svc.generateCantabularDownloadsProducer.LogErrors(ctx)
 	}
 
@@ -297,18 +253,6 @@ func (svc *Service) Close(ctx context.Context) error {
 			log.Info(shutdownContext, "closed generated downloads kafka producer", log.Data{"producer": "DimensionExtracted"})
 		}
 
-		// Close GraphDB (if it exists)
-		if svc.serviceList.Graph {
-			if err := svc.graphDB.Close(shutdownContext); err != nil {
-				log.Error(shutdownContext, "failed to close graph db", err)
-				hasShutdownError = true
-			}
-
-			if err := svc.graphDBErrorConsumer.Close(shutdownContext); err != nil {
-				log.Error(shutdownContext, "failed to close graph db error consumer", err)
-				hasShutdownError = true
-			}
-		}
 	}()
 
 	// wait for shutdown success (via cancel) or failure (timeout)
@@ -343,23 +287,9 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 			log.Error(ctx, "error adding check for zebedeee", err)
 		}
 
-		if err = svc.healthCheck.AddCheck("Kafka Generate Downloads Producer", svc.generateCMDDownloadsProducer.Checker); err != nil {
-			hasErrors = true
-			log.Error(ctx, "error adding check for CMD kafka downloads producer", err)
-		}
-
 		if err = svc.healthCheck.AddCheck("Kafka Generate Cantabular Downloads Producer", svc.generateCantabularDownloadsProducer.Checker); err != nil {
 			hasErrors = true
 			log.Error(ctx, "error adding check for cantabular kafka downloads producer", err)
-		}
-
-		// If running Catabular Locally then don't do health checks against GraphDB
-		if !svc.config.DisableGraphDBDependency {
-			log.Info(ctx, "private endpoints enabled: adding graph db health check")
-			if err = svc.healthCheck.AddCheck("Graph DB", svc.graphDB.Checker); err != nil {
-				hasErrors = true
-				log.Error(ctx, "error adding check for graph db", err)
-			}
 		}
 	}
 
