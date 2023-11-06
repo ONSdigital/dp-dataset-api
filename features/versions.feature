@@ -366,27 +366,6 @@ Feature: Dataset API
         """
     And the response header "ETag" should be "etag-test-item-2"
 
-  Scenario: PUT versions for CMD dataset produces Kafka event and returns OK
-    Given private endpoints are enabled
-    And I am identified as "user@ons.gov.uk"
-    And I am authorised
-    And I have a real kafka container with topic "filter-job-submitted"
-    When I PUT "/datasets/population-estimates/editions/hellov2/versions/3"
-            """
-            {
-              "instance_id":"test-item-3",
-              "license":"ONS",
-              "release_date":"2017-04-04",
-              "state":"associated",
-              "collection_id":"bla"
-            }
-            """
-    And these generate downloads events are produced:
-      | InstanceID  | DatasetID            | Edition | Version | FilterOutputID |
-      | test-item-3 | population-estimates | hellov2 | 3       |                |
-    Then the HTTP status code should be "200"
-
-
   Scenario: PUT versions for Cantabular dataset produces Kafka event and returns OK
     Given private endpoints are enabled
     And I am identified as "user@ons.gov.uk"

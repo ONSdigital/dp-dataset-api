@@ -53,10 +53,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 	cfg.DefaultLimit = 0
 	cfg.DefaultOffset = 0
 
-	mockedMapGeneratedDownloads := map[models.DatasetType]DownloadsGenerator{
-		models.Filterable: mockedGeneratedDownloads,
-		models.Nomis:      mockedGeneratedDownloads,
-	}
+	mockedMapGeneratedDownloads := map[models.DatasetType]DownloadsGenerator{}
 
 	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions)
 }

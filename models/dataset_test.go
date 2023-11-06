@@ -55,28 +55,27 @@ var testContext = context.Background()
 func TestString(t *testing.T) {
 	Convey("Given an index for a dataset type", t, func() {
 		Convey("Then it should return the appropriate value", func() {
-			result := Filterable.String()
-			So(result, ShouldEqual, "filterable")
-			So(datasetTypes[0], ShouldEqual, "filterable")
-			So(datasetTypes[1], ShouldEqual, "nomis")
-			So(datasetTypes[2], ShouldEqual, "cantabular_table")
-			So(datasetTypes[3], ShouldEqual, "cantabular_blob")
-			So(datasetTypes[4], ShouldEqual, "cantabular_flexible_table")
-			So(datasetTypes[5], ShouldEqual, "cantabular_multivariate_table")
-			So(datasetTypes[6], ShouldEqual, "invalid")
+			result := CantabularBlob.String()
+			So(result, ShouldEqual, "cantabular_blob")
+			So(datasetTypes[0], ShouldEqual, "cantabular_table")
+			So(datasetTypes[1], ShouldEqual, "cantabular_blob")
+			So(datasetTypes[2], ShouldEqual, "cantabular_flexible_table")
+			So(datasetTypes[3], ShouldEqual, "cantabular_multivariate_table")
+			So(datasetTypes[4], ShouldEqual, "invalid")
 		})
 	})
 }
 
 func TestGetDatasetType(t *testing.T) {
 	Convey("Given the dataset type", t, func() {
-		Convey("When the type is empty", func() {
-			Convey("Then it should default to filterable", func() {
-				result, err := GetDatasetType("")
-				So(result, ShouldEqual, Filterable)
-				So(err, ShouldBeNil)
-			})
-		})
+		//TODO: Replace this test with 'static' default and adjust the TestString above
+		// Convey("When the type is empty", func() {
+		// 	Convey("Then it should default to filterable", func() {
+		// 		result, err := GetDatasetType("")
+		// 		So(result, ShouldEqual, Filterable)
+		// 		So(err, ShouldBeNil)
+		// 	})
+		// })
 
 		Convey("When the type is cantabular_blob", func() {
 			Convey("Then it should return the appropriate value", func() {
@@ -123,16 +122,6 @@ func TestValidateDatasetType(t *testing.T) {
 		})
 	})
 }
-func TestValidateNomisURL(t *testing.T) {
-	Convey("Given a nomis URL return an error ", t, func() {
-		Convey("When the request has filterable type and a nomis url ", func() {
-			Convey("Then should return type mismatch", func() {
-				_, err := ValidateNomisURL(testContext, "filterable", "www.nomisweb.co.uk")
-				So(err, ShouldResemble, errs.ErrTypeMismatch)
-			})
-		})
-	})
-}
 
 func TestCreateDataset(t *testing.T) {
 	t.Parallel()
@@ -170,8 +159,7 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.Title, ShouldEqual, "CensusEthnicity")
 			So(dataset.UnitOfMeasure, ShouldEqual, "Pounds Sterling")
 			So(dataset.URI, ShouldEqual, "http://localhost:22000/datasets/123/breadcrumbs")
-			So(dataset.Type, ShouldEqual, "filterable")
-			So(dataset.NomisReferenceURL, ShouldEqual, "")
+			So(dataset.Type, ShouldEqual, "cantabular_table")
 			So(dataset.CanonicalTopic, ShouldResemble, canonicalTopic)
 			So(dataset.Subtopics[0], ShouldResemble, subtopic)
 			So(dataset.Survey, ShouldEqual, survey)

@@ -291,14 +291,12 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 		{Method: "PUT", URL: "http://localhost:22000/datasets/1234/editions/1234/versions/2123"}: http.StatusMethodNotAllowed,
 
 		// Instance endpoints
-		{Method: "GET", URL: "http://localhost:22000/instances"}:                            http.StatusNotFound,
-		{Method: "POST", URL: "http://localhost:22000/instances"}:                           http.StatusNotFound,
-		{Method: "GET", URL: "http://localhost:22000/instances/1234"}:                       http.StatusNotFound,
-		{Method: "PUT", URL: "http://localhost:22000/instances/123"}:                        http.StatusNotFound,
-		{Method: "PUT", URL: "http://localhost:22000/instances/123/dimensions/test"}:        http.StatusNotFound,
-		{Method: "POST", URL: "http://localhost:22000/instances/1/events"}:                  http.StatusNotFound,
-		{Method: "PUT", URL: "http://localhost:22000/instances/1/inserted_observations/11"}: http.StatusNotFound,
-		{Method: "PUT", URL: "http://localhost:22000/instances/1/import_tasks"}:             http.StatusNotFound,
+		{Method: "GET", URL: "http://localhost:22000/instances"}:                     http.StatusNotFound,
+		{Method: "POST", URL: "http://localhost:22000/instances"}:                    http.StatusNotFound,
+		{Method: "GET", URL: "http://localhost:22000/instances/1234"}:                http.StatusNotFound,
+		{Method: "PUT", URL: "http://localhost:22000/instances/123"}:                 http.StatusNotFound,
+		{Method: "PUT", URL: "http://localhost:22000/instances/123/dimensions/test"}: http.StatusNotFound,
+		{Method: "POST", URL: "http://localhost:22000/instances/1/events"}:           http.StatusNotFound,
 
 		// Dimension endpoints
 		{Method: "GET", URL: "http://localhost:22000/instances/1/dimensions"}:                       http.StatusNotFound,
@@ -326,9 +324,7 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 }
 
 func GetWebAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, datasetPermissions, permissions AuthHandler) *DatasetAPI {
-	mockedMapDownloadGenerators := map[models.DatasetType]DownloadsGenerator{
-		models.Filterable: mockedGeneratedDownloads,
-	}
+	mockedMapDownloadGenerators := map[models.DatasetType]DownloadsGenerator{}
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)
 	cfg.ServiceAuthToken = authToken

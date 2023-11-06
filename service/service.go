@@ -36,7 +36,6 @@ type Service struct {
 	config                              *config.Configuration
 	serviceList                         *ExternalServiceList
 	mongoDB                             store.MongoDB
-	generateCMDDownloadsProducer        kafka.IProducer
 	generateCantabularDownloadsProducer kafka.IProducer
 	identityClient                      *clientsidentity.Client
 	server                              HTTPServer
@@ -61,11 +60,6 @@ func (svc *Service) SetServer(server HTTPServer) {
 // SetHealthCheck sets the healthchecker for a service
 func (svc *Service) SetHealthCheck(healthCheck HealthChecker) {
 	svc.healthCheck = healthCheck
-}
-
-// SetDownloadsProducer sets the downloads kafka producer for a service
-func (svc *Service) SetDownloadsProducer(producer kafka.IProducer) {
-	svc.generateCMDDownloadsProducer = producer
 }
 
 // SetMongoDB sets the mongoDB connection for a service
@@ -243,16 +237,6 @@ func (svc *Service) Close(ctx context.Context) error {
 				hasShutdownError = true
 			}
 		}
-
-		// Close GenerateDownloadsProducer (if it exists)
-		if svc.serviceList.GenerateDownloadsProducer {
-			log.Info(shutdownContext, "closing generated downloads kafka producer", log.Data{"producer": "DimensionExtracted"})
-			if err := svc.generateCMDDownloadsProducer.Close(shutdownContext); err != nil {
-				log.Warn(shutdownContext, "error while closing generated downloads kafka producer", log.Data{"producer": "DimensionExtracted", "err": err.Error()})
-			}
-			log.Info(shutdownContext, "closed generated downloads kafka producer", log.Data{"producer": "DimensionExtracted"})
-		}
-
 	}()
 
 	// wait for shutdown success (via cancel) or failure (timeout)

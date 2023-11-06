@@ -25,9 +25,7 @@ type DatasetType int
 
 // possible dataset types
 const (
-	Filterable DatasetType = iota
-	Nomis
-	CantabularTable
+	CantabularTable DatasetType = iota
 	CantabularBlob
 	CantabularFlexibleTable
 	CantabularMultivariateTable
@@ -35,8 +33,6 @@ const (
 )
 
 var datasetTypes = []string{
-	"filterable",
-	"nomis",
 	"cantabular_table",
 	"cantabular_blob",
 	"cantabular_flexible_table",
@@ -51,10 +47,6 @@ func (dt DatasetType) String() string {
 // GetDatasetType returns a dataset type for a given dataset
 func GetDatasetType(datasetType string) (DatasetType, error) {
 	switch datasetType {
-	case "filterable", "v4", "":
-		return Filterable, nil
-	case "nomis":
-		return Nomis, nil
 	case "cantabular_table":
 		return CantabularTable, nil
 	case "cantabular_blob":
@@ -108,7 +100,6 @@ type Dataset struct {
 	UnitOfMeasure     string           `bson:"unit_of_measure,omitempty"        json:"unit_of_measure,omitempty"`
 	URI               string           `bson:"uri,omitempty"                    json:"uri,omitempty"`
 	Type              string           `bson:"type,omitempty"                   json:"type,omitempty"`
-	NomisReferenceURL string           `bson:"nomis_reference_url,omitempty"    json:"nomis_reference_url,omitempty"`
 	IsBasedOn         *IsBasedOn       `bson:"is_based_on,omitempty"            json:"is_based_on,omitempty"`
 	CanonicalTopic    string           `bson:"canonical_topic,omitempty"        json:"canonical_topic,omitempty"`
 	Subtopics         []string         `bson:"subtopics,omitempty"              json:"subtopics,omitempty"`
@@ -603,15 +594,6 @@ func ValidateDatasetType(ctx context.Context, datasetType string) (*DatasetType,
 		return nil, err
 	}
 	return &dataType, nil
-}
-
-// ValidateNomisURL checks for the nomis type when the dataset has nomis URL
-func ValidateNomisURL(ctx context.Context, datasetType, nomisURL string) (string, error) {
-	if nomisURL != "" && datasetType != Nomis.String() {
-		log.Error(ctx, "error Type mismatch", errs.ErrDatasetTypeInvalid)
-		return "", errs.ErrTypeMismatch
-	}
-	return datasetType, nil
 }
 
 // ValidateVersion checks the content of the version structure

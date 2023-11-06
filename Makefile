@@ -48,9 +48,5 @@ test:
 test-component:
 	ENABLE_PRIVATE_ENDPOINTS=true cd features/compose; docker-compose up --abort-on-container-exit
 
-.PHONY: nomis
-nomis:
-	go run NOMIS/nomis.go -mongo-url=localhost:27017
-
 .PHONY: test build debug
 

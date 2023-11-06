@@ -180,12 +180,6 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		datasetType, err := models.ValidateNomisURL(ctx, dataType.String(), dataset.NomisReferenceURL)
-		if err != nil {
-			log.Error(ctx, "addDataset endpoint: error dataset.Type mismatch", err, logData)
-			return nil, err
-		}
-
 		models.CleanDataset(dataset)
 
 		if err = models.ValidateDataset(dataset); err != nil {
@@ -193,7 +187,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		dataset.Type = datasetType
+		dataset.Type = dataType.String() // TODO: check if this is redundant - ValidateDatasetType should possibly only return an error
 		dataset.State = models.CreatedState
 		dataset.ID = datasetID
 
@@ -269,12 +263,6 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		dataset.Type = currentDataset.Next.Type
-
-		_, err = models.ValidateNomisURL(ctx, dataset.Type, dataset.NomisReferenceURL)
-		if err != nil {
-			log.Error(ctx, "putDataset endpoint: error dataset.Type mismatch", err, data)
-			return err
-		}
 
 		models.CleanDataset(dataset)
 
