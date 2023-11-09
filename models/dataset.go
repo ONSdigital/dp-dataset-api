@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -25,7 +24,8 @@ type DatasetType int
 
 // possible dataset types
 const (
-	CantabularTable DatasetType = iota
+	Static DatasetType = iota
+	CantabularTable
 	CantabularBlob
 	CantabularFlexibleTable
 	CantabularMultivariateTable
@@ -33,6 +33,7 @@ const (
 )
 
 var datasetTypes = []string{
+	"static",
 	"cantabular_table",
 	"cantabular_blob",
 	"cantabular_flexible_table",
@@ -47,6 +48,8 @@ func (dt DatasetType) String() string {
 // GetDatasetType returns a dataset type for a given dataset
 func GetDatasetType(datasetType string) (DatasetType, error) {
 	switch datasetType {
+	case "static":
+		return Static, nil
 	case "cantabular_table":
 		return CantabularTable, nil
 	case "cantabular_blob":
@@ -68,6 +71,12 @@ var (
 	ErrEditionLinksInvalid                  = errors.New("editions links do not exist")
 )
 
+type LinkedData struct {
+	Context string `json:"@context,omitempty"`
+	ID      string `json:"@id,omitempty"`
+	Type    string `json:"@type,omitempty"`
+}
+
 // DatasetUpdate represents an evolving dataset with the current dataset and the updated dataset
 // Note: Stored as Dataset (in `dataset` Collection) in MongoDB
 type DatasetUpdate struct {
@@ -76,50 +85,177 @@ type DatasetUpdate struct {
 	Next    *Dataset `bson:"next,omitempty"        json:"next,omitempty"`
 }
 
+type DatasetList struct {
+	Page
+	Links *PageLinks          `json:"_links"`
+	Items []*DatasetListItems `json:"items"`
+}
+
+type DatasetListItems struct {
+	Identifier  string `bson:"_id,omitempty"  json:"identifier,omitempty"`
+	Descriptive        // creator and label are not currently present in this struct, so don't need to be omitted
+	SummaryCore
+	Scope
+	ManagementCore
+}
+
 // Dataset represents information related to a single dataset
 type Dataset struct {
-	CollectionID      string           `bson:"collection_id,omitempty"          json:"collection_id,omitempty"`
-	Contacts          []ContactDetails `bson:"contacts,omitempty"               json:"contacts,omitempty"`
-	Description       string           `bson:"description,omitempty"            json:"description,omitempty"`
-	Keywords          []string         `bson:"keywords,omitempty"               json:"keywords,omitempty"`
-	ID                string           `bson:"_id,omitempty"                    json:"id,omitempty"`
-	LastUpdated       time.Time        `bson:"last_updated,omitempty"           json:"-"`
-	License           string           `bson:"license,omitempty"                json:"license,omitempty"`
-	Links             *DatasetLinks    `bson:"links,omitempty"                  json:"links,omitempty"`
-	Methodologies     []GeneralDetails `bson:"methodologies,omitempty"          json:"methodologies,omitempty"`
-	NationalStatistic *bool            `bson:"national_statistic,omitempty"     json:"national_statistic,omitempty"`
-	NextRelease       string           `bson:"next_release,omitempty"           json:"next_release,omitempty"`
-	Publications      []GeneralDetails `bson:"publications,omitempty"           json:"publications,omitempty"`
-	Publisher         *Publisher       `bson:"publisher,omitempty"              json:"publisher,omitempty"`
-	QMI               *GeneralDetails  `bson:"qmi,omitempty"                    json:"qmi,omitempty"`
-	RelatedDatasets   []GeneralDetails `bson:"related_datasets,omitempty"       json:"related_datasets,omitempty"`
-	ReleaseFrequency  string           `bson:"release_frequency,omitempty"      json:"release_frequency,omitempty"`
-	State             string           `bson:"state,omitempty"                  json:"state,omitempty"`
-	Theme             string           `bson:"theme,omitempty"                  json:"theme,omitempty"`
-	Title             string           `bson:"title,omitempty"                  json:"title,omitempty"`
-	UnitOfMeasure     string           `bson:"unit_of_measure,omitempty"        json:"unit_of_measure,omitempty"`
-	URI               string           `bson:"uri,omitempty"                    json:"uri,omitempty"`
-	Type              string           `bson:"type,omitempty"                   json:"type,omitempty"`
-	IsBasedOn         *IsBasedOn       `bson:"is_based_on,omitempty"            json:"is_based_on,omitempty"`
-	CanonicalTopic    string           `bson:"canonical_topic,omitempty"        json:"canonical_topic,omitempty"`
-	Subtopics         []string         `bson:"subtopics,omitempty"              json:"subtopics,omitempty"`
-	Survey            string           `bson:"survey,omitempty"                 json:"survey,omitempty"`
-	RelatedContent    []GeneralDetails `bson:"related_content,omitempty"        json:"related_content,omitempty"`
+	// HAL and Internal fields
+	CollectionID   string           `bson:"collection_id,omitempty"          json:"collection_id,omitempty"`
+	Links          *DatasetLinks    `bson:"_links,omitempty"                 json:"_links,omitempty"`
+	DatasetType    string           `bson:"dataset_type,omitempty"           json:"dataset_type,omitempty"`
+	CanonicalTopic string           `bson:"canonical_topic,omitempty"        json:"canonical_topic,omitempty"`
+	State          string           `bson:"state,omitempty"                  json:"state,omitempty"`
+	Embedded       *DatasetEmbedded `json:"_embedded,omitempty"`
+
+	// JSON-LD and Application Profile fields
+	LinkedData
+	DatasetSeries
 }
+
+// DatasetSeries represents all the fields specified in the Application Profile for a dcat:DatasetSeries
+// These fields are also all needed for a dcat:Dataset representation, which is used for Editions and Versions
+type DatasetSeries struct {
+	Identifier string `bson:"_id,omitempty"  json:"identifier,omitempty"`
+
+	// TODO: Add these fields to AP or relocate to Dataset struct
+	ContactPoint      *ContactDetails `bson:"contact_point,omitempty"          json:"contact_point,omitempty"`
+	NationalStatistic *bool           `bson:"national_statistic,omitempty"     json:"national_statistic,omitempty"`
+	IsBasedOn         *IsBasedOn      `bson:"is_based_on,omitempty"            json:"is_based_on,omitempty"`
+	Survey            string          `bson:"survey,omitempty"                 json:"survey,omitempty"`
+
+	Descriptive
+	Summary
+	Scope
+	Management
+}
+
+type VersionListItems struct {
+	DatasetListItems
+	Quality
+	Distributions []*DistributionCore `bson:"distributions,omitempty"  json:"distributions,omitempty"`
+}
+
+// Descriptive represents the '1 Descriptive' level fields in the Application Profile for a dcat:DatasetSeries
+type Descriptive struct {
+	Publisher *ContactDetails `bson:"publisher,omitempty"        json:"publisher,omitempty"`
+	Modified  time.Time       `bson:"modified,omitempty"         json:"modified,omitempty"`
+	Issued    time.Time       `bson:"issued,omitempty"           json:"issued"` //add to spec
+	Title     string          `bson:"title,omitempty"            json:"title,omitempty"`
+
+	// omitted fields from AP: 'created' time, 'creator', 'label'
+	// it is not clear what value these add over the fields already present
+}
+
+// Summary represents the '2 Summary' level fields in the Application Profile for a dcat:DatasetSeries
+type Summary struct {
+	Keywords    []string `bson:"keywords,omitempty"       json:"keywords,omitempty"`
+	Themes      []string `bson:"themes,omitempty"         json:"themes,omitempty"`
+	Description string   `bson:"description,omitempty"    json:"description,omitempty"`
+	SummaryCore
+}
+
+type SummaryCore struct {
+	Frequency string `bson:"frequency,omitempty"      json:"frequency,omitempty"`
+	Summary   string `bson:"summary,omitempty"        json:"summary,omitempty"` //shorter than description
+	License   string `bson:"license,omitempty"        json:"license,omitempty"`
+}
+
+// Scope represents the '5 Scope' level fields in the Application Profile for a dcat:DatasetSeries
+type Scope struct {
+	SpatialCoverage    string   `bson:"spatial_coverage,omitempty"    json:"spatial_coverage,omitempty"`
+	SpatialResolution  []string `bson:"spatial_resolution,omitempty"  json:"spatial_resolution,omitempty"`
+	TemporalCoverage   string   `bson:"temporal_coverage,omitempty"   json:"temporal_coverage,omitempty"`
+	TemporalResolution []string `bson:"temporal_resolution,omitempty" json:"temporal_resolution,omitempty"`
+}
+
+// Management represents the '6 Management' level fields in the Application Profile for a dcat:DatasetSeries
+type Management struct {
+	// This field only exists on edition and version responses, as part of dcat:dataset
+	NextVersion string `bson:"next_version,omitempty"           json:"next_version,omitempty"`
+
+	ManagementCore
+	// omitted fields from AP: first, last
+	// these should be provided by the _embedded fields on the response
+}
+
+type ManagementCore struct {
+	NextRelease string `bson:"next_release,omitempty"           json:"next_release,omitempty"`
+
+	// This field only exists on edition and version responses, as part of dcat:dataset
+	Version string `bson:"version,omitempty"           json:"version,omitempty"`
+}
+
+type Quality struct {
+	VersionNotes []string `bson:"version_notes,omitempty"   json:"version_notes,omitempty"`
+}
+
+type Distributions struct {
+	Size string `bson:"byte_size,omitempty" json:"byte_size,omitempty"`
+	DistributionCore
+
+	// These fields should only exist for CSV static datasets
+	Schema *Schema `bson:"table_schema,omitempty" json:"table_schema,omitempty"`
+	Relationships
+}
+
+type DistributionCore struct {
+	Type string `bson:"media_type,omitempty" json:"media_type,omitempty"`
+	URL  string `bson:"download_url,omitempty"  json:"download_url,omitempty"`
+	Etag string `bson:"etag,omitempty"  json:"etag,omitempty"`
+
+	// These fields should only exist for CSV static datasets
+	Checksum string `bson:"checksum,omitempty"  json:"checksum,omitempty"`
+}
+
+type Relationships struct {
+	DescribedBy string `bson:"described_by,omitempty" json:"described_by,omitempty"`
+
+	// omitted fields from AP: derivedFrom, generatedBy
+}
+
+type Schema struct {
+	AboutURL string   `bson:"about_url,omitempty"  json:"about_url,omitempty"`
+	Columns  []Column `bson:"columns,omitempty"  json:"columns,omitempty"`
+}
+
+type Column struct {
+	DataType string `bson:"data_type,omitempty"  json:"data_type,omitempty"`
+	Title    string `bson:"title,omitempty"  json:"title,omitempty"`
+	ColumnCore
+	// omitted fields from AP: propertyURL, value URL, description, label
+}
+
+type ColumnCore struct {
+	ComponentType string `bson:"component_type,omitempty"  json:"component_type,omitempty"`
+	Name          string `bson:"name,omitempty"  json:"name,omitempty"`
+}
+
+// DownloadObject represents information on the downloadable file
+// type DownloadObject struct {
+// 	HRef    string `bson:"href,omitempty"  json:"href,omitempty"`
+// 	Private string `bson:"private,omitempty" json:"private,omitempty"`
+// 	Public  string `bson:"public,omitempty" json:"public,omitempty"`
+// 	// TODO size is in bytes and probably should be an int64 instead of a string this
+// 	// will have to change for several services (filter API, exporter services and web)
+// 	Size string `bson:"size,omitempty" json:"size,omitempty"`
+// }
 
 // DatasetLinks represents a list of specific links related to the dataset resource
 type DatasetLinks struct {
-	AccessRights  *LinkObject `bson:"access_rights,omitempty"   json:"access_rights,omitempty"`
 	Editions      *LinkObject `bson:"editions,omitempty"        json:"editions,omitempty"`
 	LatestVersion *LinkObject `bson:"latest_version,omitempty"  json:"latest_version,omitempty"`
 	Self          *LinkObject `bson:"self,omitempty"            json:"self,omitempty"`
-	Taxonomy      *LinkObject `bson:"taxonomy,omitempty"        json:"taxonomy,omitempty"`
 }
 
-// LinkObject represents a generic structure for all links
-type LinkObject struct {
-	HRef string `bson:"href,omitempty"  json:"href,omitempty"`
-	ID   string `bson:"id,omitempty"    json:"id,omitempty"`
+// DatasetLinks represents a list of specific links related to the dataset resource
+type DatasetEmbedded struct {
+	Editions []struct {
+		ID     string `json:"@id"`
+		Issued string `json:"issued"`
+		Etag   string `json:"etag"`
+	}
 }
 
 // GeneralDetails represents generic fields stored against an object (reused)
@@ -130,13 +266,13 @@ type GeneralDetails struct {
 }
 
 // Contact represents information of individual contact details
-type Contact struct {
-	Email       string    `bson:"email,omitempty"          json:"email,omitempty"`
-	ID          string    `bson:"_id,omitempty"            json:"id,omitempty"`
-	LastUpdated time.Time `bson:"last_updated,omitempty"   json:"-"`
-	Name        string    `bson:"name,omitempty"           json:"name,omitempty"`
-	Telephone   string    `bson:"telephone,omitempty"      json:"telephone,omitempty"`
-}
+// type Contact struct {
+// 	Email       string    `bson:"email,omitempty"          json:"email,omitempty"`
+// 	ID          string    `bson:"_id,omitempty"            json:"id,omitempty"`
+// 	LastUpdated time.Time `bson:"last_updated,omitempty"   json:"-"`
+// 	Name        string    `bson:"name,omitempty"           json:"name,omitempty"`
+// 	Telephone   string    `bson:"telephone,omitempty"      json:"telephone,omitempty"`
+// }
 
 // ContactDetails represents an object containing information of the contact
 type ContactDetails struct {
@@ -171,12 +307,12 @@ type Edition struct {
 	Type        string              `bson:"type,omitempty"         json:"type,omitempty"`
 }
 
-// Publisher represents an object containing information of the publisher
-type Publisher struct {
-	HRef string `bson:"href,omitempty" json:"href,omitempty"`
-	Name string `bson:"name,omitempty" json:"name,omitempty"`
-	Type string `bson:"type,omitempty" json:"type,omitempty"`
-}
+// // Publisher represents an object containing information of the publisher
+// type Publisher struct {
+// 	HRef string `bson:"href,omitempty" json:"href,omitempty"`
+// 	Name string `bson:"name,omitempty" json:"name,omitempty"`
+// 	Type string `bson:"type,omitempty" json:"type,omitempty"`
+// }
 
 // Version represents information related to a single version for an edition of a dataset
 type Version struct {
@@ -391,24 +527,16 @@ func CreateDownloadList(reader io.Reader) (*DownloadList, error) {
 }
 
 // CreateContact manages the creation of a contact from a reader
-func CreateContact(reader io.Reader) (*Contact, error) {
+func CreateContact(reader io.Reader) (*ContactDetails, error) {
 	b, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, errs.ErrUnableToReadMessage
 	}
-	var contact Contact
+	var contact ContactDetails
 	err = json.Unmarshal(b, &contact)
 	if err != nil {
 		return nil, errs.ErrUnableToReadMessage
 	}
-
-	// Create unique id
-	id, err := uuid.NewV4()
-	if err != nil {
-		return nil, err
-	}
-
-	contact.ID = id.String()
 
 	return &contact, nil
 }
@@ -515,59 +643,6 @@ func (ed *EditionUpdate) PublishLinks(ctx context.Context, versionLink *LinkObje
 	}
 
 	ed.Next.Links.LatestVersion = versionLink
-	return nil
-}
-
-// CleanDataset trims URI and any hrefs contained in the database
-func CleanDataset(dataset *Dataset) {
-	dataset.URI = strings.TrimSpace(dataset.URI)
-
-	if dataset.QMI != nil {
-		dataset.QMI.HRef = strings.TrimSpace(dataset.QMI.HRef)
-	}
-
-	if dataset.Publisher != nil {
-		dataset.Publisher.HRef = strings.TrimSpace(dataset.Publisher.HRef)
-	}
-
-	for i := range dataset.Publications {
-		dataset.Publications[i].HRef = strings.TrimSpace(dataset.Publications[i].HRef)
-	}
-
-	for i := range dataset.Methodologies {
-		dataset.Methodologies[i].HRef = strings.TrimSpace(dataset.Methodologies[i].HRef)
-	}
-
-	for i := range dataset.RelatedDatasets {
-		dataset.RelatedDatasets[i].HRef = strings.TrimSpace(dataset.RelatedDatasets[i].HRef)
-	}
-}
-
-// ValidateDataset checks the dataset has invalid fields
-func ValidateDataset(dataset *Dataset) error {
-	var invalidFields []string
-	if dataset.URI != "" {
-		invalidFields = append(invalidFields, validateURLString(dataset.URI, "URI")...)
-	}
-
-	if dataset.QMI != nil && dataset.QMI.HRef != "" {
-		invalidFields = append(invalidFields, validateURLString(dataset.QMI.HRef, "QMI")...)
-	}
-
-	if dataset.Publisher != nil && dataset.Publisher.HRef != "" {
-		invalidFields = append(invalidFields, validateURLString(dataset.Publisher.HRef, "Publisher")...)
-	}
-
-	invalidFields = append(invalidFields, validateGeneralDetails(dataset.Publications, "Publications")...)
-
-	invalidFields = append(invalidFields, validateGeneralDetails(dataset.RelatedDatasets, "RelatedDatasets")...)
-
-	invalidFields = append(invalidFields, validateGeneralDetails(dataset.Methodologies, "Methodologies")...)
-
-	if len(invalidFields) > 0 {
-		return fmt.Errorf("invalid fields: %v", invalidFields)
-	}
-
 	return nil
 }
 
