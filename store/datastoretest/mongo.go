@@ -88,6 +88,12 @@ var _ store.MongoDB = &MongoDBMock{}
 //			GetUniqueDimensionAndOptionsFunc: func(ctx context.Context, ID string, dimension string) ([]*string, int, error) {
 //				panic("mock out the GetUniqueDimensionAndOptions method")
 //			},
+//			GetV2DatasetFunc: func(ctx context.Context, authorised bool, id string) (*models.LDDataset, error) {
+//				panic("mock out the GetV2Dataset method")
+//			},
+//			GetV2DatasetsFunc: func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.LDDataset, int, error) {
+//				panic("mock out the GetV2Datasets method")
+//			},
 //			GetVersionFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
 //				panic("mock out the GetVersion method")
 //			},
@@ -208,6 +214,12 @@ type MongoDBMock struct {
 
 	// GetUniqueDimensionAndOptionsFunc mocks the GetUniqueDimensionAndOptions method.
 	GetUniqueDimensionAndOptionsFunc func(ctx context.Context, ID string, dimension string) ([]*string, int, error)
+
+	// GetV2DatasetFunc mocks the GetV2Dataset method.
+	GetV2DatasetFunc func(ctx context.Context, authorised bool, id string) (*models.LDDataset, error)
+
+	// GetV2DatasetsFunc mocks the GetV2Datasets method.
+	GetV2DatasetsFunc func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.LDDataset, int, error)
 
 	// GetVersionFunc mocks the GetVersion method.
 	GetVersionFunc func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error)
@@ -469,6 +481,26 @@ type MongoDBMock struct {
 			// Dimension is the dimension argument value.
 			Dimension string
 		}
+		// GetV2Dataset holds details about calls to the GetV2Dataset method.
+		GetV2Dataset []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Authorised is the authorised argument value.
+			Authorised bool
+			// ID is the id argument value.
+			ID string
+		}
+		// GetV2Datasets holds details about calls to the GetV2Datasets method.
+		GetV2Datasets []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+			// Authorised is the authorised argument value.
+			Authorised bool
+		}
 		// GetVersion holds details about calls to the GetVersion method.
 		GetVersion []struct {
 			// Ctx is the ctx argument value.
@@ -652,6 +684,8 @@ type MongoDBMock struct {
 	lockGetInstances                        sync.RWMutex
 	lockGetNextVersion                      sync.RWMutex
 	lockGetUniqueDimensionAndOptions        sync.RWMutex
+	lockGetV2Dataset                        sync.RWMutex
+	lockGetV2Datasets                       sync.RWMutex
 	lockGetVersion                          sync.RWMutex
 	lockGetVersions                         sync.RWMutex
 	lockRemoveDatasetVersionAndEditionLinks sync.RWMutex
@@ -1571,6 +1605,90 @@ func (mock *MongoDBMock) GetUniqueDimensionAndOptionsCalls() []struct {
 	mock.lockGetUniqueDimensionAndOptions.RLock()
 	calls = mock.calls.GetUniqueDimensionAndOptions
 	mock.lockGetUniqueDimensionAndOptions.RUnlock()
+	return calls
+}
+
+// GetV2Dataset calls GetV2DatasetFunc.
+func (mock *MongoDBMock) GetV2Dataset(ctx context.Context, authorised bool, id string) (*models.LDDataset, error) {
+	if mock.GetV2DatasetFunc == nil {
+		panic("MongoDBMock.GetV2DatasetFunc: method is nil but MongoDB.GetV2Dataset was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		Authorised bool
+		ID         string
+	}{
+		Ctx:        ctx,
+		Authorised: authorised,
+		ID:         id,
+	}
+	mock.lockGetV2Dataset.Lock()
+	mock.calls.GetV2Dataset = append(mock.calls.GetV2Dataset, callInfo)
+	mock.lockGetV2Dataset.Unlock()
+	return mock.GetV2DatasetFunc(ctx, authorised, id)
+}
+
+// GetV2DatasetCalls gets all the calls that were made to GetV2Dataset.
+// Check the length with:
+//
+//	len(mockedMongoDB.GetV2DatasetCalls())
+func (mock *MongoDBMock) GetV2DatasetCalls() []struct {
+	Ctx        context.Context
+	Authorised bool
+	ID         string
+} {
+	var calls []struct {
+		Ctx        context.Context
+		Authorised bool
+		ID         string
+	}
+	mock.lockGetV2Dataset.RLock()
+	calls = mock.calls.GetV2Dataset
+	mock.lockGetV2Dataset.RUnlock()
+	return calls
+}
+
+// GetV2Datasets calls GetV2DatasetsFunc.
+func (mock *MongoDBMock) GetV2Datasets(ctx context.Context, offset int, limit int, authorised bool) ([]*models.LDDataset, int, error) {
+	if mock.GetV2DatasetsFunc == nil {
+		panic("MongoDBMock.GetV2DatasetsFunc: method is nil but MongoDB.GetV2Datasets was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		Offset     int
+		Limit      int
+		Authorised bool
+	}{
+		Ctx:        ctx,
+		Offset:     offset,
+		Limit:      limit,
+		Authorised: authorised,
+	}
+	mock.lockGetV2Datasets.Lock()
+	mock.calls.GetV2Datasets = append(mock.calls.GetV2Datasets, callInfo)
+	mock.lockGetV2Datasets.Unlock()
+	return mock.GetV2DatasetsFunc(ctx, offset, limit, authorised)
+}
+
+// GetV2DatasetsCalls gets all the calls that were made to GetV2Datasets.
+// Check the length with:
+//
+//	len(mockedMongoDB.GetV2DatasetsCalls())
+func (mock *MongoDBMock) GetV2DatasetsCalls() []struct {
+	Ctx        context.Context
+	Offset     int
+	Limit      int
+	Authorised bool
+} {
+	var calls []struct {
+		Ctx        context.Context
+		Offset     int
+		Limit      int
+		Authorised bool
+	}
+	mock.lockGetV2Datasets.RLock()
+	calls = mock.calls.GetV2Datasets
+	mock.lockGetV2Datasets.RUnlock()
 	return calls
 }
 

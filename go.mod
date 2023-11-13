@@ -30,6 +30,7 @@ require (
 	github.com/jinzhu/copier v0.3.5
 	github.com/justinas/alice v1.2.0
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/liip/sheriff v0.11.1
 	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 	github.com/smartystreets/goconvey v1.8.0

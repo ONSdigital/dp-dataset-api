@@ -54,6 +54,8 @@ type dataMongoDB interface {
 	UnlockInstance(ctx context.Context, lockID string)
 	RemoveDatasetVersionAndEditionLinks(ctx context.Context, id string) error
 
+	GetV2Datasets(ctx context.Context, offset, limit int, authorised bool) ([]*models.LDDataset, int, error)
+	GetV2Dataset(ctx context.Context, authorised bool, id string) (*models.LDDataset, error)
 	UpsertLDDataset(ctx context.Context, ID string, datasetDoc *models.LDDataset) error
 }
 

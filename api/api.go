@@ -137,6 +137,8 @@ func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
 	// only for seeding the db during transition - very hacky
 	api.get("/v2/datasets/convert", api.convertDatasets)
 
+	api.get("/v2/datasets", api.getV2Datasets)
+	api.get("/v2/datasets/{dataset_id}", api.getV2Dataset)
 }
 
 // enablePrivateDatasetEndpoints register the datasets endpoints with the appropriate authentication and authorisation
