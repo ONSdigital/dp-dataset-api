@@ -53,6 +53,8 @@ type dataMongoDB interface {
 	AcquireInstanceLock(ctx context.Context, instanceID string) (lockID string, err error)
 	UnlockInstance(ctx context.Context, lockID string)
 	RemoveDatasetVersionAndEditionLinks(ctx context.Context, id string) error
+
+	UpsertLDDataset(ctx context.Context, ID string, datasetDoc *models.LDDataset) error
 }
 
 // MongoDB represents all the required methods from mongo DB

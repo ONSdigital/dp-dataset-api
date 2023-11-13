@@ -72,9 +72,191 @@ var (
 )
 
 type LinkedData struct {
-	Context string `json:"@context,omitempty"`
-	ID      string `json:"@id,omitempty"`
-	Type    string `json:"@type,omitempty"`
+	Context string   `json:"@context,omitempty"`
+	ID      string   `json:"@id,omitempty"`
+	Type    []string `json:"@type,omitempty" groups:"dataset,edition"`
+}
+
+type DatasetList struct {
+	Page       `groups:"datasets"`
+	Links      *PageLinks   `json:"_links" groups:"datasets"`
+	Items      []*LDDataset `json:"items" groups:"datasets"`
+	LinkedData `groups:"all"`
+}
+
+// LDDataset represents information related to a single dataset
+type LDDataset struct {
+	// HAL and Internal fields
+	ETag        string    `bson:"e_tag,omitempty"  json:"-"`
+	LastUpdated time.Time `bson:"last_updated" json:"-"`
+
+	CollectionID   string `bson:"collection_id,omitempty"          json:"collection_id,omitempty" groups:"datasets,dataset"`
+	State          string `bson:"state,omitempty"                  json:"state,omitempty" groups:"datasets,dataset"`
+	CanonicalTopic string `bson:"canonical_topic,omitempty"        json:"canonical_topic,omitempty" groups:"datasets,dataset"`
+
+	Links    *LDDatasetLinks  `bson:"-" json:"_links,omitempty" groups:"all"`
+	Embedded *DatasetEmbedded `bson:"-" json:"_embedded,omitempty" groups:"dataset"`
+
+	// JSON-LD and Application Profile fields
+	LinkedData        `bson:"-" groups:"all"`
+	DCATDatasetSeries `bson:",inline"`
+}
+
+// DCATDatasetSeries represents all the fields specified in the Application Profile for a dcat:DatasetSeries
+// These fields are also all needed for a dcat:Dataset representation, which is used for Editions and Versions
+type DCATDatasetSeries struct {
+	Identifier string `bson:"_id,omitempty"  json:"identifier" groups:"all"`
+
+	// TODO: Add these fields to AP or relocate to Dataset struct
+	ContactPoint      *ContactDetails `bson:"contact_point,omitempty"          json:"contact_point,omitempty" groups:"datasets,dataset,editions,edition"`
+	NationalStatistic *bool           `bson:"national_statistic,omitempty"     json:"national_statistic,omitempty" groups:"datasets,dataset,editions,edition"`
+	IsBasedOn         *IsBasedOn      `bson:"is_based_on,omitempty"            json:"is_based_on,omitempty" groups:"datasets,dataset,editions,edition"`
+	Survey            string          `bson:"survey,omitempty"                 json:"survey,omitempty" groups:"datasets,dataset,editions,edition"`
+	DatasetType       string          `bson:"dataset_type,omitempty"           json:"dataset_type,omitempty" groups:"datasets,dataset,edition,version"`
+
+	//Descriptive - omitted fields from AP: 'created' time, 'creator', 'label'
+	Publisher *ContactDetails `bson:"publisher,omitempty"        json:"publisher,omitempty" groups:"datasets,dataset,editions,edition"`
+	Modified  time.Time       `bson:"modified,omitempty"         json:"modified,omitempty" groups:"datasets,dataset,editions,edition"`
+	Issued    time.Time       `bson:"issued,omitempty"           json:"issued" groups:"datasets,dataset,editions,edition"` //add to spec
+	Title     string          `bson:"title,omitempty"            json:"title,omitempty" groups:"datasets,dataset,editions,edition"`
+
+	//Summary
+	Keywords    []string `bson:"keywords,omitempty"       json:"keywords,omitempty" groups:"dataset,edition"`
+	Themes      []string `bson:"themes,omitempty"         json:"themes,omitempty" groups:"dataset,edition"`
+	Description string   `bson:"description,omitempty"    json:"description,omitempty" groups:"dataset,edition"`
+
+	Frequency string `bson:"frequency,omitempty"      json:"frequency,omitempty" groups:"datasets,dataset,editions,edition"`
+	Summary   string `bson:"summary,omitempty"        json:"summary,omitempty" groups:"datasets,dataset,editions,edition"` //shorter than description
+	License   string `bson:"license,omitempty"        json:"license,omitempty" groups:"datasets,dataset,editions,edition"`
+
+	//Scope
+	SpatialCoverage    string   `bson:"spatial_coverage,omitempty"    json:"spatial_coverage,omitempty" groups:"dataset,edition"`
+	SpatialResolution  []string `bson:"spatial_resolution,omitempty"  json:"spatial_resolution,omitempty" groups:"dataset,edition"`
+	TemporalCoverage   string   `bson:"temporal_coverage,omitempty"   json:"temporal_coverage,omitempty" groups:"dataset,edition"`
+	TemporalResolution []string `bson:"temporal_resolution,omitempty" json:"temporal_resolution,omitempty" groups:"dataset,edition"`
+
+	//Management - omitted fields from AP: first, last. These should be provided by the _embedded fields on the response
+	NextRelease string `bson:"next_release,omitempty"           json:"next_release,omitempty" groups:"datasets,dataset,editions,edition"`
+}
+
+type EditionList struct {
+	Page
+	Links *PageLinks   `json:"_links"`
+	Items []*LDEdition `json:"items"`
+}
+
+// LDEdition ...
+type LDEdition struct {
+	// HAL and Internal fields
+	ETag        string    `bson:"e_tag"                      json:"-"`
+	LastUpdated time.Time `bson:"last_updated" json:"-"`
+
+	CollectionID string           `bson:"collection_id,omitempty"          json:"collection_id,omitempty"`
+	State        string           `bson:"state,omitempty"                  json:"state,omitempty"`
+	Links        *EditionLinks    `bson:"_links" json:"_links,omitempty"`
+	Embedded     *EditionEmbedded `bson:"-" json:"_embedded,omitempty"`
+
+	// JSON-LD and Application Profile fields
+	LinkedData  `bson:"-"`
+	DCATDataset `bson:",inline"`
+}
+
+type DCATDataset struct {
+	DCATDatasetSeries `bson:"-"`
+
+	// Quality
+	VersionNotes []string `bson:"version_notes,omitempty"   json:"version_notes,omitempty" groups:"editions,edition"`
+
+	// Management
+	Version string `bson:"version,omitempty"           json:"version,omitempty" groups:"editions,edition"`
+
+	NextEdition     string `bson:"next_edition,omitempty"           json:"next_edition,omitempty" groups:"edition"`
+	PreviousEdition string `bson:"previous_edition,omitempty"           json:"previous_edition,omitempty" groups:"edition"`
+
+	NextVersion     string `bson:"next_version,omitempty"           json:"next_version,omitempty" groups:"version"`
+	PreviousVersion string `bson:"previous_version,omitempty"           json:"previous_version,omitempty" groups:"version"`
+
+	// Distributions - these are currently embedded in the Edition doc instead of here
+	//Distributions []*Distribution `bson:"distributions,omitempty"           json:"disributions,omitempty" groups:"editions,edition"`
+}
+
+type Distribution struct {
+	ETag string `bson:"e_tag,omitempty"  json:"-,omitempty"`
+
+	Type string `bson:"media_type,omitempty" json:"media_type,omitempty" groups:"editions,edition,distributions"`
+	URL  string `bson:"download_url,omitempty"  json:"download_url,omitempty" groups:"editions,edition,distributions"`
+	Size string `bson:"byte_size,omitempty" json:"byte_size,omitempty" groups:"editions,edition,distributions"` //AP says no editions, Website says yes
+
+	// These fields should only exist for CSV static datasets
+	Checksum string `bson:"checksum,omitempty"  json:"checksum,omitempty" groups:"editions,edition,distributions"`
+
+	// Relationships - omitted fields from AP: derivedFrom, generatedBy
+	DescribedBy string `bson:"described_by,omitempty" json:"described_by,omitempty" groups:"edition,distributions"` //AP says yes editions, embedding the smaller portion for now
+
+	// Schema
+	Schema *Schema `bson:"table_schema,omitempty" json:"table_schema,omitempty" groups:"edition,distributions"` //AP says yes editions, embedding the smaller portion for now
+}
+
+type Schema struct {
+	AboutURL string    `bson:"about_url,omitempty"  json:"about_url,omitempty" groups:"edition,distributions"`
+	Columns  []*Column `bson:"columns,omitempty"  json:"columns,omitempty" groups:"edition,distributions"` //AP says yes editions, embedding the smaller portion for now
+}
+
+type Column struct {
+	// omitted fields from AP: propertyURL, value URL, description, label
+
+	ComponentType string `bson:"component_type,omitempty"  json:"component_type,omitempty" groups:"edition,distributions"` //AP says yes editions, embedding the smaller portion for now
+	Name          string `bson:"name,omitempty"  json:"name,omitempty" groups:"edition,distributions"`                     //AP says yes editions, embedding the smaller portion for now
+	DataType      string `bson:"data_type,omitempty"  json:"data_type,omitempty" groups:"edition,distributions"`
+	Title         string `bson:"title,omitempty"  json:"title,omitempty" groups:"edition,distributions"`
+}
+
+// LDDatasetLinks ...
+type LDDatasetLinks struct {
+	Editions      *LinkObject `bson:"-"        json:"editions,omitempty" groups:"dataset"`
+	LatestVersion *LinkObject `bson:"latest_version,omitempty"  json:"latest_version,omitempty" groups:"datasets,dataset"`
+	Self          *LinkObject `bson:"-"            json:"self,omitempty" groups:"datasets,dataset"`
+}
+
+// DatasetEmbedded ...
+type DatasetEmbedded struct {
+	Editions []struct {
+		ID     string `json:"@id"`
+		Issued string `json:"issued"`
+		ETag   string `bson:"e_tag"                      json:"etag"`
+	}
+}
+
+// EditionLinks ...
+type EditionLinks struct {
+	Dataset       *LinkObject `bson:"dataset,omitempty"        json:"dataset,omitempty" groups:"edition,version,instance"`
+	Editions      *LinkObject `bson:"-" json:"editions,omitempty" groups:"edition"`
+	Edition       *LinkObject `bson:"edition,omitempty"        json:"edition,omitempty" groups:"version,instance"`
+	Versions      *LinkObject `bson:"-" json:"versions,omitempty" groups:"edition"`
+	Dimensions    *LinkObject `bson:"-" json:"dimensions,omitempty" groups:"versions,version"`
+	Distributions *LinkObject `bson:"-" json:"distributions,omitempty" groups:"versions,version"`
+	LatestVersion *LinkObject `bson:"latest_version,omitempty"  json:"latest_version,omitempty" groups:"edition"`
+	Next          *LinkObject `bson:"next,omitempty"        json:"next,omitempty" groups:"edition,version"`
+	Prev          *LinkObject `bson:"prev,omitempty"        json:"prev,omitempty" groups:"edition,version"`
+	Self          *LinkObject `bson:"self,omitempty"            json:"self,omitempty" groups:"editions,edition,versions,version,instance"`
+}
+
+// EditionEmbedded ...
+type EditionEmbedded struct {
+	Versions []struct {
+		ID           string   `json:"@id"`
+		Issued       string   `json:"issued"`
+		ETag         string   `json:"etag"`
+		VersionNotes []string `json:"version_notes,omitempty"`
+		Version      string   `json:"version,omitempty"`
+	} `groups:"edition"`
+	Dimensions []struct {
+		CodeList   string `json:"code_list"`
+		Identifier string `json:"identifier"`
+		Label      string `json:"label"`
+		Name       string `json:"name"`
+	} `groups:"version"`
+	Distributions []*Distribution `groups:"edition,version"`
 }
 
 // DatasetUpdate represents an evolving dataset with the current dataset and the updated dataset
@@ -85,177 +267,45 @@ type DatasetUpdate struct {
 	Next    *Dataset `bson:"next,omitempty"        json:"next,omitempty"`
 }
 
-type DatasetList struct {
-	Page
-	Links *PageLinks          `json:"_links"`
-	Items []*DatasetListItems `json:"items"`
-}
-
-type DatasetListItems struct {
-	Identifier  string `bson:"_id,omitempty"  json:"identifier,omitempty"`
-	Descriptive        // creator and label are not currently present in this struct, so don't need to be omitted
-	SummaryCore
-	Scope
-	ManagementCore
-}
-
 // Dataset represents information related to a single dataset
 type Dataset struct {
-	// HAL and Internal fields
-	CollectionID   string           `bson:"collection_id,omitempty"          json:"collection_id,omitempty"`
-	Links          *DatasetLinks    `bson:"_links,omitempty"                 json:"_links,omitempty"`
-	DatasetType    string           `bson:"dataset_type,omitempty"           json:"dataset_type,omitempty"`
-	CanonicalTopic string           `bson:"canonical_topic,omitempty"        json:"canonical_topic,omitempty"`
-	State          string           `bson:"state,omitempty"                  json:"state,omitempty"`
-	Embedded       *DatasetEmbedded `json:"_embedded,omitempty"`
-
-	// JSON-LD and Application Profile fields
-	LinkedData
-	DatasetSeries
+	CollectionID      string           `bson:"collection_id,omitempty"          json:"collection_id,omitempty"`
+	Contacts          []ContactDetails `bson:"contacts,omitempty"               json:"contacts,omitempty"`
+	Description       string           `bson:"description,omitempty"            json:"description,omitempty"`
+	Keywords          []string         `bson:"keywords,omitempty"               json:"keywords,omitempty"`
+	ID                string           `bson:"_id,omitempty"                    json:"id,omitempty"`
+	LastUpdated       time.Time        `bson:"last_updated,omitempty"           json:"-"`
+	License           string           `bson:"license,omitempty"                json:"license,omitempty"`
+	Links             *DatasetLinks    `bson:"links,omitempty"                  json:"links,omitempty"`
+	Methodologies     []GeneralDetails `bson:"methodologies,omitempty"          json:"methodologies,omitempty"`
+	NationalStatistic *bool            `bson:"national_statistic,omitempty"     json:"national_statistic,omitempty"`
+	NextRelease       string           `bson:"next_release,omitempty"           json:"next_release,omitempty"`
+	Publications      []GeneralDetails `bson:"publications,omitempty"           json:"publications,omitempty"`
+	Publisher         *Publisher       `bson:"publisher,omitempty"              json:"publisher,omitempty"`
+	QMI               *GeneralDetails  `bson:"qmi,omitempty"                    json:"qmi,omitempty"`
+	RelatedDatasets   []GeneralDetails `bson:"related_datasets,omitempty"       json:"related_datasets,omitempty"`
+	ReleaseFrequency  string           `bson:"release_frequency,omitempty"      json:"release_frequency,omitempty"`
+	State             string           `bson:"state,omitempty"                  json:"state,omitempty"`
+	Theme             string           `bson:"theme,omitempty"                  json:"theme,omitempty"`
+	Title             string           `bson:"title,omitempty"                  json:"title,omitempty"`
+	UnitOfMeasure     string           `bson:"unit_of_measure,omitempty"        json:"unit_of_measure,omitempty"`
+	URI               string           `bson:"uri,omitempty"                    json:"uri,omitempty"`
+	Type              string           `bson:"type,omitempty"                   json:"type,omitempty"`
+	NomisReferenceURL string           `bson:"nomis_reference_url,omitempty"    json:"nomis_reference_url,omitempty"`
+	IsBasedOn         *IsBasedOn       `bson:"is_based_on,omitempty"            json:"is_based_on,omitempty"`
+	CanonicalTopic    string           `bson:"canonical_topic,omitempty"        json:"canonical_topic,omitempty"`
+	Subtopics         []string         `bson:"subtopics,omitempty"              json:"subtopics,omitempty"`
+	Survey            string           `bson:"survey,omitempty"                 json:"survey,omitempty"`
+	RelatedContent    []GeneralDetails `bson:"related_content,omitempty"        json:"related_content,omitempty"`
 }
-
-// DatasetSeries represents all the fields specified in the Application Profile for a dcat:DatasetSeries
-// These fields are also all needed for a dcat:Dataset representation, which is used for Editions and Versions
-type DatasetSeries struct {
-	Identifier string `bson:"_id,omitempty"  json:"identifier,omitempty"`
-
-	// TODO: Add these fields to AP or relocate to Dataset struct
-	ContactPoint      *ContactDetails `bson:"contact_point,omitempty"          json:"contact_point,omitempty"`
-	NationalStatistic *bool           `bson:"national_statistic,omitempty"     json:"national_statistic,omitempty"`
-	IsBasedOn         *IsBasedOn      `bson:"is_based_on,omitempty"            json:"is_based_on,omitempty"`
-	Survey            string          `bson:"survey,omitempty"                 json:"survey,omitempty"`
-
-	Descriptive
-	Summary
-	Scope
-	Management
-}
-
-type VersionListItems struct {
-	DatasetListItems
-	Quality
-	Distributions []*DistributionCore `bson:"distributions,omitempty"  json:"distributions,omitempty"`
-}
-
-// Descriptive represents the '1 Descriptive' level fields in the Application Profile for a dcat:DatasetSeries
-type Descriptive struct {
-	Publisher *ContactDetails `bson:"publisher,omitempty"        json:"publisher,omitempty"`
-	Modified  time.Time       `bson:"modified,omitempty"         json:"modified,omitempty"`
-	Issued    time.Time       `bson:"issued,omitempty"           json:"issued"` //add to spec
-	Title     string          `bson:"title,omitempty"            json:"title,omitempty"`
-
-	// omitted fields from AP: 'created' time, 'creator', 'label'
-	// it is not clear what value these add over the fields already present
-}
-
-// Summary represents the '2 Summary' level fields in the Application Profile for a dcat:DatasetSeries
-type Summary struct {
-	Keywords    []string `bson:"keywords,omitempty"       json:"keywords,omitempty"`
-	Themes      []string `bson:"themes,omitempty"         json:"themes,omitempty"`
-	Description string   `bson:"description,omitempty"    json:"description,omitempty"`
-	SummaryCore
-}
-
-type SummaryCore struct {
-	Frequency string `bson:"frequency,omitempty"      json:"frequency,omitempty"`
-	Summary   string `bson:"summary,omitempty"        json:"summary,omitempty"` //shorter than description
-	License   string `bson:"license,omitempty"        json:"license,omitempty"`
-}
-
-// Scope represents the '5 Scope' level fields in the Application Profile for a dcat:DatasetSeries
-type Scope struct {
-	SpatialCoverage    string   `bson:"spatial_coverage,omitempty"    json:"spatial_coverage,omitempty"`
-	SpatialResolution  []string `bson:"spatial_resolution,omitempty"  json:"spatial_resolution,omitempty"`
-	TemporalCoverage   string   `bson:"temporal_coverage,omitempty"   json:"temporal_coverage,omitempty"`
-	TemporalResolution []string `bson:"temporal_resolution,omitempty" json:"temporal_resolution,omitempty"`
-}
-
-// Management represents the '6 Management' level fields in the Application Profile for a dcat:DatasetSeries
-type Management struct {
-	// This field only exists on edition and version responses, as part of dcat:dataset
-	NextVersion string `bson:"next_version,omitempty"           json:"next_version,omitempty"`
-
-	ManagementCore
-	// omitted fields from AP: first, last
-	// these should be provided by the _embedded fields on the response
-}
-
-type ManagementCore struct {
-	NextRelease string `bson:"next_release,omitempty"           json:"next_release,omitempty"`
-
-	// This field only exists on edition and version responses, as part of dcat:dataset
-	Version string `bson:"version,omitempty"           json:"version,omitempty"`
-}
-
-type Quality struct {
-	VersionNotes []string `bson:"version_notes,omitempty"   json:"version_notes,omitempty"`
-}
-
-type Distributions struct {
-	Size string `bson:"byte_size,omitempty" json:"byte_size,omitempty"`
-	DistributionCore
-
-	// These fields should only exist for CSV static datasets
-	Schema *Schema `bson:"table_schema,omitempty" json:"table_schema,omitempty"`
-	Relationships
-}
-
-type DistributionCore struct {
-	Type string `bson:"media_type,omitempty" json:"media_type,omitempty"`
-	URL  string `bson:"download_url,omitempty"  json:"download_url,omitempty"`
-	Etag string `bson:"etag,omitempty"  json:"etag,omitempty"`
-
-	// These fields should only exist for CSV static datasets
-	Checksum string `bson:"checksum,omitempty"  json:"checksum,omitempty"`
-}
-
-type Relationships struct {
-	DescribedBy string `bson:"described_by,omitempty" json:"described_by,omitempty"`
-
-	// omitted fields from AP: derivedFrom, generatedBy
-}
-
-type Schema struct {
-	AboutURL string   `bson:"about_url,omitempty"  json:"about_url,omitempty"`
-	Columns  []Column `bson:"columns,omitempty"  json:"columns,omitempty"`
-}
-
-type Column struct {
-	DataType string `bson:"data_type,omitempty"  json:"data_type,omitempty"`
-	Title    string `bson:"title,omitempty"  json:"title,omitempty"`
-	ColumnCore
-	// omitted fields from AP: propertyURL, value URL, description, label
-}
-
-type ColumnCore struct {
-	ComponentType string `bson:"component_type,omitempty"  json:"component_type,omitempty"`
-	Name          string `bson:"name,omitempty"  json:"name,omitempty"`
-}
-
-// DownloadObject represents information on the downloadable file
-// type DownloadObject struct {
-// 	HRef    string `bson:"href,omitempty"  json:"href,omitempty"`
-// 	Private string `bson:"private,omitempty" json:"private,omitempty"`
-// 	Public  string `bson:"public,omitempty" json:"public,omitempty"`
-// 	// TODO size is in bytes and probably should be an int64 instead of a string this
-// 	// will have to change for several services (filter API, exporter services and web)
-// 	Size string `bson:"size,omitempty" json:"size,omitempty"`
-// }
 
 // DatasetLinks represents a list of specific links related to the dataset resource
 type DatasetLinks struct {
+	AccessRights  *LinkObject `bson:"access_rights,omitempty"   json:"access_rights,omitempty"`
 	Editions      *LinkObject `bson:"editions,omitempty"        json:"editions,omitempty"`
 	LatestVersion *LinkObject `bson:"latest_version,omitempty"  json:"latest_version,omitempty"`
 	Self          *LinkObject `bson:"self,omitempty"            json:"self,omitempty"`
-}
-
-// DatasetLinks represents a list of specific links related to the dataset resource
-type DatasetEmbedded struct {
-	Editions []struct {
-		ID     string `json:"@id"`
-		Issued string `json:"issued"`
-		Etag   string `json:"etag"`
-	}
+	Taxonomy      *LinkObject `bson:"taxonomy,omitempty"        json:"taxonomy,omitempty"`
 }
 
 // GeneralDetails represents generic fields stored against an object (reused)
@@ -307,12 +357,12 @@ type Edition struct {
 	Type        string              `bson:"type,omitempty"         json:"type,omitempty"`
 }
 
-// // Publisher represents an object containing information of the publisher
-// type Publisher struct {
-// 	HRef string `bson:"href,omitempty" json:"href,omitempty"`
-// 	Name string `bson:"name,omitempty" json:"name,omitempty"`
-// 	Type string `bson:"type,omitempty" json:"type,omitempty"`
-// }
+// Publisher represents an object containing information of the publisher
+type Publisher struct {
+	HRef string `bson:"href,omitempty" json:"href,omitempty"`
+	Name string `bson:"name,omitempty" json:"name,omitempty"`
+	Type string `bson:"type,omitempty" json:"type,omitempty"`
+}
 
 // Version represents information related to a single version for an edition of a dataset
 type Version struct {

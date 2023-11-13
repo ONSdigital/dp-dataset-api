@@ -133,6 +133,10 @@ func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}", api.getVersion)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", paginator.Paginate(api.getDimensions))
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", paginator.Paginate(api.getDimensionOptions))
+
+	// only for seeding the db during transition - very hacky
+	api.get("/v2/datasets/convert", api.convertDatasets)
+
 }
 
 // enablePrivateDatasetEndpoints register the datasets endpoints with the appropriate authentication and authorisation

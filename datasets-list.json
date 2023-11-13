@@ -1,0 +1,858 @@
+{
+    "@context": "https://cdn.ons.gov.uk/assets/json-ld/context.json",
+    "count": 20,
+    "items": [
+        {
+            "contacts": [
+                {
+                    "email": "qualityoflife@ons.gov.uk",
+                    "name": "Rachel Mullis, Emily Froud and Geeta Kerai",
+                    "telephone": "+44 300 0671543"
+                }
+            ],
+            "description": "Seasonally and non seasonally-adjusted quarterly estimates of life satisfaction, feeling that the things done in life are worthwhile, happiness and anxiety in the UK.",
+            "id": "wellbeing-quarterly",
+            "keywords": [
+                "well-being"
+            ],
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/wellbeing-quarterly/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/wellbeing-quarterly/editions/time-series/versions/8",
+                    "id": "8"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/wellbeing-quarterly"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/peoplepopulationandcommunity/wellbeing"
+                }
+            },
+            "methodologies": [
+                {
+                    "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/wellbeing/methodologies/personalwellbeingquarterlyestimatestechnicalreport",
+                    "title": "Personal well-being quarterly estimates technical report"
+                }
+            ],
+            "national_statistic": false,
+            "next_release": "TBC",
+            "qmi": {
+                "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/wellbeing/methodologies/personalwellbeingintheukqmi"
+            },
+            "related_datasets": [
+                {
+                    "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/wellbeing/bulletins/personalwellbeingintheukquarterly/april2011toseptember2021/relateddata",
+                    "title": "Quality of life in the UK"
+                }
+            ],
+            "release_frequency": "Quarterly",
+            "state": "published",
+            "title": "Quarterly personal well-being estimates",
+            "unit_of_measure": "Percentage"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "QualityOfLife@ons.gov.uk",
+                    "name": "Ben Hayes, Charlotte Leach and Geeta Kerai",
+                    "telephone": "+44 3000 671 543"
+                }
+            ],
+            "description": "Estimates of life satisfaction, feeling that the things done in life are worthwhile, happiness and anxiety at the UK, country, regional, county, local and unitary authority level.",
+            "id": "wellbeing-local-authority",
+            "keywords": [
+                "well-being"
+            ],
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/wellbeing-local-authority/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/wellbeing-local-authority/editions/time-series/versions/3",
+                    "id": "3"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/wellbeing-local-authority"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/peoplepopulationandcommunity/wellbeing"
+                }
+            },
+            "national_statistic": true,
+            "next_release": "TBC",
+            "qmi": {
+                "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/wellbeing/methodologies/personalwellbeingintheukqmi"
+            },
+            "related_datasets": [
+                {
+                    "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/wellbeing/bulletins/measuringnationalwellbeing/april2021tomarch2022",
+                    "title": "Personal well-being in the UK: April 2021 to March 2022"
+                }
+            ],
+            "release_frequency": "Annual",
+            "state": "published",
+            "title": "Personal well-being estimates by local authority",
+            "unit_of_measure": "Percentage"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "health.data@ons.gov.uk",
+                    "name": "Sarah Caul",
+                    "telephone": "+44 1329 444110"
+                }
+            ],
+            "description": "Provisional counts of the number of deaths registered in England and Wales, by region, in the latest weeks for which data are available.",
+            "id": "weekly-deaths-region",
+            "keywords": [
+                "Deaths",
+                "weekly deaths"
+            ],
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/weekly-deaths-region/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/weekly-deaths-region/editions/covid-19/versions/162",
+                    "id": "162"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/weekly-deaths-region"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths"
+                }
+            },
+            "national_statistic": true,
+            "next_release": "14 November 2023",
+            "qmi": {
+                "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths/methodologies/mortalitystatisticsinenglandandwalesqmi"
+            },
+            "release_frequency": "Weekly",
+            "state": "published",
+            "title": "Deaths registered weekly in England and Wales by region"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "health.data@ons.gov.uk",
+                    "name": "Sarah Caul",
+                    "telephone": "+44 1329 444110"
+                }
+            ],
+            "description": "Provisional counts of the number of deaths registered in England and Wales, including deaths involving the coronavirus (COVID-19), by local authority, health board and place of death in the latest weeks for which data are available.",
+            "id": "weekly-deaths-local-authority",
+            "keywords": [
+                "Deaths",
+                "weekly deaths"
+            ],
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/weekly-deaths-local-authority/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/weekly-deaths-local-authority/editions/2023/versions/43",
+                    "id": "43"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/weekly-deaths-local-authority"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths"
+                }
+            },
+            "national_statistic": true,
+            "next_release": "14 November 2023",
+            "qmi": {
+                "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths/methodologies/mortalitystatisticsinenglandandwalesqmi"
+            },
+            "release_frequency": "Weekly",
+            "state": "published",
+            "title": "Death registrations and occurrences by local authority and place of death"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "health.data@ons.gov.uk",
+                    "name": "Sarah Caul",
+                    "telephone": "+44 1329 444110"
+                }
+            ],
+            "description": "Provisional counts of the number of deaths registered in Wales, by health board and place of death, in the latest weeks for which data are available.",
+            "id": "weekly-deaths-health-board",
+            "keywords": [
+                "Deaths",
+                "weekly deaths"
+            ],
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/weekly-deaths-health-board/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/weekly-deaths-health-board/editions/2023/versions/43",
+                    "id": "43"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/weekly-deaths-health-board"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths"
+                }
+            },
+            "national_statistic": true,
+            "next_release": "14 November 2023",
+            "qmi": {
+                "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths/methodologies/mortalitystatisticsinenglandandwalesqmi"
+            },
+            "release_frequency": "Weekly",
+            "state": "published",
+            "title": "Death registrations and occurrences by health board and place of death"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "health.data@ons.gov.uk",
+                    "name": "Sarah Caul",
+                    "telephone": "+44 1329 444110"
+                }
+            ],
+            "description": "Provisional counts of the number of deaths registered in England and Wales, by age and sex, in the latest weeks for which data are available.",
+            "id": "weekly-deaths-age-sex",
+            "keywords": [
+                "Deaths",
+                "weekly deaths"
+            ],
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/weekly-deaths-age-sex/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/weekly-deaths-age-sex/editions/covid-19/versions/162",
+                    "id": "162"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/weekly-deaths-age-sex"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths"
+                }
+            },
+            "national_statistic": true,
+            "next_release": "14 November 2023",
+            "qmi": {
+                "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths/methodologies/mortalitystatisticsinenglandandwalesqmi"
+            },
+            "release_frequency": "Weekly",
+            "state": "published",
+            "title": "Deaths registered weekly in England and Wales by age and sex"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "realtime.indicators@ons.gov.uk",
+                    "name": "Katie Cunliffe",
+                    "telephone": "+44 1633 560344"
+                }
+            ],
+            "description": "These data series are experimental faster indicators for monitoring UK spending using debit and credit cards.",
+            "id": "uk-spending-on-cards",
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/uk-spending-on-cards/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/uk-spending-on-cards/editions/time-series/versions/105",
+                    "id": "105"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/uk-spending-on-cards"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/economy/economicoutputandproductivity/productivitymeasures"
+                }
+            },
+            "national_statistic": false,
+            "next_release": "To be announced",
+            "qmi": {
+                "href": "https://www.bankofengland.co.uk/payment-and-settlement/chaps-faster-indicator"
+            },
+            "release_frequency": "Weekly",
+            "state": "published",
+            "title": "UK spending on credit and debit cards",
+            "type": "filterable"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "idbras@ons.gov.uk",
+                    "name": "Becky Shaw",
+                    "telephone": "+44 1633 456902"
+                }
+            ],
+            "description": "The data contained in these tables are numbers of enterprises and local units produced from a snapshot of the Inter-Departmental Business Register (IDBR) taken on 12 March 2021. This dataset contains details of the number of VAT and/or PAYE based enterprises and local units in districts, counties and unitary authorities within region and country by broad industry group.",
+            "id": "uk-business-by-enterprises-and-local-units",
+            "keywords": [
+                "enterprises",
+                "local units,IDBR,business counts,Inter-Departmental Business Register"
+            ],
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/uk-business-by-enterprises-and-local-units/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/uk-business-by-enterprises-and-local-units/editions/2022/versions/1",
+                    "id": "1"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/uk-business-by-enterprises-and-local-units"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/businessindustryandtrade/business/businessservices"
+                }
+            },
+            "next_release": "To be announced",
+            "publications": [
+                {
+                    "href": "https://www.ons.gov.uk/businessindustryandtrade/business/activitysizeandlocation",
+                    "title": "UK Business: Activity, Size and Location"
+                }
+            ],
+            "qmi": {
+                "href": "https://www.ons.gov.uk/businessindustryandtrade/business/activitysizeandlocation/methodologies/ukbusinessactivitysizeandlocationqmi"
+            },
+            "release_frequency": "Annual",
+            "state": "published",
+            "title": "UK Business: Activity, Size and Location",
+            "type": "filterable",
+            "unit_of_measure": "Count"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "realtime.indicators@ons.gov.uk",
+                    "name": "Katie Cunliffe",
+                    "telephone": "+44 1633 560344"
+                }
+            ],
+            "description": "Experimental dataset for business indices covering the UK as part of the real-time indicators release to help better understand economic activity and social change in the UK.",
+            "id": "traffic-camera-activity",
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/traffic-camera-activity/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/traffic-camera-activity/editions/time-series/versions/85",
+                    "id": "85"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/traffic-camera-activity"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/businessindustryandtrade/business/activitysizeandlocation"
+                }
+            },
+            "national_statistic": false,
+            "next_release": "To be announced",
+            "qmi": {
+                "href": "https://datasciencecampus.ons.gov.uk/projects/estimating-vehicle-and-pedestrian-activity-from-town-and-city-traffic-cameras/"
+            },
+            "release_frequency": "Weekly",
+            "state": "published",
+            "title": "Traffic Camera Activity",
+            "type": "filterable"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "trade@ons.gov.uk",
+                    "name": "Hannah Donnarumma",
+                    "telephone": "+44 (0)1329 447648"
+                }
+            ],
+            "description": "Country by commodity data on the UK's trade in goods, including trade by all countries and selected commodities, exports and imports, non seasonally adjusted.",
+            "id": "trade",
+            "keywords": [
+                "trade"
+            ],
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/trade/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/trade/editions/time-series/versions/37",
+                    "id": "37"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/trade"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/businessindustryandtrade/internationaltrade"
+                }
+            },
+            "national_statistic": false,
+            "next_release": "10 November 2023",
+            "qmi": {
+                "href": "https://www.ons.gov.uk/economy/nationalaccounts/balanceofpayments/methodologies/uktradeqmi"
+            },
+            "release_frequency": "Monthly",
+            "state": "published",
+            "title": "Trade in goods: country by commodity",
+            "unit_of_measure": "Â£million"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "hie@ons.gov.uk",
+                    "name": "Paula Croal",
+                    "telephone": "01633 651927"
+                }
+            ],
+            "description": "Estimates of mean and median annual incomes in the UK, by quintile groups.\nThe redistribution effects on individuals of direct and indirect taxation and benefits received in cash or kind.",
+            "id": "tax-benefits-statistics",
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/tax-benefits-statistics/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/tax-benefits-statistics/editions/time-series/versions/3",
+                    "id": "3"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/tax-benefits-statistics"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/economy/governmentpublicsectorandtaxes/taxesandrevenue"
+                }
+            },
+            "next_release": "TBA",
+            "qmi": {
+                "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/methodologies/theeffectsoftaxesandbenefitsonukhouseholdincome"
+            },
+            "release_frequency": "Annual",
+            "state": "published",
+            "title": "Effects of Taxes and Benefits on Household Income"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "health.data@ons.gov.uk",
+                    "name": "Rabiya Nasir, Emyr John and David Mais",
+                    "telephone": "+44 1633 456501"
+                }
+            ],
+            "description": "Number of suicides by local authority in England and Wales, registered from 2001.\n\nIf you are struggling to cope, please call Samaritans for free on 116 123 (UK and ROI) or contact other sources of support, such as those listed on the NHS’s help for suicidal thoughts webpage. Support is available round the clock, every single day of the year, providing a safe place for anyone struggling to cope, whoever they are, however they feel, whatever life has done to them.",
+            "id": "suicides-in-the-uk",
+            "keywords": [
+                "suicide",
+                "mortality"
+            ],
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/suicides-in-the-uk/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/suicides-in-the-uk/editions/2021/versions/1",
+                    "id": "1"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/suicides-in-the-uk"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths"
+                }
+            },
+            "methodologies": [
+                {
+                    "href": "https://www.samaritans.org/",
+                    "title": "Samaritans"
+                },
+                {
+                    "href": "https://www.nhs.uk/mental-health/feelings-symptoms-behaviours/behaviours/help-for-suicidal-thoughts/",
+                    "title": "Help for suicidal thoughts"
+                }
+            ],
+            "national_statistic": true,
+            "next_release": "To be announced",
+            "qmi": {
+                "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths/methodologies/suicideratesintheukqmi"
+            },
+            "related_datasets": [
+                {
+                    "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths/bulletins/suicidesintheunitedkingdom/latest",
+                    "title": "Suicides in England and Wales"
+                }
+            ],
+            "release_frequency": "Annually",
+            "state": "published",
+            "title": "Suicide registrations in England and Wales by local authority"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "pop.info@ons.gov.uk",
+                    "name": "Amanda Sharfman and Pamela Cobb",
+                    "telephone": "+44 (0)1329 444661"
+                }
+            ],
+            "description": "Sexual orientation in the UK from 2012 to 2020 by region.\n\nData source: Annual Population Survey, ONS\n",
+            "id": "sexual-orientation-by-region",
+            "keywords": [
+                "gay",
+                "lesbian,bisexual,straight,LGB"
+            ],
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/sexual-orientation-by-region/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/sexual-orientation-by-region/editions/time-series/versions/3",
+                    "id": "3"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/sexual-orientation-by-region"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/peoplepopulationandcommunity/culturalidentity/sexuality"
+                }
+            },
+            "national_statistic": false,
+            "next_release": "To be announced",
+            "publications": [
+                {
+                    "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/culturalidentity/sexuality/bulletins/sexualidentityuk/2020",
+                    "title": "Sexual orientation, UK"
+                }
+            ],
+            "qmi": {
+                "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/culturalidentity/sexuality/methodologies/sexualidentityukqmi"
+            },
+            "related_datasets": [
+                {
+                    "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/culturalidentity/sexuality/datasets/sexualidentityuk",
+                    "title": "Sexual orientation, UK, dataset"
+                }
+            ],
+            "release_frequency": "Annual",
+            "state": "published",
+            "title": "Sexual orientation by English regions and UK countries",
+            "type": "filterable",
+            "unit_of_measure": "Number of people (thousands) and percentage"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "pop.info@ons.gov.uk",
+                    "name": "Amanda Sharfman and Pamela Cobb",
+                    "telephone": "+44 (0)1329 444661"
+                }
+            ],
+            "description": "Sexual orientation in the UK by sex and age, 2014 to 2020.\n\nSource: Annual Population Survey, ONS",
+            "id": "sexual-orientation-by-age-and-sex",
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/sexual-orientation-by-age-and-sex/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/sexual-orientation-by-age-and-sex/editions/time-series/versions/3",
+                    "id": "3"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/sexual-orientation-by-age-and-sex"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/peoplepopulationandcommunity/culturalidentity/sexuality"
+                }
+            },
+            "national_statistic": false,
+            "next_release": "To be announced",
+            "publications": [
+                {
+                    "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/culturalidentity/sexuality/bulletins/sexualidentityuk/2020",
+                    "title": "Sexual orientation, UK"
+                }
+            ],
+            "qmi": {
+                "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/culturalidentity/sexuality/methodologies/sexualidentityukqmi"
+            },
+            "related_datasets": [
+                {
+                    "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/culturalidentity/sexuality/datasets/sexualidentityuk",
+                    "title": "Sexual orientation, UK dataset"
+                }
+            ],
+            "release_frequency": "Annual",
+            "state": "published",
+            "title": "Sexual orientation by age and sex",
+            "type": "filterable",
+            "unit_of_measure": "Number of people (thousands) and percentage"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "retail.sales.enquiries@ons.gov.uk",
+                    "name": "Rhys Lewis",
+                    "telephone": "+44 1633 455602"
+                }
+            ],
+            "description": "Value and volume of retail sales broken down by size of business",
+            "id": "retail-sales-index-large-and-small-businesses",
+            "keywords": [
+                "RSI",
+                "internet sales,goods bought,buying,spending"
+            ],
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/retail-sales-index-large-and-small-businesses/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/retail-sales-index-large-and-small-businesses/editions/time-series/versions/19",
+                    "id": "19"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/retail-sales-index-large-and-small-businesses"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/businessindustryandtrade/retailindustry"
+                }
+            },
+            "national_statistic": false,
+            "next_release": "17 November 2023",
+            "qmi": {
+                "href": "https://www.ons.gov.uk/businessindustryandtrade/retailindustry/methodologies/retailsalesindexrsiqmi"
+            },
+            "release_frequency": "Monthly",
+            "state": "published",
+            "title": "Retail sales index - large and small businesses",
+            "type": "filterable",
+            "unit_of_measure": "2019=100"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "retail.sales.enquiries@ons.gov.uk",
+                    "name": "Rhys Lewis",
+                    "telephone": "+44 1633 455602"
+                }
+            ],
+            "description": "Value and volume of retail sales for all businesses.",
+            "id": "retail-sales-index-all-businesses",
+            "keywords": [
+                "RSI",
+                "internet sales,goods bought,buying,spending"
+            ],
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/retail-sales-index-all-businesses/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/retail-sales-index-all-businesses/editions/time-series/versions/19",
+                    "id": "19"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/retail-sales-index-all-businesses"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/businessindustryandtrade/retailindustry"
+                }
+            },
+            "national_statistic": false,
+            "next_release": "17 November 2023",
+            "qmi": {
+                "href": "https://www.ons.gov.uk/businessindustryandtrade/retailindustry/methodologies/retailsalesindexrsiqmi"
+            },
+            "release_frequency": "Monthly",
+            "state": "published",
+            "title": "Retail sales index - all businesses",
+            "type": "filterable",
+            "unit_of_measure": "2019=100"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "retail.sales.enquiries@ons.gov.uk",
+                    "name": "Rhys Lewis",
+                    "telephone": "+44 1633 455602"
+                }
+            ],
+            "description": "Retail sales data for Great Britain in value and volume terms, seasonally and non-seasonally adjusted.",
+            "id": "retail-sales-index",
+            "keywords": [
+                "RSI",
+                "internet sales,goods bought,buying,spending"
+            ],
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/retail-sales-index/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/retail-sales-index/editions/time-series/versions/19",
+                    "id": "19"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/retail-sales-index"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/businessindustryandtrade/retailindustry"
+                }
+            },
+            "national_statistic": false,
+            "next_release": "17 November 2023",
+            "qmi": {
+                "href": "https://www.ons.gov.uk/businessindustryandtrade/retailindustry/methodologies/retailsalesindexrsiqmi"
+            },
+            "release_frequency": "Monthly",
+            "state": "published",
+            "title": "Retail sales index",
+            "type": "filterable",
+            "unit_of_measure": "2019=100"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "regionalgdp@ons.gov.uk",
+                    "name": "Keith Barnes",
+                    "telephone": "+441633 456630"
+                }
+            ],
+            "description": "Annual economic activity within England, Wales and the nine English regions (North East, North West, Yorkshire and the Humber, East Midlands, West Midlands, East of England, Greater London, South East, South West).",
+            "id": "regional-gdp-by-year",
+            "keywords": [
+                "regional GDP"
+            ],
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/regional-gdp-by-year/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/regional-gdp-by-year/editions/time-series/versions/6",
+                    "id": "6"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/regional-gdp-by-year"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/economy/grossdomesticproductgdp"
+                }
+            },
+            "national_statistic": false,
+            "next_release": "TBA",
+            "qmi": {
+                "href": "https://www.ons.gov.uk/economy/grossdomesticproductgdp/methodologies/grossdomesticproductgdpukregionsandcountriesqmi"
+            },
+            "release_frequency": "Annual",
+            "state": "published",
+            "title": "Annual GDP for England, Wales and the English regions"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "regionalgdp@ons.gov.uk",
+                    "name": "Keith Barnes",
+                    "telephone": "+441633 456630"
+                }
+            ],
+            "description": "Quarterly economic activity within England, Wales and the nine English regions (North East, North West, Yorkshire and The Humber, East Midlands, West Midlands, East of England, London, South East, South West).",
+            "id": "regional-gdp-by-quarter",
+            "keywords": [
+                "regional GDP"
+            ],
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/regional-gdp-by-quarter/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/regional-gdp-by-quarter/editions/time-series/versions/6",
+                    "id": "6"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/regional-gdp-by-quarter"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/economy/grossdomesticproductgdp"
+                }
+            },
+            "national_statistic": false,
+            "next_release": "To be announced",
+            "qmi": {
+                "href": "https://www.ons.gov.uk/economy/grossdomesticproductgdp/methodologies/grossdomesticproductgdpukregionsandcountriesqmi"
+            },
+            "release_frequency": "To be announced",
+            "state": "published",
+            "title": "Quarterly GDP for England, Wales and the English regions"
+        },
+        {
+            "contacts": [
+                {
+                    "email": "pop.info@ons.gov.uk",
+                    "name": "Population Statistics Division",
+                    "telephone": "+44 (0)1329 444661"
+                }
+            ],
+            "description": "Projected indicators included are derived from the published 2018-based subnational population projections for England, Wales, Scotland and Northern Ireland up to the year 2043. The indicators are the projected sex ratio for those aged 65 years and over and the projected sex ratio for those aged 85 years and over. A sex ratio shows the number of males in the population for every 100 females.\n\nThis dataset has been produced by the Ageing Analysis Team for inclusion in the subnational ageing tool, which was published on July 20, 2020 (see link in Related datasets). The tool is interactive, and users can compare latest and projected measures of ageing for up to four different areas through selection on a map or from a drop-down menu. \n\nNote on data sources: England, Wales, Scotland and Northern Ireland independently publish subnational population projections and the data available here are a compilation of these datasets. The ONS publish national level data for the UK, England, Wales and England & Wales, which has been included. National level data for Scotland and Northern Ireland have been taken from their subnational population projections datasets.",
+            "id": "projections-older-people-sex-ratios",
+            "links": {
+                "editions": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/projections-older-people-sex-ratios/editions"
+                },
+                "latest_version": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/projections-older-people-sex-ratios/editions/time-series/versions/1",
+                    "id": "1"
+                },
+                "self": {
+                    "href": "https://api.beta.ons.gov.uk/v1/datasets/projections-older-people-sex-ratios"
+                },
+                "taxonomy": {
+                    "href": "https://api.beta.ons.gov.uk/v1/peoplepopulationandcommunity/birthsdeathsandmarriages/ageing"
+                }
+            },
+            "methodologies": [
+                {
+                    "href": "https://www.nrscotland.gov.uk/files//statistics/population-projections/sub-national-pp-18/pop-proj-principal-18-methodology.pdf",
+                    "title": "Scotland Methodology Guide"
+                },
+                {
+                    "href": "https://gov.wales/population-and-household-statistics-technical-information",
+                    "title": "Wales technical information"
+                },
+                {
+                    "href": "https://www.nisra.gov.uk/sites/nisra.gov.uk/files/publications/SNPP18-Methodology.pdf",
+                    "title": "Northern Ireland methodology paper"
+                }
+            ],
+            "next_release": "To be announced",
+            "qmi": {
+                "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationprojections/methodologies/subnationalpopulationprojectionsqmi"
+            },
+            "related_datasets": [
+                {
+                    "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationprojections/bulletins/subnationalpopulationprojectionsforengland/2018based",
+                    "title": "Subnational population projections for England: 2018-based"
+                },
+                {
+                    "href": "https://www.nrscotland.gov.uk/statistics-and-data/statistics/statistics-by-theme/population/population-projections/sub-national-population-projections/2018-based",
+                    "title": "Population Projections for Scottish Areas (2018-based)"
+                },
+                {
+                    "href": "https://gov.wales/subnational-population-projections-2018-based",
+                    "title": "Wales Subnational population projections (local authority): 2018-based"
+                },
+                {
+                    "href": "https://www.nisra.gov.uk/publications/2018-based-population-projections-areas-within-northern-ireland",
+                    "title": "2018-based Population Projections for Areas within Northern Ireland"
+                },
+                {
+                    "href": "https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/ageing/articles/subnationalageingtool/2020-07-20",
+                    "title": "Subnational ageing tool"
+                }
+            ],
+            "release_frequency": "Biennial",
+            "state": "published",
+            "title": "Local authority ageing statistics, projected sex ratios for older people"
+        }
+    ],
+    "limit": 20,
+    "offset": 0,
+    "total_count": 337
+}

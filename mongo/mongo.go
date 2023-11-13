@@ -34,6 +34,8 @@ func (m *Mongo) Init(ctx context.Context) (err error) {
 			mongohealth.Collection(m.ActualCollectionName(config.InstanceCollection)),
 			mongohealth.Collection(m.ActualCollectionName(config.DimensionOptionsCollection)),
 			mongohealth.Collection(m.ActualCollectionName(config.InstanceLockCollection)),
+			mongohealth.Collection(m.ActualCollectionName(config.V2DatasetsCollection)),
+			mongohealth.Collection(m.ActualCollectionName(config.V2InstancesCollection)),
 		},
 	}
 	m.healthClient = mongohealth.NewClientWithCollections(m.Connection, databaseCollectionBuilder)

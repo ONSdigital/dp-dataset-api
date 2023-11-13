@@ -2,11 +2,16 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
+	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/service"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/pkg/errors"
@@ -31,6 +36,42 @@ func main() {
 		log.Error(ctx, "application unexpectedly failed", err)
 		os.Exit(1)
 	}
+}
+
+func getEditions(editions *os.File, i *models.Dataset) []string {
+	time.Sleep(10 * time.Second)
+	r, err := http.Get(i.Links.Editions.HRef)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+
+	var eds struct {
+		Items []*models.Edition
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&eds); err != nil {
+		panic(err)
+	}
+
+	var urls []string
+
+	for _, i := range eds.Items {
+		ed, err := json.Marshal(&models.EditionUpdate{
+			Current: i,
+			Next:    i,
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		if _, err := fmt.Fprintf(editions, "%s\n", ed); err != nil {
+			panic(err)
+		}
+
+		urls = append(urls, i.Links.Versions.HRef)
+	}
+	return urls
 }
 
 func run(ctx context.Context) error {

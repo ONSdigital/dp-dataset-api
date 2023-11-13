@@ -130,6 +130,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //			UpsertEditionFunc: func(ctx context.Context, datasetID string, edition string, editionDoc *models.EditionUpdate) error {
 //				panic("mock out the UpsertEdition method")
 //			},
+//			UpsertLDDatasetFunc: func(ctx context.Context, ID string, datasetDoc *models.LDDataset) error {
+//				panic("mock out the UpsertLDDataset method")
+//			},
 //			UpsertVersionFunc: func(ctx context.Context, ID string, versionDoc *models.Version) error {
 //				panic("mock out the UpsertVersion method")
 //			},
@@ -247,6 +250,9 @@ type MongoDBMock struct {
 
 	// UpsertEditionFunc mocks the UpsertEdition method.
 	UpsertEditionFunc func(ctx context.Context, datasetID string, edition string, editionDoc *models.EditionUpdate) error
+
+	// UpsertLDDatasetFunc mocks the UpsertLDDataset method.
+	UpsertLDDatasetFunc func(ctx context.Context, ID string, datasetDoc *models.LDDataset) error
 
 	// UpsertVersionFunc mocks the UpsertVersion method.
 	UpsertVersionFunc func(ctx context.Context, ID string, versionDoc *models.Version) error
@@ -605,6 +611,15 @@ type MongoDBMock struct {
 			// EditionDoc is the editionDoc argument value.
 			EditionDoc *models.EditionUpdate
 		}
+		// UpsertLDDataset holds details about calls to the UpsertLDDataset method.
+		UpsertLDDataset []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the ID argument value.
+			ID string
+			// DatasetDoc is the datasetDoc argument value.
+			DatasetDoc *models.LDDataset
+		}
 		// UpsertVersion holds details about calls to the UpsertVersion method.
 		UpsertVersion []struct {
 			// Ctx is the ctx argument value.
@@ -651,6 +666,7 @@ type MongoDBMock struct {
 	lockUpsertDataset                       sync.RWMutex
 	lockUpsertDimensionsToInstance          sync.RWMutex
 	lockUpsertEdition                       sync.RWMutex
+	lockUpsertLDDataset                     sync.RWMutex
 	lockUpsertVersion                       sync.RWMutex
 }
 
@@ -2147,6 +2163,46 @@ func (mock *MongoDBMock) UpsertEditionCalls() []struct {
 	mock.lockUpsertEdition.RLock()
 	calls = mock.calls.UpsertEdition
 	mock.lockUpsertEdition.RUnlock()
+	return calls
+}
+
+// UpsertLDDataset calls UpsertLDDatasetFunc.
+func (mock *MongoDBMock) UpsertLDDataset(ctx context.Context, ID string, datasetDoc *models.LDDataset) error {
+	if mock.UpsertLDDatasetFunc == nil {
+		panic("MongoDBMock.UpsertLDDatasetFunc: method is nil but MongoDB.UpsertLDDataset was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		ID         string
+		DatasetDoc *models.LDDataset
+	}{
+		Ctx:        ctx,
+		ID:         ID,
+		DatasetDoc: datasetDoc,
+	}
+	mock.lockUpsertLDDataset.Lock()
+	mock.calls.UpsertLDDataset = append(mock.calls.UpsertLDDataset, callInfo)
+	mock.lockUpsertLDDataset.Unlock()
+	return mock.UpsertLDDatasetFunc(ctx, ID, datasetDoc)
+}
+
+// UpsertLDDatasetCalls gets all the calls that were made to UpsertLDDataset.
+// Check the length with:
+//
+//	len(mockedMongoDB.UpsertLDDatasetCalls())
+func (mock *MongoDBMock) UpsertLDDatasetCalls() []struct {
+	Ctx        context.Context
+	ID         string
+	DatasetDoc *models.LDDataset
+} {
+	var calls []struct {
+		Ctx        context.Context
+		ID         string
+		DatasetDoc *models.LDDataset
+	}
+	mock.lockUpsertLDDataset.RLock()
+	calls = mock.calls.UpsertLDDataset
+	mock.lockUpsertLDDataset.RUnlock()
 	return calls
 }
 

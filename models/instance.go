@@ -11,6 +11,21 @@ import (
 	bsonprim "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type LDInstance struct {
+	Events     *[]Event `bson:"events,omitempty"                      json:"events,omitempty"`
+	InstanceID string   `bson:"id,omitempty"                          json:"id,omitempty"`
+	LDEdition
+
+	// Collection and State could move into this struct if not needed publicly
+}
+
+// InstanceLinks holds all links for an instance
+type LDInstanceLinks struct {
+	Job     *LinkObject `bson:"job,omitempty"        json:"job"`
+	Version *LinkObject `bson:"version,omitempty"    json:"version,omitempty"`
+	EditionLinks
+}
+
 // Instance which presents a single dataset being imported
 type Instance struct {
 	Alerts            *[]Alert             `bson:"alerts,omitempty"                      json:"alerts,omitempty"`
