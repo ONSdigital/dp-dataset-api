@@ -23,9 +23,6 @@ var _ service.Initialiser = &InitialiserMock{}
 //
 //		// make and configure a mocked service.Initialiser
 //		mockedInitialiser := &InitialiserMock{
-//			DoGetGraphDBFunc: func(ctx context.Context) (store.GraphDB, service.Closer, error) {
-//				panic("mock out the DoGetGraphDB method")
-//			},
 //			DoGetHTTPServerFunc: func(bindAddr string, router http.Handler) service.HTTPServer {
 //				panic("mock out the DoGetHTTPServer method")
 //			},
@@ -45,9 +42,6 @@ var _ service.Initialiser = &InitialiserMock{}
 //
 //	}
 type InitialiserMock struct {
-	// DoGetGraphDBFunc mocks the DoGetGraphDB method.
-	DoGetGraphDBFunc func(ctx context.Context) (store.GraphDB, service.Closer, error)
-
 	// DoGetHTTPServerFunc mocks the DoGetHTTPServer method.
 	DoGetHTTPServerFunc func(bindAddr string, router http.Handler) service.HTTPServer
 
@@ -62,11 +56,6 @@ type InitialiserMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// DoGetGraphDB holds details about calls to the DoGetGraphDB method.
-		DoGetGraphDB []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-		}
 		// DoGetHTTPServer holds details about calls to the DoGetHTTPServer method.
 		DoGetHTTPServer []struct {
 			// BindAddr is the bindAddr argument value.
@@ -102,43 +91,10 @@ type InitialiserMock struct {
 			Cfg config.MongoConfig
 		}
 	}
-	lockDoGetGraphDB       sync.RWMutex
 	lockDoGetHTTPServer    sync.RWMutex
 	lockDoGetHealthCheck   sync.RWMutex
 	lockDoGetKafkaProducer sync.RWMutex
 	lockDoGetMongoDB       sync.RWMutex
-}
-
-// DoGetGraphDB calls DoGetGraphDBFunc.
-func (mock *InitialiserMock) DoGetGraphDB(ctx context.Context) (store.GraphDB, service.Closer, error) {
-	if mock.DoGetGraphDBFunc == nil {
-		panic("InitialiserMock.DoGetGraphDBFunc: method is nil but Initialiser.DoGetGraphDB was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockDoGetGraphDB.Lock()
-	mock.calls.DoGetGraphDB = append(mock.calls.DoGetGraphDB, callInfo)
-	mock.lockDoGetGraphDB.Unlock()
-	return mock.DoGetGraphDBFunc(ctx)
-}
-
-// DoGetGraphDBCalls gets all the calls that were made to DoGetGraphDB.
-// Check the length with:
-//
-//	len(mockedInitialiser.DoGetGraphDBCalls())
-func (mock *InitialiserMock) DoGetGraphDBCalls() []struct {
-	Ctx context.Context
-} {
-	var calls []struct {
-		Ctx context.Context
-	}
-	mock.lockDoGetGraphDB.RLock()
-	calls = mock.calls.DoGetGraphDB
-	mock.lockDoGetGraphDB.RUnlock()
-	return calls
 }
 
 // DoGetHTTPServer calls DoGetHTTPServerFunc.

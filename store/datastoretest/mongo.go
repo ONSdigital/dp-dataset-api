@@ -100,12 +100,6 @@ var _ store.MongoDB = &MongoDBMock{}
 //			UnlockInstanceFunc: func(ctx context.Context, lockID string)  {
 //				panic("mock out the UnlockInstance method")
 //			},
-//			UpdateBuildHierarchyTaskStateFunc: func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-//				panic("mock out the UpdateBuildHierarchyTaskState method")
-//			},
-//			UpdateBuildSearchTaskStateFunc: func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-//				panic("mock out the UpdateBuildSearchTaskState method")
-//			},
 //			UpdateDatasetFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
 //				panic("mock out the UpdateDataset method")
 //			},
@@ -118,17 +112,8 @@ var _ store.MongoDB = &MongoDBMock{}
 //			UpdateETagForOptionsFunc: func(ctx context.Context, currentInstance *models.Instance, upserts []*models.CachedDimensionOption, updates []*models.DimensionOption, eTagSelector string) (string, error) {
 //				panic("mock out the UpdateETagForOptions method")
 //			},
-//			UpdateImportObservationsTaskStateFunc: func(ctx context.Context, currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
-//				panic("mock out the UpdateImportObservationsTaskState method")
-//			},
 //			UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
 //				panic("mock out the UpdateInstance method")
-//			},
-//			UpdateMetadataFunc: func(ctx context.Context, datasetId string, versionId string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
-//				panic("mock out the UpdateMetadata method")
-//			},
-//			UpdateObservationInsertedFunc: func(ctx context.Context, currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error) {
-//				panic("mock out the UpdateObservationInserted method")
 //			},
 //			UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
 //				panic("mock out the UpdateVersion method")
@@ -233,12 +218,6 @@ type MongoDBMock struct {
 	// UnlockInstanceFunc mocks the UnlockInstance method.
 	UnlockInstanceFunc func(ctx context.Context, lockID string)
 
-	// UpdateBuildHierarchyTaskStateFunc mocks the UpdateBuildHierarchyTaskState method.
-	UpdateBuildHierarchyTaskStateFunc func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error)
-
-	// UpdateBuildSearchTaskStateFunc mocks the UpdateBuildSearchTaskState method.
-	UpdateBuildSearchTaskStateFunc func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error)
-
 	// UpdateDatasetFunc mocks the UpdateDataset method.
 	UpdateDatasetFunc func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
 
@@ -251,17 +230,8 @@ type MongoDBMock struct {
 	// UpdateETagForOptionsFunc mocks the UpdateETagForOptions method.
 	UpdateETagForOptionsFunc func(ctx context.Context, currentInstance *models.Instance, upserts []*models.CachedDimensionOption, updates []*models.DimensionOption, eTagSelector string) (string, error)
 
-	// UpdateImportObservationsTaskStateFunc mocks the UpdateImportObservationsTaskState method.
-	UpdateImportObservationsTaskStateFunc func(ctx context.Context, currentInstance *models.Instance, state string, eTagSelector string) (string, error)
-
 	// UpdateInstanceFunc mocks the UpdateInstance method.
 	UpdateInstanceFunc func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error)
-
-	// UpdateMetadataFunc mocks the UpdateMetadata method.
-	UpdateMetadataFunc func(ctx context.Context, datasetId string, versionId string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error
-
-	// UpdateObservationInsertedFunc mocks the UpdateObservationInserted method.
-	UpdateObservationInsertedFunc func(ctx context.Context, currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error)
 
 	// UpdateVersionFunc mocks the UpdateVersion method.
 	UpdateVersionFunc func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error)
@@ -535,32 +505,6 @@ type MongoDBMock struct {
 			// LockID is the lockID argument value.
 			LockID string
 		}
-		// UpdateBuildHierarchyTaskState holds details about calls to the UpdateBuildHierarchyTaskState method.
-		UpdateBuildHierarchyTaskState []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// CurrentInstance is the currentInstance argument value.
-			CurrentInstance *models.Instance
-			// Dimension is the dimension argument value.
-			Dimension string
-			// State is the state argument value.
-			State string
-			// ETagSelector is the eTagSelector argument value.
-			ETagSelector string
-		}
-		// UpdateBuildSearchTaskState holds details about calls to the UpdateBuildSearchTaskState method.
-		UpdateBuildSearchTaskState []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// CurrentInstance is the currentInstance argument value.
-			CurrentInstance *models.Instance
-			// Dimension is the dimension argument value.
-			Dimension string
-			// State is the state argument value.
-			State string
-			// ETagSelector is the eTagSelector argument value.
-			ETagSelector string
-		}
 		// UpdateDataset holds details about calls to the UpdateDataset method.
 		UpdateDataset []struct {
 			// Ctx is the ctx argument value.
@@ -603,17 +547,6 @@ type MongoDBMock struct {
 			// ETagSelector is the eTagSelector argument value.
 			ETagSelector string
 		}
-		// UpdateImportObservationsTaskState holds details about calls to the UpdateImportObservationsTaskState method.
-		UpdateImportObservationsTaskState []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// CurrentInstance is the currentInstance argument value.
-			CurrentInstance *models.Instance
-			// State is the state argument value.
-			State string
-			// ETagSelector is the eTagSelector argument value.
-			ETagSelector string
-		}
 		// UpdateInstance holds details about calls to the UpdateInstance method.
 		UpdateInstance []struct {
 			// Ctx is the ctx argument value.
@@ -622,32 +555,6 @@ type MongoDBMock struct {
 			CurrentInstance *models.Instance
 			// UpdatedInstance is the updatedInstance argument value.
 			UpdatedInstance *models.Instance
-			// ETagSelector is the eTagSelector argument value.
-			ETagSelector string
-		}
-		// UpdateMetadata holds details about calls to the UpdateMetadata method.
-		UpdateMetadata []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// DatasetId is the datasetId argument value.
-			DatasetId string
-			// VersionId is the versionId argument value.
-			VersionId string
-			// VersionEtag is the versionEtag argument value.
-			VersionEtag string
-			// UpdatedDataset is the updatedDataset argument value.
-			UpdatedDataset *models.Dataset
-			// UpdatedVersion is the updatedVersion argument value.
-			UpdatedVersion *models.Version
-		}
-		// UpdateObservationInserted holds details about calls to the UpdateObservationInserted method.
-		UpdateObservationInserted []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// CurrentInstance is the currentInstance argument value.
-			CurrentInstance *models.Instance
-			// ObservationInserted is the observationInserted argument value.
-			ObservationInserted int64
 			// ETagSelector is the eTagSelector argument value.
 			ETagSelector string
 		}
@@ -734,16 +641,11 @@ type MongoDBMock struct {
 	lockGetVersions                         sync.RWMutex
 	lockRemoveDatasetVersionAndEditionLinks sync.RWMutex
 	lockUnlockInstance                      sync.RWMutex
-	lockUpdateBuildHierarchyTaskState       sync.RWMutex
-	lockUpdateBuildSearchTaskState          sync.RWMutex
 	lockUpdateDataset                       sync.RWMutex
 	lockUpdateDatasetWithAssociation        sync.RWMutex
 	lockUpdateDimensionsNodeIDAndOrder      sync.RWMutex
 	lockUpdateETagForOptions                sync.RWMutex
-	lockUpdateImportObservationsTaskState   sync.RWMutex
 	lockUpdateInstance                      sync.RWMutex
-	lockUpdateMetadata                      sync.RWMutex
-	lockUpdateObservationInserted           sync.RWMutex
 	lockUpdateVersion                       sync.RWMutex
 	lockUpsertContact                       sync.RWMutex
 	lockUpsertDataset                       sync.RWMutex
@@ -1828,102 +1730,6 @@ func (mock *MongoDBMock) UnlockInstanceCalls() []struct {
 	return calls
 }
 
-// UpdateBuildHierarchyTaskState calls UpdateBuildHierarchyTaskStateFunc.
-func (mock *MongoDBMock) UpdateBuildHierarchyTaskState(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-	if mock.UpdateBuildHierarchyTaskStateFunc == nil {
-		panic("MongoDBMock.UpdateBuildHierarchyTaskStateFunc: method is nil but MongoDB.UpdateBuildHierarchyTaskState was just called")
-	}
-	callInfo := struct {
-		Ctx             context.Context
-		CurrentInstance *models.Instance
-		Dimension       string
-		State           string
-		ETagSelector    string
-	}{
-		Ctx:             ctx,
-		CurrentInstance: currentInstance,
-		Dimension:       dimension,
-		State:           state,
-		ETagSelector:    eTagSelector,
-	}
-	mock.lockUpdateBuildHierarchyTaskState.Lock()
-	mock.calls.UpdateBuildHierarchyTaskState = append(mock.calls.UpdateBuildHierarchyTaskState, callInfo)
-	mock.lockUpdateBuildHierarchyTaskState.Unlock()
-	return mock.UpdateBuildHierarchyTaskStateFunc(ctx, currentInstance, dimension, state, eTagSelector)
-}
-
-// UpdateBuildHierarchyTaskStateCalls gets all the calls that were made to UpdateBuildHierarchyTaskState.
-// Check the length with:
-//
-//	len(mockedMongoDB.UpdateBuildHierarchyTaskStateCalls())
-func (mock *MongoDBMock) UpdateBuildHierarchyTaskStateCalls() []struct {
-	Ctx             context.Context
-	CurrentInstance *models.Instance
-	Dimension       string
-	State           string
-	ETagSelector    string
-} {
-	var calls []struct {
-		Ctx             context.Context
-		CurrentInstance *models.Instance
-		Dimension       string
-		State           string
-		ETagSelector    string
-	}
-	mock.lockUpdateBuildHierarchyTaskState.RLock()
-	calls = mock.calls.UpdateBuildHierarchyTaskState
-	mock.lockUpdateBuildHierarchyTaskState.RUnlock()
-	return calls
-}
-
-// UpdateBuildSearchTaskState calls UpdateBuildSearchTaskStateFunc.
-func (mock *MongoDBMock) UpdateBuildSearchTaskState(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
-	if mock.UpdateBuildSearchTaskStateFunc == nil {
-		panic("MongoDBMock.UpdateBuildSearchTaskStateFunc: method is nil but MongoDB.UpdateBuildSearchTaskState was just called")
-	}
-	callInfo := struct {
-		Ctx             context.Context
-		CurrentInstance *models.Instance
-		Dimension       string
-		State           string
-		ETagSelector    string
-	}{
-		Ctx:             ctx,
-		CurrentInstance: currentInstance,
-		Dimension:       dimension,
-		State:           state,
-		ETagSelector:    eTagSelector,
-	}
-	mock.lockUpdateBuildSearchTaskState.Lock()
-	mock.calls.UpdateBuildSearchTaskState = append(mock.calls.UpdateBuildSearchTaskState, callInfo)
-	mock.lockUpdateBuildSearchTaskState.Unlock()
-	return mock.UpdateBuildSearchTaskStateFunc(ctx, currentInstance, dimension, state, eTagSelector)
-}
-
-// UpdateBuildSearchTaskStateCalls gets all the calls that were made to UpdateBuildSearchTaskState.
-// Check the length with:
-//
-//	len(mockedMongoDB.UpdateBuildSearchTaskStateCalls())
-func (mock *MongoDBMock) UpdateBuildSearchTaskStateCalls() []struct {
-	Ctx             context.Context
-	CurrentInstance *models.Instance
-	Dimension       string
-	State           string
-	ETagSelector    string
-} {
-	var calls []struct {
-		Ctx             context.Context
-		CurrentInstance *models.Instance
-		Dimension       string
-		State           string
-		ETagSelector    string
-	}
-	mock.lockUpdateBuildSearchTaskState.RLock()
-	calls = mock.calls.UpdateBuildSearchTaskState
-	mock.lockUpdateBuildSearchTaskState.RUnlock()
-	return calls
-}
-
 // UpdateDataset calls UpdateDatasetFunc.
 func (mock *MongoDBMock) UpdateDataset(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
 	if mock.UpdateDatasetFunc == nil {
@@ -2096,50 +1902,6 @@ func (mock *MongoDBMock) UpdateETagForOptionsCalls() []struct {
 	return calls
 }
 
-// UpdateImportObservationsTaskState calls UpdateImportObservationsTaskStateFunc.
-func (mock *MongoDBMock) UpdateImportObservationsTaskState(ctx context.Context, currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
-	if mock.UpdateImportObservationsTaskStateFunc == nil {
-		panic("MongoDBMock.UpdateImportObservationsTaskStateFunc: method is nil but MongoDB.UpdateImportObservationsTaskState was just called")
-	}
-	callInfo := struct {
-		Ctx             context.Context
-		CurrentInstance *models.Instance
-		State           string
-		ETagSelector    string
-	}{
-		Ctx:             ctx,
-		CurrentInstance: currentInstance,
-		State:           state,
-		ETagSelector:    eTagSelector,
-	}
-	mock.lockUpdateImportObservationsTaskState.Lock()
-	mock.calls.UpdateImportObservationsTaskState = append(mock.calls.UpdateImportObservationsTaskState, callInfo)
-	mock.lockUpdateImportObservationsTaskState.Unlock()
-	return mock.UpdateImportObservationsTaskStateFunc(ctx, currentInstance, state, eTagSelector)
-}
-
-// UpdateImportObservationsTaskStateCalls gets all the calls that were made to UpdateImportObservationsTaskState.
-// Check the length with:
-//
-//	len(mockedMongoDB.UpdateImportObservationsTaskStateCalls())
-func (mock *MongoDBMock) UpdateImportObservationsTaskStateCalls() []struct {
-	Ctx             context.Context
-	CurrentInstance *models.Instance
-	State           string
-	ETagSelector    string
-} {
-	var calls []struct {
-		Ctx             context.Context
-		CurrentInstance *models.Instance
-		State           string
-		ETagSelector    string
-	}
-	mock.lockUpdateImportObservationsTaskState.RLock()
-	calls = mock.calls.UpdateImportObservationsTaskState
-	mock.lockUpdateImportObservationsTaskState.RUnlock()
-	return calls
-}
-
 // UpdateInstance calls UpdateInstanceFunc.
 func (mock *MongoDBMock) UpdateInstance(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
 	if mock.UpdateInstanceFunc == nil {
@@ -2181,102 +1943,6 @@ func (mock *MongoDBMock) UpdateInstanceCalls() []struct {
 	mock.lockUpdateInstance.RLock()
 	calls = mock.calls.UpdateInstance
 	mock.lockUpdateInstance.RUnlock()
-	return calls
-}
-
-// UpdateMetadata calls UpdateMetadataFunc.
-func (mock *MongoDBMock) UpdateMetadata(ctx context.Context, datasetId string, versionId string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
-	if mock.UpdateMetadataFunc == nil {
-		panic("MongoDBMock.UpdateMetadataFunc: method is nil but MongoDB.UpdateMetadata was just called")
-	}
-	callInfo := struct {
-		Ctx            context.Context
-		DatasetId      string
-		VersionId      string
-		VersionEtag    string
-		UpdatedDataset *models.Dataset
-		UpdatedVersion *models.Version
-	}{
-		Ctx:            ctx,
-		DatasetId:      datasetId,
-		VersionId:      versionId,
-		VersionEtag:    versionEtag,
-		UpdatedDataset: updatedDataset,
-		UpdatedVersion: updatedVersion,
-	}
-	mock.lockUpdateMetadata.Lock()
-	mock.calls.UpdateMetadata = append(mock.calls.UpdateMetadata, callInfo)
-	mock.lockUpdateMetadata.Unlock()
-	return mock.UpdateMetadataFunc(ctx, datasetId, versionId, versionEtag, updatedDataset, updatedVersion)
-}
-
-// UpdateMetadataCalls gets all the calls that were made to UpdateMetadata.
-// Check the length with:
-//
-//	len(mockedMongoDB.UpdateMetadataCalls())
-func (mock *MongoDBMock) UpdateMetadataCalls() []struct {
-	Ctx            context.Context
-	DatasetId      string
-	VersionId      string
-	VersionEtag    string
-	UpdatedDataset *models.Dataset
-	UpdatedVersion *models.Version
-} {
-	var calls []struct {
-		Ctx            context.Context
-		DatasetId      string
-		VersionId      string
-		VersionEtag    string
-		UpdatedDataset *models.Dataset
-		UpdatedVersion *models.Version
-	}
-	mock.lockUpdateMetadata.RLock()
-	calls = mock.calls.UpdateMetadata
-	mock.lockUpdateMetadata.RUnlock()
-	return calls
-}
-
-// UpdateObservationInserted calls UpdateObservationInsertedFunc.
-func (mock *MongoDBMock) UpdateObservationInserted(ctx context.Context, currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error) {
-	if mock.UpdateObservationInsertedFunc == nil {
-		panic("MongoDBMock.UpdateObservationInsertedFunc: method is nil but MongoDB.UpdateObservationInserted was just called")
-	}
-	callInfo := struct {
-		Ctx                 context.Context
-		CurrentInstance     *models.Instance
-		ObservationInserted int64
-		ETagSelector        string
-	}{
-		Ctx:                 ctx,
-		CurrentInstance:     currentInstance,
-		ObservationInserted: observationInserted,
-		ETagSelector:        eTagSelector,
-	}
-	mock.lockUpdateObservationInserted.Lock()
-	mock.calls.UpdateObservationInserted = append(mock.calls.UpdateObservationInserted, callInfo)
-	mock.lockUpdateObservationInserted.Unlock()
-	return mock.UpdateObservationInsertedFunc(ctx, currentInstance, observationInserted, eTagSelector)
-}
-
-// UpdateObservationInsertedCalls gets all the calls that were made to UpdateObservationInserted.
-// Check the length with:
-//
-//	len(mockedMongoDB.UpdateObservationInsertedCalls())
-func (mock *MongoDBMock) UpdateObservationInsertedCalls() []struct {
-	Ctx                 context.Context
-	CurrentInstance     *models.Instance
-	ObservationInserted int64
-	ETagSelector        string
-} {
-	var calls []struct {
-		Ctx                 context.Context
-		CurrentInstance     *models.Instance
-		ObservationInserted int64
-		ETagSelector        string
-	}
-	mock.lockUpdateObservationInserted.RLock()
-	calls = mock.calls.UpdateObservationInserted
-	mock.lockUpdateObservationInserted.RUnlock()
 	return calls
 }
 

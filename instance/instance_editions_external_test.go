@@ -2,7 +2,6 @@ package instance_test
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -52,10 +51,6 @@ func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
 			})
 
-			Convey("Then the dp-graph function is called", func() {
-				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 1)
-			})
-
 			Convey("Then the mongoDB instance lock is acquired and released as expected", func() {
 				validateLock(mockedDataStore, "123")
 				So(*isLocked, ShouldBeFalse)
@@ -98,10 +93,6 @@ func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
 			})
 
-			Convey("Then the dp-graph function is not called", func() {
-				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
-			})
-
 			Convey("Then the mongoDB instance lock is acquired and released as expected", func() {
 				validateLock(mockedDataStore, "123")
 				So(*isLocked, ShouldBeFalse)
@@ -140,10 +131,6 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 				}
 
 				mockedDataStore, isLocked := storeMockEditionCompleteWithLock(currentInstanceTestData, true)
-				mockedDataStore.AddVersionDetailsToInstanceFunc = func(_ context.Context, _ string, _ string, _ string, _ int) error {
-					So(*isLocked, ShouldBeTrue)
-					return errors.New("boom")
-				}
 
 				datasetPermissions := mocks.NewAuthHandlerMock()
 				permissions := mocks.NewAuthHandlerMock()
@@ -157,7 +144,6 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 				So(*isLocked, ShouldBeFalse)
 			})
@@ -198,7 +184,6 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 				So(*isLocked, ShouldBeFalse)
 			})
 		})
@@ -229,10 +214,6 @@ func storeMockEditionCompleteWithLock(instance *models.Instance, expectFirstGetU
 	mockedDataStore.UpdateInstanceFunc = func(_ context.Context, _ *models.Instance, _ *models.Instance, _ string) (string, error) {
 		So(*isLocked, ShouldBeTrue)
 		return testETag, nil
-	}
-	mockedDataStore.AddVersionDetailsToInstanceFunc = func(_ context.Context, _ string, _ string, _ string, _ int) error {
-		So(*isLocked, ShouldBeTrue)
-		return nil
 	}
 	return mockedDataStore, isLocked
 }

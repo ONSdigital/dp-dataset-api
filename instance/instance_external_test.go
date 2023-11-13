@@ -593,7 +593,6 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 			})
 		})
 
@@ -620,7 +619,6 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 			})
 		})
 
@@ -648,7 +646,6 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(permissions.Required.Calls, ShouldEqual, 1)
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 			})
 		})
 
@@ -680,7 +677,6 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				So(permissions.Required.Calls, ShouldEqual, 1)
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 			})
 		})
@@ -711,7 +707,6 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 			})
 		})
 

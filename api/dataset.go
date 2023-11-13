@@ -180,13 +180,6 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		models.CleanDataset(dataset)
-
-		if err = models.ValidateDataset(dataset); err != nil {
-			log.Error(ctx, "addDataset endpoint: dataset failed validation checks", err)
-			return nil, err
-		}
-
 		dataset.Type = dataType.String() // TODO: check if this is redundant - ValidateDatasetType should possibly only return an error
 		dataset.State = models.CreatedState
 		dataset.ID = datasetID
@@ -263,13 +256,6 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		dataset.Type = currentDataset.Next.Type
-
-		models.CleanDataset(dataset)
-
-		if err = models.ValidateDataset(dataset); err != nil {
-			log.Error(ctx, "putDataset endpoint: failed validation check to update dataset", err, data)
-			return err
-		}
 
 		if dataset.State == models.PublishedState {
 			if err := api.publishDataset(ctx, currentDataset, nil); err != nil {

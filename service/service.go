@@ -67,6 +67,11 @@ func (svc *Service) SetMongoDB(mongoDB store.MongoDB) {
 	svc.mongoDB = mongoDB
 }
 
+// SetDownloadsProducer sets the downloads kafka producer for a service
+func (svc *Service) SetDownloadsProducer(producer kafka.IProducer) {
+	svc.generateCantabularDownloadsProducer = producer
+}
+
 // Run the service
 func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version string, svcErrors chan error) (err error) {
 	// Get MongoDB connection

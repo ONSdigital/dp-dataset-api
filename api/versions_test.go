@@ -615,7 +615,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 				So(mockedDataStore.UpdateVersionCalls()[0].ETagSelector, ShouldEqual, testETag)
 				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
-				So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 				So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -655,7 +654,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				So(mockedDataStore.UpdateVersionCalls()[0].ETagSelector, ShouldEqual, testETag)
 				So(mockedDataStore.UpdateVersionCalls()[1].ETagSelector, ShouldEqual, testETag)
 				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
-				So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 				So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -725,7 +723,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
-			So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 			So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 			So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
@@ -778,7 +775,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
-			So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 			So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 			So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 
@@ -863,7 +859,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 
@@ -969,9 +964,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				UpsertEditionFunc: func(context.Context, string, string, *models.EditionUpdate) error {
 					return nil
 				},
-				SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
-					return nil
-				},
 				AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 					isLocked = true
 					return testLockID, nil
@@ -993,7 +985,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
-			So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 			So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 			So(generatorMock.GenerateCalls()[0].Edition, ShouldEqual, "2017")
@@ -1942,9 +1933,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 			UpsertEditionFunc: func(context.Context, string, string, *models.EditionUpdate) error {
 				return nil
 			},
-			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
-				return errors.New("failed to set is_published on the instance node")
-			},
 			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 				isLocked = true
 				return testLockID, nil
@@ -1968,7 +1956,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
