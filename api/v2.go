@@ -156,3 +156,139 @@ func (api *DatasetAPI) getV2Dataset(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Info(ctx, "getV2Dataset endpoint: request successful")
 }
+
+func (api *DatasetAPI) getV2Editions(w http.ResponseWriter, r *http.Request) {
+	defer dphttp.DrainBody(r)
+	ctx := r.Context()
+	vars := mux.Vars(r)
+	datasetID := vars["dataset_id"]
+
+	b, err := func() ([]byte, error) {
+		list, _, err := api.dataStore.Backend.GetV2Editions(ctx, datasetID, "published", 0, 100, true)
+		if err != nil {
+			log.Error(ctx, "getV2Editions endpoint: datastore.getV2Datasets returned an error", err)
+			return nil, err
+		}
+
+		//linked data fields - @id per item
+		for i, l := range list {
+			list[i].ID = fmt.Sprintf("%s/v2/datasets/%s/editions/%s", api.host, datasetID, l.Edition)
+		}
+
+		// TODO: fix pagination
+		page := &models.EditionList{
+			Items: list,
+			Page: models.Page{
+				TotalCount: len(list),
+			},
+			LinkedData: models.LinkedData{
+				Context: "cdn.ons.gov.uk/context.json",
+			},
+			Links: &models.PageLinks{
+				Self: &models.LinkObject{
+					HRef: fmt.Sprintf("%s/v2/datasets/%s/editions", api.host, datasetID),
+				},
+				Next: &models.LinkObject{
+					HRef: fmt.Sprintf("%s/v2/datasets/%s/editions", api.host, datasetID),
+				},
+				Prev: &models.LinkObject{
+					HRef: fmt.Sprintf("%s/v2/datasets/%s/editions", api.host, datasetID),
+				},
+			},
+		}
+
+		groups := []string{"editions"}
+		b, err := marshal(page, groups...)
+		if err != nil {
+			log.Error(ctx, "getV2Editions endpoint: marshal returned an error", err, log.Data{"groups": groups})
+			return nil, err
+		}
+
+		return b, nil
+	}()
+
+	if err != nil {
+		handleDatasetAPIErr(ctx, err, w, nil)
+		return
+	}
+
+	setJSONContentType(w)
+	if _, err = w.Write(b); err != nil {
+		log.Error(ctx, "getV2Editions endpoint: error writing bytes to response", err)
+		handleDatasetAPIErr(ctx, err, w, nil)
+	}
+	log.Info(ctx, "getV2Editions endpoint: request successful")
+}
+
+func (api *DatasetAPI) getV2Edition(w http.ResponseWriter, r *http.Request) {
+	defer dphttp.DrainBody(r)
+
+	ctx := r.Context()
+	vars := mux.Vars(r)
+	datasetID := vars["dataset_id"]
+	editionID := vars["edition"]
+
+	b, err := func() ([]byte, error) {
+		edition, err := api.dataStore.Backend.GetV2Edition(ctx, datasetID, editionID, "published", true)
+		if err != nil {
+			log.Error(ctx, "getV2Edition endpoint: datastore.getV2Edition returned an error", err)
+			return nil, err
+		}
+
+		edition.LinkedData = models.LinkedData{
+			Context: "cdn.ons.gov.uk/context.json",
+			ID:      fmt.Sprintf("%s/v2/datasets/%s/editions/%s", api.host, datasetID, edition.Edition),
+			Type:    []string{"dcat:dataset"},
+		}
+
+		edition.Links = &models.EditionLinks{
+			Dataset: &models.LinkObject{
+				HRef: fmt.Sprintf("%s/v2/datasets/%s", api.host, datasetID),
+			},
+			Editions: &models.LinkObject{
+				HRef: fmt.Sprintf("%s/v2/datasets/%s/editions", api.host, datasetID),
+			},
+			Versions: &models.LinkObject{
+				HRef: fmt.Sprintf("%s/v2/datasets/%s/editions/%s/versions", api.host, datasetID, edition.Edition),
+			},
+			Self: &models.LinkObject{
+				HRef: fmt.Sprintf("%s/v2/datasets/%s/editions/%s", api.host, datasetID, edition.Edition),
+			},
+		}
+
+		// replace embedded @id field with proper URLs and set latest version link
+		// if dataset.Embedded != nil && len(dataset.Embedded.Editions) > 0 {
+		// 	for i, ed := range dataset.Embedded.Editions {
+		// 		s := fmt.Sprintf("%s/v2/datasets/%s/editions/%s", api.host, dataset.Identifier, ed.ID)
+		// 		dataset.Embedded.Editions[i].ID = s
+		// 	}
+
+		// 	dataset.Links.LatestVersion = &models.LinkObject{
+		// 		HRef: dataset.Embedded.Editions[0].ID,
+		// 	}
+		// }
+
+		// TODO set etag header?
+
+		groups := []string{"edition"}
+		b, err := marshal(edition, groups...)
+		if err != nil {
+			log.Error(ctx, "getV2Edition endpoint: marshal returned an error", err, log.Data{"groups": groups})
+			return nil, err
+		}
+
+		return b, nil
+	}()
+
+	if err != nil {
+		handleDatasetAPIErr(ctx, err, w, nil)
+		return
+	}
+
+	setJSONContentType(w)
+	if _, err = w.Write(b); err != nil {
+		log.Error(ctx, "getV2Edition endpoint: error writing bytes to response", err)
+		handleDatasetAPIErr(ctx, err, w, nil)
+	}
+	log.Info(ctx, "getV2Edition endpoint: request successful")
+}

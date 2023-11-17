@@ -139,6 +139,9 @@ func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
 
 	api.get("/v2/datasets", api.getV2Datasets)
 	api.get("/v2/datasets/{dataset_id}", api.getV2Dataset)
+	api.get("/v2/datasets/{dataset_id}/editions", api.getV2Editions)
+	api.get("/v2/datasets/{dataset_id}/editions/{edition}", api.getV2Edition)
+
 }
 
 // enablePrivateDatasetEndpoints register the datasets endpoints with the appropriate authentication and authorisation

@@ -79,17 +79,32 @@ func (m *Mongo) getV2DatasetEmbeds(ctx context.Context, id, state string, author
 
 // GetEditions retrieves all edition documents for a dataset
 func (m *Mongo) GetV2Editions(ctx context.Context, id, state string, offset, limit int, authorised bool) ([]*models.LDEdition, int, error) {
-	stages := buildLatestEditionAndVersionQuery(id, state, authorised, true)
-	stages = append(stages, bson.M{
-		"sort":   bson.M{"_id": 1},
-		"$limit": limit,
-		"$skip":  offset,
-	})
+	stages := buildLatestEditionAndVersionQuery(id, "", state, authorised)
+	stages = append(stages,
+		bson.M{"$sort": bson.M{"_id": 1}},
+		bson.M{"$limit": limit},
+		bson.M{"$skip": offset},
+	)
 
 	// get total count and paginated values according to provided offset and limit
 	results := []*models.LDEdition{}
-	if err := m.Connection.Collection(m.ActualCollectionName(config.V2InstancesCollection)).Aggregate(ctx, stages, results); err != nil {
+	if err := m.Connection.Collection(m.ActualCollectionName(config.V2InstancesCollection)).Aggregate(ctx, stages, &results); err != nil {
 		return results, 0, err
+	}
+
+	// using DCATDatasetSeries directly here rather than LDDataset to avoid collisions on collectionID etc
+	// also not calling getV2Dataset to avoid additional calls to populate _embedded which would be discarded
+	var dataset models.DCATDatasetSeries
+	err := m.Connection.Collection(m.ActualCollectionName(config.V2DatasetsCollection)).FindOne(ctx, bson.M{"_id": id}, &dataset)
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return nil, 0, errs.ErrDatasetNotFound
+		}
+		return nil, 0, err
+	}
+
+	for i := range results {
+		results[i].DCATDatasetSeries = dataset
 	}
 
 	return results, len(results), nil
@@ -97,17 +112,38 @@ func (m *Mongo) GetV2Editions(ctx context.Context, id, state string, offset, lim
 
 // GetEdition retrieves an edition document for a dataset
 func (m *Mongo) GetV2Edition(ctx context.Context, id, editionID, state string, authorised bool) (*models.LDEdition, error) {
-	selector := buildV2EditionQuery(id, editionID, state)
+	stages := buildLatestEditionAndVersionQuery(id, editionID, state, authorised)
+	stages = append(stages,
+		bson.M{"$sort": bson.M{"version": -1}},
+		bson.M{"$limit": 1},
+	)
 
-	var edition models.LDEdition
-	err := m.Connection.Collection(m.ActualCollectionName(config.V2InstancesCollection)).FindOne(ctx, selector, &edition)
-
+	var result []models.LDEdition
+	err := m.Connection.Collection(m.ActualCollectionName(config.V2InstancesCollection)).Aggregate(ctx, stages, &result)
 	if err != nil {
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
 			return nil, errs.ErrEditionNotFound
 		}
 		return nil, err
 	}
+
+	if len(result) != 1 {
+		return nil, errors.New("invalid number of editions returned from mongo query")
+	}
+
+	edition := result[0]
+	// using DCATDatasetSeries directly here rather than LDDataset to avoid collisions on collectionID etc
+	// also not calling getV2Dataset to avoid additional calls to populate _embedded which would be discarded
+	var dataset models.DCATDatasetSeries
+	if err := m.Connection.Collection(m.ActualCollectionName(config.V2DatasetsCollection)).FindOne(ctx, bson.M{"_id": id}, &dataset); err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return nil, errs.ErrDatasetNotFound
+		}
+		return nil, err
+	}
+
+	edition.DCATDatasetSeries = dataset
+
 	return &edition, nil
 }
 

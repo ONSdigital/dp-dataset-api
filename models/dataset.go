@@ -140,9 +140,10 @@ type DCATDatasetSeries struct {
 }
 
 type EditionList struct {
-	Page
-	Links *PageLinks   `json:"_links"`
-	Items []*LDEdition `json:"items"`
+	Page       `groups:"editions"`
+	Links      *PageLinks   `json:"_links" groups:"editions"`
+	Items      []*LDEdition `json:"items" groups:"editions"`
+	LinkedData `groups:"all"`
 }
 
 // LDEdition ...

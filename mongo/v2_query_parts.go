@@ -40,48 +40,30 @@ func buildDatasetEmbeddedQuery(id, state string, authorised bool) []bson.M {
 	return []bson.M{selector, sort, group}
 }
 
-func buildLatestEditionAndVersionQuery(id, state string, authorised bool, fullDoc bool) []bson.M {
+func buildLatestEditionAndVersionQuery(id, edition, state string, authorised bool) []bson.M {
+
 	selector := selectByDatasetLinkAndState(id, state, authorised)
+	if edition != "" {
+		selector = selectByEditionAndState(id, edition, state, authorised)
+	}
 	sort := sortByEditionThenVersion()
 
 	group := bson.M{
 		"$group": bson.M{
-			"_id":     "$edition",
-			"version": bson.M{"$last": "$version"},
-			"updated": bson.M{"$last": "$release_date"}, //TODO: this should potentially be 'last_updated' not 'release_date'
+			"_id":          "$edition",
+			"version":      bson.M{"$last": "$version"},
+			"release_date": bson.M{"$last": "$release_date"}, //TODO: this should potentially be 'last_updated' not 'release_date'
+			"document":     bson.M{"$last": "$$CURRENT"},
 		},
 	}
 
-	if fullDoc {
-		group = bson.M{
-			"$group": bson.M{
-				"_id":      "$edition",
-				"version":  bson.M{"$last": "$version"},
-				"updated":  bson.M{"$last": "$release_date"}, //TODO: this should potentially be 'last_updated' not 'release_date'
-				"document": bson.M{"$last": "$$CURRENT"},
-			},
-		}
+	replace := bson.M{
+		"$replaceRoot": bson.M{
+			"newRoot": "$document",
+		},
 	}
+	return []bson.M{selector, sort, group, replace}
 
-	return []bson.M{selector, sort, group}
-}
-
-func buildV2EditionQuery(id, editionID, state string) bson.M {
-	var selector bson.M
-	if state != "" {
-		selector = bson.M{
-			"_links.dataset.id": id,
-			"edition":           editionID,
-			"state":             state,
-		}
-	} else {
-		selector = bson.M{
-			"_links.dataset.id": id,
-			"edition":           editionID,
-		}
-	}
-
-	return selector
 }
 
 func selectByDatasetLinkAndState(id, state string, authorised bool) bson.M {
@@ -99,6 +81,26 @@ func selectByDatasetLinkAndState(id, state string, authorised bool) bson.M {
 			"$match": bson.M{"_links.dataset.id": id, "state": state},
 		}
 	}
+
+	return selector
+}
+
+func selectByEditionAndState(id, edition, state string, authorised bool) bson.M {
+	if !authorised {
+		state = models.PublishedState
+	}
+
+	// all queries must get the dataset by id
+	selector := bson.M{
+		"$match": bson.M{"_links.dataset.id": id, "edition": edition},
+	}
+
+	if state != "" {
+		selector = bson.M{
+			"$match": bson.M{"_links.dataset.id": id, "edition": edition, "state": state},
+		}
+	}
+
 	return selector
 }
 
