@@ -12,18 +12,19 @@ import (
 )
 
 type LDInstance struct {
-	Events     *[]Event `bson:"events,omitempty"                      json:"events,omitempty"`
-	InstanceID string   `bson:"id,omitempty"                          json:"id,omitempty"`
-	LDEdition
+	Events     *[]Event         `bson:"events,omitempty"                      json:"events,omitempty"`
+	InstanceID string           `bson:"identifier,omitempty"                          json:"identifier,omitempty"`
+	Links      *LDInstanceLinks `bson:"_links,omitempty" json:"_links,omitempty"`
+	LDEdition  `bson:",inline"`
 
 	// Collection and State could move into this struct if not needed publicly
 }
 
 // InstanceLinks holds all links for an instance
 type LDInstanceLinks struct {
-	Job     *LinkObject `bson:"job,omitempty"        json:"job"`
-	Version *LinkObject `bson:"version,omitempty"    json:"version,omitempty"`
-	EditionLinks
+	Job          *LinkObject `bson:"job,omitempty"        json:"job"`
+	Version      *LinkObject `bson:"version,omitempty"    json:"version,omitempty"`
+	EditionLinks `bson:",inline"`
 }
 
 // Instance which presents a single dataset being imported

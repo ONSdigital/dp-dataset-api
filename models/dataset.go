@@ -153,7 +153,7 @@ type LDEdition struct {
 
 	CollectionID string           `bson:"collection_id,omitempty"          json:"collection_id,omitempty"`
 	State        string           `bson:"state,omitempty"                  json:"state,omitempty"`
-	Links        *EditionLinks    `bson:"_links" json:"_links,omitempty"`
+	Links        *EditionLinks    `bson:"-" json:"_links,omitempty"`
 	Embedded     *EditionEmbedded `bson:"-" json:"_embedded,omitempty"`
 
 	// JSON-LD and Application Profile fields
@@ -165,10 +165,12 @@ type DCATDataset struct {
 	DCATDatasetSeries `bson:"-"`
 
 	// Quality
-	VersionNotes []string `bson:"version_notes,omitempty"   json:"version_notes,omitempty" groups:"editions,edition"`
+	VersionNotes []string  `bson:"version_notes,omitempty"   json:"version_notes,omitempty" groups:"editions,edition"`
+	ReleaseDate  time.Time `bson:"release_date,omitempty"           json:"release_date" groups:"editions,edition"` //add to spec
 
 	// Management
-	Version string `bson:"version,omitempty"           json:"version,omitempty" groups:"editions,edition"`
+	Edition string `bson:"edition,omitempty"           json:"edition,omitempty" groups:"editions,edition"`
+	Version int    `bson:"version,omitempty"           json:"version,omitempty" groups:"editions,edition"`
 
 	NextEdition     string `bson:"next_edition,omitempty"           json:"next_edition,omitempty" groups:"edition"`
 	PreviousEdition string `bson:"previous_edition,omitempty"           json:"previous_edition,omitempty" groups:"edition"`
@@ -212,7 +214,7 @@ type Column struct {
 }
 
 // LDDatasetLinks ...
-type LDDatasetLinks struct {
+type LDDatasetLinks struct { //TODO - can potentially remove bson tags here as its "-" in the only usage
 	Editions      *LinkObject `bson:"-"        json:"editions,omitempty" groups:"dataset"`
 	LatestVersion *LinkObject `bson:"latest_version,omitempty"  json:"latest_version,omitempty" groups:"datasets,dataset"`
 	Self          *LinkObject `bson:"-"            json:"self,omitempty" groups:"datasets,dataset"`
@@ -220,11 +222,13 @@ type LDDatasetLinks struct {
 
 // DatasetEmbedded ...
 type DatasetEmbedded struct {
-	Editions []struct {
-		ID     string `json:"@id"`
-		Issued string `json:"issued"`
-		ETag   string `bson:"e_tag"                      json:"etag"`
-	}
+	Editions []EmbeddedEdition `json:"editions,omitempty" groups:"dataset"`
+}
+
+type EmbeddedEdition struct {
+	ID     string    `bson:"_id" json:"@id"`
+	Issued time.Time `bson:"issued" json:"issued"`
+	ETag   string    `bson:"e_tag"                      json:"etag"`
 }
 
 // EditionLinks ...

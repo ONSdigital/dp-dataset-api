@@ -55,8 +55,12 @@ type dataMongoDB interface {
 	RemoveDatasetVersionAndEditionLinks(ctx context.Context, id string) error
 
 	GetV2Datasets(ctx context.Context, offset, limit int, authorised bool) ([]*models.LDDataset, int, error)
-	GetV2Dataset(ctx context.Context, authorised bool, id string) (*models.LDDataset, error)
+	GetV2Dataset(ctx context.Context, id string, authorised bool) (*models.LDDataset, error)
+	GetV2Editions(ctx context.Context, id, state string, offset, limit int, authorised bool) ([]*models.LDEdition, int, error)
+	GetV2Edition(ctx context.Context, id, edition, state string, authorised bool) (*models.LDEdition, error)
+
 	UpsertLDDataset(ctx context.Context, ID string, datasetDoc *models.LDDataset) error
+	UpsertLDInstance(ctx context.Context, ID string, instanceDoc *models.LDInstance) error
 }
 
 // MongoDB represents all the required methods from mongo DB

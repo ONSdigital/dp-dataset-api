@@ -3,7 +3,6 @@ package mongo
 import (
 	"context"
 	"errors"
-	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -33,7 +32,7 @@ func (m *Mongo) GetV2Datasets(ctx context.Context, offset, limit int, authorised
 }
 
 // GetV2Dataset retrieves a dataset document
-func (m *Mongo) GetV2Dataset(ctx context.Context, authorised bool, id string) (*models.LDDataset, error) {
+func (m *Mongo) GetV2Dataset(ctx context.Context, id string, authorised bool) (*models.LDDataset, error) {
 	var filter bson.M
 	if !authorised {
 		filter = bson.M{"_id": id, "state": bson.M{"$eq": "published"}}
@@ -50,7 +49,66 @@ func (m *Mongo) GetV2Dataset(ctx context.Context, authorised bool, id string) (*
 		return nil, err
 	}
 	log.Info(ctx, "getV2Dataset mongo result", log.Data{"dataset": dataset})
+
+	editions, err := m.getV2DatasetEmbeds(ctx, id, "published", authorised)
+	if err != nil && !errors.Is(err, mongodriver.ErrNoDocumentFound) {
+		return nil, err
+	}
+	if len(editions) > 0 {
+		dataset.Embedded = &models.DatasetEmbedded{
+			Editions: editions,
+		}
+	}
+
 	return &dataset, nil
+}
+
+// getV2DatasetEmbeds queries editions documents to find the necessary fields to embed for a dataset
+func (m *Mongo) getV2DatasetEmbeds(ctx context.Context, id, state string, authorised bool) ([]models.EmbeddedEdition, error) {
+	stages := buildDatasetEmbeddedQuery(id, state, authorised)
+	stages = append(stages, bson.M{
+		"$sort": bson.M{"issued": -1},
+	})
+
+	var result []models.EmbeddedEdition
+	if err := m.Connection.Collection(m.ActualCollectionName(config.V2InstancesCollection)).Aggregate(ctx, stages, &result); err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
+// GetEditions retrieves all edition documents for a dataset
+func (m *Mongo) GetV2Editions(ctx context.Context, id, state string, offset, limit int, authorised bool) ([]*models.LDEdition, int, error) {
+	stages := buildLatestEditionAndVersionQuery(id, state, authorised, true)
+	stages = append(stages, bson.M{
+		"sort":   bson.M{"_id": 1},
+		"$limit": limit,
+		"$skip":  offset,
+	})
+
+	// get total count and paginated values according to provided offset and limit
+	results := []*models.LDEdition{}
+	if err := m.Connection.Collection(m.ActualCollectionName(config.V2InstancesCollection)).Aggregate(ctx, stages, results); err != nil {
+		return results, 0, err
+	}
+
+	return results, len(results), nil
+}
+
+// GetEdition retrieves an edition document for a dataset
+func (m *Mongo) GetV2Edition(ctx context.Context, id, editionID, state string, authorised bool) (*models.LDEdition, error) {
+	selector := buildV2EditionQuery(id, editionID, state)
+
+	var edition models.LDEdition
+	err := m.Connection.Collection(m.ActualCollectionName(config.V2InstancesCollection)).FindOne(ctx, selector, &edition)
+
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return nil, errs.ErrEditionNotFound
+		}
+		return nil, err
+	}
+	return &edition, nil
 }
 
 // UpsertLDDataset adds or overrides an existing dataset document
@@ -69,15 +127,11 @@ func (m *Mongo) UpsertLDDataset(ctx context.Context, id string, datasetDoc *mode
 
 // UpsertLDDataset adds or overrides an existing dataset document
 func (m *Mongo) UpsertLDInstance(ctx context.Context, id string, instanceDoc *models.LDInstance) (err error) {
-	// if instanceDoc != nil {
-	// 	instanceDoc.DCATDataset.DCATDatasetSeries = models.DCATDatasetSeries{}
-	// }
-
 	update := bson.M{
 		"$set": instanceDoc,
-		"$setOnInsert": bson.M{
-			"last_updated": time.Now(),
-		},
+		// "$setOnInsert": bson.M{
+		// 	"last_updated": time.Now(),
+		// },
 	}
 
 	_, err = m.Connection.Collection(m.ActualCollectionName(config.V2InstancesCollection)).UpsertById(ctx, id, update)
