@@ -141,6 +141,8 @@ func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
 	api.get("/v2/datasets/{dataset_id}", api.getV2Dataset)
 	api.get("/v2/datasets/{dataset_id}/editions", api.getV2Editions)
 	api.get("/v2/datasets/{dataset_id}/editions/{edition}", api.getV2Edition)
+	api.get("/v2/datasets/{dataset_id}/editions/{edition}/versions", api.getV2Versions)
+	api.get("/v2/datasets/{dataset_id}/editions/{edition}/versions/{version}", api.getV2Version)
 
 }
 

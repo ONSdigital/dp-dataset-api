@@ -41,7 +41,7 @@ func buildDatasetEmbeddedQuery(id, state string, authorised bool) []bson.M {
 }
 
 // get the embedded resources needed on an edition response - mapping to the `EditionEmbedded` struct
-func buildEditionEmbeddedQuery(id, edition, state string, authorised bool) []bson.M {
+func buildVersionListQuery(id, edition, state string, authorised bool) []bson.M {
 	selector := selectByEditionAndState(id, edition, state, authorised)
 	sort := bson.M{"$sort": bson.M{"version": -1}}
 

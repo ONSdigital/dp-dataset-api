@@ -144,9 +144,9 @@ func (m *Mongo) GetV2Edition(ctx context.Context, id, editionID, state string, a
 
 // getV2EditionEmbeds queries editions documents to find the necessary fields to embed for a edition
 func (m *Mongo) getV2EditionEmbeds(ctx context.Context, id, edition, state string, authorised bool) (*models.EditionEmbedded, error) {
-	stages := buildEditionEmbeddedQuery(id, edition, state, authorised)
+	stages := buildVersionListQuery(id, edition, state, authorised)
 	stages = append(stages, bson.M{
-		"$sort": bson.M{"issued": -1},
+		"$sort": bson.M{"version": -1},
 	})
 
 	var versions []models.EmbeddedVersion
@@ -163,9 +163,9 @@ func (m *Mongo) getV2EditionEmbeds(ctx context.Context, id, edition, state strin
 	}, nil
 }
 
-// GetEdition retrieves an edition document for a dataset
+// GetV2Versions retrieves a version document for an edition
 func (m *Mongo) GetV2Versions(ctx context.Context, id, editionID, state string, offset, limit int, authorised bool) ([]*models.LDEdition, int, error) {
-	stages := buildLatestEditionAndVersionQuery(id, editionID, 0, state, authorised)
+	stages := buildVersionListQuery(id, editionID, state, authorised)
 	stages = append(stages,
 		bson.M{"$sort": bson.M{"version": -1}},
 		bson.M{"$limit": limit},

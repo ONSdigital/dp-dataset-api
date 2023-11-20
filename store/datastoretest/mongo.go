@@ -100,6 +100,12 @@ var _ store.MongoDB = &MongoDBMock{}
 //			GetV2EditionsFunc: func(ctx context.Context, id string, state string, offset int, limit int, authorised bool) ([]*models.LDEdition, int, error) {
 //				panic("mock out the GetV2Editions method")
 //			},
+//			GetV2VersionFunc: func(ctx context.Context, id string, edition string, version int, state string, authorised bool) (*models.LDEdition, error) {
+//				panic("mock out the GetV2Version method")
+//			},
+//			GetV2VersionsFunc: func(ctx context.Context, id string, edition string, state string, offset int, limit int, authorised bool) ([]*models.LDEdition, int, error) {
+//				panic("mock out the GetV2Versions method")
+//			},
 //			GetVersionFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
 //				panic("mock out the GetVersion method")
 //			},
@@ -235,6 +241,12 @@ type MongoDBMock struct {
 
 	// GetV2EditionsFunc mocks the GetV2Editions method.
 	GetV2EditionsFunc func(ctx context.Context, id string, state string, offset int, limit int, authorised bool) ([]*models.LDEdition, int, error)
+
+	// GetV2VersionFunc mocks the GetV2Version method.
+	GetV2VersionFunc func(ctx context.Context, id string, edition string, version int, state string, authorised bool) (*models.LDEdition, error)
+
+	// GetV2VersionsFunc mocks the GetV2Versions method.
+	GetV2VersionsFunc func(ctx context.Context, id string, edition string, state string, offset int, limit int, authorised bool) ([]*models.LDEdition, int, error)
 
 	// GetVersionFunc mocks the GetVersion method.
 	GetVersionFunc func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error)
@@ -547,6 +559,38 @@ type MongoDBMock struct {
 			// Authorised is the authorised argument value.
 			Authorised bool
 		}
+		// GetV2Version holds details about calls to the GetV2Version method.
+		GetV2Version []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID string
+			// Edition is the edition argument value.
+			Edition string
+			// Version is the version argument value.
+			Version int
+			// State is the state argument value.
+			State string
+			// Authorised is the authorised argument value.
+			Authorised bool
+		}
+		// GetV2Versions holds details about calls to the GetV2Versions method.
+		GetV2Versions []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID string
+			// Edition is the edition argument value.
+			Edition string
+			// State is the state argument value.
+			State string
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+			// Authorised is the authorised argument value.
+			Authorised bool
+		}
 		// GetVersion holds details about calls to the GetVersion method.
 		GetVersion []struct {
 			// Ctx is the ctx argument value.
@@ -743,6 +787,8 @@ type MongoDBMock struct {
 	lockGetV2Datasets                       sync.RWMutex
 	lockGetV2Edition                        sync.RWMutex
 	lockGetV2Editions                       sync.RWMutex
+	lockGetV2Version                        sync.RWMutex
+	lockGetV2Versions                       sync.RWMutex
 	lockGetVersion                          sync.RWMutex
 	lockGetVersions                         sync.RWMutex
 	lockRemoveDatasetVersionAndEditionLinks sync.RWMutex
@@ -1847,6 +1893,114 @@ func (mock *MongoDBMock) GetV2EditionsCalls() []struct {
 	mock.lockGetV2Editions.RLock()
 	calls = mock.calls.GetV2Editions
 	mock.lockGetV2Editions.RUnlock()
+	return calls
+}
+
+// GetV2Version calls GetV2VersionFunc.
+func (mock *MongoDBMock) GetV2Version(ctx context.Context, id string, edition string, version int, state string, authorised bool) (*models.LDEdition, error) {
+	if mock.GetV2VersionFunc == nil {
+		panic("MongoDBMock.GetV2VersionFunc: method is nil but MongoDB.GetV2Version was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		ID         string
+		Edition    string
+		Version    int
+		State      string
+		Authorised bool
+	}{
+		Ctx:        ctx,
+		ID:         id,
+		Edition:    edition,
+		Version:    version,
+		State:      state,
+		Authorised: authorised,
+	}
+	mock.lockGetV2Version.Lock()
+	mock.calls.GetV2Version = append(mock.calls.GetV2Version, callInfo)
+	mock.lockGetV2Version.Unlock()
+	return mock.GetV2VersionFunc(ctx, id, edition, version, state, authorised)
+}
+
+// GetV2VersionCalls gets all the calls that were made to GetV2Version.
+// Check the length with:
+//
+//	len(mockedMongoDB.GetV2VersionCalls())
+func (mock *MongoDBMock) GetV2VersionCalls() []struct {
+	Ctx        context.Context
+	ID         string
+	Edition    string
+	Version    int
+	State      string
+	Authorised bool
+} {
+	var calls []struct {
+		Ctx        context.Context
+		ID         string
+		Edition    string
+		Version    int
+		State      string
+		Authorised bool
+	}
+	mock.lockGetV2Version.RLock()
+	calls = mock.calls.GetV2Version
+	mock.lockGetV2Version.RUnlock()
+	return calls
+}
+
+// GetV2Versions calls GetV2VersionsFunc.
+func (mock *MongoDBMock) GetV2Versions(ctx context.Context, id string, edition string, state string, offset int, limit int, authorised bool) ([]*models.LDEdition, int, error) {
+	if mock.GetV2VersionsFunc == nil {
+		panic("MongoDBMock.GetV2VersionsFunc: method is nil but MongoDB.GetV2Versions was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		ID         string
+		Edition    string
+		State      string
+		Offset     int
+		Limit      int
+		Authorised bool
+	}{
+		Ctx:        ctx,
+		ID:         id,
+		Edition:    edition,
+		State:      state,
+		Offset:     offset,
+		Limit:      limit,
+		Authorised: authorised,
+	}
+	mock.lockGetV2Versions.Lock()
+	mock.calls.GetV2Versions = append(mock.calls.GetV2Versions, callInfo)
+	mock.lockGetV2Versions.Unlock()
+	return mock.GetV2VersionsFunc(ctx, id, edition, state, offset, limit, authorised)
+}
+
+// GetV2VersionsCalls gets all the calls that were made to GetV2Versions.
+// Check the length with:
+//
+//	len(mockedMongoDB.GetV2VersionsCalls())
+func (mock *MongoDBMock) GetV2VersionsCalls() []struct {
+	Ctx        context.Context
+	ID         string
+	Edition    string
+	State      string
+	Offset     int
+	Limit      int
+	Authorised bool
+} {
+	var calls []struct {
+		Ctx        context.Context
+		ID         string
+		Edition    string
+		State      string
+		Offset     int
+		Limit      int
+		Authorised bool
+	}
+	mock.lockGetV2Versions.RLock()
+	calls = mock.calls.GetV2Versions
+	mock.lockGetV2Versions.RUnlock()
 	return calls
 }
 
