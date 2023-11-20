@@ -248,20 +248,24 @@ type EditionLinks struct {
 
 // EditionEmbedded ...
 type EditionEmbedded struct {
-	Versions []struct {
-		ID           string   `json:"@id"`
-		Issued       string   `json:"issued"`
-		ETag         string   `json:"etag"`
-		VersionNotes []string `json:"version_notes,omitempty"`
-		Version      string   `json:"version,omitempty"`
-	} `groups:"edition"`
-	Dimensions []struct {
-		CodeList   string `json:"code_list"`
-		Identifier string `json:"identifier"`
-		Label      string `json:"label"`
-		Name       string `json:"name"`
-	} `groups:"version"`
-	Distributions []*Distribution `groups:"edition,version"`
+	Versions      []EmbeddedVersion   `groups:"edition"`
+	Dimensions    []EmbeddedDimension `groups:"version"`
+	Distributions []*Distribution     `groups:"edition,version"`
+}
+
+type EmbeddedVersion struct {
+	ID           string    `json:"@id"`
+	ReleaseDate  time.Time `bson:"release_date" json:"release_date"`
+	ETag         string    `bson:"e_tag,omitempty" json:"etag"`
+	VersionNotes []string  `bson:"version_notes,omitempty" json:"version_notes,omitempty"`
+	Version      int       `bson:"version" json:"version,omitempty"`
+}
+
+type EmbeddedDimension struct {
+	CodeList   string `json:"code_list"`
+	Identifier string `json:"identifier"`
+	Label      string `json:"label"`
+	Name       string `json:"name"`
 }
 
 // DatasetUpdate represents an evolving dataset with the current dataset and the updated dataset

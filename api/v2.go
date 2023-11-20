@@ -257,16 +257,16 @@ func (api *DatasetAPI) getV2Edition(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// replace embedded @id field with proper URLs and set latest version link
-		// if dataset.Embedded != nil && len(dataset.Embedded.Editions) > 0 {
-		// 	for i, ed := range dataset.Embedded.Editions {
-		// 		s := fmt.Sprintf("%s/v2/datasets/%s/editions/%s", api.host, dataset.Identifier, ed.ID)
-		// 		dataset.Embedded.Editions[i].ID = s
-		// 	}
+		if edition.Embedded != nil && len(edition.Embedded.Versions) > 0 {
+			for i, ed := range edition.Embedded.Versions {
+				s := fmt.Sprintf("%s/v2/datasets/%s/editions/%s/versions/%d", api.host, datasetID, edition.Edition, ed.Version)
+				edition.Embedded.Versions[i].ID = s
+			}
 
-		// 	dataset.Links.LatestVersion = &models.LinkObject{
-		// 		HRef: dataset.Embedded.Editions[0].ID,
-		// 	}
-		// }
+			edition.Links.LatestVersion = &models.LinkObject{
+				HRef: edition.Embedded.Versions[0].ID,
+			}
+		}
 
 		// TODO set etag header?
 
