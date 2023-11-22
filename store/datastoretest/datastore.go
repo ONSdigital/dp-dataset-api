@@ -111,6 +111,9 @@ var _ store.Storer = &StorerMock{}
 //			GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error) {
 //				panic("mock out the GetVersions method")
 //			},
+//			InsertLDDimensionFunc: func(ctx context.Context, dimension *models.LDDimension) error {
+//				panic("mock out the InsertLDDimension method")
+//			},
 //			RemoveDatasetVersionAndEditionLinksFunc: func(ctx context.Context, id string) error {
 //				panic("mock out the RemoveDatasetVersionAndEditionLinks method")
 //			},
@@ -252,6 +255,9 @@ type StorerMock struct {
 
 	// GetVersionsFunc mocks the GetVersions method.
 	GetVersionsFunc func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error)
+
+	// InsertLDDimensionFunc mocks the InsertLDDimension method.
+	InsertLDDimensionFunc func(ctx context.Context, dimension *models.LDDimension) error
 
 	// RemoveDatasetVersionAndEditionLinksFunc mocks the RemoveDatasetVersionAndEditionLinks method.
 	RemoveDatasetVersionAndEditionLinksFunc func(ctx context.Context, id string) error
@@ -626,6 +632,13 @@ type StorerMock struct {
 			// Limit is the limit argument value.
 			Limit int
 		}
+		// InsertLDDimension holds details about calls to the InsertLDDimension method.
+		InsertLDDimension []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Dimension is the dimension argument value.
+			Dimension *models.LDDimension
+		}
 		// RemoveDatasetVersionAndEditionLinks holds details about calls to the RemoveDatasetVersionAndEditionLinks method.
 		RemoveDatasetVersionAndEditionLinks []struct {
 			// Ctx is the ctx argument value.
@@ -798,6 +811,7 @@ type StorerMock struct {
 	lockGetV2Versions                       sync.RWMutex
 	lockGetVersion                          sync.RWMutex
 	lockGetVersions                         sync.RWMutex
+	lockInsertLDDimension                   sync.RWMutex
 	lockRemoveDatasetVersionAndEditionLinks sync.RWMutex
 	lockUnlockInstance                      sync.RWMutex
 	lockUpdateDataset                       sync.RWMutex
@@ -2124,6 +2138,42 @@ func (mock *StorerMock) GetVersionsCalls() []struct {
 	mock.lockGetVersions.RLock()
 	calls = mock.calls.GetVersions
 	mock.lockGetVersions.RUnlock()
+	return calls
+}
+
+// InsertLDDimension calls InsertLDDimensionFunc.
+func (mock *StorerMock) InsertLDDimension(ctx context.Context, dimension *models.LDDimension) error {
+	if mock.InsertLDDimensionFunc == nil {
+		panic("StorerMock.InsertLDDimensionFunc: method is nil but Storer.InsertLDDimension was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		Dimension *models.LDDimension
+	}{
+		Ctx:       ctx,
+		Dimension: dimension,
+	}
+	mock.lockInsertLDDimension.Lock()
+	mock.calls.InsertLDDimension = append(mock.calls.InsertLDDimension, callInfo)
+	mock.lockInsertLDDimension.Unlock()
+	return mock.InsertLDDimensionFunc(ctx, dimension)
+}
+
+// InsertLDDimensionCalls gets all the calls that were made to InsertLDDimension.
+// Check the length with:
+//
+//	len(mockedStorer.InsertLDDimensionCalls())
+func (mock *StorerMock) InsertLDDimensionCalls() []struct {
+	Ctx       context.Context
+	Dimension *models.LDDimension
+} {
+	var calls []struct {
+		Ctx       context.Context
+		Dimension *models.LDDimension
+	}
+	mock.lockInsertLDDimension.RLock()
+	calls = mock.calls.InsertLDDimension
+	mock.lockInsertLDDimension.RUnlock()
 	return calls
 }
 

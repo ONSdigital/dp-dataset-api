@@ -65,6 +65,7 @@ type dataMongoDB interface {
 
 	UpsertLDDataset(ctx context.Context, ID string, datasetDoc *models.LDDataset) error
 	UpsertLDInstance(ctx context.Context, ID string, instanceDoc *models.LDInstance) error
+	InsertLDDimension(ctx context.Context, dimension *models.LDDimension) error
 }
 
 // MongoDB represents all the required methods from mongo DB

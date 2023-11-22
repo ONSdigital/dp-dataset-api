@@ -85,23 +85,17 @@ func (api *DatasetAPI) getV2Instance(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		dataset := inst.Links.Dataset.ID
-		edition := inst.Links.Edition.ID
+		// we're storing the IDs but we need to build the HRefs
+		if inst.Links != nil && inst.Links.Dataset != nil {
+			dataset := inst.Links.Dataset.ID
+			edition := inst.Links.Edition.ID
 
-		inst.Links = &models.LDInstanceLinks{
-			EditionLinks: models.EditionLinks{
-				Dataset: &models.LinkObject{
-					HRef: fmt.Sprintf("%s/v2/datasets/%s", api.host, dataset),
-					ID:   dataset,
-				},
-				Edition: &models.LinkObject{
-					HRef: fmt.Sprintf("%s/v2/datasets/%s/editions/%s", api.host, dataset, edition),
-					ID:   edition,
-				},
-				Self: &models.LinkObject{
-					HRef: fmt.Sprintf("%s/v2/instances/%s", api.host, instanceID),
-				},
-			},
+			inst.Links.Dataset.HRef = fmt.Sprintf("%s/v2/datasets/%s", api.host, dataset)
+			inst.Links.Edition.HRef = fmt.Sprintf("%s/v2/datasets/%s/editions/%s", api.host, dataset, edition)
+
+			if inst.Links.Version != nil {
+				inst.Links.Version.HRef = fmt.Sprintf("%s/v2/datasets/%s/editions/%s/versions/%s", api.host, dataset, edition, inst.Links.Version.ID)
+			}
 		}
 
 		// TODO set etag header?

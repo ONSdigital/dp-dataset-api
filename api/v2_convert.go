@@ -64,6 +64,12 @@ func (api *DatasetAPI) seedDB(w http.ResponseWriter, r *http.Request) {
 				log.Error(ctx, "seedDB endpoint: failed to upsert instance document", err, log.Data{"instance_id": new.InstanceID})
 				return err
 			}
+
+			if err := api.storeDimensions(ctx, i); err != nil {
+				log.Error(ctx, "seedDB endpoint: failed to insert dimensions for instance", err, log.Data{"instance_id": new.InstanceID})
+				return err
+			}
+
 		}
 
 		return nil
@@ -175,10 +181,14 @@ func (api *DatasetAPI) convertInstance(ctx context.Context, old *models.Instance
 
 	new.Links = &models.LDInstanceLinks{
 		EditionLinks: models.EditionLinks{
-			Dataset: old.Links.Dataset,
-			Self: &models.LinkObject{
-				HRef: fmt.Sprintf("/instances/%s", new.InstanceID),
-				ID:   new.InstanceID,
+			SelfLink: models.SelfLink{
+				Self: &models.LinkObject{
+					HRef: fmt.Sprintf("/instances/%s", new.InstanceID),
+					ID:   new.InstanceID,
+				},
+			},
+			DatasetLink: models.DatasetLink{
+				Dataset: old.Links.Dataset,
 			},
 		},
 	}
@@ -198,4 +208,55 @@ func (api *DatasetAPI) convertInstance(ctx context.Context, old *models.Instance
 	}
 
 	return new, nil
+}
+
+func (api *DatasetAPI) storeDimensions(ctx context.Context, old *models.Instance) error {
+	if len(old.Dimensions) == 0 {
+		return nil
+	}
+
+	links := &models.LDDimensionLinks{
+		Instance: &models.LinkObject{
+			ID: old.InstanceID,
+		},
+		DatasetLink: models.DatasetLink{
+			Dataset: &models.LinkObject{
+				ID: old.Links.Dataset.ID,
+			},
+		},
+		EditionLink: models.EditionLink{
+			Edition: &models.LinkObject{
+				ID: old.Links.Edition.ID,
+			},
+		},
+	}
+
+	if old.Links.Version != nil {
+		links.Version = &models.LinkObject{
+			ID: old.Links.Version.ID,
+		}
+	}
+
+	for _, d := range old.Dimensions {
+		tmpLinks := links
+		tmpLinks.Self = &models.LinkObject{
+			ID: d.Name,
+		}
+		newD := &models.LDDimension{
+			EmbeddedDimension: models.EmbeddedDimension{
+				CodeList:   d.HRef,
+				Identifier: d.ID,
+				Name:       d.Name,
+				Label:      d.Label,
+			},
+			Links: tmpLinks,
+		}
+
+		//insert to DB
+		if err := api.dataStore.Backend.InsertLDDimension(ctx, newD); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

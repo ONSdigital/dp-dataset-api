@@ -309,3 +309,11 @@ func (m *Mongo) UpsertLDInstance(ctx context.Context, id string, instanceDoc *mo
 
 	return err
 }
+
+// UpsertLDDataset adds or overrides an existing dataset document
+func (m *Mongo) InsertLDDimension(ctx context.Context, dimension *models.LDDimension) (err error) {
+
+	_, err = m.Connection.Collection(m.ActualCollectionName(config.V2DimensionsCollection)).Insert(ctx, dimension)
+
+	return err
+}

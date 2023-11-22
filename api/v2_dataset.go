@@ -243,8 +243,10 @@ func (api *DatasetAPI) getV2Edition(w http.ResponseWriter, r *http.Request) {
 		}
 
 		edition.Links = &models.EditionLinks{
-			Dataset: &models.LinkObject{
-				HRef: fmt.Sprintf("%s/v2/datasets/%s", api.host, datasetID),
+			DatasetLink: models.DatasetLink{
+				Dataset: &models.LinkObject{
+					HRef: fmt.Sprintf("%s/v2/datasets/%s", api.host, datasetID),
+				},
 			},
 			Editions: &models.LinkObject{
 				HRef: fmt.Sprintf("%s/v2/datasets/%s/editions", api.host, datasetID),
@@ -252,8 +254,10 @@ func (api *DatasetAPI) getV2Edition(w http.ResponseWriter, r *http.Request) {
 			Versions: &models.LinkObject{
 				HRef: fmt.Sprintf("%s/v2/datasets/%s/editions/%s/versions", api.host, datasetID, edition.Edition),
 			},
-			Self: &models.LinkObject{
-				HRef: fmt.Sprintf("%s/v2/datasets/%s/editions/%s", api.host, datasetID, edition.Edition),
+			SelfLink: models.SelfLink{
+				Self: &models.LinkObject{
+					HRef: fmt.Sprintf("%s/v2/datasets/%s/editions/%s", api.host, datasetID, edition.Edition),
+				},
 			},
 		}
 
@@ -388,20 +392,26 @@ func (api *DatasetAPI) getV2Version(w http.ResponseWriter, r *http.Request) {
 		}
 
 		edition.Links = &models.EditionLinks{
-			Dataset: &models.LinkObject{
-				HRef: fmt.Sprintf("%s/v2/datasets/%s", api.host, datasetID),
+			DatasetLink: models.DatasetLink{
+				Dataset: &models.LinkObject{
+					HRef: fmt.Sprintf("%s/v2/datasets/%s", api.host, datasetID),
+				},
 			},
 			Editions: &models.LinkObject{
 				HRef: fmt.Sprintf("%s/v2/datasets/%s/editions", api.host, datasetID),
 			},
-			Edition: &models.LinkObject{
-				HRef: fmt.Sprintf("%s/v2/datasets/%s/editions/%s", api.host, datasetID, edition.Edition),
+			EditionLink: models.EditionLink{
+				Edition: &models.LinkObject{
+					HRef: fmt.Sprintf("%s/v2/datasets/%s/editions/%s", api.host, datasetID, edition.Edition),
+				},
 			},
 			Versions: &models.LinkObject{
 				HRef: fmt.Sprintf("%s/v2/datasets/%s/editions/%s/versions", api.host, datasetID, edition.Edition),
 			},
-			Self: &models.LinkObject{
-				HRef: fmt.Sprintf("%s/v2/datasets/%s/editions/%s/versions/%d", api.host, datasetID, edition.Edition, versionID),
+			SelfLink: models.SelfLink{
+				Self: &models.LinkObject{
+					HRef: fmt.Sprintf("%s/v2/datasets/%s/editions/%s/versions/%d", api.host, datasetID, edition.Edition, versionID),
+				},
 			},
 			Dimensions: &models.LinkObject{
 				HRef: fmt.Sprintf("%s/v2/datasets/%s/editions/%s/versions/%d/dimensions", api.host, datasetID, edition.Edition, versionID),

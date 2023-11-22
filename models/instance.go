@@ -28,13 +28,6 @@ type LDInstance struct {
 	// Collection and State could move into this struct if not needed publicly
 }
 
-// InstanceLinks holds all links for an instance
-type LDInstanceLinks struct {
-	Job          *LinkObject `bson:"job,omitempty"        json:"job,omitempty" groups:"instances,instance"`
-	Version      *LinkObject `bson:"version,omitempty"    json:"version,omitempty" groups:"instances,instance"`
-	EditionLinks `bson:",inline"`
-}
-
 // Instance which presents a single dataset being imported
 type Instance struct {
 	Alerts            *[]Alert             `bson:"alerts,omitempty"                      json:"alerts,omitempty"`
