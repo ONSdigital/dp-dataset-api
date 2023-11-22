@@ -93,6 +93,9 @@ var _ store.Storer = &StorerMock{}
 //			GetV2EditionsFunc: func(ctx context.Context, id string, state string, offset int, limit int, authorised bool) ([]*models.LDEdition, int, error) {
 //				panic("mock out the GetV2Editions method")
 //			},
+//			GetV2InstancesFunc: func(ctx context.Context, id string, state string, offset int, limit int, authorised bool) ([]*models.LDInstance, int, error) {
+//				panic("mock out the GetV2Instances method")
+//			},
 //			GetV2VersionFunc: func(ctx context.Context, id string, edition string, version int, state string, authorised bool) (*models.LDEdition, error) {
 //				panic("mock out the GetV2Version method")
 //			},
@@ -228,6 +231,9 @@ type StorerMock struct {
 
 	// GetV2EditionsFunc mocks the GetV2Editions method.
 	GetV2EditionsFunc func(ctx context.Context, id string, state string, offset int, limit int, authorised bool) ([]*models.LDEdition, int, error)
+
+	// GetV2InstancesFunc mocks the GetV2Instances method.
+	GetV2InstancesFunc func(ctx context.Context, id string, state string, offset int, limit int, authorised bool) ([]*models.LDInstance, int, error)
 
 	// GetV2VersionFunc mocks the GetV2Version method.
 	GetV2VersionFunc func(ctx context.Context, id string, edition string, version int, state string, authorised bool) (*models.LDEdition, error)
@@ -534,6 +540,21 @@ type StorerMock struct {
 			// Authorised is the authorised argument value.
 			Authorised bool
 		}
+		// GetV2Instances holds details about calls to the GetV2Instances method.
+		GetV2Instances []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID string
+			// State is the state argument value.
+			State string
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+			// Authorised is the authorised argument value.
+			Authorised bool
+		}
 		// GetV2Version holds details about calls to the GetV2Version method.
 		GetV2Version []struct {
 			// Ctx is the ctx argument value.
@@ -760,6 +781,7 @@ type StorerMock struct {
 	lockGetV2Datasets                       sync.RWMutex
 	lockGetV2Edition                        sync.RWMutex
 	lockGetV2Editions                       sync.RWMutex
+	lockGetV2Instances                      sync.RWMutex
 	lockGetV2Version                        sync.RWMutex
 	lockGetV2Versions                       sync.RWMutex
 	lockGetVersion                          sync.RWMutex
@@ -1798,6 +1820,58 @@ func (mock *StorerMock) GetV2EditionsCalls() []struct {
 	mock.lockGetV2Editions.RLock()
 	calls = mock.calls.GetV2Editions
 	mock.lockGetV2Editions.RUnlock()
+	return calls
+}
+
+// GetV2Instances calls GetV2InstancesFunc.
+func (mock *StorerMock) GetV2Instances(ctx context.Context, id string, state string, offset int, limit int, authorised bool) ([]*models.LDInstance, int, error) {
+	if mock.GetV2InstancesFunc == nil {
+		panic("StorerMock.GetV2InstancesFunc: method is nil but Storer.GetV2Instances was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		ID         string
+		State      string
+		Offset     int
+		Limit      int
+		Authorised bool
+	}{
+		Ctx:        ctx,
+		ID:         id,
+		State:      state,
+		Offset:     offset,
+		Limit:      limit,
+		Authorised: authorised,
+	}
+	mock.lockGetV2Instances.Lock()
+	mock.calls.GetV2Instances = append(mock.calls.GetV2Instances, callInfo)
+	mock.lockGetV2Instances.Unlock()
+	return mock.GetV2InstancesFunc(ctx, id, state, offset, limit, authorised)
+}
+
+// GetV2InstancesCalls gets all the calls that were made to GetV2Instances.
+// Check the length with:
+//
+//	len(mockedStorer.GetV2InstancesCalls())
+func (mock *StorerMock) GetV2InstancesCalls() []struct {
+	Ctx        context.Context
+	ID         string
+	State      string
+	Offset     int
+	Limit      int
+	Authorised bool
+} {
+	var calls []struct {
+		Ctx        context.Context
+		ID         string
+		State      string
+		Offset     int
+		Limit      int
+		Authorised bool
+	}
+	mock.lockGetV2Instances.RLock()
+	calls = mock.calls.GetV2Instances
+	mock.lockGetV2Instances.RUnlock()
 	return calls
 }
 

@@ -40,18 +40,20 @@ func buildDatasetEmbeddedQuery(id, state string, authorised bool) []bson.M {
 	return []bson.M{selector, sort, group}
 }
 
-// get the embedded resources needed on an edition response - mapping to the `EditionEmbedded` struct
 func buildVersionListQuery(id, edition, state string, authorised bool) []bson.M {
 	selector := selectByEditionAndState(id, edition, state, authorised)
 	sort := bson.M{"$sort": bson.M{"version": -1}}
 
-	// group := bson.M{
-	// 	"$group": bson.M{
-	// 		"_id":    "$edition",
-	// 		"issued": bson.M{"$last": "$release_date"}, //TODO: this should potentially be 'last_updated' not 'release_date'
-	// 		//	"doc":    "$$CURRENT",
-	// 	},
-	// }
+	return []bson.M{selector, sort}
+}
+
+func buildInstanceListQuery(id, state string, authorised bool) []bson.M {
+	selector := selectByDatasetLinkAndState(id, state, authorised)
+	sort := bson.M{"$sort": bson.M{"last_updated": -1}}
+
+	if selector == nil {
+		return []bson.M{sort}
+	}
 
 	return []bson.M{selector, sort}
 }
@@ -90,18 +92,25 @@ func selectByDatasetLinkAndState(id, state string, authorised bool) bson.M {
 		state = models.PublishedState
 	}
 
-	// all queries must get the dataset by id
-	selector := bson.M{
-		"$match": bson.M{"_links.dataset.id": id},
-	}
-
-	if state != "" {
-		selector = bson.M{
+	if id != "" && state != "" {
+		return bson.M{
 			"$match": bson.M{"_links.dataset.id": id, "state": state},
 		}
 	}
 
-	return selector
+	if id != "" {
+		return bson.M{
+			"$match": bson.M{"_links.dataset.id": id},
+		}
+	}
+
+	if state != "" {
+		return bson.M{
+			"$match": bson.M{"state": state},
+		}
+	}
+
+	return nil
 }
 
 func selectByEditionAndState(id, edition, state string, authorised bool) bson.M {

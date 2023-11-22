@@ -224,6 +224,27 @@ func (m *Mongo) GetV2Version(ctx context.Context, id, editionID string, versionI
 	return &edition, nil
 }
 
+// GetV2Instances retrieves an instance document
+func (m *Mongo) GetV2Instances(ctx context.Context, id, state string, offset, limit int, authorised bool) ([]*models.LDInstance, int, error) {
+	stages := buildInstanceListQuery(id, state, authorised)
+	stages = append(stages,
+		bson.M{"$sort": bson.M{"last_updated": -1}},
+		bson.M{"$limit": limit},
+		bson.M{"$skip": offset},
+	)
+
+	var results []*models.LDInstance
+	err := m.Connection.Collection(m.ActualCollectionName(config.V2InstancesCollection)).Aggregate(ctx, stages, &results)
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return nil, 0, errs.ErrEditionNotFound
+		}
+		return nil, 0, err
+	}
+
+	return results, len(results), nil
+}
+
 // getDCATDatasetSeries should be used to return dataset details for other endpoints such as editions and versions
 // It differs from getV2Dataset by avoiding collisions on fields such as collectionID, and omits _embedded fields
 func (m *Mongo) getDCATDatasetSeries(ctx context.Context, id string) (*models.DCATDatasetSeries, error) {

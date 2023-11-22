@@ -11,19 +11,27 @@ import (
 	bsonprim "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type InstanceList struct {
+	Page       `groups:"instances"`
+	Links      *PageLinks    `json:"_links" groups:"instances"`
+	Items      []*LDInstance `json:"items" groups:"instances"`
+	LinkedData `groups:"all"`
+}
+
 type LDInstance struct {
-	Events     *[]Event         `bson:"events,omitempty"                      json:"events,omitempty"`
-	InstanceID string           `bson:"identifier,omitempty"                          json:"identifier,omitempty"`
-	Links      *LDInstanceLinks `bson:"_links,omitempty" json:"_links,omitempty"`
-	LDEdition  `bson:",inline"`
+	Events      *[]Event         `bson:"events,omitempty"                      json:"events,omitempty" groups:"instances,instance"`
+	InstanceID  string           `bson:"identifier,omitempty"                          json:"instance_id,omitempty" groups:"instances,instance"`
+	Links       *LDInstanceLinks `bson:"_links,omitempty" json:"_links,omitempty" groups:"instances,instance"`
+	LastUpdated time.Time        `bson:"last_updated,omitempty" json:"last_updated,omitempty" groups:"instances,instance"` //this is stored on instances but causes a collision if marshalled to JSON
+	LDEdition   `bson:",inline"`
 
 	// Collection and State could move into this struct if not needed publicly
 }
 
 // InstanceLinks holds all links for an instance
 type LDInstanceLinks struct {
-	Job          *LinkObject `bson:"job,omitempty"        json:"job"`
-	Version      *LinkObject `bson:"version,omitempty"    json:"version,omitempty"`
+	Job          *LinkObject `bson:"job,omitempty"        json:"job,omitempty" groups:"instances,instance"`
+	Version      *LinkObject `bson:"version,omitempty"    json:"version,omitempty" groups:"instances,instance"`
 	EditionLinks `bson:",inline"`
 }
 

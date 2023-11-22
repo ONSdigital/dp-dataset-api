@@ -149,16 +149,16 @@ type EditionList struct {
 // LDEdition ...
 type LDEdition struct {
 	// HAL and Internal fields
-	ETag        string    `bson:"e_tag"                      json:"-"`
+	ETag        string    `bson:"e_tag"   json:"-"`
 	LastUpdated time.Time `bson:"last_updated" json:"-"`
 
-	CollectionID string           `bson:"collection_id,omitempty"          json:"collection_id,omitempty"`
-	State        string           `bson:"state,omitempty"                  json:"state,omitempty"`
-	Links        *EditionLinks    `bson:"-" json:"_links,omitempty"`
-	Embedded     *EditionEmbedded `bson:"-" json:"_embedded,omitempty"`
+	CollectionID string           `bson:"collection_id,omitempty"          json:"collection_id,omitempty" groups:"editions,edition,versions,version,instances,instance"`
+	State        string           `bson:"state,omitempty"                  json:"state,omitempty" groups:"editions,edition,versions,version,instances,instance"`
+	Links        *EditionLinks    `bson:"_links" json:"_links,omitempty" groups:"editions,edition,versions,version"`
+	Embedded     *EditionEmbedded `bson:"-" json:"_embedded,omitempty" groups:"edition,version,instance"`
 
 	// JSON-LD and Application Profile fields
-	LinkedData  `bson:"-"`
+	LinkedData  `bson:"-" groups:"all"`
 	DCATDataset `bson:",inline"`
 }
 
@@ -166,8 +166,8 @@ type DCATDataset struct {
 	DCATDatasetSeries `bson:"-"`
 
 	// Quality
-	VersionNotes []string  `bson:"version_notes,omitempty"   json:"version_notes,omitempty" groups:"editions,edition,versions,version"`
-	ReleaseDate  time.Time `bson:"release_date,omitempty"           json:"release_date" groups:"editions,edition,versions,version"` //add to spec
+	VersionNotes []string  `bson:"version_notes,omitempty"   json:"version_notes,omitempty" groups:"editions,edition,versions,version,instances,instance"`
+	ReleaseDate  time.Time `bson:"release_date,omitempty"           json:"release_date" groups:"editions,edition,versions,version,instances,instance"` //add to spec
 
 	// Management
 	Edition string `bson:"edition,omitempty"           json:"edition,omitempty" groups:"editions,edition,versions,version"`
@@ -234,16 +234,16 @@ type EmbeddedEdition struct {
 
 // EditionLinks ...
 type EditionLinks struct {
-	Dataset       *LinkObject `bson:"dataset,omitempty"        json:"dataset,omitempty" groups:"edition,version,instance"`
+	Dataset       *LinkObject `bson:"dataset,omitempty"        json:"dataset,omitempty" groups:"edition,version,instances,instance"`
 	Editions      *LinkObject `bson:"-" json:"editions,omitempty" groups:"edition"`
-	Edition       *LinkObject `bson:"edition,omitempty"        json:"edition,omitempty" groups:"version,instance"`
+	Edition       *LinkObject `bson:"edition,omitempty"        json:"edition,omitempty" groups:"version,instances,instance"`
 	Versions      *LinkObject `bson:"-" json:"versions,omitempty" groups:"edition"`
 	Dimensions    *LinkObject `bson:"-" json:"dimensions,omitempty" groups:"versions,version"`
 	Distributions *LinkObject `bson:"-" json:"distributions,omitempty" groups:"versions,version"`
 	LatestVersion *LinkObject `bson:"latest_version,omitempty"  json:"latest_version,omitempty" groups:"edition"`
 	Next          *LinkObject `bson:"next,omitempty"        json:"next,omitempty" groups:"edition,version"`
 	Prev          *LinkObject `bson:"prev,omitempty"        json:"prev,omitempty" groups:"edition,version"`
-	Self          *LinkObject `bson:"self,omitempty"            json:"self,omitempty" groups:"editions,edition,versions,version,instance"`
+	Self          *LinkObject `bson:"self,omitempty"            json:"self,omitempty" groups:"editions,edition,versions,version,instances,instance"`
 }
 
 // EditionEmbedded ...
