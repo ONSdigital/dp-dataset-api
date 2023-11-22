@@ -47,8 +47,8 @@ func buildVersionListQuery(id, edition, state string, authorised bool) []bson.M 
 	return []bson.M{selector, sort}
 }
 
-func buildInstanceListQuery(id, state string, authorised bool) []bson.M {
-	selector := selectByDatasetLinkAndState(id, state, authorised)
+func buildInstanceListQuery(id, state string) []bson.M {
+	selector := selectByDatasetLinkAndState(id, state, true)
 	sort := bson.M{"$sort": bson.M{"last_updated": -1}}
 
 	if selector == nil {

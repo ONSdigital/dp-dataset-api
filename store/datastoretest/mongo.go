@@ -100,7 +100,10 @@ var _ store.MongoDB = &MongoDBMock{}
 //			GetV2EditionsFunc: func(ctx context.Context, id string, state string, offset int, limit int, authorised bool) ([]*models.LDEdition, int, error) {
 //				panic("mock out the GetV2Editions method")
 //			},
-//			GetV2InstancesFunc: func(ctx context.Context, id string, state string, offset int, limit int, authorised bool) ([]*models.LDInstance, int, error) {
+//			GetV2InstanceFunc: func(ctx context.Context, id string) (*models.LDInstance, error) {
+//				panic("mock out the GetV2Instance method")
+//			},
+//			GetV2InstancesFunc: func(ctx context.Context, id string, state string, offset int, limit int) ([]*models.LDInstance, int, error) {
 //				panic("mock out the GetV2Instances method")
 //			},
 //			GetV2VersionFunc: func(ctx context.Context, id string, edition string, version int, state string, authorised bool) (*models.LDEdition, error) {
@@ -245,8 +248,11 @@ type MongoDBMock struct {
 	// GetV2EditionsFunc mocks the GetV2Editions method.
 	GetV2EditionsFunc func(ctx context.Context, id string, state string, offset int, limit int, authorised bool) ([]*models.LDEdition, int, error)
 
+	// GetV2InstanceFunc mocks the GetV2Instance method.
+	GetV2InstanceFunc func(ctx context.Context, id string) (*models.LDInstance, error)
+
 	// GetV2InstancesFunc mocks the GetV2Instances method.
-	GetV2InstancesFunc func(ctx context.Context, id string, state string, offset int, limit int, authorised bool) ([]*models.LDInstance, int, error)
+	GetV2InstancesFunc func(ctx context.Context, id string, state string, offset int, limit int) ([]*models.LDInstance, int, error)
 
 	// GetV2VersionFunc mocks the GetV2Version method.
 	GetV2VersionFunc func(ctx context.Context, id string, edition string, version int, state string, authorised bool) (*models.LDEdition, error)
@@ -565,6 +571,13 @@ type MongoDBMock struct {
 			// Authorised is the authorised argument value.
 			Authorised bool
 		}
+		// GetV2Instance holds details about calls to the GetV2Instance method.
+		GetV2Instance []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID string
+		}
 		// GetV2Instances holds details about calls to the GetV2Instances method.
 		GetV2Instances []struct {
 			// Ctx is the ctx argument value.
@@ -577,8 +590,6 @@ type MongoDBMock struct {
 			Offset int
 			// Limit is the limit argument value.
 			Limit int
-			// Authorised is the authorised argument value.
-			Authorised bool
 		}
 		// GetV2Version holds details about calls to the GetV2Version method.
 		GetV2Version []struct {
@@ -808,6 +819,7 @@ type MongoDBMock struct {
 	lockGetV2Datasets                       sync.RWMutex
 	lockGetV2Edition                        sync.RWMutex
 	lockGetV2Editions                       sync.RWMutex
+	lockGetV2Instance                       sync.RWMutex
 	lockGetV2Instances                      sync.RWMutex
 	lockGetV2Version                        sync.RWMutex
 	lockGetV2Versions                       sync.RWMutex
@@ -1918,30 +1930,64 @@ func (mock *MongoDBMock) GetV2EditionsCalls() []struct {
 	return calls
 }
 
+// GetV2Instance calls GetV2InstanceFunc.
+func (mock *MongoDBMock) GetV2Instance(ctx context.Context, id string) (*models.LDInstance, error) {
+	if mock.GetV2InstanceFunc == nil {
+		panic("MongoDBMock.GetV2InstanceFunc: method is nil but MongoDB.GetV2Instance was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		ID  string
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockGetV2Instance.Lock()
+	mock.calls.GetV2Instance = append(mock.calls.GetV2Instance, callInfo)
+	mock.lockGetV2Instance.Unlock()
+	return mock.GetV2InstanceFunc(ctx, id)
+}
+
+// GetV2InstanceCalls gets all the calls that were made to GetV2Instance.
+// Check the length with:
+//
+//	len(mockedMongoDB.GetV2InstanceCalls())
+func (mock *MongoDBMock) GetV2InstanceCalls() []struct {
+	Ctx context.Context
+	ID  string
+} {
+	var calls []struct {
+		Ctx context.Context
+		ID  string
+	}
+	mock.lockGetV2Instance.RLock()
+	calls = mock.calls.GetV2Instance
+	mock.lockGetV2Instance.RUnlock()
+	return calls
+}
+
 // GetV2Instances calls GetV2InstancesFunc.
-func (mock *MongoDBMock) GetV2Instances(ctx context.Context, id string, state string, offset int, limit int, authorised bool) ([]*models.LDInstance, int, error) {
+func (mock *MongoDBMock) GetV2Instances(ctx context.Context, id string, state string, offset int, limit int) ([]*models.LDInstance, int, error) {
 	if mock.GetV2InstancesFunc == nil {
 		panic("MongoDBMock.GetV2InstancesFunc: method is nil but MongoDB.GetV2Instances was just called")
 	}
 	callInfo := struct {
-		Ctx        context.Context
-		ID         string
-		State      string
-		Offset     int
-		Limit      int
-		Authorised bool
+		Ctx    context.Context
+		ID     string
+		State  string
+		Offset int
+		Limit  int
 	}{
-		Ctx:        ctx,
-		ID:         id,
-		State:      state,
-		Offset:     offset,
-		Limit:      limit,
-		Authorised: authorised,
+		Ctx:    ctx,
+		ID:     id,
+		State:  state,
+		Offset: offset,
+		Limit:  limit,
 	}
 	mock.lockGetV2Instances.Lock()
 	mock.calls.GetV2Instances = append(mock.calls.GetV2Instances, callInfo)
 	mock.lockGetV2Instances.Unlock()
-	return mock.GetV2InstancesFunc(ctx, id, state, offset, limit, authorised)
+	return mock.GetV2InstancesFunc(ctx, id, state, offset, limit)
 }
 
 // GetV2InstancesCalls gets all the calls that were made to GetV2Instances.
@@ -1949,20 +1995,18 @@ func (mock *MongoDBMock) GetV2Instances(ctx context.Context, id string, state st
 //
 //	len(mockedMongoDB.GetV2InstancesCalls())
 func (mock *MongoDBMock) GetV2InstancesCalls() []struct {
-	Ctx        context.Context
-	ID         string
-	State      string
-	Offset     int
-	Limit      int
-	Authorised bool
+	Ctx    context.Context
+	ID     string
+	State  string
+	Offset int
+	Limit  int
 } {
 	var calls []struct {
-		Ctx        context.Context
-		ID         string
-		State      string
-		Offset     int
-		Limit      int
-		Authorised bool
+		Ctx    context.Context
+		ID     string
+		State  string
+		Offset int
+		Limit  int
 	}
 	mock.lockGetV2Instances.RLock()
 	calls = mock.calls.GetV2Instances

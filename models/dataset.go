@@ -105,38 +105,38 @@ type LDDataset struct {
 // DCATDatasetSeries represents all the fields specified in the Application Profile for a dcat:DatasetSeries
 // These fields are also all needed for a dcat:Dataset representation, which is used for Editions and Versions
 type DCATDatasetSeries struct {
-	Identifier string `bson:"_id,omitempty"  json:"identifier" groups:"all"`
+	Identifier string `bson:"_id,omitempty"  json:"identifier,omitempty" groups:"all"`
 
 	// TODO: Add these fields to AP or relocate to Dataset struct
-	ContactPoint      *ContactDetails `bson:"contact_point,omitempty"          json:"contact_point,omitempty" groups:"datasets,dataset,editions,edition,versions,version"`
-	NationalStatistic *bool           `bson:"national_statistic,omitempty"     json:"national_statistic,omitempty" groups:"datasets,dataset,editions,edition,versions,version"`
-	IsBasedOn         *IsBasedOn      `bson:"is_based_on,omitempty"            json:"is_based_on,omitempty" groups:"datasets,dataset,editions,edition,versions,version"`
-	Survey            string          `bson:"survey,omitempty"                 json:"survey,omitempty" groups:"datasets,dataset,editions,edition,versions,version"`
-	DatasetType       string          `bson:"dataset_type,omitempty"           json:"dataset_type,omitempty" groups:"datasets,dataset,edition,version"`
+	ContactPoint      *ContactDetails `bson:"contact_point,omitempty"          json:"contact_point,omitempty" groups:"datasets,dataset,editions,edition,versions,version,instance"`
+	NationalStatistic *bool           `bson:"national_statistic,omitempty"     json:"national_statistic,omitempty" groups:"datasets,dataset,editions,edition,versions,version,instance"`
+	IsBasedOn         *IsBasedOn      `bson:"is_based_on,omitempty"            json:"is_based_on,omitempty" groups:"datasets,dataset,editions,edition,versions,version,instance"`
+	Survey            string          `bson:"survey,omitempty"                 json:"survey,omitempty" groups:"datasets,dataset,editions,edition,versions,version,instance"`
+	DatasetType       string          `bson:"dataset_type,omitempty"           json:"dataset_type,omitempty" groups:"datasets,dataset,edition,version,instance"`
 
 	//Descriptive - omitted fields from AP: 'created' time, 'creator', 'label'
-	Publisher *ContactDetails `bson:"publisher,omitempty"        json:"publisher,omitempty" groups:"datasets,dataset,editions,edition,versions,version"`
-	Modified  time.Time       `bson:"modified,omitempty"         json:"modified,omitempty" groups:"datasets,dataset,editions,edition,versions,version"`
-	Issued    time.Time       `bson:"issued,omitempty"           json:"issued" groups:"datasets,dataset,editions,edition,versions,version"` //add to spec
-	Title     string          `bson:"title,omitempty"            json:"title,omitempty" groups:"datasets,dataset,editions,edition,versions,version"`
+	Publisher *ContactDetails `bson:"publisher,omitempty"        json:"publisher,omitempty" groups:"datasets,dataset,editions,edition,versions,version,instance"`
+	Modified  time.Time       `bson:"modified,omitempty"         json:"modified,omitempty" groups:"datasets,dataset,editions,edition,versions,version,instance"`
+	Issued    time.Time       `bson:"issued,omitempty"           json:"issued" groups:"datasets,dataset,editions,edition,versions,version,instance"` //add to spec
+	Title     string          `bson:"title,omitempty"            json:"title,omitempty" groups:"datasets,dataset,editions,edition,versions,version,instance"`
 
 	//Summary
-	Keywords    []string `bson:"keywords,omitempty"       json:"keywords,omitempty" groups:"dataset,edition,version"`
-	Themes      []string `bson:"themes,omitempty"         json:"themes,omitempty" groups:"dataset,edition,version"`
-	Description string   `bson:"description,omitempty"    json:"description,omitempty" groups:"dataset,edition,version"`
+	Keywords    []string `bson:"keywords,omitempty"       json:"keywords,omitempty" groups:"dataset,edition,version,instance"`
+	Themes      []string `bson:"themes,omitempty"         json:"themes,omitempty" groups:"dataset,edition,version,instance"`
+	Description string   `bson:"description,omitempty"    json:"description,omitempty" groups:"dataset,edition,version,instance"`
 
-	Frequency string `bson:"frequency,omitempty"      json:"frequency,omitempty" groups:"datasets,dataset,editions,edition,versions,version"`
-	Summary   string `bson:"summary,omitempty"        json:"summary,omitempty" groups:"datasets,dataset,editions,edition,versions,version"` //shorter than description
-	License   string `bson:"license,omitempty"        json:"license,omitempty" groups:"datasets,dataset,editions,edition,versions,version"`
+	Frequency string `bson:"frequency,omitempty"      json:"frequency,omitempty" groups:"datasets,dataset,editions,edition,versions,version,instance"`
+	Summary   string `bson:"summary,omitempty"        json:"summary,omitempty" groups:"datasets,dataset,editions,edition,versions,version,instance"` //shorter than description
+	License   string `bson:"license,omitempty"        json:"license,omitempty" groups:"datasets,dataset,editions,edition,versions,version,instance"`
 
 	//Scope
-	SpatialCoverage    string   `bson:"spatial_coverage,omitempty"    json:"spatial_coverage,omitempty" groups:"dataset,edition,version"`
-	SpatialResolution  []string `bson:"spatial_resolution,omitempty"  json:"spatial_resolution,omitempty" groups:"dataset,edition,version"`
-	TemporalCoverage   string   `bson:"temporal_coverage,omitempty"   json:"temporal_coverage,omitempty" groups:"dataset,edition,version"`
-	TemporalResolution []string `bson:"temporal_resolution,omitempty" json:"temporal_resolution,omitempty" groups:"dataset,edition,version"`
+	SpatialCoverage    string   `bson:"spatial_coverage,omitempty"    json:"spatial_coverage,omitempty" groups:"dataset,edition,version,instance"`
+	SpatialResolution  []string `bson:"spatial_resolution,omitempty"  json:"spatial_resolution,omitempty" groups:"dataset,edition,version,instance"`
+	TemporalCoverage   string   `bson:"temporal_coverage,omitempty"   json:"temporal_coverage,omitempty" groups:"dataset,edition,version,instance"`
+	TemporalResolution []string `bson:"temporal_resolution,omitempty" json:"temporal_resolution,omitempty" groups:"dataset,edition,version,instance"`
 
 	//Management - omitted fields from AP: first, last. These should be provided by the _embedded fields on the response
-	NextRelease string `bson:"next_release,omitempty"           json:"next_release,omitempty" groups:"datasets,dataset,editions,edition,versions,version"`
+	NextRelease string `bson:"next_release,omitempty"           json:"next_release,omitempty" groups:"datasets,dataset,editions,edition,versions,version,instance"`
 }
 
 type EditionList struct {

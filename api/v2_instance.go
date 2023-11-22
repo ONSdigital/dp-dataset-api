@@ -7,6 +7,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/log.go/v2/log"
+	"github.com/gorilla/mux"
 )
 
 func (api *DatasetAPI) getV2Instances(w http.ResponseWriter, r *http.Request) {
@@ -17,9 +18,9 @@ func (api *DatasetAPI) getV2Instances(w http.ResponseWriter, r *http.Request) {
 	datasetFilterQuery := r.URL.Query().Get("dataset")
 
 	b, err := func() ([]byte, error) {
-		list, _, err := api.dataStore.Backend.GetV2Instances(ctx, datasetFilterQuery, stateFilterQuery, 0, 100, true)
+		list, _, err := api.dataStore.Backend.GetV2Instances(ctx, datasetFilterQuery, stateFilterQuery, 0, 100)
 		if err != nil {
-			log.Error(ctx, "getV2Instances endpoint: datastore.getV2Datasets returned an error", err)
+			log.Error(ctx, "getV2Instances endpoint: datastore.getV2Instances returned an error", err)
 			return nil, err
 		}
 
@@ -33,9 +34,6 @@ func (api *DatasetAPI) getV2Instances(w http.ResponseWriter, r *http.Request) {
 			Items: list,
 			Page: models.Page{
 				TotalCount: len(list),
-			},
-			LinkedData: models.LinkedData{
-				Context: "cdn.ons.gov.uk/context.json",
 			},
 			Links: &models.PageLinks{
 				Self: &models.LinkObject{
@@ -71,4 +69,62 @@ func (api *DatasetAPI) getV2Instances(w http.ResponseWriter, r *http.Request) {
 		handleDatasetAPIErr(ctx, err, w, nil)
 	}
 	log.Info(ctx, "getV2Instances endpoint: request successful")
+}
+
+func (api *DatasetAPI) getV2Instance(w http.ResponseWriter, r *http.Request) {
+	defer dphttp.DrainBody(r)
+
+	ctx := r.Context()
+	vars := mux.Vars(r)
+	instanceID := vars["instance_id"]
+
+	b, err := func() ([]byte, error) {
+		inst, err := api.dataStore.Backend.GetV2Instance(ctx, instanceID)
+		if err != nil {
+			log.Error(ctx, "getV2Instance endpoint: datastore.getV2Instance returned an error", err)
+			return nil, err
+		}
+
+		dataset := inst.Links.Dataset.ID
+		edition := inst.Links.Edition.ID
+
+		inst.Links = &models.LDInstanceLinks{
+			EditionLinks: models.EditionLinks{
+				Dataset: &models.LinkObject{
+					HRef: fmt.Sprintf("%s/v2/datasets/%s", api.host, dataset),
+					ID:   dataset,
+				},
+				Edition: &models.LinkObject{
+					HRef: fmt.Sprintf("%s/v2/datasets/%s/editions/%s", api.host, dataset, edition),
+					ID:   edition,
+				},
+				Self: &models.LinkObject{
+					HRef: fmt.Sprintf("%s/v2/instances/%s", api.host, instanceID),
+				},
+			},
+		}
+
+		// TODO set etag header?
+
+		groups := []string{"instance"}
+		b, err := marshal(inst, groups...)
+		if err != nil {
+			log.Error(ctx, "getV2Instance endpoint: marshal returned an error", err, log.Data{"groups": groups})
+			return nil, err
+		}
+
+		return b, nil
+	}()
+
+	if err != nil {
+		handleDatasetAPIErr(ctx, err, w, nil)
+		return
+	}
+
+	setJSONContentType(w)
+	if _, err = w.Write(b); err != nil {
+		log.Error(ctx, "getV2Instance endpoint: error writing bytes to response", err)
+		handleDatasetAPIErr(ctx, err, w, nil)
+	}
+	log.Info(ctx, "getV2Instance endpoint: request successful")
 }

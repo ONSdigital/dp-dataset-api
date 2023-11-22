@@ -225,8 +225,8 @@ func (m *Mongo) GetV2Version(ctx context.Context, id, editionID string, versionI
 }
 
 // GetV2Instances retrieves an instance document
-func (m *Mongo) GetV2Instances(ctx context.Context, id, state string, offset, limit int, authorised bool) ([]*models.LDInstance, int, error) {
-	stages := buildInstanceListQuery(id, state, authorised)
+func (m *Mongo) GetV2Instances(ctx context.Context, id, state string, offset, limit int) ([]*models.LDInstance, int, error) {
+	stages := buildInstanceListQuery(id, state)
 	stages = append(stages,
 		bson.M{"$sort": bson.M{"last_updated": -1}},
 		bson.M{"$limit": limit},
@@ -243,6 +243,28 @@ func (m *Mongo) GetV2Instances(ctx context.Context, id, state string, offset, li
 	}
 
 	return results, len(results), nil
+}
+
+// GetV2Instance retrieves an instance document
+func (m *Mongo) GetV2Instance(ctx context.Context, id string) (*models.LDInstance, error) {
+	filter := bson.M{"_id": id}
+
+	var inst models.LDInstance
+	err := m.Connection.Collection(m.ActualCollectionName(config.V2InstancesCollection)).FindOne(ctx, filter, &inst)
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return nil, errs.ErrDatasetNotFound
+		}
+		return nil, err
+	}
+
+	dataset, err := m.getDCATDatasetSeries(ctx, inst.Links.Dataset.ID)
+	if err != nil {
+		return nil, err
+	}
+	inst.DCATDatasetSeries = *dataset
+
+	return &inst, nil
 }
 
 // getDCATDatasetSeries should be used to return dataset details for other endpoints such as editions and versions
