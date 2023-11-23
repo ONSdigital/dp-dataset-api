@@ -62,6 +62,7 @@ type dataMongoDB interface {
 	GetV2Version(ctx context.Context, id, edition string, version int, state string, authorised bool) (*models.LDEdition, error)
 	GetV2Instances(ctx context.Context, id, state string, offset, limit int) ([]*models.LDInstance, int, error)
 	GetV2Instance(ctx context.Context, id string) (*models.LDInstance, error)
+	GetV2Dimensions(ctx context.Context, id, edition string, version, offset, limit int) ([]*models.LDDimension, int, error)
 
 	UpsertLDDataset(ctx context.Context, ID string, datasetDoc *models.LDDataset) error
 	UpsertLDInstance(ctx context.Context, ID string, instanceDoc *models.LDInstance) error

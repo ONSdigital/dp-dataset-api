@@ -210,6 +210,8 @@ func (api *DatasetAPI) convertInstance(ctx context.Context, old *models.Instance
 	return new, nil
 }
 
+// for v2 move the dimension level detail out of the instance document and into its own collection
+// keep the dimension.options collection as it is
 func (api *DatasetAPI) storeDimensions(ctx context.Context, old *models.Instance) error {
 	if len(old.Dimensions) == 0 {
 		return nil

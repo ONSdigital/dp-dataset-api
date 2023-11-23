@@ -144,6 +144,8 @@ func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
 	api.get("/v2/datasets/{dataset_id}/editions/{edition}/versions", api.getV2Versions)
 	api.get("/v2/datasets/{dataset_id}/editions/{edition}/versions/{version}", api.getV2Version)
 
+	api.get("/v2/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", api.getV2Dimensions)
+
 	// instance endpoints should only be available behind auth, so will not conduct auth checks inside the handlers
 	api.get("/v2/instances", api.getV2Instances)
 	api.get("/v2/instances/{instance_id}", api.getV2Instance)

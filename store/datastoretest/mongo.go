@@ -94,6 +94,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //			GetV2DatasetsFunc: func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.LDDataset, int, error) {
 //				panic("mock out the GetV2Datasets method")
 //			},
+//			GetV2DimensionsFunc: func(ctx context.Context, id string, edition string, version int, offset int, limit int) ([]*models.LDDimension, int, error) {
+//				panic("mock out the GetV2Dimensions method")
+//			},
 //			GetV2EditionFunc: func(ctx context.Context, id string, edition string, state string, authorised bool) (*models.LDEdition, error) {
 //				panic("mock out the GetV2Edition method")
 //			},
@@ -244,6 +247,9 @@ type MongoDBMock struct {
 
 	// GetV2DatasetsFunc mocks the GetV2Datasets method.
 	GetV2DatasetsFunc func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.LDDataset, int, error)
+
+	// GetV2DimensionsFunc mocks the GetV2Dimensions method.
+	GetV2DimensionsFunc func(ctx context.Context, id string, edition string, version int, offset int, limit int) ([]*models.LDDimension, int, error)
 
 	// GetV2EditionFunc mocks the GetV2Edition method.
 	GetV2EditionFunc func(ctx context.Context, id string, edition string, state string, authorised bool) (*models.LDEdition, error)
@@ -549,6 +555,21 @@ type MongoDBMock struct {
 			// Authorised is the authorised argument value.
 			Authorised bool
 		}
+		// GetV2Dimensions holds details about calls to the GetV2Dimensions method.
+		GetV2Dimensions []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID string
+			// Edition is the edition argument value.
+			Edition string
+			// Version is the version argument value.
+			Version int
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+		}
 		// GetV2Edition holds details about calls to the GetV2Edition method.
 		GetV2Edition []struct {
 			// Ctx is the ctx argument value.
@@ -830,6 +851,7 @@ type MongoDBMock struct {
 	lockGetUniqueDimensionAndOptions        sync.RWMutex
 	lockGetV2Dataset                        sync.RWMutex
 	lockGetV2Datasets                       sync.RWMutex
+	lockGetV2Dimensions                     sync.RWMutex
 	lockGetV2Edition                        sync.RWMutex
 	lockGetV2Editions                       sync.RWMutex
 	lockGetV2Instance                       sync.RWMutex
@@ -1841,6 +1863,58 @@ func (mock *MongoDBMock) GetV2DatasetsCalls() []struct {
 	mock.lockGetV2Datasets.RLock()
 	calls = mock.calls.GetV2Datasets
 	mock.lockGetV2Datasets.RUnlock()
+	return calls
+}
+
+// GetV2Dimensions calls GetV2DimensionsFunc.
+func (mock *MongoDBMock) GetV2Dimensions(ctx context.Context, id string, edition string, version int, offset int, limit int) ([]*models.LDDimension, int, error) {
+	if mock.GetV2DimensionsFunc == nil {
+		panic("MongoDBMock.GetV2DimensionsFunc: method is nil but MongoDB.GetV2Dimensions was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		ID      string
+		Edition string
+		Version int
+		Offset  int
+		Limit   int
+	}{
+		Ctx:     ctx,
+		ID:      id,
+		Edition: edition,
+		Version: version,
+		Offset:  offset,
+		Limit:   limit,
+	}
+	mock.lockGetV2Dimensions.Lock()
+	mock.calls.GetV2Dimensions = append(mock.calls.GetV2Dimensions, callInfo)
+	mock.lockGetV2Dimensions.Unlock()
+	return mock.GetV2DimensionsFunc(ctx, id, edition, version, offset, limit)
+}
+
+// GetV2DimensionsCalls gets all the calls that were made to GetV2Dimensions.
+// Check the length with:
+//
+//	len(mockedMongoDB.GetV2DimensionsCalls())
+func (mock *MongoDBMock) GetV2DimensionsCalls() []struct {
+	Ctx     context.Context
+	ID      string
+	Edition string
+	Version int
+	Offset  int
+	Limit   int
+} {
+	var calls []struct {
+		Ctx     context.Context
+		ID      string
+		Edition string
+		Version int
+		Offset  int
+		Limit   int
+	}
+	mock.lockGetV2Dimensions.RLock()
+	calls = mock.calls.GetV2Dimensions
+	mock.lockGetV2Dimensions.RUnlock()
 	return calls
 }
 

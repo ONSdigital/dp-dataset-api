@@ -58,6 +58,18 @@ func buildInstanceListQuery(id, state string) []bson.M {
 	return []bson.M{selector, sort}
 }
 
+func buildDimensionListQuery(id, edition, version string) []bson.M {
+	return []bson.M{
+		{
+			"$match": bson.M{
+				"_links.dataset.id": id,
+				"_links.edition.id": edition,
+				"_links.version.id": version,
+			},
+		},
+	}
+}
+
 func buildLatestEditionAndVersionQuery(id, edition string, version int, state string, authorised bool) []bson.M {
 	selector := selectByDatasetLinkAndState(id, state, authorised)
 	if edition != "" {

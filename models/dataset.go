@@ -210,10 +210,10 @@ type EmbeddedVersion struct {
 }
 
 type EmbeddedDimension struct {
-	CodeList   string `json:"code_list"`
-	Identifier string `json:"identifier"`
-	Label      string `json:"label"`
-	Name       string `json:"name"`
+	CodeList   string `bson:"codelist" json:"code_list"`
+	Identifier string `bson:"identifier" json:"identifier"`
+	Label      string `bson:"label" json:"label"`
+	Name       string `bson:"name" json:"name"`
 }
 
 type DimensionList struct {
@@ -224,8 +224,9 @@ type DimensionList struct {
 }
 
 type LDDimension struct {
-	Links             *LDDimensionLinks `bson:"_links" json:"_links"`
-	EmbeddedDimension `bson:",inline"`
+	Links             *LDDimensionLinks `bson:"_links" json:"_links" groups:"dimensions"`
+	EmbeddedDimension `bson:",inline" groups:"dimensions"`
+	LinkedData        `bson:"-" groups:"all"`
 }
 
 type Distribution struct {

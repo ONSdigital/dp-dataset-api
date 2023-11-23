@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"errors"
+	"strconv"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -265,6 +266,27 @@ func (m *Mongo) GetV2Instance(ctx context.Context, id string) (*models.LDInstanc
 	inst.DCATDatasetSeries = *dataset
 
 	return &inst, nil
+}
+
+// GetV2Instances retrieves an instance document
+func (m *Mongo) GetV2Dimensions(ctx context.Context, id, edition string, version, offset, limit int) ([]*models.LDDimension, int, error) {
+	stages := buildDimensionListQuery(id, edition, strconv.Itoa(version))
+	stages = append(stages,
+		bson.M{"$sort": bson.M{"name": 1}},
+		bson.M{"$limit": limit},
+		bson.M{"$skip": offset},
+	)
+
+	var results []*models.LDDimension
+	err := m.Connection.Collection(m.ActualCollectionName(config.V2DimensionsCollection)).Aggregate(ctx, stages, &results)
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return nil, 0, errs.ErrEditionNotFound
+		}
+		return nil, 0, err
+	}
+
+	return results, len(results), nil
 }
 
 // getDCATDatasetSeries should be used to return dataset details for other endpoints such as editions and versions
