@@ -263,13 +263,20 @@ func (api *DatasetAPI) getV2Edition(w http.ResponseWriter, r *http.Request) {
 
 		// replace embedded @id field with proper URLs and set latest version link
 		if edition.Embedded != nil && len(edition.Embedded.Versions) > 0 {
-			for i, ed := range edition.Embedded.Versions {
-				s := fmt.Sprintf("%s/v2/datasets/%s/editions/%s/versions/%d", api.host, datasetID, edition.Edition, ed.Version)
+			for i, ev := range edition.Embedded.Versions {
+				s := fmt.Sprintf("%s/v2/datasets/%s/editions/%s/versions/%d", api.host, datasetID, edition.Edition, ev.Version)
 				edition.Embedded.Versions[i].ID = s
 			}
 
 			edition.Links.LatestVersion = &models.LinkObject{
 				HRef: edition.Embedded.Versions[0].ID,
+			}
+		}
+
+		if edition.Embedded != nil && len(edition.Embedded.Dimensions) > 0 {
+			for i, ed := range edition.Embedded.Dimensions {
+				s := fmt.Sprintf("%s/v2/datasets/%s/editions/%s/versions/%s/dimensions/%s", api.host, datasetID, edition.Edition, edition.Links.LatestVersion.ID, ed.Name)
+				edition.Embedded.Dimensions[i].ID = s
 			}
 		}
 

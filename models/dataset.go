@@ -196,9 +196,9 @@ type DCATDataset struct {
 
 // EditionEmbedded ...
 type EditionEmbedded struct {
-	Versions      []EmbeddedVersion   `groups:"edition"`
-	Dimensions    []EmbeddedDimension `groups:"version"`
-	Distributions []*Distribution     `groups:"edition,version"`
+	Versions      []EmbeddedVersion   `json:"versions,omitempty" groups:"edition"`
+	Dimensions    []EmbeddedDimension `json:"dimensions,omitempty" groups:"edition,version"`
+	Distributions []*Distribution     `json:"distributions,omitempty" groups:"edition,version"`
 }
 
 type EmbeddedVersion struct {
@@ -210,6 +210,7 @@ type EmbeddedVersion struct {
 }
 
 type EmbeddedDimension struct {
+	ID         string `json:"@id,omitempty"`
 	CodeList   string `bson:"codelist" json:"code_list"`
 	Identifier string `bson:"identifier" json:"identifier"`
 	Label      string `bson:"label" json:"label"`
@@ -226,7 +227,7 @@ type DimensionList struct {
 type LDDimension struct {
 	Links             *LDDimensionLinks `bson:"_links" json:"_links" groups:"dimensions"`
 	EmbeddedDimension `bson:",inline" groups:"dimensions"`
-	LinkedData        `bson:"-" groups:"all"`
+	//LinkedData        `bson:"-" groups:"all"`
 }
 
 type Distribution struct {

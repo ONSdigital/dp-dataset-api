@@ -156,12 +156,30 @@ func (m *Mongo) getV2EditionEmbeds(ctx context.Context, id, edition, state strin
 	}
 
 	// TODO: add dimension and distribution embeds
+	if len(versions) == 0 {
+		return nil, errors.New("there are no versions of this edition, therefore nothing to embed")
+	}
 
-	return &models.EditionEmbedded{
-		Versions:      versions,
-		Dimensions:    nil,
-		Distributions: nil,
-	}, nil
+	// there's an opportunity here for a graceful degredation, if some of the embeds fail we might
+	// not need to fail the whole response, just return what we can
+	embed := &models.EditionEmbedded{
+		Versions: versions,
+	}
+
+	v := versions[0].Version
+	dims, _, err := m.GetV2Dimensions(ctx, id, edition, v, 0, 20)
+	if err != nil {
+		return embed, err
+	}
+
+	// get just the embedded struct portion out of the LDDimension list returned
+	embedDims := []models.EmbeddedDimension{}
+	for _, d := range dims {
+		embedDims = append(embedDims, d.EmbeddedDimension)
+	}
+	embed.Dimensions = embedDims
+
+	return embed, nil
 }
 
 // GetV2Versions retrieves a version document for an edition
