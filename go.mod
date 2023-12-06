@@ -14,8 +14,6 @@ replace google.golang.org/grpc => google.golang.org/grpc v1.55.0
 // to avoid 'sonatype-2021-4899' non-CVE Vulnerability
 exclude github.com/gorilla/sessions v1.2.1
 
-replace github.com/ONSdigital/dp-mongodb/v3 => ../dp-mongodb/
-
 require (
 	github.com/ONSdigital/dp-api-clients-go/v2 v2.254.0
 	github.com/ONSdigital/dp-assistdog v0.0.1
