@@ -25,7 +25,7 @@ require (
 	github.com/ONSdigital/dp-healthcheck v1.6.1
 	github.com/ONSdigital/dp-kafka/v3 v3.10.0
 	github.com/ONSdigital/dp-mongodb/v3 v3.6.0
-	github.com/ONSdigital/dp-net/v2 v2.11.0
+	github.com/ONSdigital/dp-net/v2 v2.11.1
 	github.com/ONSdigital/dp-otel-go v0.0.6
 	github.com/ONSdigital/log.go/v2 v2.4.1
 	github.com/cucumber/godog v0.12.6
