@@ -50,6 +50,8 @@ type Configuration struct {
 	MaxRequestOptions              int           `envconfig:"MAX_REQUEST_OPTIONS"`
 	EncryptionDisabled             bool          `envconfig:"ENCRYPTION_DISABLED"`
 	ComponentTestUseLogFile        bool          `envconfig:"COMPONENT_TEST_USE_LOG_FILE"`
+	OTExporterOTLPEndpoint         string        `envconfig:"OTEL_EXPORTER_OTLP_ENDPOINT"`
+	OTServiceName                  string        `envconfig:"OTEL_SERVICE_NAME"`
 	MongoConfig
 }
 
@@ -86,6 +88,8 @@ func Get() (*Configuration, error) {
 		GracefulShutdownTimeout:        5 * time.Second,
 		HealthCheckInterval:            30 * time.Second,
 		HealthCheckCriticalTimeout:     90 * time.Second,
+		OTExporterOTLPEndpoint:         "localhost:4317",
+		OTServiceName:                  "dp-dataset-api",
 		EnablePrivateEndpoints:         false,
 		EnableDetachDataset:            false,
 		EnablePermissionsAuth:          false,

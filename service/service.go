@@ -22,6 +22,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // check that DatsetAPIStore satifies the store.Storer interface
@@ -169,8 +171,9 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 
 	// Get HTTP router and server with middleware
 	r := mux.NewRouter()
+	r.Use(otelmux.Middleware(svc.config.OTServiceName))
 	m := svc.createMiddleware(svc.config)
-	svc.server = svc.serviceList.GetHTTPServer(svc.config.BindAddr, m.Then(r))
+	svc.server = svc.serviceList.GetHTTPServer(svc.config.BindAddr, m.Then(otelhttp.NewHandler(r, "/")))
 
 	// Create Dataset API
 	urlBuilder := url.NewBuilder(svc.config.WebsiteURL)
