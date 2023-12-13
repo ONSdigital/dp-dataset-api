@@ -5,6 +5,8 @@ package mocks
 
 import (
 	"sync"
+
+	kafka "github.com/ONSdigital/dp-kafka/v4"
 )
 
 // KafkaProducerMock is a mock implementation of download.KafkaProducer.
@@ -24,7 +26,7 @@ import (
 // 	}
 type KafkaProducerMock struct {
 	// OutputFunc mocks the Output method.
-	OutputFunc func() chan []byte
+	OutputFunc func() chan kafka.BytesMessage
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -36,7 +38,7 @@ type KafkaProducerMock struct {
 }
 
 // Output calls OutputFunc.
-func (mock *KafkaProducerMock) Output() chan []byte {
+func (mock *KafkaProducerMock) Output() chan kafka.BytesMessage {
 	if mock.OutputFunc == nil {
 		panic("KafkaProducerMock.OutputFunc: method is nil but KafkaProducer.Output was just called")
 	}

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ONSdigital/dp-dataset-api/mocks"
+	kafka "github.com/ONSdigital/dp-kafka/v4"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -13,7 +14,7 @@ var testContext = context.Background()
 
 func TestGenerator_GenerateFullDatasetDownloadsValidationErrors(t *testing.T) {
 	producerMock := &mocks.KafkaProducerMock{
-		OutputFunc: func() chan []byte {
+		OutputFunc: func() chan kafka.BytesMessage {
 			return nil
 		},
 	}
@@ -111,7 +112,7 @@ func TestGenerator_GenerateMarshalError(t *testing.T) {
 		mockErr := errors.New("let's get schwifty")
 
 		producerMock := &mocks.KafkaProducerMock{
-			OutputFunc: func() chan []byte {
+			OutputFunc: func() chan kafka.BytesMessage {
 				return nil
 			},
 		}
@@ -158,11 +159,11 @@ func TestGenerator_Generate(t *testing.T) {
 			Version:        version,
 		}
 
-		output := make(chan []byte, 1)
+		output := make(chan kafka.BytesMessage, 1)
 		avroBytes := []byte("hello world")
 
 		producerMock := &mocks.KafkaProducerMock{
-			OutputFunc: func() chan []byte {
+			OutputFunc: func() chan kafka.BytesMessage {
 				return output
 			},
 		}
@@ -191,7 +192,7 @@ func TestGenerator_Generate(t *testing.T) {
 				So(len(producerMock.OutputCalls()), ShouldEqual, 1)
 
 				producerOut := <-output
-				So(producerOut, ShouldResemble, avroBytes)
+				So(producerOut.Value, ShouldResemble, avroBytes)
 			})
 		})
 	})

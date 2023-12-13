@@ -3,6 +3,7 @@ package download
 import (
 	"context"
 
+	kafka "github.com/ONSdigital/dp-kafka/v4"
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
@@ -59,7 +60,7 @@ func (gen *CantabularGenerator) Generate(ctx context.Context, datasetID, instanc
 		return newGeneratorError(err, avroMarshalErr)
 	}
 
-	gen.Producer.Output() <- avroBytes
+	gen.Producer.Output() <- kafka.BytesMessage{Value: avroBytes, Context: ctx}
 
 	return nil
 }
