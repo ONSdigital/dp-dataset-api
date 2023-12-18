@@ -52,6 +52,7 @@ type Configuration struct {
 	ComponentTestUseLogFile        bool          `envconfig:"COMPONENT_TEST_USE_LOG_FILE"`
 	OTExporterOTLPEndpoint         string        `envconfig:"OTEL_EXPORTER_OTLP_ENDPOINT"`
 	OTServiceName                  string        `envconfig:"OTEL_SERVICE_NAME"`
+	OTBatchTimeout                 time.Duration `envconfig:"OTEL_BATCH_TIMEOUT"`
 	MongoConfig
 }
 
@@ -90,6 +91,7 @@ func Get() (*Configuration, error) {
 		HealthCheckCriticalTimeout:     90 * time.Second,
 		OTExporterOTLPEndpoint:         "localhost:4317",
 		OTServiceName:                  "dp-dataset-api",
+		OTBatchTimeout:                 5 * time.Second,
 		EnablePrivateEndpoints:         false,
 		EnableDetachDataset:            false,
 		EnablePermissionsAuth:          false,
