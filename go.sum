@@ -555,8 +555,6 @@ github.com/ONSdigital/dp-mocking v0.10.1 h1:yEEglJ458kUztHlnGxhMiKhIr13gMYWYOBKF
 github.com/ONSdigital/dp-mocking v0.10.1/go.mod h1:LVFMmSpUTgalQoWbFOXTNUXrA+W+H1Lzbv+yrhmtPEY=
 github.com/ONSdigital/dp-mongodb-in-memory v1.7.0 h1:lBmjAOfnp4JPZU/Krq+ad1sqknTwUZrUp+rFHoMfr8s=
 github.com/ONSdigital/dp-mongodb-in-memory v1.7.0/go.mod h1:78zt2X+mhXlPlDoaAX19Hu462XPJIW/llN2vcUAAWSc=
-github.com/ONSdigital/dp-mongodb/v3 v3.6.0 h1:LgsCHPo0rNaEaOnQlAVGvHVRaS5jRbKh/ZHbiT7JCec=
-github.com/ONSdigital/dp-mongodb/v3 v3.6.0/go.mod h1:c64U0YglBxR2/XqIAE2Gb5864YOSsZcyWhM3UsgALGg=
 github.com/ONSdigital/dp-mongodb/v3 v3.7.0 h1:+KOarkWq4ir1/NwrtXhJZMpisfPG0B7WLq5wJtSY1Os=
 github.com/ONSdigital/dp-mongodb/v3 v3.7.0/go.mod h1:HDq7OQsVSpi4Y+U4Frzah30zc9rRyjGY50B+qLNQSpY=
 github.com/ONSdigital/dp-net v1.0.5-0.20200805082802-e518bc287596/go.mod h1:wDVhk2pYosQ1q6PXxuFIRYhYk2XX5+1CeRRnXpSczPY=
@@ -1106,8 +1104,8 @@ golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa/go.mod h1:GvvjBRRGRdwPK5y
 golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
 golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
 golang.org/x/crypto v0.6.0/go.mod h1:OFC/31mSvZgRz0V1QTNCzfAI1aIRzbiufJtkMIlEp58=
-golang.org/x/crypto v0.16.0 h1:mMMrFzRSCF0GvB7Ne27XVtVAaXLrPmgPC7/v0tkwHaY=
-golang.org/x/crypto v0.16.0/go.mod h1:gCAAfMLgwOJRpTjQ2zCCt2OcSfYMTeZVSRtQlPC7Nq4=
+golang.org/x/crypto v0.17.0 h1:r8bRNjWL3GshPW3gkd+RpvzWrZAwPS49OmTGZ/uhM4k=
+golang.org/x/crypto v0.17.0/go.mod h1:gCAAfMLgwOJRpTjQ2zCCt2OcSfYMTeZVSRtQlPC7Nq4=
 golang.org/x/exp v0.0.0-20180321215751-8460e604b9de/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20180807140117-3d87b88a115f/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
