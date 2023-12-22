@@ -14,6 +14,9 @@ replace google.golang.org/grpc => google.golang.org/grpc v1.55.0
 // to avoid 'sonatype-2021-4899' non-CVE Vulnerability
 exclude github.com/gorilla/sessions v1.2.1
 
+// to avoid [CVE-2023-48795] CWE-353: Missing Support for Integrity Check
+replace golang.org/x/crypto => golang.org/x/crypto v0.17.0
+
 require (
 	github.com/ONSdigital/dp-api-clients-go/v2 v2.254.0
 	github.com/ONSdigital/dp-assistdog v0.0.1
