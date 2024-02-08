@@ -5,8 +5,8 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: golang
-    tag: 1.21.7-bullseye
+    repository: taylorsilva/dcind
+    tag: latest
 
 inputs:
   - name: dp-dataset-api
