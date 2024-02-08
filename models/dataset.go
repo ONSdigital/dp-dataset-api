@@ -717,6 +717,8 @@ func ValidateVersion(version *Version) error {
 
 // ParseAndValidateVersionNumber checks the version is a positive integer above 0
 func ParseAndValidateVersionNumber(ctx context.Context, version string) (int, error) {
+	fmt.Println("THE NUMBER IS ")
+	fmt.Println(version)
 	versionNumber, err := strconv.Atoi(version)
 	if err != nil {
 		log.Error(ctx, "invalid version provided", err, log.Data{"version": version})
