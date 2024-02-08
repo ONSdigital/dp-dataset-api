@@ -171,9 +171,14 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 
 	// Get HTTP router and server with middleware
 	r := mux.NewRouter()
-	r.Use(otelmux.Middleware(svc.config.OTServiceName))
 	m := svc.createMiddleware(svc.config)
-	svc.server = svc.serviceList.GetHTTPServer(svc.config.BindAddr, m.Then(otelhttp.NewHandler(r, "/")))
+
+	if svc.config.OtelEnabled {
+		r.Use(otelmux.Middleware(svc.config.OTServiceName))
+		svc.server = svc.serviceList.GetHTTPServer(svc.config.BindAddr, m.Then(otelhttp.NewHandler(r, "/")))
+	} else {
+		svc.server = svc.serviceList.GetHTTPServer(svc.config.BindAddr, m.Then(r))
+	}
 
 	// Create Dataset API
 	urlBuilder := url.NewBuilder(svc.config.WebsiteURL)

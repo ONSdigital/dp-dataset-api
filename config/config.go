@@ -53,6 +53,7 @@ type Configuration struct {
 	OTExporterOTLPEndpoint         string        `envconfig:"OTEL_EXPORTER_OTLP_ENDPOINT"`
 	OTServiceName                  string        `envconfig:"OTEL_SERVICE_NAME"`
 	OTBatchTimeout                 time.Duration `envconfig:"OTEL_BATCH_TIMEOUT"`
+	OtelEnabled                    bool          `envconfig:"OTEL_ENABLED"`
 	MongoConfig
 }
 
@@ -92,6 +93,7 @@ func Get() (*Configuration, error) {
 		OTExporterOTLPEndpoint:         "localhost:4317",
 		OTServiceName:                  "dp-dataset-api",
 		OTBatchTimeout:                 5 * time.Second,
+		OtelEnabled:                    false,
 		EnablePrivateEndpoints:         false,
 		EnableDetachDataset:            false,
 		EnablePermissionsAuth:          false,

@@ -148,6 +148,7 @@ func (c *DatasetComponent) setConsumer(topic string) error {
 			KafkaVersion:      &c.Config.KafkaVersion,
 			GroupName:         "test-kafka-group",
 			MinBrokersHealthy: &c.Config.KafkaConsumerMinBrokersHealthy,
+			OtelEnabled:       &c.Config.OtelEnabled,
 		},
 	); err != nil {
 		return fmt.Errorf("error creating kafka consumer: %w", err)
