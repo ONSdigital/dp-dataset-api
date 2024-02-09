@@ -100,13 +100,13 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | DEFAULT_OFFSET                     | `0`                                                                                                                                                                                                       | Default offset for pagination                                                                        |
 |                                    |                                                                                                                                                                                                           |                                                                                                      |
 | OTEL_BATCH_TIMEOUT                 | `5s` 
-| Interval between pushes to OT Collector                          |
+| Interval between pushes to OT Collector                                     |
 | OTEL_EXPORTER_OTLP_ENDPOINT        | `http://localhost:4317`
-| URL for OpenTelemetry endpoint                                   |
+| URL for OpenTelemetry endpoint                                              |
 | OTEL_SERVICE_NAME                  | `dp-dataset-api`
-| Service name to report to telemetry tools                        |
+| Service name to report to telemetry tools                                   |
 | OTEL_ENABLED                       | `false`
-| Feature flag to enable OpenTelemetry                             |
+| Feature flag to enable OpenTelemetry                                        |
 
 Notes:
 
