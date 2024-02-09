@@ -2,8 +2,6 @@ module github.com/ONSdigital/dp-dataset-api
 
 go 1.21
 
-toolchain go1.21.5
-
 // to avoid the following vulnerabilities:
 //     - CVE-2022-29153 # pkg:golang/github.com/hashicorp/consul/api@v1.1.0
 //     - sonatype-2021-1401 # pkg:golang/github.com/miekg/dns@v1.0.14
