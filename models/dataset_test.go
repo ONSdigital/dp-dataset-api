@@ -1104,13 +1104,13 @@ func TestVersionLinksDeepCopy(t *testing.T) {
 				},
 			})
 
-			So(vl2, ShouldNotBeNil)
-			So(vl2.Dataset, ShouldNotBeNil)
-			So(vl2.Dimensions, ShouldNotBeNil)
-			So(vl2.Edition, ShouldNotBeNil)
-			So(vl2.Self, ShouldNotBeNil)
-			So(vl2.Spatial, ShouldNotBeNil)
-			So(vl2.Version, ShouldNotBeNil)
+			So(vl2, ShouldNotPointTo, vl)
+			So(vl2.Dataset, ShouldNotPointTo, vl.Dataset)
+			So(vl2.Dimensions, ShouldNotPointTo, vl.Dimensions)
+			So(vl2.Edition, ShouldNotPointTo, vl.Edition)
+			So(vl2.Self, ShouldNotPointTo, vl.Self)
+			So(vl2.Spatial, ShouldNotPointTo, vl.Spatial)
+			So(vl2.Version, ShouldNotPointTo, vl.Version)
 		})
 	})
 
@@ -1120,7 +1120,7 @@ func TestVersionLinksDeepCopy(t *testing.T) {
 		Convey("Then doing a deep copy of it results in a new empty VersionLinks", func() {
 			vl2 := vl.DeepCopy()
 			So(*vl2, ShouldResemble, VersionLinks{})
-			So(vl2, ShouldNotBeNil)
+			So(vl2, ShouldNotPointTo, vl)
 		})
 	})
 }
