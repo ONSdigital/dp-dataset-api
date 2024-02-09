@@ -34,7 +34,7 @@ Normal sequential order of states:
 6. `published` (only on *version*) - both *edition* and *dataset* are updated - must not be changed
 
 There is the possibility to **rollback** from `associated`  to `edition-confirmed`
-where a PST user has attached the *version* to the wrong collection and so not only does the `collection_id` need to be
+where a PST user has attached the _version_ to the wrong collection and so not only does the `collection_id` need to be
 updated with the new one (or removed altogether)
 but the state will need to revert back to `edition-confirmed`.
 
@@ -82,10 +82,10 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | KAFKA_CONSUMER_MIN_BROKERS_HEALTHY | 2                                                                                                                                                                                                         | The minimum number of consumer brokers needed                                                        |
 | KAFKA_PRODUCER_MIN_BROKERS_HEALTHY | 2                                                                                                                                                                                                         | The minimum number of producer brokers needed                                                        |
 | KAFKA_VERSION                      | `1.0.2`                                                                                                                                                                                                   | The version of (TLS-ready) Kafka                                                                     |
-| KAFKA_SEC_PROTO                    | *unset*                 (only `TLS`)                                                                                                                                                                      | if set to `TLS`, kafka connections will use TLS                                                      |
-| KAFKA_SEC_CLIENT_KEY               | *unset*                                                                                                                                                                                                   | PEM [2] for the client key (optional, used for client auth) [1]                                      |
-| KAFKA_SEC_CLIENT_CERT              | *unset*                                                                                                                                                                                                   | PEM [2] for the client certificate (optional, used for client auth) [1]                              |
-| KAFKA_SEC_CA_CERTS                 | *unset*                                                                                                                                                                                                   | PEM [2] of CA cert chain if using private CA for the server cert [1]                                 |
+| KAFKA_SEC_PROTO                    | _unset_                 (only `TLS`)                                                                                                                                                                      | if set to `TLS`, kafka connections will use TLS                                                      |
+| KAFKA_SEC_CLIENT_KEY               | _unset_                                                                                                                                                                                                   | PEM [2] for the client key (optional, used for client auth) [1]                                      |
+| KAFKA_SEC_CLIENT_CERT              | _unset_                                                                                                                                                                                                   | PEM [2] for the client certificate (optional, used for client auth) [1]                              |
+| KAFKA_SEC_CA_CERTS                 | _unset_                                                                                                                                                                                                   | PEM [2] of CA cert chain if using private CA for the server cert [1]                                 |
 | KAFKA_SEC_SKIP_VERIFY              | `false`                                                                                                                                                                                                   | ignore server certificate issues if set to `true` [1]                                                |
 | GENERATE_DOWNLOADS_TOPIC           | `filter-job-submitted`                                                                                                                                                                                    | The topic to send generate full dataset version downloads to                                         |
 | HEALTHCHECK_INTERVAL               | `30s`                                                                                                                                                                                                     | The time between calling healthcheck endpoints for check subsystems                                  |
@@ -100,13 +100,13 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | DEFAULT_OFFSET                     | `0`                                                                                                                                                                                                       | Default offset for pagination                                                                        |
 |                                    |                                                                                                                                                                                                           |                                                                                                      |
 | OTEL_BATCH_TIMEOUT                 | `5s` 
-| Interval between pushes to OT Collector                                                    |
+| Interval between pushes to OT Collector                                                          |
 | OTEL_EXPORTER_OTLP_ENDPOINT        | `http://localhost:4317`
-| URL for OpenTelemetry endpoint                                                             |
+| URL for OpenTelemetry endpoint                                                                   |
 | OTEL_SERVICE_NAME                  | `dp-dataset-api`
-| Service name to report to telemetry tools                                                  |
+| Service name to report to telemetry tools                                                        |
 | OTEL_ENABLED                       | `false`
-| Feature flag to enable OpenTelemetry                                                       |
+| Feature flag to enable OpenTelemetry                                                             |
 
 Notes:
 
