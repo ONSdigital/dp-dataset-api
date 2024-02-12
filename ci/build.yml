@@ -6,7 +6,7 @@ image_resource:
   type: docker-image
   source:
     repository: golang
-    tag: 1.21.5-bullseye
+    tag: 1.21.7-bullseye
 
 inputs:
   - name: dp-dataset-api
