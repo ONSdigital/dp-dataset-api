@@ -7,15 +7,8 @@ go 1.21
 //     - sonatype-2021-1401 # pkg:golang/github.com/miekg/dns@v1.0.14
 replace github.com/spf13/cobra => github.com/spf13/cobra v1.7.0
 
-// to avoid the following vulnerabilities:
-//     - CVE-2023-32731 # pkg:google.golang.org/grpc
-replace google.golang.org/grpc => google.golang.org/grpc v1.55.0
-
-// to avoid 'sonatype-2021-4899' non-CVE Vulnerability
-exclude github.com/gorilla/sessions v1.2.1
-
-// to avoid [CVE-2023-48795] CWE-353: Missing Support for Integrity Check
-replace golang.org/x/crypto => golang.org/x/crypto v0.17.0
+// [CVE-2024-24786] CWE-835: Loop with Unreachable Exit Condition ('Infinite Loop')
+replace google.golang.org/protobuf => google.golang.org/protobuf v1.33.0
 
 require (
 	github.com/ONSdigital/dp-api-clients-go/v2 v2.257.0
