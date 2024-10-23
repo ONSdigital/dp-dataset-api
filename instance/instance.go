@@ -280,11 +280,13 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			editionLogData["instance_type"] = instance.Type
 			log.Info(ctx, "skipping dp-graph instance update because it is not required by instance type", editionLogData)
 		} else {
-			if versionErr := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); versionErr != nil {
-				log.Error(ctx, "update instance: datastore.AddVersionDetailsToInstance returned an error", versionErr, editionLogData)
-				handleInstanceErr(ctx, versionErr, w, logData)
-				return
-			}
+
+			// if versionErr := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); versionErr != nil {
+			// 	log.Error(ctx, "update instance: datastore.AddVersionDetailsToInstance returned an error", versionErr, editionLogData)
+			// 	handleInstanceErr(ctx, versionErr, w, logData)
+			// 	return
+			// }
+
 		}
 
 		log.Info(ctx, "update instance: added version details to instance", editionLogData)

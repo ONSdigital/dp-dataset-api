@@ -68,6 +68,7 @@ type DatasetAPI struct {
 	instancePublishedChecker *instance.PublishCheck
 	versionPublishedChecker  *PublishCheck
 	MaxRequestOptions        int
+	DisableNeptune           bool
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
@@ -87,6 +88,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		versionPublishedChecker:  nil,
 		instancePublishedChecker: nil,
 		MaxRequestOptions:        cfg.MaxRequestOptions,
+		DisableNeptune:           cfg.DisableGraphDBDependency,
 	}
 
 	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)
