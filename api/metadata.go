@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -152,6 +153,10 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return errs.ErrUnableToParseJSON
 		}
+
+		fmt.Println("THE METADATA UPDATE REQUEST IS")
+		jsonBytes, err := json.Marshal(payload)
+		fmt.Println(string(jsonBytes), err) // {"message":"hello"} <nil>
 
 		versionNumber, err := models.ParseAndValidateVersionNumber(ctx, version)
 		if err != nil {

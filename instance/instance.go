@@ -146,6 +146,10 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("THE INSTANCE REQUEST IS")
+	jsonBytes, err := json.Marshal(instance)
+	fmt.Println(string(jsonBytes), err)
+
 	logData["instance_id"] = instance.InstanceID
 
 	instance.Links.Self = &models.LinkObject{
@@ -206,6 +210,10 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		handleInstanceErr(ctx, taskError{error: err, status: 400}, w, logData)
 		return
 	}
+
+	fmt.Println("THE PUT INSTANCE IS")
+	jsonBytes, err := json.Marshal(instance)
+	fmt.Println(string(jsonBytes), err) // {"message":"hello"} <nil>
 
 	// acquire instance lock so that the dp-graph call to AddVersionDetailsToInstance and the mongoDB update are atomic
 	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
@@ -442,6 +450,8 @@ func unmarshalInstance(ctx context.Context, reader io.Reader, post bool) (*model
 		}
 	}
 
+	fmt.Println("THE CONVERTED INSTANCE REQUEST IS")
+	fmt.Println(&instance)
 	return &instance, nil
 }
 

@@ -19,6 +19,7 @@ import (
 	dphandlers "github.com/ONSdigital/dp-net/v2/handlers"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/log.go/v2/log"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"github.com/pkg/errors"
@@ -172,6 +173,12 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	// Get HTTP router and server with middleware
 	r := mux.NewRouter()
 	m := svc.createMiddleware(svc.config)
+
+	methodsOk := handlers.AllowedMethods([]string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodHead, http.MethodOptions})
+	headersOk := handlers.AllowedHeaders([]string{"Accept", "Accept-Language", "Content-Language", "Origin", "X-Requested-With", "Content-Type", "Authorization", "X-Florence-Token"})
+	originsOk := handlers.AllowedOrigins([]string{"http://localhost:3000", "localhost:3000"})
+
+	m = m.Append(handlers.CORS(originsOk, headersOk, methodsOk))
 
 	if svc.config.OtelEnabled {
 		r.Use(otelmux.Middleware(svc.config.OTServiceName))
