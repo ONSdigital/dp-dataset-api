@@ -201,3 +201,69 @@ Feature: Private Dataset API
             	"total_count": 1
             }
         """
+
+Scenario: Successfully createing a new dataset document with ID in request body
+    When I POST "/datasets"
+        """
+        {
+            "id": "ageing-population-estimates",
+            "state": "anything",
+            "title": "CID",
+            "type": "filterable"
+        }
+        """
+    Then the HTTP status code should be "201"
+    And the document in the database for id "ageing-population-estimates" should be:
+        """
+        {
+            "id": "ageing-population-estimates",
+            "state": "created",
+            "title": "CID",
+            "type": "filterable",
+            "links": {
+                "editions": {
+                    "href":"http://localhost:22000/datasets/ageing-population-estimates/editions"
+                },
+                "self": {
+                    "href":"http://localhost:22000/datasets/ageing-population-estimates"
+                }
+            }
+        }
+        """
+
+Scenario: A document with the same ID already exists in the database
+    Given I have these datasets:
+        """
+        [
+            {
+                "id": "ageing-population-estimates"
+            }
+        ]
+        """
+    When I POST "/datasets"
+        """
+        {
+            "id": "ageing-population-estimates",
+            "title": "title"
+        }
+        """
+    Then the HTTP status code should be "403"
+    And I should receive the following response:
+        """
+        forbidden - dataset already exists
+        """
+
+Scenario: Missing dataset ID in body when creating a new dataset
+    When I POST "/datasets"
+        """
+        {
+            "title": "",
+            "state": "anything",
+            "type": "filterable"
+        }
+        """
+    Then the HTTP status code should be "400"
+    And I should receive the following response:
+        """
+        missing dataset id in request body
+        """
