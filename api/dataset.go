@@ -33,7 +33,7 @@ var (
 		errs.ErrTypeMismatch:               true,
 		errs.ErrDatasetTypeInvalid:         true,
 		errs.ErrInvalidQueryParameter:      true,
-		errs.ErrMissingDatasetId:           true,
+		errs.ErrMissingDatasetID:           true,
 	}
 
 	// errors that should return a 404 status
@@ -264,7 +264,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 
 	if datasetID == "" {
 		log.Error(ctx, "addDatasetNew endpoint: dataset ID is empty", nil)
-		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetId, w, nil)
+		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetID, w, nil)
 		return
 	}
 
