@@ -262,7 +262,6 @@ func TestGetDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("Request with empty dataset ID returns 400 Bad Request", t, func() {
-
 		b := datasetPayloadWithEmptyID
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
@@ -512,7 +511,6 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
-
 }
 
 func TestPostDatasetReturnsError(t *testing.T) {
