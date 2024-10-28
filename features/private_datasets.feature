@@ -201,7 +201,7 @@ Feature: Private Dataset API
             	"total_count": 1
             }
         """
-
+        
 Scenario: Successfully createing a new dataset document with ID in request body
     When I POST "/datasets"
         """
