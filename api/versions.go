@@ -11,6 +11,7 @@ import (
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/state"
 	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	dprequest "github.com/ONSdigital/dp-net/v2/request"
@@ -269,6 +270,16 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+
+	// Testing out the state machine
+	statesAllowed := make(map[string]state.State)
+
+	statesAllowed["associated"] = state.Associated{}
+
+	sm := state.NewStateMachine(currentVersion.State, statesAllowed[versionUpdate.State], statesAllowed, versionUpdate)
+
+	sm.Transition()
+	// End of test
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
