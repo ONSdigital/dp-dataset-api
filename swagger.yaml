@@ -250,12 +250,37 @@ paths:
           description: "No dataset was found with the popultation-type provided"
         500:
           $ref: '#/responses/InternalError'
+    post:
+      tags:
+      - "Private user"
+      summary: "Create a new dataset"
+      description: "Allows an authenticated and authorised user to create a new dataset. The dataset ID should be included in the request body."
+      parameters:
+      - $ref: '#/parameters/new_dataset'
+      produces:
+      - "application/json"
+      responses:
+        201:
+          description: "A JSON object containing the newly created dataset"
+          schema:
+            $ref: '#/definitions/NewDatasetResponse'
+        400:
+          description: "Bad request, possibly due to invalid JSON or missing dataset ID"
+        401:
+          description: "Unauthorised access; user lacks permission to create a dataset"
+        403:
+          description: "Forbidden to create dataset; a dataset with this ID already exists"
+        500:
+          $ref: '#/responses/InternalError'
+
   /datasets/{id}:
     post:
       tags:
       - "Private user"
-      summary: "Create a dataset"
-      description: "Create a dataset provided by the ONS that can be filtered using the filter API"
+      summary: "Create a dataset (deprecated)"
+      description: |
+        **Deprecated:** This endpoint is being replaced by `POST /datasets`. Please use `POST /datasets` and provide the dataset ID in the request body. This endpoint may be removed in a future release.
+      deprecated: true
       parameters:
       - $ref: '#/parameters/id'
       - $ref: '#/parameters/new_dataset'
