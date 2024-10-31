@@ -265,11 +265,11 @@ paths:
           schema:
             $ref: '#/definitions/NewDatasetResponse'
         400:
-          description: "Bad request, possibly due to invalid JSON or missing dataset ID"
+          description: "Invalid request body"
         401:
-          description: "Unauthorised access; user lacks permission to create a dataset"
+          description: "Unauthorised to create/overwrite dataset"
         403:
-          description: "Forbidden to create dataset; a dataset with this ID already exists"
+          description: "Forbidden to overwrite dataset, dataset already exists"
         500:
           $ref: '#/responses/InternalError'
 
