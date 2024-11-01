@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/ONSdigital/dp-authorisation/auth"
+	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
 	"github.com/ONSdigital/dp-dataset-api/instance"
@@ -69,10 +70,11 @@ type DatasetAPI struct {
 	versionPublishedChecker  *PublishCheck
 	MaxRequestOptions        int
 	DisableNeptune           bool
+	newDatasetAPI            *application.NewDatasetAPI
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
-func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions, permissions AuthHandler) *DatasetAPI {
+func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions, permissions AuthHandler, newDatasetAPI *application.NewDatasetAPI) *DatasetAPI {
 	api := &DatasetAPI{
 		dataStore:                dataStore,
 		host:                     cfg.DatasetAPIURL,
@@ -89,6 +91,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		instancePublishedChecker: nil,
 		MaxRequestOptions:        cfg.MaxRequestOptions,
 		DisableNeptune:           cfg.DisableGraphDBDependency,
+		newDatasetAPI:            newDatasetAPI,
 	}
 
 	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)
@@ -142,12 +145,6 @@ func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator, in
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata", api.getMetadata)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", paginator.Paginate(api.getDimensions))
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", paginator.Paginate(api.getDimensionOptions))
-	api.post("/instances", instanceAPI.Add)
-	api.put("/instances/{instance_id}", instanceAPI.Update)
-	api.post("/datasets/{dataset_id}", api.addDataset)
-	api.put("/datasets/{dataset_id}", api.putDataset)
-	api.put("/datasets/{dataset_id}/editions/{edition}/versions/{version}", api.putVersion)
-
 }
 
 // enablePrivateDatasetEndpoints register the datasets endpoints with the appropriate authentication and authorisation

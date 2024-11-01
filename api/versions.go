@@ -11,7 +11,6 @@ import (
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-dataset-api/state"
 	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	dprequest "github.com/ONSdigital/dp-net/v2/request"
@@ -236,50 +235,18 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	versionDetails := VersionDetails{
-		datasetID: vars["dataset_id"],
-		edition:   vars["edition"],
-		version:   vars["version"],
-	}
+
 	data := log.Data{
 		"datasetID": vars["dataset_id"],
 		"edition":   vars["edition"],
 		"version":   vars["version"],
 	}
 
-	currentDataset, currentVersion, versionUpdate, err := api.updateVersion(ctx, r.Body, versionDetails)
+	err := api.newDatasetAPI.AmendVersion(w, r)
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
 	}
-
-	// If update was to add downloads do not try to publish/associate version
-	if vars[hasDownloads] != trueStringified {
-		data["updated_state"] = versionUpdate.State
-		if versionUpdate.State == models.PublishedState {
-			if err := api.publishVersion(ctx, currentDataset, currentVersion, versionUpdate, versionDetails); err != nil {
-				handleVersionAPIErr(ctx, err, w, data)
-				return
-			}
-		}
-
-		if versionUpdate.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
-			if err := api.associateVersion(ctx, currentVersion, versionUpdate, versionDetails); err != nil {
-				handleVersionAPIErr(ctx, err, w, data)
-				return
-			}
-		}
-	}
-
-	// Testing out the state machine
-	statesAllowed := make(map[string]state.State)
-
-	statesAllowed["associated"] = state.Associated{}
-
-	sm := state.NewStateMachine(currentVersion.State, statesAllowed[versionUpdate.State], statesAllowed, versionUpdate)
-
-	sm.Transition()
-	// End of test
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)

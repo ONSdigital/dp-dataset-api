@@ -310,6 +310,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "putDataset endpoint: request successful", data)
 }
 
+// GONE TO STATE MACHINE
 func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *models.DatasetUpdate, version *models.Version) error {
 	if version != nil {
 		currentDataset.Next.CollectionID = ""

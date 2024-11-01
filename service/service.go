@@ -3,10 +3,12 @@ package service
 import (
 	"context"
 	"net/http"
+	"sync"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/api"
+	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	adapter "github.com/ONSdigital/dp-dataset-api/kafka"
@@ -49,6 +51,18 @@ type Service struct {
 	server                              HTTPServer
 	healthCheck                         HealthChecker
 	api                                 *api.DatasetAPI
+	newDS                               *application.NewDatasetAPI
+}
+
+var manager *application.StateMachine
+var managerInit sync.Once
+
+// GetManager returns a Manager and initializes one as singleton if there's none yet
+func GetManager() *application.StateMachine {
+	managerInit.Do(func() {
+		manager = &application.StateMachine{}
+	})
+	return manager
 }
 
 // New creates a new service
@@ -98,6 +112,8 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		log.Error(ctx, "could not obtain mongo session", err)
 		return err
 	}
+
+	sm := GetManager()
 
 	// Get graphDB connection for observation store
 	if !svc.config.EnablePrivateEndpoints || svc.config.DisableGraphDBDependency {
@@ -155,6 +171,15 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		models.Nomis:                       downloadGeneratorCMD,
 	}
 
+	newdownloadGenerators := map[models.DatasetType]application.DownloadsGenerator{
+		models.CantabularBlob:              downloadGeneratorCantabular,
+		models.CantabularTable:             downloadGeneratorCantabular,
+		models.CantabularFlexibleTable:     downloadGeneratorCantabular,
+		models.CantabularMultivariateTable: downloadGeneratorCantabular,
+		models.Filterable:                  downloadGeneratorCMD,
+		models.Nomis:                       downloadGeneratorCMD,
+	}
+
 	// Get Identity Client (only if private endpoints are enabled)
 	if svc.config.EnablePrivateEndpoints {
 		svc.identityClient = clientsidentity.New(svc.config.ZebedeeURL)
@@ -190,7 +215,9 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	// Create Dataset API
 	urlBuilder := url.NewBuilder(svc.config.WebsiteURL)
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions)
+
+	svc.newDS = application.Setup(ctx, r, ds, newdownloadGenerators, sm)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, svc.newDS)
 
 	svc.healthCheck.Start(ctx)
 
