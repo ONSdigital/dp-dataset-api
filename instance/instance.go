@@ -146,10 +146,6 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("THE INSTANCE REQUEST IS")
-	jsonBytes, err := json.Marshal(instance)
-	fmt.Println(string(jsonBytes), err)
-
 	logData["instance_id"] = instance.InstanceID
 
 	instance.Links.Self = &models.LinkObject{
@@ -210,10 +206,6 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		handleInstanceErr(ctx, taskError{error: err, status: 400}, w, logData)
 		return
 	}
-
-	fmt.Println("THE PUT INSTANCE IS")
-	jsonBytes, err := json.Marshal(instance)
-	fmt.Println(string(jsonBytes), err) // {"message":"hello"} <nil>
 
 	// acquire instance lock so that the dp-graph call to AddVersionDetailsToInstance and the mongoDB update are atomic
 	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
@@ -281,11 +273,11 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 			log.Info(ctx, "skipping dp-graph instance update because it is not required by instance type", editionLogData)
 		} else {
 
-			// if versionErr := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); versionErr != nil {
-			// 	log.Error(ctx, "update instance: datastore.AddVersionDetailsToInstance returned an error", versionErr, editionLogData)
-			// 	handleInstanceErr(ctx, versionErr, w, logData)
-			// 	return
-			// }
+			if versionErr := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); versionErr != nil {
+				log.Error(ctx, "update instance: datastore.AddVersionDetailsToInstance returned an error", versionErr, editionLogData)
+				handleInstanceErr(ctx, versionErr, w, logData)
+				return
+			}
 
 		}
 
@@ -451,9 +443,6 @@ func unmarshalInstance(ctx context.Context, reader io.Reader, post bool) (*model
 			instance.State = models.CreatedState
 		}
 	}
-
-	fmt.Println("THE CONVERTED INSTANCE REQUEST IS")
-	fmt.Println(&instance)
 	return &instance, nil
 }
 

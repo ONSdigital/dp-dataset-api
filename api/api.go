@@ -122,20 +122,14 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		api.enablePrivateInstancesEndpoints(instanceAPI, paginator)
 		api.enablePrivateDimensionsEndpoints(dimensionAPI, paginator)
 	} else {
-
-		instanceAPI := &instance.Store{
-			Host:                api.host,
-			Storer:              api.dataStore.Backend,
-			EnableDetachDataset: api.enableDetachDataset,
-		}
 		log.Info(ctx, "enabling only public endpoints for dataset api")
-		api.enablePublicEndpoints(paginator, instanceAPI)
+		api.enablePublicEndpoints(paginator)
 	}
 	return api
 }
 
 // enablePublicEndpoints register only the public GET endpoints.
-func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator, instanceAPI *instance.Store) {
+func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
 	api.get("/datasets", paginator.Paginate(api.getDatasets))
 	api.get("/datasets/{dataset_id}", api.getDataset)
 	api.get("/datasets/{dataset_id}/editions", paginator.Paginate(api.getEditions))

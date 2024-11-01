@@ -261,9 +261,6 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "putDataset endpoint: failed to model dataset resource based on request", err, data)
 			return errs.ErrAddUpdateDatasetBadRequest
 		}
-		fmt.Println("THE SUBMITTED PUT DATASET IS")
-		jsonBytes, err := json.Marshal(dataset)
-		fmt.Println(string(jsonBytes), err) // {"message":"hello"} <nil>
 
 		currentDataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
@@ -310,7 +307,6 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "putDataset endpoint: request successful", data)
 }
 
-// GONE TO STATE MACHINE
 func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *models.DatasetUpdate, version *models.Version) error {
 	if version != nil {
 		currentDataset.Next.CollectionID = ""
