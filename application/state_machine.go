@@ -1,57 +1,75 @@
 package application
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/store"
 )
 
-type StateMachine struct {
-	existingState         string
-	newState              State
-	states                map[string]State
-	event                 string
-	combinedVersionUpdate *models.Version
+type State interface {
+	Enter(combinedVersionUpdate *models.Version, l *StateMachine) error
+	String() string
 }
 
-func (sm *StateMachine) setState(s State) error {
-	fmt.Println("Entering setstate")
-	sm.newState = s
-	err := sm.newState.Enter(sm.combinedVersionUpdate)
-	if err != nil {
-		fmt.Println("the enter function returned an error")
-		return err
+type StateMachine struct {
+	states      map[string]State
+	transitions map[State]Transition
+	dataStore   store.DataStore
+	ctx         context.Context
+}
+
+type Transition struct {
+	Label                string
+	TargetState          State
+	AlllowedSourceStates []string
+}
+
+func (sm *StateMachine) Transition(combinedVersionUpdate *models.Version, newstate State, previousState string) error {
+
+	match := false
+
+	fmt.Println("The new state is")
+	fmt.Println(newstate)
+	for state, trasitions := range sm.transitions {
+		fmt.Println(state)
+		fmt.Println(trasitions)
+		if state == newstate {
+			fmt.Println("The states match")
+			for i := 0; i < len(trasitions.AlllowedSourceStates); i++ {
+				fmt.Println(trasitions.AlllowedSourceStates[i])
+				fmt.Println(previousState)
+				if previousState == trasitions.AlllowedSourceStates[i] {
+					match = true
+				}
+			}
+		}
+
 	}
 
-	return nil
-}
-
-func (sm *StateMachine) Transition() error {
-	if _, ok := sm.states[sm.existingState]; ok {
-		fmt.Println("Previous state is allowed it's ok")
-		err := sm.newState.Update(sm)
-		if err != nil {
-			return err
-		}
-		return nil
-	} else {
+	if !match {
 		fmt.Println("State not allowed to transition")
-		fmt.Println(" cannot move from " + sm.existingState + "  to ")
-		fmt.Println(sm.newState)
-
 		return errors.New("invalid state")
 	}
+
+	fmt.Println("Previous state is allowed it's ok")
+	err := newstate.Enter(combinedVersionUpdate, sm)
+	if err != nil {
+		return err
+	}
+	return nil
+
 }
 
-func NewStateMachine(existingState string, newState State, stateList map[string]State, combinedVersionUpdate *models.Version) *StateMachine {
+func NewStateMachine(states map[string]State, transitions map[State]Transition, dataStore store.DataStore, ctx context.Context) *StateMachine {
 	sm := &StateMachine{
-		existingState:         existingState,
-		newState:              newState,
-		states:                stateList,
-		combinedVersionUpdate: combinedVersionUpdate,
+		states:      states,
+		transitions: transitions,
+		dataStore:   dataStore,
+		ctx:         ctx,
 	}
 
-	sm.newState.Enter(combinedVersionUpdate)
 	return sm
 }

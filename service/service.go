@@ -50,18 +50,69 @@ type Service struct {
 	server                              HTTPServer
 	healthCheck                         HealthChecker
 	api                                 *api.DatasetAPI
-	newDS                               *application.NewDatasetAPI
+	smDS                                *application.StateMachineDatasetAPI
 }
 
-var manager *application.StateMachine
-var managerInit sync.Once
+var stateMachine *application.StateMachine
+var stateMachineInit sync.Once
 
-// GetManager returns a Manager and initializes one as singleton if there's none yet
-func GetManager() *application.StateMachine {
-	managerInit.Do(func() {
-		manager = &application.StateMachine{}
+func GetListTransitions() map[application.State]application.Transition {
+
+	publishedTransition := application.Transition{
+		Label:                "published",
+		TargetState:          application.Published{},
+		AlllowedSourceStates: []string{"associated"},
+	}
+
+	associatedTransition := application.Transition{
+		Label:                "associated",
+		TargetState:          application.Associated{},
+		AlllowedSourceStates: []string{"edition-confirmed"},
+	}
+
+	edconfirmedTransition := application.Transition{
+		Label:                "edition-confirmed",
+		TargetState:          application.EditionConfirmed{},
+		AlllowedSourceStates: []string{"completed"},
+	}
+
+	completedTransition := application.Transition{
+		Label:                "completed",
+		TargetState:          application.Completed{},
+		AlllowedSourceStates: []string{"submitted"},
+	}
+
+	submittedTransition := application.Transition{
+		Label:                "submitted",
+		TargetState:          application.Submitted{},
+		AlllowedSourceStates: []string{"created"},
+	}
+
+	failedTransition := application.Transition{
+		Label:                "failed",
+		TargetState:          application.Failed{},
+		AlllowedSourceStates: []string{"submitted"},
+	}
+
+	detachedTransition := application.Transition{
+		Label:                "detached",
+		TargetState:          application.Detached{},
+		AlllowedSourceStates: []string{"edition-confirmed"},
+	}
+
+	return map[application.State]application.Transition{application.Published{}: publishedTransition,
+		application.Associated{}: associatedTransition, application.EditionConfirmed{}: edconfirmedTransition,
+		application.Completed{}: completedTransition, application.Submitted{}: submittedTransition,
+		application.Detached{}: detachedTransition, application.Failed{}: failedTransition}
+}
+
+func GetStateMachine(dataStore store.DataStore, ctx context.Context) *application.StateMachine {
+	stateMachineInit.Do(func() {
+		states := map[string]application.State{"created": application.Created{}, "submitted": application.Submitted{}, "completed": application.Created{}, "edition-confirmed": application.EditionConfirmed{}, "associated": application.Associated{}, "published": application.Published{}}
+		transitions := GetListTransitions()
+		stateMachine = application.NewStateMachine(states, transitions, dataStore, ctx)
 	})
-	return manager
+	return stateMachine
 }
 
 // New creates a new service
@@ -112,7 +163,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		return err
 	}
 
-	sm := GetManager()
+	//sm2 := application.NewThisStateMachine()
 
 	// Get graphDB connection for observation store
 	if !svc.config.EnablePrivateEndpoints || svc.config.DisableGraphDBDependency {
@@ -208,9 +259,9 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	// Create Dataset API
 	urlBuilder := url.NewBuilder(svc.config.WebsiteURL)
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
-
-	svc.newDS = application.Setup(ctx, r, ds, newdownloadGenerators, sm)
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, svc.newDS)
+	sm := GetStateMachine(ds, ctx)
+	svc.smDS = application.Setup(ctx, r, ds, newdownloadGenerators, sm)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, svc.smDS)
 
 	svc.healthCheck.Start(ctx)
 

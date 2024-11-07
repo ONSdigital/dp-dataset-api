@@ -3,10 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
@@ -37,28 +34,6 @@ var (
 	trueStringified = strconv.FormatBool(true)
 )
 
-var (
-	// errors that map to a HTTP 404 response
-	notFound = map[error]bool{
-		errs.ErrDatasetNotFound: true,
-		errs.ErrEditionNotFound: true,
-		errs.ErrVersionNotFound: true,
-	}
-
-	// errors that map to a HTTP 400 response
-	badRequest = map[error]bool{
-		errs.ErrUnableToParseJSON:                      true,
-		models.ErrPublishedVersionCollectionIDInvalid:  true,
-		models.ErrAssociatedVersionCollectionIDInvalid: true,
-		models.ErrVersionStateInvalid:                  true,
-	}
-
-	// HTTP 500 responses with a specific message
-	internalServerErrWithMessage = map[error]bool{
-		errs.ErrResourceState: true,
-	}
-)
-
 // VersionDetails contains the details that uniquely identify a version resource
 type VersionDetails struct {
 	datasetID string
@@ -70,14 +45,14 @@ type DownloadsGenerator interface {
 	Generate(ctx context.Context, datasetID, instanceID, edition, version string) error
 }
 
-type NewDatasetAPI struct {
+type StateMachineDatasetAPI struct {
 	dataStore          store.DataStore
 	downloadGenerators map[models.DatasetType]DownloadsGenerator
 	stateMachine       *StateMachine
 }
 
-func Setup(ctx context.Context, router *mux.Router, dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine) *NewDatasetAPI {
-	newDS := &NewDatasetAPI{
+func Setup(ctx context.Context, router *mux.Router, dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine) *StateMachineDatasetAPI {
+	newDS := &StateMachineDatasetAPI{
 		dataStore:          dataStoreVal,
 		downloadGenerators: downloadGenerators,
 		stateMachine:       stateMachine,
@@ -90,19 +65,8 @@ func (v VersionDetails) baseLogData() log.Data {
 	return log.Data{"dataset_id": v.datasetID, "edition": v.edition, "version": v.version}
 }
 
-func CallStateMachine(currentVersion *models.Version, versionUpdate *models.Version) {
-	statesAllowed := make(map[string]State)
+func (smDS *StateMachineDatasetAPI) AmendVersion(vars map[string]string, version *models.Version, ctx context.Context) error {
 
-	statesAllowed["associated"] = Associated{}
-
-	sm := NewStateMachine(currentVersion.State, statesAllowed[versionUpdate.State], statesAllowed, versionUpdate)
-
-	sm.Transition()
-}
-
-func (newDS *NewDatasetAPI) AmendVersion(w http.ResponseWriter, r *http.Request) error {
-	ctx := r.Context()
-	vars := mux.Vars(r)
 	versionDetails := VersionDetails{
 		datasetID: vars["dataset_id"],
 		edition:   vars["edition"],
@@ -114,68 +78,36 @@ func (newDS *NewDatasetAPI) AmendVersion(w http.ResponseWriter, r *http.Request)
 		"version":   vars["version"],
 	}
 
-	currentDataset, currentVersion, versionUpdate, err := newDS.UpdateVersion(ctx, r.Body, versionDetails)
+	currentDataset, currentVersion, versionUpdate, err := smDS.UpdateVersion(ctx, version, versionDetails)
 	if err != nil {
-		handleVersionAPIErr(ctx, err, w, data)
+		log.Error(ctx, "putVersion endpoint: creating models failed", err)
+		return err
+	}
+
+	if err := smDS.stateMachine.Transition(versionUpdate, castStateToState(versionUpdate.State), currentDataset.Next.State); err != nil {
+		log.Error(ctx, "putVersion endpoint: state machine transition failed", err)
 		return err
 	}
 
 	if vars[hasDownloads] != trueStringified {
 		data["updated_state"] = versionUpdate.State
 		if versionUpdate.State == models.PublishedState {
-			newDS.stateMachine = NewStateMachine(currentVersion.State, castStateToState(versionUpdate.State), setAllowedStates(versionUpdate.State), versionUpdate)
-			if err := newDS.stateMachine.Transition(); err != nil {
-				handleVersionAPIErr(ctx, err, w, data)
-				return err
-			}
-
-			if err := newDS.publishVersion(ctx, currentDataset, currentVersion, versionUpdate, versionDetails); err != nil {
-				handleVersionAPIErr(ctx, err, w, data)
+			if err := smDS.publishVersion(ctx, currentDataset, currentVersion, versionUpdate, versionDetails); err != nil {
+				log.Error(ctx, "putVersion endpoint: failed publishing version", err)
 				return err
 			}
 		}
 
 		if versionUpdate.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
-			newDS.stateMachine = NewStateMachine(currentVersion.State, castStateToState(versionUpdate.State), setAllowedStates(versionUpdate.State), versionUpdate)
-			if err := newDS.stateMachine.Transition(); err != nil {
-				fmt.Println("error found")
-				handleVersionAPIErr(ctx, err, w, data)
-				return err
-			}
 
-			if err := newDS.associateVersion(ctx, currentVersion, versionUpdate, versionDetails); err != nil {
-				handleVersionAPIErr(ctx, err, w, data)
+			if err := smDS.associateVersion(ctx, currentVersion, versionUpdate, versionDetails); err != nil {
+				log.Error(ctx, "putVersion endpoint: failed associating version", err)
 				return err
 			}
 		}
 	}
 
 	return nil
-}
-
-func setAllowedStates(state string) map[string]State {
-
-	statesAllowed := make(map[string]State)
-	switch s := state; s {
-	case "published":
-		statesAllowed["associated"] = Associated{}
-	case "associated":
-		statesAllowed["edition-confirmed"] = EditionConfirmed{}
-	case "completed":
-		statesAllowed["submitted"] = Submitted{}
-	case "edition-confirmed":
-		statesAllowed["completed"] = Completed{}
-	case "detached":
-		statesAllowed["edition-confirmed"] = EditionConfirmed{}
-	case "submitted":
-		statesAllowed["created"] = Created{}
-	case "failed":
-		statesAllowed["submitted"] = Submitted{}
-	default:
-		return nil
-	}
-
-	return statesAllowed
 }
 
 func castStateToState(state string) State {
@@ -202,14 +134,14 @@ func castStateToState(state string) State {
 	}
 }
 
-func (newDS *NewDatasetAPI) associateVersion(ctx context.Context, currentVersion, versionDoc *models.Version, versionDetails VersionDetails) error {
+func (smDS *StateMachineDatasetAPI) associateVersion(ctx context.Context, currentVersion, versionDoc *models.Version, versionDetails VersionDetails) error {
 	data := versionDetails.baseLogData()
 	data["type"] = currentVersion.Type
 	data["version_update"] = versionDoc
 	log.Info(ctx, "putVersion endpoint: associated version", data)
 
 	associateVersionErr := func() error {
-		if err := newDS.dataStore.Backend.UpdateDatasetWithAssociation(ctx, versionDetails.datasetID, versionDoc.State, versionDoc); err != nil {
+		if err := smDS.dataStore.Backend.UpdateDatasetWithAssociation(ctx, versionDetails.datasetID, versionDoc.State, versionDoc); err != nil {
 			log.Error(ctx, "putVersion endpoint: failed to update dataset document after a version of a dataset has been associated with a collection", err, data)
 			return err
 		}
@@ -219,7 +151,7 @@ func (newDS *NewDatasetAPI) associateVersion(ctx context.Context, currentVersion
 		if err != nil {
 			return fmt.Errorf("error getting type of version: %w", err)
 		}
-		generator, ok := newDS.downloadGenerators[t]
+		generator, ok := smDS.downloadGenerators[t]
 		if !ok {
 			return fmt.Errorf("no downloader available for type %s", t.String())
 		}
@@ -243,7 +175,7 @@ func (newDS *NewDatasetAPI) associateVersion(ctx context.Context, currentVersion
 	return associateVersionErr
 }
 
-func (newDS *NewDatasetAPI) UpdateVersion(ctx context.Context, body io.ReadCloser, versionDetails VersionDetails) (currentDataset *models.DatasetUpdate, currentVersion, combinedVersionUpdate *models.Version, err error) {
+func (smDS *StateMachineDatasetAPI) UpdateVersion(ctx context.Context, versionUpdate *models.Version, versionDetails VersionDetails) (currentDataset *models.DatasetUpdate, currentVersion, combinedVersionUpdate *models.Version, err error) {
 	data := versionDetails.baseLogData()
 
 	reqID := ctx.Value(dprequest.RequestIdKey) // used to differentiate logs of concurrent calls to this function from different services
@@ -254,25 +186,18 @@ func (newDS *NewDatasetAPI) UpdateVersion(ctx context.Context, body io.ReadClose
 		return nil, nil, nil, err
 	}
 
-	// reads http header and creates struct for new versionNumber
-	versionUpdate, err := models.CreateVersion(body, versionDetails.datasetID)
-	if err != nil {
-		log.Error(ctx, "putVersion endpoint: failed to model version resource based on request", err, data)
-		return nil, nil, nil, errs.ErrUnableToParseJSON
-	}
-
-	currentDataset, err = newDS.dataStore.Backend.GetDataset(ctx, versionDetails.datasetID)
+	currentDataset, err = smDS.dataStore.Backend.GetDataset(ctx, versionDetails.datasetID)
 	if err != nil {
 		log.Error(ctx, "putVersion endpoint: datastore.getDataset returned an error", err, data)
 		return nil, nil, nil, err
 	}
 
-	if err = newDS.dataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
+	if err = smDS.dataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
 		log.Error(ctx, "putVersion endpoint: failed to find edition of dataset", err, data)
 		return nil, nil, nil, err
 	}
 
-	currentVersion, err = newDS.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+	currentVersion, err = smDS.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
 	if err != nil {
 		log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
 		return nil, nil, nil, err
@@ -294,12 +219,9 @@ func (newDS *NewDatasetAPI) UpdateVersion(ctx context.Context, body io.ReadClose
 			return err
 		}
 
-		newDS.stateMachine = NewStateMachine(currentVersion.State, castStateToState(versionUpdate.State), setAllowedStates(versionUpdate.State), versionUpdate)
-
-		err2 := newDS.stateMachine.Transition()
-		if err2 != nil {
-			fmt.Println("error found")
-			return err2
+		if err := smDS.stateMachine.Transition(versionUpdate, castStateToState(versionUpdate.State), currentDataset.Next.State); err != nil {
+			log.Error(ctx, "putVersion endpoint: state machine transition failed", err)
+			return err
 		}
 
 		eTag := headers.IfMatchAnyETag
@@ -307,7 +229,7 @@ func (newDS *NewDatasetAPI) UpdateVersion(ctx context.Context, body io.ReadClose
 			eTag = currentVersion.ETag
 		}
 
-		if _, err := newDS.dataStore.Backend.UpdateVersion(ctx, currentVersion, combinedVersionUpdate, eTag); err != nil {
+		if _, err := smDS.dataStore.Backend.UpdateVersion(ctx, currentVersion, combinedVersionUpdate, eTag); err != nil {
 			return err
 		}
 
@@ -315,12 +237,12 @@ func (newDS *NewDatasetAPI) UpdateVersion(ctx context.Context, body io.ReadClose
 	}
 
 	// acquire instance lock to prevent race conditions on instance collection
-	lockID, err := newDS.dataStore.Backend.AcquireInstanceLock(ctx, currentVersion.ID)
+	lockID, err := smDS.dataStore.Backend.AcquireInstanceLock(ctx, currentVersion.ID)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	defer func() {
-		newDS.dataStore.Backend.UnlockInstance(ctx, lockID)
+		smDS.dataStore.Backend.UnlockInstance(ctx, lockID)
 	}()
 
 	// Try to perform the update. If there was a race condition and another caller performed the update
@@ -332,7 +254,7 @@ func (newDS *NewDatasetAPI) UpdateVersion(ctx context.Context, body io.ReadClose
 	if err := doUpdate(); err != nil {
 		if err == errs.ErrDatasetNotFound {
 			log.Info(ctx, "instance document in database corresponding to dataset version was modified before the lock was acquired, retrying...", data)
-			currentVersion, err = newDS.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+			currentVersion, err = smDS.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
 			if err != nil {
 				log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
 				return nil, nil, nil, err
@@ -473,7 +395,7 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 	return &version, nil
 }
 
-func (newDS *NewDatasetAPI) publishVersion(
+func (smDS *StateMachineDatasetAPI) publishVersion(
 	ctx context.Context,
 	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
 	currentVersion *models.Version, // Called Instances in Mongo
@@ -483,7 +405,7 @@ func (newDS *NewDatasetAPI) publishVersion(
 	data := versionDetails.baseLogData()
 	log.Info(ctx, "attempting to publish version", data)
 	err := func() error {
-		editionDoc, err := newDS.dataStore.Backend.GetEdition(ctx, versionDetails.datasetID, versionDetails.edition, "")
+		editionDoc, err := smDS.dataStore.Backend.GetEdition(ctx, versionDetails.datasetID, versionDetails.edition, "")
 		if err != nil {
 			log.Error(ctx, "putVersion endpoint: failed to find the edition we're trying to update", err, data)
 			return err
@@ -497,12 +419,12 @@ func (newDS *NewDatasetAPI) publishVersion(
 
 		editionDoc.Current = editionDoc.Next
 
-		if err := newDS.dataStore.Backend.UpsertEdition(ctx, versionDetails.datasetID, versionDetails.edition, editionDoc); err != nil {
+		if err := smDS.dataStore.Backend.UpsertEdition(ctx, versionDetails.datasetID, versionDetails.edition, editionDoc); err != nil {
 			log.Error(ctx, "putVersion endpoint: failed to update edition during publishing", err, data)
 			return err
 		}
 
-		if err := newDS.dataStore.Backend.SetInstanceIsPublished(ctx, versionUpdate.ID); err != nil {
+		if err := smDS.dataStore.Backend.SetInstanceIsPublished(ctx, versionUpdate.ID); err != nil {
 			if user := dprequest.User(ctx); user != "" {
 				data[reqUser] = user
 			}
@@ -515,7 +437,7 @@ func (newDS *NewDatasetAPI) publishVersion(
 		}
 
 		// Pass in newVersion variable to include relevant data needed for update on dataset API (e.g. links)
-		if err := newDS.publishDataset(ctx, currentDataset, versionUpdate); err != nil {
+		if err := smDS.publishDataset(ctx, currentDataset, versionUpdate); err != nil {
 			log.Error(ctx, "putVersion endpoint: failed to update dataset document once version state changes to publish", err, data)
 			return err
 		}
@@ -530,7 +452,7 @@ func (newDS *NewDatasetAPI) publishVersion(
 			if err != nil {
 				return fmt.Errorf("error getting type of version: %w", err)
 			}
-			generator, ok := newDS.downloadGenerators[t]
+			generator, ok := smDS.downloadGenerators[t]
 			if !ok {
 				return fmt.Errorf("no downloader available for type %s", t)
 			}
@@ -556,7 +478,7 @@ func (newDS *NewDatasetAPI) publishVersion(
 	return nil
 }
 
-func (newDS *NewDatasetAPI) publishDataset(ctx context.Context, currentDataset *models.DatasetUpdate, version *models.Version) error {
+func (smDS *StateMachineDatasetAPI) publishDataset(ctx context.Context, currentDataset *models.DatasetUpdate, version *models.Version) error {
 	if version != nil {
 		currentDataset.Next.CollectionID = ""
 		currentDataset.Next.Links.LatestVersion = &models.LinkObject{
@@ -578,38 +500,10 @@ func (newDS *NewDatasetAPI) publishDataset(ctx context.Context, currentDataset *
 		Next:    currentDataset.Next,
 	}
 
-	if err := newDS.dataStore.Backend.UpsertDataset(ctx, currentDataset.ID, newDataset); err != nil {
+	if err := smDS.dataStore.Backend.UpsertDataset(ctx, currentDataset.ID, newDataset); err != nil {
 		log.Error(ctx, "unable to update dataset", err, log.Data{"dataset_id": currentDataset.ID})
 		return err
 	}
 
 	return nil
-}
-
-func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, data log.Data) {
-	var status int
-	switch {
-	case notFound[err]:
-		status = http.StatusNotFound
-	case badRequest[err]:
-		status = http.StatusBadRequest
-	case internalServerErrWithMessage[err]:
-		status = http.StatusInternalServerError
-	case strings.HasPrefix(err.Error(), "missing mandatory fields:"):
-		status = http.StatusBadRequest
-	case strings.HasPrefix(err.Error(), "invalid fields:"):
-		status = http.StatusBadRequest
-	case strings.HasPrefix(err.Error(), "invalid version requested"):
-		status = http.StatusBadRequest
-	default:
-		err = fmt.Errorf("%s: %w", errs.ErrInternalServer.Error(), err)
-		status = http.StatusInternalServerError
-	}
-
-	if data == nil {
-		data = log.Data{}
-	}
-
-	log.Error(ctx, "request unsuccessful", err, data)
-	http.Error(w, err.Error(), status)
 }

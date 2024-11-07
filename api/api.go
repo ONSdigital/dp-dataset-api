@@ -70,11 +70,11 @@ type DatasetAPI struct {
 	versionPublishedChecker  *PublishCheck
 	MaxRequestOptions        int
 	DisableNeptune           bool
-	newDatasetAPI            *application.NewDatasetAPI
+	smDatasetAPI             *application.StateMachineDatasetAPI
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
-func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions, permissions AuthHandler, newDatasetAPI *application.NewDatasetAPI) *DatasetAPI {
+func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions, permissions AuthHandler, newDatasetAPI *application.StateMachineDatasetAPI) *DatasetAPI {
 	api := &DatasetAPI{
 		dataStore:                dataStore,
 		host:                     cfg.DatasetAPIURL,
@@ -91,7 +91,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		instancePublishedChecker: nil,
 		MaxRequestOptions:        cfg.MaxRequestOptions,
 		DisableNeptune:           cfg.DisableGraphDBDependency,
-		newDatasetAPI:            newDatasetAPI,
+		smDatasetAPI:             newDatasetAPI,
 	}
 
 	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)
@@ -122,14 +122,20 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		api.enablePrivateInstancesEndpoints(instanceAPI, paginator)
 		api.enablePrivateDimensionsEndpoints(dimensionAPI, paginator)
 	} else {
+
+		instanceAPI := &instance.Store{
+			Host:                api.host,
+			Storer:              api.dataStore.Backend,
+			EnableDetachDataset: api.enableDetachDataset,
+		}
 		log.Info(ctx, "enabling only public endpoints for dataset api")
-		api.enablePublicEndpoints(paginator)
+		api.enablePublicEndpoints(paginator, instanceAPI)
 	}
 	return api
 }
 
 // enablePublicEndpoints register only the public GET endpoints.
-func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
+func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator, instanceAPI *instance.Store) {
 	api.get("/datasets", paginator.Paginate(api.getDatasets))
 	api.get("/datasets/{dataset_id}", api.getDataset)
 	api.get("/datasets/{dataset_id}/editions", paginator.Paginate(api.getEditions))
@@ -139,6 +145,12 @@ func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata", api.getMetadata)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", paginator.Paginate(api.getDimensions))
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", paginator.Paginate(api.getDimensionOptions))
+	api.post("/instances", instanceAPI.Add)
+	api.put("/instances/{instance_id}", instanceAPI.Update)
+	api.post("/datasets/{dataset_id}", api.addDataset)
+	api.put("/datasets/{dataset_id}", api.putDataset)
+	api.put("/datasets/{dataset_id}/editions/{edition}/versions/{version}", api.putVersion)
+
 }
 
 // enablePrivateDatasetEndpoints register the datasets endpoints with the appropriate authentication and authorisation

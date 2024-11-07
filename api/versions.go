@@ -242,7 +242,13 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		"version":   vars["version"],
 	}
 
-	err := api.newDatasetAPI.AmendVersion(w, r)
+	version, err := models.CreateVersion(r.Body, vars["dataset_id"])
+	if err != nil {
+		handleVersionAPIErr(ctx, err, w, data)
+		return
+	}
+
+	err = api.smDatasetAPI.AmendVersion(vars, version, r.Context())
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
