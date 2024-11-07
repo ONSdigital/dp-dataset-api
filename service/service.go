@@ -3,10 +3,12 @@ package service
 import (
 	"context"
 	"net/http"
+	"sync"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/api"
+	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	adapter "github.com/ONSdigital/dp-dataset-api/kafka"
@@ -48,6 +50,69 @@ type Service struct {
 	server                              HTTPServer
 	healthCheck                         HealthChecker
 	api                                 *api.DatasetAPI
+	smDS                                *application.StateMachineDatasetAPI
+}
+
+var stateMachine *application.StateMachine
+var stateMachineInit sync.Once
+
+func GetListTransitions() map[application.State]application.Transition {
+
+	publishedTransition := application.Transition{
+		Label:                "published",
+		TargetState:          application.Published{},
+		AlllowedSourceStates: []string{"associated"},
+	}
+
+	associatedTransition := application.Transition{
+		Label:                "associated",
+		TargetState:          application.Associated{},
+		AlllowedSourceStates: []string{"edition-confirmed"},
+	}
+
+	edconfirmedTransition := application.Transition{
+		Label:                "edition-confirmed",
+		TargetState:          application.EditionConfirmed{},
+		AlllowedSourceStates: []string{"completed"},
+	}
+
+	completedTransition := application.Transition{
+		Label:                "completed",
+		TargetState:          application.Completed{},
+		AlllowedSourceStates: []string{"submitted"},
+	}
+
+	submittedTransition := application.Transition{
+		Label:                "submitted",
+		TargetState:          application.Submitted{},
+		AlllowedSourceStates: []string{"created"},
+	}
+
+	failedTransition := application.Transition{
+		Label:                "failed",
+		TargetState:          application.Failed{},
+		AlllowedSourceStates: []string{"submitted"},
+	}
+
+	detachedTransition := application.Transition{
+		Label:                "detached",
+		TargetState:          application.Detached{},
+		AlllowedSourceStates: []string{"edition-confirmed"},
+	}
+
+	return map[application.State]application.Transition{application.Published{}: publishedTransition,
+		application.Associated{}: associatedTransition, application.EditionConfirmed{}: edconfirmedTransition,
+		application.Completed{}: completedTransition, application.Submitted{}: submittedTransition,
+		application.Detached{}: detachedTransition, application.Failed{}: failedTransition}
+}
+
+func GetStateMachine(dataStore store.DataStore, ctx context.Context) *application.StateMachine {
+	stateMachineInit.Do(func() {
+		states := map[string]application.State{"created": application.Created{}, "submitted": application.Submitted{}, "completed": application.Created{}, "edition-confirmed": application.EditionConfirmed{}, "associated": application.Associated{}, "published": application.Published{}}
+		transitions := GetListTransitions()
+		stateMachine = application.NewStateMachine(states, transitions, dataStore, ctx)
+	})
+	return stateMachine
 }
 
 // New creates a new service
@@ -97,6 +162,8 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		log.Error(ctx, "could not obtain mongo session", err)
 		return err
 	}
+
+	//sm2 := application.NewThisStateMachine()
 
 	// Get graphDB connection for observation store
 	if !svc.config.EnablePrivateEndpoints || svc.config.DisableGraphDBDependency {
@@ -154,6 +221,15 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		models.Nomis:                       downloadGeneratorCMD,
 	}
 
+	newdownloadGenerators := map[models.DatasetType]application.DownloadsGenerator{
+		models.CantabularBlob:              downloadGeneratorCantabular,
+		models.CantabularTable:             downloadGeneratorCantabular,
+		models.CantabularFlexibleTable:     downloadGeneratorCantabular,
+		models.CantabularMultivariateTable: downloadGeneratorCantabular,
+		models.Filterable:                  downloadGeneratorCMD,
+		models.Nomis:                       downloadGeneratorCMD,
+	}
+
 	// Get Identity Client (only if private endpoints are enabled)
 	if svc.config.EnablePrivateEndpoints {
 		svc.identityClient = clientsidentity.New(svc.config.ZebedeeURL)
@@ -183,7 +259,9 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	// Create Dataset API
 	urlBuilder := url.NewBuilder(svc.config.WebsiteURL)
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions)
+	sm := GetStateMachine(ds, ctx)
+	svc.smDS = application.Setup(ctx, r, ds, newdownloadGenerators, sm)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, svc.smDS)
 
 	svc.healthCheck.Start(ctx)
 

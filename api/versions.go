@@ -235,39 +235,23 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	versionDetails := VersionDetails{
-		datasetID: vars["dataset_id"],
-		edition:   vars["edition"],
-		version:   vars["version"],
-	}
+
 	data := log.Data{
 		"datasetID": vars["dataset_id"],
 		"edition":   vars["edition"],
 		"version":   vars["version"],
 	}
 
-	currentDataset, currentVersion, versionUpdate, err := api.updateVersion(ctx, r.Body, versionDetails)
+	version, err := models.CreateVersion(r.Body, vars["dataset_id"])
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
 	}
 
-	// If update was to add downloads do not try to publish/associate version
-	if vars[hasDownloads] != trueStringified {
-		data["updated_state"] = versionUpdate.State
-		if versionUpdate.State == models.PublishedState {
-			if err := api.publishVersion(ctx, currentDataset, currentVersion, versionUpdate, versionDetails); err != nil {
-				handleVersionAPIErr(ctx, err, w, data)
-				return
-			}
-		}
-
-		if versionUpdate.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
-			if err := api.associateVersion(ctx, currentVersion, versionUpdate, versionDetails); err != nil {
-				handleVersionAPIErr(ctx, err, w, data)
-				return
-			}
-		}
+	err = api.smDatasetAPI.AmendVersion(vars, version, r.Context())
+	if err != nil {
+		handleVersionAPIErr(ctx, err, w, data)
+		return
 	}
 
 	setJSONContentType(w)

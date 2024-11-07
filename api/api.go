@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/ONSdigital/dp-authorisation/auth"
+	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
 	"github.com/ONSdigital/dp-dataset-api/instance"
@@ -68,10 +69,12 @@ type DatasetAPI struct {
 	instancePublishedChecker *instance.PublishCheck
 	versionPublishedChecker  *PublishCheck
 	MaxRequestOptions        int
+	DisableNeptune           bool
+	smDatasetAPI             *application.StateMachineDatasetAPI
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
-func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions, permissions AuthHandler) *DatasetAPI {
+func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions, permissions AuthHandler, newDatasetAPI *application.StateMachineDatasetAPI) *DatasetAPI {
 	api := &DatasetAPI{
 		dataStore:                dataStore,
 		host:                     cfg.DatasetAPIURL,
@@ -87,6 +90,8 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		versionPublishedChecker:  nil,
 		instancePublishedChecker: nil,
 		MaxRequestOptions:        cfg.MaxRequestOptions,
+		DisableNeptune:           cfg.DisableGraphDBDependency,
+		smDatasetAPI:             newDatasetAPI,
 	}
 
 	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)
