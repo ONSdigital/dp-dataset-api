@@ -56,7 +56,7 @@ type Service struct {
 var stateMachine *application.StateMachine
 var stateMachineInit sync.Once
 
-func GetListTransitions() map[application.State]application.Transition {
+func GetListTransitions() []application.Transition {
 
 	publishedTransition := application.Transition{
 		Label:                "published",
@@ -100,15 +100,15 @@ func GetListTransitions() map[application.State]application.Transition {
 		AlllowedSourceStates: []string{"edition-confirmed"},
 	}
 
-	return map[application.State]application.Transition{application.Published{}: publishedTransition,
-		application.Associated{}: associatedTransition, application.EditionConfirmed{}: edconfirmedTransition,
-		application.Completed{}: completedTransition, application.Submitted{}: submittedTransition,
-		application.Detached{}: detachedTransition, application.Failed{}: failedTransition}
+	return []application.Transition{publishedTransition,
+		associatedTransition, edconfirmedTransition,
+		completedTransition, submittedTransition,
+		detachedTransition, failedTransition}
 }
 
 func GetStateMachine(dataStore store.DataStore, ctx context.Context) *application.StateMachine {
 	stateMachineInit.Do(func() {
-		states := map[string]application.State{"created": application.Created{}, "submitted": application.Submitted{}, "completed": application.Created{}, "edition-confirmed": application.EditionConfirmed{}, "associated": application.Associated{}, "published": application.Published{}}
+		states := []application.State{application.Created{}, application.Submitted{}, application.Completed{}, application.EditionConfirmed{}, application.Associated{}, application.Published{}}
 		transitions := GetListTransitions()
 		stateMachine = application.NewStateMachine(states, transitions, dataStore, ctx)
 	})
@@ -162,9 +162,6 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		log.Error(ctx, "could not obtain mongo session", err)
 		return err
 	}
-
-	//sm2 := application.NewThisStateMachine()
-
 	// Get graphDB connection for observation store
 	if !svc.config.EnablePrivateEndpoints || svc.config.DisableGraphDBDependency {
 		log.Info(ctx, "skipping graph DB client creation, because it is not required by the enabled endpoints", log.Data{
@@ -221,13 +218,13 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		models.Nomis:                       downloadGeneratorCMD,
 	}
 
-	newdownloadGenerators := map[models.DatasetType]application.DownloadsGenerator{
+	smDownloadGenerators := map[models.DatasetType]application.DownloadsGenerator{
 		models.CantabularBlob:              downloadGeneratorCantabular,
 		models.CantabularTable:             downloadGeneratorCantabular,
 		models.CantabularFlexibleTable:     downloadGeneratorCantabular,
 		models.CantabularMultivariateTable: downloadGeneratorCantabular,
 		models.Filterable:                  downloadGeneratorCMD,
-		models.Nomis:                       downloadGeneratorCMD,
+		models.Nomis:                       nil,
 	}
 
 	// Get Identity Client (only if private endpoints are enabled)
@@ -260,7 +257,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	urlBuilder := url.NewBuilder(svc.config.WebsiteURL)
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
 	sm := GetStateMachine(ds, ctx)
-	svc.smDS = application.Setup(ctx, r, ds, newdownloadGenerators, sm)
+	svc.smDS = application.Setup(ctx, r, ds, smDownloadGenerators, sm)
 	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, svc.smDS)
 
 	svc.healthCheck.Start(ctx)

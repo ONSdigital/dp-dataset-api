@@ -16,7 +16,7 @@ type State interface {
 
 type StateMachine struct {
 	states      map[string]State
-	transitions map[State]Transition
+	transitions map[string][]string
 	dataStore   store.DataStore
 	ctx         context.Context
 }
@@ -31,17 +31,14 @@ func (sm *StateMachine) Transition(combinedVersionUpdate *models.Version, newsta
 
 	match := false
 
-	fmt.Println("The new state is")
-	fmt.Println(newstate)
-	for state, trasitions := range sm.transitions {
+	for state, transitions := range sm.transitions {
 		fmt.Println(state)
-		fmt.Println(trasitions)
-		if state == newstate {
+		fmt.Println(transitions)
+
+		if state == newstate.String() {
 			fmt.Println("The states match")
-			for i := 0; i < len(trasitions.AlllowedSourceStates); i++ {
-				fmt.Println(trasitions.AlllowedSourceStates[i])
-				fmt.Println(previousState)
-				if previousState == trasitions.AlllowedSourceStates[i] {
+			for i := 0; i < len(transitions); i++ {
+				if previousState == transitions[i] {
 					match = true
 				}
 			}
@@ -63,10 +60,23 @@ func (sm *StateMachine) Transition(combinedVersionUpdate *models.Version, newsta
 
 }
 
-func NewStateMachine(states map[string]State, transitions map[State]Transition, dataStore store.DataStore, ctx context.Context) *StateMachine {
+func NewStateMachine(states []State, transitions []Transition, dataStore store.DataStore, ctx context.Context) *StateMachine {
+
+	statesMap := make(map[string]State)
+	for _, state := range states {
+		statesMap[state.String()] = state
+	}
+
+	transitionsMap := make(map[string][]string)
+	for _, transition := range transitions {
+		transitionsMap[transition.TargetState.String()] = transition.AlllowedSourceStates
+	}
+
+	fmt.Println("The transitions map is")
+	fmt.Println(transitionsMap)
 	sm := &StateMachine{
-		states:      states,
-		transitions: transitions,
+		states:      statesMap,
+		transitions: transitionsMap,
 		dataStore:   dataStore,
 		ctx:         ctx,
 	}
