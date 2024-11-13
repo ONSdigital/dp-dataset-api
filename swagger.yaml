@@ -3,7 +3,9 @@ info:
   description: "Used to find information about data published by the ONS.
   `Datasets` are published in unique `versions`, which are categorized by `edition`.
   Data in each version is broken down by `dimensions`, and a unique combination
-  of dimension `options` in a version can be used to retrieve `observation` level data."
+  of dimension `options` in a version can be used to retrieve `observation` level data.
+  
+  Note: As of the latest update, the `@context` field has been removed from all dataset endpoints to improve response performance and correct data structure."
   version: "1.0.0"
   title: "Explore our data"
   license:
