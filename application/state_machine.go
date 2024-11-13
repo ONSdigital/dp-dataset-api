@@ -10,7 +10,11 @@ import (
 )
 
 type State interface {
-	Enter(combinedVersionUpdate *models.Version, l *StateMachine) error
+	Enter(combinedVersionUpdate *models.Version, l *StateMachine, smDS *StateMachineDatasetAPI, ctx context.Context,
+		currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
+		currentVersion *models.Version, // Called Instances in Mongo
+		versionUpdate *models.Version, // Next version, that is the new version
+		versionDetails VersionDetails) error
 	String() string
 }
 
@@ -27,19 +31,49 @@ type Transition struct {
 	AlllowedSourceStates []string
 }
 
-func (sm *StateMachine) Transition(combinedVersionUpdate *models.Version, newstate State, previousState string) error {
+func castStateToState(state string) State {
+
+	switch s := state; s {
+	case "published":
+		return Published{}
+	case "associated":
+		return Associated{}
+	case "created":
+		return Created{}
+	case "completed":
+		return Completed{}
+	case "edition-confirmed":
+		return EditionConfirmed{}
+	case "detached":
+		return Detached{}
+	case "submitted":
+		return Submitted{}
+	case "failed":
+		return Failed{}
+	default:
+		return nil
+	}
+}
+
+func (sm *StateMachine) Transition(combinedVersionUpdate *models.Version, newState string, previousState string, smDS *StateMachineDatasetAPI, ctx context.Context,
+	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
+	currentVersion *models.Version, // Called Instances in Mongo
+	versionUpdate *models.Version, // Next version, that is the new version
+	versionDetails VersionDetails) error {
 
 	match := false
+	var nextState State
 
 	for state, transitions := range sm.transitions {
 		fmt.Println(state)
 		fmt.Println(transitions)
 
-		if state == newstate.String() {
+		if state == newState {
 			fmt.Println("The states match")
 			for i := 0; i < len(transitions); i++ {
 				if previousState == transitions[i] {
 					match = true
+					nextState = castStateToState(newState)
 				}
 			}
 		}
@@ -52,7 +86,11 @@ func (sm *StateMachine) Transition(combinedVersionUpdate *models.Version, newsta
 	}
 
 	fmt.Println("Previous state is allowed it's ok")
-	err := newstate.Enter(combinedVersionUpdate, sm)
+	err := nextState.Enter(combinedVersionUpdate, sm, smDS, ctx,
+		currentDataset, // Called Dataset in Mongo
+		currentVersion, // Called Instances in Mongo
+		versionUpdate,  // Next version, that is the new version
+		versionDetails)
 	if err != nil {
 		return err
 	}
