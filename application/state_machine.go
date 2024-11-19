@@ -9,19 +9,23 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 )
 
-type State interface {
-	Enter(combinedVersionUpdate *models.Version, l *StateMachine, smDS *StateMachineDatasetAPI, ctx context.Context,
+type State struct {
+	Name      string
+	EnterFunc func(smDS *StateMachineDatasetAPI, ctx context.Context,
 		currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
 		currentVersion *models.Version, // Called Instances in Mongo
 		versionUpdate *models.Version, // Next version, that is the new version
 		versionDetails VersionDetails) error
-	String() string
+}
+
+func (s State) String() string {
+	return s.Name
 }
 
 type StateMachine struct {
 	states      map[string]State
 	transitions map[string][]string
-	dataStore   store.DataStore
+	DataStore   store.DataStore
 	ctx         context.Context
 }
 
@@ -31,49 +35,50 @@ type Transition struct {
 	AlllowedSourceStates []string
 }
 
-func castStateToState(state string) State {
+func castStateToState(state string) *State {
 
 	switch s := state; s {
 	case "published":
-		return Published{}
+		return &Published
 	case "associated":
-		return Associated{}
+		return &Associated
 	case "created":
-		return Created{}
+		return &Created
 	case "completed":
-		return Completed{}
+		return &Completed
 	case "edition-confirmed":
-		return EditionConfirmed{}
+		return &EditionConfirmed
 	case "detached":
-		return Detached{}
+		return &Detached
 	case "submitted":
-		return Submitted{}
+		return &Submitted
 	case "failed":
-		return Failed{}
+		return &Failed
 	default:
 		return nil
 	}
 }
 
-func (sm *StateMachine) Transition(combinedVersionUpdate *models.Version, newState string, previousState string, smDS *StateMachineDatasetAPI, ctx context.Context,
+func (sm *StateMachine) Transition(smDS *StateMachineDatasetAPI, ctx context.Context,
 	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails) error {
 
 	match := false
-	var nextState State
+	var nextState *State
 
 	for state, transitions := range sm.transitions {
-		fmt.Println(state)
-		fmt.Println(transitions)
 
-		if state == newState {
-			fmt.Println("The states match")
+		if state == versionUpdate.State {
 			for i := 0; i < len(transitions); i++ {
-				if previousState == transitions[i] {
+				if currentVersion.State == transitions[i] {
 					match = true
-					nextState = castStateToState(newState)
+					nextState = castStateToState(versionUpdate.State)
+					if nextState == nil {
+						return errors.New("incorrect state value")
+					}
+					break
 				}
 			}
 		}
@@ -85,8 +90,7 @@ func (sm *StateMachine) Transition(combinedVersionUpdate *models.Version, newSta
 		return errors.New("invalid state")
 	}
 
-	fmt.Println("Previous state is allowed it's ok")
-	err := nextState.Enter(combinedVersionUpdate, sm, smDS, ctx,
+	err := nextState.EnterFunc(smDS, ctx,
 		currentDataset, // Called Dataset in Mongo
 		currentVersion, // Called Instances in Mongo
 		versionUpdate,  // Next version, that is the new version
@@ -110,12 +114,10 @@ func NewStateMachine(states []State, transitions []Transition, dataStore store.D
 		transitionsMap[transition.TargetState.String()] = transition.AlllowedSourceStates
 	}
 
-	fmt.Println("The transitions map is")
-	fmt.Println(transitionsMap)
 	sm := &StateMachine{
 		states:      statesMap,
 		transitions: transitionsMap,
-		dataStore:   dataStore,
+		DataStore:   dataStore,
 		ctx:         ctx,
 	}
 

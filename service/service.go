@@ -60,43 +60,43 @@ func GetListTransitions() []application.Transition {
 
 	publishedTransition := application.Transition{
 		Label:                "published",
-		TargetState:          application.Published{},
+		TargetState:          application.Published,
 		AlllowedSourceStates: []string{"associated"},
 	}
 
 	associatedTransition := application.Transition{
 		Label:                "associated",
-		TargetState:          application.Associated{},
-		AlllowedSourceStates: []string{"edition-confirmed"},
+		TargetState:          application.Associated,
+		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
 	}
 
 	edconfirmedTransition := application.Transition{
 		Label:                "edition-confirmed",
-		TargetState:          application.EditionConfirmed{},
-		AlllowedSourceStates: []string{"completed"},
+		TargetState:          application.EditionConfirmed,
+		AlllowedSourceStates: []string{"completed", "edition-confirmed"},
 	}
 
 	completedTransition := application.Transition{
 		Label:                "completed",
-		TargetState:          application.Completed{},
-		AlllowedSourceStates: []string{"submitted"},
+		TargetState:          application.Completed,
+		AlllowedSourceStates: []string{"submitted", "completed"},
 	}
 
 	submittedTransition := application.Transition{
 		Label:                "submitted",
-		TargetState:          application.Submitted{},
-		AlllowedSourceStates: []string{"created"},
+		TargetState:          application.Submitted,
+		AlllowedSourceStates: []string{"created", "submitted"},
 	}
 
 	failedTransition := application.Transition{
 		Label:                "failed",
-		TargetState:          application.Failed{},
+		TargetState:          application.Failed,
 		AlllowedSourceStates: []string{"submitted"},
 	}
 
 	detachedTransition := application.Transition{
 		Label:                "detached",
-		TargetState:          application.Detached{},
+		TargetState:          application.Detached,
 		AlllowedSourceStates: []string{"edition-confirmed"},
 	}
 
@@ -107,8 +107,9 @@ func GetListTransitions() []application.Transition {
 }
 
 func GetStateMachine(dataStore store.DataStore, ctx context.Context) *application.StateMachine {
+
 	stateMachineInit.Do(func() {
-		states := []application.State{application.Created{}, application.Submitted{}, application.Completed{}, application.EditionConfirmed{}, application.Associated{}, application.Published{}}
+		states := []application.State{application.Published, application.Submitted, application.Completed, application.EditionConfirmed, application.Associated, application.Created, application.Failed, application.Detached}
 		transitions := GetListTransitions()
 		stateMachine = application.NewStateMachine(states, transitions, dataStore, ctx)
 	})

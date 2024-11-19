@@ -43,9 +43,8 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.52.0
 )
 
-require github.com/gorilla/handlers v1.5.2
-
 require (
+	github.com/ONSdigital/dp-api-clients-go v1.43.0
 	github.com/ONSdigital/dp-mongodb-in-memory v1.7.0 // indirect
 	github.com/ONSdigital/dp-net/v2 v2.11.2
 	github.com/ONSdigital/golang-neo4j-bolt-driver v0.0.0-20210408132126-c2323ff08bf1 // indirect
