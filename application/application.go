@@ -78,6 +78,14 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(vars map[string]string, version
 		"version":   vars["version"],
 	}
 
+	lockID, error := smDS.DataStore.Backend.AcquireInstanceLock(ctx, version.ID)
+	if error != nil {
+		return error
+	}
+	defer func() {
+		smDS.DataStore.Backend.UnlockInstance(ctx, lockID)
+	}()
+
 	currentDataset, currentVersion, versionUpdate, err := smDS.PopulateVersionInfo(ctx, version, versionDetails)
 	if err != nil {
 		log.Error(ctx, "amendVersion: creating models failed", err)
@@ -411,41 +419,46 @@ func PublishVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
 		fmt.Println("Validation Failed")
 		fmt.Println(errModel)
 		return errModel
-	} else {
-		fmt.Println("Validation passed, continue")
-		data := versionDetails.baseLogData()
-
-		err := UpdateVersionInfo(smDS, ctx, currentVersion, versionUpdate)
-		if err != nil {
-			log.Error(ctx, "State machine - Publish: UpdateVersionInfo : failed to update the version", err, data)
-			return err
-		}
-
-		log.Info(ctx, "attempting to publish edition", data)
-		err = PublishEdition(smDS, ctx, versionUpdate, versionDetails, data)
-		if err != nil {
-			log.Error(ctx, "State machine - Publish: PublishEdition : failed to publish edition", err, data)
-			return err
-		}
-
-		// This is only applicable to CMD datasets
-		if currentVersion.Type == "v4" {
-			err = PublishCMDInstance(smDS, ctx, versionUpdate, data)
-			if err != nil {
-				log.Error(ctx, "State machine - Publish: PublishInstance : failed to publish instance", err, data)
-				return err
-			}
-		}
-
-		err = PublishDataset(smDS, ctx, currentDataset, currentVersion, versionUpdate, versionDetails, data)
-		if err != nil {
-			log.Error(ctx, "State machine - Publish: PublishDataset : failed to publish dataset", err, data)
-			return err
-		}
-
-		return nil
-
 	}
+	fmt.Println("Validation passed, continue")
+	data := versionDetails.baseLogData()
+
+	err := UpdateVersionInfo(smDS, ctx, currentVersion, versionUpdate)
+	if err != nil {
+		log.Error(ctx, "State machine - Publish: UpdateVersionInfo : failed to update the version", err, data)
+		return err
+	}
+
+	log.Info(ctx, "attempting to publish edition", data)
+	err = PublishEdition(smDS, ctx, versionUpdate, versionDetails, data)
+	if err != nil {
+		log.Error(ctx, "State machine - Publish: PublishEdition : failed to publish edition", err, data)
+		return err
+	}
+
+	// This is only applicable to CMD datasets
+	dsType, err := models.GetDatasetType(currentVersion.Type)
+	if err != nil {
+		log.Error(ctx, "State machine - Publish: PublishEdition : failed to get dataset type", err, data)
+		return err
+	}
+
+	if dsType == models.Filterable {
+		err = PublishCMDInstance(smDS, ctx, versionUpdate, data)
+		if err != nil {
+			log.Error(ctx, "State machine - Publish: PublishInstance : failed to publish instance", err, data)
+			return err
+		}
+	}
+
+	err = PublishDataset(smDS, ctx, currentDataset, currentVersion, versionUpdate, versionDetails, data)
+	if err != nil {
+		log.Error(ctx, "State machine - Publish: PublishDataset : failed to publish dataset", err, data)
+		return err
+	}
+
+	return nil
+
 }
 
 func CompleteVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
@@ -481,13 +494,13 @@ func UpdateVersionInfo(smDS *StateMachineDatasetAPI, ctx context.Context,
 		eTag = currentVersion.ETag
 	}
 
-	lockID, error := smDS.DataStore.Backend.AcquireInstanceLock(ctx, currentVersion.ID)
-	if error != nil {
-		return error
-	}
-	defer func() {
-		smDS.DataStore.Backend.UnlockInstance(ctx, lockID)
-	}()
+	// lockID, error := smDS.DataStore.Backend.AcquireInstanceLock(ctx, currentVersion.ID)
+	// if error != nil {
+	// 	return error
+	// }
+	// defer func() {
+	// 	smDS.DataStore.Backend.UnlockInstance(ctx, lockID)
+	// }()
 
 	if _, errVersion := smDS.DataStore.Backend.UpdateVersion(ctx, currentVersion, versionUpdate, eTag); errVersion != nil {
 		return errVersion

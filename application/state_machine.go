@@ -35,27 +35,27 @@ type Transition struct {
 	AlllowedSourceStates []string
 }
 
-func castStateToState(state string) *State {
+func castStateToState(state string) (*State, bool) {
 
 	switch s := state; s {
 	case "published":
-		return &Published
+		return &Published, true
 	case "associated":
-		return &Associated
+		return &Associated, true
 	case "created":
-		return &Created
+		return &Created, true
 	case "completed":
-		return &Completed
+		return &Completed, true
 	case "edition-confirmed":
-		return &EditionConfirmed
+		return &EditionConfirmed, true
 	case "detached":
-		return &Detached
+		return &Detached, true
 	case "submitted":
-		return &Submitted
+		return &Submitted, true
 	case "failed":
-		return &Failed
+		return &Failed, true
 	default:
-		return nil
+		return nil, false
 	}
 }
 
@@ -67,6 +67,7 @@ func (sm *StateMachine) Transition(smDS *StateMachineDatasetAPI, ctx context.Con
 
 	match := false
 	var nextState *State
+	var ok bool
 
 	for state, transitions := range sm.transitions {
 
@@ -74,8 +75,8 @@ func (sm *StateMachine) Transition(smDS *StateMachineDatasetAPI, ctx context.Con
 			for i := 0; i < len(transitions); i++ {
 				if currentVersion.State == transitions[i] {
 					match = true
-					nextState = castStateToState(versionUpdate.State)
-					if nextState == nil {
+					nextState, ok = castStateToState(versionUpdate.State)
+					if !ok {
 						return errors.New("incorrect state value")
 					}
 					break
