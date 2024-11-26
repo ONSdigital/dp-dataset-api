@@ -31,6 +31,7 @@ const (
 	CantabularBlob
 	CantabularFlexibleTable
 	CantabularMultivariateTable
+	Static
 	Invalid
 )
 
@@ -41,6 +42,7 @@ var datasetTypes = []string{
 	"cantabular_blob",
 	"cantabular_flexible_table",
 	"cantabular_multivariate_table",
+	"static",
 	"invalid",
 }
 
@@ -63,6 +65,8 @@ func GetDatasetType(datasetType string) (DatasetType, error) {
 		return CantabularFlexibleTable, nil
 	case "cantabular_multivariate_table":
 		return CantabularMultivariateTable, nil
+	case "static":
+		return Static, nil
 	default:
 		return Invalid, errs.ErrDatasetTypeInvalid
 	}

@@ -203,6 +203,13 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 				api.addDataset)),
 	)
 
+	api.post(
+		"/datasets",
+		api.isAuthenticated(
+			api.isAuthorisedForDatasets(createPermission,
+				api.addDatasetNew)),
+	)
+
 	api.put(
 		"/datasets/{dataset_id}",
 		api.isAuthenticated(
