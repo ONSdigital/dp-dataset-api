@@ -11,6 +11,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
+	"github.com/ONSdigital/dp-net/v2/links"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 )
@@ -79,11 +80,13 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
-	if authorised {
-		return datasets, totalCount, nil
+	datasetsResponse, err := mapResultsAndRewriteLinks(ctx, datasets, authorised)
+	if err != nil {
+		log.Error(ctx, "Error mapping results and rewriting links", err)
+		return nil, 0, err
 	}
 
-	return mapResults(datasets), totalCount, nil
+	return datasetsResponse, totalCount, nil
 }
 
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
@@ -499,16 +502,94 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "delete dataset", logData)
 }
 
-func mapResults(results []*models.DatasetUpdate) []*models.Dataset {
+func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpdate, authorised bool) ([]*models.Dataset, error) {
 	items := []*models.Dataset{}
 	for _, item := range results {
+		if authorised && item.Current == nil && item.Next != nil {
+			item.Next.ID = item.ID
+			err := rewriteAllLinks(ctx, item.Next.Links)
+			if err != nil {
+				log.Error(ctx, "unable to rewrite 'next' links", err)
+				return nil, err
+			}
+			items = append(items, item.Next)
+			continue
+		}
+
 		if item.Current == nil {
 			continue
 		}
+
 		item.Current.ID = item.ID
+		err := rewriteAllLinks(ctx, item.Current.Links)
+		if err != nil {
+			log.Error(ctx, "unable to rewrite 'current' links", err)
+			return nil, err
+		}
 		items = append(items, item.Current)
+
+		if authorised && item.Next != nil {
+			item.Next.ID = item.ID
+			err := rewriteAllLinks(ctx, item.Next.Links)
+			if err != nil {
+				log.Error(ctx, "unable to rewrite 'next' links", err)
+				return nil, err
+			}
+			items = append(items, item.Next)
+		}
 	}
-	return items
+
+	return items, nil
+
+}
+
+func rewriteAllLinks(ctx context.Context, oldLinks *models.DatasetLinks) error {
+	if oldLinks.AccessRights != nil && oldLinks.AccessRights.HRef != "" {
+		accessRights, err := links.URLBuild(ctx, oldLinks.AccessRights.HRef)
+		if err != nil {
+			log.Error(ctx, "error rewriting AccessRights link", err)
+			return err
+		}
+		oldLinks.AccessRights.HRef = accessRights
+	}
+
+	if oldLinks.Editions != nil && oldLinks.Editions.HRef != "" {
+		editions, err := links.URLBuild(ctx, oldLinks.Editions.HRef)
+		if err != nil {
+			log.Error(ctx, "error rewriting Editions link", err)
+			return err
+		}
+		oldLinks.Editions.HRef = editions
+	}
+
+	if oldLinks.LatestVersion != nil && oldLinks.LatestVersion.HRef != "" {
+		latestVersion, err := links.URLBuild(ctx, oldLinks.LatestVersion.HRef)
+		if err != nil {
+			log.Error(ctx, "error rewriting LatestVersion link", err)
+			return err
+		}
+		oldLinks.LatestVersion.HRef = latestVersion
+	}
+
+	if oldLinks.Self != nil && oldLinks.Self.HRef != "" {
+		self, err := links.URLBuild(ctx, oldLinks.Self.HRef)
+		if err != nil {
+			log.Error(ctx, "error rewriting Self link", err)
+			return err
+		}
+		oldLinks.Self.HRef = self
+	}
+
+	if oldLinks.Taxonomy != nil && oldLinks.Taxonomy.HRef != "" {
+		taxonomy, err := links.URLBuild(ctx, oldLinks.Taxonomy.HRef)
+		if err != nil {
+			log.Error(ctx, "error rewriting Taxonomy link", err)
+			return err
+		}
+		oldLinks.Taxonomy.HRef = taxonomy
+	}
+
+	return nil
 }
 
 func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, data log.Data) {
