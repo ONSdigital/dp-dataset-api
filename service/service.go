@@ -18,6 +18,7 @@ import (
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dphandlers "github.com/ONSdigital/dp-net/v2/handlers"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
+	"github.com/ONSdigital/dp-net/v2/links"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
@@ -171,7 +172,10 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 
 	// Get HTTP router and server with middleware
 	r := mux.NewRouter()
-	m := svc.createMiddleware(svc.config)
+	m, err := svc.createMiddleware(svc.config)
+	if err != nil {
+		return errors.Wrap(err, "unable to create middleware")
+	}
 
 	if svc.config.OtelEnabled {
 		r.Use(otelmux.Middleware(svc.config.OTServiceName))
@@ -233,7 +237,7 @@ func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (d
 
 // CreateMiddleware creates an Alice middleware chain of handlers
 // to forward collectionID from cookie from header
-func (svc *Service) createMiddleware(cfg *config.Configuration) alice.Chain {
+func (svc *Service) createMiddleware(cfg *config.Configuration) (alice.Chain, error) {
 	// healthcheck
 	healthcheckHandler := newMiddleware(svc.healthCheck.Handler, "/health")
 	middleware := alice.New(healthcheckHandler)
@@ -243,10 +247,17 @@ func (svc *Service) createMiddleware(cfg *config.Configuration) alice.Chain {
 		middleware = middleware.Append(dphandlers.IdentityWithHTTPClient(svc.identityClient))
 	}
 
+	// middleware for links
+	linksMiddleware, err := links.NewMiddleWare(cfg.DatasetAPIURL)
+	if err != nil {
+		return alice.Chain{}, errors.Wrap(err, "error creating links middleware")
+	}
+	middleware = middleware.Append(linksMiddleware)
+
 	// collection ID
 	middleware = middleware.Append(dphandlers.CheckHeader(dphandlers.CollectionID))
 
-	return middleware
+	return middleware, nil
 }
 
 // newMiddleware creates a new http.Handler to intercept /health requests.
