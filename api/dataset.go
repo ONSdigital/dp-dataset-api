@@ -87,8 +87,6 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
-	pathPrefix := r.Header.Get("X-Forwarded-Path-Prefix")
-	ctx = context.WithValue(ctx, ctxPathPrefix, pathPrefix)
 	datasetsResponse, err := mapResultsAndRewriteLinks(ctx, datasets, authorised)
 	if err != nil {
 		log.Error(ctx, "Error mapping results and rewriting links", err)
@@ -115,8 +113,6 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 		var b []byte
 
-		pathPrefix := r.Header.Get("X-Forwarded-Path-Prefix")
-		ctx = context.WithValue(ctx, ctxPathPrefix, pathPrefix)
 		datasetResponse, err := mapResultsAndRewriteLinks(ctx, []*models.DatasetUpdate{dataset}, authorised)
 		if err != nil {
 			log.Error(ctx, "Error mapping results and rewriting links", err)
@@ -606,20 +602,9 @@ func URLBuild(ctx context.Context, oldURL string) (string, error) {
 
 	fmt.Printf("\nOld URL: %s\n", parsedURL.String())
 
-	newPathPrefix := ctx.Value(ctxPathPrefix).(string)
-
-	var newUrl string
-
-	if newPathPrefix != "" {
-		newUrl, err = url.JoinPath(parsedAPIDomainUrl.String(), newPathPrefix, parsedURL.Path)
-		if err != nil {
-			return "", fmt.Errorf("error joining paths: %v", err)
-		}
-	} else {
-		newUrl, err = url.JoinPath(parsedAPIDomainUrl.String(), parsedURL.Path)
-		if err != nil {
-			return "", fmt.Errorf("error joining paths: %v", err)
-		}
+	newUrl, err := url.JoinPath(parsedAPIDomainUrl.String(), parsedURL.Path)
+	if err != nil {
+		return "", fmt.Errorf("error joining paths: %v", err)
 	}
 
 	fmt.Printf("New URL: %s\n", newUrl)

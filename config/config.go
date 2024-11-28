@@ -84,7 +84,7 @@ func Get() (*Configuration, error) {
 		CantabularExportStartTopic:     "cantabular-export-start",
 		CodeListAPIURL:                 "http://localhost:22400",
 		DatasetAPIURL:                  "http://localhost:22000",
-		APIDomainUrl:                   "https://api.beta.ons.gov.uk",
+		APIDomainUrl:                   "https://api.beta.ons.gov.uk/v1",
 		WebsiteURL:                     "http://localhost:20000",
 		ZebedeeURL:                     "http://localhost:8082",
 		ServiceAuthToken:               "FD0108EA-825D-411C-9B1D-41EF7727F465",
