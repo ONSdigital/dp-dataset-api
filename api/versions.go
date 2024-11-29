@@ -88,6 +88,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 			return nil, 0, err
 		}
 
+		// TODO - rewrite links before returning results, Download links also included here
 		results, totalCount, err := api.dataStore.Backend.GetVersions(ctx, datasetID, edition, state, offset, limit)
 		if err != nil {
 			log.Error(ctx, "failed to find any versions for dataset edition", err, logData)
@@ -172,6 +173,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
+		// TODO - rewrite links before returning results, Download links also included here
 		version, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionID, state)
 		if err != nil {
 			log.Error(ctx, "failed to find version for dataset edition", err, logData)

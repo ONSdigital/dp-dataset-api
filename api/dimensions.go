@@ -78,6 +78,8 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 			slicedResults = utils.Slice(results, offset, limit)
 		}
 
+		// TODO - rewrite links before returning results
+
 		return slicedResults, len(dimensions), nil
 	}()
 	if err != nil {
@@ -209,6 +211,8 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		results[i].Links.Version.HRef = versionHref
 		results[i].Links.Version.ID = versionID
 	}
+
+	// TODO - rewrite links before returning results
 
 	return results, totalCount, nil
 }
