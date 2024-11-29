@@ -488,31 +488,16 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpdate, authorised bool) ([]*models.Dataset, error) {
 	items := []*models.Dataset{}
 	for _, item := range results {
-		if authorised && item.Current == nil && item.Next != nil {
-			item.Next.ID = item.ID
-			err := rewriteAllLinks(ctx, item.Next.Links)
+		if item.Current != nil {
+			err := rewriteAllLinks(ctx, item.Current.Links)
 			if err != nil {
-				log.Error(ctx, "unable to rewrite 'next' links", err)
+				log.Error(ctx, "unable to rewrite 'current' links", err)
 				return nil, err
 			}
-			items = append(items, item.Next)
-			continue
+			items = append(items, item.Current)
 		}
-
-		if item.Current == nil {
-			continue
-		}
-
-		item.Current.ID = item.ID
-		err := rewriteAllLinks(ctx, item.Current.Links)
-		if err != nil {
-			log.Error(ctx, "unable to rewrite 'current' links", err)
-			return nil, err
-		}
-		items = append(items, item.Current)
 
 		if authorised && item.Next != nil {
-			item.Next.ID = item.ID
 			err := rewriteAllLinks(ctx, item.Next.Links)
 			if err != nil {
 				log.Error(ctx, "unable to rewrite 'next' links", err)
@@ -523,7 +508,6 @@ func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpd
 	}
 
 	return items, nil
-
 }
 
 func rewriteAllLinks(ctx context.Context, oldLinks *models.DatasetLinks) error {
