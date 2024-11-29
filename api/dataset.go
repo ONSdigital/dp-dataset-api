@@ -527,51 +527,25 @@ func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpd
 }
 
 func rewriteAllLinks(ctx context.Context, oldLinks *models.DatasetLinks) error {
-	if oldLinks.AccessRights != nil && oldLinks.AccessRights.HRef != "" {
-		accessRights, err := links.URLBuild(ctx, oldLinks.AccessRights.HRef)
-		if err != nil {
-			log.Error(ctx, "error rewriting AccessRights link", err)
-			return err
-		}
-		oldLinks.AccessRights.HRef = accessRights
+	prevLinks := []*models.LinkObject{
+		oldLinks.AccessRights,
+		oldLinks.Editions,
+		oldLinks.LatestVersion,
+		oldLinks.Self,
+		oldLinks.Taxonomy,
 	}
 
-	if oldLinks.Editions != nil && oldLinks.Editions.HRef != "" {
-		editions, err := links.URLBuild(ctx, oldLinks.Editions.HRef)
-		if err != nil {
-			log.Error(ctx, "error rewriting Editions link", err)
-			return err
-		}
-		oldLinks.Editions.HRef = editions
-	}
+	var err error
 
-	if oldLinks.LatestVersion != nil && oldLinks.LatestVersion.HRef != "" {
-		latestVersion, err := links.URLBuild(ctx, oldLinks.LatestVersion.HRef)
-		if err != nil {
-			log.Error(ctx, "error rewriting LatestVersion link", err)
-			return err
+	for _, link := range prevLinks {
+		if link != nil && link.HRef != "" {
+			link.HRef, err = links.URLBuild(ctx, link.HRef)
+			if err != nil {
+				log.Error(ctx, "error rewriting link", err, log.Data{"link": link.HRef})
+				return err
+			}
 		}
-		oldLinks.LatestVersion.HRef = latestVersion
 	}
-
-	if oldLinks.Self != nil && oldLinks.Self.HRef != "" {
-		self, err := links.URLBuild(ctx, oldLinks.Self.HRef)
-		if err != nil {
-			log.Error(ctx, "error rewriting Self link", err)
-			return err
-		}
-		oldLinks.Self.HRef = self
-	}
-
-	if oldLinks.Taxonomy != nil && oldLinks.Taxonomy.HRef != "" {
-		taxonomy, err := links.URLBuild(ctx, oldLinks.Taxonomy.HRef)
-		if err != nil {
-			log.Error(ctx, "error rewriting Taxonomy link", err)
-			return err
-		}
-		oldLinks.Taxonomy.HRef = taxonomy
-	}
-
 	return nil
 }
 
