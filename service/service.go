@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"net/http"
+	neturl "net/url"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	"github.com/ONSdigital/dp-authorisation/auth"
@@ -18,7 +19,6 @@ import (
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dphandlers "github.com/ONSdigital/dp-net/v2/handlers"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
-	"github.com/ONSdigital/dp-net/v2/links"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
@@ -187,7 +187,11 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	// Create Dataset API
 	urlBuilder := url.NewBuilder(svc.config.WebsiteURL)
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions)
+	defaultURL, err := neturl.Parse(svc.config.WebsiteURL)
+	if err != nil {
+		return errors.Wrap(err, "unable to parse websiteURL from config")
+	}
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, defaultURL)
 
 	svc.healthCheck.Start(ctx)
 
@@ -246,13 +250,6 @@ func (svc *Service) createMiddleware(cfg *config.Configuration) (alice.Chain, er
 	if cfg.EnablePrivateEndpoints {
 		middleware = middleware.Append(dphandlers.IdentityWithHTTPClient(svc.identityClient))
 	}
-
-	// middleware for links
-	linksMiddleware, err := links.NewMiddleWare(cfg.DatasetAPIURL)
-	if err != nil {
-		return alice.Chain{}, errors.Wrap(err, "error creating links middleware")
-	}
-	middleware = middleware.Append(linksMiddleware)
 
 	// collection ID
 	middleware = middleware.Append(dphandlers.CheckHeader(dphandlers.CollectionID))

@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	neturl "net/url"
 	"strings"
 	"sync"
 	"testing"
@@ -24,8 +25,9 @@ import (
 )
 
 var (
-	mu          sync.Mutex
-	testContext = context.Background()
+	mu            sync.Mutex
+	testContext   = context.Background()
+	defaultURL, _ = neturl.Parse("http://localhost:20000")
 )
 
 func createRequestWithToken(method, requestURL string, body io.Reader) (*http.Request, error) {
@@ -762,5 +764,5 @@ func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer
 	cfg.DatasetAPIURL = "http://localhost:22000"
 	cfg.EnablePrivateEndpoints = true
 
-	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, datasetPermissions, permissions)
+	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, datasetPermissions, permissions, defaultURL)
 }

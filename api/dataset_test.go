@@ -34,8 +34,9 @@ var (
 	datasetPayloadWithID      = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"nomis","nomis_reference_url":"https://www.nomis.co.uk"}`
 	datasetPayloadWithEmptyID = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"nomis","nomis_reference_url":"https://www.nomis.co.uk"}`
 
-	urlBuilder = url.NewBuilder("localhost:20000")
-	mu         sync.Mutex
+	urlBuilder    = url.NewBuilder("localhost:20000")
+	defaultURL, _ = goURL.Parse(host)
+	mu            sync.Mutex
 )
 
 func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {
@@ -61,7 +62,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 		models.Nomis:      mockedGeneratedDownloads,
 	}
 
-	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions)
+	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, defaultURL)
 }
 
 // GetAPIWithCMDMocks also used in other tests, so exported
@@ -82,7 +83,7 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
 
-	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions)
+	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, defaultURL)
 }
 
 func createRequestWithAuth(method, target string, body io.Reader) *http.Request {

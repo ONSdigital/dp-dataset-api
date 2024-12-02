@@ -80,7 +80,8 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
-	datasetsResponse, err := mapResultsAndRewriteLinks(ctx, datasets, authorised)
+	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.defaultURL)
+	datasetsResponse, err := mapResultsAndRewriteLinks(ctx, datasets, authorised, linksBuilder)
 	if err != nil {
 		log.Error(ctx, "Error mapping results and rewriting links", err)
 		return nil, 0, err
@@ -104,8 +105,10 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 		authorised := api.authenticate(r, logData)
 
+		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.defaultURL)
+
 		var b []byte
-		datasetResponse, err := mapResultsAndRewriteLinks(ctx, []*models.DatasetUpdate{dataset}, authorised)
+		datasetResponse, err := mapResultsAndRewriteLinks(ctx, []*models.DatasetUpdate{dataset}, authorised, linksBuilder)
 		if err != nil {
 			log.Error(ctx, "Error mapping results and rewriting links", err)
 			return nil, err
@@ -485,12 +488,12 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "delete dataset", logData)
 }
 
-func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpdate, authorised bool) ([]*models.Dataset, error) {
+func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpdate, authorised bool, linksBuilder *links.Builder) ([]*models.Dataset, error) {
 	items := []*models.Dataset{}
 	for _, item := range results {
 		if authorised && item.Current == nil && item.Next != nil {
 			item.Next.ID = item.ID
-			err := rewriteAllLinks(ctx, item.Next.Links)
+			err := rewriteAllLinks(ctx, item.Next.Links, linksBuilder)
 			if err != nil {
 				log.Error(ctx, "unable to rewrite 'next' links", err)
 				return nil, err
@@ -504,7 +507,7 @@ func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpd
 		}
 
 		item.Current.ID = item.ID
-		err := rewriteAllLinks(ctx, item.Current.Links)
+		err := rewriteAllLinks(ctx, item.Current.Links, linksBuilder)
 		if err != nil {
 			log.Error(ctx, "unable to rewrite 'current' links", err)
 			return nil, err
@@ -513,7 +516,7 @@ func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpd
 
 		if authorised && item.Next != nil {
 			item.Next.ID = item.ID
-			err := rewriteAllLinks(ctx, item.Next.Links)
+			err := rewriteAllLinks(ctx, item.Next.Links, linksBuilder)
 			if err != nil {
 				log.Error(ctx, "unable to rewrite 'next' links", err)
 				return nil, err
@@ -526,9 +529,9 @@ func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpd
 
 }
 
-func rewriteAllLinks(ctx context.Context, oldLinks *models.DatasetLinks) error {
+func rewriteAllLinks(ctx context.Context, oldLinks *models.DatasetLinks, linksBuilder *links.Builder) error {
 	if oldLinks.AccessRights != nil && oldLinks.AccessRights.HRef != "" {
-		accessRights, err := links.URLBuild(ctx, oldLinks.AccessRights.HRef)
+		accessRights, err := linksBuilder.BuildLink(oldLinks.AccessRights.HRef)
 		if err != nil {
 			log.Error(ctx, "error rewriting AccessRights link", err)
 			return err
@@ -537,7 +540,7 @@ func rewriteAllLinks(ctx context.Context, oldLinks *models.DatasetLinks) error {
 	}
 
 	if oldLinks.Editions != nil && oldLinks.Editions.HRef != "" {
-		editions, err := links.URLBuild(ctx, oldLinks.Editions.HRef)
+		editions, err := linksBuilder.BuildLink(oldLinks.Editions.HRef)
 		if err != nil {
 			log.Error(ctx, "error rewriting Editions link", err)
 			return err
@@ -546,7 +549,7 @@ func rewriteAllLinks(ctx context.Context, oldLinks *models.DatasetLinks) error {
 	}
 
 	if oldLinks.LatestVersion != nil && oldLinks.LatestVersion.HRef != "" {
-		latestVersion, err := links.URLBuild(ctx, oldLinks.LatestVersion.HRef)
+		latestVersion, err := linksBuilder.BuildLink(oldLinks.LatestVersion.HRef)
 		if err != nil {
 			log.Error(ctx, "error rewriting LatestVersion link", err)
 			return err
@@ -555,7 +558,7 @@ func rewriteAllLinks(ctx context.Context, oldLinks *models.DatasetLinks) error {
 	}
 
 	if oldLinks.Self != nil && oldLinks.Self.HRef != "" {
-		self, err := links.URLBuild(ctx, oldLinks.Self.HRef)
+		self, err := linksBuilder.BuildLink(oldLinks.Self.HRef)
 		if err != nil {
 			log.Error(ctx, "error rewriting Self link", err)
 			return err
@@ -564,7 +567,7 @@ func rewriteAllLinks(ctx context.Context, oldLinks *models.DatasetLinks) error {
 	}
 
 	if oldLinks.Taxonomy != nil && oldLinks.Taxonomy.HRef != "" {
-		taxonomy, err := links.URLBuild(ctx, oldLinks.Taxonomy.HRef)
+		taxonomy, err := linksBuilder.BuildLink(oldLinks.Taxonomy.HRef)
 		if err != nil {
 			log.Error(ctx, "error rewriting Taxonomy link", err)
 			return err
