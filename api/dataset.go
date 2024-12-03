@@ -492,7 +492,7 @@ func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpd
 	items := []*models.Dataset{}
 	for _, item := range results {
 		if item.Current != nil {
-			err := rewriteAllLinks(ctx, item.Current.Links)
+			err := rewriteAllLinks(ctx, item.Current.Links, linksBuilder)
 			if err != nil {
 				log.Error(ctx, "unable to rewrite 'current' links", err)
 				return nil, err
@@ -501,7 +501,7 @@ func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpd
 		}
 
 		if authorised && item.Next != nil {
-			err := rewriteAllLinks(ctx, item.Next.Links)
+			err := rewriteAllLinks(ctx, item.Next.Links, linksBuilder)
 			if err != nil {
 				log.Error(ctx, "unable to rewrite 'next' links", err)
 				return nil, err
