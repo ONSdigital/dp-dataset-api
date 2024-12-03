@@ -491,32 +491,17 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpdate, authorised bool, linksBuilder *links.Builder) ([]*models.Dataset, error) {
 	items := []*models.Dataset{}
 	for _, item := range results {
-		if authorised && item.Current == nil && item.Next != nil {
-			item.Next.ID = item.ID
-			err := rewriteAllLinks(ctx, item.Next.Links, linksBuilder)
+		if item.Current != nil {
+			err := rewriteAllLinks(ctx, item.Current.Links)
 			if err != nil {
-				log.Error(ctx, "unable to rewrite 'next' links", err)
+				log.Error(ctx, "unable to rewrite 'current' links", err)
 				return nil, err
 			}
-			items = append(items, item.Next)
-			continue
+			items = append(items, item.Current)
 		}
-
-		if item.Current == nil {
-			continue
-		}
-
-		item.Current.ID = item.ID
-		err := rewriteAllLinks(ctx, item.Current.Links, linksBuilder)
-		if err != nil {
-			log.Error(ctx, "unable to rewrite 'current' links", err)
-			return nil, err
-		}
-		items = append(items, item.Current)
 
 		if authorised && item.Next != nil {
-			item.Next.ID = item.ID
-			err := rewriteAllLinks(ctx, item.Next.Links, linksBuilder)
+			err := rewriteAllLinks(ctx, item.Next.Links)
 			if err != nil {
 				log.Error(ctx, "unable to rewrite 'next' links", err)
 				return nil, err
@@ -526,55 +511,28 @@ func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpd
 	}
 
 	return items, nil
-
 }
 
 func rewriteAllLinks(ctx context.Context, oldLinks *models.DatasetLinks, linksBuilder *links.Builder) error {
-	if oldLinks.AccessRights != nil && oldLinks.AccessRights.HRef != "" {
-		accessRights, err := linksBuilder.BuildLink(oldLinks.AccessRights.HRef)
-		if err != nil {
-			log.Error(ctx, "error rewriting AccessRights link", err)
-			return err
-		}
-		oldLinks.AccessRights.HRef = accessRights
+	prevLinks := []*models.LinkObject{
+		oldLinks.AccessRights,
+		oldLinks.Editions,
+		oldLinks.LatestVersion,
+		oldLinks.Self,
+		oldLinks.Taxonomy,
 	}
 
-	if oldLinks.Editions != nil && oldLinks.Editions.HRef != "" {
-		editions, err := linksBuilder.BuildLink(oldLinks.Editions.HRef)
-		if err != nil {
-			log.Error(ctx, "error rewriting Editions link", err)
-			return err
-		}
-		oldLinks.Editions.HRef = editions
-	}
+	var err error
 
-	if oldLinks.LatestVersion != nil && oldLinks.LatestVersion.HRef != "" {
-		latestVersion, err := linksBuilder.BuildLink(oldLinks.LatestVersion.HRef)
-		if err != nil {
-			log.Error(ctx, "error rewriting LatestVersion link", err)
-			return err
+	for _, link := range prevLinks {
+		if link != nil && link.HRef != "" {
+			link.HRef, err = linksBuilder.BuildLink(link.HRef)
+			if err != nil {
+				log.Error(ctx, "error rewriting link", err, log.Data{"link": link.HRef})
+				return err
+			}
 		}
-		oldLinks.LatestVersion.HRef = latestVersion
 	}
-
-	if oldLinks.Self != nil && oldLinks.Self.HRef != "" {
-		self, err := linksBuilder.BuildLink(oldLinks.Self.HRef)
-		if err != nil {
-			log.Error(ctx, "error rewriting Self link", err)
-			return err
-		}
-		oldLinks.Self.HRef = self
-	}
-
-	if oldLinks.Taxonomy != nil && oldLinks.Taxonomy.HRef != "" {
-		taxonomy, err := linksBuilder.BuildLink(oldLinks.Taxonomy.HRef)
-		if err != nil {
-			log.Error(ctx, "error rewriting Taxonomy link", err)
-			return err
-		}
-		oldLinks.Taxonomy.HRef = taxonomy
-	}
-
 	return nil
 }
 

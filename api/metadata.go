@@ -108,6 +108,8 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// TODO - rewrite links before returning results, Download links also included here
+
 		b, err := json.Marshal(metaDataDoc)
 		if err != nil {
 			log.Error(ctx, "getMetadata endpoint: failed to marshal metadata resource into bytes", err, logData)
