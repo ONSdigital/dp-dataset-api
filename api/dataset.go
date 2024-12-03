@@ -11,6 +11,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
+	"github.com/ONSdigital/dp-net/v2/links"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 )
@@ -79,11 +80,13 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
-	if authorised {
-		return datasets, totalCount, nil
+	datasetsResponse, err := mapResultsAndRewriteLinks(ctx, datasets, authorised)
+	if err != nil {
+		log.Error(ctx, "Error mapping results and rewriting links", err)
+		return nil, 0, err
 	}
 
-	return mapResults(datasets), totalCount, nil
+	return datasetsResponse, totalCount, nil
 }
 
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
@@ -102,27 +105,10 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		authorised := api.authenticate(r, logData)
 
 		var b []byte
-		var datasetResponse interface{}
-
-		if !authorised {
-			// User is not authenticated and hence has only access to current sub document
-			if dataset.Current == nil {
-				log.Info(ctx, "getDataset endpoint: published dataset not found", logData)
-				return nil, errs.ErrDatasetNotFound
-			}
-			log.Info(ctx, "getDataset endpoint: caller not authorised returning dataset", logData)
-
-			dataset.Current.ID = dataset.ID
-			datasetResponse = dataset.Current
-		} else {
-			// User has valid authentication to get raw dataset document
-			if dataset == nil {
-				log.Info(ctx, "getDataset endpoint: published or unpublished dataset not found", logData)
-				return nil, errs.ErrDatasetNotFound
-			}
-			log.Info(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", logData)
-
-			datasetResponse = dataset
+		datasetResponse, err := mapResultsAndRewriteLinks(ctx, []*models.DatasetUpdate{dataset}, authorised)
+		if err != nil {
+			log.Error(ctx, "Error mapping results and rewriting links", err)
+			return nil, err
 		}
 
 		b, err = json.Marshal(datasetResponse)
@@ -203,11 +189,11 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		dataset.Links.Editions = &models.LinkObject{
-			HRef: fmt.Sprintf("%s/datasets/%s/editions", api.host, datasetID),
+			HRef: fmt.Sprintf("/datasets/%s/editions", datasetID),
 		}
 
 		dataset.Links.Self = &models.LinkObject{
-			HRef: fmt.Sprintf("%s/datasets/%s", api.host, datasetID),
+			HRef: fmt.Sprintf("/datasets/%s", datasetID),
 		}
 
 		// Remove latest version from new dataset resource, this cannot be added at this point
@@ -499,16 +485,52 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "delete dataset", logData)
 }
 
-func mapResults(results []*models.DatasetUpdate) []*models.Dataset {
+func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpdate, authorised bool) ([]*models.Dataset, error) {
 	items := []*models.Dataset{}
 	for _, item := range results {
-		if item.Current == nil {
-			continue
+		if item.Current != nil {
+			err := rewriteAllLinks(ctx, item.Current.Links)
+			if err != nil {
+				log.Error(ctx, "unable to rewrite 'current' links", err)
+				return nil, err
+			}
+			items = append(items, item.Current)
 		}
-		item.Current.ID = item.ID
-		items = append(items, item.Current)
+
+		if authorised && item.Next != nil {
+			err := rewriteAllLinks(ctx, item.Next.Links)
+			if err != nil {
+				log.Error(ctx, "unable to rewrite 'next' links", err)
+				return nil, err
+			}
+			items = append(items, item.Next)
+		}
 	}
-	return items
+
+	return items, nil
+}
+
+func rewriteAllLinks(ctx context.Context, oldLinks *models.DatasetLinks) error {
+	prevLinks := []*models.LinkObject{
+		oldLinks.AccessRights,
+		oldLinks.Editions,
+		oldLinks.LatestVersion,
+		oldLinks.Self,
+		oldLinks.Taxonomy,
+	}
+
+	var err error
+
+	for _, link := range prevLinks {
+		if link != nil && link.HRef != "" {
+			link.HRef, err = links.URLBuild(ctx, link.HRef)
+			if err != nil {
+				log.Error(ctx, "error rewriting link", err, log.Data{"link": link.HRef})
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, data log.Data) {

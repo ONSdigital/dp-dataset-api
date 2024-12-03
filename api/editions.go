@@ -50,6 +50,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
+	// TODO - rewrite links before returning results
 	if authorised {
 		log.Info(ctx, "getEditions endpoint: get all edition with auth", logData)
 		return results, totalCount, nil
@@ -90,6 +91,8 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var b []byte
+
+		// TODO - rewrite links before returning results
 
 		if authorised {
 			// User has valid authentication to get raw edition document
