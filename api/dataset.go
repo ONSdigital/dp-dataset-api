@@ -79,8 +79,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		handleDatasetAPIErr(ctx, err, w, logData)
 		return nil, 0, err
 	}
-
-	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.defaultURL)
+	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
 	datasetsResponse, err := mapResultsAndRewriteLinks(ctx, datasets, authorised, linksBuilder)
 	if err != nil {
 		log.Error(ctx, "Error mapping results and rewriting links", err)
@@ -105,7 +104,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 		authorised := api.authenticate(r, logData)
 
-		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.defaultURL)
+		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
 
 		var b []byte
 		datasetResponse, err := mapResultsAndRewriteLinks(ctx, []*models.DatasetUpdate{dataset}, authorised, linksBuilder)

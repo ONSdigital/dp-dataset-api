@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	neturl "net/url"
 	"testing"
 	"time"
 
@@ -187,7 +188,8 @@ func TestCreateMetadata(t *testing.T) {
 		})
 
 		Convey("When we call CreateMetaDataDoc", func() {
-			websiteURL := "http://localhost:20000"
+
+			websiteURL, _ := neturl.Parse("localhost:20000")
 			metaDataDoc := CreateMetaDataDoc(&dataset, &version, url.NewBuilder(websiteURL))
 
 			Convey("Then it returns a metadata object with all the CMD fields populated", func() {

@@ -25,7 +25,8 @@ import (
 )
 
 var (
-	urlBuilder            = url.NewBuilder("localhost:20000")
+	websiteURL, _         = neturl.Parse("localhost:20000")
+	urlBuilder            = url.NewBuilder(websiteURL)
 	mu                    sync.Mutex
 	testContext           = context.Background()
 	testETag              = "testETag"
@@ -33,7 +34,6 @@ var (
 	testLockID            = "testLockID"
 	AnyETag               = "*"
 	testMaxRequestOptions = 10
-	defaultURL, _         = neturl.Parse("http://localhost:20000")
 )
 
 func createRequestWithToken(method, requestURL string, body io.Reader) (*http.Request, error) {
@@ -1530,7 +1530,7 @@ func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 	datasetPermissions := getAuthorisationHandlerMock()
 	permissions := getAuthorisationHandlerMock()
 
-	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, downloadGenerators, datasetPermissions, permissions, defaultURL)
+	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, downloadGenerators, datasetPermissions, permissions)
 }
 
 func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {

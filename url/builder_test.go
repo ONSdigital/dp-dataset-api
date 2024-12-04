@@ -2,6 +2,7 @@ package url_test
 
 import (
 	"fmt"
+	neturl "net/url"
 	"testing"
 
 	"github.com/ONSdigital/dp-dataset-api/url"
@@ -17,7 +18,9 @@ const (
 
 func TestBuilder_BuildWebsiteDatasetVersionURL(t *testing.T) {
 	Convey("Given a URL builder", t, func() {
-		urlBuilder := url.NewBuilder(websiteURL)
+
+		websiteURLparsed, _ := neturl.Parse("localhost:20000")
+		urlBuilder := url.NewBuilder(websiteURLparsed)
 
 		Convey("When BuildWebsiteDatasetVersionURL is called", func() {
 			builtURL := urlBuilder.BuildWebsiteDatasetVersionURL(datasetID, edition, version)

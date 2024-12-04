@@ -185,13 +185,13 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	}
 
 	// Create Dataset API
-	urlBuilder := url.NewBuilder(svc.config.WebsiteURL)
-	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
-	defaultURL, err := neturl.Parse(svc.config.WebsiteURL)
+	websiteURL, err := neturl.Parse(svc.config.WebsiteURL)
 	if err != nil {
 		return errors.Wrap(err, "unable to parse websiteURL from config")
 	}
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, defaultURL)
+	urlBuilder := url.NewBuilder(websiteURL)
+	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions)
 
 	svc.healthCheck.Start(ctx)
 
