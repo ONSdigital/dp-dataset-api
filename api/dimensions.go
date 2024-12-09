@@ -9,6 +9,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
+	"github.com/ONSdigital/dp-net/v2/links"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
@@ -78,14 +79,20 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 			slicedResults = utils.Slice(results, offset, limit)
 		}
 
-		// TODO - rewrite links before returning results
-
 		return slicedResults, len(dimensions), nil
 	}()
 	if err != nil {
 		handleDimensionsErr(ctx, w, "", err, logData)
 		return nil, 0, err
 	}
+
+	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+	list, err = rewriteDimensionsLinks(ctx, list, linksBuilder)
+	if err != nil {
+		log.Error(ctx, "Error mapping results and rewriting links", err)
+		return nil, 0, err
+	}
+
 	return list, totalCount, nil
 }
 
@@ -173,14 +180,14 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		return nil, 0, err
 	}
 
-	// ger version for provided dataset, edition and versionID
+	// get version for provided dataset, edition and versionID
 	version, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionName, state)
 	if err != nil {
 		handleDimensionsErr(ctx, w, "failed to get version", err, logData)
 		return nil, 0, err
 	}
 
-	// vaidate state
+	// validate state
 	if err = models.CheckState("version", version.State); err != nil {
 		logData["version_state"] = version.State
 		handleDimensionsErr(ctx, w, "unpublished version has an invalid state", err, logData)
@@ -212,9 +219,84 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		results[i].Links.Version.ID = versionID
 	}
 
-	// TODO - rewrite links before returning results
+	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+	results, err = rewriteDimensionOptionsLinks(ctx, results, linksBuilder)
+	if err != nil {
+		log.Error(ctx, "Error mapping results and rewriting links", err)
+		return nil, 0, err
+	}
 
 	return results, totalCount, nil
+}
+
+func rewriteDimensionOptionsLinks(ctx context.Context, results []*models.PublicDimensionOption, linksBuilder *links.Builder) ([]*models.PublicDimensionOption, error) {
+	items := []*models.PublicDimensionOption{}
+	for _, item := range results {
+		err := rewriteAllDimensionOptionLinkObjects(ctx, &item.Links, linksBuilder)
+		if err != nil {
+			log.Error(ctx, "unable to rewrite 'current' links", err)
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, nil
+}
+
+func rewriteDimensionsLinks(ctx context.Context, results []models.Dimension, linksBuilder *links.Builder) ([]models.Dimension, error) {
+	items := []models.Dimension{}
+	for _, item := range results {
+		err := rewriteAllDimensionLinkObjects(ctx, &item.Links, linksBuilder)
+		if err != nil {
+			log.Error(ctx, "unable to rewrite 'current' links", err)
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, nil
+}
+
+func rewriteAllDimensionLinkObjects(ctx context.Context, oldLinks *models.DimensionLink, linksBuilder *links.Builder) error {
+	prevLinks := []*models.LinkObject{
+		&oldLinks.CodeList,
+		&oldLinks.Options,
+		&oldLinks.Version,
+	}
+
+	var err error
+
+	for _, link := range prevLinks {
+		if link.HRef != "" {
+			link.HRef, err = linksBuilder.BuildLink(link.HRef)
+			if err != nil {
+				log.Error(ctx, "error rewriting link", err, log.Data{"link": link.HRef})
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func rewriteAllDimensionOptionLinkObjects(ctx context.Context, oldLinks *models.DimensionOptionLinks, linksBuilder *links.Builder) error {
+	prevLinks := []*models.LinkObject{
+		&oldLinks.Code,
+		&oldLinks.CodeList,
+		&oldLinks.Version,
+	}
+
+	var err error
+
+	for _, link := range prevLinks {
+		if link.HRef != "" {
+			fmt.Printf("\nOld Link: %s\n", link.HRef)
+			link.HRef, err = linksBuilder.BuildLink(link.HRef)
+			fmt.Printf("New Link: %s\n", link.HRef)
+			if err != nil {
+				log.Error(ctx, "error rewriting link", err, log.Data{"link": link.HRef})
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // handleDimensionsErr maps the provided error to its corresponding status code.
