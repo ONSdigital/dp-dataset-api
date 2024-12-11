@@ -80,7 +80,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-	datasetsResponse, err := mapResultsAndRewriteLinks(ctx, datasets, authorised, linksBuilder)
+	datasetsResponse, err := mapDatasetsAndRewriteLinks(ctx, datasets, authorised, linksBuilder)
 	if err != nil {
 		log.Error(ctx, "Error mapping results and rewriting links", err)
 		return nil, 0, err
@@ -105,14 +105,13 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		authorised := api.authenticate(r, logData)
 
 		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-
-		var b []byte
-		datasetResponse, err := mapResultsAndRewriteLinks(ctx, []*models.DatasetUpdate{dataset}, authorised, linksBuilder)
+		datasetResponse, err := mapDatasetsAndRewriteLinks(ctx, []*models.DatasetUpdate{dataset}, authorised, linksBuilder)
 		if err != nil {
 			log.Error(ctx, "Error mapping results and rewriting links", err)
 			return nil, err
 		}
 
+		var b []byte
 		b, err = json.Marshal(datasetResponse)
 		if err != nil {
 			log.Error(ctx, "getDataset endpoint: failed to marshal dataset resource into bytes", err, logData)
@@ -213,6 +212,12 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "addDataset endpoint: failed to insert dataset resource to datastore", err, logData)
 			return nil, err
 		}
+		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+		err = rewriteAllDatasetLinks(ctx, datasetDoc.Next.Links, linksBuilder)
+		if err != nil {
+			log.Error(ctx, "addDataset endpoint: failed to rewrite links for response", err)
+			return nil, err
+		}
 
 		b, err := json.Marshal(datasetDoc)
 		if err != nil {
@@ -299,11 +304,11 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dataset.Links.Editions = &models.LinkObject{
-		HRef: fmt.Sprintf("%s/datasets/%s/editions", api.host, datasetID),
+		HRef: fmt.Sprintf("/datasets/%s/editions", datasetID),
 	}
 
 	dataset.Links.Self = &models.LinkObject{
-		HRef: fmt.Sprintf("%s/datasets/%s", api.host, datasetID),
+		HRef: fmt.Sprintf("/datasets/%s", datasetID),
 	}
 
 	dataset.Links.LatestVersion = nil
@@ -319,6 +324,13 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		logData["new_dataset"] = datasetID
 		log.Error(ctx, "addDatasetNew endpoint: failed to insert dataset resource to datastore", err, logData)
 		handleDatasetAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+	err = rewriteAllDatasetLinks(ctx, datasetDoc.Next.Links, linksBuilder)
+	if err != nil {
+		log.Error(ctx, "addDatasetNew endpoint: failed to rewrite links for response", err)
 		return
 	}
 
@@ -487,11 +499,11 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "delete dataset", logData)
 }
 
-func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpdate, authorised bool, linksBuilder *links.Builder) ([]*models.Dataset, error) {
+func mapDatasetsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpdate, authorised bool, linksBuilder *links.Builder) ([]*models.Dataset, error) {
 	items := []*models.Dataset{}
 	for _, item := range results {
 		if item.Current != nil {
-			err := rewriteAllLinks(ctx, item.Current.Links, linksBuilder)
+			err := rewriteAllDatasetLinks(ctx, item.Current.Links, linksBuilder)
 			if err != nil {
 				log.Error(ctx, "unable to rewrite 'current' links", err)
 				return nil, err
@@ -500,7 +512,7 @@ func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpd
 		}
 
 		if authorised && item.Next != nil {
-			err := rewriteAllLinks(ctx, item.Next.Links, linksBuilder)
+			err := rewriteAllDatasetLinks(ctx, item.Next.Links, linksBuilder)
 			if err != nil {
 				log.Error(ctx, "unable to rewrite 'next' links", err)
 				return nil, err
@@ -512,7 +524,7 @@ func mapResultsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpd
 	return items, nil
 }
 
-func rewriteAllLinks(ctx context.Context, oldLinks *models.DatasetLinks, linksBuilder *links.Builder) error {
+func rewriteAllDatasetLinks(ctx context.Context, oldLinks *models.DatasetLinks, linksBuilder *links.Builder) error {
 	prevLinks := []*models.LinkObject{
 		oldLinks.AccessRights,
 		oldLinks.Editions,
