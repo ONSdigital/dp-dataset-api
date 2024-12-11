@@ -13,6 +13,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
+	"github.com/ONSdigital/dp-net/v2/links"
 	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
@@ -88,7 +89,6 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 			return nil, 0, err
 		}
 
-		// TODO - rewrite links before returning results, Download links also included here
 		results, totalCount, err := api.dataStore.Backend.GetVersions(ctx, datasetID, edition, state, offset, limit)
 		if err != nil {
 			log.Error(ctx, "failed to find any versions for dataset edition", err, logData)
@@ -135,6 +135,20 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
+	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+
+	list, err = rewriteAllVersionLinks(ctx, list, linksBuilder)
+	if err != nil {
+		log.Error(ctx, "error rewriting dimension links", err)
+		return nil, 0, err
+	}
+
+	list, err = rewriteAllVersionLinks(ctx, list, linksBuilder)
+	if err != nil {
+		log.Error(ctx, "error rewriting version links", err)
+		return nil, 0, err
+	}
+
 	return list, totalCount, nil
 }
 
@@ -173,7 +187,6 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		// TODO - rewrite links before returning results, Download links also included here
 		version, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionID, state)
 		if err != nil {
 			log.Error(ctx, "failed to find version for dataset edition", err, logData)
@@ -210,6 +223,24 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 
 	if getVersionErr != nil {
 		handleVersionAPIErr(ctx, getVersionErr, w, logData)
+		return
+	}
+
+	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+
+	var err error
+
+	err = rewriteVersionLinks(ctx, v.Links, linksBuilder)
+	if err != nil {
+		log.Error(ctx, "error rewriting version links", err)
+		handleVersionAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	v.Dimensions, err = rewriteDimensionsLink(ctx, v.Dimensions, linksBuilder)
+	if err != nil {
+		log.Error(ctx, "error rewriting version links", err)
+		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
 
@@ -738,6 +769,71 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 	}
 
 	return &version, nil
+}
+
+func rewriteAllVersionLinks(ctx context.Context, results []models.Version, linksBuilder *links.Builder) ([]models.Version, error) {
+	items := []models.Version{}
+
+	var err error
+
+	for _, item := range results {
+		item.Dimensions, err = rewriteDimensionsLink(ctx, item.Dimensions, linksBuilder)
+		if err != nil {
+			log.Error(ctx, "error rewriting dimension links", err)
+			return nil, err
+		}
+
+		err = rewriteVersionLinks(ctx, item.Links, linksBuilder)
+		if err != nil {
+			log.Error(ctx, "error rewriting version links", err)
+			return nil, err
+		}
+
+		items = append(items, item)
+	}
+
+	return items, nil
+}
+
+func rewriteDimensionsLink(ctx context.Context, dimensions []models.Dimension, linksBuilder *links.Builder) ([]models.Dimension, error) {
+	items := []models.Dimension{}
+
+	var err error
+
+	for _, item := range dimensions {
+		item.HRef, err = linksBuilder.BuildLink(item.HRef)
+		if err != nil {
+			log.Error(ctx, "unable to rewrite dimension link", err)
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, nil
+}
+
+func rewriteVersionLinks(ctx context.Context, oldLinks *models.VersionLinks, linksBuilder *links.Builder) error {
+	prevLinks := []*models.LinkObject{
+		oldLinks.Dataset,
+		oldLinks.Dimensions,
+		oldLinks.Edition,
+		oldLinks.Self,
+		oldLinks.Spatial,
+		oldLinks.Version,
+	}
+
+	var err error
+
+	for _, link := range prevLinks {
+		if link != nil && link.HRef != "" {
+			link.HRef, err = linksBuilder.BuildLink(link.HRef)
+			if err != nil {
+				log.Error(ctx, "error rewriting link", err, log.Data{"link": link.HRef})
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, data log.Data) {
