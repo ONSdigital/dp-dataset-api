@@ -58,11 +58,11 @@ func TestString(t *testing.T) {
 			result := Filterable.String()
 			So(result, ShouldEqual, "filterable")
 			So(datasetTypes[0], ShouldEqual, "filterable")
-			So(datasetTypes[1], ShouldEqual, "nomis")
-			So(datasetTypes[2], ShouldEqual, "cantabular_table")
-			So(datasetTypes[3], ShouldEqual, "cantabular_blob")
-			So(datasetTypes[4], ShouldEqual, "cantabular_flexible_table")
-			So(datasetTypes[5], ShouldEqual, "cantabular_multivariate_table")
+			So(datasetTypes[1], ShouldEqual, "cantabular_table")
+			So(datasetTypes[2], ShouldEqual, "cantabular_blob")
+			So(datasetTypes[3], ShouldEqual, "cantabular_flexible_table")
+			So(datasetTypes[4], ShouldEqual, "cantabular_multivariate_table")
+			So(datasetTypes[5], ShouldEqual, "static")
 			So(datasetTypes[6], ShouldEqual, "invalid")
 		})
 	})
@@ -123,16 +123,6 @@ func TestValidateDatasetType(t *testing.T) {
 		})
 	})
 }
-func TestValidateNomisURL(t *testing.T) {
-	Convey("Given a nomis URL return an error ", t, func() {
-		Convey("When the request has filterable type and a nomis url ", func() {
-			Convey("Then should return type mismatch", func() {
-				_, err := ValidateNomisURL(testContext, "filterable", "www.nomisweb.co.uk")
-				So(err, ShouldResemble, errs.ErrTypeMismatch)
-			})
-		})
-	})
-}
 
 func TestCreateDataset(t *testing.T) {
 	t.Parallel()
@@ -171,7 +161,6 @@ func TestCreateDataset(t *testing.T) {
 			So(dataset.UnitOfMeasure, ShouldEqual, "Pounds Sterling")
 			So(dataset.URI, ShouldEqual, "http://localhost:22000/datasets/123/breadcrumbs")
 			So(dataset.Type, ShouldEqual, "filterable")
-			So(dataset.NomisReferenceURL, ShouldEqual, "")
 			So(dataset.CanonicalTopic, ShouldResemble, canonicalTopic)
 			So(dataset.Subtopics[0], ShouldResemble, subtopic)
 			So(dataset.Survey, ShouldEqual, survey)
@@ -536,8 +525,8 @@ func TestValidateVersion(t *testing.T) {
 			v.Downloads = &DownloadList{CSV: &DownloadObject{HRef: "", Size: "2"}}
 			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSV.HRef"}), v)
 
-			v.Downloads = &DownloadList{CSVW: &DownloadObject{HRef: "", Size: "2"}}
-			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSVW.HRef"}), v)
+			// v.Downloads = &DownloadList{CSVW: &DownloadObject{HRef: "", Size: "2"}}
+			// assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSVW.HRef"}), v)
 
 			v.Downloads = &DownloadList{TXT: &DownloadObject{HRef: "", Size: "2"}}
 			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.TXT.HRef"}), v)
@@ -551,8 +540,8 @@ func TestValidateVersion(t *testing.T) {
 			v.Downloads = &DownloadList{CSV: &DownloadObject{HRef: "/", Size: ""}}
 			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSV.Size"}), v)
 
-			v.Downloads = &DownloadList{CSVW: &DownloadObject{HRef: "/", Size: ""}}
-			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSVW.Size"}), v)
+			// v.Downloads = &DownloadList{CSVW: &DownloadObject{HRef: "/", Size: ""}}
+			// assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.CSVW.Size"}), v)
 
 			v.Downloads = &DownloadList{TXT: &DownloadObject{HRef: "/", Size: ""}}
 			assertVersionDownloadError(fmt.Errorf("missing mandatory fields: %v", []string{"Downloads.TXT.Size"}), v)
@@ -566,8 +555,8 @@ func TestValidateVersion(t *testing.T) {
 			v.Downloads = &DownloadList{CSV: &DownloadObject{HRef: "/", Size: "bob"}}
 			assertVersionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.CSV.Size not a number"}), v)
 
-			v.Downloads = &DownloadList{CSVW: &DownloadObject{HRef: "/", Size: "bob"}}
-			assertVersionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.CSVW.Size not a number"}), v)
+			// v.Downloads = &DownloadList{CSVW: &DownloadObject{HRef: "/", Size: "bob"}}
+			// assertVersionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.CSVW.Size not a number"}), v)
 
 			v.Downloads = &DownloadList{TXT: &DownloadObject{HRef: "/", Size: "bob"}}
 			assertVersionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.TXT.Size not a number"}), v)

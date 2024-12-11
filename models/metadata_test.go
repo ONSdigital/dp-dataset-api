@@ -364,7 +364,6 @@ func TestUpdateMetadata(t *testing.T) {
 			state := PublishedState
 			theme := "population"
 			uri := "dataset-uri"
-			nomisURL := "nomis-reference-url"
 			links := DatasetLinks{
 				AccessRights: &LinkObject{
 					HRef: "href-access-rights",
@@ -392,17 +391,16 @@ func TestUpdateMetadata(t *testing.T) {
 				Type: "All usual residents in households",
 			}
 			dataset := Dataset{
-				CollectionID:      collectionID,
-				ID:                datasetID,
-				LastUpdated:       lastUpdated,
-				Links:             &links,
-				Publisher:         &publisher,
-				State:             state,
-				Theme:             theme,
-				URI:               uri,
-				Type:              datasetType,
-				NomisReferenceURL: nomisURL,
-				IsBasedOn:         &isBasedOn,
+				CollectionID: collectionID,
+				ID:           datasetID,
+				LastUpdated:  lastUpdated,
+				Links:        &links,
+				Publisher:    &publisher,
+				State:        state,
+				Theme:        theme,
+				URI:          uri,
+				Type:         datasetType,
+				IsBasedOn:    &isBasedOn,
 			}
 
 			Convey("When we call UpdateMetadata on the dataset", func() {
@@ -437,7 +435,6 @@ func TestUpdateMetadata(t *testing.T) {
 					So(dataset.Theme, ShouldEqual, theme)
 					So(dataset.URI, ShouldEqual, uri)
 					So(dataset.Type, ShouldEqual, datasetType)
-					So(dataset.NomisReferenceURL, ShouldEqual, nomisURL)
 					So(dataset.IsBasedOn, ShouldEqual, &isBasedOn)
 				})
 			})

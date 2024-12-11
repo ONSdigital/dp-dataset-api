@@ -52,6 +52,7 @@ type EditableMetadata struct {
 	UnitOfMeasure     string           `json:"unit_of_measure,omitempty"`
 	UsageNotes        *[]UsageNote     `json:"usage_notes,omitempty"`
 	RelatedContent    []GeneralDetails `json:"related_content,omitempty"`
+	Themes            []string         `json:"themes,omitempty"`
 }
 
 // MetadataLinks represents a link object to list of metadata relevant to a version
@@ -99,6 +100,14 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 	// Add relevant metdata links from dataset document
 	if datasetDoc.Links != nil {
 		metaDataDoc.Links.AccessRights = datasetDoc.Links.AccessRights
+	}
+
+	if datasetDoc.CanonicalTopic != "" {
+		metaDataDoc.Themes = append(metaDataDoc.Themes, datasetDoc.CanonicalTopic)
+	}
+
+	if datasetDoc.Subtopics != nil {
+		metaDataDoc.Themes = append(metaDataDoc.Themes, datasetDoc.Subtopics...)
 	}
 
 	// Add relevant metdata links from version document
@@ -294,6 +303,7 @@ func (d *Dataset) UpdateMetadata(metadata EditableMetadata) {
 	d.RelatedDatasets = metadata.RelatedDatasets
 	d.Publications = metadata.Publications
 	d.Survey = metadata.Survey
+	d.Themes = metadata.Themes
 }
 
 // UpdateMetadata updates the metadata fields for a version

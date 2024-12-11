@@ -113,6 +113,15 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			log.Info(ctx, "getDataset endpoint: caller not authorised returning dataset", logData)
 
 			dataset.Current.ID = dataset.ID
+
+			if dataset.Current.CanonicalTopic != "" {
+				dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.CanonicalTopic)
+			}
+
+			if dataset.Current.Subtopics != nil {
+				dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.Subtopics...)
+			}
+
 			datasetResponse = dataset.Current
 		} else {
 			// User has valid authentication to get raw dataset document
@@ -122,6 +131,15 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			}
 			log.Info(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", logData)
 
+			if dataset.Current != nil {
+				if dataset.Current.CanonicalTopic != "" {
+					dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.CanonicalTopic)
+				}
+
+				if dataset.Current.Subtopics != nil {
+					dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.Subtopics...)
+				}
+			}
 			datasetResponse = dataset
 		}
 
@@ -181,12 +199,6 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		datasetType, err := models.ValidateNomisURL(ctx, dataType.String(), dataset.NomisReferenceURL)
-		if err != nil {
-			log.Error(ctx, "addDataset endpoint: error dataset.Type mismatch", err, logData)
-			return nil, err
-		}
-
 		models.CleanDataset(dataset)
 
 		if err = models.ValidateDataset(dataset); err != nil {
@@ -194,7 +206,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		dataset.Type = datasetType
+		dataset.Type = dataType.String()
 		dataset.State = models.CreatedState
 		dataset.ID = datasetID
 
@@ -214,6 +226,9 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 		dataset.Links.LatestVersion = nil
 
 		dataset.LastUpdated = time.Now()
+
+		dataset.Themes = append(dataset.Themes, dataset.CanonicalTopic)
+		dataset.Themes = append(dataset.Themes, dataset.Subtopics...)
 
 		datasetDoc := &models.DatasetUpdate{
 			ID:   datasetID,
@@ -289,13 +304,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	datasetType, err := models.ValidateNomisURL(ctx, dataType.String(), dataset.NomisReferenceURL)
-	if err != nil {
-		log.Error(ctx, "addDatasetNew endpoint: error dataset.Type mismatch", err, logData)
-		handleDatasetAPIErr(ctx, err, w, logData)
-		return
-	}
-
+	// Clean and validate the dataset
 	models.CleanDataset(dataset)
 	if err = models.ValidateDataset(dataset); err != nil {
 		log.Error(ctx, "addDatasetNew endpoint: dataset failed validation checks", err)
@@ -303,7 +312,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dataset.Type = datasetType
+	dataset.Type = dataType.String()
 	dataset.State = models.CreatedState
 
 	if dataset.Links == nil {
@@ -321,6 +330,9 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	dataset.Links.LatestVersion = nil
 
 	dataset.LastUpdated = time.Now()
+
+	dataset.Themes = append(dataset.Themes, dataset.CanonicalTopic)
+	dataset.Themes = append(dataset.Themes, dataset.Subtopics...)
 
 	datasetDoc := &models.DatasetUpdate{
 		ID:   datasetID,
@@ -373,14 +385,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 
 		dataset.Type = currentDataset.Next.Type
 
-		_, err = models.ValidateNomisURL(ctx, dataset.Type, dataset.NomisReferenceURL)
-		if err != nil {
-			log.Error(ctx, "putDataset endpoint: error dataset.Type mismatch", err, data)
-			return err
-		}
-
 		models.CleanDataset(dataset)
-
 		if err = models.ValidateDataset(dataset); err != nil {
 			log.Error(ctx, "putDataset endpoint: failed validation check to update dataset", err, data)
 			return err
@@ -421,6 +426,7 @@ func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *model
 
 	currentDataset.Next.State = models.PublishedState
 	currentDataset.Next.LastUpdated = time.Now()
+	// currentDataset.Next.Themes = append([]string{currentDataset.Next.CanonicalTopic}, currentDataset.Next.Subtopics...)
 
 	// newDataset.Next will not be cleaned up due to keeping request to mongo
 	// idempotent; for instance if an authorised user double clicked to update

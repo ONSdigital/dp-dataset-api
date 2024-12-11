@@ -1254,10 +1254,6 @@ definitions:
       next_release:
         description: "The next release date for a dataset"
         type: string
-      nomis_ref_url:
-        description: "The NOMIS reference url for the dataset"
-        type: string
-        example: "https://www.nomisweb.co.uk/census/2011/ks106ew"
       publications:
         description: "A list of publications for a dataset"
         type: array
@@ -1350,7 +1346,7 @@ definitions:
   Type:
     description: "The type for a dataset" 
     type: string
-    enum: [filterable, nomis]
+    enum: [filterable]
     default: "filterable"    
   IsBasedOn:
     description: "Information about the population-type that the dataset is based on (census 2021 only)" 
