@@ -23,6 +23,10 @@ func (builder *Builder) GetWebsiteURL() *url.URL {
 	return builder.websiteURL
 }
 
+func (builder *Builder) GetDownloadServiceURL() *url.URL {
+	return builder.downloadServiceURL
+}
+
 // BuildWebsiteDatasetVersionURL returns the website URL for a specific dataset version
 func (builder Builder) BuildWebsiteDatasetVersionURL(datasetID, edition, version string) string {
 	return fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s",
