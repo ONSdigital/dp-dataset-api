@@ -26,7 +26,8 @@ import (
 
 var (
 	websiteURL, _         = neturl.Parse("localhost:20000")
-	urlBuilder            = url.NewBuilder(websiteURL)
+	downloadServiceURL, _ = neturl.Parse("localhost:23600")
+	urlBuilder            = url.NewBuilder(websiteURL, downloadServiceURL)
 	mu                    sync.Mutex
 	testContext           = context.Background()
 	testETag              = "testETag"

@@ -25,10 +25,11 @@ import (
 )
 
 var (
-	mu            sync.Mutex
-	testContext   = context.Background()
-	websiteURL, _ = neturl.Parse("localhost:20000")
-	urlBuilder    = url.NewBuilder(websiteURL)
+	mu                    sync.Mutex
+	testContext           = context.Background()
+	websiteURL, _         = neturl.Parse("localhost:20000")
+	downloadServiceURL, _ = neturl.Parse("localhost:23600")
+	urlBuilder            = url.NewBuilder(websiteURL, downloadServiceURL)
 )
 
 func createRequestWithToken(method, requestURL string, body io.Reader) (*http.Request, error) {

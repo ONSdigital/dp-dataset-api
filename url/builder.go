@@ -7,13 +7,15 @@ import (
 
 // Builder encapsulates the building of urls in a central place, with knowledge of the url structures and base host names.
 type Builder struct {
-	websiteURL *url.URL
+	websiteURL         *url.URL
+	downloadServiceURL *url.URL
 }
 
 // NewBuilder returns a new instance of url.Builder
-func NewBuilder(websiteURL *url.URL) *Builder {
+func NewBuilder(websiteURL *url.URL, downloadServiceURL *url.URL) *Builder {
 	return &Builder{
-		websiteURL: websiteURL,
+		websiteURL:         websiteURL,
+		downloadServiceURL: downloadServiceURL,
 	}
 }
 

@@ -19,8 +19,9 @@ const (
 func TestBuilder_BuildWebsiteDatasetVersionURL(t *testing.T) {
 	Convey("Given a URL builder", t, func() {
 
-		websiteURLparsed, _ := neturl.Parse("localhost:20000")
-		urlBuilder := url.NewBuilder(websiteURLparsed)
+		websiteURL, _ := neturl.Parse("localhost:20000")
+		downloadServiceURL, _ := neturl.Parse("localhost:23600")
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL)
 
 		Convey("When BuildWebsiteDatasetVersionURL is called", func() {
 			builtURL := urlBuilder.BuildWebsiteDatasetVersionURL(datasetID, edition, version)

@@ -190,7 +190,8 @@ func TestCreateMetadata(t *testing.T) {
 		Convey("When we call CreateMetaDataDoc", func() {
 
 			websiteURL, _ := neturl.Parse("localhost:20000")
-			metaDataDoc := CreateMetaDataDoc(&dataset, &version, url.NewBuilder(websiteURL))
+			downloadServiceURL, _ := neturl.Parse("localhost:23600")
+			metaDataDoc := CreateMetaDataDoc(&dataset, &version, url.NewBuilder(websiteURL, downloadServiceURL))
 
 			Convey("Then it returns a metadata object with all the CMD fields populated", func() {
 				So(metaDataDoc.Description, ShouldEqual, dataset.Description)
