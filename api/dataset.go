@@ -103,7 +103,6 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 		var b []byte
 		var datasetResponse interface{}
-
 		if !authorised {
 			// User is not authenticated and hence has only access to current sub document
 			if dataset.Current == nil {
@@ -111,20 +110,10 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 				return nil, errs.ErrDatasetNotFound
 			}
 			log.Info(ctx, "getDataset endpoint: caller not authorised returning dataset", logData)
-
 			dataset.Current.ID = dataset.ID
-
 			if dataset.Current.Themes == nil {
-				dataset.Current.Themes = []string{}
-				if dataset.Current.CanonicalTopic != "" {
-					dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.CanonicalTopic)
-				}
-
-				if dataset.Current.Subtopics != nil {
-					dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.Subtopics...)
-				}
+				dataset.Current.Themes = buildThemes(dataset.Current.CanonicalTopic, dataset.Current.Subtopics)
 			}
-
 			datasetResponse = dataset.Current
 		} else {
 			// User has valid authentication to get raw dataset document
@@ -133,18 +122,8 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 				return nil, errs.ErrDatasetNotFound
 			}
 			log.Info(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", logData)
-
-			if dataset.Current != nil {
-				if dataset.Current.Themes == nil {
-					dataset.Current.Themes = []string{}
-					if dataset.Current.CanonicalTopic != "" {
-						dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.CanonicalTopic)
-					}
-
-					if dataset.Current.Subtopics != nil {
-						dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.Subtopics...)
-					}
-				}
+			if dataset.Current != nil && dataset.Current.Themes == nil {
+				dataset.Current.Themes = buildThemes(dataset.Current.CanonicalTopic, dataset.Current.Subtopics)
 			}
 			datasetResponse = dataset
 		}
@@ -154,7 +133,6 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "getDataset endpoint: failed to marshal dataset resource into bytes", err, logData)
 			return nil, err
 		}
-
 		return b, nil
 	}()
 
@@ -334,14 +312,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	dataset.LastUpdated = time.Now()
 
 	if dataset.Themes == nil {
-		dataset.Themes = []string{}
-		if dataset.CanonicalTopic != "" {
-			dataset.Themes = append(dataset.Themes, dataset.CanonicalTopic)
-		}
-
-		if dataset.Subtopics != nil {
-			dataset.Themes = append(dataset.Themes, dataset.Subtopics...)
-		}
+		dataset.Themes = buildThemes(dataset.CanonicalTopic, dataset.Subtopics)
 	}
 
 	datasetDoc := &models.DatasetUpdate{
@@ -549,4 +520,15 @@ func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	data["responseStatus"] = status
 	log.Error(ctx, "request unsuccessful", err, data)
 	http.Error(w, err.Error(), status)
+}
+
+func buildThemes(canonicalTopic string, subtopics []string) []string {
+	themes := []string{}
+	if canonicalTopic != "" {
+		themes = append(themes, canonicalTopic)
+	}
+	if subtopics != nil {
+		themes = append(themes, subtopics...)
+	}
+	return themes
 }

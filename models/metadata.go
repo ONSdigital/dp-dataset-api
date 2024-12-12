@@ -306,11 +306,18 @@ func (d *Dataset) UpdateMetadata(metadata EditableMetadata) {
 	d.Publications = metadata.Publications
 	d.Survey = metadata.Survey
 	if metadata.CanonicalTopic != "" {
+		if index := contains(d.Themes, metadata.CanonicalTopic); index != -1 {
+			d.Themes = append(d.Themes[:index], d.Themes[index+1:]...)
+		}
 		d.Themes = append(d.Themes, metadata.CanonicalTopic)
 	}
-
 	if metadata.Subtopics != nil {
-		d.Themes = append(d.Themes, metadata.Subtopics...)
+		for _, subtopic := range metadata.Subtopics {
+			if index := contains(d.Themes, subtopic); index != -1 {
+				d.Themes = append(d.Themes[:index], d.Themes[index+1:]...)
+			}
+			d.Themes = append(d.Themes, subtopic)
+		}
 	}
 }
 
@@ -321,4 +328,13 @@ func (v *Version) UpdateMetadata(metadata EditableMetadata) {
 	v.Dimensions = metadata.Dimensions
 	v.UsageNotes = metadata.UsageNotes
 	v.LatestChanges = metadata.LatestChanges
+}
+
+func contains(themes []string, item string) int {
+	for i, v := range themes {
+		if v == item {
+			return i
+		}
+	}
+	return -1
 }
