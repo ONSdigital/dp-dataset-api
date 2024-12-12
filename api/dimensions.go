@@ -287,9 +287,7 @@ func rewriteAllDimensionOptionLinkObjects(ctx context.Context, oldLinks *models.
 
 	for _, link := range prevLinks {
 		if link.HRef != "" {
-			fmt.Printf("\nOld Link: %s\n", link.HRef)
 			link.HRef, err = linksBuilder.BuildLink(link.HRef)
-			fmt.Printf("New Link: %s\n", link.HRef)
 			if err != nil {
 				log.Error(ctx, "error rewriting link", err, log.Data{"link": link.HRef})
 				return err

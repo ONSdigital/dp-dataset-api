@@ -109,6 +109,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		}
 
 		dimensionAPI := &dimension.Store{
+			Host:              api.host,
 			Storer:            api.dataStore.Backend,
 			MaxRequestOptions: api.MaxRequestOptions,
 		}
