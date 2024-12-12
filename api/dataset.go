@@ -115,6 +115,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			dataset.Current.ID = dataset.ID
 
 			if dataset.Current.Themes == nil {
+				dataset.Current.Themes = []string{}
 				if dataset.Current.CanonicalTopic != "" {
 					dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.CanonicalTopic)
 				}
@@ -135,6 +136,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 			if dataset.Current != nil {
 				if dataset.Current.Themes == nil {
+					dataset.Current.Themes = []string{}
 					if dataset.Current.CanonicalTopic != "" {
 						dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.CanonicalTopic)
 					}
@@ -332,6 +334,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	dataset.LastUpdated = time.Now()
 
 	if dataset.Themes == nil {
+		dataset.Themes = []string{}
 		if dataset.CanonicalTopic != "" {
 			dataset.Themes = append(dataset.Themes, dataset.CanonicalTopic)
 		}

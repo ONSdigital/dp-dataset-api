@@ -58,22 +58,12 @@ func TestString(t *testing.T) {
 			result := Filterable.String()
 			So(result, ShouldEqual, "filterable")
 			So(datasetTypes[0], ShouldEqual, "filterable")
-<<<<<<< HEAD
 			So(datasetTypes[1], ShouldEqual, "cantabular_table")
 			So(datasetTypes[2], ShouldEqual, "cantabular_blob")
 			So(datasetTypes[3], ShouldEqual, "cantabular_flexible_table")
 			So(datasetTypes[4], ShouldEqual, "cantabular_multivariate_table")
 			So(datasetTypes[5], ShouldEqual, "static")
 			So(datasetTypes[6], ShouldEqual, "invalid")
-=======
-			So(datasetTypes[1], ShouldEqual, "nomis")
-			So(datasetTypes[2], ShouldEqual, "cantabular_table")
-			So(datasetTypes[3], ShouldEqual, "cantabular_blob")
-			So(datasetTypes[4], ShouldEqual, "cantabular_flexible_table")
-			So(datasetTypes[5], ShouldEqual, "cantabular_multivariate_table")
-			So(datasetTypes[6], ShouldEqual, "static")
-			So(datasetTypes[7], ShouldEqual, "invalid")
->>>>>>> develop
 		})
 	})
 }
