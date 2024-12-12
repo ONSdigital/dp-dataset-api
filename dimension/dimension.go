@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/gorilla/mux"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/utils"
 	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
+	"github.com/ONSdigital/dp-net/v2/links"
 	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
 )
@@ -22,6 +24,7 @@ import (
 // Store provides a backend for dimensions
 type Store struct {
 	store.Storer
+	Host              string
 	MaxRequestOptions int
 }
 
@@ -66,16 +69,27 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 	}
 
 	// Get dimensions corresponding to the instance in the right state
-	dimensions, totalCount, err = s.GetDimensionsFromInstance(ctx, instanceID, offset, limit)
+	var dimensionOptions []*models.DimensionOption
+	dimensionOptions, totalCount, err = s.GetDimensionsFromInstance(ctx, instanceID, offset, limit)
 	if err != nil {
 		log.Error(ctx, "failed to get dimension options for instance", err, logData)
 		handleDimensionErr(ctx, w, err, logData)
 		return nil, 0, err
 	}
 
+	hostURL, err := url.Parse(s.Host)
+	if err != nil {
+		log.Error(ctx, "failed to parse host URL", err, logData)
+		handleDimensionErr(ctx, w, err, logData)
+		return nil, 0, err
+	}
+
+	linksBuilder := links.FromHeadersOrDefault(&r.Header, hostURL)
+	err = rewriteAllDimensionOptions(ctx, dimensionOptions, linksBuilder)
+
 	log.Info(ctx, "successfully get dimensions for an instance resource", logData)
 	dpresponse.SetETag(w, instance.ETag)
-	return dimensions, totalCount, nil
+	return dimensionOptions, totalCount, nil
 }
 
 // GetUniqueDimensionAndOptionsHandler returns a list of dimension options for a dimension of an instance
@@ -510,4 +524,38 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 	logData["action"] = AddDimensionAction
 	log.Info(ctx, "added node id to dimension of an instance resource", logData)
 	dpresponse.SetETag(w, newETag)
+}
+
+func rewriteAllDimensionOptions(ctx context.Context, dimensionOptions []*models.DimensionOption, linksBuilder *links.Builder) error {
+	var err error
+	for _, option := range dimensionOptions {
+		err = rewriteDimensionOptionLinks(ctx, &option.Links, linksBuilder)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite dimension option links", err)
+			return err
+		}
+	}
+	return nil
+}
+
+func rewriteDimensionOptionLinks(ctx context.Context, oldLinks *models.DimensionOptionLinks, linksBuilder *links.Builder) error {
+	prevLinks := []*models.LinkObject{
+		&oldLinks.Code,
+		&oldLinks.CodeList,
+		&oldLinks.Version,
+	}
+
+	var err error
+
+	for _, link := range prevLinks {
+		if link.HRef != "" {
+			link.HRef, err = linksBuilder.BuildLink(link.HRef)
+			if err != nil {
+				log.Error(ctx, "unable to rewrite instance link", err)
+				return err
+			}
+		}
+	}
+
+	return nil
 }
