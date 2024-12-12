@@ -102,12 +102,14 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 		metaDataDoc.Links.AccessRights = datasetDoc.Links.AccessRights
 	}
 
-	if datasetDoc.CanonicalTopic != "" {
-		metaDataDoc.Themes = append(metaDataDoc.Themes, datasetDoc.CanonicalTopic)
-	}
+	if metaDataDoc.Themes == nil {
+		if datasetDoc.CanonicalTopic != "" {
+			metaDataDoc.Themes = append(metaDataDoc.Themes, datasetDoc.CanonicalTopic)
+		}
 
-	if datasetDoc.Subtopics != nil {
-		metaDataDoc.Themes = append(metaDataDoc.Themes, datasetDoc.Subtopics...)
+		if datasetDoc.Subtopics != nil {
+			metaDataDoc.Themes = append(metaDataDoc.Themes, datasetDoc.Subtopics...)
+		}
 	}
 
 	// Add relevant metdata links from version document
@@ -303,7 +305,13 @@ func (d *Dataset) UpdateMetadata(metadata EditableMetadata) {
 	d.RelatedDatasets = metadata.RelatedDatasets
 	d.Publications = metadata.Publications
 	d.Survey = metadata.Survey
-	d.Themes = metadata.Themes
+	if metadata.CanonicalTopic != "" {
+		d.Themes = append(d.Themes, metadata.CanonicalTopic)
+	}
+
+	if metadata.Subtopics != nil {
+		d.Themes = append(d.Themes, metadata.Subtopics...)
+	}
 }
 
 // UpdateMetadata updates the metadata fields for a version

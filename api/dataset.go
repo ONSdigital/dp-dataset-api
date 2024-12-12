@@ -305,7 +305,6 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Clean and validate the dataset
 	models.CleanDataset(dataset)
 	if err = models.ValidateDataset(dataset); err != nil {
 		log.Error(ctx, "addDatasetNew endpoint: dataset failed validation checks", err)
@@ -434,7 +433,6 @@ func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *model
 
 	currentDataset.Next.State = models.PublishedState
 	currentDataset.Next.LastUpdated = time.Now()
-	// currentDataset.Next.Themes = append([]string{currentDataset.Next.CanonicalTopic}, currentDataset.Next.Subtopics...)
 
 	// newDataset.Next will not be cleaned up due to keeping request to mongo
 	// idempotent; for instance if an authorised user double clicked to update
