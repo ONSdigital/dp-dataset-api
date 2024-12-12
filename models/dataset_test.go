@@ -58,12 +58,22 @@ func TestString(t *testing.T) {
 			result := Filterable.String()
 			So(result, ShouldEqual, "filterable")
 			So(datasetTypes[0], ShouldEqual, "filterable")
+<<<<<<< HEAD
 			So(datasetTypes[1], ShouldEqual, "cantabular_table")
 			So(datasetTypes[2], ShouldEqual, "cantabular_blob")
 			So(datasetTypes[3], ShouldEqual, "cantabular_flexible_table")
 			So(datasetTypes[4], ShouldEqual, "cantabular_multivariate_table")
 			So(datasetTypes[5], ShouldEqual, "static")
 			So(datasetTypes[6], ShouldEqual, "invalid")
+=======
+			So(datasetTypes[1], ShouldEqual, "nomis")
+			So(datasetTypes[2], ShouldEqual, "cantabular_table")
+			So(datasetTypes[3], ShouldEqual, "cantabular_blob")
+			So(datasetTypes[4], ShouldEqual, "cantabular_flexible_table")
+			So(datasetTypes[5], ShouldEqual, "cantabular_multivariate_table")
+			So(datasetTypes[6], ShouldEqual, "static")
+			So(datasetTypes[7], ShouldEqual, "invalid")
+>>>>>>> develop
 		})
 	})
 }
@@ -98,6 +108,14 @@ func TestGetDatasetType(t *testing.T) {
 			Convey("Then it should return the appropriate value", func() {
 				result, err := GetDatasetType("cantabular_flexible_table")
 				So(result, ShouldEqual, CantabularFlexibleTable)
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When the type is static", func() {
+			Convey("Then it should return the appropriate value", func() {
+				result, err := GetDatasetType("static")
+				So(result, ShouldEqual, Static)
 				So(err, ShouldBeNil)
 			})
 		})
