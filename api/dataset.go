@@ -114,12 +114,14 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 			dataset.Current.ID = dataset.ID
 
-			if dataset.Current.CanonicalTopic != "" {
-				dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.CanonicalTopic)
-			}
+			if dataset.Current.Themes == nil {
+				if dataset.Current.CanonicalTopic != "" {
+					dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.CanonicalTopic)
+				}
 
-			if dataset.Current.Subtopics != nil {
-				dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.Subtopics...)
+				if dataset.Current.Subtopics != nil {
+					dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.Subtopics...)
+				}
 			}
 
 			datasetResponse = dataset.Current
@@ -132,12 +134,14 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			log.Info(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", logData)
 
 			if dataset.Current != nil {
-				if dataset.Current.CanonicalTopic != "" {
-					dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.CanonicalTopic)
-				}
+				if dataset.Current.Themes == nil {
+					if dataset.Current.CanonicalTopic != "" {
+						dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.CanonicalTopic)
+					}
 
-				if dataset.Current.Subtopics != nil {
-					dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.Subtopics...)
+					if dataset.Current.Subtopics != nil {
+						dataset.Current.Themes = append(dataset.Current.Themes, dataset.Current.Subtopics...)
+					}
 				}
 			}
 			datasetResponse = dataset
@@ -226,9 +230,6 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 		dataset.Links.LatestVersion = nil
 
 		dataset.LastUpdated = time.Now()
-
-		dataset.Themes = append(dataset.Themes, dataset.CanonicalTopic)
-		dataset.Themes = append(dataset.Themes, dataset.Subtopics...)
 
 		datasetDoc := &models.DatasetUpdate{
 			ID:   datasetID,
@@ -331,8 +332,15 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 
 	dataset.LastUpdated = time.Now()
 
-	dataset.Themes = append(dataset.Themes, dataset.CanonicalTopic)
-	dataset.Themes = append(dataset.Themes, dataset.Subtopics...)
+	if dataset.Themes == nil {
+		if dataset.CanonicalTopic != "" {
+			dataset.Themes = append(dataset.Themes, dataset.CanonicalTopic)
+		}
+
+		if dataset.Subtopics != nil {
+			dataset.Themes = append(dataset.Themes, dataset.Subtopics...)
+		}
+	}
 
 	datasetDoc := &models.DatasetUpdate{
 		ID:   datasetID,
