@@ -1208,6 +1208,9 @@ definitions:
     type: object
     required: ["id", "contacts", "description", "license", "links", "national_statistics", "title"]
     properties:
+      id:
+        description: "The unique id for the dataset"
+        type: string
       canonical_topic:
         description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the `Themes` field."
         type: string
