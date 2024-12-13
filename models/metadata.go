@@ -306,17 +306,16 @@ func (d *Dataset) UpdateMetadata(metadata EditableMetadata) {
 	d.Publications = metadata.Publications
 	d.Survey = metadata.Survey
 	if metadata.CanonicalTopic != "" {
-		if index := contains(d.Themes, metadata.CanonicalTopic); index != -1 {
-			d.Themes = append(d.Themes[:index], d.Themes[index+1:]...)
+		if contains(d.Themes, metadata.CanonicalTopic) == -1 {
+			d.Themes = append(d.Themes, metadata.CanonicalTopic)
 		}
-		d.Themes = append(d.Themes, metadata.CanonicalTopic)
 	}
+
 	if metadata.Subtopics != nil {
 		for _, subtopic := range metadata.Subtopics {
-			if index := contains(d.Themes, subtopic); index != -1 {
-				d.Themes = append(d.Themes[:index], d.Themes[index+1:]...)
+			if contains(d.Themes, subtopic) == -1 {
+				d.Themes = append(d.Themes, subtopic)
 			}
-			d.Themes = append(d.Themes, subtopic)
 		}
 	}
 }
