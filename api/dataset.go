@@ -103,6 +103,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 		var b []byte
 		var datasetResponse interface{}
+
 		if !authorised {
 			// User is not authenticated and hence has only access to current sub document
 			if dataset.Current == nil {
@@ -110,6 +111,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 				return nil, errs.ErrDatasetNotFound
 			}
 			log.Info(ctx, "getDataset endpoint: caller not authorised returning dataset", logData)
+
 			dataset.Current.ID = dataset.ID
 			if dataset.Current.Themes == nil {
 				dataset.Current.Themes = buildThemes(dataset.Current.CanonicalTopic, dataset.Current.Subtopics)
@@ -367,6 +369,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		dataset.Type = currentDataset.Next.Type
 
 		models.CleanDataset(dataset)
+
 		if err = models.ValidateDataset(dataset); err != nil {
 			log.Error(ctx, "putDataset endpoint: failed validation check to update dataset", err, data)
 			return err
