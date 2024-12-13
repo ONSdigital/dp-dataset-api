@@ -78,6 +78,9 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(vars map[string]string, version
 		"version":   vars["version"],
 	}
 
+	fmt.Println("THE VERSION ID IS")
+	fmt.Println(version.ID)
+
 	lockID, error := smDS.DataStore.Backend.AcquireInstanceLock(ctx, version.ID)
 	if error != nil {
 		return error
@@ -91,6 +94,16 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(vars map[string]string, version
 		log.Error(ctx, "amendVersion: creating models failed", err)
 		return err
 	}
+
+	// lockID, error := smDS.DataStore.Backend.AcquireInstanceLock(ctx, version.ID)
+	// fmt.Println("GOT THE LOCK")
+	// if error != nil {
+	// 	return error
+	// }
+	// defer func() {
+	// 	fmt.Println("RELEASING LOCK")
+	// 	smDS.DataStore.Backend.UnlockInstance(ctx, lockID)
+	// }()
 
 	if err := smDS.StateMachine.Transition(smDS, ctx, currentDataset, currentVersion, versionUpdate, versionDetails); err != nil {
 		log.Error(ctx, "amendVersion: state machine transition failed", err)
@@ -119,6 +132,7 @@ func (smDS *StateMachineDatasetAPI) associateVersion(ctx context.Context, curren
 	log.Info(ctx, "associateVersion: associated version", data)
 
 	associateVersionErr := func() error {
+		fmt.Println("UPDATING ASSOCIATED")
 		if err := smDS.DataStore.Backend.UpdateDatasetWithAssociation(ctx, versionDetails.datasetID, versionDoc.State, versionDoc); err != nil {
 			log.Error(ctx, "associateVersion: failed to update dataset document after a version of a dataset has been associated with a collection", err, data)
 			return err
@@ -175,6 +189,7 @@ func (smDS *StateMachineDatasetAPI) PopulateVersionInfo(ctx context.Context, ver
 		return nil, nil, nil, err
 	}
 
+	fmt.Println("GETTING VERSION")
 	currentVersion, err = smDS.DataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
 	if err != nil {
 		log.Error(ctx, "UpdateVersion: datastore.GetVersion returned an error", err, data)
@@ -199,6 +214,7 @@ func (smDS *StateMachineDatasetAPI) PopulateVersionInfo(ctx context.Context, ver
 		return nil
 	}
 
+	// This does the retry in the current dataset api - this is where the backend call is made
 	if err := doUpdate(); err != nil {
 		if err == errs.ErrDatasetNotFound {
 			log.Info(ctx, "get version info", data)
@@ -387,6 +403,47 @@ func AssociateVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails) error {
+	fmt.Println("associating")
+	// This needs to do the validation on required fields etc.
+	errModel := models.ValidateVersion(versionUpdate)
+	if errModel != nil {
+		fmt.Println("Validation Failed")
+		fmt.Println(errModel)
+		return errModel
+	}
+	fmt.Println("Validation passed, continue")
+	data := versionDetails.baseLogData()
+
+	err := UpdateVersionInfo(smDS, ctx, currentVersion, versionUpdate)
+	if err != nil {
+		log.Error(ctx, "State machine - Associating: UpdateVersionInfo : failed to update the version", err, data)
+		return err
+	}
+
+	err = UpdateAssociatedVersionInfo(smDS, ctx, currentVersion, versionUpdate)
+	if err != nil {
+		log.Error(ctx, "State machine - Associating: UpdateAssociatedVersionInfo : failed to associate", err, data)
+		return err
+	}
+
+	// Get the download generator from the map, depending of the Version document type
+	t, err := models.GetDatasetType(currentVersion.Type)
+	if err != nil {
+		return fmt.Errorf("error getting type of version: %w", err)
+	}
+	generator, ok := smDS.DownloadGenerators[t]
+	if !ok {
+		return fmt.Errorf("no downloader available for type %s", t.String())
+	}
+
+	if err := generator.Generate(ctx, versionDetails.datasetID, versionUpdate.ID, versionDetails.edition, versionDetails.version); err != nil {
+		data["instance_id"] = versionUpdate.ID
+		data["state"] = versionUpdate.State
+		log.Error(ctx, "putVersion endpoint: error while attempting to generate full dataset version downloads on version association", err, data)
+		return err
+	}
+	data["type"] = t.String()
+	log.Info(ctx, "putVersion endpoint (associateVersion): generated full dataset version downloads", data)
 	return nil
 }
 
@@ -403,6 +460,22 @@ func EditionConfirmVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails) error {
+	fmt.Println("edition-confirming")
+	// This needs to do the validation on required fields etc.
+	errModel := models.ValidateVersion(versionUpdate)
+	if errModel != nil {
+		fmt.Println("Validation Failed")
+		fmt.Println(errModel)
+		return errModel
+	}
+	fmt.Println("Validation passed, continue")
+	data := versionDetails.baseLogData()
+
+	err := UpdateVersionInfo(smDS, ctx, currentVersion, versionUpdate)
+	if err != nil {
+		log.Error(ctx, "State machine - Edition-confirming: UpdateVersionInfo : failed to update the version", err, data)
+		return err
+	}
 	return nil
 }
 
@@ -494,6 +567,7 @@ func UpdateVersionInfo(smDS *StateMachineDatasetAPI, ctx context.Context,
 		eTag = currentVersion.ETag
 	}
 
+	fmt.Println("UPDATING VERSION INFO")
 	// lockID, error := smDS.DataStore.Backend.AcquireInstanceLock(ctx, currentVersion.ID)
 	// if error != nil {
 	// 	return error
@@ -502,7 +576,52 @@ func UpdateVersionInfo(smDS *StateMachineDatasetAPI, ctx context.Context,
 	// 	smDS.DataStore.Backend.UnlockInstance(ctx, lockID)
 	// }()
 
-	if _, errVersion := smDS.DataStore.Backend.UpdateVersion(ctx, currentVersion, versionUpdate, eTag); errVersion != nil {
+	// doUpdate is an aux function that combines the existing version document with the update received in the body request,
+	// then it validates the new model, and performs the update in MongoDB, passing the existing model ETag (if it exists) to be used in the query selector
+	// Note that the combined version update does not mutate versionUpdate because multiple retries might generate a different value depending on the currentVersion at that point.
+	var doUpdate = func() error {
+		if _, errVersion := smDS.DataStore.Backend.UpdateVersion(ctx, currentVersion, versionUpdate, eTag); errVersion != nil {
+			return errVersion
+		}
+
+		return nil
+	}
+
+	if err := doUpdate(); err != nil {
+		if err == errs.ErrDatasetNotFound {
+			//log.Info(ctx, "instance document in database corresponding to dataset version was modified before the lock was acquired, retrying...", data)
+			currentVersion, err = smDS.DataStore.Backend.GetVersion(ctx, versionUpdate.DatasetID, versionUpdate.Edition, versionUpdate.Version, "")
+			if err != nil {
+				log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err)
+				return err
+			}
+
+			if err = doUpdate(); err != nil {
+				log.Error(ctx, "putVersion endpoint: failed to update version document on 2nd attempt", err)
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func UpdateAssociatedVersionInfo(smDS *StateMachineDatasetAPI, ctx context.Context,
+	currentVersion *models.Version, // Called Instances in Mongo
+	versionUpdate *models.Version) error {
+
+	fmt.Println("ASSOCIATING VERSION")
+	// lockID, error := smDS.DataStore.Backend.AcquireInstanceLock(ctx, currentVersion.ID)
+	// if error != nil {
+	// 	return error
+	// }
+	// defer func() {
+	// 	smDS.DataStore.Backend.UnlockInstance(ctx, lockID)
+	// }()
+
+	if errVersion := smDS.DataStore.Backend.UpdateDatasetWithAssociation(ctx, versionUpdate.ID, versionUpdate.State, versionUpdate); errVersion != nil {
 		return errVersion
 	}
 

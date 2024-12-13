@@ -15,22 +15,22 @@ var _ service.HTTPServer = &HTTPServerMock{}
 
 // HTTPServerMock is a mock implementation of service.HTTPServer.
 //
-// 	func TestSomethingThatUsesHTTPServer(t *testing.T) {
+//	func TestSomethingThatUsesHTTPServer(t *testing.T) {
 //
-// 		// make and configure a mocked service.HTTPServer
-// 		mockedHTTPServer := &HTTPServerMock{
-// 			ListenAndServeFunc: func() error {
-// 				panic("mock out the ListenAndServe method")
-// 			},
-// 			ShutdownFunc: func(ctx context.Context) error {
-// 				panic("mock out the Shutdown method")
-// 			},
-// 		}
+//		// make and configure a mocked service.HTTPServer
+//		mockedHTTPServer := &HTTPServerMock{
+//			ListenAndServeFunc: func() error {
+//				panic("mock out the ListenAndServe method")
+//			},
+//			ShutdownFunc: func(ctx context.Context) error {
+//				panic("mock out the Shutdown method")
+//			},
+//		}
 //
-// 		// use mockedHTTPServer in code that requires service.HTTPServer
-// 		// and then make assertions.
+//		// use mockedHTTPServer in code that requires service.HTTPServer
+//		// and then make assertions.
 //
-// 	}
+//	}
 type HTTPServerMock struct {
 	// ListenAndServeFunc mocks the ListenAndServe method.
 	ListenAndServeFunc func() error
@@ -68,7 +68,8 @@ func (mock *HTTPServerMock) ListenAndServe() error {
 
 // ListenAndServeCalls gets all the calls that were made to ListenAndServe.
 // Check the length with:
-//     len(mockedHTTPServer.ListenAndServeCalls())
+//
+//	len(mockedHTTPServer.ListenAndServeCalls())
 func (mock *HTTPServerMock) ListenAndServeCalls() []struct {
 } {
 	var calls []struct {
@@ -97,7 +98,8 @@ func (mock *HTTPServerMock) Shutdown(ctx context.Context) error {
 
 // ShutdownCalls gets all the calls that were made to Shutdown.
 // Check the length with:
-//     len(mockedHTTPServer.ShutdownCalls())
+//
+//	len(mockedHTTPServer.ShutdownCalls())
 func (mock *HTTPServerMock) ShutdownCalls() []struct {
 	Ctx context.Context
 } {

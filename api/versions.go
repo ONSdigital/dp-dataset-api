@@ -242,17 +242,41 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		"version":   vars["version"],
 	}
 
+	// b, err := io.ReadAll(r.Body)
+	// var version *models.Version
+	// err = json.Unmarshal(b, &version)
+	// if err != nil {
+	// 	handleVersionAPIErr(ctx, err, w, data)
+	// 	//return nil, errs.ErrUnableToParseJSON
+	// 	return
+	// }
+
+	// body, err := io.ReadAll(r.Body)
+
+	// var version *models.Version
+
+	// fmt.Println("THE BODY IS")
+	// fmt.Println(body)
+	// if err = json.Unmarshal(body, version); err != nil {
+	// 	handleVersionAPIErr(ctx, err, w, data)
+	// 	return
+	// }
+
 	version, err := models.CreateVersion(r.Body, vars["dataset_id"])
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
 	}
 
+	fmt.Println("CREATED THE VERSION")
+	fmt.Println(version)
+
 	err = api.smDatasetAPI.AmendVersion(vars, version, r.Context())
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
 	}
+	fmt.Println("AMENDED THE VERSION")
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
@@ -434,13 +458,13 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	}
 
 	// acquire instance lock to prevent race conditions on instance collection
-	lockID, err := api.dataStore.Backend.AcquireInstanceLock(ctx, currentVersion.ID)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	defer func() {
-		api.dataStore.Backend.UnlockInstance(ctx, lockID)
-	}()
+	// lockID, err := api.dataStore.Backend.AcquireInstanceLock(ctx, currentVersion.ID)
+	// if err != nil {
+	// 	return nil, nil, nil, err
+	// }
+	// defer func() {
+	// 	api.dataStore.Backend.UnlockInstance(ctx, lockID)
+	// }()
 
 	// Try to perform the update. If there was a race condition and another caller performed the update
 	// before we could acquire the lock, this will result in the ETag being changed

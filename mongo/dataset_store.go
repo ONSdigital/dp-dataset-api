@@ -438,6 +438,7 @@ func (m *Mongo) UpdateDatasetWithAssociation(ctx context.Context, id, state stri
 
 // UpdateVersion updates an existing version document
 func (m *Mongo) UpdateVersion(ctx context.Context, currentVersion, versionUpdate *models.Version, eTagSelector string) (newETag string, err error) {
+	fmt.Println("I GOT HERE")
 	// calculate the new eTag hash for the instance that would result from adding the event
 	newETag, err = newETagForVersionUpdate(currentVersion, versionUpdate)
 	if err != nil {

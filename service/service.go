@@ -61,7 +61,56 @@ func GetListTransitions() []application.Transition {
 	publishedTransition := application.Transition{
 		Label:                "published",
 		TargetState:          application.Published,
-		AlllowedSourceStates: []string{"associated"},
+		AlllowedSourceStates: []string{"created", "associated"},
+	}
+
+	associatedTransition := application.Transition{
+		Label:                "associated",
+		TargetState:          application.Associated,
+		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+	}
+
+	edconfirmedTransition := application.Transition{
+		Label:                "edition-confirmed",
+		TargetState:          application.EditionConfirmed,
+		AlllowedSourceStates: []string{"completed", "edition-confirmed"},
+	}
+
+	completedTransition := application.Transition{
+		Label:                "completed",
+		TargetState:          application.Completed,
+		AlllowedSourceStates: []string{"submitted", "completed"},
+	}
+
+	submittedTransition := application.Transition{
+		Label:                "submitted",
+		TargetState:          application.Submitted,
+		AlllowedSourceStates: []string{"created", "submitted"},
+	}
+
+	failedTransition := application.Transition{
+		Label:                "failed",
+		TargetState:          application.Failed,
+		AlllowedSourceStates: []string{"submitted"},
+	}
+
+	detachedTransition := application.Transition{
+		Label:                "detached",
+		TargetState:          application.Detached,
+		AlllowedSourceStates: []string{"edition-confirmed"},
+	}
+
+	return []application.Transition{publishedTransition,
+		associatedTransition, edconfirmedTransition,
+		completedTransition, submittedTransition,
+		detachedTransition, failedTransition}
+}
+
+func GetListCantabularTransitions() []application.Transition {
+	publishedTransition := application.Transition{
+		Label:                "published",
+		TargetState:          application.Published,
+		AlllowedSourceStates: []string{"created"},
 	}
 
 	associatedTransition := application.Transition{

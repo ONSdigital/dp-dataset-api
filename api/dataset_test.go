@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -61,7 +62,78 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 		models.Nomis:      mockedGeneratedDownloads,
 	}
 
-	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions)
+	mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{
+		models.Filterable: mockedGeneratedDownloads,
+		models.Nomis:      mockedGeneratedDownloads,
+	}
+
+	states := []application.State{application.Published, application.Submitted, application.Completed, application.EditionConfirmed, application.Associated, application.Created, application.Failed, application.Detached}
+	//transitions := GetListTransitions()
+	transitions := []application.Transition{{
+		Label:                "published",
+		TargetState:          application.Published,
+		AlllowedSourceStates: []string{"associated", "published"},
+	}, {
+		Label:                "associated",
+		TargetState:          application.Associated,
+		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+	},
+		{
+			Label:                "edition-confirmed",
+			TargetState:          application.EditionConfirmed,
+			AlllowedSourceStates: []string{"edition-confirmed", "completed"},
+		}}
+
+	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
+		DataStore:          store.DataStore{Backend: mockedDataStore},
+		DownloadGenerators: mockedMapSMGeneratedDownloads,
+		StateMachine:       application.NewStateMachine(states, transitions, store.DataStore{Backend: mockedDataStore}, testContext),
+	}
+
+	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, &mockStatemachineDatasetAPI)
+}
+
+func GetStateMachineAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, statemachine application.StateMachine) *application.StateMachineDatasetAPI {
+	mu.Lock()
+	defer mu.Unlock()
+	cfg, err := config.Get()
+	So(err, ShouldBeNil)
+	cfg.ServiceAuthToken = authToken
+	cfg.DatasetAPIURL = host
+	cfg.EnablePrivateEndpoints = true
+	cfg.DefaultLimit = 0
+	cfg.DefaultOffset = 0
+
+	mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{
+		models.Filterable: mockedGeneratedDownloads,
+		models.Nomis:      mockedGeneratedDownloads,
+	}
+
+	states := []application.State{application.Published, application.Submitted, application.Completed, application.EditionConfirmed, application.Associated, application.Created, application.Failed, application.Detached}
+	//transitions := GetListTransitions()
+	transitions := []application.Transition{{
+		Label:                "published",
+		TargetState:          application.Published,
+		AlllowedSourceStates: []string{"associated", "published"},
+	}, {
+		Label:                "associated",
+		TargetState:          application.Associated,
+		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+	},
+		{
+			Label:                "edition-confirmed",
+			TargetState:          application.EditionConfirmed,
+			AlllowedSourceStates: []string{"edition-confirmed", "completed"},
+		}}
+
+	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
+		DataStore:          store.DataStore{Backend: mockedDataStore},
+		DownloadGenerators: mockedMapSMGeneratedDownloads,
+		StateMachine:       application.NewStateMachine(states, transitions, store.DataStore{Backend: mockedDataStore}, testContext),
+	}
+
+	return application.Setup(testContext, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, mockedMapSMGeneratedDownloads, mockStatemachineDatasetAPI.StateMachine)
+	//return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, &mockStatemachineDatasetAPI)
 }
 
 // GetAPIWithCMDMocks also used in other tests, so exported
@@ -82,7 +154,35 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
 
-	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions)
+	mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{
+		models.Filterable: mockedGeneratedDownloads,
+		models.Nomis:      mockedGeneratedDownloads,
+	}
+
+	states := []application.State{application.Published, application.Submitted, application.Completed, application.EditionConfirmed, application.Associated, application.Created, application.Failed, application.Detached}
+	//transitions := GetListTransitions()
+	transitions := []application.Transition{{
+		Label:                "published",
+		TargetState:          application.Published,
+		AlllowedSourceStates: []string{"associated", "published"},
+	}, {
+		Label:                "associated",
+		TargetState:          application.Associated,
+		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+	},
+		{
+			Label:                "edition-confirmed",
+			TargetState:          application.EditionConfirmed,
+			AlllowedSourceStates: []string{"edition-confirmed", "completed"},
+		}}
+
+	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
+		DataStore:          store.DataStore{Backend: mockedDataStore},
+		DownloadGenerators: mockedMapSMGeneratedDownloads,
+		StateMachine:       application.NewStateMachine(states, transitions, store.DataStore{Backend: mockedDataStore}, testContext),
+	}
+
+	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, &mockStatemachineDatasetAPI)
 }
 
 func createRequestWithAuth(method, target string, body io.Reader) *http.Request {

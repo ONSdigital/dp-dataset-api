@@ -65,6 +65,11 @@ func (sm *StateMachine) Transition(smDS *StateMachineDatasetAPI, ctx context.Con
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails) error {
 
+	fmt.Println("DOING SM TRANSITION")
+	fmt.Println("THE CURRENT STATE IS")
+	fmt.Println(currentVersion.State)
+	fmt.Println("THE UPDATED STATE IS")
+	fmt.Println(versionUpdate.State)
 	match := false
 	var nextState *State
 	var ok bool
@@ -76,6 +81,10 @@ func (sm *StateMachine) Transition(smDS *StateMachineDatasetAPI, ctx context.Con
 				if currentVersion.State == transitions[i] {
 					match = true
 					nextState, ok = castStateToState(versionUpdate.State)
+					// Could the type be added in here?
+					// if state == Created.Name && nextState == &Published && versionUpdate.Type == "v4" {
+					// 	ok = false
+					// }
 					if !ok {
 						return errors.New("incorrect state value")
 					}
