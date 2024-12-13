@@ -85,7 +85,7 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 	}
 
 	linksBuilder := links.FromHeadersOrDefault(&r.Header, hostURL)
-	err = rewriteAllDimensionOptions(ctx, dimensionOptions, linksBuilder)
+	err = utils.RewriteAllDimensionOptions(ctx, dimensionOptions, linksBuilder)
 
 	log.Info(ctx, "successfully get dimensions for an instance resource", logData)
 	dpresponse.SetETag(w, instance.ETag)
@@ -524,38 +524,4 @@ func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 	logData["action"] = AddDimensionAction
 	log.Info(ctx, "added node id to dimension of an instance resource", logData)
 	dpresponse.SetETag(w, newETag)
-}
-
-func rewriteAllDimensionOptions(ctx context.Context, dimensionOptions []*models.DimensionOption, linksBuilder *links.Builder) error {
-	var err error
-	for _, option := range dimensionOptions {
-		err = rewriteDimensionOptionLinks(ctx, &option.Links, linksBuilder)
-		if err != nil {
-			log.Error(ctx, "failed to rewrite dimension option links", err)
-			return err
-		}
-	}
-	return nil
-}
-
-func rewriteDimensionOptionLinks(ctx context.Context, oldLinks *models.DimensionOptionLinks, linksBuilder *links.Builder) error {
-	prevLinks := []*models.LinkObject{
-		&oldLinks.Code,
-		&oldLinks.CodeList,
-		&oldLinks.Version,
-	}
-
-	var err error
-
-	for _, link := range prevLinks {
-		if link.HRef != "" {
-			link.HRef, err = linksBuilder.BuildLink(link.HRef)
-			if err != nil {
-				log.Error(ctx, "unable to rewrite instance link", err)
-				return err
-			}
-		}
-	}
-
-	return nil
 }

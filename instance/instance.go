@@ -14,6 +14,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/dp-net/v2/links"
@@ -86,7 +87,7 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit, offset in
 
 		linksBuilder := links.FromHeadersOrDefault(&r.Header, hostURL)
 
-		err = rewriteAllInstances(ctx, instancesResults, linksBuilder)
+		err = utils.RewriteAllInstances(ctx, instancesResults, linksBuilder)
 		if err != nil {
 			log.Error(ctx, "get instances: failed to rewrite instances", err, logData)
 			return nil, 0, err
@@ -141,7 +142,7 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 
 	linksBuilder := links.FromHeadersOrDefault(&r.Header, hostURL)
 
-	err = rewriteAllInstances(ctx, []*models.Instance{instance}, linksBuilder)
+	err = utils.RewriteAllInstances(ctx, []*models.Instance{instance}, linksBuilder)
 	if err != nil {
 		log.Error(ctx, "get instance: failed to rewrite instance", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
@@ -535,67 +536,6 @@ func (d *PublishCheck) checkState(ctx context.Context, instanceID, eTagSelector 
 		return errs.ErrInternalServer
 	}
 
-	return nil
-}
-
-func rewriteAllInstances(ctx context.Context, instances []*models.Instance, linksBuilder *links.Builder) error {
-	var err error
-
-	for _, instance := range instances {
-		instance.Dimensions, err = rewriteDimensionsLink(ctx, instance.Dimensions, linksBuilder)
-		if err != nil {
-			log.Error(ctx, "error rewriting dimension link", err)
-			return err
-		}
-
-		err = rewriteInstanceLinks(ctx, instance.Links, linksBuilder)
-		if err != nil {
-			log.Error(ctx, "error rewriting instance links", err)
-			return err
-		}
-	}
-	return nil
-
-}
-
-func rewriteDimensionsLink(ctx context.Context, dimensions []models.Dimension, linksBuilder *links.Builder) ([]models.Dimension, error) {
-	items := []models.Dimension{}
-
-	var err error
-
-	for _, item := range dimensions {
-		item.HRef, err = linksBuilder.BuildLink(item.HRef)
-		if err != nil {
-			log.Error(ctx, "unable to rewrite dimension link", err)
-			return nil, err
-		}
-		items = append(items, item)
-	}
-	return items, nil
-}
-
-func rewriteInstanceLinks(ctx context.Context, oldLinks *models.InstanceLinks, linksBuilder *links.Builder) error {
-	prevLinks := []*models.LinkObject{
-		oldLinks.Dataset,
-		oldLinks.Dimensions,
-		oldLinks.Edition,
-		oldLinks.Job,
-		oldLinks.Self,
-		oldLinks.Spatial,
-		oldLinks.Version,
-	}
-
-	var err error
-
-	for _, link := range prevLinks {
-		if link != nil && link.HRef != "" {
-			link.HRef, err = linksBuilder.BuildLink(link.HRef)
-			if err != nil {
-				log.Error(ctx, "unable to rewrite instance link", err)
-				return err
-			}
-		}
-	}
 	return nil
 }
 

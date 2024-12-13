@@ -10,6 +10,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/dp-net/v2/links"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -80,7 +81,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-	datasetsResponse, err := mapDatasetsAndRewriteLinks(ctx, datasets, authorised, linksBuilder)
+	datasetsResponse, err := utils.MapDatasetsAndRewriteLinks(ctx, datasets, authorised, linksBuilder)
 	if err != nil {
 		log.Error(ctx, "Error mapping results and rewriting links", err)
 		return nil, 0, err
@@ -105,7 +106,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		authorised := api.authenticate(r, logData)
 
 		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-		datasetResponse, err := mapDatasetsAndRewriteLinks(ctx, []*models.DatasetUpdate{dataset}, authorised, linksBuilder)
+		datasetResponse, err := utils.MapDatasetsAndRewriteLinks(ctx, []*models.DatasetUpdate{dataset}, authorised, linksBuilder)
 		if err != nil {
 			log.Error(ctx, "Error mapping results and rewriting links", err)
 			return nil, err
@@ -213,7 +214,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-		err = rewriteAllDatasetLinks(ctx, datasetDoc.Next.Links, linksBuilder)
+		err = utils.RewriteAllDatasetLinks(ctx, datasetDoc.Next.Links, linksBuilder)
 		if err != nil {
 			log.Error(ctx, "addDataset endpoint: failed to rewrite links for response", err)
 			return nil, err
@@ -328,7 +329,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	}
 
 	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-	err = rewriteAllDatasetLinks(ctx, datasetDoc.Next.Links, linksBuilder)
+	err = utils.RewriteAllDatasetLinks(ctx, datasetDoc.Next.Links, linksBuilder)
 	if err != nil {
 		log.Error(ctx, "addDatasetNew endpoint: failed to rewrite links for response", err)
 		return
@@ -497,54 +498,6 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 	log.Info(ctx, "delete dataset", logData)
-}
-
-func mapDatasetsAndRewriteLinks(ctx context.Context, results []*models.DatasetUpdate, authorised bool, linksBuilder *links.Builder) ([]*models.Dataset, error) {
-	items := []*models.Dataset{}
-	for _, item := range results {
-		if item.Current != nil {
-			err := rewriteAllDatasetLinks(ctx, item.Current.Links, linksBuilder)
-			if err != nil {
-				log.Error(ctx, "unable to rewrite 'current' links", err)
-				return nil, err
-			}
-			items = append(items, item.Current)
-		}
-
-		if authorised && item.Next != nil {
-			err := rewriteAllDatasetLinks(ctx, item.Next.Links, linksBuilder)
-			if err != nil {
-				log.Error(ctx, "unable to rewrite 'next' links", err)
-				return nil, err
-			}
-			items = append(items, item.Next)
-		}
-	}
-
-	return items, nil
-}
-
-func rewriteAllDatasetLinks(ctx context.Context, oldLinks *models.DatasetLinks, linksBuilder *links.Builder) error {
-	prevLinks := []*models.LinkObject{
-		oldLinks.AccessRights,
-		oldLinks.Editions,
-		oldLinks.LatestVersion,
-		oldLinks.Self,
-		oldLinks.Taxonomy,
-	}
-
-	var err error
-
-	for _, link := range prevLinks {
-		if link != nil && link.HRef != "" {
-			link.HRef, err = linksBuilder.BuildLink(link.HRef)
-			if err != nil {
-				log.Error(ctx, "error rewriting link", err, log.Data{"link": link.HRef})
-				return err
-			}
-		}
-	}
-	return nil
 }
 
 func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, data log.Data) {

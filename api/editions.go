@@ -1,12 +1,12 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	"github.com/ONSdigital/dp-net/v2/links"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
@@ -53,7 +53,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 	}
 
 	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-	editionsResponse, err := mapEditionsAndRewriteLinks(ctx, results, authorised, linksBuilder)
+	editionsResponse, err := utils.MapEditionsAndRewriteLinks(ctx, results, authorised, linksBuilder)
 	if err != nil {
 		log.Error(ctx, "Error mapping results and rewriting links", err)
 		return nil, 0, err
@@ -89,7 +89,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 		}
 
 		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-		editionResponse, err := mapEditionsAndRewriteLinks(ctx, []*models.EditionUpdate{edition}, authorised, linksBuilder)
+		editionResponse, err := utils.MapEditionsAndRewriteLinks(ctx, []*models.EditionUpdate{edition}, authorised, linksBuilder)
 		if err != nil {
 			log.Error(ctx, "Error mapping results and rewriting links", err)
 			return nil, err
@@ -122,51 +122,4 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Info(ctx, "getEdition endpoint: request successful", logData)
-}
-
-func mapEditionsAndRewriteLinks(ctx context.Context, results []*models.EditionUpdate, authorised bool, linksBuilder *links.Builder) ([]*models.Edition, error) {
-	items := []*models.Edition{}
-	for _, item := range results {
-		if item.Current != nil {
-			err := rewriteAllEditionLinks(ctx, item.Current.Links, linksBuilder)
-			if err != nil {
-				log.Error(ctx, "unable to rewrite 'current' links", err)
-				return nil, err
-			}
-			items = append(items, item.Current)
-		}
-
-		if authorised && item.Next != nil {
-			err := rewriteAllEditionLinks(ctx, item.Next.Links, linksBuilder)
-			if err != nil {
-				log.Error(ctx, "unable to rewrite 'next' links", err)
-				return nil, err
-			}
-			items = append(items, item.Next)
-		}
-	}
-
-	return items, nil
-}
-
-func rewriteAllEditionLinks(ctx context.Context, oldLinks *models.EditionUpdateLinks, linksBuilder *links.Builder) error {
-	prevLinks := []*models.LinkObject{
-		oldLinks.Dataset,
-		oldLinks.LatestVersion,
-		oldLinks.Self,
-		oldLinks.Versions,
-	}
-
-	var err error
-
-	for _, link := range prevLinks {
-		if link != nil && link.HRef != "" {
-			link.HRef, err = linksBuilder.BuildLink(link.HRef)
-			if err != nil {
-				log.Error(ctx, "error rewriting link", err, log.Data{"link": link.HRef})
-				return err
-			}
-		}
-	}
-	return nil
 }

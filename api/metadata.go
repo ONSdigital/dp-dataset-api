@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -9,6 +8,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/dp-net/v2/links"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -111,13 +111,13 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		}
 
 		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-		err = rewriteAllMetadataLinks(ctx, metaDataDoc.Links, linksBuilder)
+		err = utils.RewriteAllMetadataLinks(ctx, metaDataDoc.Links, linksBuilder)
 		if err != nil {
 			log.Error(ctx, "Error rewriting metadata dataset links", err)
 			return nil, err
 		}
 
-		metaDataDoc.Dimensions, err = rewriteAllMetadataDimensionsLinks(ctx, metaDataDoc.Dimensions, linksBuilder)
+		metaDataDoc.Dimensions, err = utils.RewriteAllMetadataDimensionsLinks(ctx, metaDataDoc.Dimensions, linksBuilder)
 		if err != nil {
 			log.Error(ctx, "Error rewriting metadata dimensions links", err)
 			return nil, err
@@ -229,46 +229,6 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
 	log.Info(ctx, "putMetadata endpoint: put metadata request successful", logData)
-}
-
-func rewriteAllMetadataDimensionsLinks(ctx context.Context, results []models.Dimension, linksBuilder *links.Builder) ([]models.Dimension, error) {
-	items := []models.Dimension{}
-	var err error
-
-	for _, item := range results {
-		if item.HRef != "" {
-			item.HRef, err = linksBuilder.BuildLink(item.HRef)
-			if err != nil {
-				log.Error(ctx, "error rewriting link", err, log.Data{"link": item.HRef})
-				return nil, err
-			}
-			items = append(items, item)
-		}
-	}
-	return items, nil
-}
-
-func rewriteAllMetadataLinks(ctx context.Context, oldLinks *models.MetadataLinks, linksBuilder *links.Builder) error {
-	prevLinks := []*models.LinkObject{
-		oldLinks.AccessRights,
-		oldLinks.Self,
-		oldLinks.Spatial,
-		oldLinks.Version,
-		oldLinks.WebsiteVersion,
-	}
-
-	var err error
-
-	for _, link := range prevLinks {
-		if link != nil && link.HRef != "" {
-			link.HRef, err = linksBuilder.BuildLink(link.HRef)
-			if err != nil {
-				log.Error(ctx, "error rewriting link", err, log.Data{"link": link.HRef})
-				return err
-			}
-		}
-	}
-	return nil
 }
 
 func handleMetadataErr(w http.ResponseWriter, err error) {
