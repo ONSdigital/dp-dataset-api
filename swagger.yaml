@@ -1209,7 +1209,7 @@ definitions:
     required: ["id", "contacts", "description", "license", "links", "national_statistics", "title"]
     properties:
       canonical_topic:
-        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the "Themes" field."
+        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the `Themes` field."
         type: string
       collection_id:
         $ref: '#/definitions/CollectionID'
@@ -1317,7 +1317,7 @@ definitions:
       state:
         $ref: '#/definitions/State'
       subtopics:
-        description: "A list of subtopic ids that the dataset relates to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the "Themes" field."
+        description: "A list of subtopic ids that the dataset relates to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the `Themes` field."
         type: array
         items:
           type: "string"
@@ -1344,6 +1344,8 @@ definitions:
       themes:
         description: "A list of topics and subtopics that the dataset relates to within the website taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
         type: array
+        items:
+          type: "string"
     
 
   Type:
@@ -1836,7 +1838,7 @@ definitions:
         items:
           $ref: '#/definitions/Alert'
       canonical_topic:
-        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the "Themes" field."
+        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the `Themes` field."
         type: string
       contacts:
         description: "A list containing contact details of staticians for a dataset"
@@ -1958,7 +1960,7 @@ definitions:
         description: "The release frequency of a dataset"
         type: string
       subtopics:
-        description: "A list of subtopic ids that the dataset relates to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the "Themes" field."
+        description: "A list of subtopic ids that the dataset relates to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the `Themes` field."
         type: array
         items:
           type: "string"
@@ -1982,6 +1984,8 @@ definitions:
       themes:
         description: "A list of topics and subtopics that the dataset relates to within the website taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
         type: array
+        items:
+          type: "string"
   NewDatasetResponse:
     description: "A model for the response body when creating a new dataset"
     type: object
