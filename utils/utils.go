@@ -70,6 +70,17 @@ func SliceStr(full []*string, offset, limit int) (sliced []*string) {
 	return full[offset:end]
 }
 
+func BuildThemes(canonicalTopic string, subtopics []string) []string {
+	themes := []string{}
+	if canonicalTopic != "" {
+		themes = append(themes, canonicalTopic)
+	}
+	if subtopics != nil {
+		themes = append(themes, subtopics...)
+	}
+	return themes
+}
+
 func RewriteDatasetsBasedOnAuth(ctx context.Context, results []*models.DatasetUpdate, authorised bool, linksBuilder *links.Builder) ([]*models.Dataset, error) {
 	items := []*models.Dataset{}
 	for _, item := range results {
@@ -79,6 +90,10 @@ func RewriteDatasetsBasedOnAuth(ctx context.Context, results []*models.DatasetUp
 				log.Error(ctx, "failed to rewrite 'current' links", err)
 				return nil, err
 			}
+
+			if item.Current.Themes == nil {
+				item.Current.Themes = BuildThemes(item.Current.CanonicalTopic, item.Current.Subtopics)
+			}
 			items = append(items, item.Current)
 		}
 
@@ -87,6 +102,10 @@ func RewriteDatasetsBasedOnAuth(ctx context.Context, results []*models.DatasetUp
 			if err != nil {
 				log.Error(ctx, "failed to rewrite 'next' links", err)
 				return nil, err
+			}
+
+			if item.Current != nil && item.Current.Themes == nil {
+				item.Current.Themes = BuildThemes(item.Current.CanonicalTopic, item.Current.Subtopics)
 			}
 			items = append(items, item.Next)
 		}

@@ -1516,7 +1516,6 @@ func TestPatchDimensionsReturnsBadRequest(t *testing.T) {
 func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator) *api.DatasetAPI {
 	downloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
 		models.Filterable: mockedGeneratedDownloads,
-		models.Nomis:      mockedGeneratedDownloads,
 	}
 	mu.Lock()
 	defer mu.Unlock()

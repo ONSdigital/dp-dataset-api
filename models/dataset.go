@@ -26,7 +26,6 @@ type DatasetType int
 // possible dataset types
 const (
 	Filterable DatasetType = iota
-	Nomis
 	CantabularTable
 	CantabularBlob
 	CantabularFlexibleTable
@@ -37,7 +36,6 @@ const (
 
 var datasetTypes = []string{
 	"filterable",
-	"nomis",
 	"cantabular_table",
 	"cantabular_blob",
 	"cantabular_flexible_table",
@@ -55,8 +53,6 @@ func GetDatasetType(datasetType string) (DatasetType, error) {
 	switch datasetType {
 	case "filterable", "v4", "":
 		return Filterable, nil
-	case "nomis":
-		return Nomis, nil
 	case "cantabular_table":
 		return CantabularTable, nil
 	case "cantabular_blob":
@@ -112,12 +108,12 @@ type Dataset struct {
 	UnitOfMeasure     string           `bson:"unit_of_measure,omitempty"        json:"unit_of_measure,omitempty"`
 	URI               string           `bson:"uri,omitempty"                    json:"uri,omitempty"`
 	Type              string           `bson:"type,omitempty"                   json:"type,omitempty"`
-	NomisReferenceURL string           `bson:"nomis_reference_url,omitempty"    json:"nomis_reference_url,omitempty"`
 	IsBasedOn         *IsBasedOn       `bson:"is_based_on,omitempty"            json:"is_based_on,omitempty"`
 	CanonicalTopic    string           `bson:"canonical_topic,omitempty"        json:"canonical_topic,omitempty"`
 	Subtopics         []string         `bson:"subtopics,omitempty"              json:"subtopics,omitempty"`
 	Survey            string           `bson:"survey,omitempty"                 json:"survey,omitempty"`
 	RelatedContent    []GeneralDetails `bson:"related_content,omitempty"        json:"related_content,omitempty"`
+	Themes            []string         `bson:"themes,omitempty" json:"themes,omitempty"`
 }
 
 // DatasetLinks represents a list of specific links related to the dataset resource
@@ -175,13 +171,55 @@ type EditionUpdateLinks struct {
 
 // Edition represents information related to a single edition for a dataset
 type Edition struct {
-	Edition     string              `bson:"edition,omitempty"      json:"edition,omitempty"`
-	ID          string              `bson:"id,omitempty"           json:"id,omitempty"`
-	LastUpdated time.Time           `bson:"last_updated,omitempty" json:"-"`
-	Links       *EditionUpdateLinks `bson:"links,omitempty"        json:"links,omitempty"`
-	State       string              `bson:"state,omitempty"        json:"state,omitempty"`
-	IsBasedOn   *IsBasedOn          `bson:"is_based_on,omitempty"  json:"is_based_on,omitempty"`
-	Type        string              `bson:"type,omitempty"         json:"type,omitempty"`
+	Edition            string              `bson:"edition,omitempty"      json:"edition,omitempty"`
+	ID                 string              `bson:"id,omitempty"           json:"id,omitempty"`
+	LastUpdated        time.Time           `bson:"last_updated,omitempty" json:"-"`
+	Links              *EditionUpdateLinks `bson:"links,omitempty"        json:"links,omitempty"`
+	State              string              `bson:"state,omitempty"        json:"state,omitempty"`
+	IsBasedOn          *IsBasedOn          `bson:"is_based_on,omitempty"  json:"is_based_on,omitempty"`
+	Type               string              `bson:"type,omitempty"         json:"type,omitempty"`
+	QualityDesignation QualityDesignation  `bson:"quality_designation,omitempty" json:"quality_designation,omitempty"`
+}
+
+// Define the enum type for QualityDesignation
+type QualityDesignation string
+
+// Define the possible values for the QualityDesignation enum
+const (
+	QualityDesignationExperimental QualityDesignation = "experimental"
+	QualityDesignationOfficial     QualityDesignation = "official"
+	QualityDesignationAccredited   QualityDesignation = "accredited"
+)
+
+func (qd *QualityDesignation) IsValid() bool {
+	switch *qd {
+	case QualityDesignationExperimental, QualityDesignationOfficial, QualityDesignationAccredited:
+		return true
+	default:
+		return false
+	}
+}
+
+// MarshalJSON marshals the QualityDesignation to JSON
+func (qd QualityDesignation) MarshalJSON() ([]byte, error) {
+	if !qd.IsValid() {
+		return nil, fmt.Errorf("invalid QualityDesignation: %s", qd)
+	}
+	return json.Marshal(string(qd))
+}
+
+// UnmarshalJSON unmarshals a string to QualityDesignation
+func (qd *QualityDesignation) UnmarshalJSON(data []byte) error {
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return err
+	}
+	converted := QualityDesignation(str)
+	if !converted.IsValid() {
+		return fmt.Errorf("invalid QualityDesignation: %s", str)
+	}
+	*qd = converted
+	return nil
 }
 
 // Publisher represents an object containing information of the publisher
@@ -240,11 +278,54 @@ func (v *Version) Hash(extraBytes []byte) (string, error) {
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
+// AlertType defines possible types of alerts
+type AlertType string
+
+const (
+	AlertTypeAlert      AlertType = "alert"
+	AlertTypeCorrection AlertType = "correction"
+)
+
+func (at AlertType) IsValid() bool {
+	switch at {
+	case AlertTypeAlert, AlertTypeCorrection:
+		return true
+	default:
+		return false
+	}
+}
+
+func (at AlertType) String() string {
+	return string(at)
+}
+
 // Alert represents an object containing information on an alert
 type Alert struct {
-	Date        string `bson:"date,omitempty"        json:"date,omitempty"`
-	Description string `bson:"description,omitempty" json:"description,omitempty"`
-	Type        string `bson:"type,omitempty"        json:"type,omitempty"`
+	Date        string    `bson:"date,omitempty"        json:"date,omitempty"`
+	Description string    `bson:"description,omitempty" json:"description,omitempty"`
+	Type        AlertType `bson:"type,omitempty"        json:"type,omitempty"`
+}
+
+// MarshalJSON marshals the AlertType to JSON
+func (at AlertType) MarshalJSON() ([]byte, error) {
+	if !at.IsValid() {
+		return nil, fmt.Errorf("invalid AlertType: %s", at)
+	}
+	return json.Marshal(string(at))
+}
+
+// UnmarshalJSON unmarshals a string to AlertType
+func (at *AlertType) UnmarshalJSON(data []byte) error {
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return err
+	}
+	converted := AlertType(str)
+	if !converted.IsValid() {
+		return fmt.Errorf("invalid AlertType: %s", str)
+	}
+	*at = converted
+	return nil
 }
 
 // DownloadList represents a list of objects of containing information on the downloadable files.
@@ -607,15 +688,6 @@ func ValidateDatasetType(ctx context.Context, datasetType string) (*DatasetType,
 		return nil, err
 	}
 	return &dataType, nil
-}
-
-// ValidateNomisURL checks for the nomis type when the dataset has nomis URL
-func ValidateNomisURL(ctx context.Context, datasetType, nomisURL string) (string, error) {
-	if nomisURL != "" && datasetType != Nomis.String() {
-		log.Error(ctx, "error Type mismatch", errs.ErrDatasetTypeInvalid)
-		return "", errs.ErrTypeMismatch
-	}
-	return datasetType, nil
 }
 
 // ValidateVersion checks the content of the version structure

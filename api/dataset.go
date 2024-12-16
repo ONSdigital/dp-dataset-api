@@ -122,7 +122,6 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "getDataset endpoint: failed to marshal dataset resource into bytes", err, logData)
 			return nil, err
 		}
-
 		return b, nil
 	}()
 
@@ -173,12 +172,6 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		datasetType, err := models.ValidateNomisURL(ctx, dataType.String(), dataset.NomisReferenceURL)
-		if err != nil {
-			log.Error(ctx, "addDataset endpoint: error dataset.Type mismatch", err, logData)
-			return nil, err
-		}
-
 		models.CleanDataset(dataset)
 
 		if err = models.ValidateDataset(dataset); err != nil {
@@ -186,7 +179,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		dataset.Type = datasetType
+		dataset.Type = dataType.String()
 		dataset.State = models.CreatedState
 		dataset.ID = datasetID
 
@@ -289,13 +282,6 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	datasetType, err := models.ValidateNomisURL(ctx, dataType.String(), dataset.NomisReferenceURL)
-	if err != nil {
-		log.Error(ctx, "addDatasetNew endpoint: error dataset.Type mismatch", err, logData)
-		handleDatasetAPIErr(ctx, err, w, logData)
-		return
-	}
-
 	models.CleanDataset(dataset)
 	if err = models.ValidateDataset(dataset); err != nil {
 		log.Error(ctx, "addDatasetNew endpoint: dataset failed validation checks", err)
@@ -303,7 +289,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dataset.Type = datasetType
+	dataset.Type = dataType.String()
 	dataset.State = models.CreatedState
 
 	if dataset.Links == nil {
@@ -321,6 +307,10 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	dataset.Links.LatestVersion = nil
 
 	dataset.LastUpdated = time.Now()
+
+	if dataset.Themes == nil {
+		dataset.Themes = utils.BuildThemes(dataset.CanonicalTopic, dataset.Subtopics)
+	}
 
 	datasetDoc := &models.DatasetUpdate{
 		ID:   datasetID,
@@ -381,12 +371,6 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		dataset.Type = currentDataset.Next.Type
-
-		_, err = models.ValidateNomisURL(ctx, dataset.Type, dataset.NomisReferenceURL)
-		if err != nil {
-			log.Error(ctx, "putDataset endpoint: error dataset.Type mismatch", err, data)
-			return err
-		}
 
 		models.CleanDataset(dataset)
 
