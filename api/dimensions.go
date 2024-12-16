@@ -87,9 +87,10 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 	}
 
 	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-	list, err = utils.RewriteDimensionsLinks(ctx, list, linksBuilder)
+
+	list, err = utils.RewriteDimensions(ctx, list, linksBuilder)
 	if err != nil {
-		log.Error(ctx, "Error mapping results and rewriting links", err)
+		handleDimensionsErr(ctx, w, "getDimensions endpoint: failed to map dimensions and rewrite links", err, logData)
 		return nil, 0, err
 	}
 
@@ -220,9 +221,10 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	}
 
 	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-	results, err = utils.RewriteDimensionOptionsLinks(ctx, results, linksBuilder)
+
+	results, err = utils.RewritePublicDimensionOptions(ctx, results, linksBuilder)
 	if err != nil {
-		log.Error(ctx, "Error mapping results and rewriting links", err)
+		handleDimensionsErr(ctx, w, "getDimensionOptions endpoint: failed to map dimension options and rewrite links", err, logData)
 		return nil, 0, err
 	}
 

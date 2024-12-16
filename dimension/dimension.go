@@ -79,13 +79,19 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 
 	hostURL, err := url.Parse(s.Host)
 	if err != nil {
-		log.Error(ctx, "failed to parse host URL", err, logData)
+		log.Error(ctx, "getDimensionsHandler endpoint: failed to parse host URL", err, logData)
 		handleDimensionErr(ctx, w, err, logData)
 		return nil, 0, err
 	}
 
 	linksBuilder := links.FromHeadersOrDefault(&r.Header, hostURL)
-	err = utils.RewriteAllDimensionOptions(ctx, dimensionOptions, linksBuilder)
+
+	err = utils.RewriteDimensionOptions(ctx, dimensionOptions, linksBuilder)
+	if err != nil {
+		log.Error(ctx, "getDimensionsHandler endpoint: failed to rewrite dimension options links", err, logData)
+		handleDimensionErr(ctx, w, err, logData)
+		return nil, 0, err
+	}
 
 	log.Info(ctx, "successfully get dimensions for an instance resource", logData)
 	dpresponse.SetETag(w, instance.ETag)

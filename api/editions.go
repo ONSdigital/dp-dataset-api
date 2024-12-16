@@ -53,9 +53,10 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 	}
 
 	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-	editionsResponse, err := utils.MapEditionsAndRewriteLinks(ctx, results, authorised, linksBuilder)
+
+	editionsResponse, err := utils.RewriteEditionsBasedOnAuth(ctx, results, authorised, linksBuilder)
 	if err != nil {
-		log.Error(ctx, "Error mapping results and rewriting links", err)
+		log.Error(ctx, "getEditions endpoint: failed to map editions and rewrite links", err, logData)
 		return nil, 0, err
 	}
 
@@ -89,9 +90,10 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 		}
 
 		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-		editionResponse, err := utils.MapEditionsAndRewriteLinks(ctx, []*models.EditionUpdate{edition}, authorised, linksBuilder)
+
+		editionResponse, err := utils.RewriteEditionsBasedOnAuth(ctx, []*models.EditionUpdate{edition}, authorised, linksBuilder)
 		if err != nil {
-			log.Error(ctx, "Error mapping results and rewriting links", err)
+			log.Error(ctx, "getEdition endpoint: failed to map results and rewrite links", err, logData)
 			return nil, err
 		}
 

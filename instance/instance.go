@@ -80,16 +80,17 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit, offset in
 
 		hostURL, err := url.Parse(s.Host)
 		if err != nil {
-			log.Error(ctx, "failed to parse host URL", err, logData)
+			log.Error(ctx, "get instances endpoint: failed to parse host URL", err, logData)
 			handleInstanceErr(ctx, err, w, logData)
 			return nil, 0, err
 		}
 
 		linksBuilder := links.FromHeadersOrDefault(&r.Header, hostURL)
 
-		err = utils.RewriteAllInstances(ctx, instancesResults, linksBuilder)
+		err = utils.RewriteInstances(ctx, instancesResults, linksBuilder)
 		if err != nil {
-			log.Error(ctx, "get instances: failed to rewrite instances", err, logData)
+			log.Error(ctx, "get instances endpoint: failed to rewrite instances", err, logData)
+			handleInstanceErr(ctx, err, w, logData)
 			return nil, 0, err
 		}
 
@@ -135,14 +136,14 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 
 	hostURL, err := url.Parse(s.Host)
 	if err != nil {
-		log.Error(ctx, "failed to parse host URL", err, logData)
+		log.Error(ctx, "get instance endpoint: failed to parse host URL", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
 
 	linksBuilder := links.FromHeadersOrDefault(&r.Header, hostURL)
 
-	err = utils.RewriteAllInstances(ctx, []*models.Instance{instance}, linksBuilder)
+	err = utils.RewriteInstances(ctx, []*models.Instance{instance}, linksBuilder)
 	if err != nil {
 		log.Error(ctx, "get instance: failed to rewrite instance", err, logData)
 		handleInstanceErr(ctx, err, w, logData)

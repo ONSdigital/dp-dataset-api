@@ -111,15 +111,18 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		}
 
 		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-		err = utils.RewriteAllMetadataLinks(ctx, metaDataDoc.Links, linksBuilder)
+
+		err = utils.RewriteMetadataLinks(ctx, metaDataDoc.Links, linksBuilder)
 		if err != nil {
-			log.Error(ctx, "Error rewriting metadata dataset links", err)
+			log.Error(ctx, "getMetadata endpoint: failed to rewrite metadata links", err, logData)
+			handleMetadataErr(w, err)
 			return nil, err
 		}
 
-		metaDataDoc.Dimensions, err = utils.RewriteAllMetadataDimensionsLinks(ctx, metaDataDoc.Dimensions, linksBuilder)
+		metaDataDoc.Dimensions, err = utils.RewriteMetadataDimensionsLinks(ctx, metaDataDoc.Dimensions, linksBuilder)
 		if err != nil {
-			log.Error(ctx, "Error rewriting metadata dimensions links", err)
+			log.Error(ctx, "getMetadata endpoint: failed to rewrite metadata dimensions links", err, logData)
+			handleMetadataErr(w, err)
 			return nil, err
 		}
 

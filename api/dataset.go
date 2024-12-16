@@ -80,10 +80,13 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		handleDatasetAPIErr(ctx, err, w, logData)
 		return nil, 0, err
 	}
+
 	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-	datasetsResponse, err := utils.MapDatasetsAndRewriteLinks(ctx, datasets, authorised, linksBuilder)
+
+	datasetsResponse, err := utils.RewriteDatasetsBasedOnAuth(ctx, datasets, authorised, linksBuilder)
 	if err != nil {
-		log.Error(ctx, "Error mapping results and rewriting links", err)
+		log.Error(ctx, "getDatasets endpoint: failed to map datasets and rewrite links", err)
+		handleDatasetAPIErr(ctx, err, w, logData)
 		return nil, 0, err
 	}
 
@@ -106,9 +109,10 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		authorised := api.authenticate(r, logData)
 
 		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-		datasetResponse, err := utils.MapDatasetsAndRewriteLinks(ctx, []*models.DatasetUpdate{dataset}, authorised, linksBuilder)
+
+		datasetResponse, err := utils.RewriteDatasetsBasedOnAuth(ctx, []*models.DatasetUpdate{dataset}, authorised, linksBuilder)
 		if err != nil {
-			log.Error(ctx, "Error mapping results and rewriting links", err)
+			log.Error(ctx, "getDataset endpoint: failed to map dataset and rewrite links", err)
 			return nil, err
 		}
 
@@ -213,8 +217,10 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "addDataset endpoint: failed to insert dataset resource to datastore", err, logData)
 			return nil, err
 		}
+
 		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-		err = utils.RewriteAllDatasetLinks(ctx, datasetDoc.Next.Links, linksBuilder)
+
+		err = utils.RewriteDatasetLinks(ctx, datasetDoc.Next.Links, linksBuilder)
 		if err != nil {
 			log.Error(ctx, "addDataset endpoint: failed to rewrite links for response", err)
 			return nil, err
@@ -329,9 +335,11 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	}
 
 	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
-	err = utils.RewriteAllDatasetLinks(ctx, datasetDoc.Next.Links, linksBuilder)
+
+	err = utils.RewriteDatasetLinks(ctx, datasetDoc.Next.Links, linksBuilder)
 	if err != nil {
 		log.Error(ctx, "addDatasetNew endpoint: failed to rewrite links for response", err)
+		handleDatasetAPIErr(ctx, err, w, logData)
 		return
 	}
 
