@@ -51,6 +51,7 @@ var (
 	ErrVersionAlreadyExists              = errors.New("an unpublished version of this dataset already exists")
 	ErrNotFound                          = errors.New("not found")
 	ErrMissingDatasetID                  = errors.New("missing dataset id in request body")
+	ErrMissingDatasetType                = errors.New("missing dataset type in request body")
 
 	ErrExpectedResourceStateOfCreated          = errors.New("unable to update resource, expected resource to have a state of created")
 	ErrExpectedResourceStateOfSubmitted        = errors.New("unable to update resource, expected resource to have a state of submitted")
