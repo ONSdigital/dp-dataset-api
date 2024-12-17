@@ -36,6 +36,7 @@ var (
 		errs.ErrMissingDatasetID:           true,
 		errs.ErrMissingDatasetType:         true,
 		errs.ErrMissingDatasetTitle:        true,
+		errs.ErrMissingDatasetDescription:  true,
 	}
 
 	// errors that should return a 404 status
@@ -281,6 +282,14 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	if datasetTitle == "" {
 		log.Error(ctx, "addDatasetNew endpoint: dataset title is empty", nil)
 		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetTitle, w, nil)
+		return
+	}
+
+	datasetDescription := dataset.Description
+
+	if datasetDescription == "" {
+		log.Error(ctx, "addDatasetNew endpoint: dataset description is empty", nil)
+		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetDescription, w, nil)
 		return
 	}
 
