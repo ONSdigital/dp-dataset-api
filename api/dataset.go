@@ -37,6 +37,7 @@ var (
 		errs.ErrMissingDatasetType:         true,
 		errs.ErrMissingDatasetTitle:        true,
 		errs.ErrMissingDatasetDescription:  true,
+		errs.ErrMissingDatasetNextRelease:  true,
 		errs.ErrMissingDatasetKeywords:     true,
 	}
 
@@ -291,6 +292,14 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	if datasetDescription == "" {
 		log.Error(ctx, "addDatasetNew endpoint: dataset description is empty", nil)
 		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetDescription, w, nil)
+		return
+	}
+
+	datasetNextRelease := dataset.NextRelease
+
+	if datasetNextRelease == "" {
+		log.Error(ctx, "addDatasetNew endpoint: dataset next release is empty", nil)
+		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetNextRelease, w, nil)
 		return
 	}
 
