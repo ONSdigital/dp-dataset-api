@@ -56,6 +56,7 @@ var (
 	ErrMissingDatasetDescription         = errors.New("missing dataset description in request body")
 	ErrMissingDatasetNextRelease         = errors.New("missing dataset next release in request body")
 	ErrMissingDatasetKeywords            = errors.New("missing dataset keywords in request body")
+	ErrMissingDatasetThemes              = errors.New("missing dataset themes in request body")
 
 	ErrExpectedResourceStateOfCreated          = errors.New("unable to update resource, expected resource to have a state of created")
 	ErrExpectedResourceStateOfSubmitted        = errors.New("unable to update resource, expected resource to have a state of submitted")

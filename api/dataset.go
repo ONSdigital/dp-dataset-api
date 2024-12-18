@@ -39,6 +39,7 @@ var (
 		errs.ErrMissingDatasetDescription:  true,
 		errs.ErrMissingDatasetNextRelease:  true,
 		errs.ErrMissingDatasetKeywords:     true,
+		errs.ErrMissingDatasetThemes:       true,
 	}
 
 	// errors that should return a 404 status
@@ -307,6 +308,14 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		log.Error(ctx, "addDatasetNew endpoint: dataset keywords is empty", nil)
 		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetKeywords, w, nil)
 		return
+	}
+
+	if dataset.Type == models.Static.String() {
+		if dataset.Themes == nil || len(dataset.Themes) == 0 {
+			log.Error(ctx, "addDatasetNew endpoint: dataset themes is empty", nil)
+			handleDatasetAPIErr(ctx, errs.ErrMissingDatasetThemes, w, nil)
+			return
+		}
 	}
 
 	logData := log.Data{"dataset_id": datasetID}
