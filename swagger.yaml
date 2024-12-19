@@ -1268,9 +1268,6 @@ definitions:
         items:
           type: object
           properties:
-            description:
-              description: "The description of a methodology"
-              type: string
             href:
               description: "The url to a methodology"
               type: string
@@ -1289,24 +1286,16 @@ definitions:
         items:
           type: object
           properties:
-            description:
-              description: "The description of a publication"
-              type: string
             href:
               description: "The url to a publication"
               type: string
             title:
               description: "The title of a publication"
               type: string
-      publisher:
-        $ref: '#/definitions/Publisher'
       qmi:
         description: "Object containing information on the quality and methodology index of a dataset"
         type: object
         properties:
-          description:
-            description: "The description of a quality and methodology index"
-            type: string
           href:
             description: "The url to a quality and methodology index"
             type: string
@@ -1353,9 +1342,6 @@ definitions:
       survey:
         description: "The name of the survey the dataset was created from."
         type: string
-      theme:
-        description: "The theme for a dataset"
-        type: string
       title:
         description: "The title of the dataset"
         example: "CPI"
@@ -1367,10 +1353,7 @@ definitions:
       unit_of_measure:
         description: "The unit of measure for the dataset observations"
         type: string
-      uri:
-        description: "The uri to the location of this resource on the web"
-        type: string
-      themes:
+      topics:
         description: "A list of topics and subtopics that the dataset relates to within the website taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
         type: array
         items:
@@ -2449,8 +2432,6 @@ definitions:
     description: "A list of links related to this resource"
     type: object
     properties:
-      access_rights:
-        $ref: '#/definitions/AccessRightsLink'
       editions:
         readOnly: true
         type: object
