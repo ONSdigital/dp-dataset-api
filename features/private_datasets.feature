@@ -276,9 +276,14 @@ Feature: Private Dataset API
         When I POST "/datasets"
             """
             {
-                "title": "",
+                "title": "title",
+                "type": "filterable",
                 "state": "anything",
-                "type": "filterable"
+                "next_release":"2016-04-04",
+                "description": "census",
+                "keywords":["keyword"],
+                "themes": ["theme"],
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
             }
             """
         Then the HTTP status code should be "400"
@@ -293,7 +298,12 @@ Feature: Private Dataset API
             {
                 "id": "ageing-population-estimates",
                 "title": "title",
-                "state": "anything"
+                "state": "anything",
+                "next_release":"2016-04-04",
+                "description": "census",
+                "keywords":["keyword"],
+                "themes": ["theme"],
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
             }
             """
         Then the HTTP status code should be "400"
@@ -308,7 +318,12 @@ Feature: Private Dataset API
             {
                 "id": "ageing-population-estimates",
                 "type": "filterable",
-                "state": "anything"
+                "state": "anything",
+                "next_release":"2016-04-04",
+                "description": "census",
+                "keywords":["keyword"],
+                "themes": ["theme"],
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
             }
             """
         Then the HTTP status code should be "400"
@@ -325,7 +340,10 @@ Feature: Private Dataset API
                 "title": "title",
                 "type": "filterable",
                 "state": "anything",
-                "next_release":"2016-04-04"
+                "next_release":"2016-04-04",
+                "keywords":["keyword"],
+                "themes": ["theme"],
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
             }
             """
         Then the HTTP status code should be "400"
@@ -342,8 +360,10 @@ Feature: Private Dataset API
                 "title": "title",
                 "type": "filterable",
                 "state": "anything",
+                "next_release":"2016-04-04",
                 "description": "census",
-                "next_release":"2016-04-04"
+                "themes": ["theme"],
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
             }
             """
         Then the HTTP status code should be "400"
@@ -361,7 +381,9 @@ Feature: Private Dataset API
                 "type": "filterable",
                 "state": "anything",
                 "description": "census",
-                "keywords":["keyword"]
+                "keywords":["keyword"],
+                "themes": ["theme"],
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
             }
             """
         Then the HTTP status code should be "400"
@@ -378,9 +400,10 @@ Feature: Private Dataset API
                 "title": "title",
                 "type": "static",
                 "state": "anything",
+                "next_release":"2016-04-04",
                 "description": "census",
                 "keywords":["keyword"],
-                "next_release":"2016-04-04"
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
             }
             """
         Then the HTTP status code should be "400"
@@ -395,11 +418,11 @@ Feature: Private Dataset API
             {
                 "id": "ageing-population-estimates",
                 "title": "title",
-                "type": "static",
+                "type": "filterable",
                 "state": "anything",
+                "next_release":"2016-04-04",
                 "description": "census",
                 "keywords":["keyword"],
-                "next_release":"2016-04-04",
                 "themes": ["theme"]
             }
             """
