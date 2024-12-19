@@ -40,6 +40,7 @@ var (
 		errs.ErrMissingDatasetNextRelease:  true,
 		errs.ErrMissingDatasetKeywords:     true,
 		errs.ErrMissingDatasetThemes:       true,
+		errs.ErrMissingDatasetContacts:     true,
 	}
 
 	// errors that should return a 404 status
@@ -316,6 +317,12 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 			handleDatasetAPIErr(ctx, errs.ErrMissingDatasetThemes, w, nil)
 			return
 		}
+	}
+
+	if dataset.Contacts == nil || len(dataset.Contacts) == 0 {
+		log.Error(ctx, "addDatasetNew endpoint: dataset contacts is empty", nil)
+		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetContacts, w, nil)
+		return
 	}
 
 	logData := log.Data{"dataset_id": datasetID}
