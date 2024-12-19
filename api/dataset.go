@@ -34,6 +34,13 @@ var (
 		errs.ErrDatasetTypeInvalid:         true,
 		errs.ErrInvalidQueryParameter:      true,
 		errs.ErrMissingDatasetID:           true,
+		errs.ErrMissingDatasetType:         true,
+		errs.ErrMissingDatasetTitle:        true,
+		errs.ErrMissingDatasetDescription:  true,
+		errs.ErrMissingDatasetNextRelease:  true,
+		errs.ErrMissingDatasetKeywords:     true,
+		errs.ErrMissingDatasetThemes:       true,
+		errs.ErrMissingDatasetContacts:     true,
 	}
 
 	// errors that should return a 404 status
@@ -260,9 +267,35 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 
 	datasetID := dataset.ID
 
-	if datasetID == "" {
-		log.Error(ctx, "addDatasetNew endpoint: dataset ID is empty", nil)
-		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetID, w, nil)
+	if err = validateDatasetID(ctx, datasetID, w); err != nil {
+		return
+	}
+
+	if err = validateDatasetType(ctx, dataset.Type, w); err != nil {
+		return
+	}
+
+	if err = validateDatasetTitle(ctx, dataset.Title, w); err != nil {
+		return
+	}
+
+	if err = validateDatasetDescription(ctx, dataset.Description, w); err != nil {
+		return
+	}
+
+	if err = validateDatasetNextRelease(ctx, dataset.NextRelease, w); err != nil {
+		return
+	}
+
+	if err = validateDatasetKeywords(ctx, dataset.Keywords, w); err != nil {
+		return
+	}
+
+	if err = validateDatasetThemes(ctx, dataset.Themes, dataset.Type, w); err != nil {
+		return
+	}
+
+	if err = validateDatasetContacts(ctx, dataset.Contacts, w); err != nil {
 		return
 	}
 
@@ -343,6 +376,81 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	log.Info(ctx, "addDatasetNew endpoint: request completed successfully", logData)
+}
+
+func validateDatasetID(ctx context.Context, datasetID string, w http.ResponseWriter) error {
+	if datasetID == "" {
+		log.Error(ctx, "addDatasetNew endpoint: dataset ID is empty", nil)
+		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetID, w, nil)
+		return errs.ErrMissingDatasetID
+	}
+	return nil
+}
+
+func validateDatasetType(ctx context.Context, datasetType string, w http.ResponseWriter) error {
+	if datasetType == "" {
+		log.Error(ctx, "addDatasetNew endpoint: dataset type is empty", nil)
+		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetType, w, nil)
+		return errs.ErrMissingDatasetType
+	}
+	return nil
+}
+
+func validateDatasetTitle(ctx context.Context, datasetTitle string, w http.ResponseWriter) error {
+	if datasetTitle == "" {
+		log.Error(ctx, "addDatasetNew endpoint: dataset title is empty", nil)
+		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetTitle, w, nil)
+		return errs.ErrMissingDatasetTitle
+	}
+	return nil
+}
+
+func validateDatasetDescription(ctx context.Context, datasetDescription string, w http.ResponseWriter) error {
+	if datasetDescription == "" {
+		log.Error(ctx, "addDatasetNew endpoint: dataset description is empty", nil)
+		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetDescription, w, nil)
+		return errs.ErrMissingDatasetDescription
+	}
+	return nil
+}
+
+func validateDatasetNextRelease(ctx context.Context, datasetNextRelease string, w http.ResponseWriter) error {
+	if datasetNextRelease == "" {
+		log.Error(ctx, "addDatasetNew endpoint: dataset next release is empty", nil)
+		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetNextRelease, w, nil)
+		return errs.ErrMissingDatasetNextRelease
+	}
+	return nil
+}
+
+func validateDatasetKeywords(ctx context.Context, datasetKeywords []string, w http.ResponseWriter) error {
+	if datasetKeywords == nil || len(datasetKeywords) == 0 {
+		log.Error(ctx, "addDatasetNew endpoint: dataset keywords is empty", nil)
+		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetKeywords, w, nil)
+		return errs.ErrMissingDatasetKeywords
+	}
+	return nil
+}
+
+func validateDatasetThemes(ctx context.Context, datasetThemes []string, datasetType string, w http.ResponseWriter) error {
+	if datasetType == models.Static.String() {
+		if datasetThemes == nil || len(datasetThemes) == 0 {
+			log.Error(ctx, "addDatasetNew endpoint: dataset themes is empty", nil)
+			handleDatasetAPIErr(ctx, errs.ErrMissingDatasetThemes, w, nil)
+			return errs.ErrMissingDatasetThemes
+		}
+		return nil
+	}
+	return nil
+}
+
+func validateDatasetContacts(ctx context.Context, datasetContacts []models.ContactDetails, w http.ResponseWriter) error {
+	if datasetContacts == nil || len(datasetContacts) == 0 {
+		log.Error(ctx, "addDatasetNew endpoint: dataset contacts is empty", nil)
+		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetContacts, w, nil)
+		return errs.ErrMissingDatasetContacts
+	}
+	return nil
 }
 
 func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
