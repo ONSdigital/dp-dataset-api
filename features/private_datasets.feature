@@ -207,6 +207,8 @@ Feature: Private Dataset API
             """
             {
                 "id": "ageing-population-estimates",
+                "canonical_topic": "canonical-topic-ID",
+                "subtopics": ["subtopic-ID"],
                 "state": "anything",
                 "title": "CID",
                 "type": "filterable"
@@ -217,6 +219,8 @@ Feature: Private Dataset API
             """
             {
                 "id": "ageing-population-estimates",
+                "canonical_topic": "canonical-topic-ID",
+                "subtopics": ["subtopic-ID"],
                 "state": "created",
                 "title": "CID",
                 "type": "filterable",
@@ -227,7 +231,8 @@ Feature: Private Dataset API
                     "self": {
                         "href":"http://localhost:22000/datasets/ageing-population-estimates"
                     }
-                }
+                },
+                "themes": ["canonical-topic-ID", "subtopic-ID"]
             }
             """
 

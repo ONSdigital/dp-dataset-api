@@ -189,6 +189,7 @@ func TestCreateMetadata(t *testing.T) {
 		Convey("When we call CreateMetaDataDoc", func() {
 			websiteURL := "http://localhost:20000"
 			metaDataDoc := CreateMetaDataDoc(&dataset, &version, url.NewBuilder(websiteURL))
+			expectedThemes := []string{"1234", "5678", "9012"}
 
 			Convey("Then it returns a metadata object with all the CMD fields populated", func() {
 				So(metaDataDoc.Description, ShouldEqual, dataset.Description)
@@ -210,6 +211,7 @@ func TestCreateMetadata(t *testing.T) {
 				So(metaDataDoc.CanonicalTopic, ShouldEqual, dataset.CanonicalTopic)
 				So(metaDataDoc.Subtopics, ShouldResemble, dataset.Subtopics)
 				So(metaDataDoc.Links.AccessRights, ShouldEqual, dataset.Links.AccessRights)
+				So(metaDataDoc.Themes, ShouldEqual, expectedThemes)
 
 				So(metaDataDoc.Alerts, ShouldEqual, version.Alerts)
 				So(metaDataDoc.Dimensions, ShouldResemble, version.Dimensions)
@@ -364,7 +366,6 @@ func TestUpdateMetadata(t *testing.T) {
 			state := PublishedState
 			theme := "population"
 			uri := "dataset-uri"
-			nomisURL := "nomis-reference-url"
 			links := DatasetLinks{
 				AccessRights: &LinkObject{
 					HRef: "href-access-rights",
@@ -392,17 +393,16 @@ func TestUpdateMetadata(t *testing.T) {
 				Type: "All usual residents in households",
 			}
 			dataset := Dataset{
-				CollectionID:      collectionID,
-				ID:                datasetID,
-				LastUpdated:       lastUpdated,
-				Links:             &links,
-				Publisher:         &publisher,
-				State:             state,
-				Theme:             theme,
-				URI:               uri,
-				Type:              datasetType,
-				NomisReferenceURL: nomisURL,
-				IsBasedOn:         &isBasedOn,
+				CollectionID: collectionID,
+				ID:           datasetID,
+				LastUpdated:  lastUpdated,
+				Links:        &links,
+				Publisher:    &publisher,
+				State:        state,
+				Theme:        theme,
+				URI:          uri,
+				Type:         datasetType,
+				IsBasedOn:    &isBasedOn,
 			}
 
 			Convey("When we call UpdateMetadata on the dataset", func() {
@@ -437,7 +437,6 @@ func TestUpdateMetadata(t *testing.T) {
 					So(dataset.Theme, ShouldEqual, theme)
 					So(dataset.URI, ShouldEqual, uri)
 					So(dataset.Type, ShouldEqual, datasetType)
-					So(dataset.NomisReferenceURL, ShouldEqual, nomisURL)
 					So(dataset.IsBasedOn, ShouldEqual, &isBasedOn)
 				})
 			})
