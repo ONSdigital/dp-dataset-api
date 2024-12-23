@@ -194,7 +194,12 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		return errors.Wrap(err, "unable to parse downloadServiceURL from config")
 	}
 
-	urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL)
+	datasetAPIURL, err := neturl.Parse(svc.config.DatasetAPIURL)
+	if err != nil {
+		return errors.Wrap(err, "unable to parse datasetAPIURL from config")
+	}
+
+	urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL)
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
 	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions)
 

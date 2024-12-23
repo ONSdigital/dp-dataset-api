@@ -86,7 +86,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 		return nil, 0, err
 	}
 
-	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
 	list, err = utils.RewriteDimensions(ctx, list, linksBuilder)
 	if err != nil {
@@ -220,7 +220,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		results[i].Links.Version.ID = versionID
 	}
 
-	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
 	results, err = utils.RewritePublicDimensionOptions(ctx, results, linksBuilder)
 	if err != nil {

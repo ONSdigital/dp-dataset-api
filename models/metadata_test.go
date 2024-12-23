@@ -189,9 +189,10 @@ func TestCreateMetadata(t *testing.T) {
 
 		Convey("When we call CreateMetaDataDoc", func() {
 
-			websiteURL, _ := neturl.Parse("localhost:20000")
-			downloadServiceURL, _ := neturl.Parse("localhost:23600")
-			metaDataDoc := CreateMetaDataDoc(&dataset, &version, url.NewBuilder(websiteURL, downloadServiceURL))
+			websiteURL, _ := neturl.Parse("http://localhost:20000")
+			downloadServiceURL, _ := neturl.Parse("http://localhost:23600")
+			DatasetAPIURL, _ := neturl.Parse("http://localhost:22000")
+			metaDataDoc := CreateMetaDataDoc(&dataset, &version, url.NewBuilder(websiteURL, downloadServiceURL, DatasetAPIURL))
 			expectedThemes := []string{"1234", "5678", "9012"}
 
 			Convey("Then it returns a metadata object with all the CMD fields populated", func() {

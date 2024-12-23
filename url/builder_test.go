@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	websiteURL = "localhost:20000"
+	websiteURL = "http://localhost:20000"
 	datasetID  = "123"
 	edition    = "2017"
 	version    = "1"
@@ -19,9 +19,10 @@ const (
 func TestBuilder_BuildWebsiteDatasetVersionURL(t *testing.T) {
 	Convey("Given a URL builder", t, func() {
 
-		websiteURL, _ := neturl.Parse("localhost:20000")
-		downloadServiceURL, _ := neturl.Parse("localhost:23600")
-		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL)
+		websiteURL, _ := neturl.Parse("http://localhost:20000")
+		downloadServiceURL, _ := neturl.Parse("http://localhost:23600")
+		datasetAPIURL, _ := neturl.Parse("http://localhost:22000")
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL)
 
 		Convey("When BuildWebsiteDatasetVersionURL is called", func() {
 			builtURL := urlBuilder.BuildWebsiteDatasetVersionURL(datasetID, edition, version)

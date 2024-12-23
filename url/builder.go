@@ -9,13 +9,15 @@ import (
 type Builder struct {
 	websiteURL         *url.URL
 	downloadServiceURL *url.URL
+	datasetAPIURL      *url.URL
 }
 
 // NewBuilder returns a new instance of url.Builder
-func NewBuilder(websiteURL *url.URL, downloadServiceURL *url.URL) *Builder {
+func NewBuilder(websiteURL *url.URL, downloadServiceURL *url.URL, datasetAPIURL *url.URL) *Builder {
 	return &Builder{
 		websiteURL:         websiteURL,
 		downloadServiceURL: downloadServiceURL,
+		datasetAPIURL:      datasetAPIURL,
 	}
 }
 
@@ -25,6 +27,10 @@ func (builder *Builder) GetWebsiteURL() *url.URL {
 
 func (builder *Builder) GetDownloadServiceURL() *url.URL {
 	return builder.downloadServiceURL
+}
+
+func (builder *Builder) GetDatasetAPIURL() *url.URL {
+	return builder.datasetAPIURL
 }
 
 // BuildWebsiteDatasetVersionURL returns the website URL for a specific dataset version

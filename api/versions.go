@@ -136,7 +136,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
-	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
 	list, err = utils.RewriteVersions(ctx, list, linksBuilder)
 	if err != nil {
@@ -222,7 +222,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
 	var err error
 

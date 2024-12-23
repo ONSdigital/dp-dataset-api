@@ -110,7 +110,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
 		err = utils.RewriteMetadataLinks(ctx, metaDataDoc.Links, linksBuilder)
 		if err != nil {

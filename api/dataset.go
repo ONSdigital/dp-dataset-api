@@ -81,16 +81,27 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
-	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
-	datasetsResponse, err := utils.RewriteDatasetsBasedOnAuth(ctx, datasets, authorised, linksBuilder)
-	if err != nil {
-		log.Error(ctx, "getDatasets endpoint: failed to map datasets and rewrite links", err)
-		handleDatasetAPIErr(ctx, err, w, logData)
-		return nil, 0, err
+	if authorised {
+		datasetsResponse, err := utils.RewriteDatasetsWithAuth(ctx, datasets, linksBuilder)
+		if err != nil {
+			log.Error(ctx, "getDatasets endpoint: failed to rewrite datasets with auth", err)
+			handleDatasetAPIErr(ctx, err, w, logData)
+			return nil, 0, err
+		}
+		log.Info(ctx, "getDatasets endpoint: get all datasets with auth", logData)
+		return datasetsResponse, totalCount, nil
+	} else {
+		datasetsResponse, err := utils.RewriteDatasetsWithoutAuth(ctx, datasets, linksBuilder)
+		if err != nil {
+			log.Error(ctx, "getDatasets endpoint: failed to rewrite datasets without authorisation", err)
+			handleDatasetAPIErr(ctx, err, w, logData)
+			return nil, 0, err
+		}
+		log.Info(ctx, "getDatasets endpoint: get all datasets without auth", logData)
+		return datasetsResponse, totalCount, nil
 	}
-
-	return datasetsResponse, totalCount, nil
 }
 
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
@@ -108,12 +119,24 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 		authorised := api.authenticate(r, logData)
 
-		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
-		datasetResponse, err := utils.RewriteDatasetsBasedOnAuth(ctx, []*models.DatasetUpdate{dataset}, authorised, linksBuilder)
-		if err != nil {
-			log.Error(ctx, "getDataset endpoint: failed to map dataset and rewrite links", err)
-			return nil, err
+		var datasetResponse interface{}
+
+		if authorised {
+			datasetResponse, err = utils.RewriteDatasetWithAuth(ctx, dataset, linksBuilder)
+			if err != nil {
+				log.Error(ctx, "getDataset endpoint: failed to rewrite dataset with authorisation", err, logData)
+				return nil, err
+			}
+			log.Info(ctx, "getDataset endpoint: get dataset with auth", logData)
+		} else {
+			datasetResponse, err = utils.RewriteDatasetWithoutAuth(ctx, dataset, linksBuilder)
+			if err != nil {
+				log.Error(ctx, "getDataset endpoint: failed to rewrite dataset without authorisation", err, logData)
+				return nil, err
+			}
+			log.Info(ctx, "getDataset endpoint: get dataset without auth", logData)
 		}
 
 		var b []byte
@@ -211,7 +234,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
 		err = utils.RewriteDatasetLinks(ctx, datasetDoc.Next.Links, linksBuilder)
 		if err != nil {
@@ -324,7 +347,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
 	err = utils.RewriteDatasetLinks(ctx, datasetDoc.Next.Links, linksBuilder)
 	if err != nil {

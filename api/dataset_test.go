@@ -34,9 +34,10 @@ var (
 	datasetPayloadWithID      = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable"}`
 	datasetPayloadWithEmptyID = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable"}`
 
-	websiteURL, _         = goURL.Parse("localhost:20000")
-	downloadServiceURL, _ = goURL.Parse("localhost:23600")
-	urlBuilder            = url.NewBuilder(websiteURL, downloadServiceURL)
+	websiteURL, _         = goURL.Parse("http://localhost:20000")
+	downloadServiceURL, _ = goURL.Parse("http://localhost:23600")
+	DatasetAPIURL, _      = goURL.Parse("http://localhost:22000")
+	urlBuilder            = url.NewBuilder(websiteURL, downloadServiceURL, DatasetAPIURL)
 	mu                    sync.Mutex
 )
 

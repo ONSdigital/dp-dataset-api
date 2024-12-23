@@ -52,15 +52,25 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
-	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
-	editionsResponse, err := utils.RewriteEditionsBasedOnAuth(ctx, results, authorised, linksBuilder)
-	if err != nil {
-		log.Error(ctx, "getEditions endpoint: failed to map editions and rewrite links", err, logData)
-		return nil, 0, err
+	if authorised {
+		editionsResponse, err := utils.RewriteEditionsWithAuth(ctx, results, linksBuilder)
+		if err != nil {
+			log.Error(ctx, "getEditions endpoint: failed to rewrite editions with authorisation", err, logData)
+			return nil, 0, err
+		}
+		log.Info(ctx, "getEditions endpoint: get all editions with auth", logData)
+		return editionsResponse, totalCount, nil
+	} else {
+		editionsResponse, err := utils.RewriteEditionsWithoutAuth(ctx, results, linksBuilder)
+		if err != nil {
+			log.Error(ctx, "getEditions endpoint: failed to rewrite editions without authorisation", err, logData)
+			return nil, 0, err
+		}
+		log.Info(ctx, "getEditions endpoint: get all editions without auth", logData)
+		return editionsResponse, totalCount, nil
 	}
-
-	return editionsResponse, totalCount, nil
 }
 
 func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
@@ -89,12 +99,24 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
+		linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
-		editionResponse, err := utils.RewriteEditionsBasedOnAuth(ctx, []*models.EditionUpdate{edition}, authorised, linksBuilder)
-		if err != nil {
-			log.Error(ctx, "getEdition endpoint: failed to map results and rewrite links", err, logData)
-			return nil, err
+		var editionResponse interface{}
+
+		if authorised {
+			editionResponse, err = utils.RewriteEditionWithAuth(ctx, edition, linksBuilder)
+			if err != nil {
+				log.Error(ctx, "getEdition endpoint: failed to rewrite edition with authorisation", err, logData)
+				return nil, err
+			}
+			log.Info(ctx, "getEdition endpoint: get edition with auth", logData)
+		} else {
+			editionResponse, err = utils.RewriteEditionWithoutAuth(ctx, edition, linksBuilder)
+			if err != nil {
+				log.Error(ctx, "getEdition endpoint: failed to rewrite edition without authorisation", err, logData)
+				return nil, err
+			}
+			log.Info(ctx, "getEdition endpoint: get edition without auth", logData)
 		}
 
 		var b []byte
