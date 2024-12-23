@@ -19,6 +19,12 @@ An ONS API used to navigate datasets, editions and versions - which are publishe
 * Run api auth stub, [see documentation](https://github.com/ONSdigital/dp-auth-api-stub)
 * Run `make debug`
 
+To run `make lint-api-spec` you require Node v20.x and to install `redocly/cli`:
+
+```sh
+   npm install -g @redocly/cli
+```
+
 ### State changes
 
 Normal sequential order of states:

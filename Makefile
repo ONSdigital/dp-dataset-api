@@ -40,6 +40,10 @@ acceptance-web: build
 lint:
 	golangci-lint run ./...
 
+.PHONY: lint-api-spec
+lint-api-spec:
+	redocly lint swagger.yaml
+
 .PHONY: test
 test:
 	go test -race -cover ./...

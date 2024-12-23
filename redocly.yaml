@@ -1,0 +1,4 @@
+extends:
+  - recommended
+rules:
+  operation-operationId: off
