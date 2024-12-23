@@ -36,8 +36,8 @@ var (
 
 	websiteURL, _         = goURL.Parse("http://localhost:20000")
 	downloadServiceURL, _ = goURL.Parse("http://localhost:23600")
-	DatasetAPIURL, _      = goURL.Parse("http://localhost:22000")
-	urlBuilder            = url.NewBuilder(websiteURL, downloadServiceURL, DatasetAPIURL)
+	datasetAPIURL, _      = goURL.Parse("http://localhost:22000")
+	urlBuilder            = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL)
 	mu                    sync.Mutex
 )
 
