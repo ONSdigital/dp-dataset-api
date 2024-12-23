@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 	"time"
 
@@ -34,6 +35,13 @@ var (
 		errs.ErrDatasetTypeInvalid:         true,
 		errs.ErrInvalidQueryParameter:      true,
 		errs.ErrMissingDatasetID:           true,
+		errs.ErrMissingDatasetType:         true,
+		errs.ErrMissingDatasetTitle:        true,
+		errs.ErrMissingDatasetDescription:  true,
+		errs.ErrMissingDatasetNextRelease:  true,
+		errs.ErrMissingDatasetKeywords:     true,
+		errs.ErrMissingDatasetThemes:       true,
+		errs.ErrMissingDatasetContacts:     true,
 	}
 
 	// errors that should return a 404 status
@@ -260,9 +268,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 
 	datasetID := dataset.ID
 
-	if datasetID == "" {
-		log.Error(ctx, "addDatasetNew endpoint: dataset ID is empty", nil)
-		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetID, w, nil)
+	if err = validateDatasetMandatoryFields(ctx, *dataset, w); err != nil {
 		return
 	}
 
@@ -343,6 +349,76 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	log.Info(ctx, "addDatasetNew endpoint: request completed successfully", logData)
+}
+
+func validateDatasetMandatoryFields(ctx context.Context, dataset interface{}, w http.ResponseWriter) error {
+	v := reflect.ValueOf(dataset)
+	typeOfDataset := v.Type()
+
+	// find dataset type
+	var datasetType string
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldName := typeOfDataset.Field(i).Name
+		if fieldName == "Type" {
+			datasetType = field.String()
+		}
+	}
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldName := typeOfDataset.Field(i).Name
+
+		switch fieldName {
+		case "ID", "Type", "Title", "Description", "NextRelease":
+			if field.String() == "" {
+				err := getFieldError(fieldName)
+				log.Error(ctx, "addDatasetNew endpoint: dataset "+fieldName+" is empty", nil)
+				handleDatasetAPIErr(ctx, err, w, nil)
+				return err
+			}
+		case "Keywords", "Contacts":
+			if field.Len() == 0 {
+				err := getFieldError(fieldName)
+				log.Error(ctx, "addDatasetNew endpoint: dataset "+fieldName+" is empty", nil)
+				handleDatasetAPIErr(ctx, err, w, nil)
+				return err
+			}
+		case "Themes":
+			if datasetType == models.Static.String() {
+				if field.Len() == 0 {
+					err := getFieldError(fieldName)
+					log.Error(ctx, "addDatasetNew endpoint: dataset "+fieldName+" is empty", nil)
+					handleDatasetAPIErr(ctx, err, w, nil)
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func getFieldError(fieldName string) error {
+	switch fieldName {
+	case "ID":
+		return errs.ErrMissingDatasetID
+	case "Type":
+		return errs.ErrMissingDatasetType
+	case "Title":
+		return errs.ErrMissingDatasetTitle
+	case "Description":
+		return errs.ErrMissingDatasetDescription
+	case "NextRelease":
+		return errs.ErrMissingDatasetNextRelease
+	case "Keywords":
+		return errs.ErrMissingDatasetKeywords
+	case "Themes":
+		return errs.ErrMissingDatasetThemes
+	case "Contacts":
+		return errs.ErrMissingDatasetContacts
+	default:
+		return errs.ErrInternalServer
+	}
 }
 
 func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
