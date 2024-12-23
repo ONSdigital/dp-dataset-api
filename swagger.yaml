@@ -31,12 +31,6 @@ parameters:
     in: path
     required: true
     type: string
-  dimension_options:
-    description: "The name of the dimension option and a single value; each option (dimension) and corresponding value (code) must exist against the version - e.g. `age=30` or one of the dimension options can be represented by a wildcard value `*` e.g. `geography=*`"
-    name: "<dimension_options>"
-    in: query
-    required: true
-    type: string
   patch_options:
     required: true
     name: patch
@@ -680,40 +674,6 @@ paths:
           description: "Version was not found for a dataset using the id and edition provided"
         409:
           description: "Instance does not match the expected eTag"
-        500:
-          $ref: "#/responses/InternalError"
-  /datasets/{id}/editions/{edition}/versions/{version}/observations:
-    get:
-      tags:
-        - "Public"
-      summary: "Get specific observations"
-      description: "Get observations from a version of the dataset. By providing a single option for each dimension, a single observation will be returned. A wildcard (*) can be provided for one dimension, to retrieve a list of observations."
-      parameters:
-        - $ref: "#/parameters/edition"
-        - $ref: "#/parameters/id"
-        - $ref: "#/parameters/version"
-        - $ref: "#/parameters/dimension_options"
-      security:
-        - {}
-        - Authorization: []
-      responses:
-        200:
-          description: "Json object containing all metadata for a version"
-          schema:
-            $ref: "#/definitions/ObservationsEndpoint"
-        400:
-          description: |
-            Invalid request, reasons can be one of the following:
-              * query parameters missing expected dimensions
-              * query parameters contain incorrect dimensions
-              * too many query parameters are set to wildcard (*) value; only one query parameter can be equal to *
-        404:
-          description: |
-            Resource not found, reasons can be one of the following:
-              * dataset id was incorrect
-              * edition was incorrect
-              * version was incorrect
-              * observations not found for selected query paramaters
         500:
           $ref: "#/responses/InternalError"
   /instances:
@@ -2145,84 +2105,6 @@ definitions:
             description: "An unique id for a dataset"
             example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91CD"
       - $ref: "#/definitions/Version"
-  ObservationsEndpoint:
-    description: "An object containing information on a list of observations for a given version of a dataset"
-    type: object
-    properties:
-      dimensions:
-        description: "A list of dimensions for the given query"
-        type: object
-        properties:
-          <dimension name>:
-            description: "Each field is a dimension (<dimension name>) and will represent a query parameter in the request unless the query parameter is equal to a wildcard value (*)"
-            type: object
-            properties:
-              option:
-                description: "A list of links to the corresponding dimension codes for the given `dimension_options`"
-                type: object
-                properties:
-                  href:
-                    description: "A link to the corresponding dimension code for the given `dimension_option`"
-                    type: string
-                    example: "http://localhost:8080/codelists/AB12CD34/codes/K02000001"
-                  id:
-                    description: "The id of the corresponding dimension code for the given `dimension_option`"
-                    type: string
-      limit:
-        description: "The maximum number of observations requested when filtering on query parameters (limited to 10000). Defaults to 10000 observations."
-        type: integer
-      links:
-        $ref: "#/definitions/ObservationLinks"
-      observations:
-        description: "A list of observations found when filtering on query parameters"
-        type: array
-        items:
-          properties:
-            dimensions:
-              description: "Contains a list of dimension objects associated with an observation. Each dimension combined with the top level list of dimensions result in this single observation only"
-              type: object
-              properties:
-                <dimension name>:
-                  description: "Each field is a dimension (<dimension name>) and will represent a query parameter in the request as long as the query parameter is equal to a wildcard value (*)"
-                  type: object
-                  properties:
-                    href:
-                      description: "A link to the corresponding dimension code for the given `dimension_option`"
-                      example: "http://localhost:8080/codelists/AB12CD34/codes/K02000001"
-                      type: string
-                    id:
-                      description: "The id of the corresponding dimension code for the given `dimension_option`"
-                      type: "string"
-                    label:
-                      description: "The label corresponding to the dimension code for the given `dimension_option`"
-                      type: string
-            metadata:
-              description: "Metadata related to the observation found against version of a dataset"
-              type: array
-              items:
-                type: object
-                properties:
-                  <key>:
-                    description: "A single metadata key-value pair related to the observation found against version of a dataset, for example 'coefficients of variation' or 'data marking'"
-                    type: string
-            observation:
-              description: "The observation value for the selection of query parameters (dimensions) chosen"
-              type: string
-          required: [observation]
-      offset:
-        description: "The offset into the entire list of observations found"
-        type: integer
-      total_observations:
-        description: "The number of observations found"
-        type: integer
-      unit_of_measure:
-        description: "The unit of measure for the dataset observations"
-        type: string
-      usage_notes:
-        description: "A list of usage notes relating to the dataset"
-        type: array
-        items:
-          $ref: "#/definitions/UsageNotes"
   Publisher:
     description: "The publisher of the dataset"
     type: object
