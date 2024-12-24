@@ -82,6 +82,10 @@ func BuildThemes(canonicalTopic string, subtopics []string) []string {
 }
 
 func RewriteDatasetsWithAuth(ctx context.Context, results []*models.DatasetUpdate, linksBuilder *links.Builder) ([]*models.DatasetUpdate, error) {
+	if len(results) == 0 {
+		return results, nil
+	}
+
 	items := []*models.DatasetUpdate{}
 	for _, item := range results {
 		if item.Current != nil {
@@ -105,6 +109,10 @@ func RewriteDatasetsWithAuth(ctx context.Context, results []*models.DatasetUpdat
 }
 
 func RewriteDatasetsWithoutAuth(ctx context.Context, results []*models.DatasetUpdate, linksBuilder *links.Builder) ([]*models.Dataset, error) {
+	if len(results) == 0 {
+		return []*models.Dataset{}, nil
+	}
+
 	items := []*models.Dataset{}
 	for _, item := range results {
 		if item.Current != nil {
@@ -151,6 +159,11 @@ func RewriteDatasetWithAuth(ctx context.Context, dataset *models.DatasetUpdate, 
 }
 
 func RewriteDatasetWithoutAuth(ctx context.Context, dataset *models.DatasetUpdate, linksBuilder *links.Builder) (*models.Dataset, error) {
+	if dataset == nil {
+		log.Info(ctx, "getDataset endpoint: published dataset not found")
+		return nil, errs.ErrDatasetNotFound
+	}
+
 	datasetResponse := &models.Dataset{}
 	if dataset.Current == nil {
 		log.Info(ctx, "getDataset endpoint: published dataset not found", log.Data{"dataset_id": dataset.ID})
@@ -200,6 +213,10 @@ func RewriteDatasetLinks(ctx context.Context, oldLinks *models.DatasetLinks, lin
 }
 
 func RewriteDimensions(ctx context.Context, results []models.Dimension, linksBuilder *links.Builder) ([]models.Dimension, error) {
+	if len(results) == 0 {
+		return results, nil
+	}
+
 	items := []models.Dimension{}
 	for _, item := range results {
 		err := RewriteDimensionLinks(ctx, &item.Links, linksBuilder)
@@ -238,6 +255,10 @@ func RewriteDimensionLinks(ctx context.Context, oldLinks *models.DimensionLink, 
 }
 
 func RewritePublicDimensionOptions(ctx context.Context, results []*models.PublicDimensionOption, linksBuilder *links.Builder) ([]*models.PublicDimensionOption, error) {
+	if len(results) == 0 {
+		return results, nil
+	}
+
 	items := []*models.PublicDimensionOption{}
 	for _, item := range results {
 		err := RewriteDimensionOptionLinks(ctx, &item.Links, linksBuilder)
@@ -251,6 +272,10 @@ func RewritePublicDimensionOptions(ctx context.Context, results []*models.Public
 }
 
 func RewriteDimensionOptions(ctx context.Context, results []*models.DimensionOption, linksBuilder *links.Builder) error {
+	if len(results) == 0 {
+		return nil
+	}
+
 	var err error
 	for _, item := range results {
 		err = RewriteDimensionOptionLinks(ctx, &item.Links, linksBuilder)
@@ -288,6 +313,10 @@ func RewriteDimensionOptionLinks(ctx context.Context, oldLinks *models.Dimension
 }
 
 func RewriteEditionsWithAuth(ctx context.Context, results []*models.EditionUpdate, linksBuilder *links.Builder) ([]*models.EditionUpdate, error) {
+	if len(results) == 0 {
+		return results, nil
+	}
+
 	items := []*models.EditionUpdate{}
 	for _, item := range results {
 		if item.Current != nil {
@@ -311,6 +340,10 @@ func RewriteEditionsWithAuth(ctx context.Context, results []*models.EditionUpdat
 }
 
 func RewriteEditionsWithoutAuth(ctx context.Context, results []*models.EditionUpdate, linksBuilder *links.Builder) ([]*models.Edition, error) {
+	if len(results) == 0 {
+		return []*models.Edition{}, nil
+	}
+
 	items := []*models.Edition{}
 	for _, item := range results {
 		if item.Current != nil {
@@ -327,6 +360,11 @@ func RewriteEditionsWithoutAuth(ctx context.Context, results []*models.EditionUp
 }
 
 func RewriteEditionWithAuth(ctx context.Context, edition *models.EditionUpdate, linksBuilder *links.Builder) (*models.EditionUpdate, error) {
+	if edition == nil {
+		log.Info(ctx, "getEdition endpoint: published or unpublished edition not found")
+		return nil, errs.ErrEditionNotFound
+	}
+
 	if edition.Current != nil {
 		err := RewriteEditionLinks(ctx, edition.Current.Links, linksBuilder)
 		if err != nil {
@@ -347,6 +385,11 @@ func RewriteEditionWithAuth(ctx context.Context, edition *models.EditionUpdate, 
 }
 
 func RewriteEditionWithoutAuth(ctx context.Context, edition *models.EditionUpdate, linksBuilder *links.Builder) (*models.Edition, error) {
+	if edition == nil {
+		log.Info(ctx, "getEdition endpoint: published edition not found")
+		return nil, errs.ErrEditionNotFound
+	}
+
 	editionResponse := &models.Edition{}
 	if edition.Current == nil {
 		log.Info(ctx, "getEdition endpoint: published edition not found", log.Data{"edition_id": edition.ID})
@@ -392,6 +435,10 @@ func RewriteEditionLinks(ctx context.Context, oldLinks *models.EditionUpdateLink
 }
 
 func RewriteMetadataDimensionsLinks(ctx context.Context, results []models.Dimension, linksBuilder *links.Builder) ([]models.Dimension, error) {
+	if len(results) == 0 {
+		return results, nil
+	}
+
 	items := []models.Dimension{}
 	var err error
 
@@ -435,6 +482,10 @@ func RewriteMetadataLinks(ctx context.Context, oldLinks *models.MetadataLinks, l
 }
 
 func RewriteVersions(ctx context.Context, results []models.Version, linksBuilder *links.Builder) ([]models.Version, error) {
+	if len(results) == 0 {
+		return results, nil
+	}
+
 	items := []models.Version{}
 
 	var err error
@@ -459,8 +510,8 @@ func RewriteVersions(ctx context.Context, results []models.Version, linksBuilder
 }
 
 func RewriteLinkToEachDimension(ctx context.Context, results []models.Dimension, linksBuilder *links.Builder) ([]models.Dimension, error) {
-	if results == nil {
-		return nil, nil
+	if len(results) == 0 {
+		return results, nil
 	}
 
 	items := []models.Dimension{}
@@ -515,6 +566,10 @@ func RewriteVersionLinks(ctx context.Context, oldLinks *models.VersionLinks, lin
 }
 
 func RewriteInstances(ctx context.Context, results []*models.Instance, linksBuilder *links.Builder) error {
+	if len(results) == 0 {
+		return nil
+	}
+
 	var err error
 
 	for _, item := range results {
