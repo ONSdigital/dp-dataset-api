@@ -129,10 +129,16 @@ func RewriteDatasetsWithoutAuth(ctx context.Context, results []*models.DatasetUp
 }
 
 func RewriteDatasetWithAuth(ctx context.Context, dataset *models.DatasetUpdate, linksBuilder *links.Builder) (*models.DatasetUpdate, error) {
-	if dataset == nil || (dataset.Current == nil && dataset.Next == nil) {
-		log.Info(ctx, "getDataset endpoint: published or unpublished dataset not found or empty")
+	if dataset == nil {
+		log.Info(ctx, "getDataset endpoint: dataset is empty")
 		return nil, errs.ErrDatasetNotFound
 	}
+
+	if dataset.Current == nil && dataset.Next == nil {
+		log.Info(ctx, "getDataset endpoint: published or unpublished dataset not found")
+		return nil, errs.ErrDatasetNotFound
+	}
+
 	log.Info(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", log.Data{"dataset_id": dataset.ID})
 
 	if dataset.Current != nil && dataset.Current.Themes == nil {
@@ -159,8 +165,13 @@ func RewriteDatasetWithAuth(ctx context.Context, dataset *models.DatasetUpdate, 
 }
 
 func RewriteDatasetWithoutAuth(ctx context.Context, dataset *models.DatasetUpdate, linksBuilder *links.Builder) (*models.Dataset, error) {
-	if dataset == nil || dataset.Current == nil {
-		log.Info(ctx, "getDataset endpoint: published or unpublished dataset not found or empty")
+	if dataset == nil {
+		log.Info(ctx, "getDataset endpoint: dataset is empty")
+		return nil, errs.ErrDatasetNotFound
+	}
+
+	if dataset.Current == nil {
+		log.Info(ctx, "getDataset endpoint: published dataset not found")
 		return nil, errs.ErrDatasetNotFound
 	}
 
