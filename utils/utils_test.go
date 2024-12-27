@@ -2596,3 +2596,633 @@ func TestRewriteEditionsWithoutAuth_Error(t *testing.T) {
 		})
 	})
 }
+
+func TestRewriteEditionWithAuth_Success(t *testing.T) {
+	ctx := context.Background()
+	Convey("Given an edition update", t, func() {
+		Convey("When the edition update links need rewriting", func() {
+			result := &models.EditionUpdate{
+				ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
+				Current: &models.Edition{
+					Edition: "time-series",
+					Links: &models.EditionUpdateLinks{
+						Dataset: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						LatestVersion: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+							ID:   "1",
+						},
+						Self: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series",
+						},
+						Versions: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions",
+						},
+					},
+					State: "edition-confirmed",
+				},
+				Next: &models.Edition{
+					Edition: "time-series",
+					Links: &models.EditionUpdateLinks{
+						Dataset: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						LatestVersion: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/2",
+							ID:   "1",
+						},
+						Self: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series",
+						},
+						Versions: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions",
+						},
+					},
+					State: "edition-confirmed",
+				},
+			}
+
+			item, err := RewriteEditionWithAuth(ctx, result, linksBuilder)
+
+			Convey("Then the links should be rewritten correctly", func() {
+				So(err, ShouldBeNil)
+				So(item.ID, ShouldEqual, "66f7219d-6d53-402a-87b6-cb4014f7179f")
+				So(item.Current.Edition, ShouldEqual, "time-series")
+				So(item.Current.Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(item.Current.Links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(item.Current.Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(item.Current.Links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
+				So(item.Current.State, ShouldEqual, "edition-confirmed")
+				So(item.Next.Edition, ShouldEqual, "time-series")
+				So(item.Next.Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(item.Next.Links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/2")
+				So(item.Next.Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(item.Next.Links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
+				So(item.Next.State, ShouldEqual, "edition-confirmed")
+			})
+		})
+
+		Convey("When the edition update links do not need rewriting", func() {
+			result := &models.EditionUpdate{
+				ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
+				Current: &models.Edition{
+					Edition: "time-series",
+					Links: &models.EditionUpdateLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						LatestVersion: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+							ID:   "1",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series",
+						},
+						Versions: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions",
+						},
+					},
+					State: "edition-confirmed",
+				},
+				Next: &models.Edition{
+					Edition: "time-series",
+					Links: &models.EditionUpdateLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						LatestVersion: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/2",
+							ID:   "1",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series",
+						},
+						Versions: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions",
+						},
+					},
+					State: "edition-confirmed",
+				},
+			}
+
+			item, err := RewriteEditionWithAuth(ctx, result, linksBuilder)
+
+			Convey("Then the links should remain the same", func() {
+				So(err, ShouldBeNil)
+				So(item.ID, ShouldEqual, result.ID)
+				So(item.Current.Edition, ShouldEqual, result.Current.Edition)
+				So(item.Current.Links.Dataset.HRef, ShouldEqual, result.Current.Links.Dataset.HRef)
+				So(item.Current.Links.LatestVersion.HRef, ShouldEqual, result.Current.Links.LatestVersion.HRef)
+				So(item.Current.Links.Self.HRef, ShouldEqual, result.Current.Links.Self.HRef)
+				So(item.Current.Links.Versions.HRef, ShouldEqual, result.Current.Links.Versions.HRef)
+				So(item.Current.State, ShouldEqual, result.Current.State)
+				So(item.Next.Edition, ShouldEqual, result.Next.Edition)
+				So(item.Next.Links.Dataset.HRef, ShouldEqual, result.Next.Links.Dataset.HRef)
+				So(item.Next.Links.LatestVersion.HRef, ShouldEqual, result.Next.Links.LatestVersion.HRef)
+				So(item.Next.Links.Self.HRef, ShouldEqual, result.Next.Links.Self.HRef)
+				So(item.Next.Links.Versions.HRef, ShouldEqual, result.Next.Links.Versions.HRef)
+				So(item.Next.State, ShouldEqual, result.Next.State)
+			})
+		})
+
+		Convey("When the edition update links are empty", func() {
+			result := &models.EditionUpdate{
+				ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
+				Current: &models.Edition{
+					Edition: "time-series",
+					Links:   &models.EditionUpdateLinks{},
+					State:   "edition-confirmed",
+				},
+				Next: &models.Edition{
+					Edition: "time-series",
+					Links:   &models.EditionUpdateLinks{},
+					State:   "edition-confirmed",
+				},
+			}
+
+			item, err := RewriteEditionWithAuth(ctx, result, linksBuilder)
+
+			Convey("Then the links should remain empty", func() {
+				So(err, ShouldBeNil)
+				So(item.ID, ShouldEqual, "66f7219d-6d53-402a-87b6-cb4014f7179f")
+				So(item.Current.Links, ShouldResemble, &models.EditionUpdateLinks{})
+				So(item.Current.State, ShouldEqual, "edition-confirmed")
+				So(item.Next.Links, ShouldResemble, &models.EditionUpdateLinks{})
+				So(item.Next.State, ShouldEqual, "edition-confirmed")
+			})
+		})
+
+		Convey("When the edition update links are nil", func() {
+			result := &models.EditionUpdate{
+				ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
+				Current: &models.Edition{
+					Edition: "time-series",
+					State:   "edition-confirmed",
+				},
+				Next: &models.Edition{
+					Edition: "time-series",
+					State:   "edition-confirmed",
+				},
+			}
+
+			item, err := RewriteEditionWithAuth(ctx, result, linksBuilder)
+
+			Convey("Then the links should remain nil", func() {
+				So(err, ShouldBeNil)
+				So(item.ID, ShouldEqual, "66f7219d-6d53-402a-87b6-cb4014f7179f")
+				So(item.Current.Links, ShouldBeNil)
+				So(item.Current.State, ShouldEqual, "edition-confirmed")
+				So(item.Next.Links, ShouldBeNil)
+				So(item.Next.State, ShouldEqual, "edition-confirmed")
+			})
+		})
+	})
+}
+
+func TestRewriteEditionWithAuth_Error(t *testing.T) {
+	ctx := context.Background()
+	Convey("Given an edition update", t, func() {
+		Convey("When the edition update links are unable to be parsed", func() {
+			result := &models.EditionUpdate{
+				ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
+				Current: &models.Edition{
+					Edition: "time-series",
+					Links: &models.EditionUpdateLinks{
+						Dataset: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						LatestVersion: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+							ID:   "1",
+						},
+						Self: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series",
+						},
+						Versions: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions",
+						},
+					},
+					State: "edition-confirmed",
+				},
+				Next: &models.Edition{
+					Edition: "time-series",
+					Links: &models.EditionUpdateLinks{
+						Dataset: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						LatestVersion: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/2",
+							ID:   "1",
+						},
+						Self: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series",
+						},
+						Versions: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions",
+						},
+					},
+					State: "edition-confirmed",
+				},
+			}
+
+			item, err := RewriteEditionWithAuth(ctx, result, nil)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(item, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+
+		Convey("When the edition update is nil", func() {
+			item, err := RewriteEditionWithAuth(ctx, nil, linksBuilder)
+
+			Convey("Then an edition not found error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(item, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "edition not found")
+			})
+		})
+	})
+}
+
+func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
+	ctx := context.Background()
+	Convey("Given an edition update", t, func() {
+		Convey("When the edition update links need rewriting", func() {
+			result := &models.EditionUpdate{
+				ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
+				Current: &models.Edition{
+					Edition: "time-series",
+					Links: &models.EditionUpdateLinks{
+						Dataset: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						LatestVersion: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+							ID:   "1",
+						},
+						Self: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series",
+						},
+						Versions: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions",
+						},
+					},
+					State: "edition-confirmed",
+				},
+				Next: &models.Edition{
+					Edition: "time-series",
+					Links: &models.EditionUpdateLinks{
+						Dataset: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						LatestVersion: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/2",
+							ID:   "1",
+						},
+						Self: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series",
+						},
+						Versions: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions",
+						},
+					},
+					State: "edition-confirmed",
+				},
+			}
+
+			item, err := RewriteEditionWithoutAuth(ctx, result, linksBuilder)
+
+			Convey("Then the links should be rewritten correctly", func() {
+				So(err, ShouldBeNil)
+				So(item.ID, ShouldEqual, "66f7219d-6d53-402a-87b6-cb4014f7179f")
+				So(item.Edition, ShouldEqual, "time-series")
+				So(item.Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(item.Links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(item.Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(item.Links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
+				So(item.State, ShouldEqual, "edition-confirmed")
+			})
+		})
+
+		Convey("When the edition update links do not need rewriting", func() {
+			result := &models.EditionUpdate{
+				ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
+				Current: &models.Edition{
+					Edition: "time-series",
+					Links: &models.EditionUpdateLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						LatestVersion: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+							ID:   "1",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series",
+						},
+						Versions: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions",
+						},
+					},
+					State: "edition-confirmed",
+				},
+				Next: &models.Edition{
+					Edition: "time-series",
+					Links: &models.EditionUpdateLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						LatestVersion: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/2",
+							ID:   "1",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series",
+						},
+						Versions: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions",
+						},
+					},
+					State: "edition-confirmed",
+				},
+			}
+
+			item, err := RewriteEditionWithoutAuth(ctx, result, linksBuilder)
+
+			Convey("Then the links should remain the same", func() {
+				So(err, ShouldBeNil)
+				So(item.ID, ShouldEqual, result.ID)
+				So(item.Edition, ShouldEqual, result.Current.Edition)
+				So(item.Links.Dataset.HRef, ShouldEqual, result.Current.Links.Dataset.HRef)
+				So(item.Links.LatestVersion.HRef, ShouldEqual, result.Current.Links.LatestVersion.HRef)
+				So(item.Links.Self.HRef, ShouldEqual, result.Current.Links.Self.HRef)
+				So(item.Links.Versions.HRef, ShouldEqual, result.Current.Links.Versions.HRef)
+				So(item.State, ShouldEqual, result.Current.State)
+			})
+		})
+
+		Convey("When the edition update links are empty", func() {
+			result := &models.EditionUpdate{
+				ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
+				Current: &models.Edition{
+					Edition: "time-series",
+					Links:   &models.EditionUpdateLinks{},
+					State:   "edition-confirmed",
+				},
+				Next: &models.Edition{
+					Edition: "time-series",
+					Links:   &models.EditionUpdateLinks{},
+					State:   "edition-confirmed",
+				},
+			}
+
+			item, err := RewriteEditionWithoutAuth(ctx, result, linksBuilder)
+
+			Convey("Then the links should remain empty", func() {
+				So(err, ShouldBeNil)
+				So(item.ID, ShouldEqual, "66f7219d-6d53-402a-87b6-cb4014f7179f")
+				So(item.Links, ShouldResemble, &models.EditionUpdateLinks{})
+				So(item.State, ShouldEqual, "edition-confirmed")
+			})
+		})
+
+		Convey("When the edition update links are nil", func() {
+			result := &models.EditionUpdate{
+				ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
+				Current: &models.Edition{
+					Edition: "time-series",
+					State:   "edition-confirmed",
+				},
+				Next: &models.Edition{
+					Edition: "time-series",
+					State:   "edition-confirmed",
+				},
+			}
+
+			item, err := RewriteEditionWithoutAuth(ctx, result, linksBuilder)
+
+			Convey("Then the links should remain nil", func() {
+				So(err, ShouldBeNil)
+				So(item.ID, ShouldEqual, "66f7219d-6d53-402a-87b6-cb4014f7179f")
+				So(item.Links, ShouldBeNil)
+				So(item.State, ShouldEqual, "edition-confirmed")
+			})
+		})
+
+		Convey("When the edition update is empty", func() {
+			item, err := RewriteEditionWithoutAuth(ctx, &models.EditionUpdate{}, linksBuilder)
+
+			Convey("Then nothing should be returned", func() {
+				So(err, ShouldBeNil)
+				So(item, ShouldBeNil)
+			})
+		})
+
+		Convey("When the edition update 'current' is nil", func() {
+			item, err := RewriteEditionWithoutAuth(ctx, &models.EditionUpdate{
+				Current: nil,
+				Next:    &models.Edition{},
+			}, linksBuilder)
+
+			Convey("Then nothing should be returned", func() {
+				So(err, ShouldBeNil)
+				So(item, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestRewriteEditionWithoutAuth_Error(t *testing.T) {
+	ctx := context.Background()
+	Convey("Given an edition update", t, func() {
+		Convey("When the edition update links are unable to be parsed", func() {
+			result := &models.EditionUpdate{
+				ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
+				Current: &models.Edition{
+					Edition: "time-series",
+					Links: &models.EditionUpdateLinks{
+						Dataset: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						LatestVersion: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+							ID:   "1",
+						},
+						Self: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series",
+						},
+						Versions: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions",
+						},
+					},
+					State: "edition-confirmed",
+				},
+				Next: &models.Edition{
+					Edition: "time-series",
+					Links: &models.EditionUpdateLinks{
+						Dataset: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						LatestVersion: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/2",
+							ID:   "1",
+						},
+						Self: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series",
+						},
+						Versions: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions",
+						},
+					},
+					State: "edition-confirmed",
+				},
+			}
+
+			item, err := RewriteEditionWithoutAuth(ctx, result, nil)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(item, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+
+		Convey("When the edition update is nil", func() {
+			item, err := RewriteEditionWithoutAuth(ctx, nil, linksBuilder)
+
+			Convey("Then an edition not found error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(item, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "edition not found")
+			})
+		})
+	})
+}
+
+func TestRewriteEditionLinks_Success(t *testing.T) {
+	ctx := context.Background()
+	Convey("Given a set of edition update links", t, func() {
+		Convey("When the edition update links need rewriting", func() {
+			links := &models.EditionUpdateLinks{
+				Dataset: &models.LinkObject{
+					HRef: "https://oldhost:1000/datasets/cpih01",
+					ID:   "cpih01",
+				},
+				LatestVersion: &models.LinkObject{
+					HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+					ID:   "1",
+				},
+				Self: &models.LinkObject{
+					HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series",
+				},
+				Versions: &models.LinkObject{
+					HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions",
+				},
+			}
+
+			err := RewriteEditionLinks(ctx, links, linksBuilder)
+
+			Convey("Then the links should be rewritten correctly", func() {
+				So(err, ShouldBeNil)
+				So(links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
+			})
+		})
+
+		Convey("When the edition update links do not need rewriting", func() {
+			links := &models.EditionUpdateLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01",
+					ID:   "cpih01",
+				},
+				LatestVersion: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+					ID:   "1",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series",
+				},
+				Versions: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions",
+				},
+			}
+
+			err := RewriteEditionLinks(ctx, links, linksBuilder)
+
+			Convey("Then the links should remain the same", func() {
+				So(err, ShouldBeNil)
+				So(links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
+			})
+		})
+
+		Convey("When the edition update links are empty", func() {
+			links := &models.EditionUpdateLinks{}
+
+			err := RewriteEditionLinks(ctx, links, linksBuilder)
+
+			Convey("Then the links should remain empty", func() {
+				So(err, ShouldBeNil)
+				So(links, ShouldResemble, &models.EditionUpdateLinks{})
+			})
+		})
+
+		Convey("When the edition update links are nil", func() {
+			err := RewriteEditionLinks(ctx, nil, linksBuilder)
+
+			Convey("Then the links should remain nil", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestRewriteEditionLinks_Error(t *testing.T) {
+	ctx := context.Background()
+	Convey("Given a set of edition update links", t, func() {
+		Convey("When the edition update links are unable to be parsed", func() {
+			links := &models.EditionUpdateLinks{
+				Dataset: &models.LinkObject{
+					HRef: "://oldhost:1000/datasets/cpih01",
+					ID:   "cpih01",
+				},
+				LatestVersion: &models.LinkObject{
+					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+					ID:   "1",
+				},
+				Self: &models.LinkObject{
+					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series",
+				},
+				Versions: &models.LinkObject{
+					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions",
+				},
+			}
+
+			err := RewriteEditionLinks(ctx, links, nil)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+	})
+}

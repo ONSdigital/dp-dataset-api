@@ -403,11 +403,12 @@ func RewriteEditionWithoutAuth(ctx context.Context, edition *models.EditionUpdat
 
 	editionResponse := &models.Edition{}
 	if edition.Current == nil {
-		log.Info(ctx, "getEdition endpoint: published edition not found", log.Data{"edition_id": edition.ID})
+		log.Info(ctx, "getEdition endpoint: published edition not found")
 		return nil, nil
 	}
 	log.Info(ctx, "getEdition endpoint: caller not authorised returning edition", log.Data{"edition_id": edition.ID})
 
+	edition.Current.ID = edition.ID
 	editionResponse = edition.Current
 	err := RewriteEditionLinks(ctx, editionResponse.Links, linksBuilder)
 	if err != nil {
