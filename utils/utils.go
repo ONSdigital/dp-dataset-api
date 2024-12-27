@@ -232,7 +232,7 @@ func RewriteDimensions(ctx context.Context, results []models.Dimension, linksBui
 	for _, item := range results {
 		err := RewriteDimensionLinks(ctx, &item.Links, linksBuilder)
 		if err != nil {
-			log.Error(ctx, "failed to rewrite 'current' links", err)
+			log.Error(ctx, "failed to rewrite dimension links", err)
 			return nil, err
 		}
 		items = append(items, item)
@@ -274,7 +274,7 @@ func RewritePublicDimensionOptions(ctx context.Context, results []*models.Public
 	for _, item := range results {
 		err := RewriteDimensionOptionLinks(ctx, &item.Links, linksBuilder)
 		if err != nil {
-			log.Error(ctx, "failed to rewrite 'current' links", err)
+			log.Error(ctx, "failed to rewrite public dimension option links", err)
 			return nil, err
 		}
 		items = append(items, item)
