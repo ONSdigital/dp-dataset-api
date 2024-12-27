@@ -1269,6 +1269,94 @@ func TestRewriteDimensions_Success(t *testing.T) {
 			})
 		})
 
+		Convey("When each dimension needs its link rewritten", func() {
+			results := []models.Dimension{
+				{
+					Links: models.DimensionLink{
+						CodeList: models.LinkObject{},
+						Options:  models.LinkObject{},
+						Version:  models.LinkObject{},
+					},
+					HRef: "https://oldhost:1000/code-lists/mmm-yy",
+					ID:   "mmm-yy",
+					Name: "time",
+				},
+				{
+					Links: models.DimensionLink{
+						CodeList: models.LinkObject{},
+						Options:  models.LinkObject{},
+						Version:  models.LinkObject{},
+					},
+					HRef: "https://oldhost:1000/code-lists/uk-only",
+					ID:   "uk-only",
+					Name: "geography",
+				},
+				{
+					Links: models.DimensionLink{
+						CodeList: models.LinkObject{},
+						Options:  models.LinkObject{},
+						Version:  models.LinkObject{},
+					},
+					HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid",
+					ID:   "cpih1dim1aggid",
+					Name: "aggregate",
+				},
+			}
+
+			items, err := RewriteDimensions(ctx, results, linksBuilder)
+
+			Convey("Then the links should be rewritten correctly", func() {
+				So(err, ShouldBeNil)
+				So(items[0].HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(items[1].HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
+				So(items[2].HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+			})
+		})
+
+		Convey("When each dimemsion doesn't need its link rewritten", func() {
+			results := []models.Dimension{
+				{
+					Links: models.DimensionLink{
+						CodeList: models.LinkObject{},
+						Options:  models.LinkObject{},
+						Version:  models.LinkObject{},
+					},
+					HRef: "http://localhost:22000/code-lists/mmm-yy",
+					ID:   "mmm-yy",
+					Name: "time",
+				},
+				{
+					Links: models.DimensionLink{
+						CodeList: models.LinkObject{},
+						Options:  models.LinkObject{},
+						Version:  models.LinkObject{},
+					},
+					HRef: "http://localhost:22000/code-lists/uk-only",
+					ID:   "uk-only",
+					Name: "geography",
+				},
+				{
+					Links: models.DimensionLink{
+						CodeList: models.LinkObject{},
+						Options:  models.LinkObject{},
+						Version:  models.LinkObject{},
+					},
+					HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
+					ID:   "cpih1dim1aggid",
+					Name: "aggregate",
+				},
+			}
+
+			items, err := RewriteDimensions(ctx, results, linksBuilder)
+
+			Convey("Then the links should remain the same", func() {
+				So(err, ShouldBeNil)
+				So(items[0].HRef, ShouldEqual, results[0].HRef)
+				So(items[1].HRef, ShouldEqual, results[1].HRef)
+				So(items[2].HRef, ShouldEqual, results[2].HRef)
+			})
+		})
+
 		Convey("When the dimension links are empty", func() {
 			results := []models.Dimension{
 				{

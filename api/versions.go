@@ -233,9 +233,9 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	v.Dimensions, err = utils.RewriteLinkToEachDimension(ctx, v.Dimensions, linksBuilder)
+	v.Dimensions, err = utils.RewriteDimensions(ctx, v.Dimensions, linksBuilder)
 	if err != nil {
-		log.Error(ctx, "getVersion endpoint: failed to rewrite version links", err)
+		log.Error(ctx, "getVersion endpoint: failed to rewrite dimensions", err)
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}

@@ -119,9 +119,9 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		metaDataDoc.Dimensions, err = utils.RewriteMetadataDimensionsLinks(ctx, metaDataDoc.Dimensions, linksBuilder)
+		metaDataDoc.Dimensions, err = utils.RewriteDimensions(ctx, metaDataDoc.Dimensions, linksBuilder)
 		if err != nil {
-			log.Error(ctx, "getMetadata endpoint: failed to rewrite metadata dimensions links", err, logData)
+			log.Error(ctx, "getMetadata endpoint: failed to rewrite metadata dimensions", err, logData)
 			handleMetadataErr(w, err)
 			return nil, err
 		}
