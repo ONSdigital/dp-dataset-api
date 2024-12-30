@@ -3464,9 +3464,15 @@ func TestRewriteVersions_Success(t *testing.T) {
 							ID:    "mmm-yy",
 							Label: "Time",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/mmm-yy",
+								},
+								Options: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/mmm-yy/options",
+								},
+								Version: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/mmm-yy/versions/1",
+								},
 							},
 							Name: "time",
 						},
@@ -3475,9 +3481,15 @@ func TestRewriteVersions_Success(t *testing.T) {
 							ID:    "uk-only",
 							Label: "Geography",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/uk-only",
+								},
+								Options: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/uk-only/options",
+								},
+								Version: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/uk-only/versions/1",
+								},
 							},
 							Name: "geography",
 						},
@@ -3486,9 +3498,15 @@ func TestRewriteVersions_Success(t *testing.T) {
 							ID:    "cpih1dim1aggid",
 							Label: "Aggregate",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid",
+								},
+								Options: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid/options",
+								},
+								Version: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid/versions/1",
+								},
 							},
 							Name: "aggregate",
 						},
@@ -3518,9 +3536,15 @@ func TestRewriteVersions_Success(t *testing.T) {
 							ID:    "mmm-yy",
 							Label: "Time",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/mmm-yy",
+								},
+								Options: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/mmm-yy/options",
+								},
+								Version: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/mmm-yy/versions/1",
+								},
 							},
 							Name: "time",
 						},
@@ -3529,9 +3553,15 @@ func TestRewriteVersions_Success(t *testing.T) {
 							ID:    "uk-only",
 							Label: "Geography",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/uk-only",
+								},
+								Options: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/uk-only/options",
+								},
+								Version: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/uk-only/versions/1",
+								},
 							},
 							Name: "geography",
 						},
@@ -3540,9 +3570,15 @@ func TestRewriteVersions_Success(t *testing.T) {
 							ID:    "cpih1dim1aggid",
 							Label: "Aggregate",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid",
+								},
+								Options: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid/options",
+								},
+								Version: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid/versions/1",
+								},
 							},
 							Name: "aggregate",
 						},
@@ -3563,8 +3599,17 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[0].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(items[0].Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/53")
 				So(items[0].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(items[0].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(items[0].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/options")
+				So(items[0].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/versions/1")
 				So(items[0].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
+				So(items[0].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
+				So(items[0].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/options")
+				So(items[0].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/versions/1")
 				So(items[0].Dimensions[2].HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(items[0].Dimensions[2].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(items[0].Dimensions[2].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/options")
+				So(items[0].Dimensions[2].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/versions/1")
 
 				So(items[1].ID, ShouldEqual, "74e4d2da-8fd6-4bb6-b4a2-b5cd573fb42b")
 				So(items[1].DatasetID, ShouldEqual, "cpih01")
@@ -3574,8 +3619,17 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[1].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(items[1].Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/52")
 				So(items[1].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(items[1].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(items[1].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/options")
+				So(items[1].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/versions/1")
 				So(items[1].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
+				So(items[1].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
+				So(items[1].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/options")
+				So(items[1].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/versions/1")
 				So(items[1].Dimensions[2].HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(items[1].Dimensions[2].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(items[1].Dimensions[2].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/options")
+				So(items[1].Dimensions[2].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/versions/1")
 			})
 		})
 
@@ -3605,9 +3659,15 @@ func TestRewriteVersions_Success(t *testing.T) {
 							ID:    "mmm-yy",
 							Label: "Time",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/mmm-yy",
+								},
+								Options: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/mmm-yy/options",
+								},
+								Version: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/mmm-yy/versions/1",
+								},
 							},
 							Name: "time",
 						},
@@ -3616,9 +3676,15 @@ func TestRewriteVersions_Success(t *testing.T) {
 							ID:    "uk-only",
 							Label: "Geography",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/uk-only",
+								},
+								Options: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/uk-only/options",
+								},
+								Version: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/uk-only/versions/1",
+								},
 							},
 							Name: "geography",
 						},
@@ -3627,9 +3693,15 @@ func TestRewriteVersions_Success(t *testing.T) {
 							ID:    "cpih1dim1aggid",
 							Label: "Aggregate",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
+								},
+								Options: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid/options",
+								},
+								Version: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid/versions/1",
+								},
 							},
 							Name: "aggregate",
 						},
@@ -3659,9 +3731,15 @@ func TestRewriteVersions_Success(t *testing.T) {
 							ID:    "mmm-yy",
 							Label: "Time",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/mmm-yy",
+								},
+								Options: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/mmm-yy/options",
+								},
+								Version: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/mmm-yy/versions/1",
+								},
 							},
 							Name: "time",
 						},
@@ -3670,9 +3748,15 @@ func TestRewriteVersions_Success(t *testing.T) {
 							ID:    "uk-only",
 							Label: "Geography",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/uk-only",
+								},
+								Options: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/uk-only/options",
+								},
+								Version: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/uk-only/versions/1",
+								},
 							},
 							Name: "geography",
 						},
@@ -3681,9 +3765,15 @@ func TestRewriteVersions_Success(t *testing.T) {
 							ID:    "cpih1dim1aggid",
 							Label: "Aggregate",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
+								},
+								Options: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid/options",
+								},
+								Version: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid/versions/1",
+								},
 							},
 							Name: "aggregate",
 						},
@@ -3704,8 +3794,17 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[0].Links.Edition.HRef, ShouldEqual, results[0].Links.Edition.HRef)
 				So(items[0].Links.Self.HRef, ShouldEqual, results[0].Links.Self.HRef)
 				So(items[0].Dimensions[0].HRef, ShouldEqual, results[0].Dimensions[0].HRef)
+				So(items[0].Dimensions[0].Links.CodeList.HRef, ShouldEqual, results[0].Dimensions[0].Links.CodeList.HRef)
+				So(items[0].Dimensions[0].Links.Options.HRef, ShouldEqual, results[0].Dimensions[0].Links.Options.HRef)
+				So(items[0].Dimensions[0].Links.Version.HRef, ShouldEqual, results[0].Dimensions[0].Links.Version.HRef)
 				So(items[0].Dimensions[1].HRef, ShouldEqual, results[0].Dimensions[1].HRef)
+				So(items[0].Dimensions[1].Links.CodeList.HRef, ShouldEqual, results[0].Dimensions[1].Links.CodeList.HRef)
+				So(items[0].Dimensions[1].Links.Options.HRef, ShouldEqual, results[0].Dimensions[1].Links.Options.HRef)
+				So(items[0].Dimensions[1].Links.Version.HRef, ShouldEqual, results[0].Dimensions[1].Links.Version.HRef)
 				So(items[0].Dimensions[2].HRef, ShouldEqual, results[0].Dimensions[2].HRef)
+				So(items[0].Dimensions[2].Links.CodeList.HRef, ShouldEqual, results[0].Dimensions[2].Links.CodeList.HRef)
+				So(items[0].Dimensions[2].Links.Options.HRef, ShouldEqual, results[0].Dimensions[2].Links.Options.HRef)
+				So(items[0].Dimensions[2].Links.Version.HRef, ShouldEqual, results[0].Dimensions[2].Links.Version.HRef)
 
 				So(items[1].ID, ShouldEqual, results[1].ID)
 				So(items[1].DatasetID, ShouldEqual, results[1].DatasetID)
@@ -3715,8 +3814,17 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[1].Links.Edition.HRef, ShouldEqual, results[1].Links.Edition.HRef)
 				So(items[1].Links.Self.HRef, ShouldEqual, results[1].Links.Self.HRef)
 				So(items[1].Dimensions[0].HRef, ShouldEqual, results[1].Dimensions[0].HRef)
+				So(items[1].Dimensions[0].Links.CodeList.HRef, ShouldEqual, results[1].Dimensions[0].Links.CodeList.HRef)
+				So(items[1].Dimensions[0].Links.Options.HRef, ShouldEqual, results[1].Dimensions[0].Links.Options.HRef)
+				So(items[1].Dimensions[0].Links.Version.HRef, ShouldEqual, results[1].Dimensions[0].Links.Version.HRef)
 				So(items[1].Dimensions[1].HRef, ShouldEqual, results[1].Dimensions[1].HRef)
+				So(items[1].Dimensions[1].Links.CodeList.HRef, ShouldEqual, results[1].Dimensions[1].Links.CodeList.HRef)
+				So(items[1].Dimensions[1].Links.Options.HRef, ShouldEqual, results[1].Dimensions[1].Links.Options.HRef)
+				So(items[1].Dimensions[1].Links.Version.HRef, ShouldEqual, results[1].Dimensions[1].Links.Version.HRef)
 				So(items[1].Dimensions[2].HRef, ShouldEqual, results[1].Dimensions[2].HRef)
+				So(items[1].Dimensions[2].Links.CodeList.HRef, ShouldEqual, results[1].Dimensions[2].Links.CodeList.HRef)
+				So(items[1].Dimensions[2].Links.Options.HRef, ShouldEqual, results[1].Dimensions[2].Links.Options.HRef)
+				So(items[1].Dimensions[2].Links.Version.HRef, ShouldEqual, results[1].Dimensions[2].Links.Version.HRef)
 			})
 		})
 
@@ -4081,9 +4189,15 @@ func TestRewriteInstances_Success(t *testing.T) {
 						{
 							Label: "City",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/city",
+								},
+								Options: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/city/options",
+								},
+								Version: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/city/versions/1",
+								},
 							},
 							HRef: "https://oldhost:1000/city",
 							ID:   "city",
@@ -4091,9 +4205,15 @@ func TestRewriteInstances_Success(t *testing.T) {
 						{
 							Label: "Number of siblings (3 mappings)",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/siblings_3",
+								},
+								Options: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/siblings_3/options",
+								},
+								Version: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/siblings_3/versions/1",
+								},
 							},
 							HRef: "https://oldhost:1000/siblings_3",
 							ID:   "siblings_3",
@@ -4131,9 +4251,15 @@ func TestRewriteInstances_Success(t *testing.T) {
 					Dimensions: []models.Dimension{
 						{
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/mmm-yy",
+								},
+								Options: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/mmm-yy/options",
+								},
+								Version: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/mmm-yy/versions/1",
+								},
 							},
 							HRef: "https://oldhost:1000/code-lists/mmm-yy",
 							ID:   "mmm-yy",
@@ -4141,9 +4267,15 @@ func TestRewriteInstances_Success(t *testing.T) {
 						},
 						{
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/uk-only",
+								},
+								Options: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/uk-only/options",
+								},
+								Version: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/uk-only/versions/1",
+								},
 							},
 							HRef: "https://oldhost:1000/code-lists/uk-only",
 							ID:   "uk-only",
@@ -4151,9 +4283,15 @@ func TestRewriteInstances_Success(t *testing.T) {
 						},
 						{
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid",
+								},
+								Options: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid/options",
+								},
+								Version: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid/versions/1",
+								},
 							},
 							HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid",
 							ID:   "cpih1dim1aggid",
@@ -4196,7 +4334,13 @@ func TestRewriteInstances_Success(t *testing.T) {
 
 				So(results[0].CollectionID, ShouldEqual, "cantabularflexibledefault-1")
 				So(results[0].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/city")
+				So(results[0].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/city")
+				So(results[0].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/city/options")
+				So(results[0].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/city/versions/1")
 				So(results[0].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/siblings_3")
+				So(results[0].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/siblings_3")
+				So(results[0].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/siblings_3/options")
+				So(results[0].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/siblings_3/versions/1")
 				So(results[0].Edition, ShouldEqual, "2021")
 				So(results[0].InstanceID, ShouldEqual, "1")
 				So(results[0].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default")
@@ -4208,8 +4352,17 @@ func TestRewriteInstances_Success(t *testing.T) {
 
 				So(results[1].CollectionID, ShouldEqual, "cpihtest-1")
 				So(results[1].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[1].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[1].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/options")
+				So(results[1].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/versions/1")
 				So(results[1].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
+				So(results[1].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
+				So(results[1].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/options")
+				So(results[1].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/versions/1")
 				So(results[1].Dimensions[2].HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(results[1].Dimensions[2].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(results[1].Dimensions[2].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/options")
+				So(results[1].Dimensions[2].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/versions/1")
 				So(results[1].Edition, ShouldEqual, "time-series")
 				So(results[1].InstanceID, ShouldEqual, "2")
 				So(results[1].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
@@ -4229,9 +4382,15 @@ func TestRewriteInstances_Success(t *testing.T) {
 						{
 							Label: "City",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/city",
+								},
+								Options: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/city/options",
+								},
+								Version: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/city/versions/1",
+								},
 							},
 							HRef: "http://localhost:22000/city",
 							ID:   "city",
@@ -4239,9 +4398,15 @@ func TestRewriteInstances_Success(t *testing.T) {
 						{
 							Label: "Number of siblings (3 mappings)",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/siblings_3",
+								},
+								Options: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/siblings_3/options",
+								},
+								Version: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/siblings_3/versions/1",
+								},
 							},
 							HRef: "http://localhost:22000/siblings_3",
 							ID:   "siblings_3",
@@ -4279,9 +4444,15 @@ func TestRewriteInstances_Success(t *testing.T) {
 					Dimensions: []models.Dimension{
 						{
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/mmm-yy",
+								},
+								Options: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/mmm-yy/options",
+								},
+								Version: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/mmm-yy/versions/1",
+								},
 							},
 							HRef: "http://localhost:22000/code-lists/mmm-yy",
 							ID:   "mmm-yy",
@@ -4289,9 +4460,15 @@ func TestRewriteInstances_Success(t *testing.T) {
 						},
 						{
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/uk-only",
+								},
+								Options: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/uk-only/options",
+								},
+								Version: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/uk-only/versions/1",
+								},
 							},
 							HRef: "http://localhost:22000/code-lists/uk-only",
 							ID:   "uk-only",
@@ -4299,9 +4476,15 @@ func TestRewriteInstances_Success(t *testing.T) {
 						},
 						{
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
+								},
+								Options: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid/options",
+								},
+								Version: models.LinkObject{
+									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid/versions/1",
+								},
 							},
 							HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
 							ID:   "cpih1dim1aggid",
@@ -4344,7 +4527,13 @@ func TestRewriteInstances_Success(t *testing.T) {
 
 				So(results[0].CollectionID, ShouldEqual, "cantabularflexibledefault-1")
 				So(results[0].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/city")
+				So(results[0].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/city")
+				So(results[0].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/city/options")
+				So(results[0].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/city/versions/1")
 				So(results[0].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/siblings_3")
+				So(results[0].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/siblings_3")
+				So(results[0].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/siblings_3/options")
+				So(results[0].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/siblings_3/versions/1")
 				So(results[0].Edition, ShouldEqual, "2021")
 				So(results[0].InstanceID, ShouldEqual, "1")
 				So(results[0].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default")
@@ -4356,8 +4545,17 @@ func TestRewriteInstances_Success(t *testing.T) {
 
 				So(results[1].CollectionID, ShouldEqual, "cpihtest-1")
 				So(results[1].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[1].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[1].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/options")
+				So(results[1].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/versions/1")
 				So(results[1].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
+				So(results[1].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
+				So(results[1].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/options")
+				So(results[1].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/versions/1")
 				So(results[1].Dimensions[2].HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(results[1].Dimensions[2].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(results[1].Dimensions[2].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/options")
+				So(results[1].Dimensions[2].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/versions/1")
 				So(results[1].Edition, ShouldEqual, "time-series")
 				So(results[1].InstanceID, ShouldEqual, "2")
 				So(results[1].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
