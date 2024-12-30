@@ -4240,6 +4240,9 @@ func TestRewriteInstances_Success(t *testing.T) {
 						Self: &models.LinkObject{
 							HRef: "https://oldhost:1000/instances/1",
 						},
+						Spatial: &models.LinkObject{
+							HRef: "http://oldhost:1000/spatial/1",
+						},
 						Version: &models.LinkObject{
 							HRef: "https://oldhost:1000/datasets/cantabular-flexible-default/editions/2021/versions/1",
 							ID:   "1",
@@ -4319,6 +4322,9 @@ func TestRewriteInstances_Success(t *testing.T) {
 						Self: &models.LinkObject{
 							HRef: "https://oldhost:1000/instances/2",
 						},
+						Spatial: &models.LinkObject{
+							HRef: "http://oldhost:1000/spatial/2",
+						},
 						Version: &models.LinkObject{
 							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
 							ID:   "1",
@@ -4348,6 +4354,7 @@ func TestRewriteInstances_Success(t *testing.T) {
 				So(results[0].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default/editions/2021")
 				So(results[0].Links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/1")
 				So(results[0].Links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/1")
+				So(results[0].Links.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial/1")
 				So(results[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default/editions/2021/versions/1")
 
 				So(results[1].CollectionID, ShouldEqual, "cpihtest-1")
@@ -4370,6 +4377,7 @@ func TestRewriteInstances_Success(t *testing.T) {
 				So(results[1].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(results[1].Links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/2")
 				So(results[1].Links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/2")
+				So(results[1].Links.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial/2")
 				So(results[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
@@ -4432,6 +4440,9 @@ func TestRewriteInstances_Success(t *testing.T) {
 						},
 						Self: &models.LinkObject{
 							HRef: "http://localhost:22000/instances/1",
+						},
+						Spatial: &models.LinkObject{
+							HRef: "http://oldhost:1000/spatial/1",
 						},
 						Version: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/cantabular-flexible-default/editions/2021/versions/1",
@@ -4512,6 +4523,9 @@ func TestRewriteInstances_Success(t *testing.T) {
 						Self: &models.LinkObject{
 							HRef: "http://localhost:22000/instances/2",
 						},
+						Spatial: &models.LinkObject{
+							HRef: "http://oldhost:1000/spatial/2",
+						},
 						Version: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
 							ID:   "1",
@@ -4541,6 +4555,7 @@ func TestRewriteInstances_Success(t *testing.T) {
 				So(results[0].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default/editions/2021")
 				So(results[0].Links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/1")
 				So(results[0].Links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/1")
+				So(results[0].Links.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial/1")
 				So(results[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default/editions/2021/versions/1")
 
 				So(results[1].CollectionID, ShouldEqual, "cpihtest-1")
@@ -4563,6 +4578,7 @@ func TestRewriteInstances_Success(t *testing.T) {
 				So(results[1].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(results[1].Links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/2")
 				So(results[1].Links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/2")
+				So(results[1].Links.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial/2")
 				So(results[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
@@ -4810,6 +4826,9 @@ func TestRewriteInstanceLinks_Success(t *testing.T) {
 				Self: &models.LinkObject{
 					HRef: "https://oldhost:1000/instances/1",
 				},
+				Spatial: &models.LinkObject{
+					HRef: "http://oldhost:1000/spatial",
+				},
 				Version: &models.LinkObject{
 					HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
 				},
@@ -4824,6 +4843,7 @@ func TestRewriteInstanceLinks_Success(t *testing.T) {
 				So(links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/1")
 				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/1")
+				So(links.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial")
 				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
@@ -4845,6 +4865,9 @@ func TestRewriteInstanceLinks_Success(t *testing.T) {
 				Self: &models.LinkObject{
 					HRef: "http://localhost:22000/instances/1",
 				},
+				Spatial: &models.LinkObject{
+					HRef: "http://oldhost:1000/spatial",
+				},
 				Version: &models.LinkObject{
 					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
 				},
@@ -4859,6 +4882,7 @@ func TestRewriteInstanceLinks_Success(t *testing.T) {
 				So(links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/1")
 				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/1")
+				So(links.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial")
 				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
@@ -4903,6 +4927,9 @@ func TestRewriteInstanceLinks_Error(t *testing.T) {
 				},
 				Self: &models.LinkObject{
 					HRef: "://oldhost:1000/instances/1",
+				},
+				Spatial: &models.LinkObject{
+					HRef: "://oldhost:1000/spatial",
 				},
 				Version: &models.LinkObject{
 					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
