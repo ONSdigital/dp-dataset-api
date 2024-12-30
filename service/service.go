@@ -61,7 +61,7 @@ func GetListTransitions() []application.Transition {
 	publishedTransition := application.Transition{
 		Label:                "published",
 		TargetState:          application.Published,
-		AlllowedSourceStates: []string{"created", "associated"},
+		AlllowedSourceStates: []string{"created", "associated", "published"},
 	}
 
 	associatedTransition := application.Transition{

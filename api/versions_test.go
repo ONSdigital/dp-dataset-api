@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"time"
 
 	"io"
 	"net/http"
@@ -18,6 +20,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -547,146 +550,146 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		// b := versionPayload
-		// r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-		//w := httptest.NewRecorder()
+		b := versionPayload
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
 
-		// 	isLocked := false
-		// 	mockedDataStore := &storetest.StorerMock{
-		// 		GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
-		// 			//So(isLocked, ShouldBeTrue)
-		// 			return &models.DatasetUpdate{
-		// 				ID: "123",
-		// 			}, nil
-		// 		},
-		// 		CheckEditionExistsFunc: func(context.Context, string, string, string) error {
-		// 			//So(isLocked, ShouldBeTrue)
-		// 			return nil
-		// 		},
-		// 		GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
-		// 			//So(isLocked, ShouldBeTrue)
-		// 			return &models.Version{
-		// 				ID: "789",
-		// 				Links: &models.VersionLinks{
-		// 					Dataset: &models.LinkObject{
-		// 						HRef: "http://localhost:22000/datasets/123",
-		// 						ID:   "123",
-		// 					},
-		// 					Dimensions: &models.LinkObject{
-		// 						HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
-		// 					},
-		// 					Edition: &models.LinkObject{
-		// 						HRef: "http://localhost:22000/datasets/123/editions/2017",
-		// 						ID:   "456",
-		// 					},
-		// 					Self: &models.LinkObject{
-		// 						HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
-		// 					},
-		// 				},
-		// 				ReleaseDate: "2017-12-12",
-		// 				State:       models.EditionConfirmedState,
-		// 				ETag:        testETag,
-		// 			}, nil
-		// 		},
-		// 		UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
-		// 			//So(isLocked, ShouldBeTrue)
-		// 			return "", nil
-		// 		},
-		// 		UpdateDatasetWithAssociationFunc: func(context.Context, string, string, *models.Version) error {
-		// 			//So(isLocked, ShouldBeTrue)
-		// 			return nil
-		// 		},
-		// 		AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
-		// 			isLocked = true
-		// 			return testLockID, nil
-		// 		},
-		// 		UnlockInstanceFunc: func(context.Context, string) {
-		// 			isLocked = false
-		// 		},
-		// 	}
+		isLocked := false
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+				//So(isLocked, ShouldBeTrue)
+				return &models.DatasetUpdate{
+					ID: "123",
+				}, nil
+			},
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
+				//So(isLocked, ShouldBeTrue)
+				return nil
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				//So(isLocked, ShouldBeTrue)
+				return &models.Version{
+					ID: "789",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+						Dimensions: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017",
+							ID:   "456",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+						},
+					},
+					ReleaseDate: "2017-12-12",
+					State:       models.EditionConfirmedState,
+					ETag:        testETag,
+				}, nil
+			},
+			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+				//So(isLocked, ShouldBeTrue)
+				return "", nil
+			},
+			UpdateDatasetWithAssociationFunc: func(context.Context, string, string, *models.Version) error {
+				//So(isLocked, ShouldBeTrue)
+				return nil
+			},
+			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
+				isLocked = true
+				return testLockID, nil
+			},
+			UnlockInstanceFunc: func(context.Context, string) {
+				isLocked = false
+			},
+		}
 
-		// 	datasetPermissions := getAuthorisationHandlerMock()
-		// 	permissions := getAuthorisationHandlerMock()
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
 
-		// 	Convey("Given a valid request is executed", func() {
-		// 		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
-		// 		//	smapi := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, *mockStateMachine)
-		// 		api.Router.ServeHTTP(w, r)
+		Convey("Given a valid request is executed", func() {
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+			//	smapi := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, *mockStateMachine)
+			api.Router.ServeHTTP(w, r)
 
-		// 		Convey("Then the request is successful, with the expected calls", func() {
-		// 			So(w.Code, ShouldEqual, http.StatusOK)
-		// 			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		// 			So(permissions.Required.Calls, ShouldEqual, 0)
-		// 			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-		// 			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		// 			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-		// 			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-		// 			So(mockedDataStore.UpdateVersionCalls()[0].ETagSelector, ShouldEqual, testETag)
-		// 			So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
-		// 			So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
-		// 			So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
-		// 			So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
-		// 			So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
-		// 		})
+			Convey("Then the request is successful, with the expected calls", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+				So(mockedDataStore.UpdateVersionCalls()[0].ETagSelector, ShouldEqual, testETag)
+				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
+				So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+			})
 
-		// 		Convey("Then the lock has been acquired and released exactly once", func() {
-		// 			validateLockStateMachine(mockedDataStore)
-		// 			So(isLocked, ShouldBeFalse)
-		// 		})
+			Convey("Then the lock has been acquired and released exactly once", func() {
+				validateLockStateMachine(mockedDataStore)
+				So(isLocked, ShouldBeFalse)
+			})
 
-		// 		Convey("then the request body has been drained", func() {
-		// 			_, err := r.Body.Read(make([]byte, 1))
-		// 			So(err, ShouldEqual, io.EOF)
-		// 		})
-		// 	})
+			Convey("then the request body has been drained", func() {
+				_, err := r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
+		})
 
-		// 	Convey("Given a valid request is executed, but the firstUpdate call returns ErrDatasetNotFound", func() {
-		// 		mockedDataStore.UpdateVersionFunc = func(context.Context, *models.Version, *models.Version, string) (string, error) {
-		// 			//So(isLocked, ShouldBeTrue)
-		// 			if len(mockedDataStore.UpdateVersionCalls()) == 1 {
-		// 				return "", errs.ErrDatasetNotFound
-		// 			}
-		// 			return "", nil
-		// 		}
+		Convey("Given a valid request is executed, but the firstUpdate call returns ErrDatasetNotFound", func() {
+			mockedDataStore.UpdateVersionFunc = func(context.Context, *models.Version, *models.Version, string) (string, error) {
+				//So(isLocked, ShouldBeTrue)
+				if len(mockedDataStore.UpdateVersionCalls()) == 1 {
+					return "", errs.ErrDatasetNotFound
+				}
+				return "", nil
+			}
 
-		// 		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
-		// 		api.Router.ServeHTTP(w, r)
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+			api.Router.ServeHTTP(w, r)
 
-		// 		Convey("Then the request is successful, with the expected calls including the update retry", func() {
-		// 			So(w.Code, ShouldEqual, http.StatusOK)
-		// 			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		// 			So(permissions.Required.Calls, ShouldEqual, 0)
-		// 			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 3)
-		// 			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		// 			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-		// 			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
-		// 			So(mockedDataStore.UpdateVersionCalls()[0].ETagSelector, ShouldEqual, testETag)
-		// 			So(mockedDataStore.UpdateVersionCalls()[1].ETagSelector, ShouldEqual, testETag)
-		// 			So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
-		// 			So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
-		// 			So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
-		// 			So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
-		// 			So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
-		// 		})
+			Convey("Then the request is successful, with the expected calls including the update retry", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+				So(permissions.Required.Calls, ShouldEqual, 0)
+				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 3)
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
+				So(mockedDataStore.UpdateVersionCalls()[0].ETagSelector, ShouldEqual, testETag)
+				So(mockedDataStore.UpdateVersionCalls()[1].ETagSelector, ShouldEqual, testETag)
+				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
+				So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+			})
 
-		// 		Convey("Then the lock has been acquired and released exactly once", func() {
-		// 			validateLockStateMachine(mockedDataStore)
-		// 			So(isLocked, ShouldBeFalse)
-		// 		})
+			Convey("Then the lock has been acquired and released exactly once", func() {
+				validateLockStateMachine(mockedDataStore)
+				So(isLocked, ShouldBeFalse)
+			})
 
-		// 		Convey("then the request body has been drained", func() {
-		// 			_, err := r.Body.Read(make([]byte, 1))
-		// 			So(err, ShouldEqual, io.EOF)
-		// 		})
-		// 	})
-		// })
+			Convey("then the request body has been drained", func() {
+				_, err := r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
+		})
+	})
 
-		// Convey("When state is set to associated", t, func() {
-		// 	generatorMock := &mocks.DownloadsGeneratorMock{
-		// 		GenerateFunc: func(context.Context, string, string, string, string) error {
-		// 			return nil
-		// 		},
-		// 	}
+	Convey("When state is set to associated", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
 
 		b := versionAssociatedPayload
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
@@ -696,112 +699,112 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 
-		// Convey("put version with CMD type", func() {
-		// 	isLocked := false
-		// 	mockedDataStore := &storetest.StorerMock{
-		// 		GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
-		// 			return &models.DatasetUpdate{}, nil
-		// 		},
-		// 		CheckEditionExistsFunc: func(context.Context, string, string, string) error {
-		// 			return nil
-		// 		},
-		// 		GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
-		// 			return &models.Version{
-		// 				ID:    "789",
-		// 				Type:  models.Filterable.String(),
-		// 				State: "associated",
-		// 			}, nil
-		// 		},
-		// 		UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
-		// 			So(isLocked, ShouldBeTrue)
-		// 			return "", nil
-		// 		},
-		// 		UpdateDatasetWithAssociationFunc: func(context.Context, string, string, *models.Version) error {
-		// 			return nil
-		// 		},
-		// 		AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
-		// 			isLocked = true
-		// 			return testLockID, nil
-		// 		},
-		// 		UnlockInstanceFunc: func(context.Context, string) {
-		// 			isLocked = false
-		// 		},
-		// 	}
+		Convey("put version with CMD type", func() {
+			isLocked := false
+			mockedDataStore := &storetest.StorerMock{
+				GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+					return &models.DatasetUpdate{}, nil
+				},
+				CheckEditionExistsFunc: func(context.Context, string, string, string) error {
+					return nil
+				},
+				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+					return &models.Version{
+						ID:    "789",
+						Type:  models.Filterable.String(),
+						State: "edition-confirmed", // need to add a state as this is required by the new state machine.  All instances should have a state
+					}, nil
+				},
+				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+					So(isLocked, ShouldBeTrue)
+					return "", nil
+				},
+				UpdateDatasetWithAssociationFunc: func(context.Context, string, string, *models.Version) error {
+					return nil
+				},
+				AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
+					isLocked = true
+					return testLockID, nil
+				},
+				UnlockInstanceFunc: func(context.Context, string) {
+					isLocked = false
+				},
+			}
 
-		// 	api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
-		// 	api.Router.ServeHTTP(w, r)
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+			api.Router.ServeHTTP(w, r)
 
-		// 	So(w.Code, ShouldEqual, http.StatusOK)
-		// 	So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		// 	So(permissions.Required.Calls, ShouldEqual, 0)
-		// 	So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-		// 	So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		// 	So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-		// 	So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-		// 	So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
-		// 	So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
-		// 	So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
-		// 	So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
-		// 	So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
+			So(w.Code, ShouldEqual, http.StatusOK)
+			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+			So(permissions.Required.Calls, ShouldEqual, 0)
+			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
+			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
+			So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
+			So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+			So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 
-		// 	Convey("Then the lock has been acquired and released exactly once", func() {
-		// 		validateLockStateMachine(mockedDataStore)
-		// 		So(isLocked, ShouldBeFalse)
-		// 	})
+			Convey("Then the lock has been acquired and released exactly once", func() {
+				validateLockStateMachine(mockedDataStore)
+				So(isLocked, ShouldBeFalse)
+			})
 
-		// 	Convey("then the request body has been drained", func() {
-		// 		_, err := r.Body.Read(make([]byte, 1))
-		// 		So(err, ShouldEqual, io.EOF)
-		// 	})
-		// })
+			Convey("then the request body has been drained", func() {
+				_, err := r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
+		})
 
-		// Convey("put version with Cantabular type and CMD mock", func() {
-		// 	mockedDataStore := &storetest.StorerMock{
-		// 		GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
-		// 			return &models.DatasetUpdate{}, nil
-		// 		},
-		// 		CheckEditionExistsFunc: func(context.Context, string, string, string) error {
-		// 			return nil
-		// 		},
-		// 		GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
-		// 			return &models.Version{
-		// 				Type:  "null",
-		// 				State: "associated",
-		// 			}, nil
-		// 		},
-		// 		UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
-		// 			return "", nil
-		// 		},
-		// 		UpdateDatasetWithAssociationFunc: func(context.Context, string, string, *models.Version) error {
-		// 			return nil
-		// 		},
-		// 		AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
-		// 			return "", nil
-		// 		},
-		// 		UnlockInstanceFunc: func(context.Context, string) {},
-		// 	}
+		Convey("put version with Cantabular type and CMD mock", func() {
+			mockedDataStore := &storetest.StorerMock{
+				GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+					return &models.DatasetUpdate{}, nil
+				},
+				CheckEditionExistsFunc: func(context.Context, string, string, string) error {
+					return nil
+				},
+				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+					return &models.Version{
+						Type: "null",
+						//State: "associated",
+					}, nil
+				},
+				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+					return "", nil
+				},
+				UpdateDatasetWithAssociationFunc: func(context.Context, string, string, *models.Version) error {
+					return nil
+				},
+				AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
+					return "", nil
+				},
+				UnlockInstanceFunc: func(context.Context, string) {},
+			}
 
-		// 	api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
-		// 	api.Router.ServeHTTP(w, r)
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+			api.Router.ServeHTTP(w, r)
 
-		// 	So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		// 	So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		// 	So(permissions.Required.Calls, ShouldEqual, 0)
-		// 	So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-		// 	So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		// 	So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-		// 	So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-		// 	So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
-		// 	So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
-		// 	So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
-		// 	So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
-		// 	So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+			So(w.Code, ShouldEqual, http.StatusInternalServerError)
+			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+			So(permissions.Required.Calls, ShouldEqual, 0)
+			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
+			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)                // updated to 0 as there us no state provided so state machine fails
+			So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0) // updated to 0 as there us no state provided so state machine fails
+			So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
+			So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
+			So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+			So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
-		// 	Convey("then the request body has been drained", func() {
-		// 		_, err := r.Body.Read(make([]byte, 1))
-		// 		So(err, ShouldEqual, io.EOF)
-		// 	})
-		// })
+			Convey("then the request body has been drained", func() {
+				_, err := r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
+		})
 
 		Convey("put version with Cantabular type", func() {
 			isLocked := false
@@ -816,7 +819,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 					return &models.Version{
 						ID:    "789",
 						Type:  models.CantabularTable.String(),
-						State: "associated",
+						State: "edition-confirmed",
 					}, nil
 				},
 				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
@@ -852,381 +855,382 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 
 			Convey("Then the lock has been acquired and released exactly once", func() {
-				validateLock(mockedDataStore, "789")
+				validateLockStateMachine(mockedDataStore)
 				So(isLocked, ShouldBeFalse)
 			})
 
-			// 		Convey("then the request body has been drained", func() {
-			// 			_, err := r.Body.Read(make([]byte, 1))
-			// 			So(err, ShouldEqual, io.EOF)
-			// 		})
-			// 	})
-			// })
-
-			// Convey("When state is set to edition-confirmed", t, func() {
-			// 	downloadsGenerated := make(chan bool, 1)
-
-			// 	generatorMock := &mocks.DownloadsGeneratorMock{
-			// 		GenerateFunc: func(context.Context, string, string, string, string) error {
-			// 			downloadsGenerated <- true
-			// 			return nil
-			// 		},
-			// 	}
-
-			// 	b := versionAssociatedPayload
-			// 	r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-
-			// 	w := httptest.NewRecorder()
-
-			// 	isLocked := false
-			// 	mockedDataStore := &storetest.StorerMock{
-			// 		GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
-			// 			return &models.DatasetUpdate{}, nil
-			// 		},
-			// 		CheckEditionExistsFunc: func(context.Context, string, string, string) error {
-			// 			return nil
-			// 		},
-			// 		GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
-			// 			return &models.Version{
-			// 				ID:    "789",
-			// 				State: models.EditionConfirmedState,
-			// 			}, nil
-			// 		},
-			// 		UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
-			// 			So(isLocked, ShouldBeTrue)
-			// 			return "", nil
-			// 		},
-			// 		UpdateDatasetWithAssociationFunc: func(context.Context, string, string, *models.Version) error {
-			// 			return nil
-			// 		},
-			// 		AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
-			// 			isLocked = true
-			// 			return testLockID, nil
-			// 		},
-			// 		UnlockInstanceFunc: func(context.Context, string) {
-			// 			isLocked = false
-			// 		},
-			// 	}
-
-			// 	datasetPermissions := getAuthorisationHandlerMock()
-			// 	permissions := getAuthorisationHandlerMock()
-			// 	api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
-			// 	api.Router.ServeHTTP(w, r)
-
-			// 	ctx := context.Background()
-			// 	select {
-			// 	case <-downloadsGenerated:
-			// 		log.Info(ctx, "download generated as expected")
-			// 	case <-time.After(time.Second * 10):
-			// 		err := errors.New("failing test due to timeout")
-			// 		log.Error(ctx, "timed out", err)
-			// 		t.Fail()
-			// 	}
-
-			// 	So(w.Code, ShouldEqual, http.StatusOK)
-			// 	So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-			// 	So(permissions.Required.Calls, ShouldEqual, 0)
-			// 	So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-			// 	So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-			// 	So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-			// 	So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-			// 	So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
-			// 	So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
-			// 	So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
-			// 	So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
-			// 	So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
-
-			// 	Convey("Then the lock has been acquired and released exactly once", func() {
-			// 		validateLock(mockedDataStore, "789")
-			// 		So(isLocked, ShouldBeFalse)
-			// 	})
-
-			// 	Convey("then the request body has been drained", func() {
-			// 		_, err := r.Body.Read(make([]byte, 1))
-			// 		So(err, ShouldEqual, io.EOF)
-			// 	})
-			// })
-
-			// Convey("When state is set to published", t, func() {
-			// 	generatorMock := &mocks.DownloadsGeneratorMock{
-			// 		GenerateFunc: func(context.Context, string, string, string, string) error {
-			// 			return nil
-			// 		},
-			// 	}
-
-			// 	b := versionPublishedPayload
-			// 	r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-
-			// 	w := httptest.NewRecorder()
-
-			// 	datasetPermissions := getAuthorisationHandlerMock()
-			// 	permissions := getAuthorisationHandlerMock()
-
-			// 	Convey("And the datatype is CMD", func() {
-			// 		isLocked := false
-			// 		mockedDataStore := &storetest.StorerMock{
-			// 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
-			// 				return nil
-			// 			},
-			// 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
-			// 				return &models.Version{
-			// 					ID: "789",
-			// 					Links: &models.VersionLinks{
-			// 						Dataset: &models.LinkObject{
-			// 							HRef: "http://localhost:22000/datasets/123",
-			// 							ID:   "123",
-			// 						},
-			// 						Dimensions: &models.LinkObject{
-			// 							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
-			// 						},
-			// 						Edition: &models.LinkObject{
-			// 							HRef: "http://localhost:22000/datasets/123/editions/2017",
-			// 							ID:   "2017",
-			// 						},
-			// 						Self: &models.LinkObject{
-			// 							HRef: "http://localhost:22000/instances/765",
-			// 						},
-			// 						Version: &models.LinkObject{
-			// 							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
-			// 							ID:   "1",
-			// 						},
-			// 					},
-			// 					ReleaseDate: "2017-12-12",
-			// 					Downloads: &models.DownloadList{
-			// 						CSV: &models.DownloadObject{
-			// 							Private: "s3://csv-exported/myfile.csv",
-			// 							HRef:    "http://localhost:23600/datasets/123/editions/2017/versions/1.csv",
-			// 							Size:    "1234",
-			// 						},
-			// 					},
-			// 					State: models.EditionConfirmedState,
-			// 					Type:  models.Filterable.String(),
-			// 				}, nil
-			// 			},
-			// 			UpdateVersionFunc: func(_ context.Context, _ *models.Version, _ *models.Version, _ string) (string, error) {
-			// 				So(isLocked, ShouldBeTrue)
-			// 				return "", nil
-			// 			},
-			// 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-			// 				return &models.DatasetUpdate{
-			// 					ID:      "123",
-			// 					Next:    &models.Dataset{Links: &models.DatasetLinks{}},
-			// 					Current: &models.Dataset{Links: &models.DatasetLinks{}},
-			// 				}, nil
-			// 			},
-			// 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
-			// 				return nil
-			// 			},
-			// 			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
-			// 				return &models.EditionUpdate{
-			// 					ID: "123",
-			// 					Next: &models.Edition{
-			// 						State: models.PublishedState,
-			// 						Links: &models.EditionUpdateLinks{
-			// 							Self: &models.LinkObject{
-			// 								HRef: "http://localhost:22000/datasets/123/editions/2017",
-			// 							},
-			// 							LatestVersion: &models.LinkObject{
-			// 								HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
-			// 								ID:   "1",
-			// 							},
-			// 						},
-			// 					},
-			// 					Current: &models.Edition{},
-			// 				}, nil
-			// 			},
-			// 			UpsertEditionFunc: func(context.Context, string, string, *models.EditionUpdate) error {
-			// 				return nil
-			// 			},
-			// 			SetInstanceIsPublishedFunc: func(context.Context, string) error {
-			// 				return nil
-			// 			},
-			// 			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
-			// 				isLocked = true
-			// 				return testLockID, nil
-			// 			},
-			// 			UnlockInstanceFunc: func(context.Context, string) {
-			// 				isLocked = false
-			// 			},
-			// 		}
-
-			// 		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
-			// 		api.Router.ServeHTTP(w, r)
-
-			// 		So(w.Code, ShouldEqual, http.StatusOK)
-			// 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-			// 		So(permissions.Required.Calls, ShouldEqual, 0)
-			// 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-			// 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-			// 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-			// 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
-			// 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-			// 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
-			// 		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
-			// 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
-			// 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
-			// 		So(generatorMock.GenerateCalls()[0].Edition, ShouldEqual, "2017")
-			// 		So(generatorMock.GenerateCalls()[0].DatasetID, ShouldEqual, "123")
-			// 		So(generatorMock.GenerateCalls()[0].Version, ShouldEqual, "1")
-			// 		So(generatorMock.GenerateCalls()[0].InstanceID, ShouldEqual, "789")
-
-			// 		Convey("Then the lock has been acquired and released exactly once", func() {
-			// 			validateLock(mockedDataStore, "789")
-			// 			So(isLocked, ShouldBeFalse)
-			// 		})
-
-			// 		Convey("then the request body has been drained", func() {
-			// 			_, err := r.Body.Read(make([]byte, 1))
-			// 			So(err, ShouldEqual, io.EOF)
-			// 		})
-			// 	})
-
-			// 	Convey("And the datatype is Cantabular", func() {
-			// 		isLocked := false
-			// 		mockedDataStore := &storetest.StorerMock{
-			// 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
-			// 				return nil
-			// 			},
-			// 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
-			// 				return &models.Version{
-			// 					ID: "789",
-			// 					Links: &models.VersionLinks{
-			// 						Dataset: &models.LinkObject{
-			// 							HRef: "http://localhost:22000/datasets/123",
-			// 							ID:   "123",
-			// 						},
-			// 						Dimensions: &models.LinkObject{
-			// 							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
-			// 						},
-			// 						Edition: &models.LinkObject{
-			// 							HRef: "http://localhost:22000/datasets/123/editions/2017",
-			// 							ID:   "2017",
-			// 						},
-			// 						Self: &models.LinkObject{
-			// 							HRef: "http://localhost:22000/instances/765",
-			// 						},
-			// 						Version: &models.LinkObject{
-			// 							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
-			// 							ID:   "1",
-			// 						},
-			// 					},
-			// 					ReleaseDate: "2017-12-12",
-			// 					Downloads: &models.DownloadList{
-			// 						CSV: &models.DownloadObject{
-			// 							Private: "s3://csv-exported/myfile.csv",
-			// 							HRef:    "http://localhost:23600/datasets/123/editions/2017/versions/1.csv",
-			// 							Size:    "1234",
-			// 						},
-			// 					},
-			// 					State: models.EditionConfirmedState,
-			// 					Type:  models.CantabularTable.String(),
-			// 				}, nil
-			// 			},
-			// 			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
-			// 				So(isLocked, ShouldBeTrue)
-			// 				return "", nil
-			// 			},
-			// 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-			// 				return &models.DatasetUpdate{
-			// 					ID:      "123",
-			// 					Next:    &models.Dataset{Links: &models.DatasetLinks{}},
-			// 					Current: &models.Dataset{Links: &models.DatasetLinks{}},
-			// 				}, nil
-			// 			},
-			// 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
-			// 				return nil
-			// 			},
-			// 			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
-			// 				return &models.EditionUpdate{
-			// 					ID: "123",
-			// 					Next: &models.Edition{
-			// 						State: models.PublishedState,
-			// 						Links: &models.EditionUpdateLinks{
-			// 							Self: &models.LinkObject{
-			// 								HRef: "http://localhost:22000/datasets/123/editions/2017",
-			// 							},
-			// 							LatestVersion: &models.LinkObject{
-			// 								HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
-			// 								ID:   "1",
-			// 							},
-			// 						},
-			// 					},
-			// 					Current: &models.Edition{},
-			// 				}, nil
-			// 			},
-			// 			UpsertEditionFunc: func(context.Context, string, string, *models.EditionUpdate) error {
-			// 				return nil
-			// 			},
-			// 			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
-			// 				return nil
-			// 			},
-			// 			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
-			// 				isLocked = true
-			// 				return testLockID, nil
-			// 			},
-			// 			UnlockInstanceFunc: func(context.Context, string) {
-			// 				isLocked = false
-			// 			},
-			// 		}
-
-			// 		api := GetAPIWithCantabularMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
-			// 		api.Router.ServeHTTP(w, r)
-
-			// 		So(w.Code, ShouldEqual, http.StatusOK)
-			// 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-			// 		So(permissions.Required.Calls, ShouldEqual, 0)
-			// 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-			// 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-			// 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-			// 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
-			// 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-			// 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
-			// 		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
-			// 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
-			// 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
-			// 		So(generatorMock.GenerateCalls()[0].Edition, ShouldEqual, "2017")
-			// 		So(generatorMock.GenerateCalls()[0].DatasetID, ShouldEqual, "123")
-			// 		So(generatorMock.GenerateCalls()[0].Version, ShouldEqual, "1")
-			// 		So(generatorMock.GenerateCalls()[0].InstanceID, ShouldEqual, "789")
-
-			// 		Convey("Then the lock has been acquired and released exactly once", func() {
-			// 			validateLock(mockedDataStore, "789")
-			// 			So(isLocked, ShouldBeFalse)
-			// 		})
-
-			// 		Convey("then the request body has been drained", func() {
-			// 			_, err := r.Body.Read(make([]byte, 1))
-			// 			So(err, ShouldEqual, io.EOF)
-			// 		})
-			// 	})
-			// })
-
-			// Convey("When version is already published and update includes downloads object only", t, func() {
-			// 	Convey("And downloads object contains only a csv object", func() {
-			// 		b := `{"downloads": { "csv": { "public": "http://cmd-dev/test-site/cpih01", "size": "12", "href": "http://localhost:8080/cpih01"}}}`
-			// 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-
-			// 		updateVersionDownloadTest(r)
-
-			// 		Convey("then the request body has been drained", func() {
-			// 			_, err := r.Body.Read(make([]byte, 1))
-			// 			So(err, ShouldEqual, io.EOF)
-			// 		})
-			// 	})
-
-			// 	Convey("And downloads object contains only a xls object", func() {
-			// 		b := `{"downloads": { "xls": { "public": "http://cmd-dev/test-site/cpih01", "size": "12", "href": "http://localhost:8080/cpih01"}}}`
-			// 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
-
-			// 		updateVersionDownloadTest(r)
-
-			// 		Convey("then the request body has been drained", func() {
-			// 			_, err := r.Body.Read(make([]byte, 1))
-			// 			So(err, ShouldEqual, io.EOF)
-			// 		})
-			// 	})
+			Convey("then the request body has been drained", func() {
+				_, err := r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
 		})
 	})
+
+	Convey("When state is set to edition-confirmed", t, func() {
+		downloadsGenerated := make(chan bool, 1)
+
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				downloadsGenerated <- true
+				return nil
+			},
+		}
+
+		b := versionAssociatedPayload
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+
+		w := httptest.NewRecorder()
+
+		isLocked := false
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{}, nil
+			},
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:    "789",
+					Type:  models.CantabularTable.String(),
+					State: models.EditionConfirmedState,
+				}, nil
+			},
+			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+				So(isLocked, ShouldBeTrue)
+				return "", nil
+			},
+			UpdateDatasetWithAssociationFunc: func(context.Context, string, string, *models.Version) error {
+				return nil
+			},
+			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
+				isLocked = true
+				return testLockID, nil
+			},
+			UnlockInstanceFunc: func(context.Context, string) {
+				isLocked = false
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		ctx := context.Background()
+		select {
+		case <-downloadsGenerated:
+			log.Info(ctx, "download generated as expected")
+		case <-time.After(time.Second * 10):
+			err := errors.New("failing test due to timeout")
+			log.Error(ctx, "timed out", err)
+			t.Fail()
+		}
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
+		So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
+
+		Convey("Then the lock has been acquired and released exactly once", func() {
+			validateLockStateMachine(mockedDataStore)
+			So(isLocked, ShouldBeFalse)
+		})
+
+		Convey("then the request body has been drained", func() {
+			_, err := r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
+
+	Convey("When state is set to published", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		b := versionPublishedPayload
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+
+		w := httptest.NewRecorder()
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+
+		Convey("And the datatype is CMD", func() {
+			isLocked := false
+			mockedDataStore := &storetest.StorerMock{
+				CheckEditionExistsFunc: func(context.Context, string, string, string) error {
+					return nil
+				},
+				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+					return &models.Version{
+						ID: "789",
+						Links: &models.VersionLinks{
+							Dataset: &models.LinkObject{
+								HRef: "http://localhost:22000/datasets/123",
+								ID:   "123",
+							},
+							Dimensions: &models.LinkObject{
+								HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
+							},
+							Edition: &models.LinkObject{
+								HRef: "http://localhost:22000/datasets/123/editions/2017",
+								ID:   "2017",
+							},
+							Self: &models.LinkObject{
+								HRef: "http://localhost:22000/instances/765",
+							},
+							Version: &models.LinkObject{
+								HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+								ID:   "1",
+							},
+						},
+						ReleaseDate: "2017-12-12",
+						Downloads: &models.DownloadList{
+							CSV: &models.DownloadObject{
+								Private: "s3://csv-exported/myfile.csv",
+								HRef:    "http://localhost:23600/datasets/123/editions/2017/versions/1.csv",
+								Size:    "1234",
+							},
+						},
+						State: models.EditionConfirmedState,
+						Type:  models.Filterable.String(),
+					}, nil
+				},
+				UpdateVersionFunc: func(_ context.Context, _ *models.Version, _ *models.Version, _ string) (string, error) {
+					So(isLocked, ShouldBeTrue)
+					return "", nil
+				},
+				GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+					return &models.DatasetUpdate{
+						ID:      "123",
+						Next:    &models.Dataset{Links: &models.DatasetLinks{}},
+						Current: &models.Dataset{Links: &models.DatasetLinks{}},
+					}, nil
+				},
+				UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+					return nil
+				},
+				GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
+					return &models.EditionUpdate{
+						ID: "123",
+						Next: &models.Edition{
+							State: models.PublishedState,
+							Links: &models.EditionUpdateLinks{
+								Self: &models.LinkObject{
+									HRef: "http://localhost:22000/datasets/123/editions/2017",
+								},
+								LatestVersion: &models.LinkObject{
+									HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+									ID:   "1",
+								},
+							},
+						},
+						Current: &models.Edition{},
+					}, nil
+				},
+				UpsertEditionFunc: func(context.Context, string, string, *models.EditionUpdate) error {
+					return nil
+				},
+				SetInstanceIsPublishedFunc: func(context.Context, string) error {
+					return nil
+				},
+				AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
+					isLocked = true
+					return testLockID, nil
+				},
+				UnlockInstanceFunc: func(context.Context, string) {
+					isLocked = false
+				},
+			}
+
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+			api.Router.ServeHTTP(w, r)
+
+			So(w.Code, ShouldEqual, http.StatusOK)
+			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+			So(permissions.Required.Calls, ShouldEqual, 0)
+			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
+			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
+			So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
+			So(generatorMock.GenerateCalls()[0].Edition, ShouldEqual, "2017")
+			So(generatorMock.GenerateCalls()[0].DatasetID, ShouldEqual, "123")
+			So(generatorMock.GenerateCalls()[0].Version, ShouldEqual, "1")
+			So(generatorMock.GenerateCalls()[0].InstanceID, ShouldEqual, "789")
+
+			Convey("Then the lock has been acquired and released exactly once", func() {
+				validateLockStateMachine(mockedDataStore)
+				So(isLocked, ShouldBeFalse)
+			})
+
+			Convey("then the request body has been drained", func() {
+				_, err := r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
+		})
+
+		Convey("And the datatype is Cantabular", func() {
+			isLocked := false
+			mockedDataStore := &storetest.StorerMock{
+				CheckEditionExistsFunc: func(context.Context, string, string, string) error {
+					return nil
+				},
+				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+					return &models.Version{
+						ID: "789",
+						Links: &models.VersionLinks{
+							Dataset: &models.LinkObject{
+								HRef: "http://localhost:22000/datasets/123",
+								ID:   "123",
+							},
+							Dimensions: &models.LinkObject{
+								HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
+							},
+							Edition: &models.LinkObject{
+								HRef: "http://localhost:22000/datasets/123/editions/2017",
+								ID:   "2017",
+							},
+							Self: &models.LinkObject{
+								HRef: "http://localhost:22000/instances/765",
+							},
+							Version: &models.LinkObject{
+								HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+								ID:   "1",
+							},
+						},
+						ReleaseDate: "2017-12-12",
+						Downloads: &models.DownloadList{
+							CSV: &models.DownloadObject{
+								Private: "s3://csv-exported/myfile.csv",
+								HRef:    "http://localhost:23600/datasets/123/editions/2017/versions/1.csv",
+								Size:    "1234",
+							},
+						},
+						State: models.EditionConfirmedState,
+						Type:  models.CantabularTable.String(),
+					}, nil
+				},
+				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+					So(isLocked, ShouldBeTrue)
+					return "", nil
+				},
+				GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+					return &models.DatasetUpdate{
+						ID:      "123",
+						Next:    &models.Dataset{Links: &models.DatasetLinks{}},
+						Current: &models.Dataset{Links: &models.DatasetLinks{}},
+					}, nil
+				},
+				UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+					return nil
+				},
+				GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
+					return &models.EditionUpdate{
+						ID: "123",
+						Next: &models.Edition{
+							State: models.PublishedState,
+							Links: &models.EditionUpdateLinks{
+								Self: &models.LinkObject{
+									HRef: "http://localhost:22000/datasets/123/editions/2017",
+								},
+								LatestVersion: &models.LinkObject{
+									HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+									ID:   "1",
+								},
+							},
+						},
+						Current: &models.Edition{},
+					}, nil
+				},
+				UpsertEditionFunc: func(context.Context, string, string, *models.EditionUpdate) error {
+					return nil
+				},
+				SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
+					return nil
+				},
+				AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
+					isLocked = true
+					return testLockID, nil
+				},
+				UnlockInstanceFunc: func(context.Context, string) {
+					isLocked = false
+				},
+			}
+
+			api := GetAPIWithCantabularMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+			api.Router.ServeHTTP(w, r)
+
+			So(w.Code, ShouldEqual, http.StatusOK)
+			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+			So(permissions.Required.Calls, ShouldEqual, 0)
+			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
+			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
+			So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
+			So(generatorMock.GenerateCalls()[0].Edition, ShouldEqual, "2017")
+			So(generatorMock.GenerateCalls()[0].DatasetID, ShouldEqual, "123")
+			So(generatorMock.GenerateCalls()[0].Version, ShouldEqual, "1")
+			So(generatorMock.GenerateCalls()[0].InstanceID, ShouldEqual, "789")
+
+			Convey("Then the lock has been acquired and released exactly once", func() {
+				validateLockStateMachine(mockedDataStore)
+				So(isLocked, ShouldBeFalse)
+			})
+
+			Convey("then the request body has been drained", func() {
+				_, err := r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
+		})
+	})
+
+	Convey("When version is already published and update includes downloads object only", t, func() {
+		Convey("And downloads object contains only a csv object", func() {
+			b := `{"downloads": { "csv": { "public": "http://cmd-dev/test-site/cpih01", "size": "12", "href": "http://localhost:8080/cpih01"}}}`
+			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+
+			updateVersionDownloadTest(r)
+
+			Convey("then the request body has been drained", func() {
+				_, err := r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
+		})
+
+		Convey("And downloads object contains only a xls object", func() {
+			b := `{"downloads": { "xls": { "public": "http://cmd-dev/test-site/cpih01", "size": "12", "href": "http://localhost:8080/cpih01"}}}`
+			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+
+			updateVersionDownloadTest(r)
+
+			Convey("then the request body has been drained", func() {
+				_, err := r.Body.Read(make([]byte, 1))
+				So(err, ShouldEqual, io.EOF)
+			})
+		})
+	})
+
 }
 
 func updateVersionDownloadTest(r *http.Request) {
@@ -1292,8 +1296,27 @@ func updateVersionDownloadTest(r *http.Request) {
 				ID: "123",
 				Next: &models.Edition{
 					State: models.PublishedState,
+					Links: &models.EditionUpdateLinks{
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017",
+						},
+						LatestVersion: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+							ID:   "1",
+						},
+					},
 				},
-				Current: &models.Edition{},
+				Current: &models.Edition{
+					Links: &models.EditionUpdateLinks{
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017",
+						},
+						LatestVersion: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+							ID:   "1",
+						},
+					},
+				},
 			}, nil
 		},
 		AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
@@ -1324,7 +1347,7 @@ func updateVersionDownloadTest(r *http.Request) {
 	So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 	Convey("Then the lock has been acquired and released exactly once", func() {
-		validateLock(mockedDataStore, "789")
+		validateLockStateMachine(mockedDataStore)
 		So(isLocked, ShouldBeFalse)
 	})
 }
@@ -1415,7 +1438,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 			})
 
 			Convey("Then the lock has been acquired and released exactly once", func() {
-				validateLock(mockedDataStore, "789")
+				validateLockStateMachine(mockedDataStore)
 				So(isLocked, ShouldBeFalse)
 			})
 
@@ -1488,7 +1511,7 @@ func TestPutEmptyVersion(t *testing.T) {
 			})
 
 			Convey("Then the lock has been acquired and released exactly once", func() {
-				validateLock(mockedDataStore, "789")
+				validateLockStateMachine(mockedDataStore)
 				So(isLocked, ShouldBeFalse)
 			})
 		})
@@ -1564,7 +1587,7 @@ func TestPutEmptyVersion(t *testing.T) {
 			})
 
 			Convey("Then the lock has been acquired and released exactly once", func() {
-				validateLock(mockedDataStore, "789")
+				validateLockStateMachine(mockedDataStore)
 				So(isLocked, ShouldBeFalse)
 			})
 		})
@@ -1584,6 +1607,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
+		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{State: models.AssociatedState}, nil
@@ -1591,8 +1615,16 @@ func TestPutVersionReturnsError(t *testing.T) {
 			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{}, nil
 			},
+			// AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
+			// 	isLocked = true
+			// 	return testLockID, nil
+			// },
+			// UnlockInstanceFunc: func(context.Context, string) {
+			// 	isLocked = false
+			// },
 		}
 
+		fmt.Println(isLocked)
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
@@ -1606,6 +1638,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		// Convey("Then the lock has been acquired and released exactly once", func() {
+		// 	validateLockStateMachine(mockedDataStore)
+		// 	So(isLocked, ShouldBeFalse)
+		// })
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -1776,6 +1813,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
+		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{}, errs.ErrVersionNotFound
@@ -1785,6 +1823,13 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
+			},
+			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
+				isLocked = true
+				return testLockID, nil
+			},
+			UnlockInstanceFunc: func(context.Context, string) {
+				isLocked = false
 			},
 		}
 
@@ -1803,6 +1848,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
+		Convey("Then the lock has been acquired and released ", func() {
+			validateLockStateMachine(mockedDataStore)
+			So(isLocked, ShouldBeFalse)
+		})
+
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
@@ -1820,6 +1870,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
+		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{}, errs.ErrVersionNotFound
@@ -1829,6 +1880,13 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return errs.ErrEditionNotFound
+			},
+			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
+				isLocked = true
+				return testLockID, nil
+			},
+			UnlockInstanceFunc: func(context.Context, string) {
+				isLocked = false
 			},
 		}
 
@@ -1847,6 +1905,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
+		Convey("Then the lock has been acquired and released ", func() {
+			validateLockStateMachine(mockedDataStore)
+			So(isLocked, ShouldBeFalse)
+		})
+
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
@@ -1864,6 +1927,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
+		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{}, errs.ErrVersionNotFound
@@ -1876,6 +1940,13 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 			UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
 				return "", nil
+			},
+			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
+				isLocked = true
+				return testLockID, nil
+			},
+			UnlockInstanceFunc: func(context.Context, string) {
+				isLocked = false
 			},
 		}
 
@@ -1894,6 +1965,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+
+		Convey("Then the lock has been acquired and released ", func() {
+			validateLockStateMachine(mockedDataStore)
+			So(isLocked, ShouldBeFalse)
+		})
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -2035,7 +2111,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("Then the lock has been acquired and released ", func() {
-			validateLock(mockedDataStore, "789")
+			validateLockStateMachine(mockedDataStore)
 			So(isLocked, ShouldBeFalse)
 		})
 
@@ -2164,7 +2240,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("Then the lock has been acquired and released ", func() {
-			validateLock(mockedDataStore, "789")
+			validateLockStateMachine(mockedDataStore)
 			So(isLocked, ShouldBeFalse)
 		})
 

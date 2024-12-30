@@ -15,7 +15,8 @@ type State struct {
 		currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
 		currentVersion *models.Version, // Called Instances in Mongo
 		versionUpdate *models.Version, // Next version, that is the new version
-		versionDetails VersionDetails) error
+		versionDetails VersionDetails,
+		hasDownloads string) error
 }
 
 func (s State) String() string {
@@ -63,7 +64,8 @@ func (sm *StateMachine) Transition(smDS *StateMachineDatasetAPI, ctx context.Con
 	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
-	versionDetails VersionDetails) error {
+	versionDetails VersionDetails,
+	hasDownloads string) error {
 
 	fmt.Println("DOING SM TRANSITION")
 	fmt.Println("THE CURRENT STATE IS")
@@ -104,7 +106,8 @@ func (sm *StateMachine) Transition(smDS *StateMachineDatasetAPI, ctx context.Con
 		currentDataset, // Called Dataset in Mongo
 		currentVersion, // Called Instances in Mongo
 		versionUpdate,  // Next version, that is the new version
-		versionDetails)
+		versionDetails,
+		hasDownloads)
 	if err != nil {
 		return err
 	}

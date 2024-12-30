@@ -58,13 +58,19 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 	cfg.DefaultOffset = 0
 
 	mockedMapGeneratedDownloads := map[models.DatasetType]DownloadsGenerator{
-		models.Filterable: mockedGeneratedDownloads,
-		models.Nomis:      mockedGeneratedDownloads,
+		models.Filterable:              mockedGeneratedDownloads,
+		models.Nomis:                   mockedGeneratedDownloads,
+		models.CantabularBlob:          mockedGeneratedDownloads,
+		models.CantabularTable:         mockedGeneratedDownloads,
+		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
 
 	mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{
-		models.Filterable: mockedGeneratedDownloads,
-		models.Nomis:      mockedGeneratedDownloads,
+		models.Filterable:              mockedGeneratedDownloads,
+		models.Nomis:                   mockedGeneratedDownloads,
+		models.CantabularBlob:          mockedGeneratedDownloads,
+		models.CantabularTable:         mockedGeneratedDownloads,
+		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
 
 	states := []application.State{application.Published, application.Submitted, application.Completed, application.EditionConfirmed, application.Associated, application.Created, application.Failed, application.Detached}
@@ -72,7 +78,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 	transitions := []application.Transition{{
 		Label:                "published",
 		TargetState:          application.Published,
-		AlllowedSourceStates: []string{"associated", "published"},
+		AlllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
 	}, {
 		Label:                "associated",
 		TargetState:          application.Associated,
@@ -81,7 +87,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 		{
 			Label:                "edition-confirmed",
 			TargetState:          application.EditionConfirmed,
-			AlllowedSourceStates: []string{"edition-confirmed", "completed"},
+			AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
 		}}
 
 	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
@@ -105,8 +111,11 @@ func GetStateMachineAPIWithCMDMocks(mockedDataStore store.Storer, mockedGenerate
 	cfg.DefaultOffset = 0
 
 	mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{
-		models.Filterable: mockedGeneratedDownloads,
-		models.Nomis:      mockedGeneratedDownloads,
+		models.Filterable:              mockedGeneratedDownloads,
+		models.Nomis:                   mockedGeneratedDownloads,
+		models.CantabularBlob:          mockedGeneratedDownloads,
+		models.CantabularTable:         mockedGeneratedDownloads,
+		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
 
 	states := []application.State{application.Published, application.Submitted, application.Completed, application.EditionConfirmed, application.Associated, application.Created, application.Failed, application.Detached}
@@ -114,7 +123,7 @@ func GetStateMachineAPIWithCMDMocks(mockedDataStore store.Storer, mockedGenerate
 	transitions := []application.Transition{{
 		Label:                "published",
 		TargetState:          application.Published,
-		AlllowedSourceStates: []string{"associated", "published"},
+		AlllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
 	}, {
 		Label:                "associated",
 		TargetState:          application.Associated,
@@ -123,7 +132,7 @@ func GetStateMachineAPIWithCMDMocks(mockedDataStore store.Storer, mockedGenerate
 		{
 			Label:                "edition-confirmed",
 			TargetState:          application.EditionConfirmed,
-			AlllowedSourceStates: []string{"edition-confirmed", "completed"},
+			AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
 		}}
 
 	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
@@ -155,8 +164,11 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 	}
 
 	mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{
-		models.Filterable: mockedGeneratedDownloads,
-		models.Nomis:      mockedGeneratedDownloads,
+		models.Filterable:              mockedGeneratedDownloads,
+		models.Nomis:                   mockedGeneratedDownloads,
+		models.CantabularBlob:          mockedGeneratedDownloads,
+		models.CantabularTable:         mockedGeneratedDownloads,
+		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
 
 	states := []application.State{application.Published, application.Submitted, application.Completed, application.EditionConfirmed, application.Associated, application.Created, application.Failed, application.Detached}
@@ -164,7 +176,7 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 	transitions := []application.Transition{{
 		Label:                "published",
 		TargetState:          application.Published,
-		AlllowedSourceStates: []string{"associated", "published"},
+		AlllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
 	}, {
 		Label:                "associated",
 		TargetState:          application.Associated,
@@ -173,7 +185,7 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 		{
 			Label:                "edition-confirmed",
 			TargetState:          application.EditionConfirmed,
-			AlllowedSourceStates: []string{"edition-confirmed", "completed"},
+			AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
 		}}
 
 	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
