@@ -4069,3 +4069,654 @@ func TestRewriteVersionLinks_Error(t *testing.T) {
 		})
 	})
 }
+
+func TestRewriteInstances_Success(t *testing.T) {
+	ctx := context.Background()
+	Convey("Given a list of instances", t, func() {
+		Convey("When the instance links need rewriting", func() {
+			results := []*models.Instance{
+				{
+					CollectionID: "cantabularflexibledefault-1",
+					Dimensions: []models.Dimension{
+						{
+							Label: "City",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "https://oldhost:1000/city",
+							ID:   "city",
+						},
+						{
+							Label: "Number of siblings (3 mappings)",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "https://oldhost:1000/siblings_3",
+							ID:   "siblings_3",
+						},
+					},
+					Edition:    "2021",
+					InstanceID: "1",
+					Links: &models.InstanceLinks{
+						Dataset: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cantabular-flexible-default",
+							ID:   "cantabular-flexible-default",
+						},
+						Dimensions: &models.LinkObject{
+							HRef: "https://oldhost:1000/code-lists/mmm-yy",
+						},
+						Edition: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cantabular-flexible-default/editions/2021",
+							ID:   "2021",
+						},
+						Job: &models.LinkObject{
+							HRef: "https://oldhost:1000/jobs/1",
+							ID:   "1",
+						},
+						Self: &models.LinkObject{
+							HRef: "https://oldhost:1000/instances/1",
+						},
+						Version: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cantabular-flexible-default/editions/2021/versions/1",
+							ID:   "1",
+						},
+					},
+				},
+				{
+					CollectionID: "cpihtest-1",
+					Dimensions: []models.Dimension{
+						{
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "https://oldhost:1000/code-lists/mmm-yy",
+							ID:   "mmm-yy",
+							Name: "time",
+						},
+						{
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "https://oldhost:1000/code-lists/uk-only",
+							ID:   "uk-only",
+							Name: "geography",
+						},
+						{
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid",
+							ID:   "cpih1dim1aggid",
+							Name: "aggregate",
+						},
+					},
+					Edition:    "time-series",
+					InstanceID: "2",
+					Links: &models.InstanceLinks{
+						Dataset: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						Dimensions: &models.LinkObject{
+							HRef: "https://oldhost:1000/code-lists/mmm-yy",
+						},
+						Edition: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series",
+							ID:   "time-series",
+						},
+						Job: &models.LinkObject{
+							HRef: "https://oldhost:1000/jobs/2",
+							ID:   "2",
+						},
+						Self: &models.LinkObject{
+							HRef: "https://oldhost:1000/instances/2",
+						},
+						Version: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+							ID:   "1",
+						},
+					},
+				},
+			}
+
+			err := RewriteInstances(ctx, results, linksBuilder)
+
+			Convey("Then the links should be rewritten correctly", func() {
+				So(err, ShouldBeNil)
+
+				So(results[0].CollectionID, ShouldEqual, "cantabularflexibledefault-1")
+				So(results[0].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/city")
+				So(results[0].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/siblings_3")
+				So(results[0].Edition, ShouldEqual, "2021")
+				So(results[0].InstanceID, ShouldEqual, "1")
+				So(results[0].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default")
+				So(results[0].Links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[0].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default/editions/2021")
+				So(results[0].Links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/1")
+				So(results[0].Links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/1")
+				So(results[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default/editions/2021/versions/1")
+
+				So(results[1].CollectionID, ShouldEqual, "cpihtest-1")
+				So(results[1].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[1].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
+				So(results[1].Dimensions[2].HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(results[1].Edition, ShouldEqual, "time-series")
+				So(results[1].InstanceID, ShouldEqual, "2")
+				So(results[1].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(results[1].Links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[1].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(results[1].Links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/2")
+				So(results[1].Links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/2")
+				So(results[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+			})
+		})
+
+		Convey("When the instance links do not need rewriting", func() {
+			results := []*models.Instance{
+				{
+					CollectionID: "cantabularflexibledefault-1",
+					Dimensions: []models.Dimension{
+						{
+							Label: "City",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "http://localhost:22000/city",
+							ID:   "city",
+						},
+						{
+							Label: "Number of siblings (3 mappings)",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "http://localhost:22000/siblings_3",
+							ID:   "siblings_3",
+						},
+					},
+					Edition:    "2021",
+					InstanceID: "1",
+					Links: &models.InstanceLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cantabular-flexible-default",
+							ID:   "cantabular-flexible-default",
+						},
+						Dimensions: &models.LinkObject{
+							HRef: "http://localhost:22000/code-lists/mmm-yy",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cantabular-flexible-default/editions/2021",
+							ID:   "2021",
+						},
+						Job: &models.LinkObject{
+							HRef: "http://localhost:22000/jobs/1",
+							ID:   "1",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/instances/1",
+						},
+						Version: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cantabular-flexible-default/editions/2021/versions/1",
+							ID:   "1",
+						},
+					},
+				},
+				{
+					CollectionID: "cpihtest-1",
+					Dimensions: []models.Dimension{
+						{
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "http://localhost:22000/code-lists/mmm-yy",
+							ID:   "mmm-yy",
+							Name: "time",
+						},
+						{
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "http://localhost:22000/code-lists/uk-only",
+							ID:   "uk-only",
+							Name: "geography",
+						},
+						{
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
+							ID:   "cpih1dim1aggid",
+							Name: "aggregate",
+						},
+					},
+					Edition:    "time-series",
+					InstanceID: "2",
+					Links: &models.InstanceLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						Dimensions: &models.LinkObject{
+							HRef: "http://localhost:22000/code-lists/mmm-yy",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series",
+							ID:   "time-series",
+						},
+						Job: &models.LinkObject{
+							HRef: "http://localhost:22000/jobs/2",
+							ID:   "2",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/instances/2",
+						},
+						Version: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+							ID:   "1",
+						},
+					},
+				},
+			}
+
+			err := RewriteInstances(ctx, results, linksBuilder)
+
+			Convey("Then the links should remain the same", func() {
+				So(err, ShouldBeNil)
+
+				So(results[0].CollectionID, ShouldEqual, "cantabularflexibledefault-1")
+				So(results[0].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/city")
+				So(results[0].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/siblings_3")
+				So(results[0].Edition, ShouldEqual, "2021")
+				So(results[0].InstanceID, ShouldEqual, "1")
+				So(results[0].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default")
+				So(results[0].Links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[0].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default/editions/2021")
+				So(results[0].Links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/1")
+				So(results[0].Links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/1")
+				So(results[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default/editions/2021/versions/1")
+
+				So(results[1].CollectionID, ShouldEqual, "cpihtest-1")
+				So(results[1].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[1].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
+				So(results[1].Dimensions[2].HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(results[1].Edition, ShouldEqual, "time-series")
+				So(results[1].InstanceID, ShouldEqual, "2")
+				So(results[1].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(results[1].Links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[1].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(results[1].Links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/2")
+				So(results[1].Links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/2")
+				So(results[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+			})
+		})
+
+		Convey("When the instance links are empty", func() {
+			results := []*models.Instance{
+				{
+					CollectionID: "cantabularflexibledefault-1",
+					Dimensions: []models.Dimension{
+						{
+							Label: "City",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "http://localhost:22000/city",
+							ID:   "city",
+						},
+						{
+							Label: "Number of siblings (3 mappings)",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "http://localhost:22000/siblings_3",
+							ID:   "siblings_3",
+						},
+					},
+					Edition:    "2021",
+					InstanceID: "1",
+					Links:      &models.InstanceLinks{},
+				},
+				{
+					CollectionID: "cpihtest-1",
+					Dimensions: []models.Dimension{
+						{
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "http://localhost:22000/code-lists/mmm-yy",
+							ID:   "mmm-yy",
+							Name: "time",
+						},
+						{
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "http://localhost:22000/code-lists/uk-only",
+							ID:   "uk-only",
+							Name: "geography",
+						},
+						{
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
+							ID:   "cpih1dim1aggid",
+							Name: "aggregate",
+						},
+					},
+					Edition:    "time-series",
+					InstanceID: "2",
+					Links:      &models.InstanceLinks{},
+				},
+			}
+
+			err := RewriteInstances(ctx, results, linksBuilder)
+
+			Convey("Then the links should remain empty", func() {
+				So(err, ShouldBeNil)
+
+				So(results[0].CollectionID, ShouldEqual, "cantabularflexibledefault-1")
+				So(results[0].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/city")
+				So(results[0].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/siblings_3")
+				So(results[0].Edition, ShouldEqual, "2021")
+				So(results[0].InstanceID, ShouldEqual, "1")
+				So(results[0].Links, ShouldResemble, &models.InstanceLinks{})
+
+				So(results[1].CollectionID, ShouldEqual, "cpihtest-1")
+				So(results[1].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[1].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
+				So(results[1].Dimensions[2].HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(results[1].Edition, ShouldEqual, "time-series")
+				So(results[1].InstanceID, ShouldEqual, "2")
+				So(results[1].Links, ShouldResemble, &models.InstanceLinks{})
+			})
+		})
+	})
+}
+
+func TestRewriteInstances_Error(t *testing.T) {
+	ctx := context.Background()
+	Convey("Given a list of instances", t, func() {
+		Convey("When the instance links are unable to be parsed", func() {
+			results := []*models.Instance{
+				{
+					CollectionID: "cantabularflexibledefault-1",
+					Dimensions: []models.Dimension{
+						{
+							Label: "City",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "://oldhost:1000/city",
+							ID:   "city",
+						},
+						{
+							Label: "Number of siblings (3 mappings)",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "://oldhost:1000/siblings_3",
+							ID:   "siblings_3",
+						},
+					},
+					Edition:    "2021",
+					InstanceID: "1",
+					Links: &models.InstanceLinks{
+						Dataset: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cantabular-flexible-default",
+							ID:   "cantabular-flexible-default",
+						},
+						Dimensions: &models.LinkObject{
+							HRef: "://oldhost:1000/code-lists/mmm-yy",
+						},
+						Edition: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cantabular-flexible-default/editions/2021",
+							ID:   "2021",
+						},
+						Job: &models.LinkObject{
+							HRef: "://oldhost:1000/jobs/1",
+							ID:   "1",
+						},
+						Self: &models.LinkObject{
+							HRef: "://oldhost:1000/instances/1",
+						},
+						Version: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cantabular-flexible-default/editions/2021/versions/1",
+							ID:   "1",
+						},
+					},
+				},
+				{
+					CollectionID: "cpihtest-1",
+					Dimensions: []models.Dimension{
+						{
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "://oldhost:1000/code-lists/mmm-yy",
+							ID:   "mmm-yy",
+							Name: "time",
+						},
+						{
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "://oldhost:1000/code-lists/uk-only",
+							ID:   "uk-only",
+							Name: "geography",
+						},
+						{
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							HRef: "://oldhost:1000/code-lists/cpih1dim1aggid",
+							ID:   "cpih1dim1aggid",
+							Name: "aggregate",
+						},
+					},
+					Edition:    "time-series",
+					InstanceID: "2",
+					Links: &models.InstanceLinks{
+						Dataset: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						Dimensions: &models.LinkObject{
+							HRef: "://oldhost:1000/code-lists/mmm-yy",
+						},
+						Edition: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series",
+							ID:   "time-series",
+						},
+						Job: &models.LinkObject{
+							HRef: "://oldhost:1000/jobs/2",
+							ID:   "2",
+						},
+						Self: &models.LinkObject{
+							HRef: "://oldhost:1000/instances/2",
+						},
+						Version: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+							ID:   "1",
+						},
+					},
+				},
+			}
+
+			err := RewriteInstances(ctx, results, nil)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+	})
+}
+
+func TestRewriteInstanceLinks_Success(t *testing.T) {
+	ctx := context.Background()
+	Convey("Given a set of instance links", t, func() {
+		Convey("When the instance links need rewriting", func() {
+			links := &models.InstanceLinks{
+				Dataset: &models.LinkObject{
+					HRef: "https://oldhost:1000/datasets/cpih01",
+				},
+				Dimensions: &models.LinkObject{
+					HRef: "https://oldhost:1000/code-lists/mmm-yy",
+				},
+				Edition: &models.LinkObject{
+					HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series",
+				},
+				Job: &models.LinkObject{
+					HRef: "https://oldhost:1000/jobs/1",
+				},
+				Self: &models.LinkObject{
+					HRef: "https://oldhost:1000/instances/1",
+				},
+				Version: &models.LinkObject{
+					HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+				},
+			}
+
+			err := RewriteInstanceLinks(ctx, links, linksBuilder)
+
+			Convey("Then the links should be rewritten correctly", func() {
+				So(err, ShouldBeNil)
+				So(links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/1")
+				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/1")
+				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+			})
+		})
+
+		Convey("When the instance links do not need rewriting", func() {
+			links := &models.InstanceLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01",
+				},
+				Dimensions: &models.LinkObject{
+					HRef: "http://localhost:22000/code-lists/mmm-yy",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series",
+				},
+				Job: &models.LinkObject{
+					HRef: "http://localhost:22000/jobs/1",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/instances/1",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+				},
+			}
+
+			err := RewriteInstanceLinks(ctx, links, linksBuilder)
+
+			Convey("Then the links should remain the same", func() {
+				So(err, ShouldBeNil)
+				So(links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/1")
+				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/1")
+				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+			})
+		})
+
+		Convey("When the instance links are empty", func() {
+			links := &models.InstanceLinks{}
+
+			err := RewriteInstanceLinks(ctx, links, linksBuilder)
+
+			Convey("Then the links should remain empty", func() {
+				So(err, ShouldBeNil)
+				So(links, ShouldResemble, &models.InstanceLinks{})
+			})
+		})
+
+		Convey("When the instance links are nil", func() {
+			err := RewriteInstanceLinks(ctx, nil, linksBuilder)
+
+			Convey("Then the links should remain nil", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestRewriteInstanceLinks_Error(t *testing.T) {
+	ctx := context.Background()
+	Convey("Given a set of instance links", t, func() {
+		Convey("When the instance links are unable to be parsed", func() {
+			links := &models.InstanceLinks{
+				Dataset: &models.LinkObject{
+					HRef: "://oldhost:1000/datasets/cpih01",
+				},
+				Dimensions: &models.LinkObject{
+					HRef: "://oldhost:1000/code-lists/mmm-yy",
+				},
+				Edition: &models.LinkObject{
+					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series",
+				},
+				Job: &models.LinkObject{
+					HRef: "://oldhost:1000/jobs/1",
+				},
+				Self: &models.LinkObject{
+					HRef: "://oldhost:1000/instances/1",
+				},
+				Version: &models.LinkObject{
+					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+				},
+			}
+
+			err := RewriteInstanceLinks(ctx, links, nil)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+	})
+}

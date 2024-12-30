@@ -573,7 +573,6 @@ func RewriteInstanceLinks(ctx context.Context, oldLinks *models.InstanceLinks, l
 		oldLinks.Edition,
 		oldLinks.Job,
 		oldLinks.Self,
-		oldLinks.Spatial,
 		oldLinks.Version,
 	}
 
