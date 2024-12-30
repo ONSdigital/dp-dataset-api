@@ -520,7 +520,6 @@ func RewriteVersionLinks(ctx context.Context, oldLinks *models.VersionLinks, lin
 		oldLinks.Dimensions,
 		oldLinks.Edition,
 		oldLinks.Self,
-		oldLinks.Spatial,
 		oldLinks.Version,
 	}
 

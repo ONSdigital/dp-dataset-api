@@ -3314,3 +3314,758 @@ func TestRewriteEditionLinks_Error(t *testing.T) {
 		})
 	})
 }
+
+func TestRewriteMetadataLinks_Success(t *testing.T) {
+	ctx := context.Background()
+	Convey("Given a set of metadata links", t, func() {
+		Convey("When the metadata links need rewriting", func() {
+			links := &models.MetadataLinks{
+				AccessRights: &models.LinkObject{
+					HRef: "https://oldhost:1000/accessrights",
+				},
+				Self: &models.LinkObject{
+					HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/metadata",
+				},
+				Version: &models.LinkObject{
+					HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+					ID:   "1",
+				},
+				WebsiteVersion: &models.LinkObject{
+					HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+				},
+			}
+
+			err := RewriteMetadataLinks(ctx, links, linksBuilder)
+
+			Convey("Then the links should be rewritten correctly", func() {
+				So(err, ShouldBeNil)
+				So(links.AccessRights.HRef, ShouldEqual, "https://oldhost:1000/accessrights")
+				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/metadata")
+				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(links.Version.ID, ShouldEqual, "1")
+				So(links.WebsiteVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+			})
+		})
+
+		Convey("When the metadata links do not need rewriting", func() {
+			links := &models.MetadataLinks{
+				AccessRights: &models.LinkObject{
+					HRef: "http://localhost:22000/accessrights",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/metadata",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+					ID:   "1",
+				},
+				WebsiteVersion: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+				},
+			}
+
+			err := RewriteMetadataLinks(ctx, links, linksBuilder)
+
+			Convey("Then the links should remain the same", func() {
+				So(err, ShouldBeNil)
+				So(links.AccessRights.HRef, ShouldEqual, "http://localhost:22000/accessrights")
+				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/metadata")
+				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(links.Version.ID, ShouldEqual, "1")
+				So(links.WebsiteVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+			})
+		})
+
+		Convey("When the metadata links are empty", func() {
+			links := &models.MetadataLinks{}
+
+			err := RewriteMetadataLinks(ctx, links, linksBuilder)
+
+			Convey("Then the links should remain empty", func() {
+				So(err, ShouldBeNil)
+				So(links, ShouldResemble, &models.MetadataLinks{})
+			})
+		})
+
+		Convey("When the metadata links are nil", func() {
+			err := RewriteMetadataLinks(ctx, nil, linksBuilder)
+
+			Convey("Then the links should remain nil", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When the metadata links are missing", func() {
+			err := RewriteMetadataLinks(ctx, &models.MetadataLinks{}, linksBuilder)
+
+			Convey("Then the links should remain empty", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestRewriteMetadataLinks_Error(t *testing.T) {
+	ctx := context.Background()
+	Convey("Given a set of metadata links", t, func() {
+		Convey("When the metadata links are unable to be parsed", func() {
+			links := &models.MetadataLinks{
+				AccessRights: &models.LinkObject{
+					HRef: "://oldhost:1000/accessrights",
+				},
+				Self: &models.LinkObject{
+					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/metadata",
+				},
+				Version: &models.LinkObject{
+					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+					ID:   "1",
+				},
+				WebsiteVersion: &models.LinkObject{
+					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+				},
+			}
+
+			err := RewriteMetadataLinks(ctx, links, nil)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+	})
+}
+
+func TestRewriteVersions_Success(t *testing.T) {
+	ctx := context.Background()
+	Convey("Given a list of versions", t, func() {
+		Convey("When the version and dimension links need rewriting", func() {
+			results := []models.Version{
+				{
+					ID:        "cf4b2196-3548-4bd5-8288-92fe4ca06327",
+					DatasetID: "cpih01",
+					Edition:   "time-series",
+					Version:   53,
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						Edition: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series",
+							ID:   "time-series",
+						},
+						Self: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/53",
+						},
+					},
+					Dimensions: []models.Dimension{
+						{
+							HRef:  "https://oldhost:1000/code-lists/mmm-yy",
+							ID:    "mmm-yy",
+							Label: "Time",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "time",
+						},
+						{
+							HRef:  "https://oldhost:1000/code-lists/uk-only",
+							ID:    "uk-only",
+							Label: "Geography",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "geography",
+						},
+						{
+							HRef:  "https://oldhost:1000/code-lists/cpih1dim1aggid",
+							ID:    "cpih1dim1aggid",
+							Label: "Aggregate",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "aggregate",
+						},
+					},
+				},
+				{
+					ID:        "74e4d2da-8fd6-4bb6-b4a2-b5cd573fb42b",
+					DatasetID: "cpih01",
+					Edition:   "time-series",
+					Version:   52,
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						Edition: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series",
+							ID:   "time-series",
+						},
+						Self: &models.LinkObject{
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/52",
+						},
+					},
+					Dimensions: []models.Dimension{
+						{
+							HRef:  "https://oldhost:1000/code-lists/mmm-yy",
+							ID:    "mmm-yy",
+							Label: "Time",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "time",
+						},
+						{
+							HRef:  "https://oldhost:1000/code-lists/uk-only",
+							ID:    "uk-only",
+							Label: "Geography",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "geography",
+						},
+						{
+							HRef:  "https://oldhost:1000/code-lists/cpih1dim1aggid",
+							ID:    "cpih1dim1aggid",
+							Label: "Aggregate",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "aggregate",
+						},
+					},
+				},
+			}
+
+			items, err := RewriteVersions(ctx, results, linksBuilder)
+
+			Convey("Then the links should be rewritten correctly", func() {
+				So(err, ShouldBeNil)
+
+				So(items[0].ID, ShouldEqual, "cf4b2196-3548-4bd5-8288-92fe4ca06327")
+				So(items[0].DatasetID, ShouldEqual, "cpih01")
+				So(items[0].Edition, ShouldEqual, "time-series")
+				So(items[0].Version, ShouldEqual, 53)
+				So(items[0].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(items[0].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(items[0].Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/53")
+				So(items[0].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(items[0].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
+				So(items[0].Dimensions[2].HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+
+				So(items[1].ID, ShouldEqual, "74e4d2da-8fd6-4bb6-b4a2-b5cd573fb42b")
+				So(items[1].DatasetID, ShouldEqual, "cpih01")
+				So(items[1].Edition, ShouldEqual, "time-series")
+				So(items[1].Version, ShouldEqual, 52)
+				So(items[1].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(items[1].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(items[1].Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/52")
+				So(items[1].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(items[1].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
+				So(items[1].Dimensions[2].HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+			})
+		})
+
+		Convey("When the version and dimension links do not need rewriting", func() {
+			results := []models.Version{
+				{
+					ID:        "cf4b2196-3548-4bd5-8288-92fe4ca06327",
+					DatasetID: "cpih01",
+					Edition:   "time-series",
+					Version:   53,
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series",
+							ID:   "time-series",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/53",
+						},
+					},
+					Dimensions: []models.Dimension{
+						{
+							HRef:  "http://localhost:22000/code-lists/mmm-yy",
+							ID:    "mmm-yy",
+							Label: "Time",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "time",
+						},
+						{
+							HRef:  "http://localhost:22000/code-lists/uk-only",
+							ID:    "uk-only",
+							Label: "Geography",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "geography",
+						},
+						{
+							HRef:  "http://localhost:22000/code-lists/cpih1dim1aggid",
+							ID:    "cpih1dim1aggid",
+							Label: "Aggregate",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "aggregate",
+						},
+					},
+				},
+				{
+					ID:        "74e4d2da-8fd6-4bb6-b4a2-b5cd573fb42b",
+					DatasetID: "cpih01",
+					Edition:   "time-series",
+					Version:   52,
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series",
+							ID:   "time-series",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/52",
+						},
+					},
+					Dimensions: []models.Dimension{
+						{
+							HRef:  "http://localhost:22000/code-lists/mmm-yy",
+							ID:    "mmm-yy",
+							Label: "Time",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "time",
+						},
+						{
+							HRef:  "http://localhost:22000/code-lists/uk-only",
+							ID:    "uk-only",
+							Label: "Geography",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "geography",
+						},
+						{
+							HRef:  "http://localhost:22000/code-lists/cpih1dim1aggid",
+							ID:    "cpih1dim1aggid",
+							Label: "Aggregate",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "aggregate",
+						},
+					},
+				},
+			}
+
+			items, err := RewriteVersions(ctx, results, linksBuilder)
+
+			Convey("Then the links should remain the same", func() {
+				So(err, ShouldBeNil)
+
+				So(items[0].ID, ShouldEqual, results[0].ID)
+				So(items[0].DatasetID, ShouldEqual, results[0].DatasetID)
+				So(items[0].Edition, ShouldEqual, results[0].Edition)
+				So(items[0].Version, ShouldEqual, results[0].Version)
+				So(items[0].Links.Dataset.HRef, ShouldEqual, results[0].Links.Dataset.HRef)
+				So(items[0].Links.Edition.HRef, ShouldEqual, results[0].Links.Edition.HRef)
+				So(items[0].Links.Self.HRef, ShouldEqual, results[0].Links.Self.HRef)
+				So(items[0].Dimensions[0].HRef, ShouldEqual, results[0].Dimensions[0].HRef)
+				So(items[0].Dimensions[1].HRef, ShouldEqual, results[0].Dimensions[1].HRef)
+				So(items[0].Dimensions[2].HRef, ShouldEqual, results[0].Dimensions[2].HRef)
+
+				So(items[1].ID, ShouldEqual, results[1].ID)
+				So(items[1].DatasetID, ShouldEqual, results[1].DatasetID)
+				So(items[1].Edition, ShouldEqual, results[1].Edition)
+				So(items[1].Version, ShouldEqual, results[1].Version)
+				So(items[1].Links.Dataset.HRef, ShouldEqual, results[1].Links.Dataset.HRef)
+				So(items[1].Links.Edition.HRef, ShouldEqual, results[1].Links.Edition.HRef)
+				So(items[1].Links.Self.HRef, ShouldEqual, results[1].Links.Self.HRef)
+				So(items[1].Dimensions[0].HRef, ShouldEqual, results[1].Dimensions[0].HRef)
+				So(items[1].Dimensions[1].HRef, ShouldEqual, results[1].Dimensions[1].HRef)
+				So(items[1].Dimensions[2].HRef, ShouldEqual, results[1].Dimensions[2].HRef)
+			})
+		})
+
+		Convey("When the version and dimension links are empty", func() {
+			results := []models.Version{
+				{
+					ID:         "cf4b2196-3548-4bd5-8288-92fe4ca06327",
+					DatasetID:  "cpih01",
+					Edition:    "time-series",
+					Version:    53,
+					Links:      &models.VersionLinks{},
+					Dimensions: []models.Dimension{},
+				},
+				{
+					ID:         "74e4d2da-8fd6-4bb6-b4a2-b5cd573fb42b",
+					DatasetID:  "cpih01",
+					Edition:    "time-series",
+					Version:    52,
+					Links:      &models.VersionLinks{},
+					Dimensions: []models.Dimension{},
+				},
+			}
+
+			items, err := RewriteVersions(ctx, results, linksBuilder)
+
+			Convey("Then the links should remain empty", func() {
+				So(err, ShouldBeNil)
+
+				So(items[0].ID, ShouldEqual, results[0].ID)
+				So(items[0].DatasetID, ShouldEqual, results[0].DatasetID)
+				So(items[0].Edition, ShouldEqual, results[0].Edition)
+				So(items[0].Version, ShouldEqual, results[0].Version)
+				So(items[0].Links, ShouldResemble, &models.VersionLinks{})
+				So(items[0].Dimensions, ShouldResemble, []models.Dimension{})
+
+				So(items[1].ID, ShouldEqual, results[1].ID)
+				So(items[1].DatasetID, ShouldEqual, results[1].DatasetID)
+				So(items[1].Edition, ShouldEqual, results[1].Edition)
+				So(items[1].Version, ShouldEqual, results[1].Version)
+				So(items[1].Links, ShouldResemble, &models.VersionLinks{})
+				So(items[1].Dimensions, ShouldResemble, []models.Dimension{})
+			})
+		})
+
+		Convey("When the version and dimension links are nil", func() {
+			results := []models.Version{
+				{
+					ID:         "cf4b2196-3548-4bd5-8288-92fe4ca06327",
+					DatasetID:  "cpih01",
+					Edition:    "time-series",
+					Version:    53,
+					Links:      nil,
+					Dimensions: nil,
+				},
+				{
+					ID:         "74e4d2da-8fd6-4bb6-b4a2-b5cd573fb42b",
+					DatasetID:  "cpih01",
+					Edition:    "time-series",
+					Version:    52,
+					Links:      nil,
+					Dimensions: nil,
+				},
+			}
+
+			items, err := RewriteVersions(ctx, results, linksBuilder)
+
+			Convey("Then the links should remain nil", func() {
+				So(err, ShouldBeNil)
+
+				So(items[0].ID, ShouldEqual, results[0].ID)
+				So(items[0].DatasetID, ShouldEqual, results[0].DatasetID)
+				So(items[0].Edition, ShouldEqual, results[0].Edition)
+				So(items[0].Version, ShouldEqual, results[0].Version)
+				So(items[0].Links, ShouldBeNil)
+				So(items[0].Dimensions, ShouldBeNil)
+
+				So(items[1].ID, ShouldEqual, results[1].ID)
+				So(items[1].DatasetID, ShouldEqual, results[1].DatasetID)
+				So(items[1].Edition, ShouldEqual, results[1].Edition)
+				So(items[1].Version, ShouldEqual, results[1].Version)
+				So(items[1].Links, ShouldBeNil)
+				So(items[1].Dimensions, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestRewriteVersions_Error(t *testing.T) {
+	ctx := context.Background()
+	Convey("Given a list of versions", t, func() {
+		Convey("When the version and dimension links are unable to be parsed", func() {
+			results := []models.Version{
+				{
+					ID:        "cf4b2196-3548-4bd5-8288-92fe4ca06327",
+					DatasetID: "cpih01",
+					Edition:   "time-series",
+					Version:   53,
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						Edition: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series",
+							ID:   "time-series",
+						},
+						Self: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/53",
+						},
+					},
+					Dimensions: []models.Dimension{
+						{
+							HRef:  "://oldhost:1000/code-lists/mmm-yy",
+							ID:    "mmm-yy",
+							Label: "Time",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "time",
+						},
+						{
+							HRef:  "://oldhost:1000/code-lists/uk-only",
+							ID:    "uk-only",
+							Label: "Geography",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "geography",
+						},
+						{
+							HRef:  "://oldhost:1000/code-lists/cpih1dim1aggid",
+							ID:    "cpih1dim1aggid",
+							Label: "Aggregate",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "aggregate",
+						},
+					},
+				},
+				{
+					ID:        "74e4d2da-8fd6-4bb6-b4a2-b5cd573fb42b",
+					DatasetID: "cpih01",
+					Edition:   "time-series",
+					Version:   52,
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						Edition: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series",
+							ID:   "time-series",
+						},
+						Self: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/52",
+						},
+					},
+					Dimensions: []models.Dimension{
+						{
+							HRef:  "://oldhost:1000/code-lists/mmm-yy",
+							ID:    "mmm-yy",
+							Label: "Time",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "time",
+						},
+						{
+							HRef:  "://oldhost:1000/code-lists/uk-only",
+							ID:    "uk-only",
+							Label: "Geography",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "geography",
+						},
+						{
+							HRef:  "://oldhost:1000/code-lists/cpih1dim1aggid",
+							ID:    "cpih1dim1aggid",
+							Label: "Aggregate",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{},
+								Options:  models.LinkObject{},
+								Version:  models.LinkObject{},
+							},
+							Name: "aggregate",
+						},
+					},
+				},
+			}
+
+			items, err := RewriteVersions(ctx, results, nil)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(items, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+	})
+}
+
+func TestRewriteVersionLinks_Success(t *testing.T) {
+	ctx := context.Background()
+	Convey("Given a set of version links", t, func() {
+		Convey("When the version links need rewriting", func() {
+			links := &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "https://oldhost:1000/datasets/cpih01",
+					ID:   "cpih01",
+				},
+				Dimensions: &models.LinkObject{
+					HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions",
+				},
+				Edition: &models.LinkObject{
+					HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series",
+					ID:   "time-series",
+				},
+				Self: &models.LinkObject{
+					HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+				},
+				Spatial: &models.LinkObject{
+					HRef: "https://oldhost:1000/spatial",
+				},
+				Version: &models.LinkObject{
+					HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+					ID:   "1",
+				},
+			}
+
+			err := RewriteVersionLinks(ctx, links, linksBuilder)
+
+			Convey("Then the links should be rewritten correctly", func() {
+				So(err, ShouldBeNil)
+				So(links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions")
+				So(links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(links.Spatial.HRef, ShouldEqual, "https://oldhost:1000/spatial")
+				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(links.Version.ID, ShouldEqual, "1")
+			})
+		})
+
+		Convey("When the version links do not need rewriting", func() {
+			links := &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01",
+					ID:   "cpih01",
+				},
+				Dimensions: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series",
+					ID:   "time-series",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+				},
+				Spatial: &models.LinkObject{
+					HRef: "http://oldhost:1000/spatial",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+					ID:   "1",
+				},
+			}
+
+			err := RewriteVersionLinks(ctx, links, linksBuilder)
+
+			Convey("Then the links should remain the same", func() {
+				So(err, ShouldBeNil)
+				So(links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions")
+				So(links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(links.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial")
+				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(links.Version.ID, ShouldEqual, "1")
+			})
+		})
+
+		Convey("When the version links are empty", func() {
+			links := &models.VersionLinks{}
+
+			err := RewriteVersionLinks(ctx, links, linksBuilder)
+
+			Convey("Then the links should remain empty", func() {
+				So(err, ShouldBeNil)
+				So(links, ShouldResemble, &models.VersionLinks{})
+			})
+		})
+
+		Convey("When the version links are nil", func() {
+			err := RewriteVersionLinks(ctx, nil, linksBuilder)
+
+			Convey("Then the links should remain nil", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestRewriteVersionLinks_Error(t *testing.T) {
+	ctx := context.Background()
+	Convey("Given a set of version links", t, func() {
+		Convey("When the version links are unable to be parsed", func() {
+			links := &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "://oldhost:1000/datasets/cpih01",
+					ID:   "cpih01",
+				},
+				Dimensions: &models.LinkObject{
+					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions",
+				},
+				Edition: &models.LinkObject{
+					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series",
+					ID:   "time-series",
+				},
+				Self: &models.LinkObject{
+					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+				},
+				Spatial: &models.LinkObject{
+					HRef: "://oldhost:1000/spatial",
+				},
+				Version: &models.LinkObject{
+					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+					ID:   "1",
+				},
+			}
+
+			err := RewriteVersionLinks(ctx, links, nil)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+	})
+}
