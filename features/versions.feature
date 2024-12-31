@@ -121,7 +121,7 @@ Feature: Dataset API
                 {
                     "id": "test-item-3",
                     "version": 3,
-                    "state": "created",
+                    "state": "edition-confirmed",
                     "links": {
                         "dataset": {
                             "id": "population-estimates"
