@@ -1,8 +1,6 @@
 module github.com/ONSdigital/dp-dataset-api
 
-go 1.23
-
-toolchain go1.23.3
+go 1.23.4
 
 // to avoid the following vulnerabilities:
 //     - CVE-2022-29153 # pkg:golang/github.com/hashicorp/consul/api@v1.1.0
@@ -11,8 +9,6 @@ replace github.com/spf13/cobra => github.com/spf13/cobra v1.7.0
 
 // [CVE-2024-24786] CWE-835: Loop with Unreachable Exit Condition ('Infinite Loop')
 replace google.golang.org/protobuf => google.golang.org/protobuf v1.33.0
-
-replace github.com/ONSdigital/dp-net/v2 v2.11.2 => ../libraries/dp-net
 
 require (
 	github.com/ONSdigital/dp-api-clients-go/v2 v2.261.0
@@ -23,7 +19,7 @@ require (
 	github.com/ONSdigital/dp-healthcheck v1.6.3
 	github.com/ONSdigital/dp-kafka/v4 v4.1.0
 	github.com/ONSdigital/dp-mongodb/v3 v3.7.0
-	github.com/ONSdigital/dp-net/v2 v2.11.2
+	github.com/ONSdigital/dp-net/v2 v2.13.0
 	github.com/ONSdigital/dp-otel-go v0.0.7
 	github.com/ONSdigital/log.go/v2 v2.4.3
 	github.com/cucumber/godog v0.14.0
@@ -72,6 +68,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
+	github.com/gorilla/schema v1.4.1 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -119,11 +116,11 @@ require (
 	go.opentelemetry.io/otel/trace v1.31.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.1.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.28.0 // indirect
-	golang.org/x/net v0.30.0 // indirect
-	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.26.0 // indirect
-	golang.org/x/text v0.19.0 // indirect
+	golang.org/x/crypto v0.31.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240205150955-31a09d347014 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240205150955-31a09d347014 // indirect
 	google.golang.org/grpc v1.61.0 // indirect
