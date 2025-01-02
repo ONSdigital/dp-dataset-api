@@ -171,15 +171,11 @@ func RewriteDatasetWithoutAuth(ctx context.Context, dataset *models.DatasetUpdat
 	}
 
 	if dataset.Current == nil {
-		log.Info(ctx, "getDataset endpoint: published dataset not found")
+		log.Info(ctx, "getDataset endpoint: published dataset not found", log.Data{"dataset_id": dataset.ID})
 		return nil, errs.ErrDatasetNotFound
 	}
 
 	datasetResponse := &models.Dataset{}
-	if dataset.Current == nil {
-		log.Info(ctx, "getDataset endpoint: published dataset not found", log.Data{"dataset_id": dataset.ID})
-		return nil, errs.ErrDatasetNotFound
-	}
 	log.Info(ctx, "getDataset endpoint: caller not authorised returning dataset", log.Data{"dataset_id": dataset.ID})
 
 	dataset.Current.ID = dataset.ID

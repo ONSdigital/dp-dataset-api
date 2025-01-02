@@ -218,7 +218,7 @@ func TestRewriteDatasetsWithAuth_Success(t *testing.T) {
 func TestRewriteDatasetsWithAuth_Error(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a list of dataset updates", t, func() {
-		Convey("When the dataset links are unable to be parsed", func() {
+		Convey("When the 'current' dataset links are unable to be parsed", func() {
 			results := []*models.DatasetUpdate{
 				{
 					ID: "123",
@@ -243,6 +243,22 @@ func TestRewriteDatasetsWithAuth_Error(t *testing.T) {
 							},
 						},
 					},
+				},
+			}
+
+			items, err := RewriteDatasetsWithAuth(ctx, results, nil)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(items, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+
+		Convey("When the 'next' dataset links are unable to be parsed", func() {
+			results := []*models.DatasetUpdate{
+				{
+					ID: "123",
 					Next: &models.Dataset{
 						ID: "123",
 						Links: &models.DatasetLinks{
@@ -709,7 +725,7 @@ func TestRewriteDatasetWithAuth_Success(t *testing.T) {
 func TestRewriteDatasetWithAuth_Error(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a dataset update", t, func() {
-		Convey("When the dataset links are unable to be parsed", func() {
+		Convey("When the 'current' dataset links are unable to be parsed", func() {
 			result := &models.DatasetUpdate{
 				ID: "123",
 				Current: &models.Dataset{
@@ -733,6 +749,20 @@ func TestRewriteDatasetWithAuth_Error(t *testing.T) {
 						},
 					},
 				},
+			}
+
+			item, err := RewriteDatasetWithAuth(ctx, result, nil)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(item, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+
+		Convey("When the 'next' dataset links are unable to be parsed", func() {
+			result := &models.DatasetUpdate{
+				ID: "123",
 				Next: &models.Dataset{
 					ID: "123",
 					Links: &models.DatasetLinks{
@@ -2394,7 +2424,7 @@ func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 func TestRewriteEditionsWithAuth_Error(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a list of edition updates", t, func() {
-		Convey("When the edition update links are unable to be parsed", func() {
+		Convey("When the 'current' edition update links are unable to be parsed", func() {
 			results := []*models.EditionUpdate{
 				{
 					ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
@@ -2418,6 +2448,22 @@ func TestRewriteEditionsWithAuth_Error(t *testing.T) {
 						},
 						State: "edition-confirmed",
 					},
+				},
+			}
+
+			items, err := RewriteEditionsWithAuth(ctx, results, nil)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(items, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+
+		Convey("When the 'next' edition update links are unable to be parsed", func() {
+			results := []*models.EditionUpdate{
+				{
+					ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
 					Next: &models.Edition{
 						Edition: "time-series",
 						Links: &models.EditionUpdateLinks{
@@ -2875,7 +2921,7 @@ func TestRewriteEditionWithAuth_Success(t *testing.T) {
 func TestRewriteEditionWithAuth_Error(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given an edition update", t, func() {
-		Convey("When the edition update links are unable to be parsed", func() {
+		Convey("When the 'current' edition update links are unable to be parsed", func() {
 			result := &models.EditionUpdate{
 				ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
 				Current: &models.Edition{
@@ -2898,6 +2944,20 @@ func TestRewriteEditionWithAuth_Error(t *testing.T) {
 					},
 					State: "edition-confirmed",
 				},
+			}
+
+			item, err := RewriteEditionWithAuth(ctx, result, nil)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(item, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+
+		Convey("When the 'next' edition update links are unable to be parsed", func() {
+			result := &models.EditionUpdate{
+				ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
 				Next: &models.Edition{
 					Edition: "time-series",
 					Links: &models.EditionUpdateLinks{
@@ -2906,7 +2966,7 @@ func TestRewriteEditionWithAuth_Error(t *testing.T) {
 							ID:   "cpih01",
 						},
 						LatestVersion: &models.LinkObject{
-							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/2",
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
 							ID:   "1",
 						},
 						Self: &models.LinkObject{
@@ -3909,13 +3969,24 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[1].Dimensions, ShouldBeNil)
 			})
 		})
+
+		Convey("When the versions are empty", func() {
+			results := []models.Version{}
+
+			items, err := RewriteVersions(ctx, results, linksBuilder)
+
+			Convey("Then the versions should remain empty", func() {
+				So(err, ShouldBeNil)
+				So(items, ShouldBeEmpty)
+			})
+		})
 	})
 }
 
 func TestRewriteVersions_Error(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a list of versions", t, func() {
-		Convey("When the version and dimension links are unable to be parsed", func() {
+		Convey("When the version links are unable to be parsed", func() {
 			results := []models.Version{
 				{
 					ID:        "cf4b2196-3548-4bd5-8288-92fe4ca06327",
@@ -3933,41 +4004,6 @@ func TestRewriteVersions_Error(t *testing.T) {
 						},
 						Self: &models.LinkObject{
 							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/53",
-						},
-					},
-					Dimensions: []models.Dimension{
-						{
-							HRef:  "://oldhost:1000/code-lists/mmm-yy",
-							ID:    "mmm-yy",
-							Label: "Time",
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
-							},
-							Name: "time",
-						},
-						{
-							HRef:  "://oldhost:1000/code-lists/uk-only",
-							ID:    "uk-only",
-							Label: "Geography",
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
-							},
-							Name: "geography",
-						},
-						{
-							HRef:  "://oldhost:1000/code-lists/cpih1dim1aggid",
-							ID:    "cpih1dim1aggid",
-							Label: "Aggregate",
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
-							},
-							Name: "aggregate",
 						},
 					},
 				},
@@ -3989,45 +4025,48 @@ func TestRewriteVersions_Error(t *testing.T) {
 							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/52",
 						},
 					},
+				},
+			}
+
+			items, err := RewriteVersions(ctx, results, nil)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(items, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+
+		Convey("When the dimension links are unable to be parsed", func() {
+			results := []models.Version{
+				{
+					ID:        "cf4b2196-3548-4bd5-8288-92fe4ca06327",
+					DatasetID: "cpih01",
+					Edition:   "time-series",
+					Version:   53,
 					Dimensions: []models.Dimension{
 						{
 							HRef:  "://oldhost:1000/code-lists/mmm-yy",
 							ID:    "mmm-yy",
 							Label: "Time",
 							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
+								CodeList: models.LinkObject{
+									HRef: "://oldhost:1000/code-lists/mmm-yy",
+								},
+								Options: models.LinkObject{
+									HRef: "://oldhost:1000/code-lists/mmm-yy/options",
+								},
+								Version: models.LinkObject{
+									HRef: "://oldhost:1000/code-lists/mmm-yy/versions/1",
+								},
 							},
 							Name: "time",
-						},
-						{
-							HRef:  "://oldhost:1000/code-lists/uk-only",
-							ID:    "uk-only",
-							Label: "Geography",
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
-							},
-							Name: "geography",
-						},
-						{
-							HRef:  "://oldhost:1000/code-lists/cpih1dim1aggid",
-							ID:    "cpih1dim1aggid",
-							Label: "Aggregate",
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
-							},
-							Name: "aggregate",
 						},
 					},
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, nil)
+			items, err := RewriteVersions(ctx, results, linksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -4674,6 +4713,16 @@ func TestRewriteInstances_Success(t *testing.T) {
 				So(results[1].Links, ShouldResemble, &models.InstanceLinks{})
 			})
 		})
+
+		Convey("When the instances are empty", func() {
+			results := []*models.Instance{}
+
+			err := RewriteInstances(ctx, results, linksBuilder)
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
+			})
+		})
 	})
 }
 
@@ -4681,6 +4730,76 @@ func TestRewriteInstances_Error(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a list of instances", t, func() {
 		Convey("When the instance links are unable to be parsed", func() {
+			results := []*models.Instance{
+				{
+					CollectionID: "cantabularflexibledefault-1",
+					Edition:      "2021",
+					InstanceID:   "1",
+					Links: &models.InstanceLinks{
+						Dataset: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cantabular-flexible-default",
+							ID:   "cantabular-flexible-default",
+						},
+						Dimensions: &models.LinkObject{
+							HRef: "://oldhost:1000/code-lists/mmm-yy",
+						},
+						Edition: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cantabular-flexible-default/editions/2021",
+							ID:   "2021",
+						},
+						Job: &models.LinkObject{
+							HRef: "://oldhost:1000/jobs/1",
+							ID:   "1",
+						},
+						Self: &models.LinkObject{
+							HRef: "://oldhost:1000/instances/1",
+						},
+						Version: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cantabular-flexible-default/editions/2021/versions/1",
+							ID:   "1",
+						},
+					},
+				},
+				{
+					CollectionID: "cpihtest-1",
+					Edition:      "time-series",
+					InstanceID:   "2",
+					Links: &models.InstanceLinks{
+						Dataset: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01",
+							ID:   "cpih01",
+						},
+						Dimensions: &models.LinkObject{
+							HRef: "://oldhost:1000/code-lists/mmm-yy",
+						},
+						Edition: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series",
+							ID:   "time-series",
+						},
+						Job: &models.LinkObject{
+							HRef: "://oldhost:1000/jobs/2",
+							ID:   "2",
+						},
+						Self: &models.LinkObject{
+							HRef: "://oldhost:1000/instances/2",
+						},
+						Version: &models.LinkObject{
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+							ID:   "1",
+						},
+					},
+				},
+			}
+
+			err := RewriteInstances(ctx, results, linksBuilder)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+
+		Convey("When the dimensions links are unable to be parsed", func() {
 			results := []*models.Instance{
 				{
 					CollectionID: "cantabularflexibledefault-1",
@@ -4708,30 +4827,6 @@ func TestRewriteInstances_Error(t *testing.T) {
 					},
 					Edition:    "2021",
 					InstanceID: "1",
-					Links: &models.InstanceLinks{
-						Dataset: &models.LinkObject{
-							HRef: "://oldhost:1000/datasets/cantabular-flexible-default",
-							ID:   "cantabular-flexible-default",
-						},
-						Dimensions: &models.LinkObject{
-							HRef: "://oldhost:1000/code-lists/mmm-yy",
-						},
-						Edition: &models.LinkObject{
-							HRef: "://oldhost:1000/datasets/cantabular-flexible-default/editions/2021",
-							ID:   "2021",
-						},
-						Job: &models.LinkObject{
-							HRef: "://oldhost:1000/jobs/1",
-							ID:   "1",
-						},
-						Self: &models.LinkObject{
-							HRef: "://oldhost:1000/instances/1",
-						},
-						Version: &models.LinkObject{
-							HRef: "://oldhost:1000/datasets/cantabular-flexible-default/editions/2021/versions/1",
-							ID:   "1",
-						},
-					},
 				},
 				{
 					CollectionID: "cpihtest-1",
@@ -4769,34 +4864,10 @@ func TestRewriteInstances_Error(t *testing.T) {
 					},
 					Edition:    "time-series",
 					InstanceID: "2",
-					Links: &models.InstanceLinks{
-						Dataset: &models.LinkObject{
-							HRef: "://oldhost:1000/datasets/cpih01",
-							ID:   "cpih01",
-						},
-						Dimensions: &models.LinkObject{
-							HRef: "://oldhost:1000/code-lists/mmm-yy",
-						},
-						Edition: &models.LinkObject{
-							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series",
-							ID:   "time-series",
-						},
-						Job: &models.LinkObject{
-							HRef: "://oldhost:1000/jobs/2",
-							ID:   "2",
-						},
-						Self: &models.LinkObject{
-							HRef: "://oldhost:1000/instances/2",
-						},
-						Version: &models.LinkObject{
-							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
-							ID:   "1",
-						},
-					},
 				},
 			}
 
-			err := RewriteInstances(ctx, results, nil)
+			err := RewriteInstances(ctx, results, linksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
