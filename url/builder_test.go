@@ -36,3 +36,56 @@ func TestBuilder_BuildWebsiteDatasetVersionURL(t *testing.T) {
 		})
 	})
 }
+func TestBuilder_GetWebsiteURL(t *testing.T) {
+	Convey("Given a URL builder", t, func() {
+
+		websiteURL, _ := neturl.Parse("http://localhost:20000")
+		downloadServiceURL, _ := neturl.Parse("http://localhost:23600")
+		datasetAPIURL, _ := neturl.Parse("http://localhost:22000")
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL)
+
+		Convey("When GetWebsiteURL is called", func() {
+			returnedURL := urlBuilder.GetWebsiteURL()
+
+			Convey("Then the expected URL is returned", func() {
+				So(returnedURL, ShouldEqual, websiteURL)
+			})
+		})
+	})
+}
+
+func TestBuilder_GetDownloadServiceURL(t *testing.T) {
+	Convey("Given a URL builder", t, func() {
+
+		websiteURL, _ := neturl.Parse("http://localhost:20000")
+		downloadServiceURL, _ := neturl.Parse("http://localhost:23600")
+		datasetAPIURL, _ := neturl.Parse("http://localhost:22000")
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL)
+
+		Convey("When GetDownloadServiceURL is called", func() {
+			returnedURL := urlBuilder.GetDownloadServiceURL()
+
+			Convey("Then the expected URL is returned", func() {
+				So(returnedURL, ShouldEqual, downloadServiceURL)
+			})
+		})
+	})
+}
+
+func TestBuilder_GetDatasetAPIURL(t *testing.T) {
+	Convey("Given a URL builder", t, func() {
+
+		websiteURL, _ := neturl.Parse("http://localhost:20000")
+		downloadServiceURL, _ := neturl.Parse("http://localhost:23600")
+		datasetAPIURL, _ := neturl.Parse("http://localhost:22000")
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL)
+
+		Convey("When GetDatasetAPIURL is called", func() {
+			returnedURL := urlBuilder.GetDatasetAPIURL()
+
+			Convey("Then the expected URL is returned", func() {
+				So(returnedURL, ShouldEqual, datasetAPIURL)
+			})
+		})
+	})
+}
