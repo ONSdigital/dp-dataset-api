@@ -205,7 +205,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "someurl"
+                                "href": "http://localhost:22000/someurl"
                             }
                         },
                         "lowest_geography": "ltla"
@@ -221,7 +221,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "someurl"
+                                "href": "http://localhost:22000/someurl"
                             }
                         }
                     }
@@ -253,7 +253,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "someurl"
+                                "href": "http://localhost:22000/someurl"
                             }
                         },
                         "edition": "hello",
@@ -269,7 +269,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "someurl"
+                                "href": "http://localhost:22000/someurl"
                             }
                         },
                         "edition": "hello"
@@ -284,7 +284,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "someurl"
+                                "href": "http://localhost:22000/someurl"
                             }
                         },
                         "edition": "hello"
@@ -333,7 +333,7 @@ Feature: Dataset API
                     "id": "population-estimates"
                 },
                 "self": {
-                    "href": "someurl"
+                    "href": "http://localhost:22000/someurl"
                 }
             },
             "edition": "hello",
@@ -358,7 +358,7 @@ Feature: Dataset API
                     "id": "population-estimates"
                 },
                 "self": {
-                    "href": "someurl"
+                    "href": "http://localhost:22000/someurl"
                 }
             },
             "edition": "hello"

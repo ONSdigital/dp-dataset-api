@@ -100,7 +100,7 @@ Feature: Dataset API
                         "links": {
                             "code_list": {},
                             "options": {
-                                "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions//dimensions/geography/options",
+                                "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions/dimensions/geography/options",
                                 "id": "geography"
                             },
                             "version": {
