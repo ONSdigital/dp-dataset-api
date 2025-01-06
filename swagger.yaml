@@ -1125,7 +1125,7 @@ definitions:
     type: object
     properties:
       date:
-        description: "The date and time of when an alert took place"
+        description: "The date and time of publication of the version"
         type: string
       description:
         description: "Detail of what a user needs to be aware of for this dataset"
@@ -1208,8 +1208,11 @@ definitions:
     type: object
     required: ["id", "contacts", "description", "license", "links", "national_statistics", "title"]
     properties:
+      id:
+        description: "The unique id for the dataset"
+        type: string
       canonical_topic:
-        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy."
+        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the `Themes` field."
         type: string
       collection_id:
         $ref: '#/definitions/CollectionID'
@@ -1254,10 +1257,6 @@ definitions:
       next_release:
         description: "The next release date for a dataset"
         type: string
-      nomis_ref_url:
-        description: "The NOMIS reference url for the dataset"
-        type: string
-        example: "https://www.nomisweb.co.uk/census/2011/ks106ew"
       publications:
         description: "A list of publications for a dataset"
         type: array
@@ -1321,7 +1320,7 @@ definitions:
       state:
         $ref: '#/definitions/State'
       subtopics:
-        description: "A list of subtopic ids that the dataset relates to within the website taxonomy."
+        description: "A list of subtopic ids that the dataset relates to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the `Themes` field."
         type: array
         items:
           type: "string"
@@ -1345,12 +1344,17 @@ definitions:
       uri:
         description: "The uri to the location of this resource on the web"
         type: string
+      themes:
+        description: "A list of topics and subtopics that the dataset relates to within the website taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
+        type: array
+        items:
+          type: "string"
     
 
   Type:
     description: "The type for a dataset" 
     type: string
-    enum: [filterable, nomis]
+    enum: [filterable]
     default: "filterable"    
   IsBasedOn:
     description: "Information about the population-type that the dataset is based on (census 2021 only)" 
@@ -1837,7 +1841,7 @@ definitions:
         items:
           $ref: '#/definitions/Alert'
       canonical_topic:
-        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy."
+        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the `Themes` field."
         type: string
       contacts:
         description: "A list containing contact details of staticians for a dataset"
@@ -1959,7 +1963,7 @@ definitions:
         description: "The release frequency of a dataset"
         type: string
       subtopics:
-        description: "A list of subtopic ids that the dataset relates to within the website taxonomy."
+        description: "A list of subtopic ids that the dataset relates to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the `Themes` field."
         type: array
         items:
           type: "string"
@@ -1980,6 +1984,11 @@ definitions:
         type: string
       usage_notes:
         $ref: '#/definitions/UsageNotes'
+      themes:
+        description: "A list of topics and subtopics that the dataset relates to within the website taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
+        type: array
+        items:
+          type: "string"
   NewDatasetResponse:
     description: "A model for the response body when creating a new dataset"
     type: object

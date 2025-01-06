@@ -111,7 +111,8 @@ Feature: Dataset API - metadata
                 "canonical_topic": "new-canonical-topic-id",
                 "subtopics": ["a", "b"],
                 "state": "associated",
-                "title": "new title"
+                "title": "new title",
+                "themes": ["new-canonical-topic-id", "a", "b"]                
             }
             """
         And the version in the database for id "test-item-1" should be:
@@ -151,7 +152,8 @@ Feature: Dataset API - metadata
                 "canonical_topic": "new-canonical-topic-id",
                 "subtopics": ["a", "b"],
                 "state": "associated",
-                "title": "new title"
+                "title": "new title",
+                "themes": ["new-canonical-topic-id", "a", "b"]                
             }
             """
         And the version in the database for id "test-item-1" should be:
@@ -192,7 +194,8 @@ Feature: Dataset API - metadata
                 "canonical_topic": "new-canonical-topic-id",
                 "subtopics": ["a", "b"],
                 "state": "associated",
-                "title": "new title"
+                "title": "new title",
+                "themes": ["new-canonical-topic-id", "a", "b"]
             }
             """
         And the version in the database for id "test-item-1" should be:

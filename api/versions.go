@@ -617,6 +617,9 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 
 	if version.Alerts != nil {
 		alerts = append(alerts, *version.Alerts...)
+		for i := range alerts {
+			alerts[i].Date = currentVersion.ReleaseDate
+		}
 	}
 
 	if alerts != nil {

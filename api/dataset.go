@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 	"time"
 
@@ -34,6 +35,13 @@ var (
 		errs.ErrDatasetTypeInvalid:         true,
 		errs.ErrInvalidQueryParameter:      true,
 		errs.ErrMissingDatasetID:           true,
+		errs.ErrMissingDatasetType:         true,
+		errs.ErrMissingDatasetTitle:        true,
+		errs.ErrMissingDatasetDescription:  true,
+		errs.ErrMissingDatasetNextRelease:  true,
+		errs.ErrMissingDatasetKeywords:     true,
+		errs.ErrMissingDatasetThemes:       true,
+		errs.ErrMissingDatasetContacts:     true,
 	}
 
 	// errors that should return a 404 status
@@ -113,6 +121,9 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			log.Info(ctx, "getDataset endpoint: caller not authorised returning dataset", logData)
 
 			dataset.Current.ID = dataset.ID
+			if dataset.Current.Themes == nil {
+				dataset.Current.Themes = buildThemes(dataset.Current.CanonicalTopic, dataset.Current.Subtopics)
+			}
 			datasetResponse = dataset.Current
 		} else {
 			// User has valid authentication to get raw dataset document
@@ -121,7 +132,9 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 				return nil, errs.ErrDatasetNotFound
 			}
 			log.Info(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", logData)
-
+			if dataset.Current != nil && dataset.Current.Themes == nil {
+				dataset.Current.Themes = buildThemes(dataset.Current.CanonicalTopic, dataset.Current.Subtopics)
+			}
 			datasetResponse = dataset
 		}
 
@@ -130,7 +143,6 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "getDataset endpoint: failed to marshal dataset resource into bytes", err, logData)
 			return nil, err
 		}
-
 		return b, nil
 	}()
 
@@ -181,12 +193,6 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		datasetType, err := models.ValidateNomisURL(ctx, dataType.String(), dataset.NomisReferenceURL)
-		if err != nil {
-			log.Error(ctx, "addDataset endpoint: error dataset.Type mismatch", err, logData)
-			return nil, err
-		}
-
 		models.CleanDataset(dataset)
 
 		if err = models.ValidateDataset(dataset); err != nil {
@@ -194,7 +200,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		dataset.Type = datasetType
+		dataset.Type = dataType.String()
 		dataset.State = models.CreatedState
 		dataset.ID = datasetID
 
@@ -262,9 +268,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 
 	datasetID := dataset.ID
 
-	if datasetID == "" {
-		log.Error(ctx, "addDatasetNew endpoint: dataset ID is empty", nil)
-		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetID, w, nil)
+	if err = validateDatasetMandatoryFields(ctx, *dataset, w); err != nil {
 		return
 	}
 
@@ -289,13 +293,6 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	datasetType, err := models.ValidateNomisURL(ctx, dataType.String(), dataset.NomisReferenceURL)
-	if err != nil {
-		log.Error(ctx, "addDatasetNew endpoint: error dataset.Type mismatch", err, logData)
-		handleDatasetAPIErr(ctx, err, w, logData)
-		return
-	}
-
 	models.CleanDataset(dataset)
 	if err = models.ValidateDataset(dataset); err != nil {
 		log.Error(ctx, "addDatasetNew endpoint: dataset failed validation checks", err)
@@ -303,7 +300,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dataset.Type = datasetType
+	dataset.Type = dataType.String()
 	dataset.State = models.CreatedState
 
 	if dataset.Links == nil {
@@ -321,6 +318,10 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	dataset.Links.LatestVersion = nil
 
 	dataset.LastUpdated = time.Now()
+
+	if dataset.Themes == nil {
+		dataset.Themes = buildThemes(dataset.CanonicalTopic, dataset.Subtopics)
+	}
 
 	datasetDoc := &models.DatasetUpdate{
 		ID:   datasetID,
@@ -350,6 +351,76 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "addDatasetNew endpoint: request completed successfully", logData)
 }
 
+func validateDatasetMandatoryFields(ctx context.Context, dataset interface{}, w http.ResponseWriter) error {
+	v := reflect.ValueOf(dataset)
+	typeOfDataset := v.Type()
+
+	// find dataset type
+	var datasetType string
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldName := typeOfDataset.Field(i).Name
+		if fieldName == "Type" {
+			datasetType = field.String()
+		}
+	}
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldName := typeOfDataset.Field(i).Name
+
+		switch fieldName {
+		case "ID", "Type", "Title", "Description", "NextRelease":
+			if field.String() == "" {
+				err := getFieldError(fieldName)
+				log.Error(ctx, "addDatasetNew endpoint: dataset "+fieldName+" is empty", nil)
+				handleDatasetAPIErr(ctx, err, w, nil)
+				return err
+			}
+		case "Keywords", "Contacts":
+			if field.Len() == 0 {
+				err := getFieldError(fieldName)
+				log.Error(ctx, "addDatasetNew endpoint: dataset "+fieldName+" is empty", nil)
+				handleDatasetAPIErr(ctx, err, w, nil)
+				return err
+			}
+		case "Themes":
+			if datasetType == models.Static.String() {
+				if field.Len() == 0 {
+					err := getFieldError(fieldName)
+					log.Error(ctx, "addDatasetNew endpoint: dataset "+fieldName+" is empty", nil)
+					handleDatasetAPIErr(ctx, err, w, nil)
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func getFieldError(fieldName string) error {
+	switch fieldName {
+	case "ID":
+		return errs.ErrMissingDatasetID
+	case "Type":
+		return errs.ErrMissingDatasetType
+	case "Title":
+		return errs.ErrMissingDatasetTitle
+	case "Description":
+		return errs.ErrMissingDatasetDescription
+	case "NextRelease":
+		return errs.ErrMissingDatasetNextRelease
+	case "Keywords":
+		return errs.ErrMissingDatasetKeywords
+	case "Themes":
+		return errs.ErrMissingDatasetThemes
+	case "Contacts":
+		return errs.ErrMissingDatasetContacts
+	default:
+		return errs.ErrInternalServer
+	}
+}
+
 func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	defer dphttp.DrainBody(r)
 
@@ -372,12 +443,6 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		dataset.Type = currentDataset.Next.Type
-
-		_, err = models.ValidateNomisURL(ctx, dataset.Type, dataset.NomisReferenceURL)
-		if err != nil {
-			log.Error(ctx, "putDataset endpoint: error dataset.Type mismatch", err, data)
-			return err
-		}
 
 		models.CleanDataset(dataset)
 
@@ -534,4 +599,15 @@ func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	data["responseStatus"] = status
 	log.Error(ctx, "request unsuccessful", err, data)
 	http.Error(w, err.Error(), status)
+}
+
+func buildThemes(canonicalTopic string, subtopics []string) []string {
+	themes := []string{}
+	if canonicalTopic != "" {
+		themes = append(themes, canonicalTopic)
+	}
+	if subtopics != nil {
+		themes = append(themes, subtopics...)
+	}
+	return themes
 }
