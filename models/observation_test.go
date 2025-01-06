@@ -3,7 +3,7 @@ package models
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/smartystreets/goconvey/convey"
 )
 
 func TestCreateObservationsDoc(t *testing.T) {
@@ -15,7 +15,7 @@ func TestCreateObservationsDoc(t *testing.T) {
 	}
 
 	t.Parallel()
-	Convey("Successfully create observations document with all fields", t, func() {
+	convey.Convey("Successfully create observations document with all fields", t, func() {
 		// Setup test data
 		datasetDoc := &Dataset{
 			UnitOfMeasure: "Pounds Sterling",
@@ -26,44 +26,44 @@ func TestCreateObservationsDoc(t *testing.T) {
 		observations := setUpTestObservations()
 
 		observationsDoc := CreateObservationsDoc(query, versionDoc, datasetDoc, observations, queryParams, 0, 10000)
-		So(len(observationsDoc.Dimensions), ShouldEqual, 1)
-		So(observationsDoc.Dimensions["geography"].LinkObject.ID, ShouldEqual, "K00001")
-		So(observationsDoc.Dimensions["geography"].LinkObject.HRef, ShouldEqual, "http://localhost:8080/codelists/123/codes/K00001")
-		So(observationsDoc.Limit, ShouldEqual, 10000)
-		So(observationsDoc.Links.DatasetMetadata.HRef, ShouldEqual, "http://localhost:8080/datasets/123/editions/2017/versions/1/metadata")
-		So(observationsDoc.Links.Self.HRef, ShouldEqual, "http://localhost:8080/datasets/123/editions/2017/versions/1/observations?geography=K00001&age=*")
-		So(observationsDoc.Links.Version.HRef, ShouldEqual, "http://localhost:8080/datasets/123/editions/2017/versions/1")
-		So(observationsDoc.Links.Version.ID, ShouldEqual, "1")
-		So(len(observationsDoc.Observations), ShouldEqual, 2)
+		convey.So(len(observationsDoc.Dimensions), convey.ShouldEqual, 1)
+		convey.So(observationsDoc.Dimensions["geography"].LinkObject.ID, convey.ShouldEqual, "K00001")
+		convey.So(observationsDoc.Dimensions["geography"].LinkObject.HRef, convey.ShouldEqual, "http://localhost:8080/codelists/123/codes/K00001")
+		convey.So(observationsDoc.Limit, convey.ShouldEqual, 10000)
+		convey.So(observationsDoc.Links.DatasetMetadata.HRef, convey.ShouldEqual, "http://localhost:8080/datasets/123/editions/2017/versions/1/metadata")
+		convey.So(observationsDoc.Links.Self.HRef, convey.ShouldEqual, "http://localhost:8080/datasets/123/editions/2017/versions/1/observations?geography=K00001&age=*")
+		convey.So(observationsDoc.Links.Version.HRef, convey.ShouldEqual, "http://localhost:8080/datasets/123/editions/2017/versions/1")
+		convey.So(observationsDoc.Links.Version.ID, convey.ShouldEqual, "1")
+		convey.So(len(observationsDoc.Observations), convey.ShouldEqual, 2)
 
 		for i := 0; i < len(observationsDoc.Observations); i++ {
 			observation := observationsDoc.Observations[i]
 			if observation.Observation == "330" {
-				So(len(observation.Dimensions), ShouldEqual, 1)
-				So(observation.Dimensions["age"].HRef, ShouldEqual, "http://localhost:8080/codelists/456/codes/UTR234")
-				So(observation.Dimensions["age"].ID, ShouldEqual, "UTR234")
-				So(observation.Dimensions["age"].Label, ShouldEqual, "0-30")
-				So(len(observation.Metadata), ShouldEqual, 2)
-				So(observation.Metadata["confidence interval"], ShouldEqual, "0.7")
-				So(observation.Metadata["data marking"], ShouldEqual, "")
-				So(observation.Observation, ShouldEqual, "330")
+				convey.So(len(observation.Dimensions), convey.ShouldEqual, 1)
+				convey.So(observation.Dimensions["age"].HRef, convey.ShouldEqual, "http://localhost:8080/codelists/456/codes/UTR234")
+				convey.So(observation.Dimensions["age"].ID, convey.ShouldEqual, "UTR234")
+				convey.So(observation.Dimensions["age"].Label, convey.ShouldEqual, "0-30")
+				convey.So(len(observation.Metadata), convey.ShouldEqual, 2)
+				convey.So(observation.Metadata["confidence interval"], convey.ShouldEqual, "0.7")
+				convey.So(observation.Metadata["data marking"], convey.ShouldEqual, "")
+				convey.So(observation.Observation, convey.ShouldEqual, "330")
 			} else {
-				So(len(observation.Dimensions), ShouldEqual, 1)
-				So(observation.Dimensions["age"].HRef, ShouldEqual, "http://localhost:8080/codelists/456/codes/UTR567")
-				So(observation.Dimensions["age"].ID, ShouldEqual, "UTR567")
-				So(observation.Dimensions["age"].Label, ShouldEqual, "30+")
-				So(len(observation.Metadata), ShouldEqual, 2)
-				So(observation.Metadata["confidence interval"], ShouldEqual, "0.9")
-				So(observation.Metadata["data marking"], ShouldEqual, "p")
-				So(observation.Observation, ShouldEqual, "155")
+				convey.So(len(observation.Dimensions), convey.ShouldEqual, 1)
+				convey.So(observation.Dimensions["age"].HRef, convey.ShouldEqual, "http://localhost:8080/codelists/456/codes/UTR567")
+				convey.So(observation.Dimensions["age"].ID, convey.ShouldEqual, "UTR567")
+				convey.So(observation.Dimensions["age"].Label, convey.ShouldEqual, "30+")
+				convey.So(len(observation.Metadata), convey.ShouldEqual, 2)
+				convey.So(observation.Metadata["confidence interval"], convey.ShouldEqual, "0.9")
+				convey.So(observation.Metadata["data marking"], convey.ShouldEqual, "p")
+				convey.So(observation.Observation, convey.ShouldEqual, "155")
 			}
 		}
 
-		So(observationsDoc.Offset, ShouldEqual, 0)
-		So(observationsDoc.TotalObservations, ShouldEqual, 2)
-		So(observationsDoc.UnitOfMeasure, ShouldEqual, "Pounds Sterling")
-		So(observationsDoc.UsageNotes, ShouldNotBeNil)
-		So(observationsDoc.UsageNotes, ShouldResemble, &[]UsageNote{
+		convey.So(observationsDoc.Offset, convey.ShouldEqual, 0)
+		convey.So(observationsDoc.TotalObservations, convey.ShouldEqual, 2)
+		convey.So(observationsDoc.UnitOfMeasure, convey.ShouldEqual, "Pounds Sterling")
+		convey.So(observationsDoc.UsageNotes, convey.ShouldNotBeNil)
+		convey.So(observationsDoc.UsageNotes, convey.ShouldResemble, &[]UsageNote{
 			{Title: "Confidence Interval", Note: "A value identifying the level of confidence of the observational data"},
 			{Title: "data marking", Note: "The marking of observational data?"},
 		})

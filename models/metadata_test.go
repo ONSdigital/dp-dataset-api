@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/url"
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/smartystreets/goconvey/convey"
 )
 
 func TestCreateMetadata(t *testing.T) {
-	Convey("Given a dataset and a version objects", t, func() {
+	convey.Convey("Given a dataset and a version objects", t, func() {
 		dataset := Dataset{
 			ID:             "9875",
 			CanonicalTopic: "1234",
@@ -118,76 +118,76 @@ func TestCreateMetadata(t *testing.T) {
 			Version:       1,
 		}
 
-		Convey("When we call CreateCantabularMetaDataDoc", func() {
+		convey.Convey("When we call CreateCantabularMetaDataDoc", func() {
 			metaDataDoc := CreateCantabularMetaDataDoc(&dataset, &version)
 
-			Convey("Then it returns a metadata object with all the Cantabular fields populated", func() {
-				So(metaDataDoc.Description, ShouldEqual, dataset.Description)
-				So(metaDataDoc.Keywords, ShouldResemble, dataset.Keywords)
-				So(metaDataDoc.Title, ShouldEqual, dataset.Title)
-				So(metaDataDoc.UnitOfMeasure, ShouldEqual, dataset.UnitOfMeasure)
-				So(metaDataDoc.Contacts, ShouldResemble, dataset.Contacts)
-				So(metaDataDoc.URI, ShouldEqual, dataset.URI)
-				So(metaDataDoc.QMI, ShouldResemble, dataset.QMI)
-				So(metaDataDoc.DatasetLinks, ShouldResemble, dataset.Links)
-				So(metaDataDoc.RelatedContent, ShouldResemble, dataset.RelatedContent)
-				So(metaDataDoc.CanonicalTopic, ShouldEqual, dataset.CanonicalTopic)
-				So(metaDataDoc.Subtopics, ShouldResemble, dataset.Subtopics)
+			convey.Convey("Then it returns a metadata object with all the Cantabular fields populated", func() {
+				convey.So(metaDataDoc.Description, convey.ShouldEqual, dataset.Description)
+				convey.So(metaDataDoc.Keywords, convey.ShouldResemble, dataset.Keywords)
+				convey.So(metaDataDoc.Title, convey.ShouldEqual, dataset.Title)
+				convey.So(metaDataDoc.UnitOfMeasure, convey.ShouldEqual, dataset.UnitOfMeasure)
+				convey.So(metaDataDoc.Contacts, convey.ShouldResemble, dataset.Contacts)
+				convey.So(metaDataDoc.URI, convey.ShouldEqual, dataset.URI)
+				convey.So(metaDataDoc.QMI, convey.ShouldResemble, dataset.QMI)
+				convey.So(metaDataDoc.DatasetLinks, convey.ShouldResemble, dataset.Links)
+				convey.So(metaDataDoc.RelatedContent, convey.ShouldResemble, dataset.RelatedContent)
+				convey.So(metaDataDoc.CanonicalTopic, convey.ShouldEqual, dataset.CanonicalTopic)
+				convey.So(metaDataDoc.Subtopics, convey.ShouldResemble, dataset.Subtopics)
 
-				So(metaDataDoc.CSVHeader, ShouldResemble, version.Headers)
-				So(metaDataDoc.Dimensions, ShouldResemble, version.Dimensions)
-				So(metaDataDoc.ReleaseDate, ShouldEqual, version.ReleaseDate)
-				So(metaDataDoc.Version, ShouldEqual, version.Version)
+				convey.So(metaDataDoc.CSVHeader, convey.ShouldResemble, version.Headers)
+				convey.So(metaDataDoc.Dimensions, convey.ShouldResemble, version.Dimensions)
+				convey.So(metaDataDoc.ReleaseDate, convey.ShouldEqual, version.ReleaseDate)
+				convey.So(metaDataDoc.Version, convey.ShouldEqual, version.Version)
 
-				So(metaDataDoc.Downloads.CSV.HRef, ShouldEqual, csvDownload.HRef)
-				So(metaDataDoc.Downloads.CSV.Size, ShouldEqual, csvDownload.Size)
-				So(metaDataDoc.Downloads.CSV.Private, ShouldEqual, "")
-				So(metaDataDoc.Downloads.CSV.Public, ShouldEqual, "")
-				So(metaDataDoc.Downloads.CSVW.HRef, ShouldEqual, csvwDownload.HRef)
-				So(metaDataDoc.Downloads.CSVW.Size, ShouldEqual, csvwDownload.Size)
-				So(metaDataDoc.Downloads.CSVW.Private, ShouldEqual, "")
-				So(metaDataDoc.Downloads.CSVW.Public, ShouldEqual, "")
-				So(metaDataDoc.Downloads.TXT.HRef, ShouldEqual, txtDownload.HRef)
-				So(metaDataDoc.Downloads.TXT.Size, ShouldEqual, txtDownload.Size)
-				So(metaDataDoc.Downloads.TXT.Private, ShouldEqual, "")
-				So(metaDataDoc.Downloads.TXT.Public, ShouldEqual, "")
-				So(metaDataDoc.Downloads.XLS.HRef, ShouldEqual, xlsDownload.HRef)
-				So(metaDataDoc.Downloads.XLS.Size, ShouldEqual, xlsDownload.Size)
-				So(metaDataDoc.Downloads.XLS.Private, ShouldEqual, "")
-				So(metaDataDoc.Downloads.XLS.Public, ShouldEqual, "")
-				So(metaDataDoc.Downloads.XLSX.HRef, ShouldEqual, xlsxDownload.HRef)
-				So(metaDataDoc.Downloads.XLSX.Size, ShouldEqual, xlsxDownload.Size)
-				So(metaDataDoc.Downloads.XLSX.Private, ShouldEqual, xlsxDownload.Private) // TODO: Should it be cleared?
-				So(metaDataDoc.Downloads.XLSX.Public, ShouldEqual, xlsxDownload.Public)   // TODO: Should it be cleared?
-				So(metaDataDoc.IsBasedOn, ShouldResemble, &IsBasedOn{
+				convey.So(metaDataDoc.Downloads.CSV.HRef, convey.ShouldEqual, csvDownload.HRef)
+				convey.So(metaDataDoc.Downloads.CSV.Size, convey.ShouldEqual, csvDownload.Size)
+				convey.So(metaDataDoc.Downloads.CSV.Private, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Downloads.CSV.Public, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Downloads.CSVW.HRef, convey.ShouldEqual, csvwDownload.HRef)
+				convey.So(metaDataDoc.Downloads.CSVW.Size, convey.ShouldEqual, csvwDownload.Size)
+				convey.So(metaDataDoc.Downloads.CSVW.Private, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Downloads.CSVW.Public, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Downloads.TXT.HRef, convey.ShouldEqual, txtDownload.HRef)
+				convey.So(metaDataDoc.Downloads.TXT.Size, convey.ShouldEqual, txtDownload.Size)
+				convey.So(metaDataDoc.Downloads.TXT.Private, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Downloads.TXT.Public, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Downloads.XLS.HRef, convey.ShouldEqual, xlsDownload.HRef)
+				convey.So(metaDataDoc.Downloads.XLS.Size, convey.ShouldEqual, xlsDownload.Size)
+				convey.So(metaDataDoc.Downloads.XLS.Private, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Downloads.XLS.Public, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Downloads.XLSX.HRef, convey.ShouldEqual, xlsxDownload.HRef)
+				convey.So(metaDataDoc.Downloads.XLSX.Size, convey.ShouldEqual, xlsxDownload.Size)
+				convey.So(metaDataDoc.Downloads.XLSX.Private, convey.ShouldEqual, xlsxDownload.Private) // TODO: convey.Should it be cleared?
+				convey.So(metaDataDoc.Downloads.XLSX.Public, convey.ShouldEqual, xlsxDownload.Public)   // TODO: convey.Should it be cleared?
+				convey.So(metaDataDoc.IsBasedOn, convey.ShouldResemble, &IsBasedOn{
 					ID:   "UR_HH",
 					Type: "All usual residents in households",
 				})
-				So(metaDataDoc.Version, ShouldEqual, 1)
+				convey.So(metaDataDoc.Version, convey.ShouldEqual, 1)
 
-				// TODO: Should it include xlsx?
-				So(metaDataDoc.Distribution, ShouldResemble, []string{"json", "csv", "csvw", "xls", "txt"})
+				// TODO: convey.Should it include xlsx?
+				convey.So(metaDataDoc.Distribution, convey.ShouldResemble, []string{"json", "csv", "csvw", "xls", "txt"})
 			})
 
-			Convey("And the non-Cantabular fields are empty", func() {
-				So(metaDataDoc.Alerts, ShouldBeNil)
-				So(metaDataDoc.LatestChanges, ShouldBeNil)
-				So(metaDataDoc.Links, ShouldBeNil)
-				So(metaDataDoc.License, ShouldEqual, "")
-				So(metaDataDoc.Methodologies, ShouldBeNil)
-				So(metaDataDoc.NationalStatistic, ShouldBeNil)
-				So(metaDataDoc.NextRelease, ShouldEqual, "")
-				So(metaDataDoc.Publications, ShouldBeNil)
-				So(metaDataDoc.Publisher, ShouldBeNil)
-				So(metaDataDoc.RelatedDatasets, ShouldBeNil)
-				So(metaDataDoc.ReleaseFrequency, ShouldEqual, "")
-				So(metaDataDoc.Temporal, ShouldBeNil)
-				So(metaDataDoc.Theme, ShouldEqual, "")
-				So(metaDataDoc.UsageNotes, ShouldBeNil)
+			convey.Convey("And the non-Cantabular fields are empty", func() {
+				convey.So(metaDataDoc.Alerts, convey.ShouldBeNil)
+				convey.So(metaDataDoc.LatestChanges, convey.ShouldBeNil)
+				convey.So(metaDataDoc.Links, convey.ShouldBeNil)
+				convey.So(metaDataDoc.License, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Methodologies, convey.ShouldBeNil)
+				convey.So(metaDataDoc.NationalStatistic, convey.ShouldBeNil)
+				convey.So(metaDataDoc.NextRelease, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Publications, convey.ShouldBeNil)
+				convey.So(metaDataDoc.Publisher, convey.ShouldBeNil)
+				convey.So(metaDataDoc.RelatedDatasets, convey.ShouldBeNil)
+				convey.So(metaDataDoc.ReleaseFrequency, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Temporal, convey.ShouldBeNil)
+				convey.So(metaDataDoc.Theme, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.UsageNotes, convey.ShouldBeNil)
 			})
 		})
 
-		Convey("When we call CreateMetaDataDoc", func() {
+		convey.Convey("When we call CreateMetaDataDoc", func() {
 			codeListAPIURL, _ := neturl.Parse("http://localhost:22400")
 			datasetAPIURL, _ := neturl.Parse("http://localhost:22000")
 			downloadServiceURL, _ := neturl.Parse("http://localhost:23600")
@@ -197,83 +197,83 @@ func TestCreateMetadata(t *testing.T) {
 			metaDataDoc := CreateMetaDataDoc(&dataset, &version, urlBuilder)
 			expectedThemes := []string{"1234", "5678", "9012"}
 
-			Convey("Then it returns a metadata object with all the CMD fields populated", func() {
-				So(metaDataDoc.Description, ShouldEqual, dataset.Description)
-				So(metaDataDoc.Keywords, ShouldResemble, dataset.Keywords)
-				So(metaDataDoc.Title, ShouldEqual, dataset.Title)
-				So(metaDataDoc.UnitOfMeasure, ShouldEqual, dataset.UnitOfMeasure)
-				So(metaDataDoc.Contacts, ShouldResemble, dataset.Contacts)
-				So(metaDataDoc.License, ShouldResemble, dataset.License)
-				So(metaDataDoc.Methodologies, ShouldResemble, dataset.Methodologies)
-				So(metaDataDoc.NationalStatistic, ShouldResemble, dataset.NationalStatistic)
-				So(metaDataDoc.NextRelease, ShouldResemble, dataset.NextRelease)
-				So(metaDataDoc.Publications, ShouldResemble, dataset.Publications)
-				So(metaDataDoc.Publisher, ShouldResemble, dataset.Publisher)
-				So(metaDataDoc.RelatedDatasets, ShouldResemble, dataset.RelatedDatasets)
-				So(metaDataDoc.ReleaseFrequency, ShouldResemble, dataset.ReleaseFrequency)
-				So(metaDataDoc.Theme, ShouldResemble, dataset.Theme)
-				So(metaDataDoc.URI, ShouldEqual, dataset.URI)
-				So(metaDataDoc.QMI, ShouldResemble, dataset.QMI)
-				So(metaDataDoc.CanonicalTopic, ShouldEqual, dataset.CanonicalTopic)
-				So(metaDataDoc.Subtopics, ShouldResemble, dataset.Subtopics)
-				So(metaDataDoc.Links.AccessRights, ShouldEqual, dataset.Links.AccessRights)
-				So(metaDataDoc.Themes, ShouldEqual, expectedThemes)
+			convey.Convey("Then it returns a metadata object with all the CMD fields populated", func() {
+				convey.So(metaDataDoc.Description, convey.ShouldEqual, dataset.Description)
+				convey.So(metaDataDoc.Keywords, convey.ShouldResemble, dataset.Keywords)
+				convey.So(metaDataDoc.Title, convey.ShouldEqual, dataset.Title)
+				convey.So(metaDataDoc.UnitOfMeasure, convey.ShouldEqual, dataset.UnitOfMeasure)
+				convey.So(metaDataDoc.Contacts, convey.ShouldResemble, dataset.Contacts)
+				convey.So(metaDataDoc.License, convey.ShouldResemble, dataset.License)
+				convey.So(metaDataDoc.Methodologies, convey.ShouldResemble, dataset.Methodologies)
+				convey.So(metaDataDoc.NationalStatistic, convey.ShouldResemble, dataset.NationalStatistic)
+				convey.So(metaDataDoc.NextRelease, convey.ShouldResemble, dataset.NextRelease)
+				convey.So(metaDataDoc.Publications, convey.ShouldResemble, dataset.Publications)
+				convey.So(metaDataDoc.Publisher, convey.ShouldResemble, dataset.Publisher)
+				convey.So(metaDataDoc.RelatedDatasets, convey.ShouldResemble, dataset.RelatedDatasets)
+				convey.So(metaDataDoc.ReleaseFrequency, convey.ShouldResemble, dataset.ReleaseFrequency)
+				convey.So(metaDataDoc.Theme, convey.ShouldResemble, dataset.Theme)
+				convey.So(metaDataDoc.URI, convey.ShouldEqual, dataset.URI)
+				convey.So(metaDataDoc.QMI, convey.ShouldResemble, dataset.QMI)
+				convey.So(metaDataDoc.CanonicalTopic, convey.ShouldEqual, dataset.CanonicalTopic)
+				convey.So(metaDataDoc.Subtopics, convey.ShouldResemble, dataset.Subtopics)
+				convey.So(metaDataDoc.Links.AccessRights, convey.ShouldEqual, dataset.Links.AccessRights)
+				convey.So(metaDataDoc.Themes, convey.ShouldEqual, expectedThemes)
 
-				So(metaDataDoc.Alerts, ShouldEqual, version.Alerts)
-				So(metaDataDoc.Dimensions, ShouldResemble, version.Dimensions)
-				So(metaDataDoc.LatestChanges, ShouldEqual, version.LatestChanges)
-				So(metaDataDoc.ReleaseDate, ShouldEqual, version.ReleaseDate)
-				So(metaDataDoc.Temporal, ShouldEqual, version.Temporal)
-				So(metaDataDoc.UsageNotes, ShouldEqual, version.UsageNotes)
+				convey.So(metaDataDoc.Alerts, convey.ShouldEqual, version.Alerts)
+				convey.So(metaDataDoc.Dimensions, convey.ShouldResemble, version.Dimensions)
+				convey.So(metaDataDoc.LatestChanges, convey.ShouldEqual, version.LatestChanges)
+				convey.So(metaDataDoc.ReleaseDate, convey.ShouldEqual, version.ReleaseDate)
+				convey.So(metaDataDoc.Temporal, convey.ShouldEqual, version.Temporal)
+				convey.So(metaDataDoc.UsageNotes, convey.ShouldEqual, version.UsageNotes)
 
-				So(metaDataDoc.Downloads.CSV.HRef, ShouldEqual, csvDownload.HRef)
-				So(metaDataDoc.Downloads.CSV.Size, ShouldEqual, csvDownload.Size)
-				So(metaDataDoc.Downloads.CSV.Private, ShouldEqual, "")
-				So(metaDataDoc.Downloads.CSV.Public, ShouldEqual, "")
-				So(metaDataDoc.Downloads.CSVW.HRef, ShouldEqual, csvwDownload.HRef)
-				So(metaDataDoc.Downloads.CSVW.Size, ShouldEqual, csvwDownload.Size)
-				So(metaDataDoc.Downloads.CSVW.Private, ShouldEqual, "")
-				So(metaDataDoc.Downloads.CSVW.Public, ShouldEqual, "")
-				So(metaDataDoc.Downloads.TXT.HRef, ShouldEqual, txtDownload.HRef)
-				So(metaDataDoc.Downloads.TXT.Size, ShouldEqual, txtDownload.Size)
-				So(metaDataDoc.Downloads.TXT.Private, ShouldEqual, txtDownload.Private) // TODO: Should it be cleared?
-				So(metaDataDoc.Downloads.TXT.Public, ShouldEqual, txtDownload.Public)   // TODO: Should it be cleared?
-				So(metaDataDoc.Downloads.XLS.HRef, ShouldEqual, xlsDownload.HRef)
-				So(metaDataDoc.Downloads.XLS.Size, ShouldEqual, xlsDownload.Size)
-				So(metaDataDoc.Downloads.XLS.Private, ShouldEqual, "")
-				So(metaDataDoc.Downloads.XLS.Public, ShouldEqual, "")
-				So(metaDataDoc.Downloads.XLSX.Private, ShouldEqual, xlsxDownload.Private) // TODO: Should it be cleared?
-				So(metaDataDoc.Downloads.XLSX.Public, ShouldEqual, xlsxDownload.Public)   // TODO: Should it be cleared?
+				convey.So(metaDataDoc.Downloads.CSV.HRef, convey.ShouldEqual, csvDownload.HRef)
+				convey.So(metaDataDoc.Downloads.CSV.Size, convey.ShouldEqual, csvDownload.Size)
+				convey.So(metaDataDoc.Downloads.CSV.Private, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Downloads.CSV.Public, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Downloads.CSVW.HRef, convey.ShouldEqual, csvwDownload.HRef)
+				convey.So(metaDataDoc.Downloads.CSVW.Size, convey.ShouldEqual, csvwDownload.Size)
+				convey.So(metaDataDoc.Downloads.CSVW.Private, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Downloads.CSVW.Public, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Downloads.TXT.HRef, convey.ShouldEqual, txtDownload.HRef)
+				convey.So(metaDataDoc.Downloads.TXT.Size, convey.ShouldEqual, txtDownload.Size)
+				convey.So(metaDataDoc.Downloads.TXT.Private, convey.ShouldEqual, txtDownload.Private) // TODO: convey.Should it be cleared?
+				convey.So(metaDataDoc.Downloads.TXT.Public, convey.ShouldEqual, txtDownload.Public)   // TODO: convey.Should it be cleared?
+				convey.So(metaDataDoc.Downloads.XLS.HRef, convey.ShouldEqual, xlsDownload.HRef)
+				convey.So(metaDataDoc.Downloads.XLS.Size, convey.ShouldEqual, xlsDownload.Size)
+				convey.So(metaDataDoc.Downloads.XLS.Private, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Downloads.XLS.Public, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Downloads.XLSX.Private, convey.ShouldEqual, xlsxDownload.Private) // TODO: convey.Should it be cleared?
+				convey.So(metaDataDoc.Downloads.XLSX.Public, convey.ShouldEqual, xlsxDownload.Public)   // TODO: convey.Should it be cleared?
 
-				So(metaDataDoc.Links.Self.HRef, ShouldEqual, version.Links.Version.HRef+"/metadata")
-				So(metaDataDoc.Links.Self.ID, ShouldEqual, "")
-				So(metaDataDoc.Links.Spatial, ShouldEqual, version.Links.Spatial)
-				So(metaDataDoc.Links.Version, ShouldEqual, version.Links.Version)
+				convey.So(metaDataDoc.Links.Self.HRef, convey.ShouldEqual, version.Links.Version.HRef+"/metadata")
+				convey.So(metaDataDoc.Links.Self.ID, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.Links.Spatial, convey.ShouldEqual, version.Links.Spatial)
+				convey.So(metaDataDoc.Links.Version, convey.ShouldEqual, version.Links.Version)
 				expectedWebsiteHref := fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d",
 					websiteURL, dataset.ID, version.Links.Edition.ID, version.Version)
-				So(metaDataDoc.Links.WebsiteVersion.HRef, ShouldEqual, expectedWebsiteHref)
-				So(metaDataDoc.Links.WebsiteVersion.ID, ShouldEqual, "")
-				So(metaDataDoc.IsBasedOn, ShouldResemble, &IsBasedOn{
+				convey.So(metaDataDoc.Links.WebsiteVersion.HRef, convey.ShouldEqual, expectedWebsiteHref)
+				convey.So(metaDataDoc.Links.WebsiteVersion.ID, convey.ShouldEqual, "")
+				convey.So(metaDataDoc.IsBasedOn, convey.ShouldResemble, &IsBasedOn{
 					ID:   "UR_HH",
 					Type: "All usual residents in households",
 				})
 
-				// TODO: Should it include xlsx?
-				So(metaDataDoc.Distribution, ShouldResemble, []string{"json", "csv", "csvw", "xls", "txt"})
+				// TODO: convey.Should it include xlsx?
+				convey.So(metaDataDoc.Distribution, convey.ShouldResemble, []string{"json", "csv", "csvw", "xls", "txt"})
 			})
 
-			Convey("And the non-CMD fields are empty", func() {
-				So(metaDataDoc.CSVHeader, ShouldBeNil)
-				So(metaDataDoc.DatasetLinks, ShouldBeNil)
-				So(metaDataDoc.RelatedContent, ShouldBeNil)
-				So(metaDataDoc.Version, ShouldEqual, 0)
+			convey.Convey("And the non-CMD fields are empty", func() {
+				convey.So(metaDataDoc.CSVHeader, convey.ShouldBeNil)
+				convey.So(metaDataDoc.DatasetLinks, convey.ShouldBeNil)
+				convey.So(metaDataDoc.RelatedContent, convey.ShouldBeNil)
+				convey.So(metaDataDoc.Version, convey.ShouldEqual, 0)
 			})
 		})
 	})
 }
 
 func TestUpdateMetadata(t *testing.T) {
-	Convey("Given an EditableMetadata objects", t, func() {
+	convey.Convey("Given an EditableMetadata objects", t, func() {
 		isNationalStatistic := true
 		isAreaType := true
 		numberOfOptions := 8
@@ -366,7 +366,7 @@ func TestUpdateMetadata(t *testing.T) {
 		collectionID := "collection-id"
 		datasetID := "dataset-id"
 
-		Convey("And a dataset", func() {
+		convey.Convey("And a dataset", func() {
 			lastUpdated := time.Now()
 			datasetType := "type"
 			state := PublishedState
@@ -411,44 +411,44 @@ func TestUpdateMetadata(t *testing.T) {
 				IsBasedOn:    &isBasedOn,
 			}
 
-			Convey("When we call UpdateMetadata on the dataset", func() {
+			convey.Convey("When we call UpdateMetadata on the dataset", func() {
 				dataset.UpdateMetadata(metadata)
 
-				Convey("Then all the metadata fields are updated correctly", func() {
-					So(dataset.CanonicalTopic, ShouldEqual, metadata.CanonicalTopic)
-					So(dataset.Title, ShouldEqual, metadata.Title)
-					So(dataset.Contacts, ShouldResemble, metadata.Contacts)
-					So(dataset.NextRelease, ShouldEqual, metadata.NextRelease)
-					So(dataset.License, ShouldEqual, metadata.License)
-					So(dataset.Description, ShouldEqual, metadata.Description)
-					So(dataset.UnitOfMeasure, ShouldEqual, metadata.UnitOfMeasure)
-					So(dataset.Keywords, ShouldResemble, metadata.Keywords)
-					So(dataset.Subtopics, ShouldResemble, metadata.Subtopics)
-					So(dataset.RelatedContent, ShouldResemble, metadata.RelatedContent)
-					So(dataset.NationalStatistic, ShouldEqual, metadata.NationalStatistic)
-					So(dataset.Methodologies, ShouldResemble, metadata.Methodologies)
-					So(dataset.QMI, ShouldResemble, metadata.QMI)
-					So(dataset.ReleaseFrequency, ShouldEqual, metadata.ReleaseFrequency)
-					So(dataset.RelatedDatasets, ShouldResemble, metadata.RelatedDatasets)
-					So(dataset.Publications, ShouldResemble, metadata.Publications)
-					So(dataset.Survey, ShouldEqual, metadata.Survey)
+				convey.Convey("Then all the metadata fields are updated correctly", func() {
+					convey.So(dataset.CanonicalTopic, convey.ShouldEqual, metadata.CanonicalTopic)
+					convey.So(dataset.Title, convey.ShouldEqual, metadata.Title)
+					convey.So(dataset.Contacts, convey.ShouldResemble, metadata.Contacts)
+					convey.So(dataset.NextRelease, convey.ShouldEqual, metadata.NextRelease)
+					convey.So(dataset.License, convey.ShouldEqual, metadata.License)
+					convey.So(dataset.Description, convey.ShouldEqual, metadata.Description)
+					convey.So(dataset.UnitOfMeasure, convey.ShouldEqual, metadata.UnitOfMeasure)
+					convey.So(dataset.Keywords, convey.ShouldResemble, metadata.Keywords)
+					convey.So(dataset.Subtopics, convey.ShouldResemble, metadata.Subtopics)
+					convey.So(dataset.RelatedContent, convey.ShouldResemble, metadata.RelatedContent)
+					convey.So(dataset.NationalStatistic, convey.ShouldEqual, metadata.NationalStatistic)
+					convey.So(dataset.Methodologies, convey.ShouldResemble, metadata.Methodologies)
+					convey.So(dataset.QMI, convey.ShouldResemble, metadata.QMI)
+					convey.So(dataset.ReleaseFrequency, convey.ShouldEqual, metadata.ReleaseFrequency)
+					convey.So(dataset.RelatedDatasets, convey.ShouldResemble, metadata.RelatedDatasets)
+					convey.So(dataset.Publications, convey.ShouldResemble, metadata.Publications)
+					convey.So(dataset.Survey, convey.ShouldEqual, metadata.Survey)
 				})
-				Convey("And none of the non-metadata fields is updated", func() {
-					So(dataset.CollectionID, ShouldEqual, collectionID)
-					So(dataset.ID, ShouldEqual, datasetID)
-					So(dataset.LastUpdated, ShouldEqual, lastUpdated)
-					So(dataset.Links, ShouldEqual, &links)
-					So(dataset.Publisher, ShouldEqual, &publisher)
-					So(dataset.State, ShouldEqual, state)
-					So(dataset.Theme, ShouldEqual, theme)
-					So(dataset.URI, ShouldEqual, uri)
-					So(dataset.Type, ShouldEqual, datasetType)
-					So(dataset.IsBasedOn, ShouldEqual, &isBasedOn)
+				convey.Convey("And none of the non-metadata fields is updated", func() {
+					convey.So(dataset.CollectionID, convey.ShouldEqual, collectionID)
+					convey.So(dataset.ID, convey.ShouldEqual, datasetID)
+					convey.So(dataset.LastUpdated, convey.ShouldEqual, lastUpdated)
+					convey.So(dataset.Links, convey.ShouldEqual, &links)
+					convey.So(dataset.Publisher, convey.ShouldEqual, &publisher)
+					convey.So(dataset.State, convey.ShouldEqual, state)
+					convey.So(dataset.Theme, convey.ShouldEqual, theme)
+					convey.So(dataset.URI, convey.ShouldEqual, uri)
+					convey.So(dataset.Type, convey.ShouldEqual, datasetType)
+					convey.So(dataset.IsBasedOn, convey.ShouldEqual, &isBasedOn)
 				})
 			})
 		})
 
-		Convey("And a version", func() {
+		convey.Convey("And a version", func() {
 			downloads := DownloadList{
 				CSV: &DownloadObject{
 					HRef:    "https://www.aws/123csv",
@@ -495,33 +495,33 @@ func TestUpdateMetadata(t *testing.T) {
 				LowestGeography: lowestGeography,
 			}
 
-			Convey("When we call UpdateMetadata on the version", func() {
+			convey.Convey("When we call UpdateMetadata on the version", func() {
 				version.UpdateMetadata(metadata)
 
-				Convey("Then all the metadata fields are updated correctly", func() {
-					So(version.ReleaseDate, ShouldEqual, metadata.ReleaseDate)
-					So(version.Alerts, ShouldResemble, metadata.Alerts)
-					So(version.Dimensions, ShouldResemble, metadata.Dimensions)
-					So(version.UsageNotes, ShouldResemble, metadata.UsageNotes)
-					So(version.LatestChanges, ShouldResemble, metadata.LatestChanges)
+				convey.Convey("Then all the metadata fields are updated correctly", func() {
+					convey.So(version.ReleaseDate, convey.ShouldEqual, metadata.ReleaseDate)
+					convey.So(version.Alerts, convey.ShouldResemble, metadata.Alerts)
+					convey.So(version.Dimensions, convey.ShouldResemble, metadata.Dimensions)
+					convey.So(version.UsageNotes, convey.ShouldResemble, metadata.UsageNotes)
+					convey.So(version.LatestChanges, convey.ShouldResemble, metadata.LatestChanges)
 				})
 
-				Convey("And none of the non-metadata fields is updated", func() {
-					So(version.CollectionID, ShouldEqual, collectionID)
-					So(version.DatasetID, ShouldEqual, datasetID)
-					So(version.Downloads, ShouldEqual, &downloads)
-					So(version.Edition, ShouldEqual, edition)
-					So(version.Headers, ShouldResemble, headers)
-					So(version.ID, ShouldEqual, versionID)
-					So(version.LastUpdated, ShouldEqual, lastUpdated)
-					So(version.Links, ShouldEqual, &links)
-					So(version.State, ShouldEqual, state)
-					So(version.Temporal, ShouldEqual, &temporalFrequencies)
-					So(version.IsBasedOn, ShouldEqual, &isBasedOn)
-					So(version.Version, ShouldEqual, versionNumber)
-					So(version.Type, ShouldEqual, versionType)
-					So(version.ETag, ShouldEqual, etag)
-					So(version.LowestGeography, ShouldEqual, lowestGeography)
+				convey.Convey("And none of the non-metadata fields is updated", func() {
+					convey.So(version.CollectionID, convey.ShouldEqual, collectionID)
+					convey.So(version.DatasetID, convey.ShouldEqual, datasetID)
+					convey.So(version.Downloads, convey.ShouldEqual, &downloads)
+					convey.So(version.Edition, convey.ShouldEqual, edition)
+					convey.So(version.Headers, convey.ShouldResemble, headers)
+					convey.So(version.ID, convey.ShouldEqual, versionID)
+					convey.So(version.LastUpdated, convey.ShouldEqual, lastUpdated)
+					convey.So(version.Links, convey.ShouldEqual, &links)
+					convey.So(version.State, convey.ShouldEqual, state)
+					convey.So(version.Temporal, convey.ShouldEqual, &temporalFrequencies)
+					convey.So(version.IsBasedOn, convey.ShouldEqual, &isBasedOn)
+					convey.So(version.Version, convey.ShouldEqual, versionNumber)
+					convey.So(version.Type, convey.ShouldEqual, versionType)
+					convey.So(version.ETag, convey.ShouldEqual, etag)
+					convey.So(version.LowestGeography, convey.ShouldEqual, lowestGeography)
 				})
 			})
 		})

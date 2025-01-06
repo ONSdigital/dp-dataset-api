@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/ONSdigital/dp-dataset-api/url"
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/smartystreets/goconvey/convey"
 )
 
 var (
@@ -24,87 +24,87 @@ const (
 )
 
 func TestBuilder_BuildWebsiteDatasetVersionURL(t *testing.T) {
-	Convey("Given a URL builder", t, func() {
+	convey.Convey("Given a URL builder", t, func() {
 		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 
-		Convey("When BuildWebsiteDatasetVersionURL is called", func() {
+		convey.Convey("When BuildWebsiteDatasetVersionURL is called", func() {
 			builtURL := urlBuilder.BuildWebsiteDatasetVersionURL(datasetID, edition, version)
 
 			expectedURL := fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s",
 				websiteURL.String(), datasetID, edition, version)
 
-			Convey("Then the expected URL is returned", func() {
-				So(builtURL, ShouldEqual, expectedURL)
+			convey.Convey("Then the expected URL is returned", func() {
+				convey.So(builtURL, convey.ShouldEqual, expectedURL)
 			})
 		})
 	})
 }
 
 func TestBuilder_GetWebsiteURL(t *testing.T) {
-	Convey("Given a URL builder", t, func() {
+	convey.Convey("Given a URL builder", t, func() {
 		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 
-		Convey("When GetWebsiteURL is called", func() {
+		convey.Convey("When GetWebsiteURL is called", func() {
 			returnedURL := urlBuilder.GetWebsiteURL()
 
-			Convey("Then the expected URL is returned", func() {
-				So(returnedURL, ShouldEqual, websiteURL)
+			convey.Convey("Then the expected URL is returned", func() {
+				convey.So(returnedURL, convey.ShouldEqual, websiteURL)
 			})
 		})
 	})
 }
 
 func TestBuilder_GetDownloadServiceURL(t *testing.T) {
-	Convey("Given a URL builder", t, func() {
+	convey.Convey("Given a URL builder", t, func() {
 		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 
-		Convey("When GetDownloadServiceURL is called", func() {
+		convey.Convey("When GetDownloadServiceURL is called", func() {
 			returnedURL := urlBuilder.GetDownloadServiceURL()
 
-			Convey("Then the expected URL is returned", func() {
-				So(returnedURL, ShouldEqual, downloadServiceURL)
+			convey.Convey("Then the expected URL is returned", func() {
+				convey.So(returnedURL, convey.ShouldEqual, downloadServiceURL)
 			})
 		})
 	})
 }
 
 func TestBuilder_GetDatasetAPIURL(t *testing.T) {
-	Convey("Given a URL builder", t, func() {
+	convey.Convey("Given a URL builder", t, func() {
 		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 
-		Convey("When GetDatasetAPIURL is called", func() {
+		convey.Convey("When GetDatasetAPIURL is called", func() {
 			returnedURL := urlBuilder.GetDatasetAPIURL()
 
-			Convey("Then the expected URL is returned", func() {
-				So(returnedURL, ShouldEqual, datasetAPIURL)
+			convey.Convey("Then the expected URL is returned", func() {
+				convey.So(returnedURL, convey.ShouldEqual, datasetAPIURL)
 			})
 		})
 	})
 }
 
 func TestBuilder_GetCodeListAPIURL(t *testing.T) {
-	Convey("Given a URL builder", t, func() {
+	convey.Convey("Given a URL builder", t, func() {
 		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 
-		Convey("When GetCodeListAPIURL is called", func() {
+		convey.Convey("When GetCodeListAPIURL is called", func() {
 			returnedURL := urlBuilder.GetCodeListAPIURL()
 
-			Convey("Then the expected URL is returned", func() {
-				So(returnedURL, ShouldEqual, codeListAPIURL)
+			convey.Convey("Then the expected URL is returned", func() {
+				convey.So(returnedURL, convey.ShouldEqual, codeListAPIURL)
 			})
 		})
 	})
 }
 
 func TestBuilder_GetImportAPIURL(t *testing.T) {
-	Convey("Given a URL builder", t, func() {
+	convey.Convey("Given a URL builder", t, func() {
 		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 
-		Convey("When GetImportAPIURL is called", func() {
+		convey.Convey("When GetImportAPIURL is called", func() {
 			returnedURL := urlBuilder.GetImportAPIURL()
 
-			Convey("Then the expected URL is returned", func() {
-				So(returnedURL, ShouldEqual, importAPIURL)
+			convey.Convey("Then the expected URL is returned", func() {
+				convey.So(returnedURL, convey.ShouldEqual, importAPIURL)
 			})
 		})
 	})

@@ -105,7 +105,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
 		})
 		svc.graphDB = &storetest.GraphDBMock{
-			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
+			SetInstanceIsPublishedFunc: func(_ context.Context, instanceID string) error {
 				return nil
 			},
 		}
