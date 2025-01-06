@@ -242,26 +242,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		"version":   vars["version"],
 	}
 
-	// b, err := io.ReadAll(r.Body)
-	// var version *models.Version
-	// err = json.Unmarshal(b, &version)
-	// if err != nil {
-	// 	handleVersionAPIErr(ctx, err, w, data)
-	// 	//return nil, errs.ErrUnableToParseJSON
-	// 	return
-	// }
-
-	// body, err := io.ReadAll(r.Body)
-
-	// var version *models.Version
-
-	// fmt.Println("THE BODY IS")
-	// fmt.Println(body)
-	// if err = json.Unmarshal(body, version); err != nil {
-	// 	handleVersionAPIErr(ctx, err, w, data)
-	// 	return
-	// }
-
 	version, err := models.CreateVersion(r.Body, vars["dataset_id"])
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)

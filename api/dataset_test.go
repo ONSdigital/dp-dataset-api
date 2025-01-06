@@ -74,7 +74,6 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 	}
 
 	states := []application.State{application.Published, application.Submitted, application.Completed, application.EditionConfirmed, application.Associated, application.Created, application.Failed, application.Detached}
-	//transitions := GetListTransitions()
 	transitions := []application.Transition{{
 		Label:                "published",
 		TargetState:          application.Published,
@@ -97,52 +96,6 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 	}
 
 	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, &mockStatemachineDatasetAPI)
-}
-
-func GetStateMachineAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, statemachine application.StateMachine) *application.StateMachineDatasetAPI {
-	mu.Lock()
-	defer mu.Unlock()
-	cfg, err := config.Get()
-	So(err, ShouldBeNil)
-	cfg.ServiceAuthToken = authToken
-	cfg.DatasetAPIURL = host
-	cfg.EnablePrivateEndpoints = true
-	cfg.DefaultLimit = 0
-	cfg.DefaultOffset = 0
-
-	mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{
-		models.Filterable:              mockedGeneratedDownloads,
-		models.Nomis:                   mockedGeneratedDownloads,
-		models.CantabularBlob:          mockedGeneratedDownloads,
-		models.CantabularTable:         mockedGeneratedDownloads,
-		models.CantabularFlexibleTable: mockedGeneratedDownloads,
-	}
-
-	states := []application.State{application.Published, application.Submitted, application.Completed, application.EditionConfirmed, application.Associated, application.Created, application.Failed, application.Detached}
-	//transitions := GetListTransitions()
-	transitions := []application.Transition{{
-		Label:                "published",
-		TargetState:          application.Published,
-		AlllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
-	}, {
-		Label:                "associated",
-		TargetState:          application.Associated,
-		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
-	},
-		{
-			Label:                "edition-confirmed",
-			TargetState:          application.EditionConfirmed,
-			AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
-		}}
-
-	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
-		DataStore:          store.DataStore{Backend: mockedDataStore},
-		DownloadGenerators: mockedMapSMGeneratedDownloads,
-		StateMachine:       application.NewStateMachine(states, transitions, store.DataStore{Backend: mockedDataStore}, testContext),
-	}
-
-	return application.Setup(testContext, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, mockedMapSMGeneratedDownloads, mockStatemachineDatasetAPI.StateMachine)
-	//return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, &mockStatemachineDatasetAPI)
 }
 
 // GetAPIWithCMDMocks also used in other tests, so exported
@@ -172,7 +125,6 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 	}
 
 	states := []application.State{application.Published, application.Submitted, application.Completed, application.EditionConfirmed, application.Associated, application.Created, application.Failed, application.Detached}
-	//transitions := GetListTransitions()
 	transitions := []application.Transition{{
 		Label:                "published",
 		TargetState:          application.Published,
@@ -181,12 +133,11 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 		Label:                "associated",
 		TargetState:          application.Associated,
 		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
-	},
-		{
-			Label:                "edition-confirmed",
-			TargetState:          application.EditionConfirmed,
-			AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
-		}}
+	}, {
+		Label:                "edition-confirmed",
+		TargetState:          application.EditionConfirmed,
+		AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
+	}}
 
 	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
 		DataStore:          store.DataStore{Backend: mockedDataStore},
