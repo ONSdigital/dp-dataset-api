@@ -1998,7 +1998,6 @@ func GetStateMachineAPIWithCMDMocks(mockedDataStore store.Storer, mockedGenerate
 
 	mockedMapSMGeneratedDownloads := map[models.DatasetType]DownloadsGenerator{
 		models.Filterable:              mockedGeneratedDownloads,
-		models.Nomis:                   mockedGeneratedDownloads,
 		models.CantabularBlob:          mockedGeneratedDownloads,
 		models.CantabularTable:         mockedGeneratedDownloads,
 		models.CantabularFlexibleTable: mockedGeneratedDownloads,

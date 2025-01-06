@@ -273,7 +273,6 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		models.CantabularFlexibleTable:     downloadGeneratorCantabular,
 		models.CantabularMultivariateTable: downloadGeneratorCantabular,
 		models.Filterable:                  downloadGeneratorCMD,
-		models.Nomis:                       nil,
 	}
 
 	// Get Identity Client (only if private endpoints are enabled)

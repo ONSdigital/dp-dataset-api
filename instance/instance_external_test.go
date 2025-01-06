@@ -758,7 +758,6 @@ func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer
 
 	mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{
 		models.Filterable: mockedGeneratedDownloads,
-		models.Nomis:      mockedGeneratedDownloads,
 	}
 
 	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{

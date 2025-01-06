@@ -70,7 +70,6 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 
 	mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{
 		models.Filterable:              mockedGeneratedDownloads,
-		models.Nomis:                   mockedGeneratedDownloads,
 		models.CantabularBlob:          mockedGeneratedDownloads,
 		models.CantabularTable:         mockedGeneratedDownloads,
 		models.CantabularFlexibleTable: mockedGeneratedDownloads,
@@ -121,7 +120,6 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 
 	mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{
 		models.Filterable:              mockedGeneratedDownloads,
-		models.Nomis:                   mockedGeneratedDownloads,
 		models.CantabularBlob:          mockedGeneratedDownloads,
 		models.CantabularTable:         mockedGeneratedDownloads,
 		models.CantabularFlexibleTable: mockedGeneratedDownloads,

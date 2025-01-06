@@ -1518,7 +1518,6 @@ func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 
 	mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{
 		models.Filterable: mockedGeneratedDownloads,
-		models.Nomis:      mockedGeneratedDownloads,
 	}
 
 	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
