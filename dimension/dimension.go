@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 
 	"github.com/gorilla/mux"
 
 	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/dp-dataset-api/utils"
 	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
@@ -26,6 +26,7 @@ type Store struct {
 	store.Storer
 	Host              string
 	MaxRequestOptions int
+	UrlBuilder        *url.Builder
 }
 
 // List of actions for dimensions
@@ -77,16 +78,10 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 		return nil, 0, err
 	}
 
-	hostURL, err := url.Parse(s.Host)
-	if err != nil {
-		log.Error(ctx, "getDimensionsHandler endpoint: failed to parse host URL", err, logData)
-		handleDimensionErr(ctx, w, err, logData)
-		return nil, 0, err
-	}
+	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.UrlBuilder.GetDatasetAPIURL())
+	codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.UrlBuilder.GetCodeListAPIURL())
 
-	linksBuilder := links.FromHeadersOrDefault(&r.Header, hostURL)
-
-	err = utils.RewriteDimensionOptions(ctx, dimensionOptions, linksBuilder)
+	err = utils.RewriteDimensionOptions(ctx, dimensionOptions, datasetLinksBuilder, codeListLinksBuilder)
 	if err != nil {
 		log.Error(ctx, "getDimensionsHandler endpoint: failed to rewrite dimension options links", err, logData)
 		handleDimensionErr(ctx, w, err, logData)

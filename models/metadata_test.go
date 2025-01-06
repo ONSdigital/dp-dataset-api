@@ -188,11 +188,13 @@ func TestCreateMetadata(t *testing.T) {
 		})
 
 		Convey("When we call CreateMetaDataDoc", func() {
-
-			websiteURL, _ := neturl.Parse("http://localhost:20000")
+			codeListAPIURL, _ := neturl.Parse("http://localhost:22400")
+			datasetAPIURL, _ := neturl.Parse("http://localhost:22000")
 			downloadServiceURL, _ := neturl.Parse("http://localhost:23600")
-			DatasetAPIURL, _ := neturl.Parse("http://localhost:22000")
-			metaDataDoc := CreateMetaDataDoc(&dataset, &version, url.NewBuilder(websiteURL, downloadServiceURL, DatasetAPIURL))
+			importAPIURL, _ := neturl.Parse("http://localhost:21800")
+			websiteURL, _ := neturl.Parse("http://localhost:20000")
+			urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+			metaDataDoc := CreateMetaDataDoc(&dataset, &version, urlBuilder)
 			expectedThemes := []string{"1234", "5678", "9012"}
 
 			Convey("Then it returns a metadata object with all the CMD fields populated", func() {

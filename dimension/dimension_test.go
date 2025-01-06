@@ -25,10 +25,12 @@ import (
 )
 
 var (
-	websiteURL, _         = neturl.Parse("http://localhost:20000")
+	codeListAPIURL, _     = neturl.Parse("http://localhost:22400")
+	datasetAPIURL, _      = neturl.Parse("http://localhost:22000")
 	downloadServiceURL, _ = neturl.Parse("http://localhost:23600")
-	DatasetAPIURL, _      = neturl.Parse("http://localhost:22000")
-	urlBuilder            = url.NewBuilder(websiteURL, downloadServiceURL, DatasetAPIURL)
+	importAPIURL, _       = neturl.Parse("http://localhost:21800")
+	websiteURL, _         = neturl.Parse("http://localhost:20000")
+	urlBuilder            = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 	mu                    sync.Mutex
 	testContext           = context.Background()
 	testETag              = "testETag"

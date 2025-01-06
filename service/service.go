@@ -199,7 +199,17 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		return errors.Wrap(err, "unable to parse datasetAPIURL from config")
 	}
 
-	urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL)
+	codeListAPIURL, err := neturl.Parse(svc.config.CodeListAPIURL)
+	if err != nil {
+		return errors.Wrap(err, "unable to parse codeListAPIURL from config")
+	}
+
+	importAPIURL, err := neturl.Parse(svc.config.ImportAPIURL)
+	if err != nil {
+		return errors.Wrap(err, "unable to parse importAPIURL from config")
+	}
+
+	urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
 	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions)
 

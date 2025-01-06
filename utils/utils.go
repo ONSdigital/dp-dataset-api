@@ -81,7 +81,7 @@ func BuildThemes(canonicalTopic string, subtopics []string) []string {
 	return themes
 }
 
-func RewriteDatasetsWithAuth(ctx context.Context, results []*models.DatasetUpdate, linksBuilder *links.Builder) ([]*models.DatasetUpdate, error) {
+func RewriteDatasetsWithAuth(ctx context.Context, results []*models.DatasetUpdate, datasetLinksBuilder *links.Builder) ([]*models.DatasetUpdate, error) {
 	if len(results) == 0 {
 		return results, nil
 	}
@@ -89,7 +89,7 @@ func RewriteDatasetsWithAuth(ctx context.Context, results []*models.DatasetUpdat
 	items := []*models.DatasetUpdate{}
 	for _, item := range results {
 		if item.Current != nil {
-			err := RewriteDatasetLinks(ctx, item.Current.Links, linksBuilder)
+			err := RewriteDatasetLinks(ctx, item.Current.Links, datasetLinksBuilder)
 			if err != nil {
 				log.Error(ctx, "failed to rewrite 'current' links", err)
 				return nil, err
@@ -97,7 +97,7 @@ func RewriteDatasetsWithAuth(ctx context.Context, results []*models.DatasetUpdat
 		}
 
 		if item.Next != nil {
-			err := RewriteDatasetLinks(ctx, item.Next.Links, linksBuilder)
+			err := RewriteDatasetLinks(ctx, item.Next.Links, datasetLinksBuilder)
 			if err != nil {
 				log.Error(ctx, "failed to rewrite 'next' links", err)
 				return nil, err
@@ -108,7 +108,7 @@ func RewriteDatasetsWithAuth(ctx context.Context, results []*models.DatasetUpdat
 	return items, nil
 }
 
-func RewriteDatasetsWithoutAuth(ctx context.Context, results []*models.DatasetUpdate, linksBuilder *links.Builder) ([]*models.Dataset, error) {
+func RewriteDatasetsWithoutAuth(ctx context.Context, results []*models.DatasetUpdate, datasetLinksBuilder *links.Builder) ([]*models.Dataset, error) {
 	if len(results) == 0 {
 		return []*models.Dataset{}, nil
 	}
@@ -116,7 +116,7 @@ func RewriteDatasetsWithoutAuth(ctx context.Context, results []*models.DatasetUp
 	items := []*models.Dataset{}
 	for _, item := range results {
 		if item.Current != nil {
-			err := RewriteDatasetLinks(ctx, item.Current.Links, linksBuilder)
+			err := RewriteDatasetLinks(ctx, item.Current.Links, datasetLinksBuilder)
 			if err != nil {
 				log.Error(ctx, "failed to rewrite 'current' links", err)
 				return nil, err
@@ -128,7 +128,7 @@ func RewriteDatasetsWithoutAuth(ctx context.Context, results []*models.DatasetUp
 	return items, nil
 }
 
-func RewriteDatasetWithAuth(ctx context.Context, dataset *models.DatasetUpdate, linksBuilder *links.Builder) (*models.DatasetUpdate, error) {
+func RewriteDatasetWithAuth(ctx context.Context, dataset *models.DatasetUpdate, datasetLinksBuilder *links.Builder) (*models.DatasetUpdate, error) {
 	if dataset == nil {
 		log.Info(ctx, "getDataset endpoint: dataset is empty")
 		return nil, errs.ErrDatasetNotFound
@@ -146,7 +146,7 @@ func RewriteDatasetWithAuth(ctx context.Context, dataset *models.DatasetUpdate, 
 	}
 
 	if dataset.Current != nil {
-		err := RewriteDatasetLinks(ctx, dataset.Current.Links, linksBuilder)
+		err := RewriteDatasetLinks(ctx, dataset.Current.Links, datasetLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite 'current' links", err)
 			return nil, err
@@ -154,7 +154,7 @@ func RewriteDatasetWithAuth(ctx context.Context, dataset *models.DatasetUpdate, 
 	}
 
 	if dataset.Next != nil {
-		err := RewriteDatasetLinks(ctx, dataset.Next.Links, linksBuilder)
+		err := RewriteDatasetLinks(ctx, dataset.Next.Links, datasetLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite 'next' links", err)
 			return nil, err
@@ -164,7 +164,7 @@ func RewriteDatasetWithAuth(ctx context.Context, dataset *models.DatasetUpdate, 
 	return dataset, nil
 }
 
-func RewriteDatasetWithoutAuth(ctx context.Context, dataset *models.DatasetUpdate, linksBuilder *links.Builder) (*models.Dataset, error) {
+func RewriteDatasetWithoutAuth(ctx context.Context, dataset *models.DatasetUpdate, datasetLinksBuilder *links.Builder) (*models.Dataset, error) {
 	if dataset == nil {
 		log.Info(ctx, "getDataset endpoint: dataset is empty")
 		return nil, errs.ErrDatasetNotFound
@@ -184,7 +184,7 @@ func RewriteDatasetWithoutAuth(ctx context.Context, dataset *models.DatasetUpdat
 	}
 
 	datasetResponse = dataset.Current
-	err := RewriteDatasetLinks(ctx, datasetResponse.Links, linksBuilder)
+	err := RewriteDatasetLinks(ctx, datasetResponse.Links, datasetLinksBuilder)
 	if err != nil {
 		log.Error(ctx, "failed to rewrite 'current' links", err)
 		return nil, err
@@ -193,7 +193,7 @@ func RewriteDatasetWithoutAuth(ctx context.Context, dataset *models.DatasetUpdat
 	return datasetResponse, nil
 }
 
-func RewriteDatasetLinks(ctx context.Context, oldLinks *models.DatasetLinks, linksBuilder *links.Builder) error {
+func RewriteDatasetLinks(ctx context.Context, oldLinks *models.DatasetLinks, datasetLinksBuilder *links.Builder) error {
 	if oldLinks == nil {
 		return nil
 	}
@@ -209,7 +209,7 @@ func RewriteDatasetLinks(ctx context.Context, oldLinks *models.DatasetLinks, lin
 
 	for _, link := range prevLinks {
 		if link != nil && link.HRef != "" {
-			link.HRef, err = linksBuilder.BuildLink(link.HRef)
+			link.HRef, err = datasetLinksBuilder.BuildLink(link.HRef)
 			if err != nil {
 				log.Error(ctx, "failed to rewrite link", err, log.Data{"link": link.HRef})
 				return err
@@ -219,7 +219,7 @@ func RewriteDatasetLinks(ctx context.Context, oldLinks *models.DatasetLinks, lin
 	return nil
 }
 
-func RewriteDimensions(ctx context.Context, results []models.Dimension, linksBuilder *links.Builder) ([]models.Dimension, error) {
+func RewriteDimensions(ctx context.Context, results []models.Dimension, datasetLinksBuilder *links.Builder, codeListLinksBuilder *links.Builder) ([]models.Dimension, error) {
 	if len(results) == 0 {
 		return results, nil
 	}
@@ -230,14 +230,14 @@ func RewriteDimensions(ctx context.Context, results []models.Dimension, linksBui
 
 	for _, item := range results {
 		if item.HRef != "" {
-			item.HRef, err = linksBuilder.BuildLink(item.HRef)
+			item.HRef, err = codeListLinksBuilder.BuildLink(item.HRef)
 			if err != nil {
 				log.Error(ctx, "failed to rewrite link", err, log.Data{"link": item.HRef})
 				return nil, err
 			}
 		}
 
-		err := RewriteDimensionLinks(ctx, &item.Links, linksBuilder)
+		err := RewriteDimensionLinks(ctx, &item.Links, datasetLinksBuilder, codeListLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite dimension links", err)
 			return nil, err
@@ -247,39 +247,48 @@ func RewriteDimensions(ctx context.Context, results []models.Dimension, linksBui
 	return items, nil
 }
 
-func RewriteDimensionLinks(ctx context.Context, oldLinks *models.DimensionLink, linksBuilder *links.Builder) error {
+func RewriteDimensionLinks(ctx context.Context, oldLinks *models.DimensionLink, datasetLinksBuilder *links.Builder, codeListLinksBuilder *links.Builder) error {
 	if oldLinks == nil {
 		return nil
 	}
 
-	prevLinks := []*models.LinkObject{
-		&oldLinks.CodeList,
-		&oldLinks.Options,
-		&oldLinks.Version,
-	}
-
 	var err error
 
-	for _, link := range prevLinks {
-		if link.HRef != "" {
-			link.HRef, err = linksBuilder.BuildLink(link.HRef)
-			if err != nil {
-				log.Error(ctx, "failed to rewrite link", err, log.Data{"link": link.HRef})
-				return err
-			}
+	if oldLinks.CodeList.HRef != "" {
+		oldLinks.CodeList.HRef, err = codeListLinksBuilder.BuildLink(oldLinks.CodeList.HRef)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite codeList link", err, log.Data{"link": oldLinks.CodeList.HRef})
+			return err
 		}
 	}
+
+	if oldLinks.Options.HRef != "" {
+		oldLinks.Options.HRef, err = datasetLinksBuilder.BuildLink(oldLinks.Options.HRef)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite options link", err, log.Data{"link": oldLinks.Options.HRef})
+			return err
+		}
+	}
+
+	if oldLinks.Version.HRef != "" {
+		oldLinks.Version.HRef, err = datasetLinksBuilder.BuildLink(oldLinks.Version.HRef)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite version link", err, log.Data{"link": oldLinks.Version.HRef})
+			return err
+		}
+	}
+
 	return nil
 }
 
-func RewritePublicDimensionOptions(ctx context.Context, results []*models.PublicDimensionOption, linksBuilder *links.Builder) ([]*models.PublicDimensionOption, error) {
+func RewritePublicDimensionOptions(ctx context.Context, results []*models.PublicDimensionOption, datasetLinksBuilder *links.Builder, codeListLinksBuilder *links.Builder) ([]*models.PublicDimensionOption, error) {
 	if len(results) == 0 {
 		return results, nil
 	}
 
 	items := []*models.PublicDimensionOption{}
 	for _, item := range results {
-		err := RewriteDimensionOptionLinks(ctx, &item.Links, linksBuilder)
+		err := RewriteDimensionOptionLinks(ctx, &item.Links, datasetLinksBuilder, codeListLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite public dimension option links", err)
 			return nil, err
@@ -289,14 +298,14 @@ func RewritePublicDimensionOptions(ctx context.Context, results []*models.Public
 	return items, nil
 }
 
-func RewriteDimensionOptions(ctx context.Context, results []*models.DimensionOption, linksBuilder *links.Builder) error {
+func RewriteDimensionOptions(ctx context.Context, results []*models.DimensionOption, datasetLinksBuilder *links.Builder, codeListLinksBuilder *links.Builder) error {
 	if len(results) == 0 {
 		return nil
 	}
 
 	var err error
 	for _, item := range results {
-		err = RewriteDimensionOptionLinks(ctx, &item.Links, linksBuilder)
+		err = RewriteDimensionOptionLinks(ctx, &item.Links, datasetLinksBuilder, codeListLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite dimension option links", err)
 			return err
@@ -305,32 +314,41 @@ func RewriteDimensionOptions(ctx context.Context, results []*models.DimensionOpt
 	return nil
 }
 
-func RewriteDimensionOptionLinks(ctx context.Context, oldLinks *models.DimensionOptionLinks, linksBuilder *links.Builder) error {
+func RewriteDimensionOptionLinks(ctx context.Context, oldLinks *models.DimensionOptionLinks, datasetLinksBuilder *links.Builder, codeListLinksBuilder *links.Builder) error {
 	if oldLinks == nil {
 		return nil
 	}
 
-	prevLinks := []*models.LinkObject{
-		&oldLinks.Code,
-		&oldLinks.CodeList,
-		&oldLinks.Version,
-	}
-
 	var err error
 
-	for _, link := range prevLinks {
-		if link.HRef != "" {
-			link.HRef, err = linksBuilder.BuildLink(link.HRef)
-			if err != nil {
-				log.Error(ctx, "failed to rewrite link", err, log.Data{"link": link.HRef})
-				return err
-			}
+	if oldLinks.Code.HRef != "" {
+		oldLinks.Code.HRef, err = codeListLinksBuilder.BuildLink(oldLinks.Code.HRef)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite code link", err, log.Data{"link": oldLinks.Code.HRef})
+			return err
 		}
 	}
+
+	if oldLinks.CodeList.HRef != "" {
+		oldLinks.CodeList.HRef, err = codeListLinksBuilder.BuildLink(oldLinks.CodeList.HRef)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite codeList link", err, log.Data{"link": oldLinks.CodeList.HRef})
+			return err
+		}
+	}
+
+	if oldLinks.Version.HRef != "" {
+		oldLinks.Version.HRef, err = datasetLinksBuilder.BuildLink(oldLinks.Version.HRef)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite version link", err, log.Data{"link": oldLinks.Version.HRef})
+			return err
+		}
+	}
+
 	return nil
 }
 
-func RewriteEditionsWithAuth(ctx context.Context, results []*models.EditionUpdate, linksBuilder *links.Builder) ([]*models.EditionUpdate, error) {
+func RewriteEditionsWithAuth(ctx context.Context, results []*models.EditionUpdate, datasetLinksBuilder *links.Builder) ([]*models.EditionUpdate, error) {
 	if len(results) == 0 {
 		return results, nil
 	}
@@ -338,7 +356,7 @@ func RewriteEditionsWithAuth(ctx context.Context, results []*models.EditionUpdat
 	items := []*models.EditionUpdate{}
 	for _, item := range results {
 		if item.Current != nil {
-			err := RewriteEditionLinks(ctx, item.Current.Links, linksBuilder)
+			err := RewriteEditionLinks(ctx, item.Current.Links, datasetLinksBuilder)
 			if err != nil {
 				log.Error(ctx, "failed to rewrite 'current' links", err)
 				return nil, err
@@ -346,7 +364,7 @@ func RewriteEditionsWithAuth(ctx context.Context, results []*models.EditionUpdat
 		}
 
 		if item.Next != nil {
-			err := RewriteEditionLinks(ctx, item.Next.Links, linksBuilder)
+			err := RewriteEditionLinks(ctx, item.Next.Links, datasetLinksBuilder)
 			if err != nil {
 				log.Error(ctx, "failed to rewrite 'next' links", err)
 				return nil, err
@@ -357,7 +375,7 @@ func RewriteEditionsWithAuth(ctx context.Context, results []*models.EditionUpdat
 	return items, nil
 }
 
-func RewriteEditionsWithoutAuth(ctx context.Context, results []*models.EditionUpdate, linksBuilder *links.Builder) ([]*models.Edition, error) {
+func RewriteEditionsWithoutAuth(ctx context.Context, results []*models.EditionUpdate, datasetLinksBuilder *links.Builder) ([]*models.Edition, error) {
 	if len(results) == 0 {
 		return []*models.Edition{}, nil
 	}
@@ -365,7 +383,7 @@ func RewriteEditionsWithoutAuth(ctx context.Context, results []*models.EditionUp
 	items := []*models.Edition{}
 	for _, item := range results {
 		if item.Current != nil {
-			err := RewriteEditionLinks(ctx, item.Current.Links, linksBuilder)
+			err := RewriteEditionLinks(ctx, item.Current.Links, datasetLinksBuilder)
 			if err != nil {
 				log.Error(ctx, "failed to rewrite 'current' links", err)
 				return nil, err
@@ -377,14 +395,14 @@ func RewriteEditionsWithoutAuth(ctx context.Context, results []*models.EditionUp
 	return items, nil
 }
 
-func RewriteEditionWithAuth(ctx context.Context, edition *models.EditionUpdate, linksBuilder *links.Builder) (*models.EditionUpdate, error) {
+func RewriteEditionWithAuth(ctx context.Context, edition *models.EditionUpdate, datasetLinksBuilder *links.Builder) (*models.EditionUpdate, error) {
 	if edition == nil {
 		log.Info(ctx, "getEdition endpoint: published or unpublished edition not found")
 		return nil, errs.ErrEditionNotFound
 	}
 
 	if edition.Current != nil {
-		err := RewriteEditionLinks(ctx, edition.Current.Links, linksBuilder)
+		err := RewriteEditionLinks(ctx, edition.Current.Links, datasetLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite 'current' links", err)
 			return nil, err
@@ -392,7 +410,7 @@ func RewriteEditionWithAuth(ctx context.Context, edition *models.EditionUpdate, 
 	}
 
 	if edition.Next != nil {
-		err := RewriteEditionLinks(ctx, edition.Next.Links, linksBuilder)
+		err := RewriteEditionLinks(ctx, edition.Next.Links, datasetLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite 'next' links", err)
 			return nil, err
@@ -402,7 +420,7 @@ func RewriteEditionWithAuth(ctx context.Context, edition *models.EditionUpdate, 
 	return edition, nil
 }
 
-func RewriteEditionWithoutAuth(ctx context.Context, edition *models.EditionUpdate, linksBuilder *links.Builder) (*models.Edition, error) {
+func RewriteEditionWithoutAuth(ctx context.Context, edition *models.EditionUpdate, datasetLinksBuilder *links.Builder) (*models.Edition, error) {
 	if edition == nil {
 		log.Info(ctx, "getEdition endpoint: published edition not found")
 		return nil, errs.ErrEditionNotFound
@@ -417,7 +435,7 @@ func RewriteEditionWithoutAuth(ctx context.Context, edition *models.EditionUpdat
 
 	edition.Current.ID = edition.ID
 	editionResponse = edition.Current
-	err := RewriteEditionLinks(ctx, editionResponse.Links, linksBuilder)
+	err := RewriteEditionLinks(ctx, editionResponse.Links, datasetLinksBuilder)
 	if err != nil {
 		log.Error(ctx, "failed to rewrite 'current' links", err)
 		return nil, err
@@ -427,7 +445,7 @@ func RewriteEditionWithoutAuth(ctx context.Context, edition *models.EditionUpdat
 
 }
 
-func RewriteEditionLinks(ctx context.Context, oldLinks *models.EditionUpdateLinks, linksBuilder *links.Builder) error {
+func RewriteEditionLinks(ctx context.Context, oldLinks *models.EditionUpdateLinks, datasetLinksBuilder *links.Builder) error {
 	if oldLinks == nil {
 		return nil
 	}
@@ -443,7 +461,7 @@ func RewriteEditionLinks(ctx context.Context, oldLinks *models.EditionUpdateLink
 
 	for _, link := range prevLinks {
 		if link != nil && link.HRef != "" {
-			link.HRef, err = linksBuilder.BuildLink(link.HRef)
+			link.HRef, err = datasetLinksBuilder.BuildLink(link.HRef)
 			if err != nil {
 				log.Error(ctx, "failed to rewrite link", err, log.Data{"link": link.HRef})
 				return err
@@ -453,32 +471,41 @@ func RewriteEditionLinks(ctx context.Context, oldLinks *models.EditionUpdateLink
 	return nil
 }
 
-func RewriteMetadataLinks(ctx context.Context, oldLinks *models.MetadataLinks, linksBuilder *links.Builder) error {
+func RewriteMetadataLinks(ctx context.Context, oldLinks *models.MetadataLinks, datasetLinksBuilder *links.Builder, websiteLinksBuilder *links.Builder) error {
 	if oldLinks == nil {
 		return nil
 	}
 
-	prevLinks := []*models.LinkObject{
-		oldLinks.Self,
-		oldLinks.Version,
-		oldLinks.WebsiteVersion,
-	}
-
 	var err error
 
-	for _, link := range prevLinks {
-		if link != nil && link.HRef != "" {
-			link.HRef, err = linksBuilder.BuildLink(link.HRef)
-			if err != nil {
-				log.Error(ctx, "failed to rewrite link", err, log.Data{"link": link.HRef})
-				return err
-			}
+	if oldLinks.Self != nil && oldLinks.Self.HRef != "" {
+		oldLinks.Self.HRef, err = datasetLinksBuilder.BuildLink(oldLinks.Self.HRef)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite self link", err, log.Data{"link": oldLinks.Self.HRef})
+			return err
 		}
 	}
+
+	if oldLinks.Version != nil && oldLinks.Version.HRef != "" {
+		oldLinks.Version.HRef, err = datasetLinksBuilder.BuildLink(oldLinks.Version.HRef)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite version link", err, log.Data{"link": oldLinks.Version.HRef})
+			return err
+		}
+	}
+
+	if oldLinks.WebsiteVersion != nil && oldLinks.WebsiteVersion.HRef != "" {
+		oldLinks.WebsiteVersion.HRef, err = websiteLinksBuilder.BuildLink(oldLinks.WebsiteVersion.HRef)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite website version link", err, log.Data{"link": oldLinks.WebsiteVersion.HRef})
+			return err
+		}
+	}
+
 	return nil
 }
 
-func RewriteVersions(ctx context.Context, results []models.Version, linksBuilder *links.Builder) ([]models.Version, error) {
+func RewriteVersions(ctx context.Context, results []models.Version, datasetLinksBuilder *links.Builder, codeListLinksBuilder *links.Builder) ([]models.Version, error) {
 	if len(results) == 0 {
 		return results, nil
 	}
@@ -488,13 +515,13 @@ func RewriteVersions(ctx context.Context, results []models.Version, linksBuilder
 	var err error
 
 	for _, item := range results {
-		item.Dimensions, err = RewriteDimensions(ctx, item.Dimensions, linksBuilder)
+		item.Dimensions, err = RewriteDimensions(ctx, item.Dimensions, datasetLinksBuilder, codeListLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite dimension links", err)
 			return nil, err
 		}
 
-		err = RewriteVersionLinks(ctx, item.Links, linksBuilder)
+		err = RewriteVersionLinks(ctx, item.Links, datasetLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite version links", err)
 			return nil, err
@@ -506,7 +533,7 @@ func RewriteVersions(ctx context.Context, results []models.Version, linksBuilder
 	return items, nil
 }
 
-func RewriteVersionLinks(ctx context.Context, oldLinks *models.VersionLinks, linksBuilder *links.Builder) error {
+func RewriteVersionLinks(ctx context.Context, oldLinks *models.VersionLinks, datasetLinksBuilder *links.Builder) error {
 	if oldLinks == nil {
 		return nil
 	}
@@ -523,7 +550,7 @@ func RewriteVersionLinks(ctx context.Context, oldLinks *models.VersionLinks, lin
 
 	for _, link := range prevLinks {
 		if link != nil && link.HRef != "" {
-			link.HRef, err = linksBuilder.BuildLink(link.HRef)
+			link.HRef, err = datasetLinksBuilder.BuildLink(link.HRef)
 			if err != nil {
 				log.Error(ctx, "failed to rewrite link", err, log.Data{"link": link.HRef})
 				return err
@@ -534,7 +561,7 @@ func RewriteVersionLinks(ctx context.Context, oldLinks *models.VersionLinks, lin
 	return nil
 }
 
-func RewriteInstances(ctx context.Context, results []*models.Instance, linksBuilder *links.Builder) error {
+func RewriteInstances(ctx context.Context, results []*models.Instance, datasetLinksBuilder *links.Builder, codeListLinksBuilder *links.Builder, importLinksBuilder *links.Builder) error {
 	if len(results) == 0 {
 		return nil
 	}
@@ -542,13 +569,13 @@ func RewriteInstances(ctx context.Context, results []*models.Instance, linksBuil
 	var err error
 
 	for _, item := range results {
-		item.Dimensions, err = RewriteDimensions(ctx, item.Dimensions, linksBuilder)
+		item.Dimensions, err = RewriteDimensions(ctx, item.Dimensions, datasetLinksBuilder, codeListLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite dimension links", err)
 			return err
 		}
 
-		err = RewriteInstanceLinks(ctx, item.Links, linksBuilder)
+		err = RewriteInstanceLinks(ctx, item.Links, datasetLinksBuilder, importLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite instance links", err)
 			return err
@@ -558,7 +585,7 @@ func RewriteInstances(ctx context.Context, results []*models.Instance, linksBuil
 
 }
 
-func RewriteInstanceLinks(ctx context.Context, oldLinks *models.InstanceLinks, linksBuilder *links.Builder) error {
+func RewriteInstanceLinks(ctx context.Context, oldLinks *models.InstanceLinks, datasetLinksBuilder *links.Builder, importLinksBuilder *links.Builder) error {
 	if oldLinks == nil {
 		return nil
 	}
@@ -567,7 +594,6 @@ func RewriteInstanceLinks(ctx context.Context, oldLinks *models.InstanceLinks, l
 		oldLinks.Dataset,
 		oldLinks.Dimensions,
 		oldLinks.Edition,
-		oldLinks.Job,
 		oldLinks.Self,
 		oldLinks.Version,
 	}
@@ -576,12 +602,21 @@ func RewriteInstanceLinks(ctx context.Context, oldLinks *models.InstanceLinks, l
 
 	for _, link := range prevLinks {
 		if link != nil && link.HRef != "" {
-			link.HRef, err = linksBuilder.BuildLink(link.HRef)
+			link.HRef, err = datasetLinksBuilder.BuildLink(link.HRef)
 			if err != nil {
 				log.Error(ctx, "failed to rewrite link", err, log.Data{"link": link.HRef})
 				return err
 			}
 		}
 	}
+
+	if oldLinks.Job != nil && oldLinks.Job.HRef != "" {
+		oldLinks.Job.HRef, err = importLinksBuilder.BuildLink(oldLinks.Job.HRef)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite job link", err, log.Data{"link": oldLinks.Job.HRef})
+			return err
+		}
+	}
+
 	return nil
 }

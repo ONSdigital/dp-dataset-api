@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/dp-dataset-api/utils"
 	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
@@ -29,6 +29,7 @@ type Store struct {
 	store.Storer
 	Host                string
 	EnableDetachDataset bool
+	UrlBuilder          *url.Builder
 }
 
 type taskError struct {
@@ -78,16 +79,11 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit, offset in
 			return nil, 0, err
 		}
 
-		hostURL, err := url.Parse(s.Host)
-		if err != nil {
-			log.Error(ctx, "get instances endpoint: failed to parse host URL", err, logData)
-			handleInstanceErr(ctx, err, w, logData)
-			return nil, 0, err
-		}
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.UrlBuilder.GetDatasetAPIURL())
+		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.UrlBuilder.GetCodeListAPIURL())
+		importLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.UrlBuilder.GetImportAPIURL())
 
-		linksBuilder := links.FromHeadersOrDefault(&r.Header, hostURL)
-
-		err = utils.RewriteInstances(ctx, instancesResults, linksBuilder)
+		err = utils.RewriteInstances(ctx, instancesResults, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "get instances endpoint: failed to rewrite instances", err, logData)
 			handleInstanceErr(ctx, err, w, logData)
@@ -134,16 +130,11 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hostURL, err := url.Parse(s.Host)
-	if err != nil {
-		log.Error(ctx, "get instance endpoint: failed to parse host URL", err, logData)
-		handleInstanceErr(ctx, err, w, logData)
-		return
-	}
+	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.UrlBuilder.GetDatasetAPIURL())
+	codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.UrlBuilder.GetCodeListAPIURL())
+	importLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.UrlBuilder.GetImportAPIURL())
 
-	linksBuilder := links.FromHeadersOrDefault(&r.Header, hostURL)
-
-	err = utils.RewriteInstances(ctx, []*models.Instance{instance}, linksBuilder)
+	err = utils.RewriteInstances(ctx, []*models.Instance{instance}, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
 	if err != nil {
 		log.Error(ctx, "get instance: failed to rewrite instance", err, logData)
 		handleInstanceErr(ctx, err, w, logData)

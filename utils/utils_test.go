@@ -13,8 +13,15 @@ import (
 )
 
 var (
-	datasetAPIURL, _ = goURL.Parse("http://localhost:22000")
-	linksBuilder     = links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+	codeListAPIURL, _ = goURL.Parse("http://localhost:22400")
+	datasetAPIURL, _  = goURL.Parse("http://localhost:22000")
+	importAPIURL, _   = goURL.Parse("http://localhost:21800")
+	websiteURL, _     = goURL.Parse("http://localhost:20000")
+
+	codeListLinksBuilder = links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
+	datasetLinksBuilder  = links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+	importLinksBuilder   = links.FromHeadersOrDefault(&http.Header{}, importAPIURL)
+	websiteLinksBuilder  = links.FromHeadersOrDefault(&http.Header{}, websiteURL)
 )
 
 func TestRewriteDatasetsWithAuth_Success(t *testing.T) {
@@ -69,7 +76,7 @@ func TestRewriteDatasetsWithAuth_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteDatasetsWithAuth(ctx, results, linksBuilder)
+			items, err := RewriteDatasetsWithAuth(ctx, results, datasetLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -136,7 +143,7 @@ func TestRewriteDatasetsWithAuth_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteDatasetsWithAuth(ctx, results, linksBuilder)
+			items, err := RewriteDatasetsWithAuth(ctx, results, datasetLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -167,7 +174,7 @@ func TestRewriteDatasetsWithAuth_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteDatasetsWithAuth(ctx, results, linksBuilder)
+			items, err := RewriteDatasetsWithAuth(ctx, results, datasetLinksBuilder)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -192,7 +199,7 @@ func TestRewriteDatasetsWithAuth_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteDatasetsWithAuth(ctx, results, linksBuilder)
+			items, err := RewriteDatasetsWithAuth(ctx, results, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -205,7 +212,7 @@ func TestRewriteDatasetsWithAuth_Success(t *testing.T) {
 		Convey("When the datasets are empty", func() {
 			results := []*models.DatasetUpdate{}
 
-			items, err := RewriteDatasetsWithAuth(ctx, results, linksBuilder)
+			items, err := RewriteDatasetsWithAuth(ctx, results, datasetLinksBuilder)
 
 			Convey("Then the datasets should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -346,7 +353,7 @@ func TestRewriteDatasetsWithoutAuth_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteDatasetsWithoutAuth(ctx, results, linksBuilder)
+			items, err := RewriteDatasetsWithoutAuth(ctx, results, datasetLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -408,7 +415,7 @@ func TestRewriteDatasetsWithoutAuth_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteDatasetsWithoutAuth(ctx, results, linksBuilder)
+			items, err := RewriteDatasetsWithoutAuth(ctx, results, datasetLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -434,7 +441,7 @@ func TestRewriteDatasetsWithoutAuth_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteDatasetsWithoutAuth(ctx, results, linksBuilder)
+			items, err := RewriteDatasetsWithoutAuth(ctx, results, datasetLinksBuilder)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -458,7 +465,7 @@ func TestRewriteDatasetsWithoutAuth_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteDatasetsWithoutAuth(ctx, results, linksBuilder)
+			items, err := RewriteDatasetsWithoutAuth(ctx, results, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -470,7 +477,7 @@ func TestRewriteDatasetsWithoutAuth_Success(t *testing.T) {
 		Convey("When the datasets are empty", func() {
 			results := []*models.DatasetUpdate{}
 
-			items, err := RewriteDatasetsWithoutAuth(ctx, results, linksBuilder)
+			items, err := RewriteDatasetsWithoutAuth(ctx, results, datasetLinksBuilder)
 
 			Convey("Then the datasets should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -593,7 +600,7 @@ func TestRewriteDatasetWithAuth_Success(t *testing.T) {
 				},
 			}
 
-			item, err := RewriteDatasetWithAuth(ctx, result, linksBuilder)
+			item, err := RewriteDatasetWithAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -658,7 +665,7 @@ func TestRewriteDatasetWithAuth_Success(t *testing.T) {
 				},
 			}
 
-			item, err := RewriteDatasetWithAuth(ctx, result, linksBuilder)
+			item, err := RewriteDatasetWithAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -687,7 +694,7 @@ func TestRewriteDatasetWithAuth_Success(t *testing.T) {
 				},
 			}
 
-			item, err := RewriteDatasetWithAuth(ctx, result, linksBuilder)
+			item, err := RewriteDatasetWithAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -710,7 +717,7 @@ func TestRewriteDatasetWithAuth_Success(t *testing.T) {
 				},
 			}
 
-			item, err := RewriteDatasetWithAuth(ctx, result, linksBuilder)
+			item, err := RewriteDatasetWithAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -798,7 +805,7 @@ func TestRewriteDatasetWithAuth_Error(t *testing.T) {
 		Convey("When the dataset is empty", func() {
 			result := &models.DatasetUpdate{}
 
-			item, err := RewriteDatasetWithAuth(ctx, result, linksBuilder)
+			item, err := RewriteDatasetWithAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then we should get a dataset not found error", func() {
 				So(err, ShouldEqual, errs.ErrDatasetNotFound)
@@ -807,7 +814,7 @@ func TestRewriteDatasetWithAuth_Error(t *testing.T) {
 		})
 
 		Convey("When the dataset is nil", func() {
-			item, err := RewriteDatasetWithAuth(ctx, nil, linksBuilder)
+			item, err := RewriteDatasetWithAuth(ctx, nil, datasetLinksBuilder)
 
 			Convey("Then we should get a dataset not found error", func() {
 				So(err, ShouldEqual, errs.ErrDatasetNotFound)
@@ -867,7 +874,7 @@ func TestRewriteDatasetWithoutAuth_Success(t *testing.T) {
 				},
 			}
 
-			item, err := RewriteDatasetWithoutAuth(ctx, result, linksBuilder)
+			item, err := RewriteDatasetWithoutAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -927,7 +934,7 @@ func TestRewriteDatasetWithoutAuth_Success(t *testing.T) {
 				},
 			}
 
-			item, err := RewriteDatasetWithoutAuth(ctx, result, linksBuilder)
+			item, err := RewriteDatasetWithoutAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -951,7 +958,7 @@ func TestRewriteDatasetWithoutAuth_Success(t *testing.T) {
 				},
 			}
 
-			item, err := RewriteDatasetWithoutAuth(ctx, result, linksBuilder)
+			item, err := RewriteDatasetWithoutAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -973,7 +980,7 @@ func TestRewriteDatasetWithoutAuth_Success(t *testing.T) {
 				},
 			}
 
-			item, err := RewriteDatasetWithoutAuth(ctx, result, linksBuilder)
+			item, err := RewriteDatasetWithoutAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -1046,7 +1053,7 @@ func TestRewriteDatasetWithoutAuth_Error(t *testing.T) {
 		Convey("When the dataset is empty", func() {
 			result := &models.DatasetUpdate{}
 
-			item, err := RewriteDatasetWithoutAuth(ctx, result, linksBuilder)
+			item, err := RewriteDatasetWithoutAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then we should get a dataset not found error", func() {
 				So(err, ShouldEqual, errs.ErrDatasetNotFound)
@@ -1055,7 +1062,7 @@ func TestRewriteDatasetWithoutAuth_Error(t *testing.T) {
 		})
 
 		Convey("When the dataset is nil", func() {
-			item, err := RewriteDatasetWithoutAuth(ctx, nil, linksBuilder)
+			item, err := RewriteDatasetWithoutAuth(ctx, nil, datasetLinksBuilder)
 
 			Convey("Then we should get a dataset not found error", func() {
 				So(err, ShouldEqual, errs.ErrDatasetNotFound)
@@ -1088,7 +1095,7 @@ func TestRewriteDatasetLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDatasetLinks(ctx, links, linksBuilder)
+			err := RewriteDatasetLinks(ctx, links, datasetLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -1120,7 +1127,7 @@ func TestRewriteDatasetLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDatasetLinks(ctx, links, linksBuilder)
+			err := RewriteDatasetLinks(ctx, links, datasetLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -1135,7 +1142,7 @@ func TestRewriteDatasetLinks_Success(t *testing.T) {
 		Convey("When the dataset links are empty", func() {
 			links := &models.DatasetLinks{}
 
-			err := RewriteDatasetLinks(ctx, links, linksBuilder)
+			err := RewriteDatasetLinks(ctx, links, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -1144,7 +1151,7 @@ func TestRewriteDatasetLinks_Success(t *testing.T) {
 		})
 
 		Convey("When the dataset links are nil", func() {
-			err := RewriteDatasetLinks(ctx, nil, linksBuilder)
+			err := RewriteDatasetLinks(ctx, nil, datasetLinksBuilder)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -1227,17 +1234,17 @@ func TestRewriteDimensions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteDimensions(ctx, results, linksBuilder)
+			items, err := RewriteDimensions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
 				So(items[0].Label, ShouldEqual, "Aggregate")
-				So(items[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(items[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
 				So(items[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options")
 				So(items[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(items[0].Name, ShouldEqual, "aggregate")
 				So(items[1].Label, ShouldEqual, "Geography")
-				So(items[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
+				So(items[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/uk-only")
 				So(items[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/geography/options")
 				So(items[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(items[1].Name, ShouldEqual, "geography")
@@ -1250,7 +1257,7 @@ func TestRewriteDimensions_Success(t *testing.T) {
 					Label: "Aggregate",
 					Links: models.DimensionLink{
 						CodeList: models.LinkObject{
-							HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
+							HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
 							ID:   "cpih1dim1aggid",
 						},
 						Options: models.LinkObject{
@@ -1267,7 +1274,7 @@ func TestRewriteDimensions_Success(t *testing.T) {
 					Label: "Geography",
 					Links: models.DimensionLink{
 						CodeList: models.LinkObject{
-							HRef: "http://localhost:22000/code-lists/uk-only",
+							HRef: "http://localhost:22400/code-lists/uk-only",
 							ID:   "uk-only",
 						},
 						Options: models.LinkObject{
@@ -1282,7 +1289,7 @@ func TestRewriteDimensions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteDimensions(ctx, results, linksBuilder)
+			items, err := RewriteDimensions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -1333,13 +1340,13 @@ func TestRewriteDimensions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteDimensions(ctx, results, linksBuilder)
+			items, err := RewriteDimensions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
-				So(items[0].HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
-				So(items[1].HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
-				So(items[2].HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(items[0].HRef, ShouldEqual, "http://localhost:22400/code-lists/mmm-yy")
+				So(items[1].HRef, ShouldEqual, "http://localhost:22400/code-lists/uk-only")
+				So(items[2].HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
 			})
 		})
 
@@ -1351,7 +1358,7 @@ func TestRewriteDimensions_Success(t *testing.T) {
 						Options:  models.LinkObject{},
 						Version:  models.LinkObject{},
 					},
-					HRef: "http://localhost:22000/code-lists/mmm-yy",
+					HRef: "http://localhost:22400/code-lists/mmm-yy",
 					ID:   "mmm-yy",
 					Name: "time",
 				},
@@ -1361,7 +1368,7 @@ func TestRewriteDimensions_Success(t *testing.T) {
 						Options:  models.LinkObject{},
 						Version:  models.LinkObject{},
 					},
-					HRef: "http://localhost:22000/code-lists/uk-only",
+					HRef: "http://localhost:22400/code-lists/uk-only",
 					ID:   "uk-only",
 					Name: "geography",
 				},
@@ -1371,13 +1378,13 @@ func TestRewriteDimensions_Success(t *testing.T) {
 						Options:  models.LinkObject{},
 						Version:  models.LinkObject{},
 					},
-					HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
+					HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
 					ID:   "cpih1dim1aggid",
 					Name: "aggregate",
 				},
 			}
 
-			items, err := RewriteDimensions(ctx, results, linksBuilder)
+			items, err := RewriteDimensions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -1401,7 +1408,7 @@ func TestRewriteDimensions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteDimensions(ctx, results, linksBuilder)
+			items, err := RewriteDimensions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -1415,7 +1422,7 @@ func TestRewriteDimensions_Success(t *testing.T) {
 		})
 
 		Convey("When the dimensions are nil", func() {
-			items, err := RewriteDimensions(ctx, nil, linksBuilder)
+			items, err := RewriteDimensions(ctx, nil, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the dimensions should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -1424,7 +1431,7 @@ func TestRewriteDimensions_Success(t *testing.T) {
 		})
 
 		Convey("When the dimensions are empty", func() {
-			items, err := RewriteDimensions(ctx, []models.Dimension{}, linksBuilder)
+			items, err := RewriteDimensions(ctx, []models.Dimension{}, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -1475,7 +1482,7 @@ func TestRewriteDimensions_Error(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteDimensions(ctx, results, nil)
+			items, err := RewriteDimensions(ctx, results, nil, nil)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -1504,11 +1511,11 @@ func TestRewriteDimensionLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionLinks(ctx, &links, linksBuilder)
+			err := RewriteDimensionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
-				So(links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
 				So(links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options")
 				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 			})
@@ -1517,7 +1524,7 @@ func TestRewriteDimensionLinks_Success(t *testing.T) {
 		Convey("When the dimension links do not need rewriting", func() {
 			links := models.DimensionLink{
 				CodeList: models.LinkObject{
-					HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
+					HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
 					ID:   "cpih1dim1aggid",
 				},
 				Options: models.LinkObject{
@@ -1529,11 +1536,11 @@ func TestRewriteDimensionLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionLinks(ctx, &links, linksBuilder)
+			err := RewriteDimensionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
-				So(links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
 				So(links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options")
 				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 			})
@@ -1542,7 +1549,7 @@ func TestRewriteDimensionLinks_Success(t *testing.T) {
 		Convey("When the dimension links are empty", func() {
 			links := models.DimensionLink{}
 
-			err := RewriteDimensionLinks(ctx, &links, linksBuilder)
+			err := RewriteDimensionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -1551,7 +1558,7 @@ func TestRewriteDimensionLinks_Success(t *testing.T) {
 		})
 
 		Convey("When the dimension links are nil", func() {
-			err := RewriteDimensionLinks(ctx, nil, linksBuilder)
+			err := RewriteDimensionLinks(ctx, nil, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -1563,10 +1570,33 @@ func TestRewriteDimensionLinks_Success(t *testing.T) {
 func TestRewriteDimensionLinks_Error(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a set of dimension links", t, func() {
-		Convey("When the dimension links are unable to be parsed", func() {
+		Convey("When the Code List link is unable to be parsed", func() {
 			links := models.DimensionLink{
 				CodeList: models.LinkObject{
 					HRef: "://oldhost:1000/code-lists/cpih1dim1aggid",
+					ID:   "cpih1dim1aggid",
+				},
+				Options: models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options",
+					ID:   "aggregate",
+				},
+				Version: models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+				},
+			}
+
+			err := RewriteDimensionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+
+		Convey("When the Options link is unable to be parsed", func() {
+			links := models.DimensionLink{
+				CodeList: models.LinkObject{
+					HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
 					ID:   "cpih1dim1aggid",
 				},
 				Options: models.LinkObject{
@@ -1574,11 +1604,34 @@ func TestRewriteDimensionLinks_Error(t *testing.T) {
 					ID:   "aggregate",
 				},
 				Version: models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+				},
+			}
+
+			err := RewriteDimensionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+
+		Convey("When the Version link is unable to be parsed", func() {
+			links := models.DimensionLink{
+				CodeList: models.LinkObject{
+					HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
+					ID:   "cpih1dim1aggid",
+				},
+				Options: models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options",
+					ID:   "aggregate",
+				},
+				Version: models.LinkObject{
 					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
 				},
 			}
 
-			err := RewriteDimensionLinks(ctx, &links, nil)
+			err := RewriteDimensionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -1646,23 +1699,23 @@ func TestRewritePublicDimensionOptions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewritePublicDimensionOptions(ctx, results, linksBuilder)
+			items, err := RewritePublicDimensionOptions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
 				So(items[0].Label, ShouldEqual, "Aggregate")
-				So(items[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
-				So(items[0].Links.Code.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/codes/cpih1dim1A0")
+				So(items[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
+				So(items[0].Links.Code.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid/codes/cpih1dim1A0")
 				So(items[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(items[0].Name, ShouldEqual, "aggregate")
 				So(items[1].Label, ShouldEqual, "Geography")
-				So(items[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
-				So(items[1].Links.Code.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/codes/K02000001")
+				So(items[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/uk-only")
+				So(items[1].Links.Code.HRef, ShouldEqual, "http://localhost:22400/code-lists/uk-only/codes/K02000001")
 				So(items[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(items[1].Name, ShouldEqual, "geography")
 				So(items[2].Label, ShouldEqual, "Time")
-				So(items[2].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
-				So(items[2].Links.Code.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/codes/Apr-00")
+				So(items[2].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/mmm-yy")
+				So(items[2].Links.Code.HRef, ShouldEqual, "http://localhost:22400/code-lists/mmm-yy/codes/Apr-00")
 				So(items[2].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(items[2].Name, ShouldEqual, "time")
 			})
@@ -1674,11 +1727,11 @@ func TestRewritePublicDimensionOptions_Success(t *testing.T) {
 					Label: "Aggregate",
 					Links: models.DimensionOptionLinks{
 						CodeList: models.LinkObject{
-							HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
+							HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
 							ID:   "cpih1dim1aggid",
 						},
 						Code: models.LinkObject{
-							HRef: "http://localhost:22000/code-lists/cpih1dim1aggid/codes/cpih1dim1A0",
+							HRef: "http://localhost:22400/code-lists/cpih1dim1aggid/codes/cpih1dim1A0",
 							ID:   "aggregate",
 						},
 						Version: models.LinkObject{
@@ -1691,11 +1744,11 @@ func TestRewritePublicDimensionOptions_Success(t *testing.T) {
 					Label: "Geography",
 					Links: models.DimensionOptionLinks{
 						CodeList: models.LinkObject{
-							HRef: "http://localhost:22000/code-lists/uk-only",
+							HRef: "http://localhost:22400/code-lists/uk-only",
 							ID:   "uk-only",
 						},
 						Code: models.LinkObject{
-							HRef: "http://localhost:22000/code-lists/uk-only/codes/K02000001",
+							HRef: "http://localhost:22400/code-lists/uk-only/codes/K02000001",
 							ID:   "geography",
 						},
 						Version: models.LinkObject{
@@ -1708,11 +1761,11 @@ func TestRewritePublicDimensionOptions_Success(t *testing.T) {
 					Label: "Time",
 					Links: models.DimensionOptionLinks{
 						CodeList: models.LinkObject{
-							HRef: "http://localhost:22000/code-lists/mmm-yy",
+							HRef: "http://localhost:22400/code-lists/mmm-yy",
 							ID:   "mmm-yy",
 						},
 						Code: models.LinkObject{
-							HRef: "http://localhost:22000/code-lists/mmm-yy/codes/Apr-00",
+							HRef: "http://localhost:22400/code-lists/mmm-yy/codes/Apr-00",
 							ID:   "time",
 						},
 						Version: models.LinkObject{
@@ -1723,7 +1776,7 @@ func TestRewritePublicDimensionOptions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewritePublicDimensionOptions(ctx, results, linksBuilder)
+			items, err := RewritePublicDimensionOptions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -1746,7 +1799,7 @@ func TestRewritePublicDimensionOptions_Success(t *testing.T) {
 		})
 
 		Convey("When the public dimension options are nil", func() {
-			items, err := RewritePublicDimensionOptions(ctx, nil, linksBuilder)
+			items, err := RewritePublicDimensionOptions(ctx, nil, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the public dimension options should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -1755,7 +1808,7 @@ func TestRewritePublicDimensionOptions_Success(t *testing.T) {
 		})
 
 		Convey("When the public dimension options are empty", func() {
-			items, err := RewritePublicDimensionOptions(ctx, []*models.PublicDimensionOption{}, linksBuilder)
+			items, err := RewritePublicDimensionOptions(ctx, []*models.PublicDimensionOption{}, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -1777,7 +1830,7 @@ func TestRewritePublicDimensionOptions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewritePublicDimensionOptions(ctx, results, linksBuilder)
+			items, err := RewritePublicDimensionOptions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -1833,7 +1886,7 @@ func TestRewritePublicDimensionOptions_Error(t *testing.T) {
 				},
 			}
 
-			items, err := RewritePublicDimensionOptions(ctx, results, nil)
+			items, err := RewritePublicDimensionOptions(ctx, results, nil, nil)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -1908,27 +1961,27 @@ func TestRewriteDimensionOptions_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionOptions(ctx, results, linksBuilder)
+			err := RewriteDimensionOptions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
 				So(results[0].Label, ShouldEqual, "May-89")
-				So(results[0].Links.Code.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/codes/May-89")
-				So(results[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[0].Links.Code.HRef, ShouldEqual, "http://localhost:22400/code-lists/mmm-yy/codes/May-89")
+				So(results[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/mmm-yy")
 				So(results[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(results[0].Name, ShouldEqual, "time")
 				So(results[0].NodeID, ShouldEqual, "_37abc12d_time_May-89")
 				So(results[0].Option, ShouldEqual, "May-89")
 				So(results[1].Label, ShouldEqual, "01.1 Food")
-				So(results[1].Links.Code.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100")
-				So(results[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(results[1].Links.Code.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100")
+				So(results[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
 				So(results[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(results[1].Name, ShouldEqual, "aggregate")
 				So(results[1].NodeID, ShouldEqual, "_37abc12d_aggregate_cpih1dim1G10100")
 				So(results[1].Option, ShouldEqual, "cpih1dim1G10100")
 				So(results[2].Label, ShouldEqual, "Mar-02")
-				So(results[2].Links.Code.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/codes/Mar-02")
-				So(results[2].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[2].Links.Code.HRef, ShouldEqual, "http://localhost:22400/code-lists/mmm-yy/codes/Mar-02")
+				So(results[2].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/mmm-yy")
 				So(results[2].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(results[2].Name, ShouldEqual, "time")
 				So(results[2].NodeID, ShouldEqual, "_37abc12d_time_Mar-02")
@@ -1942,11 +1995,11 @@ func TestRewriteDimensionOptions_Success(t *testing.T) {
 					Label: "May-89",
 					Links: models.DimensionOptionLinks{
 						Code: models.LinkObject{
-							HRef: "http://localhost:22000/code-lists/mmm-yy/codes/May-89",
+							HRef: "http://localhost:22400/code-lists/mmm-yy/codes/May-89",
 							ID:   "May-89",
 						},
 						CodeList: models.LinkObject{
-							HRef: "http://localhost:22000/code-lists/mmm-yy",
+							HRef: "http://localhost:22400/code-lists/mmm-yy",
 							ID:   "mmm-yy",
 						},
 						Version: models.LinkObject{
@@ -1961,11 +2014,11 @@ func TestRewriteDimensionOptions_Success(t *testing.T) {
 					Label: "01.1 Food",
 					Links: models.DimensionOptionLinks{
 						Code: models.LinkObject{
-							HRef: "http://localhost:22000/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100",
+							HRef: "http://localhost:22400/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100",
 							ID:   "cpih1dim1G10100",
 						},
 						CodeList: models.LinkObject{
-							HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
+							HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
 							ID:   "cpih1dim1aggid",
 						},
 						Version: models.LinkObject{
@@ -1980,11 +2033,11 @@ func TestRewriteDimensionOptions_Success(t *testing.T) {
 					Label: "Mar-02",
 					Links: models.DimensionOptionLinks{
 						Code: models.LinkObject{
-							HRef: "http://localhost:22000/code-lists/mmm-yy/codes/Mar-02",
+							HRef: "http://localhost:22400/code-lists/mmm-yy/codes/Mar-02",
 							ID:   "Mar-02",
 						},
 						CodeList: models.LinkObject{
-							HRef: "http://localhost:22000/code-lists/mmm-yy",
+							HRef: "http://localhost:22400/code-lists/mmm-yy",
 							ID:   "mmm-yy",
 						},
 						Version: models.LinkObject{
@@ -1997,7 +2050,7 @@ func TestRewriteDimensionOptions_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionOptions(ctx, results, linksBuilder)
+			err := RewriteDimensionOptions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -2026,7 +2079,7 @@ func TestRewriteDimensionOptions_Success(t *testing.T) {
 		})
 
 		Convey("When the dimension options are nil", func() {
-			err := RewriteDimensionOptions(ctx, nil, linksBuilder)
+			err := RewriteDimensionOptions(ctx, nil, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the dimension options should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -2034,7 +2087,7 @@ func TestRewriteDimensionOptions_Success(t *testing.T) {
 		})
 
 		Convey("When the dimension options are empty", func() {
-			err := RewriteDimensionOptions(ctx, []*models.DimensionOption{}, linksBuilder)
+			err := RewriteDimensionOptions(ctx, []*models.DimensionOption{}, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -2059,7 +2112,7 @@ func TestRewriteDimensionOptions_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionOptions(ctx, results, linksBuilder)
+			err := RewriteDimensionOptions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -2123,7 +2176,7 @@ func TestRewriteDimensionOptions_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionOptions(ctx, results, nil)
+			err := RewriteDimensionOptions(ctx, results, nil, nil)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -2151,12 +2204,12 @@ func TestRewriteDimensionOptionLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionOptionLinks(ctx, &links, linksBuilder)
+			err := RewriteDimensionOptionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
-				So(links.Code.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100")
-				So(links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(links.Code.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100")
+				So(links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
 				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
@@ -2164,11 +2217,11 @@ func TestRewriteDimensionOptionLinks_Success(t *testing.T) {
 		Convey("When the dimension option links do not need rewriting", func() {
 			links := models.DimensionOptionLinks{
 				Code: models.LinkObject{
-					HRef: "http://localhost:22000/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100",
+					HRef: "http://localhost:22400/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100",
 					ID:   "cpih1dim1G10100",
 				},
 				CodeList: models.LinkObject{
-					HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
+					HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
 					ID:   "cpih1dim1aggid",
 				},
 				Version: models.LinkObject{
@@ -2176,12 +2229,12 @@ func TestRewriteDimensionOptionLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionOptionLinks(ctx, &links, linksBuilder)
+			err := RewriteDimensionOptionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
-				So(links.Code.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100")
-				So(links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
+				So(links.Code.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100")
+				So(links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
 				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
@@ -2189,7 +2242,7 @@ func TestRewriteDimensionOptionLinks_Success(t *testing.T) {
 		Convey("When the dimension option links are empty", func() {
 			links := models.DimensionOptionLinks{}
 
-			err := RewriteDimensionOptionLinks(ctx, &links, linksBuilder)
+			err := RewriteDimensionOptionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -2198,7 +2251,7 @@ func TestRewriteDimensionOptionLinks_Success(t *testing.T) {
 		})
 
 		Convey("When the dimension option links are nil", func() {
-			err := RewriteDimensionOptionLinks(ctx, nil, linksBuilder)
+			err := RewriteDimensionOptionLinks(ctx, nil, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -2210,10 +2263,33 @@ func TestRewriteDimensionOptionLinks_Success(t *testing.T) {
 func TestRewriteDimensionOptionLinks_Error(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a set of dimension option links", t, func() {
-		Convey("When the dimension option links are unable to be parsed", func() {
+		Convey("When the Code link is unable to be parsed", func() {
 			links := models.DimensionOptionLinks{
 				Code: models.LinkObject{
 					HRef: "://oldhost:1000/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100",
+					ID:   "cpih1dim1G10100",
+				},
+				CodeList: models.LinkObject{
+					HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
+					ID:   "cpih1dim1aggid",
+				},
+				Version: models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+				},
+			}
+
+			err := RewriteDimensionOptionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+
+		Convey("When the CodeList link is unable to be parsed", func() {
+			links := models.DimensionOptionLinks{
+				Code: models.LinkObject{
+					HRef: "http://localhost:22400/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100",
 					ID:   "cpih1dim1G10100",
 				},
 				CodeList: models.LinkObject{
@@ -2221,11 +2297,34 @@ func TestRewriteDimensionOptionLinks_Error(t *testing.T) {
 					ID:   "cpih1dim1aggid",
 				},
 				Version: models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+				},
+			}
+
+			err := RewriteDimensionOptionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+
+		Convey("When the Version link is unable to be parsed", func() {
+			links := models.DimensionOptionLinks{
+				Code: models.LinkObject{
+					HRef: "http://localhost:22400/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100",
+					ID:   "cpih1dim1G10100",
+				},
+				CodeList: models.LinkObject{
+					HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
+					ID:   "cpih1dim1aggid",
+				},
+				Version: models.LinkObject{
 					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
 				},
 			}
 
-			err := RewriteDimensionOptionLinks(ctx, &links, nil)
+			err := RewriteDimensionOptionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -2285,7 +2384,7 @@ func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteEditionsWithAuth(ctx, results, linksBuilder)
+			items, err := RewriteEditionsWithAuth(ctx, results, datasetLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -2352,7 +2451,7 @@ func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteEditionsWithAuth(ctx, results, linksBuilder)
+			items, err := RewriteEditionsWithAuth(ctx, results, datasetLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -2373,7 +2472,7 @@ func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 		})
 
 		Convey("When the edition updates are nil", func() {
-			items, err := RewriteEditionsWithAuth(ctx, nil, linksBuilder)
+			items, err := RewriteEditionsWithAuth(ctx, nil, datasetLinksBuilder)
 
 			Convey("Then the edition updates should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -2382,7 +2481,7 @@ func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 		})
 
 		Convey("When the edition updates are empty", func() {
-			items, err := RewriteEditionsWithAuth(ctx, []*models.EditionUpdate{}, linksBuilder)
+			items, err := RewriteEditionsWithAuth(ctx, []*models.EditionUpdate{}, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -2407,7 +2506,7 @@ func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteEditionsWithAuth(ctx, results, linksBuilder)
+			items, err := RewriteEditionsWithAuth(ctx, results, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -2548,7 +2647,7 @@ func TestRewriteEditionsWithoutAuth_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteEditionsWithoutAuth(ctx, results, linksBuilder)
+			items, err := RewriteEditionsWithoutAuth(ctx, results, datasetLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -2609,7 +2708,7 @@ func TestRewriteEditionsWithoutAuth_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteEditionsWithoutAuth(ctx, results, linksBuilder)
+			items, err := RewriteEditionsWithoutAuth(ctx, results, datasetLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -2624,7 +2723,7 @@ func TestRewriteEditionsWithoutAuth_Success(t *testing.T) {
 		})
 
 		Convey("When the edition updates are nil", func() {
-			items, err := RewriteEditionsWithoutAuth(ctx, nil, linksBuilder)
+			items, err := RewriteEditionsWithoutAuth(ctx, nil, datasetLinksBuilder)
 
 			Convey("Then an empty list should be returned", func() {
 				So(err, ShouldBeNil)
@@ -2633,7 +2732,7 @@ func TestRewriteEditionsWithoutAuth_Success(t *testing.T) {
 		})
 
 		Convey("When the edition updates are empty", func() {
-			items, err := RewriteEditionsWithoutAuth(ctx, []*models.EditionUpdate{}, linksBuilder)
+			items, err := RewriteEditionsWithoutAuth(ctx, []*models.EditionUpdate{}, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -2658,7 +2757,7 @@ func TestRewriteEditionsWithoutAuth_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteEditionsWithoutAuth(ctx, results, linksBuilder)
+			items, err := RewriteEditionsWithoutAuth(ctx, results, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -2779,7 +2878,7 @@ func TestRewriteEditionWithAuth_Success(t *testing.T) {
 				},
 			}
 
-			item, err := RewriteEditionWithAuth(ctx, result, linksBuilder)
+			item, err := RewriteEditionWithAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -2844,7 +2943,7 @@ func TestRewriteEditionWithAuth_Success(t *testing.T) {
 				},
 			}
 
-			item, err := RewriteEditionWithAuth(ctx, result, linksBuilder)
+			item, err := RewriteEditionWithAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -2879,7 +2978,7 @@ func TestRewriteEditionWithAuth_Success(t *testing.T) {
 				},
 			}
 
-			item, err := RewriteEditionWithAuth(ctx, result, linksBuilder)
+			item, err := RewriteEditionWithAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -2904,7 +3003,7 @@ func TestRewriteEditionWithAuth_Success(t *testing.T) {
 				},
 			}
 
-			item, err := RewriteEditionWithAuth(ctx, result, linksBuilder)
+			item, err := RewriteEditionWithAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -2990,7 +3089,7 @@ func TestRewriteEditionWithAuth_Error(t *testing.T) {
 		})
 
 		Convey("When the edition update is nil", func() {
-			item, err := RewriteEditionWithAuth(ctx, nil, linksBuilder)
+			item, err := RewriteEditionWithAuth(ctx, nil, datasetLinksBuilder)
 
 			Convey("Then an edition not found error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -3049,7 +3148,7 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 				},
 			}
 
-			item, err := RewriteEditionWithoutAuth(ctx, result, linksBuilder)
+			item, err := RewriteEditionWithoutAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -3108,7 +3207,7 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 				},
 			}
 
-			item, err := RewriteEditionWithoutAuth(ctx, result, linksBuilder)
+			item, err := RewriteEditionWithoutAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -3137,7 +3236,7 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 				},
 			}
 
-			item, err := RewriteEditionWithoutAuth(ctx, result, linksBuilder)
+			item, err := RewriteEditionWithoutAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -3160,7 +3259,7 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 				},
 			}
 
-			item, err := RewriteEditionWithoutAuth(ctx, result, linksBuilder)
+			item, err := RewriteEditionWithoutAuth(ctx, result, datasetLinksBuilder)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -3171,7 +3270,7 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 		})
 
 		Convey("When the edition update is empty", func() {
-			item, err := RewriteEditionWithoutAuth(ctx, &models.EditionUpdate{}, linksBuilder)
+			item, err := RewriteEditionWithoutAuth(ctx, &models.EditionUpdate{}, datasetLinksBuilder)
 
 			Convey("Then nothing should be returned", func() {
 				So(err, ShouldBeNil)
@@ -3183,7 +3282,7 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 			item, err := RewriteEditionWithoutAuth(ctx, &models.EditionUpdate{
 				Current: nil,
 				Next:    &models.Edition{},
-			}, linksBuilder)
+			}, datasetLinksBuilder)
 
 			Convey("Then nothing should be returned", func() {
 				So(err, ShouldBeNil)
@@ -3251,7 +3350,7 @@ func TestRewriteEditionWithoutAuth_Error(t *testing.T) {
 		})
 
 		Convey("When the edition update is nil", func() {
-			item, err := RewriteEditionWithoutAuth(ctx, nil, linksBuilder)
+			item, err := RewriteEditionWithoutAuth(ctx, nil, datasetLinksBuilder)
 
 			Convey("Then an edition not found error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -3283,7 +3382,7 @@ func TestRewriteEditionLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteEditionLinks(ctx, links, linksBuilder)
+			err := RewriteEditionLinks(ctx, links, datasetLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -3312,7 +3411,7 @@ func TestRewriteEditionLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteEditionLinks(ctx, links, linksBuilder)
+			err := RewriteEditionLinks(ctx, links, datasetLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -3326,7 +3425,7 @@ func TestRewriteEditionLinks_Success(t *testing.T) {
 		Convey("When the edition update links are empty", func() {
 			links := &models.EditionUpdateLinks{}
 
-			err := RewriteEditionLinks(ctx, links, linksBuilder)
+			err := RewriteEditionLinks(ctx, links, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -3335,7 +3434,7 @@ func TestRewriteEditionLinks_Success(t *testing.T) {
 		})
 
 		Convey("When the edition update links are nil", func() {
-			err := RewriteEditionLinks(ctx, nil, linksBuilder)
+			err := RewriteEditionLinks(ctx, nil, datasetLinksBuilder)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -3395,7 +3494,7 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteMetadataLinks(ctx, links, linksBuilder)
+			err := RewriteMetadataLinks(ctx, links, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -3403,7 +3502,7 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/metadata")
 				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(links.Version.ID, ShouldEqual, "1")
-				So(links.WebsiteVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(links.WebsiteVersion.HRef, ShouldEqual, "http://localhost:20000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
 
@@ -3420,11 +3519,11 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 					ID:   "1",
 				},
 				WebsiteVersion: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+					HRef: "http://localhost:20000/datasets/cpih01/editions/time-series/versions/1",
 				},
 			}
 
-			err := RewriteMetadataLinks(ctx, links, linksBuilder)
+			err := RewriteMetadataLinks(ctx, links, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -3432,14 +3531,14 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/metadata")
 				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(links.Version.ID, ShouldEqual, "1")
-				So(links.WebsiteVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(links.WebsiteVersion.HRef, ShouldEqual, "http://localhost:20000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
 
 		Convey("When the metadata links are empty", func() {
 			links := &models.MetadataLinks{}
 
-			err := RewriteMetadataLinks(ctx, links, linksBuilder)
+			err := RewriteMetadataLinks(ctx, links, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -3448,7 +3547,7 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 		})
 
 		Convey("When the metadata links are nil", func() {
-			err := RewriteMetadataLinks(ctx, nil, linksBuilder)
+			err := RewriteMetadataLinks(ctx, nil, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -3456,7 +3555,7 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 		})
 
 		Convey("When the metadata links are missing", func() {
-			err := RewriteMetadataLinks(ctx, &models.MetadataLinks{}, linksBuilder)
+			err := RewriteMetadataLinks(ctx, &models.MetadataLinks{}, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -3468,16 +3567,57 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 func TestRewriteMetadataLinks_Error(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a set of metadata links", t, func() {
-		Convey("When the metadata links are unable to be parsed", func() {
+		Convey("When the Self link is unable to be parsed", func() {
 			links := &models.MetadataLinks{
-				AccessRights: &models.LinkObject{
-					HRef: "://oldhost:1000/accessrights",
-				},
 				Self: &models.LinkObject{
 					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/metadata",
 				},
 				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+					ID:   "1",
+				},
+				WebsiteVersion: &models.LinkObject{
+					HRef: "http://localhost:20000/datasets/cpih01/editions/time-series/versions/1",
+				},
+			}
+
+			err := RewriteMetadataLinks(ctx, links, datasetLinksBuilder, websiteLinksBuilder)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+
+		Convey("When the Version link is unable to be parsed", func() {
+			links := &models.MetadataLinks{
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/metadata",
+				},
+				Version: &models.LinkObject{
 					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+					ID:   "1",
+				},
+				WebsiteVersion: &models.LinkObject{
+					HRef: "http://localhost:20000/datasets/cpih01/editions/time-series/versions/1",
+				},
+			}
+
+			err := RewriteMetadataLinks(ctx, links, datasetLinksBuilder, websiteLinksBuilder)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+
+		Convey("When the WebsiteVersion link is unable to be parsed", func() {
+			links := &models.MetadataLinks{
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/metadata",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
 					ID:   "1",
 				},
 				WebsiteVersion: &models.LinkObject{
@@ -3485,7 +3625,7 @@ func TestRewriteMetadataLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteMetadataLinks(ctx, links, nil)
+			err := RewriteMetadataLinks(ctx, links, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -3520,55 +3660,38 @@ func TestRewriteVersions_Success(t *testing.T) {
 					},
 					Dimensions: []models.Dimension{
 						{
-							HRef:  "https://oldhost:1000/code-lists/mmm-yy",
-							ID:    "mmm-yy",
-							Label: "Time",
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/mmm-yy",
-								},
-								Options: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/mmm-yy/options",
-								},
-								Version: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/mmm-yy/versions/1",
-								},
-							},
-							Name: "time",
-						},
-						{
-							HRef:  "https://oldhost:1000/code-lists/uk-only",
-							ID:    "uk-only",
-							Label: "Geography",
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/uk-only",
-								},
-								Options: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/uk-only/options",
-								},
-								Version: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/uk-only/versions/1",
-								},
-							},
-							Name: "geography",
-						},
-						{
-							HRef:  "https://oldhost:1000/code-lists/cpih1dim1aggid",
-							ID:    "cpih1dim1aggid",
 							Label: "Aggregate",
 							Links: models.DimensionLink{
 								CodeList: models.LinkObject{
 									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid",
+									ID:   "cpih1dim1aggid",
 								},
 								Options: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid/options",
+									HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options",
+									ID:   "aggregate",
 								},
 								Version: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid/versions/1",
+									HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
 								},
 							},
 							Name: "aggregate",
+						},
+						{
+							Label: "Geography",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/uk-only",
+									ID:   "uk-only",
+								},
+								Options: models.LinkObject{
+									HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions/geography/options",
+									ID:   "geography",
+								},
+								Version: models.LinkObject{
+									HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+								},
+							},
+							Name: "geography",
 						},
 					},
 				},
@@ -3592,61 +3715,44 @@ func TestRewriteVersions_Success(t *testing.T) {
 					},
 					Dimensions: []models.Dimension{
 						{
-							HRef:  "https://oldhost:1000/code-lists/mmm-yy",
-							ID:    "mmm-yy",
-							Label: "Time",
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/mmm-yy",
-								},
-								Options: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/mmm-yy/options",
-								},
-								Version: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/mmm-yy/versions/1",
-								},
-							},
-							Name: "time",
-						},
-						{
-							HRef:  "https://oldhost:1000/code-lists/uk-only",
-							ID:    "uk-only",
-							Label: "Geography",
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/uk-only",
-								},
-								Options: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/uk-only/options",
-								},
-								Version: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/uk-only/versions/1",
-								},
-							},
-							Name: "geography",
-						},
-						{
-							HRef:  "https://oldhost:1000/code-lists/cpih1dim1aggid",
-							ID:    "cpih1dim1aggid",
 							Label: "Aggregate",
 							Links: models.DimensionLink{
 								CodeList: models.LinkObject{
 									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid",
+									ID:   "cpih1dim1aggid",
 								},
 								Options: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid/options",
+									HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options",
+									ID:   "aggregate",
 								},
 								Version: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid/versions/1",
+									HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
 								},
 							},
 							Name: "aggregate",
+						},
+						{
+							Label: "Geography",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/uk-only",
+									ID:   "uk-only",
+								},
+								Options: models.LinkObject{
+									HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions/geography/options",
+									ID:   "geography",
+								},
+								Version: models.LinkObject{
+									HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+								},
+							},
+							Name: "geography",
 						},
 					},
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, linksBuilder)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -3658,18 +3764,12 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[0].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
 				So(items[0].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(items[0].Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/53")
-				So(items[0].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
-				So(items[0].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
-				So(items[0].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/options")
-				So(items[0].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/versions/1")
-				So(items[0].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
-				So(items[0].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
-				So(items[0].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/options")
-				So(items[0].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/versions/1")
-				So(items[0].Dimensions[2].HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
-				So(items[0].Dimensions[2].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
-				So(items[0].Dimensions[2].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/options")
-				So(items[0].Dimensions[2].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/versions/1")
+				So(items[0].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
+				So(items[0].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options")
+				So(items[0].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(items[0].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/uk-only")
+				So(items[0].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/geography/options")
+				So(items[0].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 
 				So(items[1].ID, ShouldEqual, "74e4d2da-8fd6-4bb6-b4a2-b5cd573fb42b")
 				So(items[1].DatasetID, ShouldEqual, "cpih01")
@@ -3678,18 +3778,12 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[1].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
 				So(items[1].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(items[1].Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/52")
-				So(items[1].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
-				So(items[1].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
-				So(items[1].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/options")
-				So(items[1].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/versions/1")
-				So(items[1].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
-				So(items[1].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
-				So(items[1].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/options")
-				So(items[1].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/versions/1")
-				So(items[1].Dimensions[2].HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
-				So(items[1].Dimensions[2].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
-				So(items[1].Dimensions[2].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/options")
-				So(items[1].Dimensions[2].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/versions/1")
+				So(items[1].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
+				So(items[1].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options")
+				So(items[1].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(items[1].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/uk-only")
+				So(items[1].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/geography/options")
+				So(items[1].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
 
@@ -3715,55 +3809,38 @@ func TestRewriteVersions_Success(t *testing.T) {
 					},
 					Dimensions: []models.Dimension{
 						{
-							HRef:  "http://localhost:22000/code-lists/mmm-yy",
-							ID:    "mmm-yy",
-							Label: "Time",
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/mmm-yy",
-								},
-								Options: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/mmm-yy/options",
-								},
-								Version: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/mmm-yy/versions/1",
-								},
-							},
-							Name: "time",
-						},
-						{
-							HRef:  "http://localhost:22000/code-lists/uk-only",
-							ID:    "uk-only",
-							Label: "Geography",
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/uk-only",
-								},
-								Options: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/uk-only/options",
-								},
-								Version: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/uk-only/versions/1",
-								},
-							},
-							Name: "geography",
-						},
-						{
-							HRef:  "http://localhost:22000/code-lists/cpih1dim1aggid",
-							ID:    "cpih1dim1aggid",
 							Label: "Aggregate",
 							Links: models.DimensionLink{
 								CodeList: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
+									HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
+									ID:   "cpih1dim1aggid",
 								},
 								Options: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid/options",
+									HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options",
+									ID:   "aggregate",
 								},
 								Version: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid/versions/1",
+									HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
 								},
 							},
 							Name: "aggregate",
+						},
+						{
+							Label: "Geography",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{
+									HRef: "http://localhost:22400/code-lists/uk-only",
+									ID:   "uk-only",
+								},
+								Options: models.LinkObject{
+									HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/geography/options",
+									ID:   "geography",
+								},
+								Version: models.LinkObject{
+									HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+								},
+							},
+							Name: "geography",
 						},
 					},
 				},
@@ -3787,61 +3864,44 @@ func TestRewriteVersions_Success(t *testing.T) {
 					},
 					Dimensions: []models.Dimension{
 						{
-							HRef:  "http://localhost:22000/code-lists/mmm-yy",
-							ID:    "mmm-yy",
-							Label: "Time",
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/mmm-yy",
-								},
-								Options: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/mmm-yy/options",
-								},
-								Version: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/mmm-yy/versions/1",
-								},
-							},
-							Name: "time",
-						},
-						{
-							HRef:  "http://localhost:22000/code-lists/uk-only",
-							ID:    "uk-only",
-							Label: "Geography",
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/uk-only",
-								},
-								Options: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/uk-only/options",
-								},
-								Version: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/uk-only/versions/1",
-								},
-							},
-							Name: "geography",
-						},
-						{
-							HRef:  "http://localhost:22000/code-lists/cpih1dim1aggid",
-							ID:    "cpih1dim1aggid",
 							Label: "Aggregate",
 							Links: models.DimensionLink{
 								CodeList: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
+									HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
+									ID:   "cpih1dim1aggid",
 								},
 								Options: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid/options",
+									HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options",
+									ID:   "aggregate",
 								},
 								Version: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid/versions/1",
+									HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
 								},
 							},
 							Name: "aggregate",
+						},
+						{
+							Label: "Geography",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{
+									HRef: "http://localhost:22400/code-lists/uk-only",
+									ID:   "uk-only",
+								},
+								Options: models.LinkObject{
+									HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/geography/options",
+									ID:   "geography",
+								},
+								Version: models.LinkObject{
+									HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+								},
+							},
+							Name: "geography",
 						},
 					},
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, linksBuilder)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -3853,18 +3913,12 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[0].Links.Dataset.HRef, ShouldEqual, results[0].Links.Dataset.HRef)
 				So(items[0].Links.Edition.HRef, ShouldEqual, results[0].Links.Edition.HRef)
 				So(items[0].Links.Self.HRef, ShouldEqual, results[0].Links.Self.HRef)
-				So(items[0].Dimensions[0].HRef, ShouldEqual, results[0].Dimensions[0].HRef)
 				So(items[0].Dimensions[0].Links.CodeList.HRef, ShouldEqual, results[0].Dimensions[0].Links.CodeList.HRef)
 				So(items[0].Dimensions[0].Links.Options.HRef, ShouldEqual, results[0].Dimensions[0].Links.Options.HRef)
 				So(items[0].Dimensions[0].Links.Version.HRef, ShouldEqual, results[0].Dimensions[0].Links.Version.HRef)
-				So(items[0].Dimensions[1].HRef, ShouldEqual, results[0].Dimensions[1].HRef)
 				So(items[0].Dimensions[1].Links.CodeList.HRef, ShouldEqual, results[0].Dimensions[1].Links.CodeList.HRef)
 				So(items[0].Dimensions[1].Links.Options.HRef, ShouldEqual, results[0].Dimensions[1].Links.Options.HRef)
 				So(items[0].Dimensions[1].Links.Version.HRef, ShouldEqual, results[0].Dimensions[1].Links.Version.HRef)
-				So(items[0].Dimensions[2].HRef, ShouldEqual, results[0].Dimensions[2].HRef)
-				So(items[0].Dimensions[2].Links.CodeList.HRef, ShouldEqual, results[0].Dimensions[2].Links.CodeList.HRef)
-				So(items[0].Dimensions[2].Links.Options.HRef, ShouldEqual, results[0].Dimensions[2].Links.Options.HRef)
-				So(items[0].Dimensions[2].Links.Version.HRef, ShouldEqual, results[0].Dimensions[2].Links.Version.HRef)
 
 				So(items[1].ID, ShouldEqual, results[1].ID)
 				So(items[1].DatasetID, ShouldEqual, results[1].DatasetID)
@@ -3873,18 +3927,12 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[1].Links.Dataset.HRef, ShouldEqual, results[1].Links.Dataset.HRef)
 				So(items[1].Links.Edition.HRef, ShouldEqual, results[1].Links.Edition.HRef)
 				So(items[1].Links.Self.HRef, ShouldEqual, results[1].Links.Self.HRef)
-				So(items[1].Dimensions[0].HRef, ShouldEqual, results[1].Dimensions[0].HRef)
 				So(items[1].Dimensions[0].Links.CodeList.HRef, ShouldEqual, results[1].Dimensions[0].Links.CodeList.HRef)
 				So(items[1].Dimensions[0].Links.Options.HRef, ShouldEqual, results[1].Dimensions[0].Links.Options.HRef)
 				So(items[1].Dimensions[0].Links.Version.HRef, ShouldEqual, results[1].Dimensions[0].Links.Version.HRef)
-				So(items[1].Dimensions[1].HRef, ShouldEqual, results[1].Dimensions[1].HRef)
 				So(items[1].Dimensions[1].Links.CodeList.HRef, ShouldEqual, results[1].Dimensions[1].Links.CodeList.HRef)
 				So(items[1].Dimensions[1].Links.Options.HRef, ShouldEqual, results[1].Dimensions[1].Links.Options.HRef)
 				So(items[1].Dimensions[1].Links.Version.HRef, ShouldEqual, results[1].Dimensions[1].Links.Version.HRef)
-				So(items[1].Dimensions[2].HRef, ShouldEqual, results[1].Dimensions[2].HRef)
-				So(items[1].Dimensions[2].Links.CodeList.HRef, ShouldEqual, results[1].Dimensions[2].Links.CodeList.HRef)
-				So(items[1].Dimensions[2].Links.Options.HRef, ShouldEqual, results[1].Dimensions[2].Links.Options.HRef)
-				So(items[1].Dimensions[2].Links.Version.HRef, ShouldEqual, results[1].Dimensions[2].Links.Version.HRef)
 			})
 		})
 
@@ -3908,7 +3956,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, linksBuilder)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -3949,7 +3997,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, linksBuilder)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -3973,7 +4021,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 		Convey("When the versions are empty", func() {
 			results := []models.Version{}
 
-			items, err := RewriteVersions(ctx, results, linksBuilder)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the versions should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -4028,7 +4076,7 @@ func TestRewriteVersions_Error(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, nil)
+			items, err := RewriteVersions(ctx, results, nil, nil)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -4046,27 +4094,27 @@ func TestRewriteVersions_Error(t *testing.T) {
 					Version:   53,
 					Dimensions: []models.Dimension{
 						{
-							HRef:  "://oldhost:1000/code-lists/mmm-yy",
-							ID:    "mmm-yy",
-							Label: "Time",
+							HRef:  "://oldhost:1000/code-lists/cpih1dim1aggid",
+							ID:    "cpih1dim1aggid",
+							Label: "Aggregate",
 							Links: models.DimensionLink{
 								CodeList: models.LinkObject{
-									HRef: "://oldhost:1000/code-lists/mmm-yy",
+									HRef: "://oldhost:1000/code-lists/cpih1dim1aggid",
 								},
 								Options: models.LinkObject{
-									HRef: "://oldhost:1000/code-lists/mmm-yy/options",
+									HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options",
 								},
 								Version: models.LinkObject{
-									HRef: "://oldhost:1000/code-lists/mmm-yy/versions/1",
+									HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
 								},
 							},
-							Name: "time",
+							Name: "aggregate",
 						},
 					},
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, linksBuilder)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -4105,7 +4153,7 @@ func TestRewriteVersionLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteVersionLinks(ctx, links, linksBuilder)
+			err := RewriteVersionLinks(ctx, links, datasetLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -4144,7 +4192,7 @@ func TestRewriteVersionLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteVersionLinks(ctx, links, linksBuilder)
+			err := RewriteVersionLinks(ctx, links, datasetLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -4161,7 +4209,7 @@ func TestRewriteVersionLinks_Success(t *testing.T) {
 		Convey("When the version links are empty", func() {
 			links := &models.VersionLinks{}
 
-			err := RewriteVersionLinks(ctx, links, linksBuilder)
+			err := RewriteVersionLinks(ctx, links, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -4170,7 +4218,7 @@ func TestRewriteVersionLinks_Success(t *testing.T) {
 		})
 
 		Convey("When the version links are nil", func() {
-			err := RewriteVersionLinks(ctx, nil, linksBuilder)
+			err := RewriteVersionLinks(ctx, nil, datasetLinksBuilder)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -4226,36 +4274,38 @@ func TestRewriteInstances_Success(t *testing.T) {
 					CollectionID: "cantabularflexibledefault-1",
 					Dimensions: []models.Dimension{
 						{
-							Label: "City",
+							Label: "Aggregate",
 							Links: models.DimensionLink{
 								CodeList: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/city",
+									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid",
+									ID:   "cpih1dim1aggid",
 								},
 								Options: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/city/options",
+									HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options",
+									ID:   "aggregate",
 								},
 								Version: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/city/versions/1",
+									HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
 								},
 							},
-							HRef: "https://oldhost:1000/city",
-							ID:   "city",
+							Name: "aggregate",
 						},
 						{
-							Label: "Number of siblings (3 mappings)",
+							Label: "Geography",
 							Links: models.DimensionLink{
 								CodeList: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/siblings_3",
+									HRef: "https://oldhost:1000/code-lists/uk-only",
+									ID:   "uk-only",
 								},
 								Options: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/siblings_3/options",
+									HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions/geography/options",
+									ID:   "geography",
 								},
 								Version: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/siblings_3/versions/1",
+									HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
 								},
 							},
-							HRef: "https://oldhost:1000/siblings_3",
-							ID:   "siblings_3",
+							Name: "geography",
 						},
 					},
 					Edition:    "2021",
@@ -4266,7 +4316,7 @@ func TestRewriteInstances_Success(t *testing.T) {
 							ID:   "cantabular-flexible-default",
 						},
 						Dimensions: &models.LinkObject{
-							HRef: "https://oldhost:1000/code-lists/mmm-yy",
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions",
 						},
 						Edition: &models.LinkObject{
 							HRef: "https://oldhost:1000/datasets/cantabular-flexible-default/editions/2021",
@@ -4292,52 +4342,38 @@ func TestRewriteInstances_Success(t *testing.T) {
 					CollectionID: "cpihtest-1",
 					Dimensions: []models.Dimension{
 						{
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/mmm-yy",
-								},
-								Options: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/mmm-yy/options",
-								},
-								Version: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/mmm-yy/versions/1",
-								},
-							},
-							HRef: "https://oldhost:1000/code-lists/mmm-yy",
-							ID:   "mmm-yy",
-							Name: "time",
-						},
-						{
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/uk-only",
-								},
-								Options: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/uk-only/options",
-								},
-								Version: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/uk-only/versions/1",
-								},
-							},
-							HRef: "https://oldhost:1000/code-lists/uk-only",
-							ID:   "uk-only",
-							Name: "geography",
-						},
-						{
+							Label: "Aggregate",
 							Links: models.DimensionLink{
 								CodeList: models.LinkObject{
 									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid",
+									ID:   "cpih1dim1aggid",
 								},
 								Options: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid/options",
+									HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options",
+									ID:   "aggregate",
 								},
 								Version: models.LinkObject{
-									HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid/versions/1",
+									HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
 								},
 							},
-							HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid",
-							ID:   "cpih1dim1aggid",
 							Name: "aggregate",
+						},
+						{
+							Label: "Geography",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{
+									HRef: "https://oldhost:1000/code-lists/uk-only",
+									ID:   "uk-only",
+								},
+								Options: models.LinkObject{
+									HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions/geography/options",
+									ID:   "geography",
+								},
+								Version: models.LinkObject{
+									HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+								},
+							},
+							Name: "geography",
 						},
 					},
 					Edition:    "time-series",
@@ -4348,7 +4384,7 @@ func TestRewriteInstances_Success(t *testing.T) {
 							ID:   "cpih01",
 						},
 						Dimensions: &models.LinkObject{
-							HRef: "https://oldhost:1000/code-lists/mmm-yy",
+							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions",
 						},
 						Edition: &models.LinkObject{
 							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series",
@@ -4372,49 +4408,41 @@ func TestRewriteInstances_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstances(ctx, results, linksBuilder)
+			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
 
 				So(results[0].CollectionID, ShouldEqual, "cantabularflexibledefault-1")
-				So(results[0].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/city")
-				So(results[0].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/city")
-				So(results[0].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/city/options")
-				So(results[0].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/city/versions/1")
-				So(results[0].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/siblings_3")
-				So(results[0].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/siblings_3")
-				So(results[0].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/siblings_3/options")
-				So(results[0].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/siblings_3/versions/1")
+				So(results[0].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
+				So(results[0].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options")
+				So(results[0].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(results[0].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/uk-only")
+				So(results[0].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/geography/options")
+				So(results[0].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(results[0].Edition, ShouldEqual, "2021")
 				So(results[0].InstanceID, ShouldEqual, "1")
 				So(results[0].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default")
-				So(results[0].Links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[0].Links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions")
 				So(results[0].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default/editions/2021")
-				So(results[0].Links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/1")
+				So(results[0].Links.Job.HRef, ShouldEqual, "http://localhost:21800/jobs/1")
 				So(results[0].Links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/1")
 				So(results[0].Links.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial/1")
 				So(results[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default/editions/2021/versions/1")
 
 				So(results[1].CollectionID, ShouldEqual, "cpihtest-1")
-				So(results[1].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
-				So(results[1].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
-				So(results[1].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/options")
-				So(results[1].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/versions/1")
-				So(results[1].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
-				So(results[1].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
-				So(results[1].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/options")
-				So(results[1].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/versions/1")
-				So(results[1].Dimensions[2].HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
-				So(results[1].Dimensions[2].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
-				So(results[1].Dimensions[2].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/options")
-				So(results[1].Dimensions[2].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/versions/1")
+				So(results[1].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
+				So(results[1].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options")
+				So(results[1].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(results[1].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/uk-only")
+				So(results[1].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/geography/options")
+				So(results[1].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(results[1].Edition, ShouldEqual, "time-series")
 				So(results[1].InstanceID, ShouldEqual, "2")
 				So(results[1].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
-				So(results[1].Links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[1].Links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions")
 				So(results[1].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
-				So(results[1].Links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/2")
+				So(results[1].Links.Job.HRef, ShouldEqual, "http://localhost:21800/jobs/2")
 				So(results[1].Links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/2")
 				So(results[1].Links.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial/2")
 				So(results[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
@@ -4427,36 +4455,38 @@ func TestRewriteInstances_Success(t *testing.T) {
 					CollectionID: "cantabularflexibledefault-1",
 					Dimensions: []models.Dimension{
 						{
-							Label: "City",
+							Label: "Aggregate",
 							Links: models.DimensionLink{
 								CodeList: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/city",
+									HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
+									ID:   "cpih1dim1aggid",
 								},
 								Options: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/city/options",
+									HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options",
+									ID:   "aggregate",
 								},
 								Version: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/city/versions/1",
+									HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
 								},
 							},
-							HRef: "http://localhost:22000/city",
-							ID:   "city",
+							Name: "aggregate",
 						},
 						{
-							Label: "Number of siblings (3 mappings)",
+							Label: "Geography",
 							Links: models.DimensionLink{
 								CodeList: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/siblings_3",
+									HRef: "http://localhost:22400/code-lists/uk-only",
+									ID:   "uk-only",
 								},
 								Options: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/siblings_3/options",
+									HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/geography/options",
+									ID:   "geography",
 								},
 								Version: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/siblings_3/versions/1",
+									HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
 								},
 							},
-							HRef: "http://localhost:22000/siblings_3",
-							ID:   "siblings_3",
+							Name: "geography",
 						},
 					},
 					Edition:    "2021",
@@ -4467,14 +4497,14 @@ func TestRewriteInstances_Success(t *testing.T) {
 							ID:   "cantabular-flexible-default",
 						},
 						Dimensions: &models.LinkObject{
-							HRef: "http://localhost:22000/code-lists/mmm-yy",
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions",
 						},
 						Edition: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/cantabular-flexible-default/editions/2021",
 							ID:   "2021",
 						},
 						Job: &models.LinkObject{
-							HRef: "http://localhost:22000/jobs/1",
+							HRef: "http://localhost:21800/jobs/1",
 							ID:   "1",
 						},
 						Self: &models.LinkObject{
@@ -4493,52 +4523,38 @@ func TestRewriteInstances_Success(t *testing.T) {
 					CollectionID: "cpihtest-1",
 					Dimensions: []models.Dimension{
 						{
+							Label: "Aggregate",
 							Links: models.DimensionLink{
 								CodeList: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/mmm-yy",
+									HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
+									ID:   "cpih1dim1aggid",
 								},
 								Options: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/mmm-yy/options",
+									HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options",
+									ID:   "aggregate",
 								},
 								Version: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/mmm-yy/versions/1",
+									HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
 								},
 							},
-							HRef: "http://localhost:22000/code-lists/mmm-yy",
-							ID:   "mmm-yy",
-							Name: "time",
-						},
-						{
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/uk-only",
-								},
-								Options: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/uk-only/options",
-								},
-								Version: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/uk-only/versions/1",
-								},
-							},
-							HRef: "http://localhost:22000/code-lists/uk-only",
-							ID:   "uk-only",
-							Name: "geography",
-						},
-						{
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
-								},
-								Options: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid/options",
-								},
-								Version: models.LinkObject{
-									HRef: "http://localhost:22000/code-lists/cpih1dim1aggid/versions/1",
-								},
-							},
-							HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
-							ID:   "cpih1dim1aggid",
 							Name: "aggregate",
+						},
+						{
+							Label: "Geography",
+							Links: models.DimensionLink{
+								CodeList: models.LinkObject{
+									HRef: "http://localhost:22400/code-lists/uk-only",
+									ID:   "uk-only",
+								},
+								Options: models.LinkObject{
+									HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/geography/options",
+									ID:   "geography",
+								},
+								Version: models.LinkObject{
+									HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+								},
+							},
+							Name: "geography",
 						},
 					},
 					Edition:    "time-series",
@@ -4549,14 +4565,14 @@ func TestRewriteInstances_Success(t *testing.T) {
 							ID:   "cpih01",
 						},
 						Dimensions: &models.LinkObject{
-							HRef: "http://localhost:22000/code-lists/mmm-yy",
+							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions",
 						},
 						Edition: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series",
 							ID:   "time-series",
 						},
 						Job: &models.LinkObject{
-							HRef: "http://localhost:22000/jobs/2",
+							HRef: "http://localhost:21800/jobs/2",
 							ID:   "2",
 						},
 						Self: &models.LinkObject{
@@ -4573,49 +4589,41 @@ func TestRewriteInstances_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstances(ctx, results, linksBuilder)
+			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
 
 				So(results[0].CollectionID, ShouldEqual, "cantabularflexibledefault-1")
-				So(results[0].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/city")
-				So(results[0].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/city")
-				So(results[0].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/city/options")
-				So(results[0].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/city/versions/1")
-				So(results[0].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/siblings_3")
-				So(results[0].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/siblings_3")
-				So(results[0].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/siblings_3/options")
-				So(results[0].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/siblings_3/versions/1")
+				So(results[0].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
+				So(results[0].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options")
+				So(results[0].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(results[0].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/uk-only")
+				So(results[0].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/geography/options")
+				So(results[0].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(results[0].Edition, ShouldEqual, "2021")
 				So(results[0].InstanceID, ShouldEqual, "1")
 				So(results[0].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default")
-				So(results[0].Links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[0].Links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions")
 				So(results[0].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default/editions/2021")
-				So(results[0].Links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/1")
+				So(results[0].Links.Job.HRef, ShouldEqual, "http://localhost:21800/jobs/1")
 				So(results[0].Links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/1")
 				So(results[0].Links.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial/1")
 				So(results[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cantabular-flexible-default/editions/2021/versions/1")
 
 				So(results[1].CollectionID, ShouldEqual, "cpihtest-1")
-				So(results[1].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
-				So(results[1].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
-				So(results[1].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/options")
-				So(results[1].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy/versions/1")
-				So(results[1].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
-				So(results[1].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
-				So(results[1].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/options")
-				So(results[1].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only/versions/1")
-				So(results[1].Dimensions[2].HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
-				So(results[1].Dimensions[2].Links.CodeList.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
-				So(results[1].Dimensions[2].Links.Options.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/options")
-				So(results[1].Dimensions[2].Links.Version.HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid/versions/1")
+				So(results[1].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
+				So(results[1].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options")
+				So(results[1].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(results[1].Dimensions[1].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/uk-only")
+				So(results[1].Dimensions[1].Links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/geography/options")
+				So(results[1].Dimensions[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(results[1].Edition, ShouldEqual, "time-series")
 				So(results[1].InstanceID, ShouldEqual, "2")
 				So(results[1].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
-				So(results[1].Links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(results[1].Links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions")
 				So(results[1].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
-				So(results[1].Links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/2")
+				So(results[1].Links.Job.HRef, ShouldEqual, "http://localhost:21800/jobs/2")
 				So(results[1].Links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/2")
 				So(results[1].Links.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial/2")
 				So(results[1].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
@@ -4626,88 +4634,29 @@ func TestRewriteInstances_Success(t *testing.T) {
 			results := []*models.Instance{
 				{
 					CollectionID: "cantabularflexibledefault-1",
-					Dimensions: []models.Dimension{
-						{
-							Label: "City",
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
-							},
-							HRef: "http://localhost:22000/city",
-							ID:   "city",
-						},
-						{
-							Label: "Number of siblings (3 mappings)",
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
-							},
-							HRef: "http://localhost:22000/siblings_3",
-							ID:   "siblings_3",
-						},
-					},
-					Edition:    "2021",
-					InstanceID: "1",
-					Links:      &models.InstanceLinks{},
+					Edition:      "2021",
+					InstanceID:   "1",
+					Links:        &models.InstanceLinks{},
 				},
 				{
 					CollectionID: "cpihtest-1",
-					Dimensions: []models.Dimension{
-						{
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
-							},
-							HRef: "http://localhost:22000/code-lists/mmm-yy",
-							ID:   "mmm-yy",
-							Name: "time",
-						},
-						{
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
-							},
-							HRef: "http://localhost:22000/code-lists/uk-only",
-							ID:   "uk-only",
-							Name: "geography",
-						},
-						{
-							Links: models.DimensionLink{
-								CodeList: models.LinkObject{},
-								Options:  models.LinkObject{},
-								Version:  models.LinkObject{},
-							},
-							HRef: "http://localhost:22000/code-lists/cpih1dim1aggid",
-							ID:   "cpih1dim1aggid",
-							Name: "aggregate",
-						},
-					},
-					Edition:    "time-series",
-					InstanceID: "2",
-					Links:      &models.InstanceLinks{},
+					Edition:      "time-series",
+					InstanceID:   "2",
+					Links:        &models.InstanceLinks{},
 				},
 			}
 
-			err := RewriteInstances(ctx, results, linksBuilder)
+			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
 
 				So(results[0].CollectionID, ShouldEqual, "cantabularflexibledefault-1")
-				So(results[0].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/city")
-				So(results[0].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/siblings_3")
 				So(results[0].Edition, ShouldEqual, "2021")
 				So(results[0].InstanceID, ShouldEqual, "1")
 				So(results[0].Links, ShouldResemble, &models.InstanceLinks{})
 
 				So(results[1].CollectionID, ShouldEqual, "cpihtest-1")
-				So(results[1].Dimensions[0].HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
-				So(results[1].Dimensions[1].HRef, ShouldEqual, "http://localhost:22000/code-lists/uk-only")
-				So(results[1].Dimensions[2].HRef, ShouldEqual, "http://localhost:22000/code-lists/cpih1dim1aggid")
 				So(results[1].Edition, ShouldEqual, "time-series")
 				So(results[1].InstanceID, ShouldEqual, "2")
 				So(results[1].Links, ShouldResemble, &models.InstanceLinks{})
@@ -4717,7 +4666,7 @@ func TestRewriteInstances_Success(t *testing.T) {
 		Convey("When the instances are empty", func() {
 			results := []*models.Instance{}
 
-			err := RewriteInstances(ctx, results, linksBuilder)
+			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
 
 			Convey("Then no error should be returned", func() {
 				So(err, ShouldBeNil)
@@ -4741,7 +4690,7 @@ func TestRewriteInstances_Error(t *testing.T) {
 							ID:   "cantabular-flexible-default",
 						},
 						Dimensions: &models.LinkObject{
-							HRef: "://oldhost:1000/code-lists/mmm-yy",
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions",
 						},
 						Edition: &models.LinkObject{
 							HRef: "://oldhost:1000/datasets/cantabular-flexible-default/editions/2021",
@@ -4770,7 +4719,7 @@ func TestRewriteInstances_Error(t *testing.T) {
 							ID:   "cpih01",
 						},
 						Dimensions: &models.LinkObject{
-							HRef: "://oldhost:1000/code-lists/mmm-yy",
+							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions",
 						},
 						Edition: &models.LinkObject{
 							HRef: "://oldhost:1000/datasets/cpih01/editions/time-series",
@@ -4791,7 +4740,7 @@ func TestRewriteInstances_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstances(ctx, results, linksBuilder)
+			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -4867,7 +4816,7 @@ func TestRewriteInstances_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstances(ctx, results, linksBuilder)
+			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -4886,7 +4835,7 @@ func TestRewriteInstanceLinks_Success(t *testing.T) {
 					HRef: "https://oldhost:1000/datasets/cpih01",
 				},
 				Dimensions: &models.LinkObject{
-					HRef: "https://oldhost:1000/code-lists/mmm-yy",
+					HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions",
 				},
 				Edition: &models.LinkObject{
 					HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series",
@@ -4905,14 +4854,14 @@ func TestRewriteInstanceLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstanceLinks(ctx, links, linksBuilder)
+			err := RewriteInstanceLinks(ctx, links, datasetLinksBuilder, importLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
 				So(links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
-				So(links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions")
 				So(links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
-				So(links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/1")
+				So(links.Job.HRef, ShouldEqual, "http://localhost:21800/jobs/1")
 				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/1")
 				So(links.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial")
 				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
@@ -4925,13 +4874,13 @@ func TestRewriteInstanceLinks_Success(t *testing.T) {
 					HRef: "http://localhost:22000/datasets/cpih01",
 				},
 				Dimensions: &models.LinkObject{
-					HRef: "http://localhost:22000/code-lists/mmm-yy",
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions",
 				},
 				Edition: &models.LinkObject{
 					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series",
 				},
 				Job: &models.LinkObject{
-					HRef: "http://localhost:22000/jobs/1",
+					HRef: "http://localhost:21800/jobs/1",
 				},
 				Self: &models.LinkObject{
 					HRef: "http://localhost:22000/instances/1",
@@ -4944,14 +4893,14 @@ func TestRewriteInstanceLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstanceLinks(ctx, links, linksBuilder)
+			err := RewriteInstanceLinks(ctx, links, datasetLinksBuilder, importLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
 				So(links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
-				So(links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/code-lists/mmm-yy")
+				So(links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions")
 				So(links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
-				So(links.Job.HRef, ShouldEqual, "http://localhost:22000/jobs/1")
+				So(links.Job.HRef, ShouldEqual, "http://localhost:21800/jobs/1")
 				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/1")
 				So(links.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial")
 				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
@@ -4961,7 +4910,7 @@ func TestRewriteInstanceLinks_Success(t *testing.T) {
 		Convey("When the instance links are empty", func() {
 			links := &models.InstanceLinks{}
 
-			err := RewriteInstanceLinks(ctx, links, linksBuilder)
+			err := RewriteInstanceLinks(ctx, links, datasetLinksBuilder, importLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -4970,7 +4919,7 @@ func TestRewriteInstanceLinks_Success(t *testing.T) {
 		})
 
 		Convey("When the instance links are nil", func() {
-			err := RewriteInstanceLinks(ctx, nil, linksBuilder)
+			err := RewriteInstanceLinks(ctx, nil, datasetLinksBuilder, importLinksBuilder)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -4988,7 +4937,7 @@ func TestRewriteInstanceLinks_Error(t *testing.T) {
 					HRef: "://oldhost:1000/datasets/cpih01",
 				},
 				Dimensions: &models.LinkObject{
-					HRef: "://oldhost:1000/code-lists/mmm-yy",
+					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions",
 				},
 				Edition: &models.LinkObject{
 					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series",
@@ -5007,7 +4956,40 @@ func TestRewriteInstanceLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstanceLinks(ctx, links, nil)
+			err := RewriteInstanceLinks(ctx, links, nil, nil)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+
+		Convey("When the Job link is unable to be parsed", func() {
+			links := &models.InstanceLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01",
+				},
+				Dimensions: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series",
+				},
+				Job: &models.LinkObject{
+					HRef: "://oldhost:1000/jobs/1",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/instances/1",
+				},
+				Spatial: &models.LinkObject{
+					HRef: "http://localhost:22000/spatial",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+				},
+			}
+
+			err := RewriteInstanceLinks(ctx, links, datasetLinksBuilder, importLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)

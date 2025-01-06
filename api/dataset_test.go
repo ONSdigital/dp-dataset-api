@@ -41,10 +41,12 @@ var (
 	datasetPayloadWithEmptyThemesAndTypeStatic = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","keywords":["keyword"],"links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"static","themes":[]}`
 	datasetPayloadWithEmptyContacts            = `{"contacts":[],"description":"census","keywords":["keyword"],"links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"static","themes":["theme"]}`
 
-	websiteURL, _         = goURL.Parse("http://localhost:20000")
-	downloadServiceURL, _ = goURL.Parse("http://localhost:23600")
+	codeListAPIURL, _     = goURL.Parse("http://localhost:22400")
 	datasetAPIURL, _      = goURL.Parse("http://localhost:22000")
-	urlBuilder            = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL)
+	downloadServiceURL, _ = goURL.Parse("http://localhost:23600")
+	importAPIURL, _       = goURL.Parse("http://localhost:21800")
+	websiteURL, _         = goURL.Parse("http://localhost:20000")
+	urlBuilder            = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 	mu                    sync.Mutex
 )
 

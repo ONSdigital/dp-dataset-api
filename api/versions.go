@@ -136,9 +136,10 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
-	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
+	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
+	codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetCodeListAPIURL())
 
-	list, err = utils.RewriteVersions(ctx, list, linksBuilder)
+	list, err = utils.RewriteVersions(ctx, list, datasetLinksBuilder, codeListLinksBuilder)
 	if err != nil {
 		log.Error(ctx, "getVersions endpoint: error rewriting dimension or version links", err)
 		handleVersionAPIErr(ctx, err, w, logData)
@@ -222,18 +223,19 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	linksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
+	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
+	codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetCodeListAPIURL())
 
 	var err error
 
-	err = utils.RewriteVersionLinks(ctx, v.Links, linksBuilder)
+	err = utils.RewriteVersionLinks(ctx, v.Links, datasetLinksBuilder)
 	if err != nil {
 		log.Error(ctx, "getVersion endpoint: failed to rewrite version links", err)
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
 
-	v.Dimensions, err = utils.RewriteDimensions(ctx, v.Dimensions, linksBuilder)
+	v.Dimensions, err = utils.RewriteDimensions(ctx, v.Dimensions, datasetLinksBuilder, codeListLinksBuilder)
 	if err != nil {
 		log.Error(ctx, "getVersion endpoint: failed to rewrite dimensions", err)
 		handleVersionAPIErr(ctx, err, w, logData)

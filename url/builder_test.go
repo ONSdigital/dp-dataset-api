@@ -9,26 +9,29 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+var (
+	websiteURL, _         = neturl.Parse("http://localhost:20000")
+	downloadServiceURL, _ = neturl.Parse("http://localhost:23600")
+	datasetAPIURL, _      = neturl.Parse("http://localhost:22000")
+	codeListAPIURL, _     = neturl.Parse("http://localhost:22400")
+	importAPIURL, _       = neturl.Parse("http://localhost:21800")
+)
+
 const (
-	websiteURL = "http://localhost:20000"
-	datasetID  = "123"
-	edition    = "2017"
-	version    = "1"
+	datasetID = "123"
+	edition   = "2017"
+	version   = "1"
 )
 
 func TestBuilder_BuildWebsiteDatasetVersionURL(t *testing.T) {
 	Convey("Given a URL builder", t, func() {
-
-		websiteURL, _ := neturl.Parse("http://localhost:20000")
-		downloadServiceURL, _ := neturl.Parse("http://localhost:23600")
-		datasetAPIURL, _ := neturl.Parse("http://localhost:22000")
-		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL)
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 
 		Convey("When BuildWebsiteDatasetVersionURL is called", func() {
 			builtURL := urlBuilder.BuildWebsiteDatasetVersionURL(datasetID, edition, version)
 
 			expectedURL := fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s",
-				websiteURL, datasetID, edition, version)
+				websiteURL.String(), datasetID, edition, version)
 
 			Convey("Then the expected URL is returned", func() {
 				So(builtURL, ShouldEqual, expectedURL)
@@ -36,13 +39,10 @@ func TestBuilder_BuildWebsiteDatasetVersionURL(t *testing.T) {
 		})
 	})
 }
+
 func TestBuilder_GetWebsiteURL(t *testing.T) {
 	Convey("Given a URL builder", t, func() {
-
-		websiteURL, _ := neturl.Parse("http://localhost:20000")
-		downloadServiceURL, _ := neturl.Parse("http://localhost:23600")
-		datasetAPIURL, _ := neturl.Parse("http://localhost:22000")
-		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL)
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 
 		Convey("When GetWebsiteURL is called", func() {
 			returnedURL := urlBuilder.GetWebsiteURL()
@@ -56,11 +56,7 @@ func TestBuilder_GetWebsiteURL(t *testing.T) {
 
 func TestBuilder_GetDownloadServiceURL(t *testing.T) {
 	Convey("Given a URL builder", t, func() {
-
-		websiteURL, _ := neturl.Parse("http://localhost:20000")
-		downloadServiceURL, _ := neturl.Parse("http://localhost:23600")
-		datasetAPIURL, _ := neturl.Parse("http://localhost:22000")
-		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL)
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 
 		Convey("When GetDownloadServiceURL is called", func() {
 			returnedURL := urlBuilder.GetDownloadServiceURL()
@@ -74,17 +70,41 @@ func TestBuilder_GetDownloadServiceURL(t *testing.T) {
 
 func TestBuilder_GetDatasetAPIURL(t *testing.T) {
 	Convey("Given a URL builder", t, func() {
-
-		websiteURL, _ := neturl.Parse("http://localhost:20000")
-		downloadServiceURL, _ := neturl.Parse("http://localhost:23600")
-		datasetAPIURL, _ := neturl.Parse("http://localhost:22000")
-		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL)
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 
 		Convey("When GetDatasetAPIURL is called", func() {
 			returnedURL := urlBuilder.GetDatasetAPIURL()
 
 			Convey("Then the expected URL is returned", func() {
 				So(returnedURL, ShouldEqual, datasetAPIURL)
+			})
+		})
+	})
+}
+
+func TestBuilder_GetCodeListAPIURL(t *testing.T) {
+	Convey("Given a URL builder", t, func() {
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+
+		Convey("When GetCodeListAPIURL is called", func() {
+			returnedURL := urlBuilder.GetCodeListAPIURL()
+
+			Convey("Then the expected URL is returned", func() {
+				So(returnedURL, ShouldEqual, codeListAPIURL)
+			})
+		})
+	})
+}
+
+func TestBuilder_GetImportAPIURL(t *testing.T) {
+	Convey("Given a URL builder", t, func() {
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+
+		Convey("When GetImportAPIURL is called", func() {
+			returnedURL := urlBuilder.GetImportAPIURL()
+
+			Convey("Then the expected URL is returned", func() {
+				So(returnedURL, ShouldEqual, importAPIURL)
 			})
 		})
 	})
