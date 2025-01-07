@@ -92,6 +92,7 @@ func (svc *Service) SetGraphDBErrorConsumer(graphDBErrorConsumer Closer) {
 
 // Run the service
 func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version string, svcErrors chan error) (err error) {
+	// Copilot used to move initMongoDB and initGraphDB functions out of Run
 	if err := svc.initMongoDB(ctx); err != nil {
 		return err
 	}

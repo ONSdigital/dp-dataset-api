@@ -24,6 +24,8 @@ var (
 	websiteLinksBuilder  = links.FromHeadersOrDefault(&http.Header{}, websiteURL)
 )
 
+// Copilot used to format test data and generate .So() statements
+
 func TestRewriteDatasetsWithAuth_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a list of dataset updates", t, func() {

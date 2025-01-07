@@ -73,6 +73,7 @@ func (m *Mongo) GetInstance(ctx context.Context, id, eTagSelector string) (*mode
 
 // AddInstance to the instance collection
 func (m *Mongo) AddInstance(ctx context.Context, instance *models.Instance) (inst *models.Instance, err error) {
+	// Copilot used for timestamp error checking
 	instance.LastUpdated = time.Now().UTC()
 	timestamp := instance.LastUpdated.Unix()
 	if timestamp < 0 || timestamp > int64(^uint32(0)) {
