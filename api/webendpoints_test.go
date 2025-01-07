@@ -32,7 +32,7 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+			GetDatasetsFunc: func(context.Context, int, int, bool) ([]*models.DatasetUpdate, int, error) {
 				return []*models.DatasetUpdate{
 					{
 						Current: current,
@@ -74,7 +74,7 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{
 					Current: current,
 					Next:    next,
@@ -235,7 +235,7 @@ func TestWebSubnetDimensionsEndpoint(t *testing.T) {
 						Version: &models.LinkObject{},
 						Self:    &models.LinkObject{}}}, nil
 			},
-			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
+			GetDimensionsFunc: func(context.Context, string) ([]bson.M, error) {
 				return []bson.M{}, nil
 			},
 		}
@@ -263,7 +263,7 @@ func TestWebSubnetDimensionOptionsEndpoint(t *testing.T) {
 						Version: &models.LinkObject{},
 						Self:    &models.LinkObject{}}}, nil
 			},
-			GetDimensionOptionsFunc: func(ctx context.Context, version *models.Version, dimension string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
+			GetDimensionOptionsFunc: func(context.Context, *models.Version, string, int, int) ([]*models.PublicDimensionOption, int, error) {
 				return []*models.PublicDimensionOption{}, 0, nil
 			},
 		}

@@ -26,7 +26,7 @@ type Store struct {
 	store.Storer
 	Host              string
 	MaxRequestOptions int
-	UrlBuilder        *url.Builder
+	URLBuilder        *url.Builder
 }
 
 // List of actions for dimensions
@@ -78,8 +78,8 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 		return nil, 0, err
 	}
 
-	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.UrlBuilder.GetDatasetAPIURL())
-	codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.UrlBuilder.GetCodeListAPIURL())
+	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.URLBuilder.GetDatasetAPIURL())
+	codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.URLBuilder.GetCodeListAPIURL())
 
 	err = utils.RewriteDimensionOptions(ctx, dimensionOptions, datasetLinksBuilder, codeListLinksBuilder)
 	if err != nil {

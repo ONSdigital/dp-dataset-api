@@ -74,7 +74,11 @@ func (m *Mongo) GetInstance(ctx context.Context, id, eTagSelector string) (*mode
 // AddInstance to the instance collection
 func (m *Mongo) AddInstance(ctx context.Context, instance *models.Instance) (inst *models.Instance, err error) {
 	instance.LastUpdated = time.Now().UTC()
-	instance.UniqueTimestamp = bsonprim.Timestamp{T: uint32(instance.LastUpdated.Unix())}
+	timestamp := instance.LastUpdated.Unix()
+	if timestamp < 0 || timestamp > int64(^uint32(0)) {
+		return nil, errors.New("timestamp out of range for uint32")
+	}
+	instance.UniqueTimestamp = bsonprim.Timestamp{T: uint32(timestamp)}
 
 	// set eTag value to current hash of the instance
 	instance.ETag, err = instance.Hash(nil)

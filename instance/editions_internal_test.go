@@ -24,10 +24,10 @@ const (
 func Test_ConfirmEditionReturnsOK(t *testing.T) {
 	convey.Convey("given no edition exists", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetEditionFunc: func(ctx context.Context, dataset, edition, state string) (*models.EditionUpdate, error) {
+			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return nil, errs.ErrEditionNotFound
 			},
-			UpsertEditionFunc: func(ctx context.Context, dataset, edition string, doc *models.EditionUpdate) error {
+			UpsertEditionFunc: func(context.Context, string, string, *models.EditionUpdate) error {
 				return nil
 			},
 		}
@@ -78,7 +78,7 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 	if featureOn {
 		convey.Convey("given an edition exists with 1 unpublished version", t, func() {
 			mockedDataStore := &storetest.StorerMock{
-				GetEditionFunc: func(ctx context.Context, dataset, edition, state string) (*models.EditionUpdate, error) {
+				GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 					return &models.EditionUpdate{
 						ID: "test",
 						Next: &models.Edition{
@@ -89,7 +89,7 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 					}, nil
 				},
 
-				UpsertEditionFunc: func(ctx context.Context, dataset, edition string, doc *models.EditionUpdate) error {
+				UpsertEditionFunc: func(context.Context, string, string, *models.EditionUpdate) error {
 					return errs.ErrInternalServer
 				},
 			}
@@ -114,7 +114,7 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 
 	convey.Convey("given an edition exists with a published version 10", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetEditionFunc: func(ctx context.Context, dataset, edition, state string) (*models.EditionUpdate, error) {
+			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
 					ID: "test",
 					Next: &models.Edition{
@@ -153,7 +153,7 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 					},
 				}, nil
 			},
-			UpsertEditionFunc: func(ctx context.Context, dataset, edition string, doc *models.EditionUpdate) error {
+			UpsertEditionFunc: func(context.Context, string, string, *models.EditionUpdate) error {
 				return nil
 			},
 		}
@@ -186,7 +186,7 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 func Test_ConfirmEditionReturnsError(t *testing.T) {
 	convey.Convey("given the datastore is unavailable", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetEditionFunc: func(ctx context.Context, dataset, edition, state string) (*models.EditionUpdate, error) {
+			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return nil, errs.ErrInternalServer
 			},
 		}
@@ -207,7 +207,7 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 
 	convey.Convey("given an invalid edition exists", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetEditionFunc: func(ctx context.Context, dataset, edition, state string) (*models.EditionUpdate, error) {
+			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
 					ID: "test",
 					Current: &models.Edition{
@@ -243,7 +243,7 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 
 	convey.Convey("given an edition exists with nil current doc", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetEditionFunc: func(ctx context.Context, dataset, edition, state string) (*models.EditionUpdate, error) {
+			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
 					ID: "test",
 					Next: &models.Edition{
@@ -274,7 +274,7 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 
 	convey.Convey("given an edition exists with nil next doc", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetEditionFunc: func(ctx context.Context, dataset, edition, state string) (*models.EditionUpdate, error) {
+			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
 					ID: "test",
 					Current: &models.Edition{
@@ -305,7 +305,7 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 
 	convey.Convey("given intermittent datastore failures", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetEditionFunc: func(ctx context.Context, dataset, edition, state string) (*models.EditionUpdate, error) {
+			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
 					ID: "test",
 					Next: &models.Edition{
@@ -344,7 +344,7 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 					},
 				}, nil
 			},
-			UpsertEditionFunc: func(ctx context.Context, dataset, edition string, doc *models.EditionUpdate) error {
+			UpsertEditionFunc: func(context.Context, string, string, *models.EditionUpdate) error {
 				return errs.ErrInternalServer
 			},
 		}

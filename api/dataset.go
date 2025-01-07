@@ -100,16 +100,16 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		}
 		log.Info(ctx, "getDatasets endpoint: get all datasets with auth", logData)
 		return datasetsResponse, totalCount, nil
-	} else {
-		datasetsResponse, err := utils.RewriteDatasetsWithoutAuth(ctx, datasets, datasetLinksBuilder)
-		if err != nil {
-			log.Error(ctx, "getDatasets endpoint: failed to rewrite datasets without authorisation", err)
-			handleDatasetAPIErr(ctx, err, w, logData)
-			return nil, 0, err
-		}
-		log.Info(ctx, "getDatasets endpoint: get all datasets without auth", logData)
-		return datasetsResponse, totalCount, nil
 	}
+
+	datasetsResponse, err := utils.RewriteDatasetsWithoutAuth(ctx, datasets, datasetLinksBuilder)
+	if err != nil {
+		log.Error(ctx, "getDatasets endpoint: failed to rewrite datasets without authorisation", err)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return nil, 0, err
+	}
+	log.Info(ctx, "getDatasets endpoint: get all datasets without auth", logData)
+	return datasetsResponse, totalCount, nil
 }
 
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {

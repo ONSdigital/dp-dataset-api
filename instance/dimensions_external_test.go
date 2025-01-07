@@ -39,12 +39,12 @@ func Test_UpdateDimensionReturnsOk(t *testing.T) {
 			InstanceID: "123",
 		}
 		mockedDataStore, isLocked := storeMockWithLock(instance, false)
-		mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 			return &models.Instance{State: models.EditionConfirmedState,
 				InstanceID: "123",
 				Dimensions: []models.Dimension{{Name: "age", ID: "age"}}}, nil
 		}
-		mockedDataStore.UpdateInstanceFunc = func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+		mockedDataStore.UpdateInstanceFunc = func(context.Context, *models.Instance, *models.Instance, string) (string, error) {
 			return testETag, nil
 		}
 
@@ -133,10 +133,10 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 					InstanceID: "123",
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return nil, errs.ErrInternalServer
 				}
-				mockedDataStore.UpdateInstanceFunc = func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateInstanceFunc = func(context.Context, *models.Instance, *models.Instance, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -170,10 +170,10 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 					InstanceID: "123",
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: "gobbly gook"}, nil
 				}
-				mockedDataStore.UpdateInstanceFunc = func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateInstanceFunc = func(context.Context, *models.Instance, *models.Instance, string) (string, error) {
 					return testETag, nil
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -204,7 +204,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 					InstanceID: "123",
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.PublishedState}, nil
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -235,7 +235,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 					InstanceID: "123",
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return nil, errs.ErrInstanceNotFound
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -267,12 +267,12 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 					InstanceID: "123",
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.EditionConfirmedState,
 						InstanceID: "123",
 						Dimensions: []models.Dimension{{Name: "age", ID: "age"}}}, nil
 				}
-				mockedDataStore.UpdateInstanceFunc = func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateInstanceFunc = func(context.Context, *models.Instance, *models.Instance, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -305,7 +305,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 					InstanceID: "123",
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.CompletedState}, nil
 				}
 
@@ -339,7 +339,7 @@ func Test_UpdateDimensionReturnsInternalError(t *testing.T) {
 					InstanceID: "123",
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return nil, errs.ErrInstanceConflict
 				}
 

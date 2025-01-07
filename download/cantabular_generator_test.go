@@ -17,7 +17,7 @@ func TestGenerator_GenerateFullCantabularDatasetDownloadsValidationErrors(t *tes
 	}
 
 	marhsallerMock := &mocks.GenerateDownloadsEventMock{
-		MarshalFunc: func(s interface{}) ([]byte, error) {
+		MarshalFunc: func(interface{}) ([]byte, error) {
 			return nil, nil
 		},
 	}
@@ -115,7 +115,7 @@ func TestGeneratorCantabular_GenerateMarshalError(t *testing.T) {
 		}
 
 		marhsallerMock := &mocks.GenerateDownloadsEventMock{
-			MarshalFunc: func(s interface{}) ([]byte, error) {
+			MarshalFunc: func(interface{}) ([]byte, error) {
 				return nil, mockErr
 			},
 		}
@@ -165,7 +165,7 @@ func TestCantabularGenerator_Generate(t *testing.T) {
 		}
 
 		marhsallerMock := &mocks.GenerateDownloadsEventMock{
-			MarshalFunc: func(s interface{}) ([]byte, error) {
+			MarshalFunc: func(interface{}) ([]byte, error) {
 				return avroBytes, nil
 			},
 		}

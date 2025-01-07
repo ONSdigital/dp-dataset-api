@@ -62,15 +62,15 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 		}
 		log.Info(ctx, "getEditions endpoint: get all editions with auth", logData)
 		return editionsResponse, totalCount, nil
-	} else {
-		editionsResponse, err := utils.RewriteEditionsWithoutAuth(ctx, results, datasetLinksBuilder)
-		if err != nil {
-			log.Error(ctx, "getEditions endpoint: failed to rewrite editions without authorisation", err, logData)
-			return nil, 0, err
-		}
-		log.Info(ctx, "getEditions endpoint: get all editions without auth", logData)
-		return editionsResponse, totalCount, nil
 	}
+
+	editionsResponse, err := utils.RewriteEditionsWithoutAuth(ctx, results, datasetLinksBuilder)
+	if err != nil {
+		log.Error(ctx, "getEditions endpoint: failed to rewrite editions without authorisation", err, logData)
+		return nil, 0, err
+	}
+	log.Info(ctx, "getEditions endpoint: get all editions without auth", logData)
+	return editionsResponse, totalCount, nil
 }
 
 func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {

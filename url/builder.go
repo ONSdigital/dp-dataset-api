@@ -15,7 +15,7 @@ type Builder struct {
 }
 
 // NewBuilder returns a new instance of url.Builder
-func NewBuilder(websiteURL *url.URL, downloadServiceURL *url.URL, datasetAPIURL *url.URL, codeListAPIURL *url.URL, importAPIURL *url.URL) *Builder {
+func NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL *url.URL) *Builder {
 	return &Builder{
 		websiteURL:         websiteURL,
 		downloadServiceURL: downloadServiceURL,

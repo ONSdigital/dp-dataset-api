@@ -114,7 +114,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		convey.So(err, convey.ShouldBeNil)
 		r.URL = address
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+			GetDatasetsFunc: func(context.Context, int, int, bool) ([]*models.DatasetUpdate, int, error) {
 				return []*models.DatasetUpdate{}, 15, nil
 			},
 		}
@@ -142,7 +142,7 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 		convey.So(err, convey.ShouldBeNil)
 		r.URL = address
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+			GetDatasetsFunc: func(context.Context, int, int, bool) ([]*models.DatasetUpdate, int, error) {
 				return nil, 0, errs.ErrInternalServer
 			},
 		}
@@ -170,7 +170,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{ID: "123", Current: &models.Dataset{ID: "123"}}, nil
 			},
 		}
@@ -191,7 +191,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{ID: "123"}}, nil
 			},
 		}
@@ -214,7 +214,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrInternalServer
 			},
 		}
@@ -234,7 +234,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{ID: "123"}}, nil
 			},
 		}
@@ -256,7 +256,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
 		}
@@ -278,10 +278,10 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpsertDatasetFunc: func(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) error {
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
 		}
@@ -304,10 +304,10 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpsertDatasetFunc: func(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) error {
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
 		}
@@ -330,10 +330,10 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpsertDatasetFunc: func(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) error {
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
 		}
@@ -356,10 +356,10 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpsertDatasetFunc: func(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) error {
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
 		}
@@ -382,10 +382,10 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpsertDatasetFunc: func(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) error {
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
 		}
@@ -408,10 +408,10 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpsertDatasetFunc: func(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) error {
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
 		}
@@ -434,10 +434,10 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpsertDatasetFunc: func(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) error {
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
 		}
@@ -460,10 +460,10 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpsertDatasetFunc: func(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) error {
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
 		}
@@ -492,7 +492,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpsertDatasetFunc: func(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) error {
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
 		}
@@ -524,7 +524,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpsertDatasetFunc: func(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) error {
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
 		}
@@ -556,7 +556,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpsertDatasetFunc: func(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) error {
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
 		}
@@ -588,7 +588,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpsertDatasetFunc: func(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) error {
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
 		}
@@ -620,7 +620,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpsertDatasetFunc: func(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) error {
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
 		}
@@ -652,7 +652,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpsertDatasetFunc: func(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) error {
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
 		}
@@ -680,10 +680,10 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			UpsertDatasetFunc: func(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) error {
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
 		}
@@ -1468,7 +1468,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
@@ -1502,7 +1502,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 				items = append(items, &models.EditionUpdate{})
 				return items, 0, nil
 			},
-			DeleteEditionFunc: func(ctx context.Context, ID string) error {
+			DeleteEditionFunc: func(context.Context, string) error {
 				return nil
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
@@ -1535,7 +1535,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
@@ -1566,7 +1566,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
@@ -1596,7 +1596,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
@@ -1627,7 +1627,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errors.New("database is broken")
 			},
-			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {

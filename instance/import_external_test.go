@@ -23,10 +23,10 @@ func Test_InsertedObservationsReturnsOk(t *testing.T) {
 			State:      models.EditionConfirmedState,
 		}
 		mockedDataStore, isLocked := storeMockWithLock(instance, false)
-		mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 			return &models.Instance{State: models.EditionConfirmedState}, nil
 		}
-		mockedDataStore.UpdateObservationInsertedFunc = func(ctx context.Context, id *models.Instance, ob int64, eTagSelector string) (string, error) {
+		mockedDataStore.UpdateObservationInsertedFunc = func(context.Context, *models.Instance, int64, string) (string, error) {
 			return testETag, nil
 		}
 		datasetPermissions := mocks.NewAuthHandlerMock()
@@ -106,7 +106,7 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return nil, errs.ErrInternalServer
 				}
 
@@ -140,10 +140,10 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.EditionConfirmedState}, nil
 				}
-				mockedDataStore.UpdateObservationInsertedFunc = func(ctx context.Context, id *models.Instance, ob int64, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateObservationInsertedFunc = func(context.Context, *models.Instance, int64, string) (string, error) {
 					return "", errs.ErrInstanceNotFound
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -175,7 +175,7 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.SubmittedState}, nil
 				}
 
@@ -210,7 +210,7 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return nil, errs.ErrInstanceConflict
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -246,13 +246,13 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 			State:      models.EditionConfirmedState,
 		}
 		mockedDataStore, isLocked := storeMockWithLock(instance, false)
-		mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+		mockedDataStore.GetInstanceFunc = func(_ context.Context, ID string, _ string) (*models.Instance, error) {
 			return &models.Instance{
 				InstanceID: ID,
 				State:      models.CreatedState,
 			}, nil
 		}
-		mockedDataStore.UpdateImportObservationsTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+		mockedDataStore.UpdateImportObservationsTaskStateFunc = func(context.Context, *models.Instance, string, string) (string, error) {
 			return testETag, nil
 		}
 		datasetPermissions := mocks.NewAuthHandlerMock()
@@ -337,7 +337,7 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return nil, errs.ErrInternalServer
 				}
 
@@ -373,7 +373,7 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return nil, errs.ErrInstanceNotFound
 				}
 
@@ -409,10 +409,10 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.PublishedState}, nil
 				}
-				mockedDataStore.UpdateInstanceFunc = func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateInstanceFunc = func(context.Context, *models.Instance, *models.Instance, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -451,10 +451,10 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.EditionConfirmedState}, nil
 				}
-				mockedDataStore.UpdateImportObservationsTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateImportObservationsTaskStateFunc = func(context.Context, *models.Instance, string, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -490,10 +490,10 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.EditionConfirmedState}, nil
 				}
-				mockedDataStore.UpdateImportObservationsTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateImportObservationsTaskStateFunc = func(context.Context, *models.Instance, string, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -528,10 +528,10 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.EditionConfirmedState}, nil
 				}
-				mockedDataStore.UpdateImportObservationsTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateImportObservationsTaskStateFunc = func(context.Context, *models.Instance, string, string) (string, error) {
 					return testETag, nil
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -565,10 +565,10 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.EditionConfirmedState}, nil
 				}
-				mockedDataStore.UpdateImportObservationsTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateImportObservationsTaskStateFunc = func(context.Context, *models.Instance, string, string) (string, error) {
 					return "", errs.ErrInternalServer
 				}
 
@@ -607,10 +607,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.EditionConfirmedState}, nil
 				}
-				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -646,10 +646,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.EditionConfirmedState}, nil
 				}
-				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -686,10 +686,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.EditionConfirmedState}, nil
 				}
-				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -725,10 +725,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.EditionConfirmedState}, nil
 				}
-				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -764,10 +764,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.EditionConfirmedState}, nil
 				}
-				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -803,10 +803,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.EditionConfirmedState}, nil
 				}
-				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -842,10 +842,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.EditionConfirmedState}, nil
 				}
-				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return "", errors.New("not found")
 				}
 
@@ -881,10 +881,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.EditionConfirmedState}, nil
 				}
-				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return "", errors.New("internal error")
 				}
 
@@ -925,10 +925,10 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsOk(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.EditionConfirmedState}, nil
 				}
-				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildHierarchyTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -967,10 +967,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.CreatedState}, nil
 				}
-				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -1006,10 +1006,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.CreatedState}, nil
 				}
-				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -1045,10 +1045,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.CreatedState}, nil
 				}
-				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return testETag, nil
 				}
 				datasetPermissions := mocks.NewAuthHandlerMock()
@@ -1083,10 +1083,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.CreatedState}, nil
 				}
-				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -1122,10 +1122,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.CreatedState}, nil
 				}
-				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -1161,10 +1161,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.CreatedState}, nil
 				}
-				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return testETag, nil
 				}
 
@@ -1200,10 +1200,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.CreatedState}, nil
 				}
-				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return "", errors.New("not found")
 				}
 
@@ -1239,10 +1239,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.CreatedState}, nil
 				}
-				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return "", errors.New("internal error")
 				}
 
@@ -1283,10 +1283,10 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexReturnsOk(t *testing.T) {
 					State:      models.EditionConfirmedState,
 				}
 				mockedDataStore, isLocked := storeMockWithLock(instance, false)
-				mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return &models.Instance{State: models.CreatedState}, nil
 				}
-				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
+				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return testETag, nil
 				}
 

@@ -21,10 +21,10 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		publicResult := &models.Edition{ID: "20"}
 		results := []*models.EditionUpdate{{Current: publicResult}}
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			GetEditionsFunc: func(ctx context.Context, id string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return results, 2, nil
 			},
 		}
@@ -48,7 +48,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return errs.ErrInternalServer
 			},
 		}
@@ -71,7 +71,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		r.Header.Add("internal-token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return errs.ErrDatasetNotFound
 			},
 		}
@@ -94,10 +94,10 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		r.Header.Add("internal-token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			GetEditionsFunc: func(ctx context.Context, id string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return nil, 0, errs.ErrEditionNotFound
 			},
 		}
@@ -119,10 +119,10 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			GetEditionsFunc: func(ctx context.Context, id string, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return nil, 0, errs.ErrEditionNotFound
 			},
 		}
@@ -147,10 +147,10 @@ func TestGetEditionReturnsOK(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			GetEditionFunc: func(ctx context.Context, id string, editionID string, state string) (*models.EditionUpdate, error) {
+			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{}, nil
 			},
 		}
@@ -174,7 +174,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return errs.ErrInternalServer
 			},
 		}
@@ -197,7 +197,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 		r.Header.Add("internal-token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return errs.ErrDatasetNotFound
 			},
 		}
@@ -220,10 +220,10 @@ func TestGetEditionReturnsError(t *testing.T) {
 		r.Header.Add("internal-token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			GetEditionFunc: func(ctx context.Context, id string, editionID string, state string) (*models.EditionUpdate, error) {
+			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return nil, errs.ErrEditionNotFound
 			},
 		}
@@ -245,10 +245,10 @@ func TestGetEditionReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			GetEditionFunc: func(ctx context.Context, id string, editionID string, state string) (*models.EditionUpdate, error) {
+			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return nil, errs.ErrEditionNotFound
 			},
 		}

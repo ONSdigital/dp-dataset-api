@@ -34,19 +34,19 @@ var (
 	errHealthcheck = errors.New("healthCheck error")
 )
 
-var funcDoGetHealthcheckErr = func(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error) {
+var funcDoGetHealthcheckErr = func(*config.Configuration, string, string, string) (service.HealthChecker, error) {
 	return nil, errHealthcheck
 }
 
-var funcDoGetMongoDBErr = func(ctx context.Context, cfg config.MongoConfig) (store.MongoDB, error) {
+var funcDoGetMongoDBErr = func(context.Context, config.MongoConfig) (store.MongoDB, error) {
 	return nil, errMongo
 }
 
-var funcDoGetGraphDBErr = func(ctx context.Context) (store.GraphDB, service.Closer, error) {
+var funcDoGetGraphDBErr = func(context.Context) (store.GraphDB, service.Closer, error) {
 	return nil, nil, errGraph
 }
 
-var funcDoGetKafkaProducerErr = func(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
+var funcDoGetKafkaProducerErr = func(context.Context, *config.Configuration, string) (kafka.IProducer, error) {
 	return nil, errKafka
 }
 
@@ -57,8 +57,8 @@ func TestRun(t *testing.T) {
 		convey.So(err, convey.ShouldBeNil)
 
 		hcMock := &serviceMock.HealthCheckerMock{
-			AddCheckFunc: func(name string, checker healthcheck.Checker) error { return nil },
-			StartFunc:    func(ctx context.Context) {},
+			AddCheckFunc: func(string, healthcheck.Checker) error { return nil },
+			StartFunc:    func(context.Context) {},
 		}
 
 		serverWg := &sync.WaitGroup{}
@@ -76,35 +76,35 @@ func TestRun(t *testing.T) {
 			},
 		}
 
-		funcDoGetHealthcheckOk := func(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error) {
+		funcDoGetHealthcheckOk := func(*config.Configuration, string, string, string) (service.HealthChecker, error) {
 			return hcMock, nil
 		}
 
-		funcDoGetHTTPServer := func(bindAddr string, router http.Handler) service.HTTPServer {
+		funcDoGetHTTPServer := func(string, http.Handler) service.HTTPServer {
 			return serverMock
 		}
 
-		funcDoGetFailingHTTPSerer := func(bindAddr string, router http.Handler) service.HTTPServer {
+		funcDoGetFailingHTTPSerer := func(string, http.Handler) service.HTTPServer {
 			return failingServerMock
 		}
 
-		funcDoGetMongoDBOk := func(ctx context.Context, cfg config.MongoConfig) (store.MongoDB, error) {
+		funcDoGetMongoDBOk := func(context.Context, config.MongoConfig) (store.MongoDB, error) {
 			return &storeMock.MongoDBMock{}, nil
 		}
 
-		funcDoGetGraphDBOk := func(_ context.Context) (store.GraphDB, service.Closer, error) {
-			var funcClose = func(ctx context.Context) error {
+		funcDoGetGraphDBOk := func(context.Context) (store.GraphDB, service.Closer, error) {
+			var funcClose = func(context.Context) error {
 				return nil
 			}
 			return &storeMock.GraphDBMock{}, &serviceMock.CloserMock{CloseFunc: funcClose}, nil
 		}
 
-		funcDoGetKafkaProducerOk := func(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error) {
+		funcDoGetKafkaProducerOk := func(context.Context, *config.Configuration, string) (kafka.IProducer, error) {
 			return &kafkatest.IProducerMock{
 				ChannelsFunc: func() *kafka.ProducerChannels {
 					return &kafka.ProducerChannels{}
 				},
-				LogErrorsFunc: func(ctx context.Context) {
+				LogErrorsFunc: func(context.Context) {
 					// Do nothing
 				},
 			}, nil
@@ -191,15 +191,15 @@ func TestRun(t *testing.T) {
 		convey.Convey("Given that Checkers cannot be registered", func() {
 			errAddheckFail := errors.New("Error(s) registering checkers for healthcheck")
 			hcMockAddFail := &serviceMock.HealthCheckerMock{
-				AddCheckFunc: func(name string, checker healthcheck.Checker) error { return errAddheckFail },
-				StartFunc:    func(ctx context.Context) {},
+				AddCheckFunc: func(string, healthcheck.Checker) error { return errAddheckFail },
+				StartFunc:    func(context.Context) {},
 			}
 
 			initMock := &serviceMock.InitialiserMock{
 				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
 				DoGetGraphDBFunc:       funcDoGetGraphDBOk,
 				DoGetKafkaProducerFunc: funcDoGetKafkaProducerOk,
-				DoGetHealthCheckFunc: func(cfg *config.Configuration, buildTime string, gitCommit string, version string) (service.HealthChecker, error) {
+				DoGetHealthCheckFunc: func(*config.Configuration, string, string, string) (service.HealthChecker, error) {
 					return hcMockAddFail, nil
 				},
 			}
@@ -328,15 +328,15 @@ func TestClose(t *testing.T) {
 
 		// healthcheck Stop does not depend on any other service being closed/stopped
 		hcMock := &serviceMock.HealthCheckerMock{
-			AddCheckFunc: func(name string, checker healthcheck.Checker) error { return nil },
-			StartFunc:    func(ctx context.Context) {},
+			AddCheckFunc: func(string, healthcheck.Checker) error { return nil },
+			StartFunc:    func(context.Context) {},
 			StopFunc:     func() { hcStopped = true },
 		}
 
 		// server Shutdown will fail if healthcheck is not stopped
 		serverMock := &serviceMock.HTTPServerMock{
 			ListenAndServeFunc: func() error { return nil },
-			ShutdownFunc: func(_ context.Context) error {
+			ShutdownFunc: func(context.Context) error {
 				if !hcStopped {
 					return errors.New("Server was stopped before healthcheck")
 				}
@@ -345,7 +345,7 @@ func TestClose(t *testing.T) {
 			},
 		}
 
-		funcClose := func(_ context.Context) error {
+		funcClose := func(context.Context) error {
 			if !hcStopped {
 				return errors.New("Dependency was closed before healthcheck")
 			}
@@ -375,7 +375,7 @@ func TestClose(t *testing.T) {
 				return &kafka.ProducerChannels{}
 			},
 			CloseFunc: funcClose,
-			LogErrorsFunc: func(ctx context.Context) {
+			LogErrorsFunc: func(context.Context) {
 				// Do nothing
 			},
 		}
@@ -421,7 +421,7 @@ func TestClose(t *testing.T) {
 		convey.Convey("If services fail to stop, the Close operation tries to close all dependencies and returns an error", func() {
 			failingserverMock := &serviceMock.HTTPServerMock{
 				ListenAndServeFunc: func() error { return nil },
-				ShutdownFunc: func(ctx context.Context) error {
+				ShutdownFunc: func(context.Context) error {
 					return errors.New("Failed to stop http server")
 				},
 			}

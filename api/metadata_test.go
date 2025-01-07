@@ -286,13 +286,13 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, datasetID, edition, state string) error {
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -345,13 +345,13 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, datasetID, edition, state string) error {
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -401,7 +401,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return nil, errs.ErrInternalServer
 			},
 		}
@@ -426,10 +426,10 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return nil, nil
 			},
 		}
@@ -457,13 +457,13 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, datasetId, edition, state string) error {
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -494,13 +494,13 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, datasetId, edition, state string) error {
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -528,13 +528,13 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, datasetId, edition, state string) error {
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return errs.ErrEditionNotFound
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -562,13 +562,13 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, datasetId, edition, state string) error {
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return nil, errs.ErrVersionNotFound
 			},
 		}
@@ -597,13 +597,13 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, datasetId, edition, state string) error {
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{State: "gobbly-gook"}, nil
 			},
 		}

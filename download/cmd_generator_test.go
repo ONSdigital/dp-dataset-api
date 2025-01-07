@@ -20,7 +20,7 @@ func TestGenerator_GenerateFullDatasetDownloadsValidationErrors(t *testing.T) {
 	}
 
 	marhsallerMock := &mocks.GenerateDownloadsEventMock{
-		MarshalFunc: func(s interface{}) ([]byte, error) {
+		MarshalFunc: func(interface{}) ([]byte, error) {
 			return nil, nil
 		},
 	}
@@ -118,7 +118,7 @@ func TestGenerator_GenerateMarshalError(t *testing.T) {
 		}
 
 		marhsallerMock := &mocks.GenerateDownloadsEventMock{
-			MarshalFunc: func(s interface{}) ([]byte, error) {
+			MarshalFunc: func(interface{}) ([]byte, error) {
 				return nil, mockErr
 			},
 		}
@@ -169,7 +169,7 @@ func TestGenerator_Generate(t *testing.T) {
 		}
 
 		marhsallerMock := &mocks.GenerateDownloadsEventMock{
-			MarshalFunc: func(s interface{}) ([]byte, error) {
+			MarshalFunc: func(interface{}) ([]byte, error) {
 				return avroBytes, nil
 			},
 		}

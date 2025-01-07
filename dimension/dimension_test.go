@@ -105,11 +105,11 @@ func storeMockWithLock(expectFirstGetUnlocked bool) (storerTestMock *storetest.S
 	isLocked := false
 	numGetCall := 0
 	storerTestMock = &storetest.StorerMock{
-		AcquireInstanceLockFunc: func(_ context.Context, _ string) (string, error) {
+		AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 			isLocked = true
 			return testLockID, nil
 		},
-		UnlockInstanceFunc: func(_ context.Context, _ string) {
+		UnlockInstanceFunc: func(context.Context, string) {
 			isLocked = false
 		},
 		GetInstanceFunc: func(_ context.Context, ID string, _ string) (*models.Instance, error) {
@@ -137,11 +137,11 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 
 	convey.Convey("Given a dataset API with a successful store mock and auth", t, func() {
 		mockedDataStore, isLocked := storeMockWithLock(true)
-		mockedDataStore.UpdateETagForOptionsFunc = func(_ context.Context, _ *models.Instance, _ []*models.CachedDimensionOption, _ []*models.DimensionOption, _ string) (string, error) {
+		mockedDataStore.UpdateETagForOptionsFunc = func(context.Context, *models.Instance, []*models.CachedDimensionOption, []*models.DimensionOption, string) (string, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return testETag, nil
 		}
-		mockedDataStore.UpdateDimensionsNodeIDAndOrderFunc = func(_ context.Context, _ []*models.DimensionOption) error {
+		mockedDataStore.UpdateDimensionsNodeIDAndOrderFunc = func(context.Context, []*models.DimensionOption) error {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return nil
 		}
@@ -217,13 +217,13 @@ func TestPatchOptionReturnsOK(t *testing.T) {
 		numUpdateCall := 0
 
 		mockedDataStore, isLocked := storeMockWithLock(true)
-		mockedDataStore.UpdateETagForOptionsFunc = func(_ context.Context, _ *models.Instance, _ []*models.CachedDimensionOption, _ []*models.DimensionOption, _ string) (string, error) {
+		mockedDataStore.UpdateETagForOptionsFunc = func(context.Context, *models.Instance, []*models.CachedDimensionOption, []*models.DimensionOption, string) (string, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			newETag := fmt.Sprintf("%s_%d", testETag, numUpdateCall)
 			numUpdateCall++
 			return newETag, nil
 		}
-		mockedDataStore.UpdateDimensionsNodeIDAndOrderFunc = func(_ context.Context, _ []*models.DimensionOption) error {
+		mockedDataStore.UpdateDimensionsNodeIDAndOrderFunc = func(context.Context, []*models.DimensionOption) error {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return nil
 		}
@@ -373,11 +373,11 @@ func TestAddNodeIDToDimensionReturnsNotFound(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore, isLocked := storeMockWithLock(true)
-		mockedDataStore.UpdateETagForOptionsFunc = func(_ context.Context, _ *models.Instance, _ []*models.CachedDimensionOption, _ []*models.DimensionOption, _ string) (string, error) {
+		mockedDataStore.UpdateETagForOptionsFunc = func(context.Context, *models.Instance, []*models.CachedDimensionOption, []*models.DimensionOption, string) (string, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return testETag, nil
 		}
-		mockedDataStore.UpdateDimensionsNodeIDAndOrderFunc = func(_ context.Context, _ []*models.DimensionOption) error {
+		mockedDataStore.UpdateDimensionsNodeIDAndOrderFunc = func(context.Context, []*models.DimensionOption) error {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return errs.ErrDimensionNodeNotFound
 		}
@@ -419,11 +419,11 @@ func TestPatchOptionReturnsNotFound(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore, isLocked := storeMockWithLock(true)
-		mockedDataStore.UpdateETagForOptionsFunc = func(_ context.Context, _ *models.Instance, _ []*models.CachedDimensionOption, _ []*models.DimensionOption, _ string) (string, error) {
+		mockedDataStore.UpdateETagForOptionsFunc = func(context.Context, *models.Instance, []*models.CachedDimensionOption, []*models.DimensionOption, string) (string, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return testETag, nil
 		}
-		mockedDataStore.UpdateDimensionsNodeIDAndOrderFunc = func(_ context.Context, _ []*models.DimensionOption) error {
+		mockedDataStore.UpdateDimensionsNodeIDAndOrderFunc = func(context.Context, []*models.DimensionOption) error {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return errs.ErrDimensionNodeNotFound
 		}
@@ -502,7 +502,7 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+			GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 				return nil, errs.ErrInternalServer
 			},
 		}
@@ -521,7 +521,7 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+			GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 				return &models.Instance{State: "gobbledygook"}, nil
 			},
 		}
@@ -546,7 +546,7 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 
 	convey.Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 			return nil, errs.ErrInternalServer
 		}
 
@@ -570,7 +570,7 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 			return &models.Instance{State: "gobbledygook"}, nil
 		}
 
@@ -586,7 +586,7 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 
 	convey.Convey("Given an internal error is returned from mongo GetInstance on the second call, then response returns an internal error", t, func() {
 		mockedDataStore, isLocked := storeMockWithLock(true)
-		mockedDataStore.GetInstanceFunc = func(_ context.Context, _ string, _ string) (*models.Instance, error) {
+		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 			if len(mockedDataStore.GetInstanceCalls()) == 1 {
 				return &models.Instance{State: models.CreatedState}, nil
 			}
@@ -617,7 +617,7 @@ func TestAddNodeIDToDimensionReturnsForbidden(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+			GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 				return &models.Instance{State: models.PublishedState}, nil
 			},
 		}
@@ -643,7 +643,7 @@ func TestPatchOptionReturnsForbidden(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+			GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 				return &models.Instance{State: models.PublishedState}, nil
 			},
 		}
@@ -709,11 +709,11 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 
 	convey.Convey("Given a dataset API with a successful store mock and auth", t, func() {
 		mockedDataStore, isLocked := storeMockWithLock(true)
-		mockedDataStore.UpdateETagForOptionsFunc = func(_ context.Context, _ *models.Instance, _ []*models.CachedDimensionOption, _ []*models.DimensionOption, _ string) (string, error) {
+		mockedDataStore.UpdateETagForOptionsFunc = func(context.Context, *models.Instance, []*models.CachedDimensionOption, []*models.DimensionOption, string) (string, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return testETag, nil
 		}
-		mockedDataStore.UpsertDimensionsToInstanceFunc = func(_ context.Context, _ []*models.CachedDimensionOption) error {
+		mockedDataStore.UpsertDimensionsToInstanceFunc = func(context.Context, []*models.CachedDimensionOption) error {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return nil
 		}
@@ -800,11 +800,11 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore, isLocked := storeMockWithLock(true)
-		mockedDataStore.UpdateETagForOptionsFunc = func(_ context.Context, _ *models.Instance, _ []*models.CachedDimensionOption, _ []*models.DimensionOption, _ string) (string, error) {
+		mockedDataStore.UpdateETagForOptionsFunc = func(context.Context, *models.Instance, []*models.CachedDimensionOption, []*models.DimensionOption, string) (string, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return testETag, nil
 		}
-		mockedDataStore.UpsertDimensionsToInstanceFunc = func(_ context.Context, _ []*models.CachedDimensionOption) error {
+		mockedDataStore.UpsertDimensionsToInstanceFunc = func(context.Context, []*models.CachedDimensionOption) error {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return errs.ErrDimensionNodeNotFound
 		}
@@ -842,7 +842,7 @@ func TestAddDimensionToInstanceReturnsForbidden(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+			GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 				return &models.Instance{State: models.PublishedState}, nil
 			},
 		}
@@ -886,7 +886,7 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+			GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 				return nil, errs.ErrInternalServer
 			},
 		}
@@ -908,7 +908,7 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+			GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 				return &models.Instance{State: "gobbledygook"}, nil
 			},
 		}
@@ -929,7 +929,7 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 
 	convey.Convey("Given a dataset API with a successful store mock and auth", t, func() {
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		mockedDataStore.GetDimensionsFromInstanceFunc = func(_ context.Context, _ string, _ int, _ int) ([]*models.DimensionOption, int, error) {
+		mockedDataStore.GetDimensionsFromInstanceFunc = func(context.Context, string, int, int) ([]*models.DimensionOption, int, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return []*models.DimensionOption{}, 0, nil
 		}
@@ -1000,7 +1000,7 @@ func TestGetDimensionsReturnsNotFound(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		mockedDataStore.GetDimensionsFromInstanceFunc = func(_ context.Context, _ string, _, _ int) ([]*models.DimensionOption, int, error) {
+		mockedDataStore.GetDimensionsFromInstanceFunc = func(context.Context, string, int, int) ([]*models.DimensionOption, int, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return nil, 0, errs.ErrDimensionNodeNotFound
 		}
@@ -1028,7 +1028,7 @@ func TestGetDimensionsReturnsConflict(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		mockedDataStore.GetInstanceFunc = func(_ context.Context, _ string, _ string) (*models.Instance, error) {
+		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return nil, errs.ErrInstanceConflict
 		}
@@ -1054,7 +1054,7 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		mockedDataStore.GetInstanceFunc = func(_ context.Context, _ string, _ string) (*models.Instance, error) {
+		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return nil, errs.ErrInternalServer
 		}
@@ -1077,7 +1077,7 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore, isLocked := storeMockWithLock(true)
-		mockedDataStore.GetInstanceFunc = func(_ context.Context, _ string, _ string) (*models.Instance, error) {
+		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return &models.Instance{State: "gobbly gook"}, nil
 		}
@@ -1099,7 +1099,7 @@ func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 
 	convey.Convey("Given a dataset API with a successful store mock and auth", t, func() {
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		mockedDataStore.GetUniqueDimensionAndOptionsFunc = func(_ context.Context, _ string, _ string) ([]*string, int, error) {
+		mockedDataStore.GetUniqueDimensionAndOptionsFunc = func(context.Context, string, string) ([]*string, int, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return []*string{}, 0, nil
 		}
@@ -1166,7 +1166,7 @@ func TestGetUniqueDimensionAndOptionsReturnsNotFound(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		mockedDataStore.GetUniqueDimensionAndOptionsFunc = func(_ context.Context, _ string, _ string) ([]*string, int, error) {
+		mockedDataStore.GetUniqueDimensionAndOptionsFunc = func(context.Context, string, string) ([]*string, int, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return nil, 0, errs.ErrInstanceNotFound
 		}
@@ -1194,7 +1194,7 @@ func TestGetUniqueDimensionAndOptionsReturnsConflict(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		mockedDataStore.GetInstanceFunc = func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 			return nil, errs.ErrInstanceConflict
 		}
 
@@ -1219,7 +1219,7 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		mockedDataStore.GetInstanceFunc = func(_ context.Context, _ string, _ string) (*models.Instance, error) {
+		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return nil, errs.ErrInternalServer
 		}
@@ -1240,7 +1240,7 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		mockedDataStore.GetInstanceFunc = func(_ context.Context, _ string, _ string) (*models.Instance, error) {
+		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return &models.Instance{State: "gobbly gook"}, nil
 		}
@@ -1265,23 +1265,23 @@ func TestPatchDimensions(t *testing.T) {
 		numUpdateCall := 0
 
 		mockedDataStore, isLocked := storeMockWithLock(true)
-		mockedDataStore.UpdateETagForOptionsFunc = func(_ context.Context, _ *models.Instance, _ []*models.CachedDimensionOption, _ []*models.DimensionOption, _ string) (string, error) {
+		mockedDataStore.UpdateETagForOptionsFunc = func(context.Context, *models.Instance, []*models.CachedDimensionOption, []*models.DimensionOption, string) (string, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			newETag := fmt.Sprintf("%s_%d", testETag, numUpdateCall)
 			numUpdateCall++
 			return newETag, nil
 		}
-		mockedDataStore.UpdateETagForOptionsFunc = func(_ context.Context, _ *models.Instance, _ []*models.CachedDimensionOption, _ []*models.DimensionOption, _ string) (string, error) {
+		mockedDataStore.UpdateETagForOptionsFunc = func(context.Context, *models.Instance, []*models.CachedDimensionOption, []*models.DimensionOption, string) (string, error) {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			newETag := fmt.Sprintf("%s_%d", testETag, numUpdateCall)
 			numUpdateCall++
 			return newETag, nil
 		}
-		mockedDataStore.UpsertDimensionsToInstanceFunc = func(_ context.Context, _ []*models.CachedDimensionOption) error {
+		mockedDataStore.UpsertDimensionsToInstanceFunc = func(context.Context, []*models.CachedDimensionOption) error {
 			convey.So(*isLocked, convey.ShouldBeTrue)
 			return nil
 		}
-		mockedDataStore.UpdateDimensionsNodeIDAndOrderFunc = func(ctx context.Context, updates []*models.DimensionOption) error {
+		mockedDataStore.UpdateDimensionsNodeIDAndOrderFunc = func(context.Context, []*models.DimensionOption) error {
 			return nil
 		}
 

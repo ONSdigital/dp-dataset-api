@@ -106,14 +106,14 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 			Host:                api.host,
 			Storer:              api.dataStore.Backend,
 			EnableDetachDataset: api.enableDetachDataset,
-			UrlBuilder:          api.urlBuilder,
+			URLBuilder:          api.urlBuilder,
 		}
 
 		dimensionAPI := &dimension.Store{
 			Host:              api.host,
 			Storer:            api.dataStore.Backend,
 			MaxRequestOptions: api.MaxRequestOptions,
-			UrlBuilder:        api.urlBuilder,
+			URLBuilder:        api.urlBuilder,
 		}
 
 		api.enablePrivateDatasetEndpoints(paginator)

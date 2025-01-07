@@ -130,7 +130,7 @@ func (c *DatasetComponent) InitialiseService() (http.Handler, error) {
 	return c.HTTPServer.Handler, nil
 }
 
-func funcClose(_ context.Context) error {
+func funcClose(context.Context) error {
 	return nil
 }
 
@@ -167,10 +167,10 @@ func (c *DatasetComponent) setConsumer(topic string) error {
 	return nil
 }
 
-func (c *DatasetComponent) DoGetHealthcheckOk(_ *config.Configuration, _, _, _ string) (service.HealthChecker, error) {
+func (c *DatasetComponent) DoGetHealthcheckOk(*config.Configuration, string, string, string) (service.HealthChecker, error) {
 	return &serviceMock.HealthCheckerMock{
-		AddCheckFunc: func(name string, checker healthcheck.Checker) error { return nil },
-		StartFunc:    func(ctx context.Context) {},
+		AddCheckFunc: func(string, healthcheck.Checker) error { return nil },
+		StartFunc:    func(context.Context) {},
 		StopFunc:     func() {},
 	}, nil
 }
@@ -201,23 +201,23 @@ func (c *DatasetComponent) DoGetKafkaProducer(ctx context.Context, cfg *config.C
 	return kafka.NewProducer(ctx, pConfig)
 }
 
-func (c *DatasetComponent) DoGetMockedKafkaProducerOk(_ context.Context, _ *config.Configuration, _ string) (kafka.IProducer, error) {
+func (c *DatasetComponent) DoGetMockedKafkaProducerOk(context.Context, *config.Configuration, string) (kafka.IProducer, error) {
 	return &kafkatest.IProducerMock{
 		ChannelsFunc: func() *kafka.ProducerChannels {
 			return &kafka.ProducerChannels{}
 		},
 		CloseFunc: funcClose,
-		LogErrorsFunc: func(ctx context.Context) {
+		LogErrorsFunc: func(context.Context) {
 			// Do nothing
 		},
 	}, nil
 }
 
-func (c *DatasetComponent) DoGetMongoDB(_ context.Context, _ config.MongoConfig) (store.MongoDB, error) {
+func (c *DatasetComponent) DoGetMongoDB(context.Context, config.MongoConfig) (store.MongoDB, error) {
 	return c.MongoClient, nil
 }
 
-func (c *DatasetComponent) DoGetGraphDBOk(_ context.Context) (store.GraphDB, service.Closer, error) {
+func (c *DatasetComponent) DoGetGraphDBOk(context.Context) (store.GraphDB, service.Closer, error) {
 	return &storeMock.GraphDBMock{
 			SetInstanceIsPublishedFunc: func(context.Context, string) error {
 				return nil
