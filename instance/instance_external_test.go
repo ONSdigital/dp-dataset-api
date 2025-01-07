@@ -45,7 +45,8 @@ func createRequestWithToken(method, requestURL string, body io.Reader) (*http.Re
 
 func initAPIWithMockedStore(mockedStore *storetest.StorerMock) *instance.Store {
 	instanceAPI := &instance.Store{
-		Storer: mockedStore,
+		Storer:     mockedStore,
+		URLBuilder: urlBuilder,
 	}
 	return instanceAPI
 }
