@@ -3,7 +3,7 @@ package utils
 import (
 	"context"
 	"net/http"
-	goURL "net/url"
+	neturl "net/url"
 	"testing"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -13,10 +13,11 @@ import (
 )
 
 var (
-	codeListAPIURL, _ = goURL.Parse("http://localhost:22400")
-	datasetAPIURL, _  = goURL.Parse("http://localhost:22000")
-	importAPIURL, _   = goURL.Parse("http://localhost:21800")
-	websiteURL, _     = goURL.Parse("http://localhost:20000")
+	codeListAPIURL     = &neturl.URL{Scheme: "http", Host: "localhost:22400"}
+	datasetAPIURL      = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
+	downloadServiceURL = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
+	importAPIURL       = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
+	websiteURL         = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 
 	codeListLinksBuilder = links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 	datasetLinksBuilder  = links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
