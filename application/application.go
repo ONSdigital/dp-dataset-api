@@ -14,7 +14,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
-	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
 )
 
@@ -51,7 +50,7 @@ type StateMachineDatasetAPI struct {
 	StateMachine       *StateMachine
 }
 
-func Setup(ctx context.Context, router *mux.Router, dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine) *StateMachineDatasetAPI {
+func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine) *StateMachineDatasetAPI {
 	newDS := &StateMachineDatasetAPI{
 		DataStore:          dataStoreVal,
 		DownloadGenerators: downloadGenerators,
@@ -65,29 +64,28 @@ func (v VersionDetails) baseLogData() log.Data {
 	return log.Data{"dataset_id": v.datasetID, "edition": v.edition, "version": v.version}
 }
 
-func (smDS *StateMachineDatasetAPI) AmendVersion(vars map[string]string, version *models.Version, ctx context.Context) error {
-
+func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[string]string, version *models.Version) error {
 	versionDetails := VersionDetails{
 		datasetID: vars["dataset_id"],
 		edition:   vars["edition"],
 		version:   vars["version"],
 	}
 
-	lockID, error := smDS.DataStore.Backend.AcquireInstanceLock(ctx, version.ID)
-	if error != nil {
-		return error
+	lockID, lockErr := smDS.DataStore.Backend.AcquireInstanceLock(ctx, version.ID)
+	if lockErr != nil {
+		return lockErr
 	}
 	defer func() {
 		smDS.DataStore.Backend.UnlockInstance(ctx, lockID)
 	}()
 
-	currentDataset, currentVersion, versionUpdate, err := smDS.PopulateVersionInfo(ctx, version, versionDetails)
+	currentVersion, versionUpdate, err := smDS.PopulateVersionInfo(ctx, version, versionDetails)
 	if err != nil {
 		log.Error(ctx, "amendVersion: creating models failed", err)
 		return err
 	}
 
-	if err := smDS.StateMachine.Transition(smDS, ctx, currentDataset, currentVersion, versionUpdate, versionDetails, vars[hasDownloads]); err != nil {
+	if err := smDS.StateMachine.Transition(ctx, smDS, currentVersion, versionUpdate, versionDetails, vars[hasDownloads]); err != nil {
 		log.Error(ctx, "amendVersion: state machine transition failed", err)
 		return err
 	}
@@ -95,7 +93,7 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(vars map[string]string, version
 	return nil
 }
 
-func (smDS *StateMachineDatasetAPI) PopulateVersionInfo(ctx context.Context, versionUpdate *models.Version, versionDetails VersionDetails) (currentDataset *models.DatasetUpdate, currentVersion, combinedVersionUpdate *models.Version, err error) {
+func (smDS *StateMachineDatasetAPI) PopulateVersionInfo(ctx context.Context, versionUpdate *models.Version, versionDetails VersionDetails) (currentVersion, combinedVersionUpdate *models.Version, err error) {
 	data := versionDetails.baseLogData()
 
 	reqID := ctx.Value(dprequest.RequestIdKey) // used to differentiate logs of concurrent calls to this function from different services
@@ -103,68 +101,40 @@ func (smDS *StateMachineDatasetAPI) PopulateVersionInfo(ctx context.Context, ver
 	versionNumber, err := models.ParseAndValidateVersionNumber(ctx, versionDetails.version)
 	if err != nil {
 		log.Error(ctx, "UpdateVersion: invalid version request", err, data)
-		return nil, nil, nil, err
-	}
-
-	currentDataset, err = smDS.DataStore.Backend.GetDataset(ctx, versionDetails.datasetID)
-	if err != nil {
-		log.Error(ctx, "UpdateVersion: datastore.getDataset returned an error", err, data)
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	if err = smDS.DataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
 		log.Error(ctx, "UpdateVersion: failed to find edition of dataset", err, data)
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	currentVersion, err = smDS.DataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
 	if err != nil {
 		log.Error(ctx, "UpdateVersion: datastore.GetVersion returned an error", err, data)
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	// doUpdate is an aux function that combines the existing version document with the update received in the body request,
 	// then it validates the new model, and performs the update in MongoDB, passing the existing model ETag (if it exists) to be used in the query selector
 	// Note that the combined version update does not mutate versionUpdate because multiple retries might generate a different value depending on the currentVersion at that point.
-	//var doUpdate = func() error {
 	combinedVersionUpdate, err = populateNewVersionDoc(currentVersion, versionUpdate)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	data["updated_version"] = combinedVersionUpdate
 
 	if err = models.ValidateVersion(combinedVersionUpdate); err != nil {
 		log.Error(ctx, "UpdateVersion: failed validation check for version update", err)
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
-	//return nil
-	//}
-
-	// This does the retry in the current dataset api - this is where the backend call is made
-	// if err := doUpdate(); err != nil {
-	// 	if err == errs.ErrDatasetNotFound {
-	// 		log.Info(ctx, "get version info", data)
-	// 		currentVersion, err = smDS.DataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
-	// 		if err != nil {
-	// 			log.Error(ctx, "UpdateVersion: datastore.GetVersion returned an error", err, data)
-	// 			return nil, nil, nil, err
-	// 		}
-
-	// 		if err = doUpdate(); err != nil {
-	// 			log.Error(ctx, "UpdateVersion: failed to get version info", err, data)
-	// 			return nil, nil, nil, err
-	// 		}
-	// 	} else {
-	// 		return nil, nil, nil, err
-	// 	}
-	// }
 
 	data["type"] = currentVersion.Type
 	data["reqID"] = reqID
 	log.Info(ctx, "update version completed successfully", data)
 
-	return currentDataset, currentVersion, combinedVersionUpdate, nil
+	return currentVersion, combinedVersionUpdate, nil
 }
 
 func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*models.Version, error) {
@@ -219,72 +189,83 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 		version.Temporal = currentVersion.Temporal
 	}
 
-	var spatial string
-
-	// Get spatial link before overwriting the version links object below
-	if version.Links != nil {
-		if version.Links.Spatial != nil {
-			if version.Links.Spatial.HRef != "" {
-				spatial = version.Links.Spatial.HRef
-			}
-		}
-	}
-
 	version.ID = currentVersion.ID
-	version.Links = nil
-	if currentVersion.Links != nil {
-		version.Links = currentVersion.Links.DeepCopy()
-	}
 
-	if spatial != "" {
-		// In reality the current version will always have a link object, so
-		// if/else statement should always fall into else block
-		if version.Links == nil {
-			version.Links = &models.VersionLinks{
-				Spatial: &models.LinkObject{
-					HRef: spatial,
-				},
-			}
-		} else {
-			version.Links.Spatial = &models.LinkObject{
-				HRef: spatial,
-			}
-		}
-	}
+	version.Links = populateVersionLinks(version.Links, currentVersion.Links)
 
 	// TODO - Data Integrity - Updating downloads should be locked down to services
 	// with permissions to do so, currently a user could update these fields
 
 	log.Info(context.Background(), "DEBUG", log.Data{"downloads": version.Downloads, "currentDownloads": currentVersion.Downloads})
-	if version.Downloads == nil {
-		version.Downloads = currentVersion.Downloads
-	} else {
-		if version.Downloads.XLS == nil && currentVersion.Downloads != nil {
-			version.Downloads.XLS = currentVersion.Downloads.XLS
-		}
-
-		if version.Downloads.XLSX == nil && currentVersion.Downloads != nil {
-			version.Downloads.XLSX = currentVersion.Downloads.XLSX
-		}
-
-		if version.Downloads.CSV == nil && currentVersion.Downloads != nil {
-			version.Downloads.CSV = currentVersion.Downloads.CSV
-		}
-
-		if version.Downloads.CSVW == nil && currentVersion.Downloads != nil {
-			version.Downloads.CSVW = currentVersion.Downloads.CSVW
-		}
-
-		if version.Downloads.TXT == nil && currentVersion.Downloads != nil {
-			version.Downloads.TXT = currentVersion.Downloads.TXT
-		}
-	}
+	version.Downloads = populateDownloads(version.Downloads, currentVersion.Downloads)
 
 	if version.UsageNotes == nil {
 		version.UsageNotes = currentVersion.UsageNotes
 	}
 
 	return &version, nil
+}
+
+func populateVersionLinks(versionLinks, currentVersionLinks *models.VersionLinks) *models.VersionLinks {
+	var spatial string
+
+	// Get spatial link before overwriting the version links object below
+	if versionLinks != nil {
+		if versionLinks.Spatial != nil {
+			if versionLinks.Spatial.HRef != "" {
+				spatial = versionLinks.Spatial.HRef
+			}
+		}
+	}
+
+	versionLinks = nil
+	if currentVersionLinks != nil {
+		versionLinks = currentVersionLinks.DeepCopy()
+	}
+
+	if spatial != "" {
+		// In reality the current version will always have a link object, so
+		// if/else statement should always fall into else block
+		if versionLinks == nil {
+			versionLinks = &models.VersionLinks{
+				Spatial: &models.LinkObject{
+					HRef: spatial,
+				},
+			}
+		} else {
+			versionLinks.Spatial = &models.LinkObject{
+				HRef: spatial,
+			}
+		}
+	}
+	return versionLinks
+}
+
+func populateDownloads(versionDownloads, currentVersionDownloads *models.DownloadList) *models.DownloadList {
+	if versionDownloads == nil {
+		versionDownloads = currentVersionDownloads
+	} else {
+		if versionDownloads.XLS == nil && currentVersionDownloads != nil {
+			versionDownloads.XLS = currentVersionDownloads.XLS
+		}
+
+		if versionDownloads.XLSX == nil && currentVersionDownloads != nil {
+			versionDownloads.XLSX = currentVersionDownloads.XLSX
+		}
+
+		if versionDownloads.CSV == nil && currentVersionDownloads != nil {
+			versionDownloads.CSV = currentVersionDownloads.CSV
+		}
+
+		if versionDownloads.CSVW == nil && currentVersionDownloads != nil {
+			versionDownloads.CSVW = currentVersionDownloads.CSVW
+		}
+
+		if versionDownloads.TXT == nil && currentVersionDownloads != nil {
+			versionDownloads.TXT = currentVersionDownloads.TXT
+		}
+	}
+	return versionDownloads
 }
 
 func (smDS *StateMachineDatasetAPI) publishDataset(ctx context.Context, currentDataset *models.DatasetUpdate, version *models.Version) error {
@@ -317,22 +298,11 @@ func (smDS *StateMachineDatasetAPI) publishDataset(ctx context.Context, currentD
 	return nil
 }
 
-func CreateVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
-	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
+func AssociateVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails,
 	hasDownloads string) error {
-	return nil
-}
-
-func AssociateVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
-	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
-	currentVersion *models.Version, // Called Instances in Mongo
-	versionUpdate *models.Version, // Next version, that is the new version
-	versionDetails VersionDetails,
-	hasDownloads string) error {
-
 	data := versionDetails.baseLogData()
 	log.Info(ctx, "putVersion endpoint (associateVersion): beginning associate version", data)
 
@@ -342,7 +312,7 @@ func AssociateVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
 		return errModel
 	}
 
-	_, err := UpdateVersionInfo(smDS, ctx, currentVersion, versionUpdate, versionDetails)
+	_, err := UpdateVersionInfo(ctx, smDS, currentVersion, versionUpdate, versionDetails)
 	if err != nil {
 		log.Error(ctx, "State machine - Associating: UpdateVersionInfo : failed to update the version", err, data)
 		return err
@@ -378,22 +348,11 @@ func AssociateVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
 	return nil
 }
 
-func SubmitVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
-	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
+func EditionConfirmVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails,
-	hasDownloads string) error {
-	return nil
-}
-
-func EditionConfirmVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
-	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
-	currentVersion *models.Version, // Called Instances in Mongo
-	versionUpdate *models.Version, // Next version, that is the new version
-	versionDetails VersionDetails,
-	hasDownloads string) error {
-
+	_ string) error {
 	data := versionDetails.baseLogData()
 
 	log.Info(ctx, "putVersion endpoint (editionConfirmVersion): beginning transition to edition-confirmed", data)
@@ -404,7 +363,7 @@ func EditionConfirmVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
 		return errModel
 	}
 
-	_, err := UpdateVersionInfo(smDS, ctx, currentVersion, versionUpdate, versionDetails)
+	_, err := UpdateVersionInfo(ctx, smDS, currentVersion, versionUpdate, versionDetails)
 	if err != nil {
 		log.Error(ctx, "State machine - Edition-confirming: UpdateVersionInfo : failed to update the version", err, data)
 		return err
@@ -412,40 +371,36 @@ func EditionConfirmVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
 	return nil
 }
 
-func PublishVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
-	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
+func PublishVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails,
 	hasDownloads string) error {
-
 	data := versionDetails.baseLogData()
 	log.Info(ctx, "putVersion endpoint (publishVersion): beginning transition to published", data)
 
 	// This needs to do the validation on required fields etc.
-	errModel := models.ValidateVersion(versionUpdate)
-	if errModel != nil {
-		log.Error(ctx, "State machine - Publishing: ValidateVersion : failed to validate version", errModel, data)
-		return errModel
+	err := models.ValidateVersion(versionUpdate)
+	if err != nil {
+		log.Error(ctx, "State machine - Publishing: ValidateVersion : failed to validate version", err, data)
+		return err
 	}
 
-	versionUpdate, err := UpdateVersionInfo(smDS, ctx, currentVersion, versionUpdate, versionDetails)
+	versionUpdate, err = UpdateVersionInfo(ctx, smDS, currentVersion, versionUpdate, versionDetails)
 	if err != nil {
 		log.Error(ctx, "State machine - Publish: UpdateVersionInfo : failed to update the version", err, data)
 		return err
 	}
 
 	if hasDownloads != trueStringified {
-
 		log.Info(ctx, "attempting to publish edition", data)
 
-		err = PublishEdition(smDS, ctx, versionUpdate, versionDetails, data)
+		err = PublishEdition(ctx, smDS, versionUpdate, versionDetails, data)
 		if err != nil {
 			log.Error(ctx, "State machine - Publish: PublishEdition : failed to publish edition", err, data)
 			return err
 		}
 
-		// This is only applicable to CMD datasets
 		dsType, err := models.GetDatasetType(currentVersion.Type)
 		if err != nil {
 			log.Error(ctx, "State machine - Publish: GetDatasetType : failed to get dataset type", err, data)
@@ -453,55 +408,26 @@ func PublishVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
 		}
 
 		if dsType == models.Filterable || dsType == models.CantabularFlexibleTable || dsType == models.CantabularMultivariateTable || dsType == models.CantabularTable {
-			err = PublishCMDInstance(smDS, ctx, versionUpdate, data)
+			err = PublishInstance(ctx, smDS, versionUpdate, data)
 			if err != nil {
 				log.Error(ctx, "State machine - Publish: PublishInstance : failed to publish instance", err, data)
 				return err
 			}
 		}
 
-		err = PublishDataset(smDS, ctx, currentDataset, currentVersion, versionUpdate, versionDetails, data)
+		err = PublishDataset(ctx, smDS, currentVersion, versionUpdate, versionDetails, data)
 		if err != nil {
 			log.Error(ctx, "State machine - Publish: PublishDataset : failed to publish dataset", err, data)
 			return err
 		}
 	}
 	return nil
-
 }
 
-func CompleteVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
-	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
-	currentVersion *models.Version, // Called Instances in Mongo
-	versionUpdate *models.Version, // Next version, that is the new version
-	versionDetails VersionDetails,
-	hasDownloads string) error {
-	return nil
-}
-
-func DetachVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
-	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
-	currentVersion *models.Version, // Called Instances in Mongo
-	versionUpdate *models.Version, // Next version, that is the new version
-	versionDetails VersionDetails,
-	hasDownloads string) error {
-	return nil
-}
-
-func FailVersion(smDS *StateMachineDatasetAPI, ctx context.Context,
-	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
-	currentVersion *models.Version, // Called Instances in Mongo
-	versionUpdate *models.Version, // Next version, that is the new version
-	versionDetails VersionDetails,
-	hasDownloads string) error {
-	return nil
-}
-
-func UpdateVersionInfo(smDS *StateMachineDatasetAPI, ctx context.Context,
+func UpdateVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version,
 	versionDetails VersionDetails) (updatedVersion *models.Version, err error) {
-
 	eTag := headers.IfMatchAnyETag
 	if currentVersion.ETag != "" {
 		eTag = currentVersion.ETag
@@ -526,7 +452,6 @@ func UpdateVersionInfo(smDS *StateMachineDatasetAPI, ctx context.Context,
 
 	if err := doUpdate(); err != nil {
 		if err == errs.ErrDatasetNotFound {
-
 			currentVersion, err = smDS.DataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
 			if err != nil {
 				log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err)
@@ -545,10 +470,9 @@ func UpdateVersionInfo(smDS *StateMachineDatasetAPI, ctx context.Context,
 	return currentVersion, nil
 }
 
-func PublishEdition(smDS *StateMachineDatasetAPI, ctx context.Context,
+func PublishEdition(ctx context.Context, smDS *StateMachineDatasetAPI,
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails, data log.Data) error {
-
 	editionDoc, err := smDS.DataStore.Backend.GetEdition(ctx, versionDetails.datasetID, versionDetails.edition, "")
 	if err != nil {
 		log.Error(ctx, "State Machine - Publish: PublishEdition: failed to find the edition we're trying to update", err, data)
@@ -572,10 +496,9 @@ func PublishEdition(smDS *StateMachineDatasetAPI, ctx context.Context,
 	return nil
 }
 
-func PublishCMDInstance(smDS *StateMachineDatasetAPI, ctx context.Context,
+func PublishInstance(ctx context.Context, smDS *StateMachineDatasetAPI,
 	versionUpdate *models.Version, // Called Instances in Mongo
 	data log.Data) error {
-
 	if err := smDS.DataStore.Backend.SetInstanceIsPublished(ctx, versionUpdate.ID); err != nil {
 		if user := dprequest.User(ctx); user != "" {
 			data[reqUser] = user
@@ -589,15 +512,20 @@ func PublishCMDInstance(smDS *StateMachineDatasetAPI, ctx context.Context,
 	}
 
 	return nil
-
 }
 
-func PublishDataset(smDS *StateMachineDatasetAPI, ctx context.Context,
-	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
+func PublishDataset(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails,
 	data log.Data) error {
+	// Get the dataset record
+	currentDataset, err := smDS.DataStore.Backend.GetDataset(ctx, versionDetails.datasetID)
+	if err != nil {
+		log.Error(ctx, "State Machine: Publish: PublishDataset: unable to find dataset", err, data)
+		return err
+	}
+
 	// Pass in newVersion variable to include relevant data needed for update on dataset record (e.g. links)
 	if err := smDS.publishDataset(ctx, currentDataset, versionUpdate); err != nil {
 		log.Error(ctx, "State Machine: Publish: PublishDataset: failed to update dataset document once version state changes to publish", err, data)

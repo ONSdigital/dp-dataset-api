@@ -10,8 +10,7 @@ import (
 
 type State struct {
 	Name      string
-	EnterFunc func(smDS *StateMachineDatasetAPI, ctx context.Context,
-		currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
+	EnterFunc func(ctx context.Context, smDS *StateMachineDatasetAPI,
 		currentVersion *models.Version, // Called Instances in Mongo
 		versionUpdate *models.Version, // Next version, that is the new version
 		versionDetails VersionDetails,
@@ -36,42 +35,28 @@ type Transition struct {
 }
 
 func castStateToState(state string) (*State, bool) {
-
 	switch s := state; s {
 	case "published":
 		return &Published, true
 	case "associated":
 		return &Associated, true
-	case "created":
-		return &Created, true
-	case "completed":
-		return &Completed, true
 	case "edition-confirmed":
 		return &EditionConfirmed, true
-	case "detached":
-		return &Detached, true
-	case "submitted":
-		return &Submitted, true
-	case "failed":
-		return &Failed, true
 	default:
 		return nil, false
 	}
 }
 
-func (sm *StateMachine) Transition(smDS *StateMachineDatasetAPI, ctx context.Context,
-	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
+func (sm *StateMachine) Transition(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails,
 	hasDownloads string) error {
-
 	match := false
 	var nextState *State
 	var ok bool
 
 	for state, transitions := range sm.transitions {
-
 		if state == versionUpdate.State {
 			for i := 0; i < len(transitions); i++ {
 				if currentVersion.State == transitions[i] {
@@ -84,15 +69,13 @@ func (sm *StateMachine) Transition(smDS *StateMachineDatasetAPI, ctx context.Con
 				}
 			}
 		}
-
 	}
 
 	if !match {
 		return errors.New("State not allowed to transition")
 	}
 
-	err := nextState.EnterFunc(smDS, ctx,
-		currentDataset, // Called Dataset in Mongo
+	err := nextState.EnterFunc(ctx, smDS,
 		currentVersion, // Called Instances in Mongo
 		versionUpdate,  // Next version, that is the new version
 		versionDetails,
@@ -101,11 +84,9 @@ func (sm *StateMachine) Transition(smDS *StateMachineDatasetAPI, ctx context.Con
 		return err
 	}
 	return nil
-
 }
 
-func NewStateMachine(states []State, transitions []Transition, dataStore store.DataStore, ctx context.Context) *StateMachine {
-
+func NewStateMachine(ctx context.Context, states []State, transitions []Transition, dataStore store.DataStore) *StateMachine {
 	statesMap := make(map[string]State)
 	for _, state := range states {
 		statesMap[state.String()] = state

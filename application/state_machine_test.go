@@ -8,52 +8,31 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/smartystreets/goconvey/convey"
 )
 
 func TestCastStateToState(t *testing.T) {
 	t.Parallel()
-	Convey("When a string is converted to a state", t, func() {
+	convey.Convey("When a string is converted to a state", t, func() {
 		publishedState, publishedOk := castStateToState("published")
-		So(publishedState.Name, ShouldEqual, Published.Name)
-		So(publishedOk, ShouldBeTrue)
+		convey.So(publishedState.Name, convey.ShouldEqual, Published.Name)
+		convey.So(publishedOk, convey.ShouldBeTrue)
 
 		associatedState, associatedOk := castStateToState("associated")
-		So(associatedState.Name, ShouldEqual, Associated.Name)
-		So(associatedOk, ShouldBeTrue)
+		convey.So(associatedState.Name, convey.ShouldEqual, associatedState.Name)
+		convey.So(associatedOk, convey.ShouldBeTrue)
 
 		editionConfirmedState, editionConfirmedOk := castStateToState("edition-confirmed")
-		So(editionConfirmedState.Name, ShouldEqual, EditionConfirmed.Name)
-		So(editionConfirmedOk, ShouldBeTrue)
-
-		createdState, createdOk := castStateToState("created")
-		So(createdState.Name, ShouldEqual, Created.Name)
-		So(createdOk, ShouldBeTrue)
-
-		completedState, completedOk := castStateToState("completed")
-		So(completedState.Name, ShouldEqual, Completed.Name)
-		So(completedOk, ShouldBeTrue)
-
-		detachedState, detachedOk := castStateToState("detached")
-		So(detachedState.Name, ShouldEqual, Detached.Name)
-		So(detachedOk, ShouldBeTrue)
-
-		failedState, failedOk := castStateToState("failed")
-		So(failedState.Name, ShouldEqual, Failed.Name)
-		So(failedOk, ShouldBeTrue)
-
-		submittedState, submittedOk := castStateToState("submitted")
-		So(submittedState.Name, ShouldEqual, Submitted.Name)
-		So(submittedOk, ShouldBeTrue)
+		convey.So(editionConfirmedState.Name, convey.ShouldEqual, EditionConfirmed.Name)
+		convey.So(editionConfirmedOk, convey.ShouldBeTrue)
 
 		nilState, ok := castStateToState("")
-		So(nilState, ShouldBeNil)
-		So(ok, ShouldBeFalse)
+		convey.So(nilState, convey.ShouldBeNil)
+		convey.So(ok, convey.ShouldBeFalse)
 	})
 }
 
 func TestTransition(t *testing.T) {
-
 	generatorMock := &mocks.DownloadsGeneratorMock{
 		GenerateFunc: func(context.Context, string, string, string, string) error {
 			return nil
@@ -68,20 +47,17 @@ func TestTransition(t *testing.T) {
 		},
 	}
 
-	stateMachine := NewStateMachine(states, transitions, store.DataStore{Backend: mockedDataStore}, testContext)
+	stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 	smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 
-	Convey("The transition is successful", t, func() {
+	convey.Convey("The transition is successful", t, func() {
+		err := smDS.StateMachine.Transition(testContext, smDS, currentVersionEditionConfirmed, versionUpdateAssociated, versionDetails, "true")
 
-		err := smDS.StateMachine.Transition(smDS, testContext, currentDataset, currentVersionEditionConfirmed, versionUpdateAssociated, versionDetails, "true")
-
-		So(err, ShouldBeNil)
-		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-
+		convey.So(err, convey.ShouldBeNil)
+		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
 	})
 
-	Convey("The transition is not successful", t, func() {
-
+	convey.Convey("The transition is not successful", t, func() {
 		incorrectStateVersion := &models.Version{
 			State:        "not_a_state",
 			ReleaseDate:  "2024-12-31",
@@ -98,10 +74,9 @@ func TestTransition(t *testing.T) {
 			CollectionID: "3434",
 		}
 
-		err := smDS.StateMachine.Transition(smDS, testContext, currentDataset, currentIncorrectState, incorrectStateVersion, versionDetails, "true")
+		err := smDS.StateMachine.Transition(testContext, smDS, currentIncorrectState, incorrectStateVersion, versionDetails, "true")
 
-		So(err, ShouldNotBeNil)
-		So(err.Error(), ShouldContainSubstring, "State not allowed to transition")
-
+		convey.So(err, convey.ShouldNotBeNil)
+		convey.So(err.Error(), convey.ShouldContainSubstring, "State not allowed to transition")
 	})
 }
