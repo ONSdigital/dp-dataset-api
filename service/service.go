@@ -156,10 +156,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 
 	// Get HTTP router and server with middleware
 	r := mux.NewRouter()
-	m, err := svc.createMiddleware(svc.config)
-	if err != nil {
-		return errors.Wrap(err, "unable to create middleware")
-	}
+	m := svc.createMiddleware(svc.config)
 
 	if svc.config.OtelEnabled {
 		r.Use(otelmux.Middleware(svc.config.OTServiceName))
@@ -171,6 +168,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	// Create Dataset API
 	urlBuilder, err := createURLBuilder(svc.config)
 	if err != nil {
+		log.Error(ctx, "failed to create URL builder", err)
 		return err
 	}
 
@@ -283,7 +281,7 @@ func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (d
 
 // CreateMiddleware creates an Alice middleware chain of handlers
 // to forward collectionID from cookie from header
-func (svc *Service) createMiddleware(cfg *config.Configuration) (alice.Chain, error) {
+func (svc *Service) createMiddleware(cfg *config.Configuration) alice.Chain {
 	// healthcheck
 	healthcheckHandler := newMiddleware(svc.healthCheck.Handler, "/health")
 	middleware := alice.New(healthcheckHandler)
@@ -296,7 +294,7 @@ func (svc *Service) createMiddleware(cfg *config.Configuration) (alice.Chain, er
 	// collection ID
 	middleware = middleware.Append(dphandlers.CheckHeader(dphandlers.CollectionID))
 
-	return middleware, nil
+	return middleware
 }
 
 // newMiddleware creates a new http.Handler to intercept /health requests.

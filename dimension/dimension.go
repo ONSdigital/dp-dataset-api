@@ -69,7 +69,7 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 		return nil, 0, err
 	}
 
-	// Get dimensions corresponding to the instance in the right state
+	// Get dimension options corresponding to the instance in the right state
 	var dimensionOptions []*models.DimensionOption
 	dimensionOptions, totalCount, err = s.GetDimensionsFromInstance(ctx, instanceID, offset, limit)
 	if err != nil {

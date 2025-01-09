@@ -119,8 +119,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 			log.Info(ctx, "getEdition endpoint: get edition without auth", logData)
 		}
 
-		var b []byte
-		b, err = json.Marshal(editionResponse)
+		b, err := json.Marshal(editionResponse)
 		if err != nil {
 			log.Error(ctx, "getEdition endpoint: failed to marshal edition resource into bytes", err, logData)
 			return nil, err

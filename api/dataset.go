@@ -147,8 +147,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			log.Info(ctx, "getDataset endpoint: get dataset without auth", logData)
 		}
 
-		var b []byte
-		b, err = json.Marshal(datasetResponse)
+		b, err := json.Marshal(datasetResponse)
 		if err != nil {
 			log.Error(ctx, "getDataset endpoint: failed to marshal dataset resource into bytes", err, logData)
 			return nil, err
