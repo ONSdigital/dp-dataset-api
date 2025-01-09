@@ -277,7 +277,7 @@ Feature: Private Dataset API
             """
             {
                 "title": "title",
-                "type": "filterable",
+                "type": "static",
                 "state": "anything",
                 "next_release":"2016-04-04",
                 "description": "census",
@@ -317,7 +317,7 @@ Feature: Private Dataset API
             """
             {
                 "id": "ageing-population-estimates",
-                "type": "filterable",
+                "type": "static",
                 "state": "anything",
                 "next_release":"2016-04-04",
                 "description": "census",
@@ -338,7 +338,7 @@ Feature: Private Dataset API
             {
                 "id": "ageing-population-estimates",
                 "title": "title",
-                "type": "filterable",
+                "type": "static",
                 "state": "anything",
                 "next_release":"2016-04-04",
                 "keywords":["keyword"],
@@ -358,7 +358,7 @@ Feature: Private Dataset API
             {
                 "id": "ageing-population-estimates",
                 "title": "title",
-                "type": "filterable",
+                "type": "static",
                 "state": "anything",
                 "next_release":"2016-04-04",
                 "description": "census",
@@ -378,7 +378,7 @@ Feature: Private Dataset API
             {
                 "id": "ageing-population-estimates",
                 "title": "title",
-                "type": "filterable",
+                "type": "static",
                 "state": "anything",
                 "description": "census",
                 "keywords":["keyword"],
@@ -418,7 +418,7 @@ Feature: Private Dataset API
             {
                 "id": "ageing-population-estimates",
                 "title": "title",
-                "type": "filterable",
+                "type": "static",
                 "state": "anything",
                 "next_release":"2016-04-04",
                 "description": "census",
