@@ -114,7 +114,7 @@ Feature: Dataset API
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
         And I am authorised
-        When I GET "/instances/test-item-1/dimensions"
+        When I GET "/instances/test-item-1/dimensions" without a request host
         Then I should receive the following JSON response with status "200":
             """
             {
@@ -203,7 +203,7 @@ Feature: Dataset API
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
         And I am authorised
-        When I GET "/instances/test-item-1/dimensions?offset=3&limit=7"
+        When I GET "/instances/test-item-1/dimensions?offset=3&limit=7" without a request host
         Then I should receive the following JSON response with status "200":
             """
             {

@@ -89,7 +89,7 @@ Feature: Dataset API
             """
 
     Scenario: GET /datasets/{id}/editions/{edition}/versions/{version}/dimensions in public mode
-        When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions"
+        When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions" without a request host
         Then I should receive the following JSON response with status "200":
             """
             {
@@ -135,7 +135,7 @@ Feature: Dataset API
             """
 
     Scenario: GET /datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options in public mode
-        When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions/geography/options"
+        When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions/geography/options" without a request host
         Then I should receive the following JSON response with status "200":
             """
             {
