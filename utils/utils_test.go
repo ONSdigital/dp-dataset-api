@@ -18,10 +18,10 @@ var (
 	importAPIURL   = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
 	websiteURL     = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 
-	codeListLinksBuilder = links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
-	datasetLinksBuilder  = links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
-	importLinksBuilder   = links.FromHeadersOrDefault(&http.Header{}, importAPIURL)
-	websiteLinksBuilder  = links.FromHeadersOrDefault(&http.Header{}, websiteURL)
+	codeListLinksBuilder = links.FromHeadersOrDefault(&http.Header{}, &http.Request{}, codeListAPIURL)
+	datasetLinksBuilder  = links.FromHeadersOrDefault(&http.Header{}, &http.Request{}, datasetAPIURL)
+	importLinksBuilder   = links.FromHeadersOrDefault(&http.Header{}, &http.Request{}, importAPIURL)
+	websiteLinksBuilder  = links.FromHeadersOrDefault(&http.Header{}, &http.Request{}, websiteURL)
 )
 
 // Copilot used to format test data and generate .So() statements

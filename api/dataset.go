@@ -89,7 +89,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
-	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
+	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
 
 	if authorised {
 		datasetsResponse, err := utils.RewriteDatasetsWithAuth(ctx, datasets, datasetLinksBuilder)
@@ -127,7 +127,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 		authorised := api.authenticate(r, logData)
 
-		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
 
 		var datasetResponse interface{}
 
@@ -241,7 +241,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
 
 		err = utils.RewriteDatasetLinks(ctx, datasetDoc.Next.Links, datasetLinksBuilder)
 		if err != nil {
@@ -352,7 +352,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
+	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
 
 	err = utils.RewriteDatasetLinks(ctx, datasetDoc.Next.Links, datasetLinksBuilder)
 	if err != nil {
