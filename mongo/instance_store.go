@@ -3,6 +3,8 @@ package mongo
 import (
 	"context"
 	"errors"
+	"fmt"
+	"math"
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -74,7 +76,12 @@ func (m *Mongo) GetInstance(ctx context.Context, id, eTagSelector string) (*mode
 // AddInstance to the instance collection
 func (m *Mongo) AddInstance(ctx context.Context, instance *models.Instance) (inst *models.Instance, err error) {
 	instance.LastUpdated = time.Now().UTC()
-	instance.UniqueTimestamp = bsonprim.Timestamp{T: uint32(instance.LastUpdated.Unix())}
+
+	unixTime := instance.LastUpdated.Unix()
+	if unixTime < 0 || unixTime > math.MaxUint32 {
+		return nil, fmt.Errorf("timestamp out of range for uint32: %d", unixTime)
+	}
+	instance.UniqueTimestamp = bsonprim.Timestamp{T: uint32(unixTime)}
 
 	// set eTag value to current hash of the instance
 	instance.ETag, err = instance.Hash(nil)
