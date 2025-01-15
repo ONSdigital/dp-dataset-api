@@ -9,7 +9,6 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/log.go/v2/log"
-	"github.com/smartystreets/goconvey/convey"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -39,9 +38,9 @@ func TestUnmarshalDimensionCache(t *testing.T) {
 			json := strings.NewReader("{}")
 
 			option, err := unmarshalDimensionCache(json)
-			convey.So(err, convey.ShouldNotBeNil)
-			convey.So(err, convey.ShouldResemble, errs.ErrMissingParameters)
-			convey.So(option, convey.ShouldBeNil)
+			So(err, ShouldNotBeNil)
+			So(err, ShouldResemble, errs.ErrMissingParameters)
+			So(option, ShouldBeNil)
 		})
 	})
 }
