@@ -32,12 +32,11 @@ const (
 var (
 	datasetPayload                             = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable"}`
 	datasetPayloadWithID                       = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","keywords":["keyword"],"links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable"}`
-	datasetPayloadWithEmptyID                  = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable"}`
-	datasetPayloadWithEmptyType                = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":""}`
-	datasetPayloadWithEmptyTitle               = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable"}`
-	datasetPayloadWithEmptyDescription         = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable"}`
-	datasetPayloadWithEmptyNextRelease         = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","keywords":["keyword"],"links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable"}`
-	datasetPayloadWithEmptyKeywords            = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"filterable"}`
+	datasetPayloadWithEmptyID                  = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"static"}`
+	datasetPayloadWithEmptyTitle               = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"static"}`
+	datasetPayloadWithEmptyDescription         = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"static"}`
+	datasetPayloadWithEmptyNextRelease         = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","keywords":["keyword"],"links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"static"}`
+	datasetPayloadWithEmptyKeywords            = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"static"}`
 	datasetPayloadWithEmptyThemesAndTypeStatic = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","keywords":["keyword"],"links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"static","themes":[]}`
 	datasetPayloadWithEmptyContacts            = `{"contacts":[],"description":"census","keywords":["keyword"],"links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"static","themes":["theme"]}`
 
@@ -294,33 +293,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
-	})
-
-	convey.Convey("Request with empty dataset type returns 400 Bad Request", t, func() {
-		b := datasetPayloadWithEmptyType
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
-			},
-			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
-				return nil
-			},
-		}
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.Router.ServeHTTP(w, r)
-
-		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
-		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
-		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 	})
 
@@ -346,7 +319,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 	})
 
@@ -372,7 +345,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 	})
 
@@ -398,7 +371,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 	})
 
@@ -424,11 +397,11 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 	})
 
-	convey.Convey("Request with empty themes and type static returns 400 Bad Request", t, func() {
+	convey.Convey("Request with empty themes returns 400 Bad Request", t, func() {
 		b := datasetPayloadWithEmptyThemesAndTypeStatic
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
@@ -450,7 +423,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 	})
 
@@ -476,7 +449,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 	})
 }

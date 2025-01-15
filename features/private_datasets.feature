@@ -277,7 +277,7 @@ Feature: Private Dataset API
             """
             {
                 "title": "title",
-                "type": "filterable",
+                "type": "static",
                 "state": "anything",
                 "next_release":"2016-04-04",
                 "description": "census",
@@ -289,27 +289,7 @@ Feature: Private Dataset API
         Then the HTTP status code should be "400"
         And I should receive the following response:
             """
-            missing dataset id in request body
-            """
-
-    Scenario: Missing dataset type in body when creating a new dataset
-        When I POST "/datasets"
-            """
-            {
-                "id": "ageing-population-estimates",
-                "title": "title",
-                "state": "anything",
-                "next_release":"2016-04-04",
-                "description": "census",
-                "keywords":["keyword"],
-                "themes": ["theme"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
-            }
-            """
-        Then the HTTP status code should be "400"
-        And I should receive the following response:
-            """
-            missing dataset type in request body
+            invalid fields: [ID]
             """
 
     Scenario: Missing dataset title in body when creating a new dataset
@@ -317,7 +297,7 @@ Feature: Private Dataset API
             """
             {
                 "id": "ageing-population-estimates",
-                "type": "filterable",
+                "type": "static",
                 "state": "anything",
                 "next_release":"2016-04-04",
                 "description": "census",
@@ -329,7 +309,7 @@ Feature: Private Dataset API
         Then the HTTP status code should be "400"
         And I should receive the following response:
             """
-            missing dataset title in request body
+            invalid fields: [Title]
             """
 
     Scenario: Missing dataset description in body when creating a new dataset
@@ -338,7 +318,7 @@ Feature: Private Dataset API
             {
                 "id": "ageing-population-estimates",
                 "title": "title",
-                "type": "filterable",
+                "type": "static",
                 "state": "anything",
                 "next_release":"2016-04-04",
                 "keywords":["keyword"],
@@ -349,7 +329,7 @@ Feature: Private Dataset API
         Then the HTTP status code should be "400"
         And I should receive the following response:
             """
-            missing dataset description in request body
+            invalid fields: [Description]
             """
 
     Scenario: Missing dataset keywords in body when creating a new dataset
@@ -358,7 +338,7 @@ Feature: Private Dataset API
             {
                 "id": "ageing-population-estimates",
                 "title": "title",
-                "type": "filterable",
+                "type": "static",
                 "state": "anything",
                 "next_release":"2016-04-04",
                 "description": "census",
@@ -369,7 +349,7 @@ Feature: Private Dataset API
         Then the HTTP status code should be "400"
         And I should receive the following response:
             """
-            missing dataset keywords in request body
+            invalid fields: [Keywords]
             """
 
     Scenario: Missing dataset next release in body when creating a new dataset
@@ -378,7 +358,7 @@ Feature: Private Dataset API
             {
                 "id": "ageing-population-estimates",
                 "title": "title",
-                "type": "filterable",
+                "type": "static",
                 "state": "anything",
                 "description": "census",
                 "keywords":["keyword"],
@@ -389,7 +369,7 @@ Feature: Private Dataset API
         Then the HTTP status code should be "400"
         And I should receive the following response:
             """
-            missing dataset next release in request body
+            invalid fields: [NextRelease]
             """
 
     Scenario: Missing dataset themes in body and dataset type is static when creating a new dataset
@@ -409,7 +389,7 @@ Feature: Private Dataset API
         Then the HTTP status code should be "400"
         And I should receive the following response:
             """
-            missing dataset themes in request body
+            invalid fields: [Themes]
             """
 
     Scenario: Missing dataset contacts in body when creating a new dataset
@@ -418,7 +398,7 @@ Feature: Private Dataset API
             {
                 "id": "ageing-population-estimates",
                 "title": "title",
-                "type": "filterable",
+                "type": "static",
                 "state": "anything",
                 "next_release":"2016-04-04",
                 "description": "census",
@@ -429,5 +409,5 @@ Feature: Private Dataset API
         Then the HTTP status code should be "400"
         And I should receive the following response:
             """
-            missing dataset contacts in request body
+            invalid fields: [Contacts]
             """
