@@ -289,7 +289,7 @@ Feature: Private Dataset API
         Then the HTTP status code should be "400"
         And I should receive the following response:
             """
-            invalid fields: [ID]
+            invalid fields: missing dataset id in request body
             """
 
     Scenario: Missing dataset title in body when creating a new dataset

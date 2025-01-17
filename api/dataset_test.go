@@ -293,7 +293,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 	})
 
