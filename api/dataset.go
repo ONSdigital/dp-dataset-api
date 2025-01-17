@@ -259,6 +259,12 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 
 	datasetID := dataset.ID
 
+	if datasetID == "" {
+		log.Error(ctx, "addDatasetNew endpoint: dataset ID is empty", nil)
+		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetID, w, nil)
+		return
+	}
+
 	logData := log.Data{"dataset_id": datasetID}
 
 	_, err = api.dataStore.Backend.GetDataset(ctx, datasetID)
