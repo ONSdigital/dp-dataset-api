@@ -79,26 +79,63 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
 
-	states := []application.State{application.Published, application.Submitted, application.Completed, application.EditionConfirmed, application.Associated, application.Created, application.Failed, application.Detached}
+	states := []application.State{application.Published, application.EditionConfirmed, application.Associated}
 	transitions := []application.Transition{{
 		Label:                "published",
 		TargetState:          application.Published,
 		AlllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
+		Type:                 "v4",
 	}, {
 		Label:                "associated",
 		TargetState:          application.Associated,
 		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+		Type:                 "v4",
 	},
 		{
 			Label:                "edition-confirmed",
 			TargetState:          application.EditionConfirmed,
 			AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
+			Type:                 "v4",
+		},
+		{
+			Label:                "published",
+			TargetState:          application.Published,
+			AlllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
+			Type:                 "cantabular_table",
+		}, {
+			Label:                "associated",
+			TargetState:          application.Associated,
+			AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+			Type:                 "cantabular_table",
+		},
+		{
+			Label:                "edition-confirmed",
+			TargetState:          application.EditionConfirmed,
+			AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
+			Type:                 "cantabular_table",
+		},
+		{
+			Label:                "published",
+			TargetState:          application.Published,
+			AlllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
+			Type:                 "filterable",
+		}, {
+			Label:                "associated",
+			TargetState:          application.Associated,
+			AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+			Type:                 "filterable",
+		},
+		{
+			Label:                "edition-confirmed",
+			TargetState:          application.EditionConfirmed,
+			AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
+			Type:                 "filterable",
 		}}
 
 	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
 		DataStore:          store.DataStore{Backend: mockedDataStore},
 		DownloadGenerators: mockedMapSMGeneratedDownloads,
-		StateMachine:       application.NewStateMachine(states, transitions, store.DataStore{Backend: mockedDataStore}, testContext),
+		StateMachine:       application.NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore}),
 	}
 
 	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, &mockStatemachineDatasetAPI)
@@ -129,25 +166,28 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
 
-	states := []application.State{application.Published, application.Submitted, application.Completed, application.EditionConfirmed, application.Associated, application.Created, application.Failed, application.Detached}
+	states := []application.State{application.Published, application.EditionConfirmed, application.Associated}
 	transitions := []application.Transition{{
 		Label:                "published",
 		TargetState:          application.Published,
 		AlllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
+		Type:                 "cantabular_table",
 	}, {
 		Label:                "associated",
 		TargetState:          application.Associated,
 		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+		Type:                 "cantabular_table",
 	}, {
 		Label:                "edition-confirmed",
 		TargetState:          application.EditionConfirmed,
 		AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
+		Type:                 "cantabular_table",
 	}}
 
 	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
 		DataStore:          store.DataStore{Backend: mockedDataStore},
 		DownloadGenerators: mockedMapSMGeneratedDownloads,
-		StateMachine:       application.NewStateMachine(states, transitions, store.DataStore{Backend: mockedDataStore}, testContext),
+		StateMachine:       application.NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore}),
 	}
 
 	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, &mockStatemachineDatasetAPI)
@@ -429,7 +469,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 	})
 
@@ -455,11 +495,11 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 	})
 
-	convey.Convey("Request with empty themes returns 400 Bad Request", t, func() {
+	convey.Convey("Request with empty themes and type static returns 400 Bad Request", t, func() {
 		b := datasetPayloadWithEmptyThemesAndTypeStatic
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
@@ -481,7 +521,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 	})
 
@@ -507,7 +547,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 	})
 }

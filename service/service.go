@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	neturl "net/url"
+	"slices"
 	"sync"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
@@ -58,23 +59,25 @@ var stateMachine *application.StateMachine
 var stateMachineInit sync.Once
 
 func GetListTransitions() []application.Transition {
-
 	publishedTransition := application.Transition{
 		Label:                "published",
 		TargetState:          application.Published,
 		AlllowedSourceStates: []string{"created", "associated", "published"},
+		Type:                 "v4",
 	}
 
 	associatedTransition := application.Transition{
 		Label:                "associated",
 		TargetState:          application.Associated,
 		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+		Type:                 "v4",
 	}
 
 	edconfirmedTransition := application.Transition{
 		Label:                "edition-confirmed",
 		TargetState:          application.EditionConfirmed,
 		AlllowedSourceStates: []string{"completed", "edition-confirmed"},
+		Type:                 "v4",
 	}
 
 	return []application.Transition{publishedTransition,
@@ -86,30 +89,32 @@ func GetListCantabularTransitions() []application.Transition {
 		Label:                "published",
 		TargetState:          application.Published,
 		AlllowedSourceStates: []string{"created"},
+		Type:                 "cantabular_flexible_table",
 	}
 
 	associatedTransition := application.Transition{
 		Label:                "associated",
 		TargetState:          application.Associated,
 		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+		Type:                 "cantabular_flexible_table",
 	}
 
 	edconfirmedTransition := application.Transition{
 		Label:                "edition-confirmed",
 		TargetState:          application.EditionConfirmed,
 		AlllowedSourceStates: []string{"completed", "edition-confirmed"},
+		Type:                 "cantabular_flexible_table",
 	}
 
 	return []application.Transition{publishedTransition,
 		associatedTransition, edconfirmedTransition}
 }
 
-func GetStateMachine(dataStore store.DataStore, ctx context.Context) *application.StateMachine {
-
+func GetStateMachine(ctx context.Context, dataStore store.DataStore) *application.StateMachine {
 	stateMachineInit.Do(func() {
 		states := []application.State{application.Published, application.EditionConfirmed, application.Associated}
-		transitions := GetListTransitions()
-		stateMachine = application.NewStateMachine(states, transitions, dataStore, ctx)
+		transitions := slices.Concat(GetListTransitions(), GetListCantabularTransitions())
+		stateMachine = application.NewStateMachine(ctx, states, transitions, dataStore)
 	})
 	return stateMachine
 }
@@ -244,8 +249,8 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	}
 
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
-	sm := GetStateMachine(ds, ctx)
-	svc.smDS = application.Setup(ctx, r, ds, smDownloadGenerators, sm)
+	sm := GetStateMachine(ctx, ds)
+	svc.smDS = application.Setup(ds, smDownloadGenerators, sm)
 	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, svc.smDS)
 
 	svc.healthCheck.Start(ctx)

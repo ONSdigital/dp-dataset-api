@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -23,7 +24,7 @@ func (s State) String() string {
 
 type StateMachine struct {
 	states      map[string]State
-	transitions map[string][]string
+	transitions map[KeyVal][]string
 	DataStore   store.DataStore
 	ctx         context.Context
 }
@@ -32,6 +33,12 @@ type Transition struct {
 	Label                string
 	TargetState          State
 	AlllowedSourceStates []string
+	Type                 string
+}
+
+type KeyVal struct {
+	StateVal string
+	Type     string
 }
 
 func castStateToState(state string) (*State, bool) {
@@ -57,7 +64,15 @@ func (sm *StateMachine) Transition(ctx context.Context, smDS *StateMachineDatase
 	var ok bool
 
 	for state, transitions := range sm.transitions {
-		if state == versionUpdate.State {
+		fmt.Println("THE VERSION UPDATE TYPE IS")
+		fmt.Println(currentVersion.Type)
+		if currentVersion.Type == "" {
+			currentVersion.Type = "v4"
+		}
+		fmt.Println("THE VERSION UPDATE STATE IS")
+		fmt.Println(versionUpdate.State)
+		if state.StateVal == versionUpdate.State && state.Type == currentVersion.Type {
+			fmt.Println("GOT IN THE MATCH")
 			for i := 0; i < len(transitions); i++ {
 				if currentVersion.State == transitions[i] {
 					match = true
@@ -68,6 +83,7 @@ func (sm *StateMachine) Transition(ctx context.Context, smDS *StateMachineDatase
 					break
 				}
 			}
+
 		}
 	}
 
@@ -92,9 +108,11 @@ func NewStateMachine(ctx context.Context, states []State, transitions []Transiti
 		statesMap[state.String()] = state
 	}
 
-	transitionsMap := make(map[string][]string)
+	//transitionsMap := make(map[string][]string)
+	transitionsMap := make(map[KeyVal][]string)
 	for _, transition := range transitions {
-		transitionsMap[transition.TargetState.String()] = transition.AlllowedSourceStates
+		transitionsMap[KeyVal{StateVal: transition.TargetState.String(), Type: transition.Type}] = transition.AlllowedSourceStates
+		//transitionsMap[transition.TargetState.String()][transition.Type] = transition.AlllowedSourceStates
 	}
 
 	sm := &StateMachine{

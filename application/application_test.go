@@ -25,6 +25,7 @@ var publishVersionUpdate = &models.Version{
 var currentVersionEditionConfirmed = &models.Version{
 	State:        models.EditionConfirmedState,
 	CollectionID: "3434",
+	Type:         "v4",
 }
 
 var versionDetails = VersionDetails{
@@ -39,6 +40,7 @@ var versionUpdateAssociated = &models.Version{
 	Version:      1,
 	ID:           "789",
 	CollectionID: "3434",
+	Type:         "cantabular_flexible_table",
 }
 
 var versionUpdateEditionConfirmed = &models.Version{
@@ -54,15 +56,34 @@ func setUpStatesTransitions() ([]State, []Transition) {
 		Label:                "published",
 		TargetState:          Published,
 		AlllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
+		Type:                 "v4",
 	}, {
 		Label:                "associated",
 		TargetState:          Associated,
 		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+		Type:                 "v4",
 	}, {
 		Label:                "edition-confirmed",
 		TargetState:          EditionConfirmed,
 		AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
-	}}
+		Type:                 "v4",
+	},
+		{
+			Label:                "published",
+			TargetState:          Published,
+			AlllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
+			Type:                 "cantabular_flexible_table",
+		}, {
+			Label:                "associated",
+			TargetState:          Associated,
+			AlllowedSourceStates: []string{"edition-confirmed", "associated", "created"},
+			Type:                 "cantabular_flexible_table",
+		}, {
+			Label:                "edition-confirmed",
+			TargetState:          EditionConfirmed,
+			AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
+			Type:                 "cantabular_flexible_table",
+		}}
 
 	return states, transitions
 }
@@ -268,6 +289,7 @@ func TestAmendVersionSuccess(t *testing.T) {
 					ReleaseDate: "2017-12-12",
 					State:       models.EditionConfirmedState,
 					ETag:        "12345",
+					Type:        "cantabular_flexible_table",
 				}, nil
 			},
 			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
