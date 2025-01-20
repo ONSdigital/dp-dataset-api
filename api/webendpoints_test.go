@@ -15,7 +15,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/gorilla/mux"
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/smartystreets/goconvey/convey"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -25,7 +25,7 @@ import (
 var testContext = context.Background()
 
 func TestWebSubnetDatasetsEndpoint(t *testing.T) {
-	Convey("When the API is started with private endpoints disabled", t, func() {
+	convey.Convey("When the API is started with private endpoints disabled", t, func() {
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets", nil)
 
 		current := &models.Dataset{ID: "1234", Title: "current"}
@@ -33,7 +33,7 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsFunc: func(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+			GetDatasetsFunc: func(context.Context, int, int, bool) ([]*models.DatasetUpdate, int, error) {
 				return []*models.DatasetUpdate{
 					{
 						Current: current,
@@ -42,13 +42,13 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 				}, 0, nil
 			},
 		}
-		Convey("Calling the datasets endpoint should allow only published items", func() {
+		convey.Convey("Calling the datasets endpoint should allow only published items", func() {
 			api := GetWebAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, nil, nil)
 
 			api.Router.ServeHTTP(w, r)
 			a, _ := io.ReadAll(w.Body)
-			So(w.Code, ShouldEqual, http.StatusOK)
-			So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 1)
+			convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+			convey.So(len(mockedDataStore.GetDatasetsCalls()), convey.ShouldEqual, 1)
 			type datasetResults struct {
 				Items      []*models.Dataset `json:"items"`
 				Count      int               `json:"count"`
@@ -58,16 +58,16 @@ func TestWebSubnetDatasetsEndpoint(t *testing.T) {
 			}
 			var results datasetResults
 			err := json.Unmarshal(a, &results)
-			So(err, ShouldBeNil)
+			convey.So(err, convey.ShouldBeNil)
 			// Only a single dataset should be returned in a web subnet
-			So(len(results.Items), ShouldEqual, 1)
-			So(results.Items[0].Title, ShouldEqual, current.Title)
+			convey.So(len(results.Items), convey.ShouldEqual, 1)
+			convey.So(results.Items[0].Title, convey.ShouldEqual, current.Title)
 		})
 	})
 }
 
 func TestWebSubnetDatasetEndpoint(t *testing.T) {
-	Convey("When the API is started with private endpoints disabled", t, func() {
+	convey.Convey("When the API is started with private endpoints disabled", t, func() {
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234", nil)
 
 		current := &models.Dataset{ID: "1234", Title: "current"}
@@ -75,30 +75,30 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{
 					Current: current,
 					Next:    next,
 				}, nil
 			},
 		}
-		Convey("Calling the dataset endpoint should allow only published items", func() {
+		convey.Convey("Calling the dataset endpoint should allow only published items", func() {
 			api := GetWebAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, nil, nil)
 
 			api.Router.ServeHTTP(w, r)
 			a, _ := io.ReadAll(w.Body)
-			So(w.Code, ShouldEqual, http.StatusOK)
-			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+			convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+			convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 			var result models.Dataset
 			err := json.Unmarshal(a, &result)
-			So(err, ShouldBeNil)
-			So(result.Title, ShouldEqual, current.Title)
+			convey.So(err, convey.ShouldBeNil)
+			convey.So(result.Title, convey.ShouldEqual, current.Title)
 		})
 	})
 }
 
 func TestWebSubnetEditionsEndpoint(t *testing.T) {
-	Convey("When the API is started with private endpoints disabled", t, func() {
+	convey.Convey("When the API is started with private endpoints disabled", t, func() {
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions", nil)
 
 		edition := models.EditionUpdate{ID: "1234", Current: &models.Edition{State: models.PublishedState}}
@@ -115,19 +115,19 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 				return []*models.EditionUpdate{&edition}, 0, nil
 			},
 		}
-		Convey("Calling the editions endpoint should allow only published items", func() {
+		convey.Convey("Calling the editions endpoint should allow only published items", func() {
 			api := GetWebAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, nil, nil)
 
 			api.Router.ServeHTTP(w, r)
-			So(w.Code, ShouldEqual, http.StatusOK)
-			So(datasetSearchState, ShouldEqual, models.PublishedState)
-			So(editionSearchState, ShouldEqual, models.PublishedState)
+			convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+			convey.So(datasetSearchState, convey.ShouldEqual, models.PublishedState)
+			convey.So(editionSearchState, convey.ShouldEqual, models.PublishedState)
 		})
 	})
 }
 
 func TestWebSubnetEditionEndpoint(t *testing.T) {
-	Convey("When the API is started with private endpoints disabled", t, func() {
+	convey.Convey("When the API is started with private endpoints disabled", t, func() {
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234", nil)
 
 		edition := &models.EditionUpdate{ID: "1234", Current: &models.Edition{State: models.PublishedState}}
@@ -144,19 +144,19 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 				return edition, nil
 			},
 		}
-		Convey("Calling the edition endpoint should allow only published items", func() {
+		convey.Convey("Calling the edition endpoint should allow only published items", func() {
 			api := GetWebAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, nil, nil)
 
 			api.Router.ServeHTTP(w, r)
-			So(w.Code, ShouldEqual, http.StatusOK)
-			So(datasetSearchState, ShouldEqual, models.PublishedState)
-			So(editionSearchState, ShouldEqual, models.PublishedState)
+			convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+			convey.So(datasetSearchState, convey.ShouldEqual, models.PublishedState)
+			convey.So(editionSearchState, convey.ShouldEqual, models.PublishedState)
 		})
 	})
 }
 
 func TestWebSubnetVersionsEndpoint(t *testing.T) {
-	Convey("When the API is started with private endpoints disabled", t, func() {
+	convey.Convey("When the API is started with private endpoints disabled", t, func() {
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions", nil)
 
 		var versionSearchState, editionSearchState, datasetSearchState string
@@ -175,20 +175,20 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 				return []models.Version{{ID: "124", State: models.PublishedState}}, 1, nil
 			},
 		}
-		Convey("Calling the versions endpoint should allow only published items", func() {
+		convey.Convey("Calling the versions endpoint should allow only published items", func() {
 			api := GetWebAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, nil, nil)
 
 			api.Router.ServeHTTP(w, r)
-			So(w.Code, ShouldEqual, http.StatusOK)
-			So(datasetSearchState, ShouldEqual, models.PublishedState)
-			So(editionSearchState, ShouldEqual, models.PublishedState)
-			So(versionSearchState, ShouldEqual, models.PublishedState)
+			convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+			convey.So(datasetSearchState, convey.ShouldEqual, models.PublishedState)
+			convey.So(editionSearchState, convey.ShouldEqual, models.PublishedState)
+			convey.So(versionSearchState, convey.ShouldEqual, models.PublishedState)
 		})
 	})
 }
 
 func TestWebSubnetVersionEndpoint(t *testing.T) {
-	Convey("When the API is started with private endpoints disabled", t, func() {
+	convey.Convey("When the API is started with private endpoints disabled", t, func() {
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234", nil)
 
 		var versionSearchState, editionSearchState, datasetSearchState string
@@ -210,21 +210,21 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 						Self:    &models.LinkObject{}}}, nil
 			},
 		}
-		Convey("Calling the version endpoint should allow only published items", func() {
+		convey.Convey("Calling the version endpoint should allow only published items", func() {
 			api := GetWebAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, nil, nil)
 
 			api.Router.ServeHTTP(w, r)
 
-			So(w.Code, ShouldEqual, http.StatusOK)
-			So(datasetSearchState, ShouldEqual, models.PublishedState)
-			So(editionSearchState, ShouldEqual, models.PublishedState)
-			So(versionSearchState, ShouldEqual, models.PublishedState)
+			convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+			convey.So(datasetSearchState, convey.ShouldEqual, models.PublishedState)
+			convey.So(editionSearchState, convey.ShouldEqual, models.PublishedState)
+			convey.So(versionSearchState, convey.ShouldEqual, models.PublishedState)
 		})
 	})
 }
 
 func TestWebSubnetDimensionsEndpoint(t *testing.T) {
-	Convey("When the API is started with private endpoints disabled", t, func() {
+	convey.Convey("When the API is started with private endpoints disabled", t, func() {
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234/dimensions", nil)
 		var versionSearchState string
 		w := httptest.NewRecorder()
@@ -236,22 +236,22 @@ func TestWebSubnetDimensionsEndpoint(t *testing.T) {
 						Version: &models.LinkObject{},
 						Self:    &models.LinkObject{}}}, nil
 			},
-			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
+			GetDimensionsFunc: func(context.Context, string) ([]bson.M, error) {
 				return []bson.M{}, nil
 			},
 		}
-		Convey("Calling dimension endpoint should allow only published items", func() {
+		convey.Convey("Calling dimension endpoint should allow only published items", func() {
 			api := GetWebAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, nil, nil)
 
 			api.Router.ServeHTTP(w, r)
-			So(w.Code, ShouldEqual, http.StatusOK)
-			So(versionSearchState, ShouldEqual, models.PublishedState)
+			convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+			convey.So(versionSearchState, convey.ShouldEqual, models.PublishedState)
 		})
 	})
 }
 
 func TestWebSubnetDimensionOptionsEndpoint(t *testing.T) {
-	Convey("When the API is started with private endpoints disabled", t, func() {
+	convey.Convey("When the API is started with private endpoints disabled", t, func() {
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234/dimensions/t/options", nil)
 
 		var versionSearchState string
@@ -264,17 +264,17 @@ func TestWebSubnetDimensionOptionsEndpoint(t *testing.T) {
 						Version: &models.LinkObject{},
 						Self:    &models.LinkObject{}}}, nil
 			},
-			GetDimensionOptionsFunc: func(ctx context.Context, version *models.Version, dimension string, offset, limit int) ([]*models.PublicDimensionOption, int, error) {
+			GetDimensionOptionsFunc: func(context.Context, *models.Version, string, int, int) ([]*models.PublicDimensionOption, int, error) {
 				return []*models.PublicDimensionOption{}, 0, nil
 			},
 		}
 
-		Convey("Calling dimension option endpoint should allow only published items", func() {
+		convey.Convey("Calling dimension option endpoint should allow only published items", func() {
 			api := GetWebAPIWithMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, nil, nil)
 
 			api.Router.ServeHTTP(w, r)
-			So(w.Code, ShouldEqual, http.StatusOK)
-			So(versionSearchState, ShouldEqual, models.PublishedState)
+			convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+			convey.So(versionSearchState, convey.ShouldEqual, models.PublishedState)
 		})
 	})
 }
@@ -308,9 +308,9 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 		{Method: "PUT", URL: "http://localhost:22000/instances/1/dimensions/1/options/1/node_id/1"}: http.StatusNotFound,
 	}
 
-	Convey("When the API is started with private endpoints disabled", t, func() {
+	convey.Convey("When the API is started with private endpoints disabled", t, func() {
 		for endpoint, expectedStatusCode := range publishSubnetEndpoints {
-			Convey("The following endpoint "+endpoint.URL+"(Method:"+endpoint.Method+") should return 404", func() {
+			convey.Convey("The following endpoint "+endpoint.URL+"(Method:"+endpoint.Method+") should return 404", func() {
 				r := createRequestWithAuth(endpoint.Method, endpoint.URL, nil)
 
 				w := httptest.NewRecorder()
@@ -320,7 +320,7 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 
 				api.Router.ServeHTTP(w, r)
 
-				So(w.Code, ShouldEqual, expectedStatusCode)
+				convey.So(w.Code, convey.ShouldEqual, expectedStatusCode)
 			})
 		}
 	})
@@ -341,7 +341,7 @@ func GetWebAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 	}
 
 	cfg, err := config.Get()
-	So(err, ShouldBeNil)
+	convey.So(err, convey.ShouldBeNil)
 	cfg.ServiceAuthToken = authToken
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEndpoints = false

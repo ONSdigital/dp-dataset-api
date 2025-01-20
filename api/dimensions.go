@@ -9,6 +9,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
+	"github.com/ONSdigital/dp-net/v2/links"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
@@ -84,6 +85,16 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 		handleDimensionsErr(ctx, w, "", err, logData)
 		return nil, 0, err
 	}
+
+	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+	codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetCodeListAPIURL())
+
+	list, err = utils.RewriteDimensions(ctx, list, datasetLinksBuilder, codeListLinksBuilder)
+	if err != nil {
+		handleDimensionsErr(ctx, w, "getDimensions endpoint: failed to map dimensions and rewrite links", err, logData)
+		return nil, 0, err
+	}
+
 	return list, totalCount, nil
 }
 
@@ -171,14 +182,14 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		return nil, 0, err
 	}
 
-	// ger version for provided dataset, edition and versionID
+	// get version for provided dataset, edition and versionID
 	version, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionName, state)
 	if err != nil {
 		handleDimensionsErr(ctx, w, "failed to get version", err, logData)
 		return nil, 0, err
 	}
 
-	// vaidate state
+	// validate state
 	if err = models.CheckState("version", version.State); err != nil {
 		logData["version_state"] = version.State
 		handleDimensionsErr(ctx, w, "unpublished version has an invalid state", err, logData)
@@ -208,6 +219,15 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	for i := range results {
 		results[i].Links.Version.HRef = versionHref
 		results[i].Links.Version.ID = versionID
+	}
+
+	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+	codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetCodeListAPIURL())
+
+	results, err = utils.RewritePublicDimensionOptions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
+	if err != nil {
+		handleDimensionsErr(ctx, w, "getDimensionOptions endpoint: failed to map dimension options and rewrite links", err, logData)
+		return nil, 0, err
 	}
 
 	return results, totalCount, nil

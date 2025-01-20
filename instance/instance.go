@@ -13,8 +13,11 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/url"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
+	"github.com/ONSdigital/dp-net/v2/links"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -26,6 +29,7 @@ type Store struct {
 	store.Storer
 	Host                string
 	EnableDetachDataset bool
+	URLBuilder          *url.Builder
 }
 
 type taskError struct {
@@ -75,6 +79,17 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit, offset in
 			return nil, 0, err
 		}
 
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetDatasetAPIURL())
+		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetCodeListAPIURL())
+		importLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetImportAPIURL())
+
+		err = utils.RewriteInstances(ctx, instancesResults, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
+		if err != nil {
+			log.Error(ctx, "get instances endpoint: failed to rewrite instances", err, logData)
+			handleInstanceErr(ctx, err, w, logData)
+			return nil, 0, err
+		}
+
 		return instancesResults, instancesTotalCount, nil
 	}()
 
@@ -111,6 +126,17 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	if err = models.CheckState("instance", instance.State); err != nil {
 		logData["state"] = instance.State
 		log.Error(ctx, "get instance: instance has an invalid state", err, logData)
+		handleInstanceErr(ctx, err, w, logData)
+		return
+	}
+
+	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetDatasetAPIURL())
+	codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetCodeListAPIURL())
+	importLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetImportAPIURL())
+
+	err = utils.RewriteInstances(ctx, []*models.Instance{instance}, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
+	if err != nil {
+		log.Error(ctx, "get instance: failed to rewrite instance", err, logData)
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
@@ -268,7 +294,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// update dp-graph instance node (only for non-cantabular types)
-		if currentInstance.Type == models.CantabularBlob.String() || currentInstance.Type == models.CantabularTable.String() || currentInstance.Type == models.CantabularFlexibleTable.String() || currentInstance.Type == models.CantabularMultivariateTable.String() {
+		if currentInstance.Type == models.CantabularBlob.String() || currentInstance.Type == models.CantabularTable.String() || currentInstance.Type == models.CantabularFlexibleTable.String() || currentInstance.Type == models.CantabularMultivariateTable.String() || currentInstance.Type == models.Static.String() {
 			editionLogData["instance_type"] = instance.Type
 			log.Info(ctx, "skipping dp-graph instance update because it is not required by instance type", editionLogData)
 		} else {

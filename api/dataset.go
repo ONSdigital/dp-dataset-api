@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"reflect"
 	"strings"
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
+	"github.com/ONSdigital/dp-net/v2/links"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 )
@@ -34,14 +35,6 @@ var (
 		errs.ErrTypeMismatch:               true,
 		errs.ErrDatasetTypeInvalid:         true,
 		errs.ErrInvalidQueryParameter:      true,
-		errs.ErrMissingDatasetID:           true,
-		errs.ErrMissingDatasetType:         true,
-		errs.ErrMissingDatasetTitle:        true,
-		errs.ErrMissingDatasetDescription:  true,
-		errs.ErrMissingDatasetNextRelease:  true,
-		errs.ErrMissingDatasetKeywords:     true,
-		errs.ErrMissingDatasetThemes:       true,
-		errs.ErrMissingDatasetContacts:     true,
 	}
 
 	// errors that should return a 404 status
@@ -87,11 +80,27 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
+	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+
 	if authorised {
-		return datasets, totalCount, nil
+		datasetsResponse, err := utils.RewriteDatasetsWithAuth(ctx, datasets, datasetLinksBuilder)
+		if err != nil {
+			log.Error(ctx, "getDatasets endpoint: failed to rewrite datasets with auth", err)
+			handleDatasetAPIErr(ctx, err, w, logData)
+			return nil, 0, err
+		}
+		log.Info(ctx, "getDatasets endpoint: get all datasets with auth", logData)
+		return datasetsResponse, totalCount, nil
 	}
 
-	return mapResults(datasets), totalCount, nil
+	datasetsResponse, err := utils.RewriteDatasetsWithoutAuth(ctx, datasets, datasetLinksBuilder)
+	if err != nil {
+		log.Error(ctx, "getDatasets endpoint: failed to rewrite datasets without authorisation", err)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return nil, 0, err
+	}
+	log.Info(ctx, "getDatasets endpoint: get all datasets without auth", logData)
+	return datasetsResponse, totalCount, nil
 }
 
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
@@ -109,36 +118,27 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 		authorised := api.authenticate(r, logData)
 
-		var b []byte
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+
 		var datasetResponse interface{}
 
-		if !authorised {
-			// User is not authenticated and hence has only access to current sub document
-			if dataset.Current == nil {
-				log.Info(ctx, "getDataset endpoint: published dataset not found", logData)
-				return nil, errs.ErrDatasetNotFound
+		if authorised {
+			datasetResponse, err = utils.RewriteDatasetWithAuth(ctx, dataset, datasetLinksBuilder)
+			if err != nil {
+				log.Error(ctx, "getDataset endpoint: failed to rewrite dataset with authorisation", err, logData)
+				return nil, err
 			}
-			log.Info(ctx, "getDataset endpoint: caller not authorised returning dataset", logData)
-
-			dataset.Current.ID = dataset.ID
-			if dataset.Current.Themes == nil {
-				dataset.Current.Themes = buildThemes(dataset.Current.CanonicalTopic, dataset.Current.Subtopics)
-			}
-			datasetResponse = dataset.Current
+			log.Info(ctx, "getDataset endpoint: get dataset with auth", logData)
 		} else {
-			// User has valid authentication to get raw dataset document
-			if dataset == nil {
-				log.Info(ctx, "getDataset endpoint: published or unpublished dataset not found", logData)
-				return nil, errs.ErrDatasetNotFound
+			datasetResponse, err = utils.RewriteDatasetWithoutAuth(ctx, dataset, datasetLinksBuilder)
+			if err != nil {
+				log.Error(ctx, "getDataset endpoint: failed to rewrite dataset without authorisation", err, logData)
+				return nil, err
 			}
-			log.Info(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", logData)
-			if dataset.Current != nil && dataset.Current.Themes == nil {
-				dataset.Current.Themes = buildThemes(dataset.Current.CanonicalTopic, dataset.Current.Subtopics)
-			}
-			datasetResponse = dataset
+			log.Info(ctx, "getDataset endpoint: get dataset without auth", logData)
 		}
 
-		b, err = json.Marshal(datasetResponse)
+		b, err := json.Marshal(datasetResponse)
 		if err != nil {
 			log.Error(ctx, "getDataset endpoint: failed to marshal dataset resource into bytes", err, logData)
 			return nil, err
@@ -232,6 +232,14 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+
+		err = utils.RewriteDatasetLinks(ctx, datasetDoc.Next.Links, datasetLinksBuilder)
+		if err != nil {
+			log.Error(ctx, "addDataset endpoint: failed to rewrite links for response", err)
+			return nil, err
+		}
+
 		b, err := json.Marshal(datasetDoc)
 		if err != nil {
 			log.Error(ctx, "addDataset endpoint: failed to marshal dataset resource into bytes", err, logData)
@@ -268,7 +276,9 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 
 	datasetID := dataset.ID
 
-	if err = validateDatasetMandatoryFields(ctx, *dataset, w); err != nil {
+	if datasetID == "" {
+		log.Error(ctx, "addDatasetNew endpoint: dataset ID is empty", nil)
+		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetID, w, nil)
 		return
 	}
 
@@ -320,7 +330,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	dataset.LastUpdated = time.Now()
 
 	if dataset.Themes == nil {
-		dataset.Themes = buildThemes(dataset.CanonicalTopic, dataset.Subtopics)
+		dataset.Themes = utils.BuildThemes(dataset.CanonicalTopic, dataset.Subtopics)
 	}
 
 	datasetDoc := &models.DatasetUpdate{
@@ -331,6 +341,15 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	if err = api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
 		logData["new_dataset"] = datasetID
 		log.Error(ctx, "addDatasetNew endpoint: failed to insert dataset resource to datastore", err, logData)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+
+	err = utils.RewriteDatasetLinks(ctx, datasetDoc.Next.Links, datasetLinksBuilder)
+	if err != nil {
+		log.Error(ctx, "addDatasetNew endpoint: failed to rewrite links for response", err)
 		handleDatasetAPIErr(ctx, err, w, logData)
 		return
 	}
@@ -349,76 +368,6 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	log.Info(ctx, "addDatasetNew endpoint: request completed successfully", logData)
-}
-
-func validateDatasetMandatoryFields(ctx context.Context, dataset interface{}, w http.ResponseWriter) error {
-	v := reflect.ValueOf(dataset)
-	typeOfDataset := v.Type()
-
-	// find dataset type
-	var datasetType string
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-		fieldName := typeOfDataset.Field(i).Name
-		if fieldName == "Type" {
-			datasetType = field.String()
-		}
-	}
-
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-		fieldName := typeOfDataset.Field(i).Name
-
-		switch fieldName {
-		case "ID", "Type", "Title", "Description", "NextRelease":
-			if field.String() == "" {
-				err := getFieldError(fieldName)
-				log.Error(ctx, "addDatasetNew endpoint: dataset "+fieldName+" is empty", nil)
-				handleDatasetAPIErr(ctx, err, w, nil)
-				return err
-			}
-		case "Keywords", "Contacts":
-			if field.Len() == 0 {
-				err := getFieldError(fieldName)
-				log.Error(ctx, "addDatasetNew endpoint: dataset "+fieldName+" is empty", nil)
-				handleDatasetAPIErr(ctx, err, w, nil)
-				return err
-			}
-		case "Themes":
-			if datasetType == models.Static.String() {
-				if field.Len() == 0 {
-					err := getFieldError(fieldName)
-					log.Error(ctx, "addDatasetNew endpoint: dataset "+fieldName+" is empty", nil)
-					handleDatasetAPIErr(ctx, err, w, nil)
-					return err
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func getFieldError(fieldName string) error {
-	switch fieldName {
-	case "ID":
-		return errs.ErrMissingDatasetID
-	case "Type":
-		return errs.ErrMissingDatasetType
-	case "Title":
-		return errs.ErrMissingDatasetTitle
-	case "Description":
-		return errs.ErrMissingDatasetDescription
-	case "NextRelease":
-		return errs.ErrMissingDatasetNextRelease
-	case "Keywords":
-		return errs.ErrMissingDatasetKeywords
-	case "Themes":
-		return errs.ErrMissingDatasetThemes
-	case "Contacts":
-		return errs.ErrMissingDatasetContacts
-	default:
-		return errs.ErrInternalServer
-	}
 }
 
 func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
@@ -564,18 +513,6 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "delete dataset", logData)
 }
 
-func mapResults(results []*models.DatasetUpdate) []*models.Dataset {
-	items := []*models.Dataset{}
-	for _, item := range results {
-		if item.Current == nil {
-			continue
-		}
-		item.Current.ID = item.ID
-		items = append(items, item.Current)
-	}
-	return items
-}
-
 func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, data log.Data) {
 	if data == nil {
 		data = log.Data{}
@@ -599,15 +536,4 @@ func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	data["responseStatus"] = status
 	log.Error(ctx, "request unsuccessful", err, data)
 	http.Error(w, err.Error(), status)
-}
-
-func buildThemes(canonicalTopic string, subtopics []string) []string {
-	themes := []string{}
-	if canonicalTopic != "" {
-		themes = append(themes, canonicalTopic)
-	}
-	if subtopics != nil {
-		themes = append(themes, subtopics...)
-	}
-	return themes
 }

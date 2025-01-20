@@ -31,6 +31,8 @@ type Configuration struct {
 	CantabularExportStartTopic     string        `envconfig:"CANTABULAR_EXPORT_START"`
 	CodeListAPIURL                 string        `envconfig:"CODE_LIST_API_URL"`
 	DatasetAPIURL                  string        `envconfig:"DATASET_API_URL"`
+	DownloadServiceURL             string        `envconfig:"DOWNLOAD_SERVICE_URL"`
+	ImportAPIURL                   string        `envconfig:"IMPORT_API_URL"`
 	WebsiteURL                     string        `envconfig:"WEBSITE_URL"`
 	ZebedeeURL                     string        `envconfig:"ZEBEDEE_URL"`
 	DownloadServiceSecretKey       string        `envconfig:"DOWNLOAD_SERVICE_SECRET_KEY"      json:"-"`
@@ -83,6 +85,8 @@ func Get() (*Configuration, error) {
 		CantabularExportStartTopic:     "cantabular-export-start",
 		CodeListAPIURL:                 "http://localhost:22400",
 		DatasetAPIURL:                  "http://localhost:22000",
+		DownloadServiceURL:             "http://localhost:23600",
+		ImportAPIURL:                   "http://localhost:21800",
 		WebsiteURL:                     "http://localhost:20000",
 		ZebedeeURL:                     "http://localhost:8082",
 		ServiceAuthToken:               "FD0108EA-825D-411C-9B1D-41EF7727F465",
