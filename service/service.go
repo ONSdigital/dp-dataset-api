@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"net/http"
+	neturl "net/url"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	"github.com/ONSdigital/dp-authorisation/auth"
@@ -92,30 +93,15 @@ func (svc *Service) SetGraphDBErrorConsumer(graphDBErrorConsumer Closer) {
 
 // Run the service
 func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version string, svcErrors chan error) (err error) {
-	// Get MongoDB connection
-	svc.mongoDB, err = svc.serviceList.GetMongoDB(ctx, svc.config.MongoConfig)
-	if err != nil {
-		log.Error(ctx, "could not obtain mongo session", err)
+	// Copilot used to move initMongoDB and initGraphDB functions out of Run
+	if err := svc.initMongoDB(ctx); err != nil {
 		return err
 	}
 
-	// Get graphDB connection for observation store
-	if !svc.config.EnablePrivateEndpoints || svc.config.DisableGraphDBDependency {
-		log.Info(ctx, "skipping graph DB client creation, because it is not required by the enabled endpoints", log.Data{
-			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
-		})
-		svc.graphDB = &storetest.GraphDBMock{
-			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
-				return nil
-			},
-		}
-	} else {
-		svc.graphDB, svc.graphDBErrorConsumer, err = svc.serviceList.GetGraphDB(ctx)
-		if err != nil {
-			log.Fatal(ctx, "failed to initialise graph driver", err)
-			return err
-		}
+	if err := svc.initGraphDB(ctx); err != nil {
+		return err
 	}
+
 	ds := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB}}
 
 	// Get GenerateDownloads Kafka Producer
@@ -187,7 +173,12 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	}
 
 	// Create Dataset API
-	urlBuilder := url.NewBuilder(svc.config.WebsiteURL)
+	urlBuilder, err := createURLBuilder(svc.config)
+	if err != nil {
+		log.Error(ctx, "failed to create URL builder", err)
+		return err
+	}
+
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
 	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions)
 
@@ -207,6 +198,64 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	}()
 
 	return nil
+}
+
+func (svc *Service) initMongoDB(ctx context.Context) error {
+	var err error
+	svc.mongoDB, err = svc.serviceList.GetMongoDB(ctx, svc.config.MongoConfig)
+	if err != nil {
+		log.Error(ctx, "could not obtain mongo session", err)
+	}
+	return err
+}
+
+func (svc *Service) initGraphDB(ctx context.Context) error {
+	var err error
+	if !svc.config.EnablePrivateEndpoints || svc.config.DisableGraphDBDependency {
+		log.Info(ctx, "skipping graph DB client creation, because it is not required by the enabled endpoints", log.Data{
+			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
+		})
+		svc.graphDB = &storetest.GraphDBMock{
+			SetInstanceIsPublishedFunc: func(context.Context, string) error {
+				return nil
+			},
+		}
+	} else {
+		svc.graphDB, svc.graphDBErrorConsumer, err = svc.serviceList.GetGraphDB(ctx)
+		if err != nil {
+			log.Fatal(ctx, "failed to initialise graph driver", err)
+		}
+	}
+	return err
+}
+
+func createURLBuilder(config *config.Configuration) (*url.Builder, error) {
+	websiteURL, err := neturl.Parse(config.WebsiteURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse websiteURL from config")
+	}
+
+	downloadServiceURL, err := neturl.Parse(config.DownloadServiceURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse downloadServiceURL from config")
+	}
+
+	datasetAPIURL, err := neturl.Parse(config.DatasetAPIURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse datasetAPIURL from config")
+	}
+
+	codeListAPIURL, err := neturl.Parse(config.CodeListAPIURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse codeListAPIURL from config")
+	}
+
+	importAPIURL, err := neturl.Parse(config.ImportAPIURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse importAPIURL from config")
+	}
+
+	return url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL), nil
 }
 
 func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (datasetPermissions, permissions api.AuthHandler) {

@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	neturl "net/url"
 	"strings"
 	"sync"
 	"testing"
@@ -20,12 +21,18 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/url"
 	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/gorilla/mux"
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/smartystreets/goconvey/convey"
 )
 
 var (
-	mu          sync.Mutex
-	testContext = context.Background()
+	mu                 sync.Mutex
+	testContext        = context.Background()
+	codeListAPIURL     = &neturl.URL{Scheme: "http", Host: "localhost:22400"}
+	datasetAPIURL      = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
+	downloadServiceURL = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
+	importAPIURL       = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
+	websiteURL         = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
+	urlBuilder         = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 )
 
 func createRequestWithToken(method, requestURL string, body io.Reader) (*http.Request, error) {
@@ -38,15 +45,16 @@ func createRequestWithToken(method, requestURL string, body io.Reader) (*http.Re
 
 func initAPIWithMockedStore(mockedStore *storetest.StorerMock) *instance.Store {
 	instanceAPI := &instance.Store{
-		Storer: mockedStore,
+		Storer:     mockedStore,
+		URLBuilder: urlBuilder,
 	}
 	return instanceAPI
 }
 
 func Test_GetInstancesReturnsOK(t *testing.T) {
 	t.Parallel()
-	Convey("Given a GET request to retrieve a list of instance resources is made", t, func() {
-		Convey("Then return status ok (200)", func() {
+	convey.Convey("Given a GET request to retrieve a list of instance resources is made", t, func() {
+		convey.Convey("Then return status ok (200)", func() {
 			r := httptest.NewRequest("GET", "http://foo/instances", http.NoBody)
 			w := httptest.NewRecorder()
 
@@ -59,18 +67,18 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 			instanceAPI := initAPIWithMockedStore(mockedDataStore)
 			list, totalCount, err := instanceAPI.GetList(w, r, 20, 0)
 
-			So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
-			So(totalCount, ShouldEqual, 0)
-			So(list, ShouldResemble, []*models.Instance{})
-			So(err, ShouldEqual, nil)
+			convey.So(len(mockedDataStore.GetInstancesCalls()), convey.ShouldEqual, 1)
+			convey.So(totalCount, convey.ShouldEqual, 0)
+			convey.So(list, convey.ShouldResemble, []*models.Instance{})
+			convey.So(err, convey.ShouldEqual, nil)
 		})
 
-		Convey("When the request includes a filter by state of 'completed' this is delegated to the database function", func() {
+		convey.Convey("When the request includes a filter by state of 'completed' this is delegated to the database function", func() {
 			r := httptest.NewRequest("GET", "http://foo/instances?state=completed", http.NoBody)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
-				GetInstancesFunc: func(testContext context.Context, state []string, dataset []string, offset, limit int) ([]*models.Instance, int, error) {
+				GetInstancesFunc: func(context.Context, []string, []string, int, int) ([]*models.Instance, int, error) {
 					return []*models.Instance{{InstanceID: "test"}}, 1, nil
 				},
 			}
@@ -78,19 +86,19 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 			instanceAPI := initAPIWithMockedStore(mockedDataStore)
 			list, totalCount, err := instanceAPI.GetList(w, r, 20, 0)
 
-			So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
-			So(mockedDataStore.GetInstancesCalls()[0].States, ShouldResemble, []string{"completed"})
-			So(totalCount, ShouldEqual, 1)
-			So(list, ShouldResemble, []*models.Instance{{InstanceID: "test"}})
-			So(err, ShouldEqual, nil)
+			convey.So(len(mockedDataStore.GetInstancesCalls()), convey.ShouldEqual, 1)
+			convey.So(mockedDataStore.GetInstancesCalls()[0].States, convey.ShouldResemble, []string{"completed"})
+			convey.So(totalCount, convey.ShouldEqual, 1)
+			convey.So(list, convey.ShouldResemble, []*models.Instance{{InstanceID: "test"}})
+			convey.So(err, convey.ShouldEqual, nil)
 		})
 
-		Convey("When the request includes a filter by dataset of 'test' this is delegated to the database function", func() {
+		convey.Convey("When the request includes a filter by dataset of 'test' this is delegated to the database function", func() {
 			r := httptest.NewRequest("GET", "http://foo/instances?dataset=test", http.NoBody)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
-				GetInstancesFunc: func(testContext context.Context, state []string, dataset []string, offset, limit int) ([]*models.Instance, int, error) {
+				GetInstancesFunc: func(context.Context, []string, []string, int, int) ([]*models.Instance, int, error) {
 					return []*models.Instance{}, 0, nil
 				},
 			}
@@ -98,16 +106,16 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 			instanceAPI := initAPIWithMockedStore(mockedDataStore)
 			_, _, _ = instanceAPI.GetList(w, r, 20, 0)
 
-			So(mockedDataStore.GetInstancesCalls()[0].Datasets, ShouldResemble, []string{"test"})
-			So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
+			convey.So(mockedDataStore.GetInstancesCalls()[0].Datasets, convey.ShouldResemble, []string{"test"})
+			convey.So(len(mockedDataStore.GetInstancesCalls()), convey.ShouldEqual, 1)
 		})
 
-		Convey("When the request includes a filter by state of multiple values 'completed,edition-confirmed' these are all delegated to the database function", func() {
+		convey.Convey("When the request includes a filter by state of multiple values 'completed,edition-confirmed' these are all delegated to the database function", func() {
 			r := httptest.NewRequest("GET", "http://foo/instances?state=completed,edition-confirmed", http.NoBody)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
-				GetInstancesFunc: func(testContext context.Context, state []string, dataset []string, offset, limit int) ([]*models.Instance, int, error) {
+				GetInstancesFunc: func(context.Context, []string, []string, int, int) ([]*models.Instance, int, error) {
 					return []*models.Instance{}, 0, nil
 				},
 			}
@@ -115,16 +123,16 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 			instanceAPI := initAPIWithMockedStore(mockedDataStore)
 			_, _, _ = instanceAPI.GetList(w, r, 20, 0)
 
-			So(mockedDataStore.GetInstancesCalls()[0].States, ShouldResemble, []string{"completed", "edition-confirmed"})
-			So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
+			convey.So(mockedDataStore.GetInstancesCalls()[0].States, convey.ShouldResemble, []string{"completed", "edition-confirmed"})
+			convey.So(len(mockedDataStore.GetInstancesCalls()), convey.ShouldEqual, 1)
 		})
 
-		Convey("When the request includes a filter by state of 'completed' and dataset 'test'", func() {
+		convey.Convey("When the request includes a filter by state of 'completed' and dataset 'test'", func() {
 			r := httptest.NewRequest("GET", "http://foo/instances?state=completed&dataset=test", http.NoBody)
 			w := httptest.NewRecorder()
 
 			mockedDataStore := &storetest.StorerMock{
-				GetInstancesFunc: func(testContext context.Context, state []string, dataset []string, offset, limit int) ([]*models.Instance, int, error) {
+				GetInstancesFunc: func(context.Context, []string, []string, int, int) ([]*models.Instance, int, error) {
 					return []*models.Instance{}, 0, nil
 				},
 			}
@@ -132,23 +140,23 @@ func Test_GetInstancesReturnsOK(t *testing.T) {
 			instanceAPI := initAPIWithMockedStore(mockedDataStore)
 			_, _, _ = instanceAPI.GetList(w, r, 20, 0)
 
-			So(mockedDataStore.GetInstancesCalls()[0].States, ShouldResemble, []string{"completed"})
-			So(mockedDataStore.GetInstancesCalls()[0].Datasets, ShouldResemble, []string{"test"})
-			So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
+			convey.So(mockedDataStore.GetInstancesCalls()[0].States, convey.ShouldResemble, []string{"completed"})
+			convey.So(mockedDataStore.GetInstancesCalls()[0].Datasets, convey.ShouldResemble, []string{"test"})
+			convey.So(len(mockedDataStore.GetInstancesCalls()), convey.ShouldEqual, 1)
 		})
 	})
 }
 
 func Test_GetInstancesReturnsError(t *testing.T) {
 	t.Parallel()
-	Convey("Given a GET request to retrieve a list of instance resources is made", t, func() {
-		Convey("When the service is unable to connect to the datastore", func() {
-			Convey("Then return status internal server error (500)", func() {
+	convey.Convey("Given a GET request to retrieve a list of instance resources is made", t, func() {
+		convey.Convey("When the service is unable to connect to the datastore", func() {
+			convey.Convey("Then return status internal server error (500)", func() {
 				r := httptest.NewRequest("GET", "http://localhost:21800/instances", http.NoBody)
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstancesFunc: func(testContext context.Context, state []string, dataset []string, offset, limit int) ([]*models.Instance, int, error) {
+					GetInstancesFunc: func(context.Context, []string, []string, int, int) ([]*models.Instance, int, error) {
 						return nil, 0, errs.ErrInternalServer
 					},
 				}
@@ -156,22 +164,22 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 				instanceAPI := initAPIWithMockedStore(mockedDataStore)
 				_, _, _ = instanceAPI.GetList(w, r, 20, 0)
 
-				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-				So(len(mockedDataStore.GetInstancesCalls()), ShouldEqual, 1)
+				convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
+				convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInternalServer.Error())
+				convey.So(len(mockedDataStore.GetInstancesCalls()), convey.ShouldEqual, 1)
 			})
 		})
 
-		Convey("When the request contains an invalid state to filter on", func() {
-			Convey("Then return status bad request (400)", func() {
+		convey.Convey("When the request contains an invalid state to filter on", func() {
+			convey.Convey("Then return status bad request (400)", func() {
 				r := httptest.NewRequest("GET", "http://foo/instances?state=foo", http.NoBody)
 				w := httptest.NewRecorder()
 
 				instanceAPI := initAPIWithMockedStore(&storetest.StorerMock{})
 				_, _, _ = instanceAPI.GetList(w, r, 20, 0)
 
-				So(w.Code, ShouldEqual, http.StatusBadRequest)
-				So(w.Body.String(), ShouldContainSubstring, "bad request - invalid filter state values: [foo]")
+				convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
+				convey.So(w.Body.String(), convey.ShouldContainSubstring, "bad request - invalid filter state values: [foo]")
 			})
 		})
 	})
@@ -180,9 +188,9 @@ func Test_GetInstancesReturnsError(t *testing.T) {
 func Test_GetInstanceReturnsOK(t *testing.T) {
 	t.Parallel()
 
-	Convey("Given a dataset API with a successful store mock and auth", t, func() {
+	convey.Convey("Given a dataset API with a successful store mock and auth", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+			GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 				return &models.Instance{
 					State: models.CreatedState,
 					ETag:  testETag,
@@ -193,46 +201,46 @@ func Test_GetInstanceReturnsOK(t *testing.T) {
 		permissions := mocks.NewAuthHandlerMock()
 		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 
-		Convey("When a GET request to retrieve an instance resource is made, with a valid If-Match header", func() {
+		convey.Convey("When a GET request to retrieve an instance resource is made, with a valid If-Match header", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", http.NoBody)
 			r.Header.Set("If-Match", testIfMatch)
-			So(err, ShouldBeNil)
+			convey.So(err, convey.ShouldBeNil)
 			w := httptest.NewRecorder()
 
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
-				So(w.Code, ShouldEqual, http.StatusOK)
-				So(w.Header().Get("ETag"), ShouldEqual, testETag)
+			convey.Convey("Then the response status is 200 OK, with the expected ETag header", func() {
+				convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+				convey.So(w.Header().Get("ETag"), convey.ShouldEqual, testETag)
 			})
 
-			Convey("Then the expected functions are called", func() {
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
-				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
-				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
+			convey.Convey("Then the expected functions are called", func() {
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
+				convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
+				convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
+				convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, testIfMatch)
 			})
 		})
 
-		Convey("When a GET request to retrieve an instance resource is made, without an If-Match header", func() {
+		convey.Convey("When a GET request to retrieve an instance resource is made, without an If-Match header", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", http.NoBody)
-			So(err, ShouldBeNil)
+			convey.So(err, convey.ShouldBeNil)
 			w := httptest.NewRecorder()
 
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
-				So(w.Code, ShouldEqual, http.StatusOK)
-				So(w.Header().Get("ETag"), ShouldEqual, testETag)
+			convey.Convey("Then the response status is 200 OK, with the expected ETag header", func() {
+				convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+				convey.So(w.Header().Get("ETag"), convey.ShouldEqual, testETag)
 			})
 
-			Convey("Then the expected functions are called, with the '*' wildchar when validting the provided If-Match value", func() {
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
-				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
-				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, AnyETag)
+			convey.Convey("Then the expected functions are called, with the '*' wildchar when validting the provided If-Match value", func() {
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
+				convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
+				convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
+				convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, AnyETag)
 			})
 		})
 	})
@@ -240,15 +248,15 @@ func Test_GetInstanceReturnsOK(t *testing.T) {
 
 func Test_GetInstanceReturnsError(t *testing.T) {
 	t.Parallel()
-	Convey("Given a GET request to retrieve an instance resource is made", t, func() {
-		Convey("When the service is unable to connect to the datastore", func() {
-			Convey("Then return status internal server error (500)", func() {
+	convey.Convey("Given a GET request to retrieve an instance resource is made", t, func() {
+		convey.Convey("When the service is unable to connect to the datastore", func() {
+			convey.Convey("Then return status internal server error (500)", func() {
 				r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", http.NoBody)
-				So(err, ShouldBeNil)
+				convey.So(err, convey.ShouldBeNil)
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 						return nil, errs.ErrInternalServer
 					},
 				}
@@ -259,22 +267,22 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
-				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
+				convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInternalServer.Error())
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
+				convey.So(len(mockedDataStore.GetInstanceCalls()), convey.ShouldEqual, 1)
 			})
 		})
 
-		Convey("When the current instance state is invalid", func() {
-			Convey("Then return status internal server error (500)", func() {
+		convey.Convey("When the current instance state is invalid", func() {
+			convey.Convey("Then return status internal server error (500)", func() {
 				r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", http.NoBody)
-				So(err, ShouldBeNil)
+				convey.So(err, convey.ShouldBeNil)
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 						return &models.Instance{State: "gobbledygook"}, nil
 					},
 				}
@@ -284,22 +292,22 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
-				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
+				convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInternalServer.Error())
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
+				convey.So(len(mockedDataStore.GetInstanceCalls()), convey.ShouldEqual, 1)
 			})
 		})
 
-		Convey("When the instance resource does not exist", func() {
-			Convey("Then return status not found (404)", func() {
+		convey.Convey("When the instance resource does not exist", func() {
+			convey.Convey("Then return status not found (404)", func() {
 				r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", http.NoBody)
-				So(err, ShouldBeNil)
+				convey.So(err, convey.ShouldBeNil)
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 						return nil, errs.ErrInstanceNotFound
 					},
 				}
@@ -310,23 +318,23 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
-				So(w.Code, ShouldEqual, http.StatusNotFound)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
+				convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
+				convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
+				convey.So(len(mockedDataStore.GetInstanceCalls()), convey.ShouldEqual, 1)
 			})
 		})
 
-		Convey("When the instance resource eTag does not match the provided If-Match header value", func() {
-			Convey("Then return status conflict (409)", func() {
+		convey.Convey("When the instance resource eTag does not match the provided If-Match header value", func() {
+			convey.Convey("Then return status conflict (409)", func() {
 				r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", http.NoBody)
 				r.Header.Set("If-Match", "wrong")
-				So(err, ShouldBeNil)
+				convey.So(err, convey.ShouldBeNil)
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 						return nil, errs.ErrInstanceConflict
 					},
 				}
@@ -337,12 +345,12 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
-				So(w.Code, ShouldEqual, http.StatusConflict)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceConflict.Error())
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, "wrong")
+				convey.So(w.Code, convey.ShouldEqual, http.StatusConflict)
+				convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInstanceConflict.Error())
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
+				convey.So(len(mockedDataStore.GetInstanceCalls()), convey.ShouldEqual, 1)
+				convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, "wrong")
 			})
 		})
 	})
@@ -350,12 +358,12 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 
 func Test_AddInstanceReturnsCreated(t *testing.T) {
 	t.Parallel()
-	Convey("Given a POST request to create an instance resource", t, func() {
-		Convey("When the request is authorised", func() {
-			Convey("Then return status created (201)", func() {
+	convey.Convey("Given a POST request to create an instance resource", t, func() {
+		convey.Convey("When the request is authorised", func() {
+			convey.Convey("Then return status created (201)", func() {
 				body := strings.NewReader(`{"links": { "job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } } }`)
 				r, err := createRequestWithToken("POST", "http://localhost:21800/instances", body)
-				So(err, ShouldBeNil)
+				convey.So(err, convey.ShouldBeNil)
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
@@ -371,12 +379,12 @@ func Test_AddInstanceReturnsCreated(t *testing.T) {
 				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
-				So(w.Code, ShouldEqual, http.StatusCreated)
-				So(w.Header().Get("ETag"), ShouldEqual, testETag)
-				So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 1)
+				convey.So(w.Code, convey.ShouldEqual, http.StatusCreated)
+				convey.So(w.Header().Get("ETag"), convey.ShouldEqual, testETag)
+				convey.So(len(mockedDataStore.AddInstanceCalls()), convey.ShouldEqual, 1)
 
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
 			})
 		})
 	})
@@ -384,12 +392,12 @@ func Test_AddInstanceReturnsCreated(t *testing.T) {
 
 func Test_AddInstanceReturnsError(t *testing.T) {
 	t.Parallel()
-	Convey("Given a POST request to create an instance resources", t, func() {
-		Convey("When the service is unable to connect to the datastore", func() {
-			Convey("Then return status internal server error (500)", func() {
+	convey.Convey("Given a POST request to create an instance resources", t, func() {
+		convey.Convey("When the service is unable to connect to the datastore", func() {
+			convey.Convey("Then return status internal server error (500)", func() {
 				body := strings.NewReader(`{"links": {"job": { "id":"123-456", "href":"http://localhost:2200/jobs/123-456" } } }`)
 				r, err := createRequestWithToken("POST", "http://localhost:21800/instances", body)
-				So(err, ShouldBeNil)
+				convey.So(err, convey.ShouldBeNil)
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{
 					AddInstanceFunc: func(context.Context, *models.Instance) (*models.Instance, error) {
@@ -402,19 +410,19 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
-				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 1)
+				convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
+				convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInternalServer.Error())
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
+				convey.So(len(mockedDataStore.AddInstanceCalls()), convey.ShouldEqual, 1)
 			})
 		})
 
-		Convey("When the request contains invalid json", func() {
-			Convey("Then return status bad request (400)", func() {
+		convey.Convey("When the request contains invalid json", func() {
+			convey.Convey("Then return status bad request (400)", func() {
 				body := strings.NewReader(`{`)
 				r, err := createRequestWithToken("POST", "http://localhost:21800/instances", body)
-				So(err, ShouldBeNil)
+				convey.So(err, convey.ShouldBeNil)
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
@@ -428,19 +436,19 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
-				So(w.Code, ShouldEqual, http.StatusBadRequest)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 0)
+				convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
+				convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
+				convey.So(len(mockedDataStore.AddInstanceCalls()), convey.ShouldEqual, 0)
 			})
 		})
 
-		Convey("When the request contains empty json", func() {
-			Convey("Then return status bad request (400)", func() {
+		convey.Convey("When the request contains empty json", func() {
+			convey.Convey("Then return status bad request (400)", func() {
 				body := strings.NewReader(`{}`)
 				r, err := createRequestWithToken("POST", "http://localhost:21800/instances", body)
-				So(err, ShouldBeNil)
+				convey.So(err, convey.ShouldBeNil)
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
@@ -454,11 +462,11 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
-				So(w.Code, ShouldEqual, http.StatusBadRequest)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrMissingJobProperties.Error())
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 0)
+				convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
+				convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrMissingJobProperties.Error())
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
+				convey.So(len(mockedDataStore.AddInstanceCalls()), convey.ShouldEqual, 0)
 			})
 		})
 	})
@@ -467,7 +475,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 func Test_UpdateInstanceReturnsOk(t *testing.T) {
 	t.Parallel()
 
-	Convey("Given a dataset API with a successful store mock and auth", t, func() {
+	convey.Convey("Given a dataset API with a successful store mock and auth", t, func() {
 		mockedDataStore, isLocked := storeMockWithLock(&models.Instance{
 			InstanceID: "123",
 			Links: &models.InstanceLinks{
@@ -484,8 +492,8 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 			ETag:  testETag,
 		}, true)
 
-		mockedDataStore.UpdateInstanceFunc = func(_ context.Context, _ *models.Instance, _ *models.Instance, _ string) (string, error) {
-			So(*isLocked, ShouldBeTrue)
+		mockedDataStore.UpdateInstanceFunc = func(context.Context, *models.Instance, *models.Instance, string) (string, error) {
+			convey.So(*isLocked, convey.ShouldBeTrue)
 			return testETag, nil
 		}
 
@@ -493,72 +501,72 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 		permissions := mocks.NewAuthHandlerMock()
 		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 
-		Convey("When a PUT request to update state of an instance resource to 'submitted' is made with a valid If-Match header", func() {
+		convey.Convey("When a PUT request to update state of an instance resource to 'submitted' is made with a valid If-Match header", func() {
 			body := strings.NewReader(`{"state":"submitted"}`)
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
 			r.Header.Set("If-Match", testIfMatch)
-			So(err, ShouldBeNil)
+			convey.So(err, convey.ShouldBeNil)
 			w := httptest.NewRecorder()
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
-				So(w.Code, ShouldEqual, http.StatusOK)
-				So(w.Header().Get("ETag"), ShouldEqual, testETag)
+			convey.Convey("Then the response status is 200 OK, with the expected ETag header", func() {
+				convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+				convey.So(w.Header().Get("ETag"), convey.ShouldEqual, testETag)
 			})
 
-			Convey("Then the expected functions are called", func() {
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 3)
-				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
-				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
-				So(mockedDataStore.GetInstanceCalls()[1].ID, ShouldEqual, "123")
-				So(mockedDataStore.GetInstanceCalls()[1].ETagSelector, ShouldEqual, testIfMatch)
-				So(mockedDataStore.GetInstanceCalls()[2].ID, ShouldEqual, "123")
-				So(mockedDataStore.GetInstanceCalls()[2].ETagSelector, ShouldEqual, testETag)
-				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
-				So(mockedDataStore.UpdateInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
-				So(mockedDataStore.UpdateInstanceCalls()[0].CurrentInstance.InstanceID, ShouldEqual, "123")
-				So(mockedDataStore.UpdateInstanceCalls()[0].UpdatedInstance.State, ShouldEqual, models.SubmittedState)
+			convey.Convey("Then the expected functions are called", func() {
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
+				convey.So(len(mockedDataStore.GetInstanceCalls()), convey.ShouldEqual, 3)
+				convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
+				convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, testIfMatch)
+				convey.So(mockedDataStore.GetInstanceCalls()[1].ID, convey.ShouldEqual, "123")
+				convey.So(mockedDataStore.GetInstanceCalls()[1].ETagSelector, convey.ShouldEqual, testIfMatch)
+				convey.So(mockedDataStore.GetInstanceCalls()[2].ID, convey.ShouldEqual, "123")
+				convey.So(mockedDataStore.GetInstanceCalls()[2].ETagSelector, convey.ShouldEqual, testETag)
+				convey.So(len(mockedDataStore.UpdateInstanceCalls()), convey.ShouldEqual, 1)
+				convey.So(mockedDataStore.UpdateInstanceCalls()[0].ETagSelector, convey.ShouldEqual, testIfMatch)
+				convey.So(mockedDataStore.UpdateInstanceCalls()[0].CurrentInstance.InstanceID, convey.ShouldEqual, "123")
+				convey.So(mockedDataStore.UpdateInstanceCalls()[0].UpdatedInstance.State, convey.ShouldEqual, models.SubmittedState)
 			})
 
-			Convey("Then the mongoDB instance lock is acquired and released as expected", func() {
+			convey.Convey("Then the mongoDB instance lock is acquired and released as expected", func() {
 				validateLock(mockedDataStore, "123")
-				So(*isLocked, ShouldBeFalse)
+				convey.So(*isLocked, convey.ShouldBeFalse)
 			})
 		})
 
-		Convey("When a PUT request to update state of an instance resource to 'submitted' is made without an If-Match header", func() {
+		convey.Convey("When a PUT request to update state of an instance resource to 'submitted' is made without an If-Match header", func() {
 			body := strings.NewReader(`{"state":"submitted"}`)
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
-			So(err, ShouldBeNil)
+			convey.So(err, convey.ShouldBeNil)
 			w := httptest.NewRecorder()
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
-				So(w.Code, ShouldEqual, http.StatusOK)
-				So(w.Header().Get("ETag"), ShouldEqual, testETag)
+			convey.Convey("Then the response status is 200 OK, with the expected ETag header", func() {
+				convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+				convey.So(w.Header().Get("ETag"), convey.ShouldEqual, testETag)
 			})
 
-			Convey("Then the expected functions are called", func() {
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 3)
-				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
-				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, AnyETag)
-				So(mockedDataStore.GetInstanceCalls()[1].ID, ShouldEqual, "123")
-				So(mockedDataStore.GetInstanceCalls()[1].ETagSelector, ShouldEqual, AnyETag)
-				So(mockedDataStore.GetInstanceCalls()[2].ID, ShouldEqual, "123")
-				So(mockedDataStore.GetInstanceCalls()[2].ETagSelector, ShouldEqual, testETag)
-				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 1)
-				So(mockedDataStore.UpdateInstanceCalls()[0].ETagSelector, ShouldEqual, AnyETag)
-				So(mockedDataStore.UpdateInstanceCalls()[0].CurrentInstance.InstanceID, ShouldEqual, "123")
-				So(mockedDataStore.UpdateInstanceCalls()[0].UpdatedInstance.State, ShouldEqual, models.SubmittedState)
+			convey.Convey("Then the expected functions are called", func() {
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
+				convey.So(len(mockedDataStore.GetInstanceCalls()), convey.ShouldEqual, 3)
+				convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
+				convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, AnyETag)
+				convey.So(mockedDataStore.GetInstanceCalls()[1].ID, convey.ShouldEqual, "123")
+				convey.So(mockedDataStore.GetInstanceCalls()[1].ETagSelector, convey.ShouldEqual, AnyETag)
+				convey.So(mockedDataStore.GetInstanceCalls()[2].ID, convey.ShouldEqual, "123")
+				convey.So(mockedDataStore.GetInstanceCalls()[2].ETagSelector, convey.ShouldEqual, testETag)
+				convey.So(len(mockedDataStore.UpdateInstanceCalls()), convey.ShouldEqual, 1)
+				convey.So(mockedDataStore.UpdateInstanceCalls()[0].ETagSelector, convey.ShouldEqual, AnyETag)
+				convey.So(mockedDataStore.UpdateInstanceCalls()[0].CurrentInstance.InstanceID, convey.ShouldEqual, "123")
+				convey.So(mockedDataStore.UpdateInstanceCalls()[0].UpdatedInstance.State, convey.ShouldEqual, models.SubmittedState)
 			})
 
-			Convey("Then the mongoDB instance lock is acquired and released as expected", func() {
+			convey.Convey("Then the mongoDB instance lock is acquired and released as expected", func() {
 				validateLock(mockedDataStore, "123")
-				So(*isLocked, ShouldBeFalse)
+				convey.So(*isLocked, convey.ShouldBeFalse)
 			})
 		})
 	})
@@ -566,16 +574,16 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 
 func Test_UpdateInstanceReturnsError(t *testing.T) {
 	t.Parallel()
-	Convey("Given a PUT request to update state of an instance resource is made", t, func() {
-		Convey("When the service is unable to connect to the datastore", func() {
-			Convey("Then return status internal server error (500)", func() {
+	convey.Convey("Given a PUT request to update state of an instance resource is made", t, func() {
+		convey.Convey("When the service is unable to connect to the datastore", func() {
+			convey.Convey("Then return status internal server error (500)", func() {
 				body := strings.NewReader(`{"state":"created"}`)
 				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
-				So(err, ShouldBeNil)
+				convey.So(err, convey.ShouldBeNil)
 				w := httptest.NewRecorder()
 
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 						return nil, errs.ErrInternalServer
 					},
 				}
@@ -585,25 +593,25 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
-				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+				convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
+				convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
 
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
+				convey.So(len(mockedDataStore.GetInstanceCalls()), convey.ShouldEqual, 1)
+				convey.So(len(mockedDataStore.UpdateInstanceCalls()), convey.ShouldEqual, 0)
+				convey.So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), convey.ShouldEqual, 0)
 			})
 		})
 
-		Convey("When the current instance state is invalid", func() {
-			Convey("Then return status internal server error (500)", func() {
+		convey.Convey("When the current instance state is invalid", func() {
+			convey.Convey("Then return status internal server error (500)", func() {
 				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", strings.NewReader(`{"state":"completed", "edition": "2017"}`))
-				So(err, ShouldBeNil)
+				convey.So(err, convey.ShouldBeNil)
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 						return &models.Instance{State: "gobbledygook"}, nil
 					},
 				}
@@ -614,24 +622,24 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
-				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
+				convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
+				convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInternalServer.Error())
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
+				convey.So(len(mockedDataStore.GetInstanceCalls()), convey.ShouldEqual, 1)
+				convey.So(len(mockedDataStore.UpdateInstanceCalls()), convey.ShouldEqual, 0)
+				convey.So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), convey.ShouldEqual, 0)
 			})
 		})
 
-		Convey("When the json body is invalid", func() {
-			Convey("Then return status bad request (400)", func() {
+		convey.Convey("When the json body is invalid", func() {
+			convey.Convey("Then return status bad request (400)", func() {
 				body := strings.NewReader(`{"state":`)
 				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
-				So(err, ShouldBeNil)
+				convey.So(err, convey.ShouldBeNil)
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 						return &models.Instance{State: "completed"}, nil
 					},
 				}
@@ -641,28 +649,28 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
-				So(w.Code, ShouldEqual, http.StatusBadRequest)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
+				convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
+				convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
 
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
 
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
+				convey.So(len(mockedDataStore.GetInstanceCalls()), convey.ShouldEqual, 1)
+				convey.So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), convey.ShouldEqual, 0)
 			})
 		})
 
-		Convey("When the json body contains fields that are not allowed to be updated", func() {
-			Convey("Then return status bad request (400)", func() {
+		convey.Convey("When the json body contains fields that are not allowed to be updated", func() {
+			convey.Convey("Then return status bad request (400)", func() {
 				body := strings.NewReader(`{"links": { "dataset": { "href": "silly-site"}, "version": { "href": "sillier-site"}}}`)
 				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
-				So(err, ShouldBeNil)
+				convey.So(err, convey.ShouldBeNil)
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 						return &models.Instance{State: "completed"}, nil
 					},
-					UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
+					UpdateInstanceFunc: func(context.Context, *models.Instance, *models.Instance, string) (string, error) {
 						return testETag, nil
 					},
 				}
@@ -673,26 +681,26 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
-				So(w.Code, ShouldEqual, http.StatusBadRequest)
-				So(w.Body.String(), ShouldContainSubstring, "unable to update instance contains invalid fields: [instance.Links.Dataset instance.Links.Version]")
+				convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
+				convey.So(w.Body.String(), convey.ShouldContainSubstring, "unable to update instance contains invalid fields: [instance.Links.Dataset instance.Links.Version]")
 
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
 
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
-				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+				convey.So(len(mockedDataStore.GetInstanceCalls()), convey.ShouldEqual, 1)
+				convey.So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), convey.ShouldEqual, 0)
+				convey.So(len(mockedDataStore.UpdateInstanceCalls()), convey.ShouldEqual, 0)
 			})
 		})
 
-		Convey("When the instance does not exist", func() {
-			Convey("Then return status not found (404)", func() {
+		convey.Convey("When the instance does not exist", func() {
+			convey.Convey("Then return status not found (404)", func() {
 				body := strings.NewReader(`{"edition": "2017"}`)
 				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
-				So(err, ShouldBeNil)
+				convey.So(err, convey.ShouldBeNil)
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 						return nil, errs.ErrInstanceNotFound
 					},
 				}
@@ -703,27 +711,27 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
-				So(w.Code, ShouldEqual, http.StatusNotFound)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
+				convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
+				convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
 
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
 
-				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
-				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
+				convey.So(len(mockedDataStore.GetInstanceCalls()), convey.ShouldEqual, 1)
+				convey.So(len(mockedDataStore.UpdateInstanceCalls()), convey.ShouldEqual, 0)
+				convey.So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), convey.ShouldEqual, 0)
 			})
 		})
 
-		Convey("When the instance eTag does not match the provided if-Match header value", func() {
-			Convey("Then return status conflict (409)", func() {
+		convey.Convey("When the instance eTag does not match the provided if-Match header value", func() {
+			convey.Convey("Then return status conflict (409)", func() {
 				body := strings.NewReader(`{"edition": "2017"}`)
 				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
 				r.Header.Set("If-Match", testIfMatch)
-				So(err, ShouldBeNil)
+				convey.So(err, convey.ShouldBeNil)
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{
-					GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
+					GetInstanceFunc: func(context.Context, string, string) (*models.Instance, error) {
 						return nil, errs.ErrInstanceConflict
 					},
 				}
@@ -734,21 +742,19 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 				datasetAPI.Router.ServeHTTP(w, r)
 
-				So(w.Code, ShouldEqual, http.StatusConflict)
-				So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceConflict.Error())
+				convey.So(w.Code, convey.ShouldEqual, http.StatusConflict)
+				convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInstanceConflict.Error())
 
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
+				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 0)
+				convey.So(permissions.Required.Calls, convey.ShouldEqual, 1)
 
-				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
-				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
-				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
+				convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
+				convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
+				convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, testIfMatch)
 			})
 		})
 	})
 }
-
-var urlBuilder = url.NewBuilder("localhost:20000")
 
 func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, datasetPermissions, permissions api.AuthHandler) *api.DatasetAPI {
 	mockedMapDownloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
@@ -757,7 +763,7 @@ func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer
 	mu.Lock()
 	defer mu.Unlock()
 	cfg, err := config.Get()
-	So(err, ShouldBeNil)
+	convey.So(err, convey.ShouldBeNil)
 	cfg.ServiceAuthToken = "dataset"
 	cfg.DatasetAPIURL = "http://localhost:22000"
 	cfg.EnablePrivateEndpoints = true

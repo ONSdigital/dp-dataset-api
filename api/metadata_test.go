@@ -17,11 +17,11 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/smartystreets/goconvey/convey"
 )
 
 func TestPutMetadata(t *testing.T) {
-	Convey("Given a version and a dataset stored in database", t, func() {
+	convey.Convey("Given a version and a dataset stored in database", t, func() {
 		version := createUnpublishedVersionDoc()
 		version.ETag = "version-etag"
 		version.Version = 1
@@ -67,7 +67,7 @@ func TestPutMetadata(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		Convey("And a valid payload", func() {
+		convey.Convey("And a valid payload", func() {
 			metadata := models.EditableMetadata{
 				Title:       "new title",
 				Survey:      "new survey",
@@ -81,195 +81,195 @@ func TestPutMetadata(t *testing.T) {
 			}
 			payload, _ := json.Marshal(metadata)
 
-			Convey("And an invalid version", func() {
+			convey.Convey("And an invalid version", func() {
 				versionNo = "vvv"
 				url := fmt.Sprintf("http://localhost:22000/datasets/%s/editions/%s/versions/%s/metadata", dataset.ID, edition, versionNo)
 				r := createRequestWithAuth("PUT", url, bytes.NewBuffer(payload))
 
-				Convey("When we call the PUT metadata endpoint", func() {
+				convey.Convey("When we call the PUT metadata endpoint", func() {
 					api.Router.ServeHTTP(w, r)
 
-					Convey("Then a 400 error is returned", func() {
-						So(w.Code, ShouldEqual, http.StatusBadRequest)
-						So(w.Body.String(), ShouldEqual, "invalid version requested\n")
+					convey.Convey("Then a 400 error is returned", func() {
+						convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
+						convey.So(w.Body.String(), convey.ShouldEqual, "invalid version requested\n")
 					})
 				})
 			})
 
-			Convey("And a valid version that does not exist", func() {
+			convey.Convey("And a valid version that does not exist", func() {
 				versionNo = "88"
 				url := fmt.Sprintf("http://localhost:22000/datasets/%s/editions/%s/versions/%s/metadata", dataset.ID, edition, versionNo)
 				r := createRequestWithAuth("PUT", url, bytes.NewBuffer(payload))
 
-				Convey("When we call the PUT metadata endpoint", func() {
+				convey.Convey("When we call the PUT metadata endpoint", func() {
 					api.Router.ServeHTTP(w, r)
 
-					Convey("Then a 404 error is returned", func() {
-						So(w.Code, ShouldEqual, http.StatusNotFound)
-						So(w.Body.String(), ShouldEqual, "version not found\n")
+					convey.Convey("Then a 404 error is returned", func() {
+						convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
+						convey.So(w.Body.String(), convey.ShouldEqual, "version not found\n")
 					})
 				})
 			})
 
-			Convey("And an invalid version etag", func() {
+			convey.Convey("And an invalid version etag", func() {
 				url := fmt.Sprintf("http://localhost:22000/datasets/%s/editions/%s/versions/%s/metadata", dataset.ID, edition, versionNo)
 				r := createRequestWithAuth("PUT", url, bytes.NewBuffer(payload))
 				r.Header.Add("If-Match", "wrong-etag")
 
-				Convey("When we call the PUT metadata endpoint", func() {
+				convey.Convey("When we call the PUT metadata endpoint", func() {
 					api.Router.ServeHTTP(w, r)
 
-					Convey("Then a 409 error is returned", func() {
-						So(w.Code, ShouldEqual, http.StatusConflict)
-						So(w.Body.String(), ShouldEqual, "instance does not match the expected eTag\n")
+					convey.Convey("Then a 409 error is returned", func() {
+						convey.So(w.Code, convey.ShouldEqual, http.StatusConflict)
+						convey.So(w.Body.String(), convey.ShouldEqual, "instance does not match the expected eTag\n")
 					})
 				})
 			})
 
-			Convey("And a missing version etag", func() {
+			convey.Convey("And a missing version etag", func() {
 				url := fmt.Sprintf("http://localhost:22000/datasets/%s/editions/%s/versions/%s/metadata", dataset.ID, edition, versionNo)
 				r := createRequestWithAuth("PUT", url, bytes.NewBuffer(payload))
 				r.Header.Del("If-Match") // no etag
 
-				Convey("When we call the PUT metadata endpoint", func() {
+				convey.Convey("When we call the PUT metadata endpoint", func() {
 					// Check metadata is changing
-					So(dataset.Next.Title, ShouldNotEqual, metadata.Title)
-					So(dataset.Next.Survey, ShouldNotEqual, metadata.Survey)
-					So(version.ReleaseDate, ShouldNotEqual, metadata.ReleaseDate)
-					So(version.LatestChanges, ShouldNotResemble, metadata.LatestChanges)
+					convey.So(dataset.Next.Title, convey.ShouldNotEqual, metadata.Title)
+					convey.So(dataset.Next.Survey, convey.ShouldNotEqual, metadata.Survey)
+					convey.So(version.ReleaseDate, convey.ShouldNotEqual, metadata.ReleaseDate)
+					convey.So(version.LatestChanges, convey.ShouldNotResemble, metadata.LatestChanges)
 
 					api.Router.ServeHTTP(w, r)
 
-					Convey("Then a 200 is returned and the metadata has changed", func() {
-						So(w.Code, ShouldEqual, http.StatusOK)
-						So(dataset.Next.Title, ShouldEqual, metadata.Title)
-						So(dataset.Next.Survey, ShouldEqual, metadata.Survey)
-						So(version.ReleaseDate, ShouldEqual, metadata.ReleaseDate)
-						So(version.LatestChanges, ShouldResemble, metadata.LatestChanges)
+					convey.Convey("Then a 200 is returned and the metadata has changed", func() {
+						convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+						convey.So(dataset.Next.Title, convey.ShouldEqual, metadata.Title)
+						convey.So(dataset.Next.Survey, convey.ShouldEqual, metadata.Survey)
+						convey.So(version.ReleaseDate, convey.ShouldEqual, metadata.ReleaseDate)
+						convey.So(version.LatestChanges, convey.ShouldResemble, metadata.LatestChanges)
 					})
 				})
 			})
 
-			Convey("And a star version etag", func() {
+			convey.Convey("And a star version etag", func() {
 				url := fmt.Sprintf("http://localhost:22000/datasets/%s/editions/%s/versions/%s/metadata", dataset.ID, edition, versionNo)
 				r := createRequestWithAuth("PUT", url, bytes.NewBuffer(payload))
 				r.Header.Add("If-Match", "*")
 
-				Convey("When we call the PUT metadata endpoint", func() {
+				convey.Convey("When we call the PUT metadata endpoint", func() {
 					// Check metadata is changing
-					So(dataset.Next.Title, ShouldNotEqual, metadata.Title)
-					So(dataset.Next.Survey, ShouldNotEqual, metadata.Survey)
-					So(version.ReleaseDate, ShouldNotEqual, metadata.ReleaseDate)
-					So(version.LatestChanges, ShouldNotResemble, metadata.LatestChanges)
+					convey.So(dataset.Next.Title, convey.ShouldNotEqual, metadata.Title)
+					convey.So(dataset.Next.Survey, convey.ShouldNotEqual, metadata.Survey)
+					convey.So(version.ReleaseDate, convey.ShouldNotEqual, metadata.ReleaseDate)
+					convey.So(version.LatestChanges, convey.ShouldNotResemble, metadata.LatestChanges)
 
 					api.Router.ServeHTTP(w, r)
 
-					Convey("Then a 200 is returned and the metadata has changed", func() {
-						So(w.Code, ShouldEqual, http.StatusOK)
-						So(dataset.Next.Title, ShouldEqual, metadata.Title)
-						So(dataset.Next.Survey, ShouldEqual, metadata.Survey)
-						So(version.ReleaseDate, ShouldEqual, metadata.ReleaseDate)
-						So(version.LatestChanges, ShouldResemble, metadata.LatestChanges)
+					convey.Convey("Then a 200 is returned and the metadata has changed", func() {
+						convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+						convey.So(dataset.Next.Title, convey.ShouldEqual, metadata.Title)
+						convey.So(dataset.Next.Survey, convey.ShouldEqual, metadata.Survey)
+						convey.So(version.ReleaseDate, convey.ShouldEqual, metadata.ReleaseDate)
+						convey.So(version.LatestChanges, convey.ShouldResemble, metadata.LatestChanges)
 					})
 				})
 			})
 
-			Convey("And a valid version etag", func() {
+			convey.Convey("And a valid version etag", func() {
 				url := fmt.Sprintf("http://localhost:22000/datasets/%s/editions/%s/versions/%s/metadata", dataset.ID, edition, versionNo)
 				r := createRequestWithAuth("PUT", url, bytes.NewBuffer(payload))
 				r.Header.Add("If-Match", version.ETag)
 
-				Convey("And a dataset id that does not exist", func() {
+				convey.Convey("And a dataset id that does not exist", func() {
 					dataset.ID = "changed"
-					Convey("When we call the PUT metadata endpoint", func() {
+					convey.Convey("When we call the PUT metadata endpoint", func() {
 						api.Router.ServeHTTP(w, r)
 
-						Convey("Then a 404 error is returned", func() {
-							So(w.Code, ShouldEqual, http.StatusNotFound)
-							So(w.Body.String(), ShouldEqual, "dataset not found\n")
+						convey.Convey("Then a 404 error is returned", func() {
+							convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
+							convey.So(w.Body.String(), convey.ShouldEqual, "dataset not found\n")
 						})
 					})
 				})
 
-				Convey("And the dataset does not have a next object", func() {
+				convey.Convey("And the dataset does not have a next object", func() {
 					dataset.Next = nil
-					Convey("When we call the PUT metadata endpoint", func() {
+					convey.Convey("When we call the PUT metadata endpoint", func() {
 						api.Router.ServeHTTP(w, r)
 
-						Convey("Then a 500 error is returned", func() {
-							So(w.Code, ShouldEqual, http.StatusInternalServerError)
-							So(w.Body.String(), ShouldEqual, "internal error\n")
+						convey.Convey("Then a 500 error is returned", func() {
+							convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
+							convey.So(w.Body.String(), convey.ShouldEqual, "internal error\n")
 						})
 					})
 				})
 
-				Convey("And the dataset is not associated", func() {
+				convey.Convey("And the dataset is not associated", func() {
 					dataset.Next.State = models.PublishedState
-					Convey("When we call the PUT metadata endpoint", func() {
+					convey.Convey("When we call the PUT metadata endpoint", func() {
 						api.Router.ServeHTTP(w, r)
 
-						Convey("Then a 403 error is returned", func() {
-							So(w.Code, ShouldEqual, http.StatusForbidden)
-							So(w.Body.String(), ShouldEqual, "unable to update resource, expected resource to have a state of associated\n")
+						convey.Convey("Then a 403 error is returned", func() {
+							convey.So(w.Code, convey.ShouldEqual, http.StatusForbidden)
+							convey.So(w.Body.String(), convey.ShouldEqual, "unable to update resource, expected resource to have a state of associated\n")
 						})
 					})
 				})
 
-				Convey("And the version is not associated", func() {
+				convey.Convey("And the version is not associated", func() {
 					version.State = models.PublishedState
-					Convey("When we call the PUT metadata endpoint", func() {
+					convey.Convey("When we call the PUT metadata endpoint", func() {
 						api.Router.ServeHTTP(w, r)
 
-						Convey("Then a 403 error is returned", func() {
-							So(w.Code, ShouldEqual, http.StatusForbidden)
-							So(w.Body.String(), ShouldEqual, "unable to update resource, expected resource to have a state of associated\n")
+						convey.Convey("Then a 403 error is returned", func() {
+							convey.So(w.Code, convey.ShouldEqual, http.StatusForbidden)
+							convey.So(w.Body.String(), convey.ShouldEqual, "unable to update resource, expected resource to have a state of associated\n")
 						})
 					})
 				})
 
-				Convey("And the UpdateMetadata call fails", func() {
+				convey.Convey("And the UpdateMetadata call fails", func() {
 					forceUpdateMetadataFail = true
-					Convey("When we call the PUT metadata endpoint", func() {
+					convey.Convey("When we call the PUT metadata endpoint", func() {
 						api.Router.ServeHTTP(w, r)
 
-						Convey("Then a 500 error is returned", func() {
-							So(w.Code, ShouldEqual, http.StatusInternalServerError)
-							So(w.Body.String(), ShouldEqual, "internal error\n")
+						convey.Convey("Then a 500 error is returned", func() {
+							convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
+							convey.So(w.Body.String(), convey.ShouldEqual, "internal error\n")
 						})
 					})
 				})
 
-				Convey("When we call the PUT metadata endpoint", func() {
+				convey.Convey("When we call the PUT metadata endpoint", func() {
 					// Check metadata is changing
-					So(dataset.Next.Title, ShouldNotEqual, metadata.Title)
-					So(dataset.Next.Survey, ShouldNotEqual, metadata.Survey)
-					So(version.ReleaseDate, ShouldNotEqual, metadata.ReleaseDate)
-					So(version.LatestChanges, ShouldNotResemble, metadata.LatestChanges)
+					convey.So(dataset.Next.Title, convey.ShouldNotEqual, metadata.Title)
+					convey.So(dataset.Next.Survey, convey.ShouldNotEqual, metadata.Survey)
+					convey.So(version.ReleaseDate, convey.ShouldNotEqual, metadata.ReleaseDate)
+					convey.So(version.LatestChanges, convey.ShouldNotResemble, metadata.LatestChanges)
 
 					api.Router.ServeHTTP(w, r)
 
-					Convey("Then a 200 is returned and the metadata has changed", func() {
-						So(w.Code, ShouldEqual, http.StatusOK)
-						So(dataset.Next.Title, ShouldEqual, metadata.Title)
-						So(dataset.Next.Survey, ShouldEqual, metadata.Survey)
-						So(version.ReleaseDate, ShouldEqual, metadata.ReleaseDate)
-						So(version.LatestChanges, ShouldResemble, metadata.LatestChanges)
+					convey.Convey("Then a 200 is returned and the metadata has changed", func() {
+						convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+						convey.So(dataset.Next.Title, convey.ShouldEqual, metadata.Title)
+						convey.So(dataset.Next.Survey, convey.ShouldEqual, metadata.Survey)
+						convey.So(version.ReleaseDate, convey.ShouldEqual, metadata.ReleaseDate)
+						convey.So(version.LatestChanges, convey.ShouldResemble, metadata.LatestChanges)
 					})
 				})
 			})
 		})
 
-		Convey("And an invalid payload", func() {
+		convey.Convey("And an invalid payload", func() {
 			payload := "invalid"
 			url := fmt.Sprintf("http://localhost:22000/datasets/%s/editions/%s/versions/%s/metadata", dataset.ID, edition, versionNo)
 			r := createRequestWithAuth("PUT", url, bytes.NewBufferString(payload))
 
-			Convey("When we call the PUT metadata endpoint", func() {
+			convey.Convey("When we call the PUT metadata endpoint", func() {
 				api.Router.ServeHTTP(w, r)
 
-				Convey("Then a 400 error is returned", func() {
-					So(w.Code, ShouldEqual, http.StatusBadRequest)
-					So(w.Body.String(), ShouldEqual, "failed to parse json body\n")
+				convey.Convey("Then a 400 error is returned", func() {
+					convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
+					convey.So(w.Body.String(), convey.ShouldEqual, "failed to parse json body\n")
 				})
 			})
 		})
@@ -278,7 +278,7 @@ func TestPutMetadata(t *testing.T) {
 
 func TestGetMetadataReturnsOk(t *testing.T) {
 	t.Parallel()
-	Convey("Successfully return metadata resource for a request without an authentication header", t, func() {
+	convey.Convey("Successfully return metadata resource for a request without an authentication header", t, func() {
 		datasetDoc := createDatasetDoc()
 		versionDoc := createPublishedVersionDoc()
 
@@ -286,13 +286,13 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, datasetID, edition, state string) error {
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -302,13 +302,13 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusOK)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
+		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 1)
 
 		responseBytes, err := io.ReadAll(w.Body)
 		if err != nil {
@@ -322,21 +322,21 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			os.Exit(1)
 		}
 
-		So(metaData.Keywords, ShouldBeNil)
-		So(metaData.ReleaseFrequency, ShouldEqual, "yearly")
+		convey.So(metaData.Keywords, convey.ShouldBeNil)
+		convey.So(metaData.ReleaseFrequency, convey.ShouldEqual, "yearly")
 
 		temporal := models.TemporalFrequency{
 			EndDate:   "2017-05-09",
 			Frequency: "Monthly",
 			StartDate: "2014-05-09",
 		}
-		So(metaData.Temporal, ShouldResemble, &[]models.TemporalFrequency{temporal})
-		So(metaData.UnitOfMeasure, ShouldEqual, "Pounds Sterling")
+		convey.So(metaData.Temporal, convey.ShouldResemble, &[]models.TemporalFrequency{temporal})
+		convey.So(metaData.UnitOfMeasure, convey.ShouldEqual, "Pounds Sterling")
 	})
 
 	// Subtle difference between the test above and below, keywords is Not nil
 	// in response for test below while it is nil in test above
-	Convey("Successfully return metadata resource for a request with an authentication header", t, func() {
+	convey.Convey("Successfully return metadata resource for a request with an authentication header", t, func() {
 		datasetDoc := createDatasetDoc()
 		versionDoc := createUnpublishedVersionDoc()
 
@@ -345,13 +345,13 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, datasetID, edition, state string) error {
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -361,13 +361,13 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusOK)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
+		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 1)
 
 		responseBytes, err := io.ReadAll(w.Body)
 		if err != nil {
@@ -381,27 +381,27 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			os.Exit(1)
 		}
 
-		So(metaData.Keywords, ShouldResemble, []string{"pensioners"})
-		So(metaData.ReleaseFrequency, ShouldResemble, "yearly")
+		convey.So(metaData.Keywords, convey.ShouldResemble, []string{"pensioners"})
+		convey.So(metaData.ReleaseFrequency, convey.ShouldResemble, "yearly")
 
 		temporal := models.TemporalFrequency{
 			EndDate:   "2017-05-09",
 			Frequency: "Monthly",
 			StartDate: "2014-05-09",
 		}
-		So(metaData.Temporal, ShouldResemble, &[]models.TemporalFrequency{temporal})
-		So(metaData.UnitOfMeasure, ShouldEqual, "Pounds Sterling")
+		convey.So(metaData.Temporal, convey.ShouldResemble, &[]models.TemporalFrequency{temporal})
+		convey.So(metaData.UnitOfMeasure, convey.ShouldEqual, "Pounds Sterling")
 	})
 }
 
 func TestGetMetadataReturnsError(t *testing.T) {
 	t.Parallel()
-	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
+	convey.Convey("When the api cannot connect to datastore return an internal server error", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", http.NoBody)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return nil, errs.ErrInternalServer
 			},
 		}
@@ -411,25 +411,25 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
+		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
+		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
 	})
 
-	Convey("When the dataset document cannot be found return status not found", t, func() {
+	convey.Convey("When the dataset document cannot be found return status not found", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", http.NoBody)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return nil, nil
 			},
 		}
@@ -439,16 +439,16 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
+		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
+		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
+		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 0)
 	})
 
-	Convey("When the dataset document has no current sub document return status not found", t, func() {
+	convey.Convey("When the dataset document has no current sub document return status not found", t, func() {
 		datasetDoc := createDatasetDoc()
 		versionDoc := createPublishedVersionDoc()
 		datasetDoc.Current = nil
@@ -457,13 +457,13 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, datasetId, edition, state string) error {
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -473,17 +473,17 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
+		convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
+		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
 
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
+		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 0)
 	})
 
-	Convey("When the dataset document has no current or nextsub document but request is authorized return status internal server error", t, func() {
+	convey.Convey("When the dataset document has no current or nextsub document but request is authorized return status internal server error", t, func() {
 		datasetDoc := createDatasetDoc()
 		versionDoc := createPublishedVersionDoc()
 		datasetDoc.Current = nil
@@ -494,13 +494,13 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, datasetId, edition, state string) error {
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -510,17 +510,17 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, "internal error")
+		convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
+		convey.So(w.Body.String(), convey.ShouldContainSubstring, "internal error")
 
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
+		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
 	})
 
-	Convey("When the edition document cannot be found for version return status not found", t, func() {
+	convey.Convey("When the edition document cannot be found for version return status not found", t, func() {
 		datasetDoc := createDatasetDoc()
 		versionDoc := createPublishedVersionDoc()
 
@@ -528,13 +528,13 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, datasetId, edition, state string) error {
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return errs.ErrEditionNotFound
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
 		}
@@ -544,31 +544,31 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
+		convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
+		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
+		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 1)
 	})
 
-	Convey("When the version document cannot be found return status not found", t, func() {
+	convey.Convey("When the version document cannot be found return status not found", t, func() {
 		datasetDoc := createDatasetDoc()
 
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", http.NoBody)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, datasetId, edition, state string) error {
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return nil, errs.ErrVersionNotFound
 			},
 		}
@@ -578,18 +578,18 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
+		convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
+		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
+		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 0)
 	})
 
-	Convey("When the version document state is invalid return an internal server error", t, func() {
+	convey.Convey("When the version document state is invalid return an internal server error", t, func() {
 		datasetDoc := createDatasetDoc()
 
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
@@ -597,13 +597,13 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return datasetDoc, nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, datasetId, edition, state string) error {
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			GetVersionFunc: func(ctx context.Context, datasetID, edition string, version int, state string) (*models.Version, error) {
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{State: "gobbly-gook"}, nil
 			},
 		}
@@ -614,15 +614,15 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
+		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 1)
 	})
 
-	Convey("When an edition document for an invalid version is requested returns invalid version error", t, func() {
+	convey.Convey("When an edition document for an invalid version is requested returns invalid version error", t, func() {
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/jjj/metadata", nil)
 
 		w := httptest.NewRecorder()
@@ -634,18 +634,18 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidVersion.Error())
+		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
+		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInvalidVersion.Error())
 
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
+		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 0)
 	})
 
-	Convey("When an edition document for version zero is requested return an invalid version error", t, func() {
+	convey.Convey("When an edition document for version zero is requested return an invalid version error", t, func() {
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/0/metadata", nil)
 
 		w := httptest.NewRecorder()
@@ -657,18 +657,18 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidVersion.Error())
+		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
+		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInvalidVersion.Error())
 
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
+		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 0)
 	})
 
-	Convey("When an edition document for a negative version is requested return an invalid version error", t, func() {
+	convey.Convey("When an edition document for a negative version is requested return an invalid version error", t, func() {
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/-1/metadata", nil)
 
 		w := httptest.NewRecorder()
@@ -680,15 +680,15 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidVersion.Error())
+		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
+		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInvalidVersion.Error())
 
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
+		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
+		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 0)
 	})
 }
 

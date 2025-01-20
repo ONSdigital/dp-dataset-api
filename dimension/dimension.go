@@ -12,9 +12,11 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/dp-dataset-api/utils"
 	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
+	"github.com/ONSdigital/dp-net/v2/links"
 	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
 )
@@ -22,7 +24,9 @@ import (
 // Store provides a backend for dimensions
 type Store struct {
 	store.Storer
+	Host              string
 	MaxRequestOptions int
+	URLBuilder        *url.Builder
 }
 
 // List of actions for dimensions
@@ -65,17 +69,28 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 		return nil, 0, err
 	}
 
-	// Get dimensions corresponding to the instance in the right state
-	dimensions, totalCount, err = s.GetDimensionsFromInstance(ctx, instanceID, offset, limit)
+	// Get dimension options corresponding to the instance in the right state
+	var dimensionOptions []*models.DimensionOption
+	dimensionOptions, totalCount, err = s.GetDimensionsFromInstance(ctx, instanceID, offset, limit)
 	if err != nil {
 		log.Error(ctx, "failed to get dimension options for instance", err, logData)
 		handleDimensionErr(ctx, w, err, logData)
 		return nil, 0, err
 	}
 
+	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetDatasetAPIURL())
+	codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetCodeListAPIURL())
+
+	err = utils.RewriteDimensionOptions(ctx, dimensionOptions, datasetLinksBuilder, codeListLinksBuilder)
+	if err != nil {
+		log.Error(ctx, "getDimensionsHandler endpoint: failed to rewrite dimension options links", err, logData)
+		handleDimensionErr(ctx, w, err, logData)
+		return nil, 0, err
+	}
+
 	log.Info(ctx, "successfully get dimensions for an instance resource", logData)
 	dpresponse.SetETag(w, instance.ETag)
-	return dimensions, totalCount, nil
+	return dimensionOptions, totalCount, nil
 }
 
 // GetUniqueDimensionAndOptionsHandler returns a list of dimension options for a dimension of an instance

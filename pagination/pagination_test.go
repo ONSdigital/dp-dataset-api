@@ -158,7 +158,7 @@ func TestPaginateFunctionPassesParametersDownToProvidedFunction(t *testing.T) {
 	r := httptest.NewRequest("GET", "/test?limit=1&offset=2", http.NoBody)
 	w := httptest.NewRecorder()
 
-	fetchListFunc := func(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
+	fetchListFunc := func(_ http.ResponseWriter, _ *http.Request, limit int, offset int) (interface{}, int, error) {
 		return []int{limit, offset}, 10, nil
 	}
 
@@ -190,7 +190,7 @@ func TestPaginateFunctionPassesParametersDownToProvidedFunction(t *testing.T) {
 func TestPaginateFunctionReturnsBadRequestWhenInvalidQueryParametersAreGiven(t *testing.T) {
 	r := httptest.NewRequest("GET", "/test?limit=-1", http.NoBody)
 	w := httptest.NewRecorder()
-	fetchListFunc := func(w http.ResponseWriter, r *http.Request, limit int, offset int) (interface{}, int, error) {
+	fetchListFunc := func(http.ResponseWriter, *http.Request, int, int) (interface{}, int, error) {
 		return []int{}, 0, nil
 	}
 

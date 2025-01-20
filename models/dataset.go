@@ -640,6 +640,34 @@ func CleanDataset(dataset *Dataset) {
 // ValidateDataset checks the dataset has invalid fields
 func ValidateDataset(dataset *Dataset) error {
 	var invalidFields []string
+
+	if dataset.Type == "static" {
+		mandatoryStringFields := map[string]string{
+			"ID":          dataset.ID,
+			"Title":       dataset.Title,
+			"Description": dataset.Description,
+			"NextRelease": dataset.NextRelease,
+		}
+
+		for fieldName, fieldValue := range mandatoryStringFields {
+			if fieldValue == "" {
+				invalidFields = append(invalidFields, fieldName)
+			}
+		}
+
+		if len(dataset.Keywords) == 0 {
+			invalidFields = append(invalidFields, "Keywords")
+		}
+
+		if len(dataset.Contacts) == 0 {
+			invalidFields = append(invalidFields, "Contacts")
+		}
+
+		if len(dataset.Themes) == 0 {
+			invalidFields = append(invalidFields, "Themes")
+		}
+	}
+
 	if dataset.URI != "" {
 		invalidFields = append(invalidFields, validateURLString(dataset.URI, "URI")...)
 	}

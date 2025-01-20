@@ -188,7 +188,7 @@ Feature: Dataset API
             """
 
   Scenario: GET /datasets/{id}/editions/{edition}/versions in public mode returns published versions
-    When I GET "/datasets/population-estimates/editions/hello/versions"
+    When I GET "/datasets/population-estimates/editions/hello/versions" without a request host
     Then I should receive the following JSON response with status "200":
             """
             {
@@ -205,7 +205,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "someurl"
+                                "href": "http://localhost:22000/someurl"
                             }
                         },
                         "lowest_geography": "ltla"
@@ -221,7 +221,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "someurl"
+                                "href": "http://localhost:22000/someurl"
                             }
                         }
                     }
@@ -237,7 +237,7 @@ Feature: Dataset API
     Given private endpoints are enabled
     And I am identified as "user@ons.gov.uk"
     And I am authorised
-    When I GET "/datasets/population-estimates/editions/hello/versions"
+    When I GET "/datasets/population-estimates/editions/hello/versions" without a request host
     Then I should receive the following JSON response with status "200":
             """
             {
@@ -253,7 +253,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "someurl"
+                                "href": "http://localhost:22000/someurl"
                             }
                         },
                         "edition": "hello",
@@ -269,7 +269,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "someurl"
+                                "href": "http://localhost:22000/someurl"
                             }
                         },
                         "edition": "hello"
@@ -284,7 +284,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "someurl"
+                                "href": "http://localhost:22000/someurl"
                             }
                         },
                         "edition": "hello"
@@ -321,7 +321,7 @@ Feature: Dataset API
             """
 
   Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in public mode returns the version
-    When I GET "/datasets/population-estimates/editions/hello/versions/4"
+    When I GET "/datasets/population-estimates/editions/hello/versions/4" without a request host
     Then I should receive the following JSON response with status "200":
         """
         {
@@ -333,7 +333,7 @@ Feature: Dataset API
                     "id": "population-estimates"
                 },
                 "self": {
-                    "href": "someurl"
+                    "href": "http://localhost:22000/someurl"
                 }
             },
             "edition": "hello",
@@ -346,7 +346,7 @@ Feature: Dataset API
     Given private endpoints are enabled
     And I am identified as "user@ons.gov.uk"
     And I am authorised
-    When I GET "/datasets/population-estimates/editions/hello/versions/2"
+    When I GET "/datasets/population-estimates/editions/hello/versions/2" without a request host
     Then I should receive the following JSON response with status "200":
         """
         {
@@ -358,7 +358,7 @@ Feature: Dataset API
                     "id": "population-estimates"
                 },
                 "self": {
-                    "href": "someurl"
+                    "href": "http://localhost:22000/someurl"
                 }
             },
             "edition": "hello"

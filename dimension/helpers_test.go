@@ -9,38 +9,38 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/log.go/v2/log"
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/smartystreets/goconvey/convey"
 )
 
 func TestUnmarshalDimensionCache(t *testing.T) {
 	t.Parallel()
-	Convey("Successfully unmarshal dimension cache", t, func() {
+	convey.Convey("Successfully unmarshal dimension cache", t, func() {
 		json := strings.NewReader(`{"option":"24", "code_list":"123-456", "dimension": "test"}`)
 
 		option, err := unmarshalDimensionCache(json)
-		So(err, ShouldBeNil)
-		So(option.CodeList, ShouldEqual, "123-456")
-		So(option.Name, ShouldEqual, "test")
-		So(option.Option, ShouldEqual, "24")
+		convey.So(err, convey.ShouldBeNil)
+		convey.So(option.CodeList, convey.ShouldEqual, "123-456")
+		convey.So(option.Name, convey.ShouldEqual, "test")
+		convey.So(option.Option, convey.ShouldEqual, "24")
 	})
 
-	Convey("Fail to unmarshal dimension cache", t, func() {
-		Convey("When unable to marshal json", func() {
+	convey.Convey("Fail to unmarshal dimension cache", t, func() {
+		convey.Convey("When unable to marshal json", func() {
 			json := strings.NewReader("{")
 
 			option, err := unmarshalDimensionCache(json)
-			So(err, ShouldNotBeNil)
-			So(err, ShouldResemble, errs.ErrUnableToParseJSON)
-			So(option, ShouldBeNil)
+			convey.So(err, convey.ShouldNotBeNil)
+			convey.So(err, convey.ShouldResemble, errs.ErrUnableToParseJSON)
+			convey.So(option, convey.ShouldBeNil)
 		})
 
-		Convey("When options are missing mandatory fields", func() {
+		convey.Convey("When options are missing mandatory fields", func() {
 			json := strings.NewReader("{}")
 
 			option, err := unmarshalDimensionCache(json)
-			So(err, ShouldNotBeNil)
-			So(err, ShouldResemble, errs.ErrMissingParameters)
-			So(option, ShouldBeNil)
+			convey.So(err, convey.ShouldNotBeNil)
+			convey.So(err, convey.ShouldResemble, errs.ErrMissingParameters)
+			convey.So(option, convey.ShouldBeNil)
 		})
 	})
 }
@@ -54,36 +54,36 @@ func TestHandleDimensionErr(t *testing.T) {
 	ctx = context.WithValue(ctx, requestID, "123789")
 
 	t.Parallel()
-	Convey("Correctly handle dimension not found", t, func() {
+	convey.Convey("Correctly handle dimension not found", t, func() {
 		w := httptest.NewRecorder()
 		dimensionError := errs.ErrDimensionNotFound
 		logData := log.Data{"test": "not found"}
 
 		handleDimensionErr(ctx, w, dimensionError, logData)
 
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldContainSubstring, dimensionError.Error())
+		convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
+		convey.So(w.Body.String(), convey.ShouldContainSubstring, dimensionError.Error())
 	})
 
-	Convey("Correctly handle bad request", t, func() {
+	convey.Convey("Correctly handle bad request", t, func() {
 		w := httptest.NewRecorder()
 		dimensionError := errs.ErrUnableToParseJSON
 		logData := log.Data{"test": "bad request"}
 
 		handleDimensionErr(ctx, w, dimensionError, logData)
 
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(w.Body.String(), ShouldContainSubstring, dimensionError.Error())
+		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
+		convey.So(w.Body.String(), convey.ShouldContainSubstring, dimensionError.Error())
 	})
 
-	Convey("Correctly handle internal error", t, func() {
+	convey.Convey("Correctly handle internal error", t, func() {
 		w := httptest.NewRecorder()
 		dimensionError := errs.ErrInternalServer
 		logData := log.Data{"test": "internal error"}
 
 		handleDimensionErr(ctx, w, dimensionError, logData)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, dimensionError.Error())
+		convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
+		convey.So(w.Body.String(), convey.ShouldContainSubstring, dimensionError.Error())
 	})
 }
