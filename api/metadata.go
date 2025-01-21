@@ -128,6 +128,13 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
+		err = utils.RewriteDatasetLinks(ctx, metaDataDoc.DatasetLinks, datasetLinksBuilder)
+		if err != nil {
+			log.Error(ctx, "getMetadata endpoint: failed to rewrite dataset links", err, logData)
+			handleMetadataErr(w, err)
+			return nil, err
+		}
+
 		b, err := json.Marshal(metaDataDoc)
 		if err != nil {
 			log.Error(ctx, "getMetadata endpoint: failed to marshal metadata resource into bytes", err, logData)
