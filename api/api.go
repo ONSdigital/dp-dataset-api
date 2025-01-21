@@ -237,6 +237,13 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 				api.putMetadata)),
 	)
 
+	api.post(
+		"/datasets/{dataset_id}/editions/{edition}/versions",
+		api.isAuthenticated(
+			api.isAuthorisedForDatasets(createPermission,
+				api.addDatasetVersionCondensed)),
+	)
+
 	if api.enableDetachDataset {
 		api.delete(
 			"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
