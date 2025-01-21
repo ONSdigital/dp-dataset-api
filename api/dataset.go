@@ -616,21 +616,23 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	log.Info(ctx, "add instance: request successful", logData)
 
-	//Return response
 	setJSONContentType(w)
 	dpresponse.SetETag(w, newInstance.ETag)
 	w.WriteHeader(http.StatusCreated)
 
 	response, err := json.Marshal(newInstance)
 	if err != nil {
-		log.Error(ctx, err.Error(), err, logData)
+		log.Error(ctx, "failed to marshal instance to JSON", err, logData)
+		http.Error(w, "failed to marshal response", http.StatusInternalServerError)
 		return
 	}
 
-	_, err = w.Write(response)
+	if _, err := w.Write(response); err != nil {
+		log.Error(ctx, "failed to write response", err, logData)
+	}
 }
 
-func (api *DatasetAPI) generateInstanceLinks(datasetID, instanceID string, edition string, version int) *models.InstanceLinks {
+func (api *DatasetAPI) generateInstanceLinks(datasetID string, instanceID string, edition string, version int) *models.InstanceLinks {
 	jobID, _ := uuid.NewV4()
 
 	return &models.InstanceLinks{

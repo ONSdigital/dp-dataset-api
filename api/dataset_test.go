@@ -1646,21 +1646,19 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 func TestAddDatasetVersionCondensed(t *testing.T) {
 	t.Parallel()
-
 	convey.Convey("When dataset and edition exist and instance is added successfully", t, func() {
-
 		b := `{"title":"test-dataset","description":"test dataset","type":"static","next_release":"2025-02-15","alerts":[{"date":"2025-01-15","description":"Correction to the CPIH index for December 2024 due to an error in data input.","type":"correction"}],"latest_changes":[{"description":"Updated classification of housing components in CPIH.","name":"Changes in classification","type":"Summary of changes"}],"links":{"dataset":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd","id":"cpih01"},"dimensions":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd/dimensions"},"edition":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series","id":"time-series"},"job":{"href":"http://localhost:10700/jobs/383df410-845e-4efd-9ba1-ab469361eae5","id":"383df410-845e-4efd-9ba1-ab469361eae5"},"version":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series/versions/1","id":"1"},"spatial":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd"}},"release_date":"2025-01-15","state":"associated","themes":["Economy","Prices"],"temporal":[{"start_date":"2025-01-01","end_date":"2025-01-31","frequency":"Monthly"}],"usage_notes":[{"title":"Data usage guide","note":"This dataset is subject to revision and should be used in conjunction with the accompanying documentation."}]}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123//editions/time-series/versions", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(ctx context.Context, datasetID, state string) error {
+			CheckDatasetExistsFunc: func(_ context.Context, datasetID, state string) error {
 				return nil
 			},
-			CheckEditionExistsFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+			CheckEditionExistsFunc: func(_ context.Context, datasetID, editionID, state string) error {
 				return nil
 			},
-			GetNextVersionFunc: func(ctx context.Context, datasetID, editionID string) (int, error) {
+			GetNextVersionFunc: func(_ context.Context, datasetID, editionID string) (int, error) {
 				return 2, nil
 			},
 			AddInstanceFunc: func(ctx context.Context, instance *models.Instance) (*models.Instance, error) {
@@ -1705,7 +1703,6 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
 
 	})
-
 	convey.Convey("When edition does not exist", t, func() {
 		b := `{"title":"test-dataset","description":"test dataset","type":"static","next_release":"2025-02-15","alerts":[{"date":"2025-01-15","description":"Correction to the CPIH index for December 2024 due to an error in data input.","type":"correction"}],"latest_changes":[{"description":"Updated classification of housing components in CPIH.","name":"Changes in classification","type":"Summary of changes"}],"links":{"dataset":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd","id":"cpih01"},"dimensions":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd/dimensions"},"edition":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series","id":"time-series"},"job":{"href":"http://localhost:10700/jobs/383df410-845e-4efd-9ba1-ab469361eae5","id":"383df410-845e-4efd-9ba1-ab469361eae5"},"version":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series/versions/1","id":"1"},"spatial":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd"}},"release_date":"2025-01-15","state":"associated","themes":["Economy","Prices"],"temporal":[{"start_date":"2025-01-01","end_date":"2025-01-31","frequency":"Monthly"}],"usage_notes":[{"title":"Data usage guide","note":"This dataset is subject to revision and should be used in conjunction with the accompanying documentation."}]}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123//editions/time-series/versions", bytes.NewBufferString(b))
