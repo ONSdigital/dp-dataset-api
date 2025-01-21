@@ -632,7 +632,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	}
 }
 
-func (api *DatasetAPI) generateInstanceLinks(datasetID string, instanceID string, edition string, version int) *models.InstanceLinks {
+func (api *DatasetAPI) generateInstanceLinks(datasetID, instanceID, edition string, version int) *models.InstanceLinks {
 	jobID, _ := uuid.NewV4()
 
 	return &models.InstanceLinks{
