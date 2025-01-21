@@ -166,7 +166,7 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 
 	log.Info(ctx, "add instance", logData)
 
-	instance, err := unmarshalInstance(ctx, r.Body, true)
+	instance, err := UnmarshalInstance(ctx, r.Body, true)
 	if err != nil {
 		handleInstanceErr(ctx, err, w, logData)
 		return
@@ -221,7 +221,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 	logData := log.Data{"instance_id": instanceID}
 
-	instance, err := unmarshalInstance(ctx, r.Body, false)
+	instance, err := UnmarshalInstance(ctx, r.Body, false)
 	if err != nil {
 		log.Error(ctx, "update instance: failed unmarshalling json to model", err, logData)
 		handleInstanceErr(ctx, taskError{error: err, status: 400}, w, logData)
@@ -418,7 +418,7 @@ func validateInstanceStateUpdate(instance, currentInstance *models.Instance) (er
 	return nil
 }
 
-func unmarshalInstance(ctx context.Context, reader io.Reader, post bool) (*models.Instance, error) {
+func UnmarshalInstance(ctx context.Context, reader io.Reader, post bool) (*models.Instance, error) {
 	b, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, errs.ErrUnableToReadMessage
