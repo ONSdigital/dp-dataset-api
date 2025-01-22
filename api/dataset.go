@@ -584,7 +584,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	}
 	newInstance.Version = nextVersion
 	newInstance.State = models.AssociatedState
-	newInstance.Links = api.generateInstanceLinks(datasetID, newInstance.InstanceID, edition, nextVersion)
+	newInstance.Links = api.generateInstanceLinks(datasetID, newInstance.InstanceID, edition, nextVersion, newInstance.Links)
 
 	// Add instance to the datastore
 	newInstance, err = api.dataStore.Backend.AddInstance(ctx, newInstance)
@@ -633,9 +633,13 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	}
 }
 
-func (api *DatasetAPI) generateInstanceLinks(datasetID, instanceID, edition string, version int) *models.InstanceLinks {
+func (api *DatasetAPI) generateInstanceLinks(datasetID, instanceID, edition string, version int, existingLinks *models.InstanceLinks) *models.InstanceLinks {
 	jobID, _ := uuid.NewV4()
 
+	spatial := (*models.LinkObject)(nil)
+	if existingLinks != nil && existingLinks.Spatial != nil {
+		spatial = existingLinks.Spatial
+	}
 	return &models.InstanceLinks{
 		Dataset: &models.LinkObject{
 			HRef: fmt.Sprintf("%s/datasets/%s", api.host, datasetID),
@@ -656,5 +660,6 @@ func (api *DatasetAPI) generateInstanceLinks(datasetID, instanceID, edition stri
 			HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d", api.host, datasetID, edition, version),
 			ID:   fmt.Sprintf("%d", version),
 		},
+		Spatial: spatial,
 	}
 }
