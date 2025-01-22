@@ -424,10 +424,10 @@ paths:
       summary: "Create a version"
       description: "Create a version for a dataset series.  This will set the state of the version and dataset series to be associated."
       parameters:
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/version_update'
-      required: ["title", "description", "type", "next_release", "release_date", "state", "themes"]
+        - $ref: '#/parameters/id'
+        - $ref: '#/parameters/edition'
+        - $ref: '#/parameters/version_update'
+        - $ref: '#/definitions/Version'
       responses:
         201:
           description: "A json object containing a version"
@@ -2376,9 +2376,7 @@ definitions:
         type: integer
   Version:
     description: "An object containing information about published datasets from the ONS"
-    required: [
-      release_date,
-    ]
+    required: ["title", "description", "type", "next_release", "release_date", "state", "themes"]
     type: object
     properties:
       alerts:
