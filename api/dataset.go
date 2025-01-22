@@ -44,6 +44,7 @@ var (
 	resourcesNotFound = map[error]bool{
 		errs.ErrDatasetNotFound:  true,
 		errs.ErrEditionsNotFound: true,
+		errs.ErrEditionNotFound:  true,
 	}
 )
 
@@ -556,12 +557,12 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	// Validate dataset and edition existence
 	if err := api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, ""); err != nil {
 		log.Error(ctx, "failed to find dataset", err, logData)
-		http.Error(w, "dataset not found", http.StatusNotFound)
+		handleDatasetAPIErr(ctx, errs.ErrDatasetNotFound, w, nil)
 		return
 	}
 	if err := api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, ""); err != nil {
 		log.Error(ctx, "failed to find edition", err, logData)
-		http.Error(w, "edition not found", http.StatusNotFound)
+		handleDatasetAPIErr(ctx, errs.ErrEditionNotFound, w, nil)
 		return
 	}
 
@@ -569,7 +570,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	newInstance, err := instance.UnmarshalInstance(ctx, r.Body, true)
 	if err != nil {
 		log.Error(ctx, "failed to unmarshal instance", err, logData)
-		http.Error(w, "invalid instance data", http.StatusBadRequest)
+		handleDatasetAPIErr(ctx, errs.ErrInvalidQueryParameter, w, nil)
 		return
 	}
 
@@ -578,7 +579,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	nextVersion, err := api.dataStore.Backend.GetNextVersion(ctx, datasetID, edition)
 	if err != nil {
 		log.Error(ctx, "failed to get next version", err, logData)
-		http.Error(w, "error getting next version", http.StatusInternalServerError)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
 		return
 	}
 	newInstance.Version = nextVersion
@@ -589,7 +590,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	newInstance, err = api.dataStore.Backend.AddInstance(ctx, newInstance)
 	if err != nil {
 		log.Error(ctx, "failed to add instance", err, logData)
-		http.Error(w, "error adding instance", http.StatusInternalServerError)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
 		return
 	}
 
@@ -597,7 +598,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 	if err != nil {
 		log.Error(ctx, "failed to get dataset", err, logData)
-		http.Error(w, "error retrieving dataset", http.StatusInternalServerError)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
 		return
 	}
 
@@ -610,7 +611,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	if err := api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
 		log.Error(ctx, "failed to update dataset", err, logData)
-		http.Error(w, "error updating dataset", http.StatusInternalServerError)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
 		return
 	}
 
@@ -623,7 +624,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	response, err := json.Marshal(newInstance)
 	if err != nil {
 		log.Error(ctx, "failed to marshal instance to JSON", err, logData)
-		http.Error(w, "failed to marshal response", http.StatusInternalServerError)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
 		return
 	}
 
