@@ -51,26 +51,39 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 		}
 		return nil, 0, err
 	}
+	if api.enableURLRewriting {
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
 
-	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+		if authorised {
+			editionsResponse, err := utils.RewriteEditionsWithAuth(ctx, results, datasetLinksBuilder)
+			if err != nil {
+				log.Error(ctx, "getEditions endpoint: failed to rewrite editions with authorisation", err, logData)
+				return nil, 0, err
+			}
+			log.Info(ctx, "getEditions endpoint: get all editions with auth", logData)
+			return editionsResponse, totalCount, nil
+		}
 
-	if authorised {
-		editionsResponse, err := utils.RewriteEditionsWithAuth(ctx, results, datasetLinksBuilder)
+		editionsResponse, err := utils.RewriteEditionsWithoutAuth(ctx, results, datasetLinksBuilder)
 		if err != nil {
-			log.Error(ctx, "getEditions endpoint: failed to rewrite editions with authorisation", err, logData)
+			log.Error(ctx, "getEditions endpoint: failed to rewrite editions without authorisation", err, logData)
 			return nil, 0, err
 		}
-		log.Info(ctx, "getEditions endpoint: get all editions with auth", logData)
+		log.Info(ctx, "getEditions endpoint: get all editions without auth", logData)
 		return editionsResponse, totalCount, nil
-	}
+	} else {
+		if authorised {
+			log.Info(ctx, "getEditions endpoint: get all edition with auth", logData)
+			return results, totalCount, nil
+		}
 
-	editionsResponse, err := utils.RewriteEditionsWithoutAuth(ctx, results, datasetLinksBuilder)
-	if err != nil {
-		log.Error(ctx, "getEditions endpoint: failed to rewrite editions without authorisation", err, logData)
-		return nil, 0, err
+		publicResults := make([]*models.Edition, 0, len(results))
+		for i := range results {
+			publicResults = append(publicResults, results[i].Current)
+		}
+		log.Info(ctx, "getEditions endpoint: get all edition without auth", logData)
+		return publicResults, totalCount, nil
 	}
-	log.Info(ctx, "getEditions endpoint: get all editions without auth", logData)
-	return editionsResponse, totalCount, nil
 }
 
 func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
@@ -99,24 +112,46 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
-
 		var editionResponse interface{}
 
-		if authorised {
-			editionResponse, err = utils.RewriteEditionWithAuth(ctx, edition, datasetLinksBuilder)
-			if err != nil {
-				log.Error(ctx, "getEdition endpoint: failed to rewrite edition with authorisation", err, logData)
-				return nil, err
+		if api.enableURLRewriting {
+			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+
+			if authorised {
+				editionResponse, err = utils.RewriteEditionWithAuth(ctx, edition, datasetLinksBuilder)
+				if err != nil {
+					log.Error(ctx, "getEdition endpoint: failed to rewrite edition with authorisation", err, logData)
+					return nil, err
+				}
+				log.Info(ctx, "getEdition endpoint: get edition with auth", logData)
+			} else {
+				editionResponse, err = utils.RewriteEditionWithoutAuth(ctx, edition, datasetLinksBuilder)
+				if err != nil {
+					log.Error(ctx, "getEdition endpoint: failed to rewrite edition without authorisation", err, logData)
+					return nil, err
+				}
+				log.Info(ctx, "getEdition endpoint: get edition without auth", logData)
 			}
-			log.Info(ctx, "getEdition endpoint: get edition with auth", logData)
 		} else {
-			editionResponse, err = utils.RewriteEditionWithoutAuth(ctx, edition, datasetLinksBuilder)
-			if err != nil {
-				log.Error(ctx, "getEdition endpoint: failed to rewrite edition without authorisation", err, logData)
-				return nil, err
+			var b []byte
+			if authorised {
+				// User has valid authentication to get raw edition document
+				b, err = json.Marshal(edition)
+				if err != nil {
+					log.Error(ctx, "getEdition endpoint: failed to marshal edition resource into bytes", err, logData)
+					return nil, err
+				}
+				log.Info(ctx, "getEdition endpoint: get edition with auth", logData)
+			} else {
+				// User is not authenticated and hence has only access to current sub document
+				b, err = json.Marshal(edition.Current)
+				if err != nil {
+					log.Error(ctx, "getEdition endpoint: failed to marshal edition resource into bytes", err, logData)
+					return nil, err
+				}
+				log.Info(ctx, "getEdition endpoint: get edition without auth", logData)
 			}
-			log.Info(ctx, "getEdition endpoint: get edition without auth", logData)
+			return b, nil
 		}
 
 		b, err := json.Marshal(editionResponse)

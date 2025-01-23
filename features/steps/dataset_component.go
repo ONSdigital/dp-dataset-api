@@ -87,6 +87,7 @@ func (c *DatasetComponent) Reset() error {
 	}
 
 	c.Config.EnablePrivateEndpoints = false
+	c.Config.EnableURLRewriting = false
 	// Resets back to Mocked Kafka
 	c.setInitialiserMock()
 

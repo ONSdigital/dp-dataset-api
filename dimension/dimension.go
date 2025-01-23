@@ -24,9 +24,10 @@ import (
 // Store provides a backend for dimensions
 type Store struct {
 	store.Storer
-	Host              string
-	MaxRequestOptions int
-	URLBuilder        *url.Builder
+	Host               string
+	MaxRequestOptions  int
+	URLBuilder         *url.Builder
+	EnableURLRewriting bool
 }
 
 // List of actions for dimensions
@@ -78,14 +79,16 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 		return nil, 0, err
 	}
 
-	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetDatasetAPIURL())
-	codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetCodeListAPIURL())
+	if s.EnableURLRewriting {
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetDatasetAPIURL())
+		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetCodeListAPIURL())
 
-	err = utils.RewriteDimensionOptions(ctx, dimensionOptions, datasetLinksBuilder, codeListLinksBuilder)
-	if err != nil {
-		log.Error(ctx, "getDimensionsHandler endpoint: failed to rewrite dimension options links", err, logData)
-		handleDimensionErr(ctx, w, err, logData)
-		return nil, 0, err
+		err = utils.RewriteDimensionOptions(ctx, dimensionOptions, datasetLinksBuilder, codeListLinksBuilder)
+		if err != nil {
+			log.Error(ctx, "getDimensionsHandler endpoint: failed to rewrite dimension options links", err, logData)
+			handleDimensionErr(ctx, w, err, logData)
+			return nil, 0, err
+		}
 	}
 
 	log.Info(ctx, "successfully get dimensions for an instance resource", logData)

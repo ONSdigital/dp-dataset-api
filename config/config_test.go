@@ -45,6 +45,7 @@ func TestSpec(t *testing.T) {
 				convey.So(cfg.DefaultOffset, convey.ShouldEqual, 0)
 				convey.So(cfg.MaxRequestOptions, convey.ShouldEqual, 100)
 				convey.So(cfg.EnablePermissionsAuth, convey.ShouldBeFalse)
+				convey.So(cfg.EnableURLRewriting, convey.ShouldBeFalse)
 				convey.So(cfg.HealthCheckCriticalTimeout, convey.ShouldEqual, 90*time.Second)
 				convey.So(cfg.HealthCheckInterval, convey.ShouldEqual, 30*time.Second)
 				convey.So(cfg.MongoConfig.ClusterEndpoint, convey.ShouldEqual, "localhost:27017")

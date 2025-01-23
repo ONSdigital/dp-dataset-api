@@ -29,6 +29,7 @@ func WellKnownTestTime() time.Time {
 
 func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^private endpoints are enabled$`, c.privateEndpointsAreEnabled)
+	ctx.Step(`^URL rewriting is enabled$`, c.URLRewritingIsEnabled)
 	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, c.theDocumentInTheDatabaseForIDShouldBe)
 	ctx.Step(`^the instance in the database for id "([^"]*)" should be:$`, c.theInstanceInTheDatabaseForIDShouldBe)
 	ctx.Step(`^the version in the database for id "([^"]*)" should be:$`, c.theVersionInTheDatabaseForIDShouldBe)
@@ -51,6 +52,11 @@ func (c *DatasetComponent) thereAreNoDatasets() error {
 
 func (c *DatasetComponent) privateEndpointsAreEnabled() error {
 	c.Config.EnablePrivateEndpoints = true
+	return nil
+}
+
+func (c *DatasetComponent) URLRewritingIsEnabled() error {
+	c.Config.EnableURLRewriting = true
 	return nil
 }
 

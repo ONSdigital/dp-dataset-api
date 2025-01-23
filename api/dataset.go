@@ -80,27 +80,35 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
-	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+	if api.enableURLRewriting {
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
 
-	if authorised {
-		datasetsResponse, err := utils.RewriteDatasetsWithAuth(ctx, datasets, datasetLinksBuilder)
+		if authorised {
+			datasetsResponse, err := utils.RewriteDatasetsWithAuth(ctx, datasets, datasetLinksBuilder)
+			if err != nil {
+				log.Error(ctx, "getDatasets endpoint: failed to rewrite datasets with auth", err)
+				handleDatasetAPIErr(ctx, err, w, logData)
+				return nil, 0, err
+			}
+			log.Info(ctx, "getDatasets endpoint: get all datasets with auth", logData)
+			return datasetsResponse, totalCount, nil
+		}
+
+		datasetsResponse, err := utils.RewriteDatasetsWithoutAuth(ctx, datasets, datasetLinksBuilder)
 		if err != nil {
-			log.Error(ctx, "getDatasets endpoint: failed to rewrite datasets with auth", err)
+			log.Error(ctx, "getDatasets endpoint: failed to rewrite datasets without authorisation", err)
 			handleDatasetAPIErr(ctx, err, w, logData)
 			return nil, 0, err
 		}
-		log.Info(ctx, "getDatasets endpoint: get all datasets with auth", logData)
+		log.Info(ctx, "getDatasets endpoint: get all datasets without auth", logData)
 		return datasetsResponse, totalCount, nil
-	}
+	} else {
+		if authorised {
+			return datasets, totalCount, nil
+		}
 
-	datasetsResponse, err := utils.RewriteDatasetsWithoutAuth(ctx, datasets, datasetLinksBuilder)
-	if err != nil {
-		log.Error(ctx, "getDatasets endpoint: failed to rewrite datasets without authorisation", err)
-		handleDatasetAPIErr(ctx, err, w, logData)
-		return nil, 0, err
+		return mapResults(datasets), totalCount, nil
 	}
-	log.Info(ctx, "getDatasets endpoint: get all datasets without auth", logData)
-	return datasetsResponse, totalCount, nil
 }
 
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
@@ -122,20 +130,48 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 		var datasetResponse interface{}
 
-		if authorised {
-			datasetResponse, err = utils.RewriteDatasetWithAuth(ctx, dataset, datasetLinksBuilder)
-			if err != nil {
-				log.Error(ctx, "getDataset endpoint: failed to rewrite dataset with authorisation", err, logData)
-				return nil, err
+		if api.enableURLRewriting {
+			if authorised {
+				datasetResponse, err = utils.RewriteDatasetWithAuth(ctx, dataset, datasetLinksBuilder)
+				if err != nil {
+					log.Error(ctx, "getDataset endpoint: failed to rewrite dataset with authorisation", err, logData)
+					return nil, err
+				}
+				log.Info(ctx, "getDataset endpoint: get dataset with auth", logData)
+			} else {
+				datasetResponse, err = utils.RewriteDatasetWithoutAuth(ctx, dataset, datasetLinksBuilder)
+				if err != nil {
+					log.Error(ctx, "getDataset endpoint: failed to rewrite dataset without authorisation", err, logData)
+					return nil, err
+				}
+				log.Info(ctx, "getDataset endpoint: get dataset without auth", logData)
 			}
-			log.Info(ctx, "getDataset endpoint: get dataset with auth", logData)
 		} else {
-			datasetResponse, err = utils.RewriteDatasetWithoutAuth(ctx, dataset, datasetLinksBuilder)
-			if err != nil {
-				log.Error(ctx, "getDataset endpoint: failed to rewrite dataset without authorisation", err, logData)
-				return nil, err
+			if !authorised {
+				// User is not authenticated and hence has only access to current sub document
+				if dataset.Current == nil {
+					log.Info(ctx, "getDataset endpoint: published dataset not found", logData)
+					return nil, errs.ErrDatasetNotFound
+				}
+				log.Info(ctx, "getDataset endpoint: caller not authorised returning dataset", logData)
+
+				dataset.Current.ID = dataset.ID
+				if dataset.Current.Themes == nil {
+					dataset.Current.Themes = utils.BuildThemes(dataset.Current.CanonicalTopic, dataset.Current.Subtopics)
+				}
+				datasetResponse = dataset.Current
+			} else {
+				// User has valid authentication to get raw dataset document
+				if dataset == nil {
+					log.Info(ctx, "getDataset endpoint: published or unpublished dataset not found", logData)
+					return nil, errs.ErrDatasetNotFound
+				}
+				log.Info(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", logData)
+				if dataset.Current != nil && dataset.Current.Themes == nil {
+					dataset.Current.Themes = utils.BuildThemes(dataset.Current.CanonicalTopic, dataset.Current.Subtopics)
+				}
+				datasetResponse = dataset
 			}
-			log.Info(ctx, "getDataset endpoint: get dataset without auth", logData)
 		}
 
 		b, err := json.Marshal(datasetResponse)
@@ -232,12 +268,14 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+		if api.enableURLRewriting {
+			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
 
-		err = utils.RewriteDatasetLinks(ctx, datasetDoc.Next.Links, datasetLinksBuilder)
-		if err != nil {
-			log.Error(ctx, "addDataset endpoint: failed to rewrite links for response", err)
-			return nil, err
+			err = utils.RewriteDatasetLinks(ctx, datasetDoc.Next.Links, datasetLinksBuilder)
+			if err != nil {
+				log.Error(ctx, "addDataset endpoint: failed to rewrite links for response", err)
+				return nil, err
+			}
 		}
 
 		b, err := json.Marshal(datasetDoc)
@@ -345,13 +383,15 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+	if api.enableURLRewriting {
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
 
-	err = utils.RewriteDatasetLinks(ctx, datasetDoc.Next.Links, datasetLinksBuilder)
-	if err != nil {
-		log.Error(ctx, "addDatasetNew endpoint: failed to rewrite links for response", err)
-		handleDatasetAPIErr(ctx, err, w, logData)
-		return
+		err = utils.RewriteDatasetLinks(ctx, datasetDoc.Next.Links, datasetLinksBuilder)
+		if err != nil {
+			log.Error(ctx, "addDatasetNew endpoint: failed to rewrite links for response", err)
+			handleDatasetAPIErr(ctx, err, w, logData)
+			return
+		}
 	}
 
 	b, err := json.Marshal(datasetDoc)
@@ -511,6 +551,18 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 	log.Info(ctx, "delete dataset", logData)
+}
+
+func mapResults(results []*models.DatasetUpdate) []*models.Dataset {
+	items := []*models.Dataset{}
+	for _, item := range results {
+		if item.Current == nil {
+			continue
+		}
+		item.Current.ID = item.ID
+		items = append(items, item.Current)
+	}
+	return items
 }
 
 func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, data log.Data) {

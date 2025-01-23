@@ -30,6 +30,7 @@ type Store struct {
 	Host                string
 	EnableDetachDataset bool
 	URLBuilder          *url.Builder
+	EnableURLRewriting  bool
 }
 
 type taskError struct {
@@ -79,15 +80,17 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit, offset in
 			return nil, 0, err
 		}
 
-		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetDatasetAPIURL())
-		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetCodeListAPIURL())
-		importLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetImportAPIURL())
+		if s.EnableURLRewriting {
+			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetDatasetAPIURL())
+			codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetCodeListAPIURL())
+			importLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetImportAPIURL())
 
-		err = utils.RewriteInstances(ctx, instancesResults, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
-		if err != nil {
-			log.Error(ctx, "get instances endpoint: failed to rewrite instances", err, logData)
-			handleInstanceErr(ctx, err, w, logData)
-			return nil, 0, err
+			err = utils.RewriteInstances(ctx, instancesResults, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
+			if err != nil {
+				log.Error(ctx, "get instances endpoint: failed to rewrite instances", err, logData)
+				handleInstanceErr(ctx, err, w, logData)
+				return nil, 0, err
+			}
 		}
 
 		return instancesResults, instancesTotalCount, nil
@@ -130,15 +133,17 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetDatasetAPIURL())
-	codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetCodeListAPIURL())
-	importLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetImportAPIURL())
+	if s.EnableURLRewriting {
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetDatasetAPIURL())
+		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetCodeListAPIURL())
+		importLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetImportAPIURL())
 
-	err = utils.RewriteInstances(ctx, []*models.Instance{instance}, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
-	if err != nil {
-		log.Error(ctx, "get instance: failed to rewrite instance", err, logData)
-		handleInstanceErr(ctx, err, w, logData)
-		return
+		err = utils.RewriteInstances(ctx, []*models.Instance{instance}, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
+		if err != nil {
+			log.Error(ctx, "get instance: failed to rewrite instance", err, logData)
+			handleInstanceErr(ctx, err, w, logData)
+			return
+		}
 	}
 
 	log.Info(ctx, "get instance: marshalling instance json", logData)

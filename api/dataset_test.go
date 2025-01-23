@@ -46,6 +46,7 @@ var (
 	importAPIURL       = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
 	websiteURL         = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 	urlBuilder         = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+	enableURLRewriting = false
 	mu                 sync.Mutex
 )
 
@@ -71,7 +72,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 		models.Filterable: mockedGeneratedDownloads,
 	}
 
-	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions)
+	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, enableURLRewriting)
 }
 
 // GetAPIWithCMDMocks also used in other tests, so exported
@@ -92,7 +93,7 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
 
-	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions)
+	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, enableURLRewriting)
 }
 
 func createRequestWithAuth(method, target string, body io.Reader) *http.Request {

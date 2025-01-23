@@ -57,6 +57,7 @@ type DatasetAPI struct {
 	Router                   *mux.Router
 	dataStore                store.DataStore
 	urlBuilder               *url.Builder
+	enableURLRewriting       bool
 	host                     string
 	downloadServiceToken     string
 	EnablePrePublishView     bool
@@ -71,7 +72,7 @@ type DatasetAPI struct {
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
-func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions, permissions AuthHandler) *DatasetAPI {
+func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions, permissions AuthHandler, enableURLRewriting bool) *DatasetAPI {
 	api := &DatasetAPI{
 		dataStore:                dataStore,
 		host:                     cfg.DatasetAPIURL,
@@ -79,6 +80,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		EnablePrePublishView:     cfg.EnablePrivateEndpoints,
 		Router:                   router,
 		urlBuilder:               urlBuilder,
+		enableURLRewriting:       enableURLRewriting,
 		downloadGenerators:       downloadGenerators,
 		enablePrivateEndpoints:   cfg.EnablePrivateEndpoints,
 		enableDetachDataset:      cfg.EnableDetachDataset,
@@ -107,13 +109,15 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 			Storer:              api.dataStore.Backend,
 			EnableDetachDataset: api.enableDetachDataset,
 			URLBuilder:          api.urlBuilder,
+			EnableURLRewriting:  api.enableURLRewriting,
 		}
 
 		dimensionAPI := &dimension.Store{
-			Host:              api.host,
-			Storer:            api.dataStore.Backend,
-			MaxRequestOptions: api.MaxRequestOptions,
-			URLBuilder:        api.urlBuilder,
+			Host:               api.host,
+			Storer:             api.dataStore.Backend,
+			MaxRequestOptions:  api.MaxRequestOptions,
+			URLBuilder:         api.urlBuilder,
+			EnableURLRewriting: api.enableURLRewriting,
 		}
 
 		api.enablePrivateDatasetEndpoints(paginator)
