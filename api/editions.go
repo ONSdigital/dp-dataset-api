@@ -71,21 +71,22 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 		}
 		log.Info(ctx, "getEditions endpoint: get all editions without auth", logData)
 		return editionsResponse, totalCount, nil
-	} else {
-		if authorised {
-			log.Info(ctx, "getEditions endpoint: get all edition with auth", logData)
-			return results, totalCount, nil
-		}
-
-		publicResults := make([]*models.Edition, 0, len(results))
-		for i := range results {
-			publicResults = append(publicResults, results[i].Current)
-		}
-		log.Info(ctx, "getEditions endpoint: get all edition without auth", logData)
-		return publicResults, totalCount, nil
 	}
+
+	if authorised {
+		log.Info(ctx, "getEditions endpoint: get all edition with auth", logData)
+		return results, totalCount, nil
+	}
+
+	publicResults := make([]*models.Edition, 0, len(results))
+	for i := range results {
+		publicResults = append(publicResults, results[i].Current)
+	}
+	log.Info(ctx, "getEditions endpoint: get all edition without auth", logData)
+	return publicResults, totalCount, nil
 }
 
+//nolint:gocognit,gocyclo // cognitive complexity 36 (> 30) is acceptable for now
 func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)

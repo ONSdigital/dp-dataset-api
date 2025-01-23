@@ -106,15 +106,16 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		}
 		log.Info(ctx, "getDatasets endpoint: get all datasets without auth", logData)
 		return datasetsResponse, totalCount, nil
-	} else {
-		if authorised {
-			return datasets, totalCount, nil
-		}
-
-		return mapResults(datasets), totalCount, nil
 	}
+
+	if authorised {
+		return datasets, totalCount, nil
+	}
+
+	return mapResults(datasets), totalCount, nil
 }
 
+//nolint:gocognit // cognitive complexity (> 30) is acceptable for now
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
