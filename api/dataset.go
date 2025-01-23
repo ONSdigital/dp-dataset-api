@@ -9,11 +9,14 @@ import (
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
+	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/dp-net/v2/links"
 	"github.com/ONSdigital/log.go/v2/log"
+	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -41,6 +44,7 @@ var (
 	resourcesNotFound = map[error]bool{
 		errs.ErrDatasetNotFound:  true,
 		errs.ErrEditionsNotFound: true,
+		errs.ErrEditionNotFound:  true,
 	}
 )
 
@@ -588,4 +592,126 @@ func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	data["responseStatus"] = status
 	log.Error(ctx, "request unsuccessful", err, data)
 	http.Error(w, err.Error(), status)
+}
+
+// condensed api call to add new version
+func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http.Request) {
+	defer dphttp.DrainBody(r)
+
+	ctx := r.Context()
+	vars := mux.Vars(r)
+	datasetID := vars["dataset_id"]
+	edition := vars["edition"]
+	logData := log.Data{"dataset_id": datasetID, "edition": edition}
+
+	log.Info(ctx, "condensed endpoint called", logData)
+
+	// Validate dataset and edition existence
+	if err := api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, ""); err != nil {
+		log.Error(ctx, "failed to find dataset", err, logData)
+		handleDatasetAPIErr(ctx, errs.ErrDatasetNotFound, w, nil)
+		return
+	}
+	if err := api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, ""); err != nil {
+		log.Error(ctx, "failed to find edition", err, logData)
+		handleDatasetAPIErr(ctx, errs.ErrEditionNotFound, w, nil)
+		return
+	}
+
+	// Unmarshal instance from the request body
+	newInstance, err := instance.UnmarshalInstance(ctx, r.Body, true)
+	if err != nil {
+		log.Error(ctx, "failed to unmarshal instance", err, logData)
+		handleDatasetAPIErr(ctx, errs.ErrInvalidQueryParameter, w, nil)
+		return
+	}
+
+	// Set instance attributes and generate links
+	newInstance.Edition = edition
+	nextVersion, err := api.dataStore.Backend.GetNextVersion(ctx, datasetID, edition)
+	if err != nil {
+		log.Error(ctx, "failed to get next version", err, logData)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
+		return
+	}
+	newInstance.Version = nextVersion
+	newInstance.State = models.AssociatedState
+	newInstance.Links = api.generateInstanceLinks(datasetID, newInstance.InstanceID, edition, nextVersion, newInstance.Links)
+
+	// Add instance to the datastore
+	newInstance, err = api.dataStore.Backend.AddInstance(ctx, newInstance)
+	if err != nil {
+		log.Error(ctx, "failed to add instance", err, logData)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
+		return
+	}
+
+	// Update dataset's next object with instance details
+	datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+	if err != nil {
+		log.Error(ctx, "failed to get dataset", err, logData)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
+		return
+	}
+
+	datasetDoc.Next.State = models.AssociatedState
+	datasetDoc.Next.Description = newInstance.Description
+	datasetDoc.Next.Title = newInstance.Title
+	datasetDoc.Next.NextRelease = newInstance.NextRelease
+	datasetDoc.Next.Themes = newInstance.Themes
+	datasetDoc.Next.LastUpdated = newInstance.LastUpdated
+
+	if err := api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
+		log.Error(ctx, "failed to update dataset", err, logData)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
+		return
+	}
+
+	log.Info(ctx, "add instance: request successful", logData)
+
+	setJSONContentType(w)
+	dpresponse.SetETag(w, newInstance.ETag)
+	w.WriteHeader(http.StatusCreated)
+
+	response, err := json.Marshal(newInstance)
+	if err != nil {
+		log.Error(ctx, "failed to marshal instance to JSON", err, logData)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
+		return
+	}
+
+	if _, err := w.Write(response); err != nil {
+		log.Error(ctx, "failed to write response", err, logData)
+	}
+}
+
+func (api *DatasetAPI) generateInstanceLinks(datasetID, instanceID, edition string, version int, existingLinks *models.InstanceLinks) *models.InstanceLinks {
+	jobID, _ := uuid.NewV4()
+
+	spatial := (*models.LinkObject)(nil)
+	if existingLinks != nil && existingLinks.Spatial != nil {
+		spatial = existingLinks.Spatial
+	}
+	return &models.InstanceLinks{
+		Dataset: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s", api.host, datasetID),
+			ID:   datasetID,
+		},
+		Self: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s", api.host, instanceID),
+		},
+		Job: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/jobs/%s", api.host, jobID.String()),
+			ID:   jobID.String(),
+		},
+		Edition: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", api.host, datasetID, edition),
+			ID:   edition,
+		},
+		Version: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d", api.host, datasetID, edition, version),
+			ID:   fmt.Sprintf("%d", version),
+		},
+		Spatial: spatial,
+	}
 }
