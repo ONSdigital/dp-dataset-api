@@ -46,6 +46,7 @@ var (
 	importAPIURL       = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
 	websiteURL         = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 	urlBuilder         = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+	enableURLRewriting = false
 	mu                 sync.Mutex
 )
 
@@ -71,7 +72,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 		models.Filterable: mockedGeneratedDownloads,
 	}
 
-	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions)
+	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, enableURLRewriting)
 }
 
 // GetAPIWithCMDMocks also used in other tests, so exported
@@ -92,7 +93,7 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
 
-	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions)
+	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, enableURLRewriting)
 }
 
 func createRequestWithAuth(method, target string, body io.Reader) *http.Request {
@@ -1641,5 +1642,118 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		convey.So(len(mockedDataStore.GetEditionsCalls()), convey.ShouldEqual, 0)
 		convey.So(len(mockedDataStore.DeleteEditionCalls()), convey.ShouldEqual, 0)
 		convey.So(len(mockedDataStore.DeleteDatasetCalls()), convey.ShouldEqual, 0)
+	})
+}
+
+func TestAddDatasetVersionCondensed(t *testing.T) {
+	t.Parallel()
+	convey.Convey("When dataset and edition exist and instance is added successfully", t, func() {
+		b := `{"title":"test-dataset","description":"test dataset","type":"static","next_release":"2025-02-15","alerts":[{"date":"2025-01-15","description":"Correction to the CPIH index for December 2024 due to an error in data input.","type":"correction"}],"latest_changes":[{"description":"Updated classification of housing components in CPIH.","name":"Changes in classification","type":"Summary of changes"}],"links":{"dataset":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd","id":"cpih01"},"dimensions":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd/dimensions"},"edition":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series","id":"time-series"},"job":{"href":"http://localhost:10700/jobs/383df410-845e-4efd-9ba1-ab469361eae5","id":"383df410-845e-4efd-9ba1-ab469361eae5"},"version":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series/versions/1","id":"1"},"spatial":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd"}},"release_date":"2025-01-15","state":"associated","themes":["Economy","Prices"],"temporal":[{"start_date":"2025-01-01","end_date":"2025-01-31","frequency":"Monthly"}],"usage_notes":[{"title":"Data usage guide","note":"This dataset is subject to revision and should be used in conjunction with the accompanying documentation."}]}`
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123//editions/time-series/versions", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetNextVersionFunc: func(context.Context, string, string) (int, error) {
+				return 2, nil
+			},
+			AddInstanceFunc: func(context.Context, *models.Instance) (*models.Instance, error) {
+				return &models.Instance{InstanceID: "1234"}, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.addDatasetVersionCondensed(w, r)
+
+		convey.So(w.Code, convey.ShouldEqual, http.StatusCreated)
+		convey.So(mockedDataStore.CheckDatasetExistsCalls(), convey.ShouldHaveLength, 1)
+		convey.So(mockedDataStore.CheckEditionExistsCalls(), convey.ShouldHaveLength, 1)
+		convey.So(mockedDataStore.GetNextVersionCalls(), convey.ShouldHaveLength, 1)
+		convey.So(mockedDataStore.AddInstanceCalls(), convey.ShouldHaveLength, 1)
+		convey.So(mockedDataStore.GetDatasetCalls(), convey.ShouldHaveLength, 1)
+		convey.So(mockedDataStore.UpsertDatasetCalls(), convey.ShouldHaveLength, 1)
+	})
+
+	convey.Convey("When dataset does not exist", t, func() {
+		b := `{"title":"test-dataset","description":"test dataset","type":"static","next_release":"2025-02-15","alerts":[{"date":"2025-01-15","description":"Correction to the CPIH index for December 2024 due to an error in data input.","type":"correction"}],"latest_changes":[{"description":"Updated classification of housing components in CPIH.","name":"Changes in classification","type":"Summary of changes"}],"links":{"dataset":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd","id":"cpih01"},"dimensions":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd/dimensions"},"edition":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series","id":"time-series"},"job":{"href":"http://localhost:10700/jobs/383df410-845e-4efd-9ba1-ab469361eae5","id":"383df410-845e-4efd-9ba1-ab469361eae5"},"version":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series/versions/1","id":"1"},"spatial":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd"}},"release_date":"2025-01-15","state":"associated","themes":["Economy","Prices"],"temporal":[{"start_date":"2025-01-01","end_date":"2025-01-31","frequency":"Monthly"}],"usage_notes":[{"title":"Data usage guide","note":"This dataset is subject to revision and should be used in conjunction with the accompanying documentation."}]}`
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123//editions/time-series/versions", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return errs.ErrDatasetNotFound
+			},
+		}
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.addDatasetVersionCondensed(w, r)
+
+		convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
+	})
+	convey.Convey("When edition does not exist", t, func() {
+		b := `{"title":"test-dataset","description":"test dataset","type":"static","next_release":"2025-02-15","alerts":[{"date":"2025-01-15","description":"Correction to the CPIH index for December 2024 due to an error in data input.","type":"correction"}],"latest_changes":[{"description":"Updated classification of housing components in CPIH.","name":"Changes in classification","type":"Summary of changes"}],"links":{"dataset":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd","id":"cpih01"},"dimensions":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd/dimensions"},"edition":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series","id":"time-series"},"job":{"href":"http://localhost:10700/jobs/383df410-845e-4efd-9ba1-ab469361eae5","id":"383df410-845e-4efd-9ba1-ab469361eae5"},"version":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series/versions/1","id":"1"},"spatial":{"href":"http://localhost:10400/datasets/bara-test-ds-abcd"}},"release_date":"2025-01-15","state":"associated","themes":["Economy","Prices"],"temporal":[{"start_date":"2025-01-01","end_date":"2025-01-31","frequency":"Monthly"}],"usage_notes":[{"title":"Data usage guide","note":"This dataset is subject to revision and should be used in conjunction with the accompanying documentation."}]}`
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123//editions/time-series/versions", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
+				return errs.ErrEditionNotFound
+			},
+		}
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.addDatasetVersionCondensed(w, r)
+
+		convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
+	})
+
+	convey.Convey("When request body is not valid", t, func() {
+		b := `{"title":"test-dataset","description":"test dataset","type":"static","next_release":"2025-02-15"}`
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123//editions/time-series/versions", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetNextVersionFunc: func(context.Context, string, string) (int, error) {
+				return 2, nil
+			},
+			AddInstanceFunc: func(context.Context, *models.Instance) (*models.Instance, error) {
+				return &models.Instance{InstanceID: "1234"}, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.addDatasetVersionCondensed(w, r)
+
+		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 	})
 }

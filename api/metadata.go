@@ -111,22 +111,31 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
-		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetCodeListAPIURL())
-		websiteLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetWebsiteURL())
+		if api.enableURLRewriting {
+			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+			codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetCodeListAPIURL())
+			websiteLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetWebsiteURL())
 
-		err = utils.RewriteMetadataLinks(ctx, metaDataDoc.Links, datasetLinksBuilder, websiteLinksBuilder)
-		if err != nil {
-			log.Error(ctx, "getMetadata endpoint: failed to rewrite metadata links", err, logData)
-			handleMetadataErr(w, err)
-			return nil, err
-		}
+			err = utils.RewriteMetadataLinks(ctx, metaDataDoc.Links, datasetLinksBuilder, websiteLinksBuilder)
+			if err != nil {
+				log.Error(ctx, "getMetadata endpoint: failed to rewrite metadata links", err, logData)
+				handleMetadataErr(w, err)
+				return nil, err
+			}
 
-		metaDataDoc.Dimensions, err = utils.RewriteDimensions(ctx, metaDataDoc.Dimensions, datasetLinksBuilder, codeListLinksBuilder)
-		if err != nil {
-			log.Error(ctx, "getMetadata endpoint: failed to rewrite metadata dimensions", err, logData)
-			handleMetadataErr(w, err)
-			return nil, err
+			metaDataDoc.Dimensions, err = utils.RewriteDimensions(ctx, metaDataDoc.Dimensions, datasetLinksBuilder, codeListLinksBuilder)
+			if err != nil {
+				log.Error(ctx, "getMetadata endpoint: failed to rewrite metadata dimensions", err, logData)
+				handleMetadataErr(w, err)
+				return nil, err
+			}
+
+			err = utils.RewriteDatasetLinks(ctx, metaDataDoc.DatasetLinks, datasetLinksBuilder)
+			if err != nil {
+				log.Error(ctx, "getMetadata endpoint: failed to rewrite dataset links", err, logData)
+				handleMetadataErr(w, err)
+				return nil, err
+			}
 		}
 
 		b, err := json.Marshal(metaDataDoc)

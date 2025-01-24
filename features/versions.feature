@@ -188,6 +188,7 @@ Feature: Dataset API
             """
 
   Scenario: GET /datasets/{id}/editions/{edition}/versions in public mode returns published versions
+    And URL rewriting is enabled
     When I GET "/datasets/population-estimates/editions/hello/versions" without a request host
     Then I should receive the following JSON response with status "200":
             """
@@ -232,9 +233,54 @@ Feature: Dataset API
             }
             """
 
+  Scenario: GET /datasets/{id}/editions/{edition}/versions in public mode returns published versions
+    When I GET "/datasets/population-estimates/editions/hello/versions"
+    Then I should receive the following JSON response with status "200":
+            """
+            {
+                "count": 2,
+                "items": [
+                    {
+                        "dataset_id": "population-estimates",
+                        "id": "test-item-4",
+                        "version": 4,
+                        "edition": "hello",
+                        "state": "published",
+                        "links": {
+                            "dataset": {
+                                "id": "population-estimates"
+                            },
+                            "self": {
+                                "href": "someurl"
+                            }
+                        },
+                        "lowest_geography": "ltla"
+                    },
+                    {
+                        "dataset_id": "population-estimates",
+                        "id": "test-item-1",
+                        "version": 1,
+                        "edition": "hello",
+                        "state": "published",
+                        "links": {
+                            "dataset": {
+                                "id": "population-estimates"
+                            },
+                            "self": {
+                                "href": "someurl"
+                            }
+                        }
+                    }
+                ],
+                "limit": 20,
+                "offset": 0,
+                "total_count": 2
+            }
+            """
 
   Scenario: GET /datasets/{id}/editions/{edition}/versions in private mode returns all versions
     Given private endpoints are enabled
+    And URL rewriting is enabled
     And I am identified as "user@ons.gov.uk"
     And I am authorised
     When I GET "/datasets/population-estimates/editions/hello/versions" without a request host
@@ -296,6 +342,69 @@ Feature: Dataset API
             }
             """
 
+  Scenario: GET /datasets/{id}/editions/{edition}/versions in private mode returns all versions
+    Given private endpoints are enabled
+    And I am identified as "user@ons.gov.uk"
+    And I am authorised
+    When I GET "/datasets/population-estimates/editions/hello/versions"
+    Then I should receive the following JSON response with status "200":
+            """
+            {
+                "count": 3,
+                "items": [
+                    {
+                        "dataset_id": "population-estimates",
+                        "id": "test-item-4",
+                        "version": 4,
+                        "state": "published",
+                        "links": {
+                            "dataset": {
+                                "id": "population-estimates"
+                            },
+                            "self": {
+                                "href": "someurl"
+                            }
+                        },
+                        "edition": "hello",
+                        "lowest_geography": "ltla"
+                    },
+                    {
+                        "dataset_id": "population-estimates",
+                        "id": "test-item-2",
+                        "version": 2,
+                        "state": "associated",
+                        "links": {
+                            "dataset": {
+                                "id": "population-estimates"
+                            },
+                            "self": {
+                                "href": "someurl"
+                            }
+                        },
+                        "edition": "hello"
+                    },
+                    {
+                        "dataset_id": "population-estimates",
+                        "id": "test-item-1",
+                        "version": 1,
+                        "state": "published",
+                        "links": {
+                            "dataset": {
+                                "id": "population-estimates"
+                            },
+                            "self": {
+                                "href": "someurl"
+                            }
+                        },
+                        "edition": "hello"
+                    }
+                ],
+                "limit": 20,
+                "offset": 0,
+                "total_count": 3
+            }
+            """
+
   Scenario: GET versions for unknown dataset returns not found error
     When I GET "/datasets/unknown-dataset/editions/hello/versions"
     Then the HTTP status code should be "404"
@@ -321,6 +430,7 @@ Feature: Dataset API
             """
 
   Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in public mode returns the version
+    And URL rewriting is enabled
     When I GET "/datasets/population-estimates/editions/hello/versions/4" without a request host
     Then I should receive the following JSON response with status "200":
         """
@@ -342,8 +452,31 @@ Feature: Dataset API
         """
     And the response header "ETag" should be "etag-test-item-4"
 
+  Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in public mode returns the version
+    When I GET "/datasets/population-estimates/editions/hello/versions/4"
+    Then I should receive the following JSON response with status "200":
+        """
+        {
+            "id": "test-item-4",
+            "version": 4,
+            "state": "published",
+            "links": {
+                "dataset": {
+                    "id": "population-estimates"
+                },
+                "self": {
+                    "href": "someurl"
+                }
+            },
+            "edition": "hello",
+            "lowest_geography": "ltla"
+        }
+        """
+    And the response header "ETag" should be "etag-test-item-4"
+
   Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in private mode returns the version
     Given private endpoints are enabled
+    And URL rewriting is enabled
     And I am identified as "user@ons.gov.uk"
     And I am authorised
     When I GET "/datasets/population-estimates/editions/hello/versions/2" without a request host
@@ -359,6 +492,30 @@ Feature: Dataset API
                 },
                 "self": {
                     "href": "http://localhost:22000/someurl"
+                }
+            },
+            "edition": "hello"
+        }
+        """
+    And the response header "ETag" should be "etag-test-item-2"
+
+  Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in private mode returns the version
+    Given private endpoints are enabled
+    And I am identified as "user@ons.gov.uk"
+    And I am authorised
+    When I GET "/datasets/population-estimates/editions/hello/versions/2"
+    Then I should receive the following JSON response with status "200":
+        """
+        {
+            "id": "test-item-2",
+            "version": 2,
+            "state": "associated",
+            "links": {
+                "dataset": {
+                    "id": "population-estimates"
+                },
+                "self": {
+                    "href": "someurl"
                 }
             },
             "edition": "hello"

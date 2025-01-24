@@ -179,8 +179,13 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		return err
 	}
 
+	enableURLRewriting := svc.config.EnableURLRewriting
+	if enableURLRewriting {
+		log.Info(ctx, "URL rewriting enabled")
+	}
+
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting)
 
 	svc.healthCheck.Start(ctx)
 
