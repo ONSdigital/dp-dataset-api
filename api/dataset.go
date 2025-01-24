@@ -687,12 +687,22 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 }
 
 func (api *DatasetAPI) generateInstanceLinks(datasetID, instanceID, edition string, version int, existingLinks *models.InstanceLinks) *models.InstanceLinks {
-	jobID, _ := uuid.NewV4()
-
 	spatial := (*models.LinkObject)(nil)
+	job := (*models.LinkObject)(nil)
 	if existingLinks != nil && existingLinks.Spatial != nil {
 		spatial = existingLinks.Spatial
 	}
+
+	if existingLinks != nil && existingLinks.Job != nil {
+		job = existingLinks.Job
+	} else {
+		jobID, _ := uuid.NewV4()
+		job = &models.LinkObject{
+			HRef: fmt.Sprintf("%s/jobs/%s", api.host, jobID.String()),
+			ID:   jobID.String(),
+		}
+	}
+
 	return &models.InstanceLinks{
 		Dataset: &models.LinkObject{
 			HRef: fmt.Sprintf("%s/datasets/%s", api.host, datasetID),
@@ -701,10 +711,7 @@ func (api *DatasetAPI) generateInstanceLinks(datasetID, instanceID, edition stri
 		Self: &models.LinkObject{
 			HRef: fmt.Sprintf("%s/datasets/%s", api.host, instanceID),
 		},
-		Job: &models.LinkObject{
-			HRef: fmt.Sprintf("%s/jobs/%s", api.host, jobID.String()),
-			ID:   jobID.String(),
-		},
+		Job: job,
 		Edition: &models.LinkObject{
 			HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", api.host, datasetID, edition),
 			ID:   edition,
