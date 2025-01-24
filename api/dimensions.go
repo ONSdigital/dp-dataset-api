@@ -86,13 +86,15 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 		return nil, 0, err
 	}
 
-	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
-	codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetCodeListAPIURL())
+	if api.enableURLRewriting {
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetCodeListAPIURL())
 
-	list, err = utils.RewriteDimensions(ctx, list, datasetLinksBuilder, codeListLinksBuilder)
-	if err != nil {
-		handleDimensionsErr(ctx, w, "getDimensions endpoint: failed to map dimensions and rewrite links", err, logData)
-		return nil, 0, err
+		list, err = utils.RewriteDimensions(ctx, list, datasetLinksBuilder, codeListLinksBuilder)
+		if err != nil {
+			handleDimensionsErr(ctx, w, "getDimensions endpoint: failed to map dimensions and rewrite links", err, logData)
+			return nil, 0, err
+		}
 	}
 
 	return list, totalCount, nil
@@ -221,13 +223,15 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 		results[i].Links.Version.ID = versionID
 	}
 
-	datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
-	codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetCodeListAPIURL())
+	if api.enableURLRewriting {
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetCodeListAPIURL())
 
-	results, err = utils.RewritePublicDimensionOptions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
-	if err != nil {
-		handleDimensionsErr(ctx, w, "getDimensionOptions endpoint: failed to map dimension options and rewrite links", err, logData)
-		return nil, 0, err
+		results, err = utils.RewritePublicDimensionOptions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
+		if err != nil {
+			handleDimensionsErr(ctx, w, "getDimensionOptions endpoint: failed to map dimension options and rewrite links", err, logData)
+			return nil, 0, err
+		}
 	}
 
 	return results, totalCount, nil

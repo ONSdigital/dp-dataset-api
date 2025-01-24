@@ -89,6 +89,7 @@ Feature: Dataset API
             """
 
     Scenario: GET /datasets/{id}/editions/{edition}/versions/{version}/dimensions in public mode
+        And URL rewriting is enabled
         When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions" without a request host
         Then I should receive the following JSON response with status "200":
             """
@@ -101,6 +102,33 @@ Feature: Dataset API
                             "code_list": {},
                             "options": {
                                 "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions/dimensions/geography/options",
+                                "id": "geography"
+                            },
+                            "version": {
+                                "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions/"
+                            }
+                        }
+                    }
+                ],
+                "limit": 20,
+                "offset": 0,
+                "total_count": 1
+            }
+            """
+
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/{version}/dimensions in public mode
+        When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "count": 1,
+                "items": [
+                    {
+                        "name": "geography",
+                        "links": {
+                            "code_list": {},
+                            "options": {
+                                "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions//dimensions/geography/options",
                                 "id": "geography"
                             },
                             "version": {

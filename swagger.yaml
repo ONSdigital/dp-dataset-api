@@ -418,6 +418,33 @@ paths:
           description: "No versions found using the id and edition provided"
         500:
           $ref: '#/responses/InternalError'
+    post:
+      tags:
+      - "Private user"
+      summary: "Create a version"
+      description: "Create a version for a dataset series.  This will set the state of the version and dataset series to be associated."
+      parameters:
+        - $ref: '#/parameters/id'
+        - $ref: '#/parameters/edition'
+        - $ref: '#/parameters/version_update'
+        - $ref: '#/definitions/Version'
+      responses:
+        201:
+          description: "A json object containing a version"
+          schema:
+            $ref: '#/definitions/NewVersionResponse'
+        400:
+          description: |
+            Invalid request, reasons can be one of the following:
+              * invalid request body
+              * dataset id was incorrect
+              * edition was incorrect
+        401:
+          description: "Unauthorised to update version of dataset"
+        404:
+          description: "Dataset series was not found for a dataset using the id and edition provided"
+        500:
+          $ref: '#/responses/InternalError'
   /datasets/{id}/editions/{edition}/versions/{version}:
     put:
       tags:
@@ -2349,9 +2376,7 @@ definitions:
         type: integer
   Version:
     description: "An object containing information about published datasets from the ONS"
-    required: [
-      release_date,
-    ]
+    required: ["title", "description", "type", "next_release", "release_date", "state", "themes"]
     type: object
     properties:
       alerts:
