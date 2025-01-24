@@ -427,7 +427,6 @@ paths:
         - $ref: '#/parameters/id'
         - $ref: '#/parameters/edition'
         - $ref: '#/parameters/version_update'
-        - $ref: '#/definitions/Version'
       responses:
         201:
           description: "A json object containing a version"
