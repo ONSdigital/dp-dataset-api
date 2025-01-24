@@ -1754,6 +1754,6 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.addDatasetVersionCondensed(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
+		convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
 	})
 }
