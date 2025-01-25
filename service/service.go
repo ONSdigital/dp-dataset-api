@@ -3,10 +3,14 @@ package service
 import (
 	"context"
 	"net/http"
+	neturl "net/url"
+	"slices"
+	"sync"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/api"
+	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	adapter "github.com/ONSdigital/dp-dataset-api/kafka"
@@ -19,7 +23,6 @@ import (
 	dphandlers "github.com/ONSdigital/dp-net/v2/handlers"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/log.go/v2/log"
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"github.com/pkg/errors"
@@ -49,6 +52,97 @@ type Service struct {
 	server                              HTTPServer
 	healthCheck                         HealthChecker
 	api                                 *api.DatasetAPI
+	smDS                                *application.StateMachineDatasetAPI
+}
+
+var stateMachine *application.StateMachine
+var stateMachineInit sync.Once
+
+func GetListTransitions() []application.Transition {
+	publishedTransition := application.Transition{
+		Label:                "published",
+		TargetState:          application.Published,
+		AlllowedSourceStates: []string{"created", "associated", "published"},
+		Type:                 "v4",
+	}
+
+	associatedTransition := application.Transition{
+		Label:                "associated",
+		TargetState:          application.Associated,
+		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+		Type:                 "v4",
+	}
+
+	edconfirmedTransition := application.Transition{
+		Label:                "edition-confirmed",
+		TargetState:          application.EditionConfirmed,
+		AlllowedSourceStates: []string{"completed", "edition-confirmed"},
+		Type:                 "v4",
+	}
+
+	return []application.Transition{publishedTransition,
+		associatedTransition, edconfirmedTransition}
+}
+
+func GetListCantabularTransitions() []application.Transition {
+	publishedTransition := application.Transition{
+		Label:                "published",
+		TargetState:          application.Published,
+		AlllowedSourceStates: []string{"published", "associated", "edition-confirmed"},
+		Type:                 "cantabular_flexible_table",
+	}
+
+	associatedTransition := application.Transition{
+		Label:                "associated",
+		TargetState:          application.Associated,
+		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+		Type:                 "cantabular_flexible_table",
+	}
+
+	edconfirmedTransition := application.Transition{
+		Label:                "edition-confirmed",
+		TargetState:          application.EditionConfirmed,
+		AlllowedSourceStates: []string{"completed", "edition-confirmed"},
+		Type:                 "cantabular_flexible_table",
+	}
+
+	return []application.Transition{publishedTransition,
+		associatedTransition, edconfirmedTransition}
+}
+
+func GetListMultivariateCantabularTransitions() []application.Transition {
+	publishedTransition := application.Transition{
+		Label:                "published",
+		TargetState:          application.Published,
+		AlllowedSourceStates: []string{"associated", "edition-confirmed"},
+		Type:                 "cantabular_multivariate_table",
+	}
+
+	associatedTransition := application.Transition{
+		Label:                "associated",
+		TargetState:          application.Associated,
+		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+		Type:                 "cantabular_multivariate_table",
+	}
+
+	edconfirmedTransition := application.Transition{
+		Label:                "edition-confirmed",
+		TargetState:          application.EditionConfirmed,
+		AlllowedSourceStates: []string{"completed", "edition-confirmed"},
+		Type:                 "cantabular_multivariate_table",
+	}
+
+	return []application.Transition{publishedTransition,
+		associatedTransition, edconfirmedTransition}
+}
+
+func GetStateMachine(ctx context.Context, dataStore store.DataStore) *application.StateMachine {
+	stateMachineInit.Do(func() {
+		states := []application.State{application.Published, application.EditionConfirmed, application.Associated}
+		transitions := slices.Concat(GetListTransitions(), GetListCantabularTransitions(), GetListMultivariateCantabularTransitions())
+		stateMachine = application.NewStateMachine(ctx, states, transitions, dataStore)
+	})
+	return stateMachine
 }
 
 // New creates a new service
@@ -92,30 +186,15 @@ func (svc *Service) SetGraphDBErrorConsumer(graphDBErrorConsumer Closer) {
 
 // Run the service
 func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version string, svcErrors chan error) (err error) {
-	// Get MongoDB connection
-	svc.mongoDB, err = svc.serviceList.GetMongoDB(ctx, svc.config.MongoConfig)
-	if err != nil {
-		log.Error(ctx, "could not obtain mongo session", err)
+	// Copilot used to move initMongoDB and initGraphDB functions out of Run
+	if err := svc.initMongoDB(ctx); err != nil {
 		return err
 	}
 
-	// Get graphDB connection for observation store
-	if !svc.config.EnablePrivateEndpoints || svc.config.DisableGraphDBDependency {
-		log.Info(ctx, "skipping graph DB client creation, because it is not required by the enabled endpoints", log.Data{
-			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
-		})
-		svc.graphDB = &storetest.GraphDBMock{
-			SetInstanceIsPublishedFunc: func(ctx context.Context, instanceID string) error {
-				return nil
-			},
-		}
-	} else {
-		svc.graphDB, svc.graphDBErrorConsumer, err = svc.serviceList.GetGraphDB(ctx)
-		if err != nil {
-			log.Fatal(ctx, "failed to initialise graph driver", err)
-			return err
-		}
+	if err := svc.initGraphDB(ctx); err != nil {
+		return err
 	}
+
 	ds := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB}}
 
 	// Get GenerateDownloads Kafka Producer
@@ -152,7 +231,14 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		models.CantabularFlexibleTable:     downloadGeneratorCantabular,
 		models.CantabularMultivariateTable: downloadGeneratorCantabular,
 		models.Filterable:                  downloadGeneratorCMD,
-		models.Nomis:                       downloadGeneratorCMD,
+	}
+
+	smDownloadGenerators := map[models.DatasetType]application.DownloadsGenerator{
+		models.CantabularBlob:              downloadGeneratorCantabular,
+		models.CantabularTable:             downloadGeneratorCantabular,
+		models.CantabularFlexibleTable:     downloadGeneratorCantabular,
+		models.CantabularMultivariateTable: downloadGeneratorCantabular,
+		models.Filterable:                  downloadGeneratorCMD,
 	}
 
 	// Get Identity Client (only if private endpoints are enabled)
@@ -174,12 +260,6 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	r := mux.NewRouter()
 	m := svc.createMiddleware(svc.config)
 
-	methodsOk := handlers.AllowedMethods([]string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodHead, http.MethodOptions})
-	headersOk := handlers.AllowedHeaders([]string{"Accept", "Accept-Language", "Content-Language", "Origin", "X-Requested-With", "Content-Type", "Authorization", "X-Florence-Token"})
-	originsOk := handlers.AllowedOrigins([]string{"http://localhost:3000", "localhost:3000"})
-
-	m = m.Append(handlers.CORS(originsOk, headersOk, methodsOk))
-
 	if svc.config.OtelEnabled {
 		r.Use(otelmux.Middleware(svc.config.OTServiceName))
 		svc.server = svc.serviceList.GetHTTPServer(svc.config.BindAddr, m.Then(otelhttp.NewHandler(r, "/")))
@@ -188,9 +268,26 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	}
 
 	// Create Dataset API
-	urlBuilder := url.NewBuilder(svc.config.WebsiteURL)
+	urlBuilder, err := createURLBuilder(svc.config)
+	if err != nil {
+		log.Error(ctx, "failed to create URL builder", err)
+		return err
+	}
+
+	enableURLRewriting := svc.config.EnableURLRewriting
+	if enableURLRewriting {
+		log.Info(ctx, "URL rewriting enabled")
+	}
+
+	enableStateMachine := svc.config.EnableStateMachine
+	if enableStateMachine {
+		log.Info(ctx, "State machine enabled")
+	}
+
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions)
+	sm := GetStateMachine(ctx, ds)
+	svc.smDS = application.Setup(ds, smDownloadGenerators, sm)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, svc.smDS, enableStateMachine)
 
 	svc.healthCheck.Start(ctx)
 
@@ -208,6 +305,64 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	}()
 
 	return nil
+}
+
+func (svc *Service) initMongoDB(ctx context.Context) error {
+	var err error
+	svc.mongoDB, err = svc.serviceList.GetMongoDB(ctx, svc.config.MongoConfig)
+	if err != nil {
+		log.Error(ctx, "could not obtain mongo session", err)
+	}
+	return err
+}
+
+func (svc *Service) initGraphDB(ctx context.Context) error {
+	var err error
+	if !svc.config.EnablePrivateEndpoints || svc.config.DisableGraphDBDependency {
+		log.Info(ctx, "skipping graph DB client creation, because it is not required by the enabled endpoints", log.Data{
+			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
+		})
+		svc.graphDB = &storetest.GraphDBMock{
+			SetInstanceIsPublishedFunc: func(context.Context, string) error {
+				return nil
+			},
+		}
+	} else {
+		svc.graphDB, svc.graphDBErrorConsumer, err = svc.serviceList.GetGraphDB(ctx)
+		if err != nil {
+			log.Fatal(ctx, "failed to initialise graph driver", err)
+		}
+	}
+	return err
+}
+
+func createURLBuilder(config *config.Configuration) (*url.Builder, error) {
+	websiteURL, err := neturl.Parse(config.WebsiteURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse websiteURL from config")
+	}
+
+	downloadServiceURL, err := neturl.Parse(config.DownloadServiceURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse downloadServiceURL from config")
+	}
+
+	datasetAPIURL, err := neturl.Parse(config.DatasetAPIURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse datasetAPIURL from config")
+	}
+
+	codeListAPIURL, err := neturl.Parse(config.CodeListAPIURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse codeListAPIURL from config")
+	}
+
+	importAPIURL, err := neturl.Parse(config.ImportAPIURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse importAPIURL from config")
+	}
+
+	return url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL), nil
 }
 
 func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (datasetPermissions, permissions api.AuthHandler) {

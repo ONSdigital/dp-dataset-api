@@ -29,6 +29,7 @@ func WellKnownTestTime() time.Time {
 
 func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^private endpoints are enabled$`, c.privateEndpointsAreEnabled)
+	ctx.Step(`^URL rewriting is enabled$`, c.URLRewritingIsEnabled)
 	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, c.theDocumentInTheDatabaseForIDShouldBe)
 	ctx.Step(`^the instance in the database for id "([^"]*)" should be:$`, c.theInstanceInTheDatabaseForIDShouldBe)
 	ctx.Step(`^the version in the database for id "([^"]*)" should be:$`, c.theVersionInTheDatabaseForIDShouldBe)
@@ -43,6 +44,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I have a real kafka container with topic "([^"]*)"$`, c.iHaveARealKafkaContainerWithTopic)
 	ctx.Step(`^these cantabular generator downloads events are produced:$`, c.theseCantabularGeneratorDownloadsEventsAreProduced)
 	ctx.Step(`^these generate downloads events are produced:$`, c.theseGenerateDownloadsEventsAreProduced)
+	ctx.Step(`^the state machine is enabled$`, c.StateMachineIsEnabled)
 }
 
 func (c *DatasetComponent) thereAreNoDatasets() error {
@@ -51,6 +53,16 @@ func (c *DatasetComponent) thereAreNoDatasets() error {
 
 func (c *DatasetComponent) privateEndpointsAreEnabled() error {
 	c.Config.EnablePrivateEndpoints = true
+	return nil
+}
+
+func (c *DatasetComponent) URLRewritingIsEnabled() error {
+	c.Config.EnableURLRewriting = true
+	return nil
+}
+
+func (c *DatasetComponent) StateMachineIsEnabled() error {
+	c.Config.EnableStateMachine = true
 	return nil
 }
 

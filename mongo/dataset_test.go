@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/smartystreets/goconvey/convey"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -19,53 +19,53 @@ var (
 
 func TestBuildEditionsQuery(t *testing.T) {
 	t.Parallel()
-	Convey("When no state was set and the request is authorised then the selector only queries by id", t, func() {
+	convey.Convey("When no state was set and the request is authorised then the selector only queries by id", t, func() {
 		selector := buildEditionsQuery(id, "", true)
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldHaveLength, 1)
-		So(selector["next.links.dataset.id"], ShouldEqual, id)
+		convey.So(selector, convey.ShouldNotBeNil)
+		convey.So(selector, convey.ShouldHaveLength, 1)
+		convey.So(selector["next.links.dataset.id"], convey.ShouldEqual, id)
 	})
 
-	Convey("When no state was set and the request is not authorised then the selector queries by id and current must exist", t, func() {
+	convey.Convey("When no state was set and the request is not authorised then the selector queries by id and current must exist", t, func() {
 		selector := buildEditionsQuery(id, "", false)
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldHaveLength, 2)
-		So(selector["next.links.dataset.id"], ShouldEqual, id)
-		So(selector["current"], ShouldResemble, bson.M{"$exists": true})
+		convey.So(selector, convey.ShouldNotBeNil)
+		convey.So(selector, convey.ShouldHaveLength, 2)
+		convey.So(selector["next.links.dataset.id"], convey.ShouldEqual, id)
+		convey.So(selector["current"], convey.ShouldResemble, bson.M{"$exists": true})
 	})
 
-	Convey("When state was set to published and request is authorised then the selector queries by id and state", t, func() {
+	convey.Convey("When state was set to published and request is authorised then the selector queries by id and state", t, func() {
 		selector := buildEditionsQuery(id, state, true)
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldHaveLength, 2)
-		So(selector["next.links.dataset.id"], ShouldEqual, id)
-		So(selector["current.state"], ShouldEqual, state)
+		convey.So(selector, convey.ShouldNotBeNil)
+		convey.So(selector, convey.ShouldHaveLength, 2)
+		convey.So(selector["next.links.dataset.id"], convey.ShouldEqual, id)
+		convey.So(selector["current.state"], convey.ShouldEqual, state)
 	})
 
-	Convey("When state was set to published and request is not authorised then the selector queries by id, state and current must exist", t, func() {
+	convey.Convey("When state was set to published and request is not authorised then the selector queries by id, state and current must exist", t, func() {
 		selector := buildEditionsQuery(id, state, false)
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldHaveLength, 3)
-		So(selector["next.links.dataset.id"], ShouldEqual, id)
-		So(selector["current.state"], ShouldEqual, state)
-		So(selector["current"], ShouldResemble, bson.M{"$exists": true})
+		convey.So(selector, convey.ShouldNotBeNil)
+		convey.So(selector, convey.ShouldHaveLength, 3)
+		convey.So(selector["next.links.dataset.id"], convey.ShouldEqual, id)
+		convey.So(selector["current.state"], convey.ShouldEqual, state)
+		convey.So(selector["current"], convey.ShouldResemble, bson.M{"$exists": true})
 	})
 }
 
 func TestBuildEditionQuery(t *testing.T) {
 	t.Parallel()
-	Convey("When no state was set", t, func() {
+	convey.Convey("When no state was set", t, func() {
 		expectedSelector := bson.M{
 			"next.links.dataset.id": id,
 			"next.edition":          editionID,
 		}
 
 		selector := buildEditionQuery(id, editionID, "")
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldResemble, expectedSelector)
+		convey.So(selector, convey.ShouldNotBeNil)
+		convey.So(selector, convey.ShouldResemble, expectedSelector)
 	})
 
-	Convey("When state was set to published", t, func() {
+	convey.Convey("When state was set to published", t, func() {
 		expectedSelector := bson.M{
 			"current.links.dataset.id": id,
 			"current.edition":          editionID,
@@ -73,14 +73,14 @@ func TestBuildEditionQuery(t *testing.T) {
 		}
 
 		selector := buildEditionQuery(id, editionID, state)
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldResemble, expectedSelector)
+		convey.So(selector, convey.ShouldNotBeNil)
+		convey.So(selector, convey.ShouldResemble, expectedSelector)
 	})
 }
 
 func TestBuildVersionsQuery(t *testing.T) {
 	t.Parallel()
-	Convey("When no state was set", t, func() {
+	convey.Convey("When no state was set", t, func() {
 		expectedSelector := bson.M{
 			"links.dataset.id": id,
 			"edition":          editionID,
@@ -92,11 +92,11 @@ func TestBuildVersionsQuery(t *testing.T) {
 		}
 
 		selector := buildVersionsQuery(id, editionID, "")
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldResemble, expectedSelector)
+		convey.So(selector, convey.ShouldNotBeNil)
+		convey.So(selector, convey.ShouldResemble, expectedSelector)
 	})
 
-	Convey("When state was set to published", t, func() {
+	convey.Convey("When state was set to published", t, func() {
 		expectedSelector := bson.M{
 			"links.dataset.id": id,
 			"edition":          editionID,
@@ -104,14 +104,14 @@ func TestBuildVersionsQuery(t *testing.T) {
 		}
 
 		selector := buildVersionsQuery(id, editionID, state)
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldResemble, expectedSelector)
+		convey.So(selector, convey.ShouldNotBeNil)
+		convey.So(selector, convey.ShouldResemble, expectedSelector)
 	})
 }
 
 func TestBuildVersionQuery(t *testing.T) {
 	t.Parallel()
-	Convey("When no state was set", t, func() {
+	convey.Convey("When no state was set", t, func() {
 		expectedSelector := bson.M{
 			"links.dataset.id": id,
 			"edition":          editionID,
@@ -119,11 +119,11 @@ func TestBuildVersionQuery(t *testing.T) {
 		}
 
 		selector := buildVersionQuery(id, editionID, "", versionID)
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldResemble, expectedSelector)
+		convey.So(selector, convey.ShouldNotBeNil)
+		convey.So(selector, convey.ShouldResemble, expectedSelector)
 	})
 
-	Convey("When state was set to published", t, func() {
+	convey.Convey("When state was set to published", t, func() {
 		expectedSelector := bson.M{
 			"links.dataset.id": id,
 			"edition":          editionID,
@@ -132,14 +132,14 @@ func TestBuildVersionQuery(t *testing.T) {
 		}
 
 		selector := buildVersionQuery(id, editionID, state, versionID)
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldResemble, expectedSelector)
+		convey.So(selector, convey.ShouldNotBeNil)
+		convey.So(selector, convey.ShouldResemble, expectedSelector)
 	})
 }
 
 func TestDatasetUpdateQuery(t *testing.T) {
 	t.Parallel()
-	Convey("When all possible fields exist", t, func() {
+	convey.Convey("When all possible fields exist", t, func() {
 		contact := models.ContactDetails{
 			Email:     "njarrod@test.com",
 			Name:      "natalie jarrod",
@@ -216,8 +216,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			"next.theme":                    "construction",
 			"next.title":                    "CPI",
 			"next.uri":                      "http://ons.gov.uk/datasets/123/landing-page",
-			"next.type":                     "nomis",
-			"next.nomis_reference_url":      "https://www.nomisweb.co.uk/census/2011/ks106ew",
+			"next.type":                     "filterable",
 			"next.canonical_topic":          canonicalTopic,
 			"next.subtopics":                subtopics,
 			"next.survey":                   survey,
@@ -244,26 +243,25 @@ func TestDatasetUpdateQuery(t *testing.T) {
 				Type: "Public",
 				HRef: "http://ons.gov.uk",
 			},
-			QMI:               &qmi,
-			RelatedDatasets:   relatedDatasets,
-			ReleaseFrequency:  "yearly",
-			Theme:             "construction",
-			Title:             "CPI",
-			URI:               "http://ons.gov.uk/datasets/123/landing-page",
-			Type:              "nomis",
-			NomisReferenceURL: "https://www.nomisweb.co.uk/census/2011/ks106ew",
-			CanonicalTopic:    canonicalTopic,
-			Subtopics:         subtopics,
-			Survey:            survey,
-			RelatedContent:    relatedContent,
+			QMI:              &qmi,
+			RelatedDatasets:  relatedDatasets,
+			ReleaseFrequency: "yearly",
+			Theme:            "construction",
+			Title:            "CPI",
+			URI:              "http://ons.gov.uk/datasets/123/landing-page",
+			Type:             "filterable",
+			CanonicalTopic:   canonicalTopic,
+			Subtopics:        subtopics,
+			Survey:           survey,
+			RelatedContent:   relatedContent,
 		}
 
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldResemble, expectedUpdate)
+		convey.So(selector, convey.ShouldNotBeNil)
+		convey.So(selector, convey.ShouldResemble, expectedUpdate)
 	})
 
-	Convey("When national statistic is set to false", t, func() {
+	convey.Convey("When national statistic is set to false", t, func() {
 		nationalStatistic := false
 		dataset := &models.Dataset{
 			NationalStatistic: &nationalStatistic,
@@ -274,14 +272,14 @@ func TestDatasetUpdateQuery(t *testing.T) {
 		}
 
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldResemble, expectedUpdate)
+		convey.So(selector, convey.ShouldNotBeNil)
+		convey.So(selector, convey.ShouldResemble, expectedUpdate)
 	})
 }
 
 func TestVersionUpdateQuery(t *testing.T) {
 	t.Parallel()
-	Convey("When all possible fields exist", t, func() {
+	convey.Convey("When all possible fields exist", t, func() {
 		temporal := models.TemporalFrequency{
 			EndDate:   "2017-09-09",
 			Frequency: "monthly",
@@ -310,7 +308,7 @@ func TestVersionUpdateQuery(t *testing.T) {
 		}
 
 		selector := createVersionUpdateQuery(version, "newETag")
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldResemble, expectedUpdate)
+		convey.So(selector, convey.ShouldNotBeNil)
+		convey.So(selector, convey.ShouldResemble, expectedUpdate)
 	})
 }

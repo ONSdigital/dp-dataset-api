@@ -13,8 +13,11 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/url"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
+	"github.com/ONSdigital/dp-net/v2/links"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -26,6 +29,8 @@ type Store struct {
 	store.Storer
 	Host                string
 	EnableDetachDataset bool
+	URLBuilder          *url.Builder
+	EnableURLRewriting  bool
 }
 
 type taskError struct {
@@ -75,6 +80,19 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit, offset in
 			return nil, 0, err
 		}
 
+		if s.EnableURLRewriting {
+			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetDatasetAPIURL())
+			codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetCodeListAPIURL())
+			importLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetImportAPIURL())
+
+			err = utils.RewriteInstances(ctx, instancesResults, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
+			if err != nil {
+				log.Error(ctx, "get instances endpoint: failed to rewrite instances", err, logData)
+				handleInstanceErr(ctx, err, w, logData)
+				return nil, 0, err
+			}
+		}
+
 		return instancesResults, instancesTotalCount, nil
 	}()
 
@@ -115,6 +133,19 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if s.EnableURLRewriting {
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetDatasetAPIURL())
+		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetCodeListAPIURL())
+		importLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetImportAPIURL())
+
+		err = utils.RewriteInstances(ctx, []*models.Instance{instance}, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
+		if err != nil {
+			log.Error(ctx, "get instance: failed to rewrite instance", err, logData)
+			handleInstanceErr(ctx, err, w, logData)
+			return
+		}
+	}
+
 	log.Info(ctx, "get instance: marshalling instance json", logData)
 	b, err := json.Marshal(instance)
 	if err != nil {
@@ -140,15 +171,11 @@ func (s *Store) Add(w http.ResponseWriter, r *http.Request) {
 
 	log.Info(ctx, "add instance", logData)
 
-	instance, err := unmarshalInstance(ctx, r.Body, true)
+	instance, err := UnmarshalInstance(ctx, r.Body, true)
 	if err != nil {
 		handleInstanceErr(ctx, err, w, logData)
 		return
 	}
-
-	fmt.Println("THE INSTANCE REQUEST IS")
-	jsonBytes, err := json.Marshal(instance)
-	fmt.Println(string(jsonBytes), err)
 
 	logData["instance_id"] = instance.InstanceID
 
@@ -199,7 +226,7 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 
 	logData := log.Data{"instance_id": instanceID}
 
-	instance, err := unmarshalInstance(ctx, r.Body, false)
+	instance, err := UnmarshalInstance(ctx, r.Body, false)
 	if err != nil {
 		log.Error(ctx, "update instance: failed unmarshalling json to model", err, logData)
 		handleInstanceErr(ctx, taskError{error: err, status: 400}, w, logData)
@@ -210,10 +237,6 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		handleInstanceErr(ctx, taskError{error: err, status: 400}, w, logData)
 		return
 	}
-
-	fmt.Println("THE PUT INSTANCE IS")
-	jsonBytes, err := json.Marshal(instance)
-	fmt.Println(string(jsonBytes), err) // {"message":"hello"} <nil>
 
 	// acquire instance lock so that the dp-graph call to AddVersionDetailsToInstance and the mongoDB update are atomic
 	lockID, err := s.AcquireInstanceLock(ctx, instanceID)
@@ -276,17 +299,15 @@ func (s *Store) Update(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// update dp-graph instance node (only for non-cantabular types)
-		if currentInstance.Type == models.CantabularBlob.String() || currentInstance.Type == models.CantabularTable.String() || currentInstance.Type == models.CantabularFlexibleTable.String() || currentInstance.Type == models.CantabularMultivariateTable.String() {
+		if currentInstance.Type == models.CantabularBlob.String() || currentInstance.Type == models.CantabularTable.String() || currentInstance.Type == models.CantabularFlexibleTable.String() || currentInstance.Type == models.CantabularMultivariateTable.String() || currentInstance.Type == models.Static.String() {
 			editionLogData["instance_type"] = instance.Type
 			log.Info(ctx, "skipping dp-graph instance update because it is not required by instance type", editionLogData)
 		} else {
-
-			// if versionErr := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); versionErr != nil {
-			// 	log.Error(ctx, "update instance: datastore.AddVersionDetailsToInstance returned an error", versionErr, editionLogData)
-			// 	handleInstanceErr(ctx, versionErr, w, logData)
-			// 	return
-			// }
-
+			if versionErr := s.AddVersionDetailsToInstance(ctx, currentInstance.InstanceID, datasetID, edition, instance.Version); versionErr != nil {
+				log.Error(ctx, "update instance: datastore.AddVersionDetailsToInstance returned an error", versionErr, editionLogData)
+				handleInstanceErr(ctx, versionErr, w, logData)
+				return
+			}
 		}
 
 		log.Info(ctx, "update instance: added version details to instance", editionLogData)
@@ -402,7 +423,7 @@ func validateInstanceStateUpdate(instance, currentInstance *models.Instance) (er
 	return nil
 }
 
-func unmarshalInstance(ctx context.Context, reader io.Reader, post bool) (*models.Instance, error) {
+func UnmarshalInstance(ctx context.Context, reader io.Reader, post bool) (*models.Instance, error) {
 	b, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, errs.ErrUnableToReadMessage
@@ -451,9 +472,6 @@ func unmarshalInstance(ctx context.Context, reader io.Reader, post bool) (*model
 			instance.State = models.CreatedState
 		}
 	}
-
-	fmt.Println("THE CONVERTED INSTANCE REQUEST IS")
-	fmt.Println(&instance)
 	return &instance, nil
 }
 

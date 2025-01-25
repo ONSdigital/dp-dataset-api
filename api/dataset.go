@@ -9,9 +9,14 @@ import (
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/utils"
+	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
+	"github.com/ONSdigital/dp-net/v2/links"
 	"github.com/ONSdigital/log.go/v2/log"
+	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -39,6 +44,7 @@ var (
 	resourcesNotFound = map[error]bool{
 		errs.ErrDatasetNotFound:  true,
 		errs.ErrEditionsNotFound: true,
+		errs.ErrEditionNotFound:  true,
 	}
 )
 
@@ -78,6 +84,30 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
+	if api.enableURLRewriting {
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+
+		if authorised {
+			datasetsResponse, err := utils.RewriteDatasetsWithAuth(ctx, datasets, datasetLinksBuilder)
+			if err != nil {
+				log.Error(ctx, "getDatasets endpoint: failed to rewrite datasets with auth", err)
+				handleDatasetAPIErr(ctx, err, w, logData)
+				return nil, 0, err
+			}
+			log.Info(ctx, "getDatasets endpoint: get all datasets with auth", logData)
+			return datasetsResponse, totalCount, nil
+		}
+
+		datasetsResponse, err := utils.RewriteDatasetsWithoutAuth(ctx, datasets, datasetLinksBuilder)
+		if err != nil {
+			log.Error(ctx, "getDatasets endpoint: failed to rewrite datasets without authorisation", err)
+			handleDatasetAPIErr(ctx, err, w, logData)
+			return nil, 0, err
+		}
+		log.Info(ctx, "getDatasets endpoint: get all datasets without auth", logData)
+		return datasetsResponse, totalCount, nil
+	}
+
 	if authorised {
 		return datasets, totalCount, nil
 	}
@@ -85,6 +115,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 	return mapResults(datasets), totalCount, nil
 }
 
+//nolint:gocognit // cognitive complexity (> 30) is acceptable for now
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -100,36 +131,59 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 		authorised := api.authenticate(r, logData)
 
-		var b []byte
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+
 		var datasetResponse interface{}
 
-		if !authorised {
-			// User is not authenticated and hence has only access to current sub document
-			if dataset.Current == nil {
-				log.Info(ctx, "getDataset endpoint: published dataset not found", logData)
-				return nil, errs.ErrDatasetNotFound
+		if api.enableURLRewriting {
+			if authorised {
+				datasetResponse, err = utils.RewriteDatasetWithAuth(ctx, dataset, datasetLinksBuilder)
+				if err != nil {
+					log.Error(ctx, "getDataset endpoint: failed to rewrite dataset with authorisation", err, logData)
+					return nil, err
+				}
+				log.Info(ctx, "getDataset endpoint: get dataset with auth", logData)
+			} else {
+				datasetResponse, err = utils.RewriteDatasetWithoutAuth(ctx, dataset, datasetLinksBuilder)
+				if err != nil {
+					log.Error(ctx, "getDataset endpoint: failed to rewrite dataset without authorisation", err, logData)
+					return nil, err
+				}
+				log.Info(ctx, "getDataset endpoint: get dataset without auth", logData)
 			}
-			log.Info(ctx, "getDataset endpoint: caller not authorised returning dataset", logData)
-
-			dataset.Current.ID = dataset.ID
-			datasetResponse = dataset.Current
 		} else {
-			// User has valid authentication to get raw dataset document
-			if dataset == nil {
-				log.Info(ctx, "getDataset endpoint: published or unpublished dataset not found", logData)
-				return nil, errs.ErrDatasetNotFound
-			}
-			log.Info(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", logData)
+			if !authorised {
+				// User is not authenticated and hence has only access to current sub document
+				if dataset.Current == nil {
+					log.Info(ctx, "getDataset endpoint: published dataset not found", logData)
+					return nil, errs.ErrDatasetNotFound
+				}
+				log.Info(ctx, "getDataset endpoint: caller not authorised returning dataset", logData)
 
-			datasetResponse = dataset
+				dataset.Current.ID = dataset.ID
+				if dataset.Current.Themes == nil {
+					dataset.Current.Themes = utils.BuildThemes(dataset.Current.CanonicalTopic, dataset.Current.Subtopics)
+				}
+				datasetResponse = dataset.Current
+			} else {
+				// User has valid authentication to get raw dataset document
+				if dataset == nil {
+					log.Info(ctx, "getDataset endpoint: published or unpublished dataset not found", logData)
+					return nil, errs.ErrDatasetNotFound
+				}
+				log.Info(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", logData)
+				if dataset.Current != nil && dataset.Current.Themes == nil {
+					dataset.Current.Themes = utils.BuildThemes(dataset.Current.CanonicalTopic, dataset.Current.Subtopics)
+				}
+				datasetResponse = dataset
+			}
 		}
 
-		b, err = json.Marshal(datasetResponse)
+		b, err := json.Marshal(datasetResponse)
 		if err != nil {
 			log.Error(ctx, "getDataset endpoint: failed to marshal dataset resource into bytes", err, logData)
 			return nil, err
 		}
-
 		return b, nil
 	}()
 
@@ -180,12 +234,6 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		datasetType, err := models.ValidateNomisURL(ctx, dataType.String(), dataset.NomisReferenceURL)
-		if err != nil {
-			log.Error(ctx, "addDataset endpoint: error dataset.Type mismatch", err, logData)
-			return nil, err
-		}
-
 		models.CleanDataset(dataset)
 
 		if err = models.ValidateDataset(dataset); err != nil {
@@ -193,7 +241,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		dataset.Type = datasetType
+		dataset.Type = dataType.String()
 		dataset.State = models.CreatedState
 		dataset.ID = datasetID
 
@@ -225,6 +273,16 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
+		if api.enableURLRewriting {
+			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+
+			err = utils.RewriteDatasetLinks(ctx, datasetDoc.Next.Links, datasetLinksBuilder)
+			if err != nil {
+				log.Error(ctx, "addDataset endpoint: failed to rewrite links for response", err)
+				return nil, err
+			}
+		}
+
 		b, err := json.Marshal(datasetDoc)
 		if err != nil {
 			log.Error(ctx, "addDataset endpoint: failed to marshal dataset resource into bytes", err, logData)
@@ -247,6 +305,116 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "addDataset endpoint: request completed successfully", logData)
 }
 
+func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
+	defer dphttp.DrainBody(r)
+
+	ctx := r.Context()
+
+	dataset, err := models.CreateDataset(r.Body)
+	if err != nil {
+		log.Error(ctx, "addDatasetNew endpoint: failed to model dataset resource based on request", err, nil)
+		handleDatasetAPIErr(ctx, errs.ErrAddUpdateDatasetBadRequest, w, nil)
+		return
+	}
+
+	datasetID := dataset.ID
+
+	if datasetID == "" {
+		log.Error(ctx, "addDatasetNew endpoint: dataset ID is empty", nil)
+		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetID, w, nil)
+		return
+	}
+
+	logData := log.Data{"dataset_id": datasetID}
+
+	_, err = api.dataStore.Backend.GetDataset(ctx, datasetID)
+	if err == nil {
+		log.Error(ctx, "addDatasetNew endpoint: unable to create a dataset that already exists", errs.ErrAddDatasetAlreadyExists, logData)
+		handleDatasetAPIErr(ctx, errs.ErrAddDatasetAlreadyExists, w, logData)
+		return
+	}
+	if err != errs.ErrDatasetNotFound {
+		log.Error(ctx, "addDatasetNew endpoint: error checking if dataset exists", err, logData)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	dataType, err := models.ValidateDatasetType(ctx, dataset.Type)
+	if err != nil {
+		log.Error(ctx, "addDatasetNew endpoint: error Invalid dataset type", err, logData)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	models.CleanDataset(dataset)
+	if err = models.ValidateDataset(dataset); err != nil {
+		log.Error(ctx, "addDatasetNew endpoint: dataset failed validation checks", err)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	dataset.Type = dataType.String()
+	dataset.State = models.CreatedState
+
+	if dataset.Links == nil {
+		dataset.Links = &models.DatasetLinks{}
+	}
+
+	dataset.Links.Editions = &models.LinkObject{
+		HRef: fmt.Sprintf("%s/datasets/%s/editions", api.host, datasetID),
+	}
+
+	dataset.Links.Self = &models.LinkObject{
+		HRef: fmt.Sprintf("%s/datasets/%s", api.host, datasetID),
+	}
+
+	dataset.Links.LatestVersion = nil
+
+	dataset.LastUpdated = time.Now()
+
+	if dataset.Themes == nil {
+		dataset.Themes = utils.BuildThemes(dataset.CanonicalTopic, dataset.Subtopics)
+	}
+
+	datasetDoc := &models.DatasetUpdate{
+		ID:   datasetID,
+		Next: dataset,
+	}
+
+	if err = api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
+		logData["new_dataset"] = datasetID
+		log.Error(ctx, "addDatasetNew endpoint: failed to insert dataset resource to datastore", err, logData)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	if api.enableURLRewriting {
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+
+		err = utils.RewriteDatasetLinks(ctx, datasetDoc.Next.Links, datasetLinksBuilder)
+		if err != nil {
+			log.Error(ctx, "addDatasetNew endpoint: failed to rewrite links for response", err)
+			handleDatasetAPIErr(ctx, err, w, logData)
+			return
+		}
+	}
+
+	b, err := json.Marshal(datasetDoc)
+	if err != nil {
+		log.Error(ctx, "addDatasetNew endpoint: failed to marshal dataset resource into bytes", err, logData)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	setJSONContentType(w)
+	w.WriteHeader(http.StatusCreated)
+	if _, err = w.Write(b); err != nil {
+		log.Error(ctx, "addDatasetNew endpoint: error writing bytes to response", err, logData)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	log.Info(ctx, "addDatasetNew endpoint: request completed successfully", logData)
+}
+
 func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	defer dphttp.DrainBody(r)
 
@@ -261,9 +429,6 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "putDataset endpoint: failed to model dataset resource based on request", err, data)
 			return errs.ErrAddUpdateDatasetBadRequest
 		}
-		fmt.Println("THE SUBMITTED PUT DATASET IS")
-		jsonBytes, err := json.Marshal(dataset)
-		fmt.Println(string(jsonBytes), err) // {"message":"hello"} <nil>
 
 		currentDataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
@@ -272,12 +437,6 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		dataset.Type = currentDataset.Next.Type
-
-		_, err = models.ValidateNomisURL(ctx, dataset.Type, dataset.NomisReferenceURL)
-		if err != nil {
-			log.Error(ctx, "putDataset endpoint: error dataset.Type mismatch", err, data)
-			return err
-		}
 
 		models.CleanDataset(dataset)
 
@@ -434,4 +593,126 @@ func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	data["responseStatus"] = status
 	log.Error(ctx, "request unsuccessful", err, data)
 	http.Error(w, err.Error(), status)
+}
+
+// condensed api call to add new version
+func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http.Request) {
+	defer dphttp.DrainBody(r)
+
+	ctx := r.Context()
+	vars := mux.Vars(r)
+	datasetID := vars["dataset_id"]
+	edition := vars["edition"]
+	logData := log.Data{"dataset_id": datasetID, "edition": edition}
+
+	log.Info(ctx, "condensed endpoint called", logData)
+
+	// Validate dataset and edition existence
+	if err := api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, ""); err != nil {
+		log.Error(ctx, "failed to find dataset", err, logData)
+		handleDatasetAPIErr(ctx, errs.ErrDatasetNotFound, w, nil)
+		return
+	}
+	if err := api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, ""); err != nil {
+		log.Error(ctx, "failed to find edition", err, logData)
+		handleDatasetAPIErr(ctx, errs.ErrEditionNotFound, w, nil)
+		return
+	}
+
+	// Unmarshal instance from the request body
+	newInstance, err := instance.UnmarshalInstance(ctx, r.Body, true)
+	if err != nil {
+		log.Error(ctx, "failed to unmarshal instance", err, logData)
+		handleDatasetAPIErr(ctx, errs.ErrInvalidQueryParameter, w, nil)
+		return
+	}
+
+	// Set instance attributes and generate links
+	newInstance.Edition = edition
+	nextVersion, err := api.dataStore.Backend.GetNextVersion(ctx, datasetID, edition)
+	if err != nil {
+		log.Error(ctx, "failed to get next version", err, logData)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
+		return
+	}
+	newInstance.Version = nextVersion
+	newInstance.State = models.AssociatedState
+	newInstance.Links = api.generateInstanceLinks(datasetID, newInstance.InstanceID, edition, nextVersion, newInstance.Links)
+
+	// Add instance to the datastore
+	newInstance, err = api.dataStore.Backend.AddInstance(ctx, newInstance)
+	if err != nil {
+		log.Error(ctx, "failed to add instance", err, logData)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
+		return
+	}
+
+	// Update dataset's next object with instance details
+	datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+	if err != nil {
+		log.Error(ctx, "failed to get dataset", err, logData)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
+		return
+	}
+
+	datasetDoc.Next.State = models.AssociatedState
+	datasetDoc.Next.Description = newInstance.Description
+	datasetDoc.Next.Title = newInstance.Title
+	datasetDoc.Next.NextRelease = newInstance.NextRelease
+	datasetDoc.Next.Themes = newInstance.Themes
+	datasetDoc.Next.LastUpdated = newInstance.LastUpdated
+
+	if err := api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
+		log.Error(ctx, "failed to update dataset", err, logData)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
+		return
+	}
+
+	log.Info(ctx, "add instance: request successful", logData)
+
+	setJSONContentType(w)
+	dpresponse.SetETag(w, newInstance.ETag)
+	w.WriteHeader(http.StatusCreated)
+
+	response, err := json.Marshal(newInstance)
+	if err != nil {
+		log.Error(ctx, "failed to marshal instance to JSON", err, logData)
+		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
+		return
+	}
+
+	if _, err := w.Write(response); err != nil {
+		log.Error(ctx, "failed to write response", err, logData)
+	}
+}
+
+func (api *DatasetAPI) generateInstanceLinks(datasetID, instanceID, edition string, version int, existingLinks *models.InstanceLinks) *models.InstanceLinks {
+	jobID, _ := uuid.NewV4()
+
+	spatial := (*models.LinkObject)(nil)
+	if existingLinks != nil && existingLinks.Spatial != nil {
+		spatial = existingLinks.Spatial
+	}
+	return &models.InstanceLinks{
+		Dataset: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s", api.host, datasetID),
+			ID:   datasetID,
+		},
+		Self: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s", api.host, instanceID),
+		},
+		Job: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/jobs/%s", api.host, jobID.String()),
+			ID:   jobID.String(),
+		},
+		Edition: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", api.host, datasetID, edition),
+			ID:   edition,
+		},
+		Version: &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d", api.host, datasetID, edition, version),
+			ID:   fmt.Sprintf("%d", version),
+		},
+		Spatial: spatial,
+	}
 }

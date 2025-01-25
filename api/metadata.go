@@ -2,14 +2,15 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
+	"github.com/ONSdigital/dp-net/v2/links"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -109,6 +110,33 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		if api.enableURLRewriting {
+			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+			codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetCodeListAPIURL())
+			websiteLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetWebsiteURL())
+
+			err = utils.RewriteMetadataLinks(ctx, metaDataDoc.Links, datasetLinksBuilder, websiteLinksBuilder)
+			if err != nil {
+				log.Error(ctx, "getMetadata endpoint: failed to rewrite metadata links", err, logData)
+				handleMetadataErr(w, err)
+				return nil, err
+			}
+
+			metaDataDoc.Dimensions, err = utils.RewriteDimensions(ctx, metaDataDoc.Dimensions, datasetLinksBuilder, codeListLinksBuilder)
+			if err != nil {
+				log.Error(ctx, "getMetadata endpoint: failed to rewrite metadata dimensions", err, logData)
+				handleMetadataErr(w, err)
+				return nil, err
+			}
+
+			err = utils.RewriteDatasetLinks(ctx, metaDataDoc.DatasetLinks, datasetLinksBuilder)
+			if err != nil {
+				log.Error(ctx, "getMetadata endpoint: failed to rewrite dataset links", err, logData)
+				handleMetadataErr(w, err)
+				return nil, err
+			}
+		}
+
 		b, err := json.Marshal(metaDataDoc)
 		if err != nil {
 			log.Error(ctx, "getMetadata endpoint: failed to marshal metadata resource into bytes", err, logData)
@@ -153,10 +181,6 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return errs.ErrUnableToParseJSON
 		}
-
-		fmt.Println("THE METADATA UPDATE REQUEST IS")
-		jsonBytes, err := json.Marshal(payload)
-		fmt.Println(string(jsonBytes), err) // {"message":"hello"} <nil>
 
 		versionNumber, err := models.ParseAndValidateVersionNumber(ctx, version)
 		if err != nil {
