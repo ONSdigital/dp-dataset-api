@@ -3,7 +3,6 @@ package application
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -64,15 +63,11 @@ func (sm *StateMachine) Transition(ctx context.Context, smDS *StateMachineDatase
 	var ok bool
 
 	for state, transitions := range sm.transitions {
-		fmt.Println("THE VERSION UPDATE TYPE IS")
-		fmt.Println(currentVersion.Type)
 		if currentVersion.Type == "" {
 			currentVersion.Type = "v4"
 		}
-		fmt.Println("THE VERSION UPDATE STATE IS")
-		fmt.Println(versionUpdate.State)
+
 		if state.StateVal == versionUpdate.State && state.Type == currentVersion.Type {
-			fmt.Println("GOT IN THE MATCH")
 			for i := 0; i < len(transitions); i++ {
 				if currentVersion.State == transitions[i] {
 					match = true
@@ -83,12 +78,11 @@ func (sm *StateMachine) Transition(ctx context.Context, smDS *StateMachineDatase
 					break
 				}
 			}
-
 		}
 	}
 
 	if !match {
-		return errors.New("State not allowed to transition")
+		return errors.New("state not allowed to transition")
 	}
 
 	err := nextState.EnterFunc(ctx, smDS,
@@ -108,11 +102,9 @@ func NewStateMachine(ctx context.Context, states []State, transitions []Transiti
 		statesMap[state.String()] = state
 	}
 
-	//transitionsMap := make(map[string][]string)
 	transitionsMap := make(map[KeyVal][]string)
 	for _, transition := range transitions {
 		transitionsMap[KeyVal{StateVal: transition.TargetState.String(), Type: transition.Type}] = transition.AlllowedSourceStates
-		//transitionsMap[transition.TargetState.String()][transition.Type] = transition.AlllowedSourceStates
 	}
 
 	sm := &StateMachine{

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"time"
 
 	"io"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	versionPayload           = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04", "state":"edition-confirmed"}`
+	versionPayload           = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04"}`
 	versionAssociatedPayload = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"associated","collection_id":"12345"}`
 	versionPublishedPayload  = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"published","collection_id":"12345"}`
 	testLockID               = "testLockID"
@@ -586,10 +586,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				}, nil
 			},
 			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+				convey.So(isLocked, convey.ShouldBeTrue)
 				return "", nil
-			},
-			UpdateDatasetWithAssociationFunc: func(context.Context, string, string, *models.Version) error {
-				return nil
 			},
 			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 				isLocked = true
@@ -612,6 +610,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 				convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 				convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 2)
+				convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 				convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
 				convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
 				convey.So(mockedDataStore.UpdateVersionCalls()[0].ETagSelector, convey.ShouldEqual, testETag)
@@ -623,7 +622,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			})
 
 			convey.Convey("Then the lock has been acquired and released exactly once", func() {
-				validateLockStateMachine(mockedDataStore)
+				validateLock(mockedDataStore, "789")
 				convey.So(isLocked, convey.ShouldBeFalse)
 			})
 
@@ -635,6 +634,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		convey.Convey("Given a valid request is executed, but the firstUpdate call returns ErrDatasetNotFound", func() {
 			mockedDataStore.UpdateVersionFunc = func(context.Context, *models.Version, *models.Version, string) (string, error) {
+				convey.So(isLocked, convey.ShouldBeTrue)
 				if len(mockedDataStore.UpdateVersionCalls()) == 1 {
 					return "", errs.ErrDatasetNotFound
 				}
@@ -649,6 +649,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 				convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 				convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 3)
+				convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 				convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
 				convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 2)
 				convey.So(mockedDataStore.UpdateVersionCalls()[0].ETagSelector, convey.ShouldEqual, testETag)
@@ -661,7 +662,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			})
 
 			convey.Convey("Then the lock has been acquired and released exactly once", func() {
-				validateLockStateMachine(mockedDataStore)
+				validateLock(mockedDataStore, "789")
 				convey.So(isLocked, convey.ShouldBeFalse)
 			})
 
@@ -698,9 +699,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 					return &models.Version{
-						ID:    "789",
-						Type:  models.Filterable.String(),
-						State: "edition-confirmed", // need to add a state as this is required by the new state machine.  All instances should have a state
+						ID:   "789",
+						Type: models.Filterable.String(),
 					}, nil
 				},
 				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
@@ -726,6 +726,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 			convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 			convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 2)
+			convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 			convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
 			convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
 			convey.So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), convey.ShouldEqual, 1)
@@ -735,7 +736,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			convey.So(len(generatorMock.GenerateCalls()), convey.ShouldEqual, 1)
 
 			convey.Convey("Then the lock has been acquired and released exactly once", func() {
-				validateLockStateMachine(mockedDataStore)
+				validateLock(mockedDataStore, "789")
 				convey.So(isLocked, convey.ShouldBeFalse)
 			})
 
@@ -777,9 +778,10 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 			convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 			convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 2)
+			convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 			convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
-			convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 0)                // updated to 0 as there us no state provided so state machine fails
-			convey.So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), convey.ShouldEqual, 0) // updated to 0 as there us no state provided so state machine fails
+			convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
+			convey.So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), convey.ShouldEqual, 1)
 			convey.So(len(mockedDataStore.UpsertEditionCalls()), convey.ShouldEqual, 0)
 			convey.So(len(mockedDataStore.SetInstanceIsPublishedCalls()), convey.ShouldEqual, 0)
 			convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
@@ -802,9 +804,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 					return &models.Version{
-						ID:    "789",
-						Type:  models.CantabularTable.String(),
-						State: "edition-confirmed",
+						ID:   "789",
+						Type: models.CantabularFlexibleTable.String(),
 					}, nil
 				},
 				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
@@ -830,6 +831,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 			convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 			convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 2)
+			convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 			convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
 			convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
 			convey.So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), convey.ShouldEqual, 1)
@@ -839,7 +841,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			convey.So(len(generatorMock.GenerateCalls()), convey.ShouldEqual, 1)
 
 			convey.Convey("Then the lock has been acquired and released exactly once", func() {
-				validateLockStateMachine(mockedDataStore)
+				validateLock(mockedDataStore, "789")
 				convey.So(isLocked, convey.ShouldBeFalse)
 			})
 
@@ -876,7 +878,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{
 					ID:    "789",
-					Type:  models.CantabularTable.String(),
 					State: models.EditionConfirmedState,
 				}, nil
 			},
@@ -915,6 +916,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 2)
 		convey.So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), convey.ShouldEqual, 1)
@@ -924,7 +926,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		convey.So(len(generatorMock.GenerateCalls()), convey.ShouldEqual, 1)
 
 		convey.Convey("Then the lock has been acquired and released exactly once", func() {
-			validateLockStateMachine(mockedDataStore)
+			validateLock(mockedDataStore, "789")
 			convey.So(isLocked, convey.ShouldBeFalse)
 		})
 
@@ -1058,7 +1060,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			convey.So(generatorMock.GenerateCalls()[0].InstanceID, convey.ShouldEqual, "789")
 
 			convey.Convey("Then the lock has been acquired and released exactly once", func() {
-				validateLockStateMachine(mockedDataStore)
+				validateLock(mockedDataStore, "789")
 				convey.So(isLocked, convey.ShouldBeFalse)
 			})
 
@@ -1106,7 +1108,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 							},
 						},
 						State: models.EditionConfirmedState,
-						Type:  models.CantabularTable.String(),
+						Type:  models.CantabularFlexibleTable.String(),
 					}, nil
 				},
 				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
@@ -1177,7 +1179,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			convey.So(generatorMock.GenerateCalls()[0].InstanceID, convey.ShouldEqual, "789")
 
 			convey.Convey("Then the lock has been acquired and released exactly once", func() {
-				validateLockStateMachine(mockedDataStore)
+				validateLock(mockedDataStore, "789")
 				convey.So(isLocked, convey.ShouldBeFalse)
 			})
 
@@ -1226,6 +1228,13 @@ func updateVersionDownloadTest(r *http.Request) {
 
 	isLocked := false
 	mockedDataStore := &storetest.StorerMock{
+		GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+			return &models.DatasetUpdate{
+				ID:      "123",
+				Next:    &models.Dataset{Links: &models.DatasetLinks{}},
+				Current: &models.Dataset{Links: &models.DatasetLinks{}},
+			}, nil
+		},
 		CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 			return nil
 		},
@@ -1271,27 +1280,8 @@ func updateVersionDownloadTest(r *http.Request) {
 				ID: "123",
 				Next: &models.Edition{
 					State: models.PublishedState,
-					Links: &models.EditionUpdateLinks{
-						Self: &models.LinkObject{
-							HRef: "http://localhost:22000/datasets/123/editions/2017",
-						},
-						LatestVersion: &models.LinkObject{
-							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
-							ID:   "1",
-						},
-					},
 				},
-				Current: &models.Edition{
-					Links: &models.EditionUpdateLinks{
-						Self: &models.LinkObject{
-							HRef: "http://localhost:22000/datasets/123/editions/2017",
-						},
-						LatestVersion: &models.LinkObject{
-							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
-							ID:   "1",
-						},
-					},
-				},
+				Current: &models.Edition{},
 			}, nil
 		},
 		AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
@@ -1311,6 +1301,7 @@ func updateVersionDownloadTest(r *http.Request) {
 	convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
 	convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 	convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
+	convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 	convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
 	convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 2)
 	convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
@@ -1321,7 +1312,7 @@ func updateVersionDownloadTest(r *http.Request) {
 	convey.So(len(generatorMock.GenerateCalls()), convey.ShouldEqual, 0)
 
 	convey.Convey("Then the lock has been acquired and released exactly once", func() {
-		validateLockStateMachine(mockedDataStore)
+		validateLock(mockedDataStore, "789")
 		convey.So(isLocked, convey.ShouldBeFalse)
 	})
 }
@@ -1392,6 +1383,9 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 
 				genCalls := mockDownloadGenerator.GenerateCalls()
 
+				convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
+				convey.So(mockedDataStore.GetDatasetCalls()[0].ID, convey.ShouldEqual, "123")
+
 				convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
 				convey.So(mockedDataStore.CheckEditionExistsCalls()[0].ID, convey.ShouldEqual, "123")
 				convey.So(mockedDataStore.CheckEditionExistsCalls()[0].EditionID, convey.ShouldEqual, "2017")
@@ -1409,7 +1403,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 			})
 
 			convey.Convey("Then the lock has been acquired and released exactly once", func() {
-				validateLockStateMachine(mockedDataStore)
+				validateLock(mockedDataStore, "789")
 				convey.So(isLocked, convey.ShouldBeFalse)
 			})
 
@@ -1424,11 +1418,11 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 func TestPutEmptyVersion(t *testing.T) {
 	getVersionAssociatedModel := func(datasetType models.DatasetType) models.Version {
 		var v models.Version
-		err := json.Unmarshal([]byte(versionAssociatedPayload), &v)
-		convey.So(err, convey.ShouldBeNil)
+		err := json.Unmarshal([]byte(versionAssociatedPayload), &v) //
+		convey.So(err, convey.ShouldBeNil)                          //
 		v.Type = datasetType.String()
 		v.ID = "789"
-		v.State = models.AssociatedState
+		v.State = models.AssociatedState //
 		return v
 	}
 	xlsDownload := &models.DownloadList{XLS: &models.DownloadObject{Size: "1", HRef: "/hello"}}
@@ -1482,7 +1476,7 @@ func TestPutEmptyVersion(t *testing.T) {
 			})
 
 			convey.Convey("Then the lock has been acquired and released exactly once", func() {
-				validateLockStateMachine(mockedDataStore)
+				validateLock(mockedDataStore, "789")
 				convey.So(isLocked, convey.ShouldBeFalse)
 			})
 		})
@@ -1538,6 +1532,9 @@ func TestPutEmptyVersion(t *testing.T) {
 			})
 
 			convey.Convey("and the expected external calls are made with the correct parameters", func() {
+				convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
+				convey.So(mockedDataStore.GetDatasetCalls()[0].ID, convey.ShouldEqual, "123")
+
 				convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
 				convey.So(mockedDataStore.CheckEditionExistsCalls()[0].ID, convey.ShouldEqual, "123")
 				convey.So(mockedDataStore.CheckEditionExistsCalls()[0].EditionID, convey.ShouldEqual, "2017")
@@ -1555,7 +1552,7 @@ func TestPutEmptyVersion(t *testing.T) {
 			})
 
 			convey.Convey("Then the lock has been acquired and released exactly once", func() {
-				validateLockStateMachine(mockedDataStore)
+				validateLock(mockedDataStore, "789")
 				convey.So(isLocked, convey.ShouldBeFalse)
 			})
 		})
@@ -1767,7 +1764,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
-		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{}, errs.ErrVersionNotFound
@@ -1778,13 +1774,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
-				isLocked = true
-				return testLockID, nil
-			},
-			UnlockInstanceFunc: func(context.Context, string) {
-				isLocked = false
-			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -1793,16 +1782,14 @@ func TestPutVersionReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
+		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
+
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 2)
-		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 0)
 		convey.So(len(generatorMock.GenerateCalls()), convey.ShouldEqual, 0)
-
-		convey.Convey("Then the lock has been acquired and released ", func() {
-			validateLockStateMachine(mockedDataStore)
-			convey.So(isLocked, convey.ShouldBeFalse)
-		})
 
 		convey.Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -1821,7 +1808,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
-		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{}, errs.ErrVersionNotFound
@@ -1831,13 +1817,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return errs.ErrEditionNotFound
-			},
-			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
-				isLocked = true
-				return testLockID, nil
-			},
-			UnlockInstanceFunc: func(context.Context, string) {
-				isLocked = false
 			},
 		}
 
@@ -1852,13 +1831,9 @@ func TestPutVersionReturnsError(t *testing.T) {
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
 		convey.So(len(generatorMock.GenerateCalls()), convey.ShouldEqual, 0)
-
-		convey.Convey("Then the lock has been acquired and released ", func() {
-			validateLockStateMachine(mockedDataStore)
-			convey.So(isLocked, convey.ShouldBeFalse)
-		})
 
 		convey.Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -1877,7 +1852,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
-		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{}, errs.ErrVersionNotFound
@@ -1890,13 +1864,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				return "", nil
-			},
-			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
-				isLocked = true
-				return testLockID, nil
-			},
-			UnlockInstanceFunc: func(context.Context, string) {
-				isLocked = false
 			},
 		}
 
@@ -1911,14 +1878,10 @@ func TestPutVersionReturnsError(t *testing.T) {
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 2)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 0)
 		convey.So(len(generatorMock.GenerateCalls()), convey.ShouldEqual, 0)
-
-		convey.Convey("Then the lock has been acquired and released ", func() {
-			validateLockStateMachine(mockedDataStore)
-			convey.So(isLocked, convey.ShouldBeFalse)
-		})
 
 		convey.Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
@@ -2054,12 +2017,13 @@ func TestPutVersionReturnsError(t *testing.T) {
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
 		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 2)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 0)
 		convey.So(len(generatorMock.GenerateCalls()), convey.ShouldEqual, 0)
 
 		convey.Convey("Then the lock has been acquired and released ", func() {
-			validateLockStateMachine(mockedDataStore)
+			validateLock(mockedDataStore, "789")
 			convey.So(isLocked, convey.ShouldBeFalse)
 		})
 
@@ -2181,13 +2145,14 @@ func TestPutVersionReturnsError(t *testing.T) {
 		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 2)
 		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.UpsertEditionCalls()), convey.ShouldEqual, 1)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.SetInstanceIsPublishedCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 		convey.So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), convey.ShouldEqual, 0)
 		convey.So(len(generatorMock.GenerateCalls()), convey.ShouldEqual, 0)
 
 		convey.Convey("Then the lock has been acquired and released ", func() {
-			validateLockStateMachine(mockedDataStore)
+			validateLock(mockedDataStore, "789")
 			convey.So(isLocked, convey.ShouldBeFalse)
 		})
 
@@ -2944,10 +2909,9 @@ func assertInternalServerErr(w *httptest.ResponseRecorder) {
 	convey.So(strings.TrimSpace(w.Body.String()), convey.ShouldContainSubstring, errs.ErrInternalServer.Error())
 }
 
-func validateLockStateMachine(mockedDataStore *storetest.StorerMock) {
+func validateLock(mockedDataStore *storetest.StorerMock, expectedInstanceID string) {
 	convey.So(mockedDataStore.AcquireInstanceLockCalls(), convey.ShouldHaveLength, 1)
-	// Length 36 resembles a UUID which this value should now be as the database lock location has changed
-	convey.So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, convey.ShouldHaveLength, 36)
+	convey.So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, convey.ShouldEqual, expectedInstanceID)
 	convey.So(mockedDataStore.UnlockInstanceCalls(), convey.ShouldHaveLength, 1)
 	convey.So(mockedDataStore.UnlockInstanceCalls()[0].LockID, convey.ShouldEqual, testLockID)
 }

@@ -48,6 +48,7 @@ var (
 	websiteURL         = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 	urlBuilder         = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 	enableURLRewriting = false
+	enableStateMachine = false
 	mu                 sync.Mutex
 )
 
@@ -70,7 +71,8 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 	cfg.DefaultOffset = 0
 
 	mockedMapGeneratedDownloads := map[models.DatasetType]DownloadsGenerator{
-		models.Filterable: mockedGeneratedDownloads,
+		models.Filterable:              mockedGeneratedDownloads,
+		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
 
 	mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{
@@ -102,18 +104,18 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 			Label:                "published",
 			TargetState:          application.Published,
 			AlllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
-			Type:                 "cantabular_table",
+			Type:                 "cantabular_flexible_table",
 		}, {
 			Label:                "associated",
 			TargetState:          application.Associated,
 			AlllowedSourceStates: []string{"edition-confirmed", "associated"},
-			Type:                 "cantabular_table",
+			Type:                 "cantabular_flexible_table",
 		},
 		{
 			Label:                "edition-confirmed",
 			TargetState:          application.EditionConfirmed,
 			AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
-			Type:                 "cantabular_table",
+			Type:                 "cantabular_flexible_table",
 		},
 		{
 			Label:                "published",
@@ -139,8 +141,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 		StateMachine:       application.NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore}),
 	}
 
-	//return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, &mockStatemachineDatasetAPI)
-	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI)
+	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI, enableStateMachine)
 }
 
 // GetAPIWithCMDMocks also used in other tests, so exported
@@ -157,14 +158,12 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 
 	mockedMapGeneratedDownloads := map[models.DatasetType]DownloadsGenerator{
 		models.CantabularBlob:          mockedGeneratedDownloads,
-		models.CantabularTable:         mockedGeneratedDownloads,
 		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
 
 	mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{
 		models.Filterable:              mockedGeneratedDownloads,
 		models.CantabularBlob:          mockedGeneratedDownloads,
-		models.CantabularTable:         mockedGeneratedDownloads,
 		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
 
@@ -173,17 +172,17 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 		Label:                "published",
 		TargetState:          application.Published,
 		AlllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
-		Type:                 "cantabular_table",
+		Type:                 "cantabular_flexible_table",
 	}, {
 		Label:                "associated",
 		TargetState:          application.Associated,
 		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
-		Type:                 "cantabular_table",
+		Type:                 "cantabular_flexible_table",
 	}, {
 		Label:                "edition-confirmed",
 		TargetState:          application.EditionConfirmed,
 		AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
-		Type:                 "cantabular_table",
+		Type:                 "cantabular_flexible_table",
 	}}
 
 	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
@@ -192,8 +191,7 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 		StateMachine:       application.NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore}),
 	}
 
-	//return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions,)
-	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI)
+	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI, enableStateMachine)
 }
 
 func createRequestWithAuth(method, target string, body io.Reader) *http.Request {
@@ -472,7 +470,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 	})
 
@@ -498,11 +496,11 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 	})
 
-	convey.Convey("Request with empty themes and type static returns 400 Bad Request", t, func() {
+	convey.Convey("Request with empty themes returns 400 Bad Request", t, func() {
 		b := datasetPayloadWithEmptyThemesAndTypeStatic
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
@@ -524,7 +522,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 	})
 
@@ -550,7 +548,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
 		convey.So(datasetPermissions.Required.Calls, convey.ShouldEqual, 1)
 		convey.So(permissions.Required.Calls, convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 0)
+		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 0)
 	})
 }

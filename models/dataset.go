@@ -584,16 +584,10 @@ func (ed *EditionUpdate) PublishLinks(ctx context.Context, versionLink *LinkObje
 		return errors.New("editions links do not exist")
 	}
 
-	fmt.Println("GOT HERE")
-
 	currentVersion := 0
 
 	if ed.Current != nil && ed.Current.Links != nil && ed.Current.Links.LatestVersion != nil {
 		var err error
-		fmt.Println("IN PUBLISH LINKS THE CURRENT VERSION IS")
-		fmt.Println(currentVersion)
-		fmt.Println("CURRENT LINKS ID IS")
-		fmt.Println(ed.Current.Links.LatestVersion.ID)
 		currentVersion, err = strconv.Atoi(ed.Current.Links.LatestVersion.ID)
 		if err != nil {
 			return fmt.Errorf("failed to parse LatestVersion.ID: %w", err)
@@ -603,9 +597,6 @@ func (ed *EditionUpdate) PublishLinks(ctx context.Context, versionLink *LinkObje
 	if versionLink == nil {
 		return errors.New("invalid arguments to PublishLinks - versionLink empty")
 	}
-
-	fmt.Println("I AM HERE")
-	fmt.Println(versionLink.ID)
 
 	version, err := strconv.Atoi(versionLink.ID)
 	if err != nil {

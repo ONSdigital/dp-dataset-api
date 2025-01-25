@@ -88,7 +88,7 @@ func GetListCantabularTransitions() []application.Transition {
 	publishedTransition := application.Transition{
 		Label:                "published",
 		TargetState:          application.Published,
-		AlllowedSourceStates: []string{"created"},
+		AlllowedSourceStates: []string{"published", "associated", "edition-confirmed"},
 		Type:                 "cantabular_flexible_table",
 	}
 
@@ -110,10 +110,36 @@ func GetListCantabularTransitions() []application.Transition {
 		associatedTransition, edconfirmedTransition}
 }
 
+func GetListMultivariateCantabularTransitions() []application.Transition {
+	publishedTransition := application.Transition{
+		Label:                "published",
+		TargetState:          application.Published,
+		AlllowedSourceStates: []string{"associated", "edition-confirmed"},
+		Type:                 "cantabular_multivariate_table",
+	}
+
+	associatedTransition := application.Transition{
+		Label:                "associated",
+		TargetState:          application.Associated,
+		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+		Type:                 "cantabular_multivariate_table",
+	}
+
+	edconfirmedTransition := application.Transition{
+		Label:                "edition-confirmed",
+		TargetState:          application.EditionConfirmed,
+		AlllowedSourceStates: []string{"completed", "edition-confirmed"},
+		Type:                 "cantabular_multivariate_table",
+	}
+
+	return []application.Transition{publishedTransition,
+		associatedTransition, edconfirmedTransition}
+}
+
 func GetStateMachine(ctx context.Context, dataStore store.DataStore) *application.StateMachine {
 	stateMachineInit.Do(func() {
 		states := []application.State{application.Published, application.EditionConfirmed, application.Associated}
-		transitions := slices.Concat(GetListTransitions(), GetListCantabularTransitions())
+		transitions := slices.Concat(GetListTransitions(), GetListCantabularTransitions(), GetListMultivariateCantabularTransitions())
 		stateMachine = application.NewStateMachine(ctx, states, transitions, dataStore)
 	})
 	return stateMachine
@@ -253,11 +279,15 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		log.Info(ctx, "URL rewriting enabled")
 	}
 
+	enableStateMachine := svc.config.EnableStateMachine
+	if enableStateMachine {
+		log.Info(ctx, "State machine enabled")
+	}
+
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
 	sm := GetStateMachine(ctx, ds)
 	svc.smDS = application.Setup(ds, smDownloadGenerators, sm)
-	//svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, svc.smDS)
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, svc.smDS)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, svc.smDS, enableStateMachine)
 
 	svc.healthCheck.Start(ctx)
 

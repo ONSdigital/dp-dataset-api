@@ -2120,7 +2120,7 @@ func TestPublishVersionFailedToGenerateDownloads(t *testing.T) {
 			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				return "", nil
 			},
-			GetDatasetFunc: func(ctx context.Context, datasetID string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(_ context.Context, _ string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{
 					Next: &models.Dataset{Links: &models.DatasetLinks{LatestVersion: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
 						ID: "1"}}},

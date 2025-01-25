@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -14,9 +15,16 @@ import (
 	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	"github.com/ONSdigital/dp-net/v2/links"
+	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
+	"github.com/pkg/errors"
+)
+
+const (
+	reqUser   = "req_user"
+	reqCaller = "req_caller"
 )
 
 var (
@@ -40,6 +48,17 @@ var (
 		errs.ErrResourceState: true,
 	}
 )
+
+// VersionDetails contains the details that uniquely identify a version resource
+type VersionDetails struct {
+	datasetID string
+	edition   string
+	version   string
+}
+
+func (v VersionDetails) baseLogData() log.Data {
+	return log.Data{"dataset_id": v.datasetID, "edition": v.edition, "version": v.version}
+}
 
 // getVersions returns a list of versions, the total count of versions that match the query parameters and an error
 // TODO: Refactor this to reduce the complexity
@@ -258,21 +277,94 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		"version":   vars["version"],
 	}
 
-	version, err := models.CreateVersion(r.Body, vars["dataset_id"])
-	if err != nil {
-		handleVersionAPIErr(ctx, err, w, data)
-		return
-	}
+	if api.EnableStateMachine {
+		version, err := models.CreateVersion(r.Body, vars["dataset_id"])
+		if err != nil {
+			handleVersionAPIErr(ctx, err, w, data)
+			return
+		}
 
-	err = api.smDatasetAPI.AmendVersion(r.Context(), vars, version)
-	if err != nil {
-		handleVersionAPIErr(ctx, err, w, data)
-		return
+		err = api.smDatasetAPI.AmendVersion(r.Context(), vars, version)
+		if err != nil {
+			handleVersionAPIErr(ctx, err, w, data)
+			return
+		}
+	} else {
+		versionDetails := VersionDetails{
+			datasetID: vars["dataset_id"],
+			edition:   vars["edition"],
+			version:   vars["version"],
+		}
+
+		currentDataset, currentVersion, versionUpdate, err := api.updateVersion(ctx, r.Body, versionDetails)
+		if err != nil {
+			handleVersionAPIErr(ctx, err, w, data)
+			return
+		}
+
+		// If update was to add downloads do not try to publish/associate version
+		if vars[hasDownloads] != trueStringified {
+			data["updated_state"] = versionUpdate.State
+			if versionUpdate.State == models.PublishedState {
+				if err := api.publishVersion(ctx, currentDataset, currentVersion, versionUpdate, versionDetails); err != nil {
+					handleVersionAPIErr(ctx, err, w, data)
+					return
+				}
+			}
+
+			if versionUpdate.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
+				if err := api.associateVersion(ctx, currentVersion, versionUpdate, versionDetails); err != nil {
+					handleVersionAPIErr(ctx, err, w, data)
+					return
+				}
+			}
+		}
 	}
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
 	log.Info(ctx, "putVersion endpoint: request successful", data)
+}
+
+func (api *DatasetAPI) associateVersion(ctx context.Context, currentVersion, versionDoc *models.Version, versionDetails VersionDetails) error {
+	data := versionDetails.baseLogData()
+	data["type"] = currentVersion.Type
+	data["version_update"] = versionDoc
+	log.Info(ctx, "putVersion endpoint: associated version", data)
+
+	associateVersionErr := func() error {
+		if err := api.dataStore.Backend.UpdateDatasetWithAssociation(ctx, versionDetails.datasetID, versionDoc.State, versionDoc); err != nil {
+			log.Error(ctx, "putVersion endpoint: failed to update dataset document after a version of a dataset has been associated with a collection", err, data)
+			return err
+		}
+
+		// Get the download generator from the map, depending of the Version document type
+		t, err := models.GetDatasetType(currentVersion.Type)
+		if err != nil {
+			return fmt.Errorf("error getting type of version: %w", err)
+		}
+		generator, ok := api.downloadGenerators[t]
+		if !ok {
+			return fmt.Errorf("no downloader available for type %s", t.String())
+		}
+
+		if err := generator.Generate(ctx, versionDetails.datasetID, versionDoc.ID, versionDetails.edition, versionDetails.version); err != nil {
+			data["instance_id"] = versionDoc.ID
+			data["state"] = versionDoc.State
+			log.Error(ctx, "putVersion endpoint: error while attempting to generate full dataset version downloads on version association", err, data)
+			return err
+		}
+		data["type"] = t.String()
+		log.Info(ctx, "putVersion endpoint (associateVersion): generated full dataset version downloads", data)
+		return nil
+	}()
+
+	if associateVersionErr != nil {
+		return associateVersionErr
+	}
+
+	log.Info(ctx, "associate version completed successfully", data)
+	return associateVersionErr
 }
 
 // TODO: Refactor this to reduce the complexity
@@ -384,6 +476,194 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	log.Info(ctx, "detachVersion endpoint: request successful", logData)
+}
+
+func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, versionDetails VersionDetails) (currentDataset *models.DatasetUpdate, currentVersion, combinedVersionUpdate *models.Version, err error) {
+	data := versionDetails.baseLogData()
+
+	reqID := ctx.Value(dprequest.RequestIdKey) // used to differentiate logs of concurrent calls to this function from different services
+
+	versionNumber, err := models.ParseAndValidateVersionNumber(ctx, versionDetails.version)
+	if err != nil {
+		log.Error(ctx, "putVersion endpoint: invalid version request", err, data)
+		return nil, nil, nil, err
+	}
+
+	// reads http header and creates struct for new versionNumber
+	versionUpdate, err := models.CreateVersion(body, versionDetails.datasetID)
+	if err != nil {
+		log.Error(ctx, "putVersion endpoint: failed to model version resource based on request", err, data)
+		return nil, nil, nil, errs.ErrUnableToParseJSON
+	}
+
+	currentDataset, err = api.dataStore.Backend.GetDataset(ctx, versionDetails.datasetID)
+	if err != nil {
+		log.Error(ctx, "putVersion endpoint: datastore.getDataset returned an error", err, data)
+		return nil, nil, nil, err
+	}
+
+	if err = api.dataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
+		log.Error(ctx, "putVersion endpoint: failed to find edition of dataset", err, data)
+		return nil, nil, nil, err
+	}
+
+	currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+	if err != nil {
+		log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
+		return nil, nil, nil, err
+	}
+
+	// doUpdate is an aux function that combines the existing version document with the update received in the body request,
+	// then it validates the new model, and performs the update in MongoDB, passing the existing model ETag (if it exists) to be used in the query selector
+	// Note that the combined version update does not mutate versionUpdate because multiple retries might generate a different value depending on the currentVersion at that point.
+	var doUpdate = func() error {
+		combinedVersionUpdate, err = populateNewVersionDoc(currentVersion, versionUpdate)
+		if err != nil {
+			return err
+		}
+
+		data["updated_version"] = combinedVersionUpdate
+
+		if err = models.ValidateVersion(combinedVersionUpdate); err != nil {
+			log.Error(ctx, "putVersion endpoint: failed validation check for version update", err)
+			return err
+		}
+
+		eTag := headers.IfMatchAnyETag
+		if currentVersion.ETag != "" {
+			eTag = currentVersion.ETag
+		}
+
+		if _, err := api.dataStore.Backend.UpdateVersion(ctx, currentVersion, combinedVersionUpdate, eTag); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	// acquire instance lock to prevent race conditions on instance collection
+	lockID, err := api.dataStore.Backend.AcquireInstanceLock(ctx, currentVersion.ID)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	defer func() {
+		api.dataStore.Backend.UnlockInstance(ctx, lockID)
+	}()
+
+	// Try to perform the update. If there was a race condition and another caller performed the update
+	// before we could acquire the lock, this will result in the ETag being changed
+	// and the update failing with ErrDatasetNotFound.
+	// In this scenario we re-try the get + update before releasing the lock.
+	// Note that the lock and ETag will also protect against race conditions with instance endpoints,
+	// which may also modify the same instance collection in the database.
+	if err := doUpdate(); err != nil {
+		if err == errs.ErrDatasetNotFound {
+			log.Info(ctx, "instance document in database corresponding to dataset version was modified before the lock was acquired, retrying...", data)
+			currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+			if err != nil {
+				log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
+				return nil, nil, nil, err
+			}
+
+			if err = doUpdate(); err != nil {
+				log.Error(ctx, "putVersion endpoint: failed to update version document on 2nd attempt", err, data)
+				return nil, nil, nil, err
+			}
+		} else {
+			return nil, nil, nil, err
+		}
+	}
+
+	data["type"] = currentVersion.Type
+	data["reqID"] = reqID
+	log.Info(ctx, "update version completed successfully", data)
+	return currentDataset, currentVersion, combinedVersionUpdate, nil
+}
+
+// TODO: Refactor this to reduce the complexity
+//
+//nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
+func (api *DatasetAPI) publishVersion(
+	ctx context.Context,
+	currentDataset *models.DatasetUpdate, // Called Dataset in Mongo
+	currentVersion *models.Version, // Called Instances in Mongo
+	versionUpdate *models.Version, // Next version, that is the new version
+	versionDetails VersionDetails, // Struct holding URL Params.
+) error {
+	data := versionDetails.baseLogData()
+	log.Info(ctx, "attempting to publish version", data)
+	err := func() error {
+		editionDoc, err := api.dataStore.Backend.GetEdition(ctx, versionDetails.datasetID, versionDetails.edition, "")
+		if err != nil {
+			log.Error(ctx, "putVersion endpoint: failed to find the edition we're trying to update", err, data)
+			return err
+		}
+
+		editionDoc.Next.State = models.PublishedState
+		if err := editionDoc.PublishLinks(ctx, versionUpdate.Links.Version); err != nil {
+			log.Error(ctx, "putVersion endpoint: failed to update the edition links for the version we're trying to publish", err, data)
+			return err
+		}
+
+		editionDoc.Current = editionDoc.Next
+
+		if err := api.dataStore.Backend.UpsertEdition(ctx, versionDetails.datasetID, versionDetails.edition, editionDoc); err != nil {
+			log.Error(ctx, "putVersion endpoint: failed to update edition during publishing", err, data)
+			return err
+		}
+
+		if err := api.dataStore.Backend.SetInstanceIsPublished(ctx, versionUpdate.ID); err != nil {
+			if user := dprequest.User(ctx); user != "" {
+				data[reqUser] = user
+			}
+			if caller := dprequest.Caller(ctx); caller != "" {
+				data[reqCaller] = caller
+			}
+			err := errors.WithMessage(err, "putVersion endpoint: failed to set instance node is_published")
+			log.Error(ctx, "failed to publish instance version", err, data)
+			return err
+		}
+
+		// Pass in newVersion variable to include relevant data needed for update on dataset API (e.g. links)
+		if err := api.publishDataset(ctx, currentDataset, versionUpdate); err != nil {
+			log.Error(ctx, "putVersion endpoint: failed to update dataset document once version state changes to publish", err, data)
+			return err
+		}
+		data["type"] = currentVersion.Type
+		data["version_update"] = versionUpdate
+		log.Info(ctx, "putVersion endpoint: published version", data)
+
+		// Only want to generate downloads again if there is no public link available
+		if currentVersion.Downloads != nil && currentVersion.Downloads.CSV != nil && currentVersion.Downloads.CSV.Public == "" {
+			// Lookup the download generator using the version document type
+			t, err := models.GetDatasetType(currentVersion.Type)
+			if err != nil {
+				return fmt.Errorf("error getting type of version: %w", err)
+			}
+			generator, ok := api.downloadGenerators[t]
+			if !ok {
+				return fmt.Errorf("no downloader available for type %s", t)
+			}
+			// Send Kafka message.  The generator which is used depends on the type defined in VersionDoc.
+			if err := generator.Generate(ctx, versionDetails.datasetID, versionUpdate.ID, versionDetails.edition, versionDetails.version); err != nil {
+				data["instance_id"] = versionUpdate.ID
+				data["state"] = versionUpdate.State
+				data["type"] = t.String()
+				log.Error(ctx, "putVersion endpoint: error while attempting to generate full dataset version downloads on version publish", err, data)
+				return err
+				// TODO - TECH DEBT - need to add an error event for this.  Kafka message perhaps.
+			}
+			log.Info(ctx, "putVersion endpoint (publishVersions): generated full dataset version downloads:", data)
+		}
+		return nil
+	}()
+
+	if err != nil {
+		return err
+	}
+
+	log.Info(ctx, "publish version completed successfully", data)
+	return nil
 }
 
 // TODO: Refactor this to reduce the complexity

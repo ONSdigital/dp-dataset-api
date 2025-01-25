@@ -33,6 +33,7 @@ var (
 	websiteURL            = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 	urlBuilder            = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 	enableURLRewriting    = false
+	enableStateMachine    = false
 	mu                    sync.Mutex
 	testContext           = context.Background()
 	testETag              = "testETag"
@@ -1544,8 +1545,7 @@ func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 	datasetPermissions := getAuthorisationHandlerMock()
 	permissions := getAuthorisationHandlerMock()
 
-	//return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, downloadGenerators, datasetPermissions, permissions, &mockStatemachineDatasetAPI)
-	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI)
+	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI, enableStateMachine)
 }
 
 func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {
