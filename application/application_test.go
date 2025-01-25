@@ -125,7 +125,7 @@ func TestAmendVersionInvalidState(t *testing.T) {
 
 		err := smDS.AmendVersion(testContext, vars, publishVersionUpdate)
 		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "State not allowed to transition")
+		convey.So(err.Error(), convey.ShouldContainSubstring, "state not allowed to transition")
 		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 0)
 		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
 		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 1)

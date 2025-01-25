@@ -70,7 +70,6 @@ type DatasetAPI struct {
 	instancePublishedChecker *instance.PublishCheck
 	versionPublishedChecker  *PublishCheck
 	MaxRequestOptions        int
-	DisableNeptune           bool
 	smDatasetAPI             *application.StateMachineDatasetAPI
 	EnableStateMachine       bool
 }
@@ -93,7 +92,6 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		versionPublishedChecker:  nil,
 		instancePublishedChecker: nil,
 		MaxRequestOptions:        cfg.MaxRequestOptions,
-		DisableNeptune:           cfg.DisableGraphDBDependency,
 		smDatasetAPI:             smDatasetAPI,
 		EnableStateMachine:       enableStateMachine,
 	}

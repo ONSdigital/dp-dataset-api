@@ -193,9 +193,6 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 
 	version.Links = populateVersionLinks(version.Links, currentVersion.Links)
 
-	// TODO - Data Integrity - Updating downloads should be locked down to services
-	// with permissions to do so, currently a user could update these fields
-
 	log.Info(context.Background(), "DEBUG", log.Data{"downloads": version.Downloads, "currentDownloads": currentVersion.Downloads})
 	version.Downloads = populateDownloads(version.Downloads, currentVersion.Downloads)
 

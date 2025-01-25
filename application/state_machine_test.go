@@ -77,6 +77,6 @@ func TestTransition(t *testing.T) {
 		err := smDS.StateMachine.Transition(testContext, smDS, currentIncorrectState, incorrectStateVersion, versionDetails, "true")
 
 		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "State not allowed to transition")
+		convey.So(err.Error(), convey.ShouldContainSubstring, "state not allowed to transition")
 	})
 }
