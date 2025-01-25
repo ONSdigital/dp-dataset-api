@@ -14,10 +14,12 @@ require (
 	github.com/ONSdigital/dp-graph/v2 v2.18.0
 	github.com/ONSdigital/dp-healthcheck v1.6.3
 	github.com/ONSdigital/dp-kafka/v4 v4.1.0
-	github.com/ONSdigital/dp-mongodb/v3 v3.8.0
-	github.com/ONSdigital/dp-otel-go v0.0.8
+	github.com/ONSdigital/dp-mongodb/v3 v3.7.0
+	github.com/ONSdigital/dp-net/v2 v2.19.0
+	github.com/ONSdigital/dp-otel-go v0.0.7
 	github.com/ONSdigital/log.go/v2 v2.4.3
-	github.com/cucumber/godog v0.15.0
+	github.com/cucumber/godog v0.14.1
+	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/go-cmp v0.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/jinzhu/copier v0.4.0
@@ -36,7 +38,6 @@ require go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 
 require (
 	github.com/ONSdigital/dp-mongodb-in-memory v1.7.0 // indirect
-	github.com/ONSdigital/dp-net/v2 v2.18.0
 	github.com/ONSdigital/golang-neo4j-bolt-driver v0.0.0-20241121114036-9f4b82bb9d37 // indirect
 	github.com/ONSdigital/graphson v0.3.0 // indirect
 	github.com/ONSdigital/gremgo-neptune v1.1.0 // indirect
@@ -59,7 +60,6 @@ require (
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.4.0 // indirect
-	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
