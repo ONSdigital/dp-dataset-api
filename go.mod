@@ -14,11 +14,11 @@ require (
 	github.com/ONSdigital/dp-graph/v2 v2.18.0
 	github.com/ONSdigital/dp-healthcheck v1.6.3
 	github.com/ONSdigital/dp-kafka/v4 v4.1.0
-	github.com/ONSdigital/dp-mongodb/v3 v3.7.0
+	github.com/ONSdigital/dp-mongodb/v3 v3.8.0
 	github.com/ONSdigital/dp-net/v2 v2.19.0
-	github.com/ONSdigital/dp-otel-go v0.0.7
+	github.com/ONSdigital/dp-otel-go v0.0.8
 	github.com/ONSdigital/log.go/v2 v2.4.3
-	github.com/cucumber/godog v0.14.1
+	github.com/cucumber/godog v0.15.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/go-cmp v0.6.0
 	github.com/gorilla/mux v1.8.1
@@ -37,13 +37,13 @@ require (
 require go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 
 require (
-	github.com/ONSdigital/dp-mongodb-in-memory v1.7.0 // indirect
+	github.com/ONSdigital/dp-mongodb-in-memory v1.8.0 // indirect
 	github.com/ONSdigital/golang-neo4j-bolt-driver v0.0.0-20241121114036-9f4b82bb9d37 // indirect
 	github.com/ONSdigital/graphson v0.3.0 // indirect
 	github.com/ONSdigital/gremgo-neptune v1.1.0 // indirect
 	github.com/Shopify/sarama v1.38.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
-	github.com/chromedp/cdproto v0.0.0-20250120090109-d38428e4d9c8 // indirect
+	github.com/chromedp/cdproto v0.0.0-20250126231910-1730200a0f74 // indirect
 	github.com/chromedp/chromedp v0.12.1 // indirect
 	github.com/chromedp/sysutil v1.1.0 // indirect
 	github.com/cucumber/gherkin/go/v26 v26.2.0 // indirect
@@ -115,9 +115,9 @@ require (
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250122153221-138b5a5a4fd4 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250122153221-138b5a5a4fd4 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250127172529-29210b9bc287 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250127172529-29210b9bc287 // indirect
 	google.golang.org/grpc v1.70.0 // indirect
-	google.golang.org/protobuf v1.36.3 // indirect
+	google.golang.org/protobuf v1.36.4 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
