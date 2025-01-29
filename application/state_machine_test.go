@@ -45,9 +45,6 @@ func TestTransition(t *testing.T) {
 		UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 			return "", nil
 		},
-		UpdateDatasetWithAssociationFunc: func(context.Context, string, string, *models.Version) error {
-			return nil
-		},
 	}
 
 	stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
@@ -58,7 +55,6 @@ func TestTransition(t *testing.T) {
 
 		convey.So(err, convey.ShouldBeNil)
 		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), convey.ShouldEqual, 1)
 	})
 
 	convey.Convey("The transition is not successful", t, func() {

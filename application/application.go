@@ -316,11 +316,12 @@ func AssociateVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	}
 
 	if currentVersion.Type != "static" {
-		if versionUpdate.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
-			if errVersion := smDS.DataStore.Backend.UpdateDatasetWithAssociation(ctx, versionUpdate.DatasetID, versionUpdate.State, versionUpdate); errVersion != nil {
-				return errVersion
-			}
-			if hasDownloads != trueStringified {
+		if hasDownloads != trueStringified {
+			if versionUpdate.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
+				if errVersion := smDS.DataStore.Backend.UpdateDatasetWithAssociation(ctx, versionUpdate.DatasetID, versionUpdate.State, versionUpdate); errVersion != nil {
+					return errVersion
+				}
+
 				// Get the download generator from the map, depending of the Version document type
 				t, err := models.GetDatasetType(currentVersion.Type)
 				if err != nil {
