@@ -60,24 +60,24 @@ var stateMachineInit sync.Once
 
 func GetListTransitions() []application.Transition {
 	publishedTransition := application.Transition{
-		Label:                "published",
-		TargetState:          application.Published,
-		AlllowedSourceStates: []string{"created", "associated", "published"},
-		Type:                 "v4",
+		Label:               "published",
+		TargetState:         application.Published,
+		AllowedSourceStates: []string{"created", "associated", "published"},
+		Type:                "v4",
 	}
 
 	associatedTransition := application.Transition{
-		Label:                "associated",
-		TargetState:          application.Associated,
-		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
-		Type:                 "v4",
+		Label:               "associated",
+		TargetState:         application.Associated,
+		AllowedSourceStates: []string{"edition-confirmed", "associated"},
+		Type:                "v4",
 	}
 
 	edconfirmedTransition := application.Transition{
-		Label:                "edition-confirmed",
-		TargetState:          application.EditionConfirmed,
-		AlllowedSourceStates: []string{"completed", "edition-confirmed"},
-		Type:                 "v4",
+		Label:               "edition-confirmed",
+		TargetState:         application.EditionConfirmed,
+		AllowedSourceStates: []string{"completed", "edition-confirmed"},
+		Type:                "v4",
 	}
 
 	return []application.Transition{publishedTransition,
@@ -86,17 +86,17 @@ func GetListTransitions() []application.Transition {
 
 func GetListStaticTransitions() []application.Transition {
 	publishedTransition := application.Transition{
-		Label:                "published",
-		TargetState:          application.Published,
-		AlllowedSourceStates: []string{"created", "associated", "published"},
-		Type:                 "static",
+		Label:               "published",
+		TargetState:         application.Published,
+		AllowedSourceStates: []string{"created", "associated", "published"},
+		Type:                "static",
 	}
 
 	associatedTransition := application.Transition{
-		Label:                "associated",
-		TargetState:          application.Associated,
-		AlllowedSourceStates: []string{"created", "associated"},
-		Type:                 "static",
+		Label:               "associated",
+		TargetState:         application.Associated,
+		AllowedSourceStates: []string{"created", "associated"},
+		Type:                "static",
 	}
 
 	return []application.Transition{publishedTransition,
@@ -105,24 +105,24 @@ func GetListStaticTransitions() []application.Transition {
 
 func GetListCantabularTransitions() []application.Transition {
 	publishedTransition := application.Transition{
-		Label:                "published",
-		TargetState:          application.Published,
-		AlllowedSourceStates: []string{"published", "associated", "edition-confirmed"},
-		Type:                 "cantabular_flexible_table",
+		Label:               "published",
+		TargetState:         application.Published,
+		AllowedSourceStates: []string{"published", "associated", "edition-confirmed"},
+		Type:                "cantabular_flexible_table",
 	}
 
 	associatedTransition := application.Transition{
-		Label:                "associated",
-		TargetState:          application.Associated,
-		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
-		Type:                 "cantabular_flexible_table",
+		Label:               "associated",
+		TargetState:         application.Associated,
+		AllowedSourceStates: []string{"edition-confirmed", "associated"},
+		Type:                "cantabular_flexible_table",
 	}
 
 	edconfirmedTransition := application.Transition{
-		Label:                "edition-confirmed",
-		TargetState:          application.EditionConfirmed,
-		AlllowedSourceStates: []string{"completed", "edition-confirmed"},
-		Type:                 "cantabular_flexible_table",
+		Label:               "edition-confirmed",
+		TargetState:         application.EditionConfirmed,
+		AllowedSourceStates: []string{"completed", "edition-confirmed"},
+		Type:                "cantabular_flexible_table",
 	}
 
 	return []application.Transition{publishedTransition,
@@ -131,24 +131,24 @@ func GetListCantabularTransitions() []application.Transition {
 
 func GetListMultivariateCantabularTransitions() []application.Transition {
 	publishedTransition := application.Transition{
-		Label:                "published",
-		TargetState:          application.Published,
-		AlllowedSourceStates: []string{"associated", "edition-confirmed"},
-		Type:                 "cantabular_multivariate_table",
+		Label:               "published",
+		TargetState:         application.Published,
+		AllowedSourceStates: []string{"associated", "edition-confirmed"},
+		Type:                "cantabular_multivariate_table",
 	}
 
 	associatedTransition := application.Transition{
-		Label:                "associated",
-		TargetState:          application.Associated,
-		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
-		Type:                 "cantabular_multivariate_table",
+		Label:               "associated",
+		TargetState:         application.Associated,
+		AllowedSourceStates: []string{"edition-confirmed", "associated"},
+		Type:                "cantabular_multivariate_table",
 	}
 
 	edconfirmedTransition := application.Transition{
-		Label:                "edition-confirmed",
-		TargetState:          application.EditionConfirmed,
-		AlllowedSourceStates: []string{"completed", "edition-confirmed"},
-		Type:                 "cantabular_multivariate_table",
+		Label:               "edition-confirmed",
+		TargetState:         application.EditionConfirmed,
+		AllowedSourceStates: []string{"completed", "edition-confirmed"},
+		Type:                "cantabular_multivariate_table",
 	}
 
 	return []application.Transition{publishedTransition,

@@ -53,36 +53,36 @@ var versionUpdateEditionConfirmed = &models.Version{
 func setUpStatesTransitions() ([]State, []Transition) {
 	states := []State{Published, EditionConfirmed, Associated}
 	transitions := []Transition{{
-		Label:                "published",
-		TargetState:          Published,
-		AlllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
-		Type:                 "v4",
+		Label:               "published",
+		TargetState:         Published,
+		AllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
+		Type:                "v4",
 	}, {
-		Label:                "associated",
-		TargetState:          Associated,
-		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
-		Type:                 "v4",
+		Label:               "associated",
+		TargetState:         Associated,
+		AllowedSourceStates: []string{"edition-confirmed", "associated"},
+		Type:                "v4",
 	}, {
-		Label:                "edition-confirmed",
-		TargetState:          EditionConfirmed,
-		AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
-		Type:                 "v4",
+		Label:               "edition-confirmed",
+		TargetState:         EditionConfirmed,
+		AllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
+		Type:                "v4",
 	},
 		{
-			Label:                "published",
-			TargetState:          Published,
-			AlllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
-			Type:                 "cantabular_flexible_table",
+			Label:               "published",
+			TargetState:         Published,
+			AllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
+			Type:                "cantabular_flexible_table",
 		}, {
-			Label:                "associated",
-			TargetState:          Associated,
-			AlllowedSourceStates: []string{"edition-confirmed", "associated", "created"},
-			Type:                 "cantabular_flexible_table",
+			Label:               "associated",
+			TargetState:         Associated,
+			AllowedSourceStates: []string{"edition-confirmed", "associated", "created"},
+			Type:                "cantabular_flexible_table",
 		}, {
-			Label:                "edition-confirmed",
-			TargetState:          EditionConfirmed,
-			AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
-			Type:                 "cantabular_flexible_table",
+			Label:               "edition-confirmed",
+			TargetState:         EditionConfirmed,
+			AllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
+			Type:                "cantabular_flexible_table",
 		}}
 
 	return states, transitions

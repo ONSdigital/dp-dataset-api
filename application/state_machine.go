@@ -29,10 +29,10 @@ type StateMachine struct {
 }
 
 type Transition struct {
-	Label                string
-	TargetState          State
-	AlllowedSourceStates []string
-	Type                 string
+	Label               string
+	TargetState         State
+	AllowedSourceStates []string
+	Type                string
 }
 
 type KeyVal struct {
@@ -104,7 +104,7 @@ func NewStateMachine(ctx context.Context, states []State, transitions []Transiti
 
 	transitionsMap := make(map[KeyVal][]string)
 	for _, transition := range transitions {
-		transitionsMap[KeyVal{StateVal: transition.TargetState.String(), Type: transition.Type}] = transition.AlllowedSourceStates
+		transitionsMap[KeyVal{StateVal: transition.TargetState.String(), Type: transition.Type}] = transition.AllowedSourceStates
 	}
 
 	sm := &StateMachine{
