@@ -426,8 +426,7 @@ paths:
       parameters:
         - $ref: '#/parameters/id'
         - $ref: '#/parameters/edition'
-        - $ref: '#/parameters/version_update'
-        - $ref: '#/definitions/Version'
+        - $ref: '#/parameters/new_version'
       responses:
         201:
           description: "A json object containing a version"
@@ -2535,6 +2534,8 @@ definitions:
         $ref: '#/definitions/SelfLink'
       spatial:
         $ref: '#/definitions/SpatialLink'
+      job:
+        $ref: '#/definitions/JobLink'
   DatasetLink:
     description: "An object containing the dataset id and link"
     readOnly: true
@@ -2599,6 +2600,15 @@ definitions:
       href:
         description: "A url to a list of geography ranges for the version of the dataset"
         type: string
+  JobLink:
+    type: object
+    properties:
+          href:
+            description: "A URL to list dimensions for this version"
+            type: string
+          id:
+            description: "A Job id"
+            type: string
   TaxonomyLink:
     description: "A link to the taxonomy of the dataset"
     type: object
