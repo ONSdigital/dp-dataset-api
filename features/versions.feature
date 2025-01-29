@@ -23,6 +23,16 @@ Feature: Dataset API
                 {
                     "id": "population-estimates",
                     "state": "published"
+                },
+                 {
+                    "id": "test-static",
+                    "state": "created",
+                    "links": {
+                      "latest_version": {
+                        "id": "1",
+                        "href": "someurl"
+                      }
+                    }
                 }
             ]
             """
@@ -78,6 +88,21 @@ Feature: Dataset API
                     "links": {
                         "dataset": {
                             "id": "test-cantabular-dataset-2"
+                        },
+                        "latest_version": {
+                            "id": "1",
+                            "href": "someurl"
+                        }
+                    }
+                },
+                 {
+                    "id": "test-edition-static",
+                    "edition": "test-edition-static",
+                    "state": "created",
+                    "type":"static",
+                    "links": {
+                        "dataset": {
+                            "id": "test-static"
                         },
                         "latest_version": {
                             "id": "1",
@@ -183,6 +208,21 @@ Feature: Dataset API
                         "href": "someurl"
                       }
                     }
+                },
+                {
+                    "id": "test-static-version-1",
+                    "version": 1,
+                    "state": "created",
+                    "type": "static",
+                    "links": {
+                        "dataset": {
+                            "id": "test-static"
+                        },
+                        "self": {
+                            "href": "someurl"
+                        }
+                    },
+                    "edition": "test-edition-static"
                 }
             ]
             """
@@ -655,6 +695,23 @@ Feature: Dataset API
     And these generate downloads events are produced:
       | InstanceID  | DatasetID            | Edition | Version | FilterOutputID |
       | test-item-3 | population-estimates | hellov2 | 3       |                |
+    Then the HTTP status code should be "200"
+
+  Scenario: PUT versions for static dataset returns OK when the state machine is enabled
+    Given private endpoints are enabled
+    And the state machine is enabled
+    And I am identified as "user@ons.gov.uk"
+    And I am authorised
+    When I PUT "/datasets/test-static/editions/test-edition-static/versions/1"
+            """
+            {
+              "instance_id":"test-static-version-1",
+              "license":"ONS",
+              "release_date":"2017-04-04",
+              "state":"associated",
+              "collection_id":"bla"
+            }
+            """
     Then the HTTP status code should be "200"
 
   Scenario: PUT versions for CMD dataset when the state machine is enabled fails due to invalid state

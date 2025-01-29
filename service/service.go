@@ -84,6 +84,25 @@ func GetListTransitions() []application.Transition {
 		associatedTransition, edconfirmedTransition}
 }
 
+func GetListStaticTransitions() []application.Transition {
+	publishedTransition := application.Transition{
+		Label:                "published",
+		TargetState:          application.Published,
+		AlllowedSourceStates: []string{"created", "associated", "published"},
+		Type:                 "static",
+	}
+
+	associatedTransition := application.Transition{
+		Label:                "associated",
+		TargetState:          application.Associated,
+		AlllowedSourceStates: []string{"created", "associated"},
+		Type:                 "static",
+	}
+
+	return []application.Transition{publishedTransition,
+		associatedTransition}
+}
+
 func GetListCantabularTransitions() []application.Transition {
 	publishedTransition := application.Transition{
 		Label:                "published",
@@ -139,7 +158,7 @@ func GetListMultivariateCantabularTransitions() []application.Transition {
 func GetStateMachine(ctx context.Context, dataStore store.DataStore) *application.StateMachine {
 	stateMachineInit.Do(func() {
 		states := []application.State{application.Published, application.EditionConfirmed, application.Associated}
-		transitions := slices.Concat(GetListTransitions(), GetListCantabularTransitions(), GetListMultivariateCantabularTransitions())
+		transitions := slices.Concat(GetListTransitions(), GetListCantabularTransitions(), GetListMultivariateCantabularTransitions(), GetListStaticTransitions())
 		stateMachine = application.NewStateMachine(ctx, states, transitions, dataStore)
 	})
 	return stateMachine

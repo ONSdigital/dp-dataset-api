@@ -457,7 +457,7 @@ func TestAssociateVersionInvalidRequest(t *testing.T) {
 	})
 }
 
-func TestAssociateVersionErrorDownloaderType(t *testing.T) {
+func TestAssociateStaticVersionNoErrors(t *testing.T) {
 	t.Parallel()
 
 	generatorMock := &mocks.DownloadsGeneratorMock{
@@ -468,7 +468,7 @@ func TestAssociateVersionErrorDownloaderType(t *testing.T) {
 
 	convey.Convey("When a version is set to associated from edition-confirmed for a type which does not generate downloads", t, func() {
 		currentStaticVersion := &models.Version{
-			State:        models.EditionConfirmedState,
+			State:        models.CreatedState,
 			CollectionID: "3434",
 			Type:         "static",
 		}
@@ -486,9 +486,6 @@ func TestAssociateVersionErrorDownloaderType(t *testing.T) {
 			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				return "", nil
 			},
-			UpdateDatasetWithAssociationFunc: func(context.Context, string, string, *models.Version) error {
-				return nil
-			},
 		}
 
 		states, transitions := setUpStatesTransitions()
@@ -498,10 +495,8 @@ func TestAssociateVersionErrorDownloaderType(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := AssociateVersion(testContext, smDS, currentStaticVersion, versionstaticUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "no downloader available for type")
+		convey.So(err, convey.ShouldBeNil)
 		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), convey.ShouldEqual, 1)
 	})
 }
 
@@ -960,138 +955,6 @@ func TestPopulateNewVersionDocWithDownloads(t *testing.T) {
 		convey.So(version.State, convey.ShouldEqual, currentVersion.State)
 		convey.So(version.Downloads.XLS, convey.ShouldEqual, currentVersion.Downloads.XLS)
 		convey.So(len(*version.LatestChanges), convey.ShouldEqual, len(*currentVersion.LatestChanges)+len(*originalVersion.LatestChanges))
-	})
-}
-
-func TestPublishVersionForInvalidTypeNoDownloader(t *testing.T) {
-	t.Parallel()
-	convey.Convey("When a version is set to published from associated for a type that does not generate downloads", t, func() {
-		currentVersion := &models.Version{
-			State: models.AssociatedState,
-			Type:  "static",
-			Downloads: &models.DownloadList{
-				CSV: &models.DownloadObject{
-					Private: "s3://csv-exported/myfile.csv",
-					HRef:    "http://localhost:23600/datasets/123/editions/2017/versions/1.csv",
-					Size:    "1234",
-				},
-			},
-			Links: &models.VersionLinks{
-				Dataset: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123",
-					ID:   "123",
-				},
-				Dimensions: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
-				},
-				Edition: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2017",
-					ID:   "2017",
-				},
-				Self: &models.LinkObject{
-					HRef: "http://localhost:22000/instances/765",
-				},
-				Version: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
-					ID:   "1",
-				},
-			},
-		}
-
-		versionUpdate := &models.Version{
-			State:       models.PublishedState,
-			Version:     1,
-			ReleaseDate: "2024-05-23",
-			ID:          "789",
-			Type:        "static",
-			Links: &models.VersionLinks{
-				Dataset: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123",
-					ID:   "123",
-				},
-				Dimensions: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
-				},
-				Edition: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2017",
-					ID:   "2017",
-				},
-				Self: &models.LinkObject{
-					HRef: "http://localhost:22000/instances/765",
-				},
-				Version: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
-					ID:   "1",
-				},
-			},
-		}
-
-		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(context.Context, string, string, string, string) error {
-				return nil
-			},
-		}
-
-		mockedDataStore := &storetest.StorerMock{
-			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
-				return "", nil
-			},
-			UpsertEditionFunc: func(context.Context, string, string, *models.EditionUpdate) error {
-				return nil
-			},
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{
-					Next: &models.Dataset{Links: &models.DatasetLinks{LatestVersion: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
-						ID: "1"}}},
-					ID: "123",
-				}, nil
-			},
-			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
-				return &models.EditionUpdate{
-					ID: "123",
-					Next: &models.Edition{
-						State: models.EditionConfirmedState,
-						Links: &models.EditionUpdateLinks{
-							Self: &models.LinkObject{
-								HRef: "http://localhost:22000/datasets/123/editions/2017",
-							},
-							LatestVersion: &models.LinkObject{
-								HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
-								ID:   "1",
-							},
-						},
-					},
-					Current: &models.Edition{
-						Links: &models.EditionUpdateLinks{
-							Self: &models.LinkObject{
-								HRef: "http://localhost:22000/datasets/123/editions/2017",
-							},
-							LatestVersion: &models.LinkObject{
-								HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
-								ID:   "1",
-							},
-						},
-					},
-				}, nil
-			},
-			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
-				return nil
-			},
-		}
-
-		states, transitions := setUpStatesTransitions()
-		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
-
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
-
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "no downloader available for type")
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpsertEditionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetEditionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
 	})
 }
 

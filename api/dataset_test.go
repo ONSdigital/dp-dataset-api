@@ -133,6 +133,12 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 			TargetState:          application.EditionConfirmed,
 			AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
 			Type:                 "filterable",
+		},
+		{
+			Label:                "associated",
+			TargetState:          application.Associated,
+			AlllowedSourceStates: []string{"created"},
+			Type:                 "static",
 		}}
 
 	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
@@ -183,7 +189,13 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 		TargetState:          application.EditionConfirmed,
 		AlllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
 		Type:                 "cantabular_flexible_table",
-	}}
+	},
+		{
+			Label:                "associated",
+			TargetState:          application.Associated,
+			AlllowedSourceStates: []string{"created"},
+			Type:                 "static",
+		}}
 
 	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
 		DataStore:          store.DataStore{Backend: mockedDataStore},

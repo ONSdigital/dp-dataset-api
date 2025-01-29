@@ -315,30 +315,31 @@ func AssociateVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 		return err
 	}
 
-	if hasDownloads != trueStringified {
+	if currentVersion.Type != "static" {
 		if versionUpdate.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
 			if errVersion := smDS.DataStore.Backend.UpdateDatasetWithAssociation(ctx, versionUpdate.DatasetID, versionUpdate.State, versionUpdate); errVersion != nil {
 				return errVersion
 			}
+			if hasDownloads != trueStringified {
+				// Get the download generator from the map, depending of the Version document type
+				t, err := models.GetDatasetType(currentVersion.Type)
+				if err != nil {
+					return fmt.Errorf("error getting type of version: %w", err)
+				}
+				generator, ok := smDS.DownloadGenerators[t]
+				if !ok {
+					return fmt.Errorf("no downloader available for type %s", t.String())
+				}
 
-			// Get the download generator from the map, depending of the Version document type
-			t, err := models.GetDatasetType(currentVersion.Type)
-			if err != nil {
-				return fmt.Errorf("error getting type of version: %w", err)
+				if err := generator.Generate(ctx, versionDetails.datasetID, versionUpdate.ID, versionDetails.edition, versionDetails.version); err != nil {
+					data["instance_id"] = versionUpdate.ID
+					data["state"] = versionUpdate.State
+					log.Error(ctx, "putVersion endpoint: error while attempting to generate full dataset version downloads on version association", err, data)
+					return err
+				}
+				data["type"] = t.String()
+				log.Info(ctx, "putVersion endpoint (associateVersion): generated full dataset version downloads", data)
 			}
-			generator, ok := smDS.DownloadGenerators[t]
-			if !ok {
-				return fmt.Errorf("no downloader available for type %s", t.String())
-			}
-
-			if err := generator.Generate(ctx, versionDetails.datasetID, versionUpdate.ID, versionDetails.edition, versionDetails.version); err != nil {
-				data["instance_id"] = versionUpdate.ID
-				data["state"] = versionUpdate.State
-				log.Error(ctx, "putVersion endpoint: error while attempting to generate full dataset version downloads on version association", err, data)
-				return err
-			}
-			data["type"] = t.String()
-			log.Info(ctx, "putVersion endpoint (associateVersion): generated full dataset version downloads", data)
 		}
 	}
 
@@ -532,27 +533,29 @@ func PublishDataset(ctx context.Context, smDS *StateMachineDatasetAPI,
 	data["version_update"] = versionUpdate
 	log.Info(ctx, "State Machine: Publish: PublishDataset: published version", data)
 
-	// Only want to generate downloads again if there is no public link available
-	if currentVersion.Downloads != nil && currentVersion.Downloads.CSV != nil && currentVersion.Downloads.CSV.Public == "" {
-		// Lookup the download generator using the version document type
-		t, err := models.GetDatasetType(currentVersion.Type)
-		if err != nil {
-			return fmt.Errorf("error getting type of version: %w", err)
+	if currentVersion.Type != "static" {
+		// Only want to generate downloads again if there is no public link available
+		if currentVersion.Downloads != nil && currentVersion.Downloads.CSV != nil && currentVersion.Downloads.CSV.Public == "" {
+			// Lookup the download generator using the version document type
+			t, err := models.GetDatasetType(currentVersion.Type)
+			if err != nil {
+				return fmt.Errorf("error getting type of version: %w", err)
+			}
+			generator, ok := smDS.DownloadGenerators[t]
+			if !ok {
+				return fmt.Errorf("no downloader available for type %s", t)
+			}
+			// Send Kafka message.  The generator which is used depends on the type defined in VersionDoc.
+			if err := generator.Generate(ctx, versionDetails.datasetID, versionUpdate.ID, versionDetails.edition, versionDetails.version); err != nil {
+				data["instance_id"] = versionUpdate.ID
+				data["state"] = versionUpdate.State
+				data["type"] = t.String()
+				log.Error(ctx, "State Machine: Publish: PublishDataset: error while attempting to generate full dataset version downloads on version publish", err, data)
+				return err
+				// TODO - TECH DEBT - need to add an error event for this.  Kafka message perhaps.
+			}
+			log.Info(ctx, "State Machine: Publish: PublishDataset: generated full dataset version downloads:", data)
 		}
-		generator, ok := smDS.DownloadGenerators[t]
-		if !ok {
-			return fmt.Errorf("no downloader available for type %s", t)
-		}
-		// Send Kafka message.  The generator which is used depends on the type defined in VersionDoc.
-		if err := generator.Generate(ctx, versionDetails.datasetID, versionUpdate.ID, versionDetails.edition, versionDetails.version); err != nil {
-			data["instance_id"] = versionUpdate.ID
-			data["state"] = versionUpdate.State
-			data["type"] = t.String()
-			log.Error(ctx, "State Machine: Publish: PublishDataset: error while attempting to generate full dataset version downloads on version publish", err, data)
-			return err
-			// TODO - TECH DEBT - need to add an error event for this.  Kafka message perhaps.
-		}
-		log.Info(ctx, "State Machine: Publish: PublishDataset: generated full dataset version downloads:", data)
 	}
 
 	return nil
