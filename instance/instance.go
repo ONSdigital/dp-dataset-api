@@ -472,7 +472,6 @@ func UnmarshalInstance(ctx context.Context, reader io.Reader, post bool) (*model
 			instance.State = models.CreatedState
 		}
 	}
-
 	return &instance, nil
 }
 

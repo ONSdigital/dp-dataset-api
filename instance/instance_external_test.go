@@ -12,6 +12,7 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/api"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
@@ -34,6 +35,7 @@ var (
 	websiteURL         = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 	urlBuilder         = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 	enableURLRewriting = false
+	enableStateMachine = false
 )
 
 func createRequestWithToken(method, requestURL string, body io.Reader) (*http.Request, error) {
@@ -761,6 +763,15 @@ func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer
 	mockedMapDownloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
 		models.Filterable: mockedGeneratedDownloads,
 	}
+
+	mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{
+		models.Filterable: mockedGeneratedDownloads,
+	}
+
+	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
+		DataStore:          store.DataStore{Backend: mockedDataStore},
+		DownloadGenerators: mockedMapSMGeneratedDownloads,
+	}
 	mu.Lock()
 	defer mu.Unlock()
 	cfg, err := config.Get()
@@ -769,5 +780,5 @@ func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer
 	cfg.DatasetAPIURL = "http://localhost:22000"
 	cfg.EnablePrivateEndpoints = true
 
-	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, datasetPermissions, permissions, enableURLRewriting)
+	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI, enableStateMachine)
 }

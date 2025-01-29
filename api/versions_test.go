@@ -805,7 +805,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 					return &models.Version{
 						ID:   "789",
-						Type: models.CantabularTable.String(),
+						Type: models.CantabularFlexibleTable.String(),
 					}, nil
 				},
 				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
@@ -1108,7 +1108,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 							},
 						},
 						State: models.EditionConfirmedState,
-						Type:  models.CantabularTable.String(),
+						Type:  models.CantabularFlexibleTable.String(),
 					}, nil
 				},
 				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {

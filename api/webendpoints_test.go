@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -329,11 +330,21 @@ func GetWebAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 	mockedMapDownloadGenerators := map[models.DatasetType]DownloadsGenerator{
 		models.Filterable: mockedGeneratedDownloads,
 	}
+
+	mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{
+		models.Filterable: mockedGeneratedDownloads,
+	}
+
+	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
+		DataStore:          store.DataStore{Backend: mockedDataStore},
+		DownloadGenerators: mockedMapSMGeneratedDownloads,
+	}
+
 	cfg, err := config.Get()
 	convey.So(err, convey.ShouldBeNil)
 	cfg.ServiceAuthToken = authToken
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEndpoints = false
 
-	return Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, datasetPermissions, permissions, enableURLRewriting)
+	return Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI, enableStateMachine)
 }

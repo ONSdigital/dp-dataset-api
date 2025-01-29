@@ -13,6 +13,7 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/api"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -32,6 +33,7 @@ var (
 	websiteURL            = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 	urlBuilder            = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 	enableURLRewriting    = false
+	enableStateMachine    = false
 	mu                    sync.Mutex
 	testContext           = context.Background()
 	testETag              = "testETag"
@@ -1521,6 +1523,15 @@ func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 	downloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
 		models.Filterable: mockedGeneratedDownloads,
 	}
+
+	mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{
+		models.Filterable: mockedGeneratedDownloads,
+	}
+
+	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
+		DataStore:          store.DataStore{Backend: mockedDataStore},
+		DownloadGenerators: mockedMapSMGeneratedDownloads,
+	}
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -1534,7 +1545,7 @@ func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 	datasetPermissions := getAuthorisationHandlerMock()
 	permissions := getAuthorisationHandlerMock()
 
-	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting)
+	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI, enableStateMachine)
 }
 
 func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {

@@ -6,12 +6,12 @@ Feature: Dataset API
             [
                 {
                     "id": "test-cantabular-dataset-1",
-                    "type": "cantabular_table",
+                    "type": "cantabular_flexible_table",
                     "state": "edition-confirmed"
                 },
                 {
                     "id": "test-cantabular-dataset-2",
-                    "type": "cantabular_table",
+                    "type": "cantabular_flexible_table",
                     "state": "associated",
                     "links": {
                       "latest_version": {
@@ -63,7 +63,7 @@ Feature: Dataset API
                     "id": "test-edition-cantabular-1",
                     "edition": "2021",
                     "state": "edition-confirmed",
-                    "type": "cantabular_table",
+                    "type": "cantabular_flexible_table",
                     "links": {
                         "dataset": {
                             "id": "test-cantabular-dataset-1"
@@ -74,7 +74,7 @@ Feature: Dataset API
                     "id": "test-edition-cantabular-2",
                     "edition": "2021",
                     "state": "associated",
-                    "type": "cantabular_table",
+                    "type": "cantabular_flexible_table",
                     "links": {
                         "dataset": {
                             "id": "test-cantabular-dataset-2"
@@ -121,7 +121,7 @@ Feature: Dataset API
                 {
                     "id": "test-item-3",
                     "version": 3,
-                    "state": "created",
+                    "state": "edition-confirmed",
                     "links": {
                         "dataset": {
                             "id": "population-estimates"
@@ -151,7 +151,7 @@ Feature: Dataset API
                     "id": "test-cantabular-version-1",
                     "version": 1,
                     "state": "edition-confirmed",
-                    "type": "cantabular_table",
+                    "type": "cantabular_flexible_table",
                     "links": {
                         "dataset": {
                             "id": "test-cantabular-dataset-1"
@@ -166,7 +166,7 @@ Feature: Dataset API
                     "id": "test-cantabular-version-2",
                     "version": 1,
                     "state": "associated",
-                    "type": "cantabular_table",
+                    "type": "cantabular_flexible_table",
                     "links": {
                         "dataset": {
                             "id": "test-cantabular-dataset-2"
@@ -599,3 +599,77 @@ Feature: Dataset API
       | InstanceID                | DatasetID                 | Edition | Version |FilterOutputID| Dimensions |
       | test-cantabular-version-2 | test-cantabular-dataset-2 | 2021    | 1       |              | []         |
     Then the HTTP status code should be "200"
+
+  Scenario: PUT published version for Cantabular dataset produces Kafka event and returns OK with state machine enabled
+    Given private endpoints are enabled
+    And the state machine is enabled
+    And I am identified as "user@ons.gov.uk"
+    And I am authorised
+    And I have a real kafka container with topic "cantabular-export-start"
+    And these versions need to be published:
+            """
+              [
+               {
+                 "version_id": "test-cantabular-version-2",
+                 "version_number": "1"
+               }
+              ]
+            """
+    When I PUT "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
+            """
+            {
+              "instance_id": "test-cantabular-version-2",
+              "license": "ONS",
+              "release_date": "2017-04-04",
+              "state": "published",
+              "collection_id": "bla",
+              "links": {
+                "version": {
+                  "id": "1",
+                  "href": "someurl"
+                }
+              }
+            }
+            """
+    And these cantabular generator downloads events are produced:
+      | InstanceID                | DatasetID                 | Edition | Version |FilterOutputID| Dimensions |
+      | test-cantabular-version-2 | test-cantabular-dataset-2 | 2021    | 1       |              | []         |
+    Then the HTTP status code should be "200"
+
+  Scenario: PUT versions for CMD dataset produces Kafka event and returns OK when the state machine is enabled
+    Given private endpoints are enabled
+    And the state machine is enabled
+    And I am identified as "user@ons.gov.uk"
+    And I am authorised
+    And I have a real kafka container with topic "filter-job-submitted"
+    When I PUT "/datasets/population-estimates/editions/hellov2/versions/3"
+            """
+            {
+              "instance_id":"test-item-3",
+              "license":"ONS",
+              "release_date":"2017-04-04",
+              "state":"associated",
+              "collection_id":"bla"
+            }
+            """
+    And these generate downloads events are produced:
+      | InstanceID  | DatasetID            | Edition | Version | FilterOutputID |
+      | test-item-3 | population-estimates | hellov2 | 3       |                |
+    Then the HTTP status code should be "200"
+
+  Scenario: PUT versions for CMD dataset when the state machine is enabled fails due to invalid state
+    Given private endpoints are enabled
+    And the state machine is enabled
+    And I am identified as "user@ons.gov.uk"
+    And I am authorised
+    When I PUT "/datasets/population-estimates/editions/hellov2/versions/3"
+            """
+            {
+              "instance_id":"test-item-3",
+              "license":"ONS",
+              "release_date":"2017-04-04",
+              "state":"created",
+              "collection_id":"bla"
+            }
+            """
+    Then the HTTP status code should be "400"

@@ -15,19 +15,19 @@ var _ service.Closer = &CloserMock{}
 
 // CloserMock is a mock implementation of service.Closer.
 //
-// 	func TestSomethingThatUsesCloser(t *testing.T) {
+//	func TestSomethingThatUsesCloser(t *testing.T) {
 //
-// 		// make and configure a mocked service.Closer
-// 		mockedCloser := &CloserMock{
-// 			CloseFunc: func(ctx context.Context) error {
-// 				panic("mock out the Close method")
-// 			},
-// 		}
+//		// make and configure a mocked service.Closer
+//		mockedCloser := &CloserMock{
+//			CloseFunc: func(ctx context.Context) error {
+//				panic("mock out the Close method")
+//			},
+//		}
 //
-// 		// use mockedCloser in code that requires service.Closer
-// 		// and then make assertions.
+//		// use mockedCloser in code that requires service.Closer
+//		// and then make assertions.
 //
-// 	}
+//	}
 type CloserMock struct {
 	// CloseFunc mocks the Close method.
 	CloseFunc func(ctx context.Context) error
@@ -61,7 +61,8 @@ func (mock *CloserMock) Close(ctx context.Context) error {
 
 // CloseCalls gets all the calls that were made to Close.
 // Check the length with:
-//     len(mockedCloser.CloseCalls())
+//
+//	len(mockedCloser.CloseCalls())
 func (mock *CloserMock) CloseCalls() []struct {
 	Ctx context.Context
 } {

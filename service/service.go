@@ -4,10 +4,13 @@ import (
 	"context"
 	"net/http"
 	neturl "net/url"
+	"slices"
+	"sync"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/api"
+	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	adapter "github.com/ONSdigital/dp-dataset-api/kafka"
@@ -49,6 +52,97 @@ type Service struct {
 	server                              HTTPServer
 	healthCheck                         HealthChecker
 	api                                 *api.DatasetAPI
+	smDS                                *application.StateMachineDatasetAPI
+}
+
+var stateMachine *application.StateMachine
+var stateMachineInit sync.Once
+
+func GetListTransitions() []application.Transition {
+	publishedTransition := application.Transition{
+		Label:                "published",
+		TargetState:          application.Published,
+		AlllowedSourceStates: []string{"created", "associated", "published"},
+		Type:                 "v4",
+	}
+
+	associatedTransition := application.Transition{
+		Label:                "associated",
+		TargetState:          application.Associated,
+		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+		Type:                 "v4",
+	}
+
+	edconfirmedTransition := application.Transition{
+		Label:                "edition-confirmed",
+		TargetState:          application.EditionConfirmed,
+		AlllowedSourceStates: []string{"completed", "edition-confirmed"},
+		Type:                 "v4",
+	}
+
+	return []application.Transition{publishedTransition,
+		associatedTransition, edconfirmedTransition}
+}
+
+func GetListCantabularTransitions() []application.Transition {
+	publishedTransition := application.Transition{
+		Label:                "published",
+		TargetState:          application.Published,
+		AlllowedSourceStates: []string{"published", "associated", "edition-confirmed"},
+		Type:                 "cantabular_flexible_table",
+	}
+
+	associatedTransition := application.Transition{
+		Label:                "associated",
+		TargetState:          application.Associated,
+		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+		Type:                 "cantabular_flexible_table",
+	}
+
+	edconfirmedTransition := application.Transition{
+		Label:                "edition-confirmed",
+		TargetState:          application.EditionConfirmed,
+		AlllowedSourceStates: []string{"completed", "edition-confirmed"},
+		Type:                 "cantabular_flexible_table",
+	}
+
+	return []application.Transition{publishedTransition,
+		associatedTransition, edconfirmedTransition}
+}
+
+func GetListMultivariateCantabularTransitions() []application.Transition {
+	publishedTransition := application.Transition{
+		Label:                "published",
+		TargetState:          application.Published,
+		AlllowedSourceStates: []string{"associated", "edition-confirmed"},
+		Type:                 "cantabular_multivariate_table",
+	}
+
+	associatedTransition := application.Transition{
+		Label:                "associated",
+		TargetState:          application.Associated,
+		AlllowedSourceStates: []string{"edition-confirmed", "associated"},
+		Type:                 "cantabular_multivariate_table",
+	}
+
+	edconfirmedTransition := application.Transition{
+		Label:                "edition-confirmed",
+		TargetState:          application.EditionConfirmed,
+		AlllowedSourceStates: []string{"completed", "edition-confirmed"},
+		Type:                 "cantabular_multivariate_table",
+	}
+
+	return []application.Transition{publishedTransition,
+		associatedTransition, edconfirmedTransition}
+}
+
+func GetStateMachine(ctx context.Context, dataStore store.DataStore) *application.StateMachine {
+	stateMachineInit.Do(func() {
+		states := []application.State{application.Published, application.EditionConfirmed, application.Associated}
+		transitions := slices.Concat(GetListTransitions(), GetListCantabularTransitions(), GetListMultivariateCantabularTransitions())
+		stateMachine = application.NewStateMachine(ctx, states, transitions, dataStore)
+	})
+	return stateMachine
 }
 
 // New creates a new service
@@ -139,6 +233,14 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		models.Filterable:                  downloadGeneratorCMD,
 	}
 
+	smDownloadGenerators := map[models.DatasetType]application.DownloadsGenerator{
+		models.CantabularBlob:              downloadGeneratorCantabular,
+		models.CantabularTable:             downloadGeneratorCantabular,
+		models.CantabularFlexibleTable:     downloadGeneratorCantabular,
+		models.CantabularMultivariateTable: downloadGeneratorCantabular,
+		models.Filterable:                  downloadGeneratorCMD,
+	}
+
 	// Get Identity Client (only if private endpoints are enabled)
 	if svc.config.EnablePrivateEndpoints {
 		svc.identityClient = clientsidentity.New(svc.config.ZebedeeURL)
@@ -177,8 +279,15 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		log.Info(ctx, "URL rewriting enabled")
 	}
 
+	enableStateMachine := svc.config.EnableStateMachine
+	if enableStateMachine {
+		log.Info(ctx, "State machine enabled")
+	}
+
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting)
+	sm := GetStateMachine(ctx, ds)
+	svc.smDS = application.Setup(ds, smDownloadGenerators, sm)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, svc.smDS, enableStateMachine)
 
 	svc.healthCheck.Start(ctx)
 

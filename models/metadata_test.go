@@ -157,8 +157,8 @@ func TestCreateMetadata(t *testing.T) {
 				convey.So(metaDataDoc.Downloads.XLS.Public, convey.ShouldEqual, "")
 				convey.So(metaDataDoc.Downloads.XLSX.HRef, convey.ShouldEqual, xlsxDownload.HRef)
 				convey.So(metaDataDoc.Downloads.XLSX.Size, convey.ShouldEqual, xlsxDownload.Size)
-				convey.So(metaDataDoc.Downloads.XLSX.Private, convey.ShouldEqual, xlsxDownload.Private) // TODO: convey.Should it be cleared?
-				convey.So(metaDataDoc.Downloads.XLSX.Public, convey.ShouldEqual, xlsxDownload.Public)   // TODO: convey.Should it be cleared?
+				convey.So(metaDataDoc.Downloads.XLSX.Private, convey.ShouldEqual, xlsxDownload.Private) // TODO: Should it be cleared?
+				convey.So(metaDataDoc.Downloads.XLSX.Public, convey.ShouldEqual, xlsxDownload.Public)   // TODO: Should it be cleared?
 				convey.So(metaDataDoc.IsBasedOn, convey.ShouldResemble, &IsBasedOn{
 					ID:   "UR_HH",
 					Type: "All usual residents in households",
@@ -236,14 +236,14 @@ func TestCreateMetadata(t *testing.T) {
 				convey.So(metaDataDoc.Downloads.CSVW.Public, convey.ShouldEqual, "")
 				convey.So(metaDataDoc.Downloads.TXT.HRef, convey.ShouldEqual, txtDownload.HRef)
 				convey.So(metaDataDoc.Downloads.TXT.Size, convey.ShouldEqual, txtDownload.Size)
-				convey.So(metaDataDoc.Downloads.TXT.Private, convey.ShouldEqual, txtDownload.Private) // TODO: convey.Should it be cleared?
-				convey.So(metaDataDoc.Downloads.TXT.Public, convey.ShouldEqual, txtDownload.Public)   // TODO: convey.Should it be cleared?
+				convey.So(metaDataDoc.Downloads.TXT.Private, convey.ShouldEqual, txtDownload.Private) // TODO: Should it be cleared?
+				convey.So(metaDataDoc.Downloads.TXT.Public, convey.ShouldEqual, txtDownload.Public)   // TODO: Should it be cleared?
 				convey.So(metaDataDoc.Downloads.XLS.HRef, convey.ShouldEqual, xlsDownload.HRef)
 				convey.So(metaDataDoc.Downloads.XLS.Size, convey.ShouldEqual, xlsDownload.Size)
 				convey.So(metaDataDoc.Downloads.XLS.Private, convey.ShouldEqual, "")
 				convey.So(metaDataDoc.Downloads.XLS.Public, convey.ShouldEqual, "")
-				convey.So(metaDataDoc.Downloads.XLSX.Private, convey.ShouldEqual, xlsxDownload.Private) // TODO: convey.Should it be cleared?
-				convey.So(metaDataDoc.Downloads.XLSX.Public, convey.ShouldEqual, xlsxDownload.Public)   // TODO: convey.Should it be cleared?
+				convey.So(metaDataDoc.Downloads.XLSX.Private, convey.ShouldEqual, xlsxDownload.Private) // TODO: Should it be cleared?
+				convey.So(metaDataDoc.Downloads.XLSX.Public, convey.ShouldEqual, xlsxDownload.Public)   // TODO: Should it be cleared?
 
 				convey.So(metaDataDoc.Links.Self.HRef, convey.ShouldEqual, version.Links.Version.HRef+"/metadata")
 				convey.So(metaDataDoc.Links.Self.ID, convey.ShouldEqual, "")
@@ -258,7 +258,7 @@ func TestCreateMetadata(t *testing.T) {
 					Type: "All usual residents in households",
 				})
 
-				// TODO: convey.Should it include xlsx?
+				// TODO: Should it include xlsx?
 				convey.So(metaDataDoc.Distribution, convey.ShouldResemble, []string{"json", "csv", "csvw", "xls", "txt"})
 			})
 
