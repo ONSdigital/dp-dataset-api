@@ -315,7 +315,7 @@ func AssociateVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 		return err
 	}
 
-	if currentVersion.Type != "static" {
+	if currentVersion.Type != models.Static.String() {
 		if hasDownloads != trueStringified {
 			if versionUpdate.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
 				if errVersion := smDS.DataStore.Backend.UpdateDatasetWithAssociation(ctx, versionUpdate.DatasetID, versionUpdate.State, versionUpdate); errVersion != nil {
@@ -534,7 +534,7 @@ func PublishDataset(ctx context.Context, smDS *StateMachineDatasetAPI,
 	data["version_update"] = versionUpdate
 	log.Info(ctx, "State Machine: Publish: PublishDataset: published version", data)
 
-	if currentVersion.Type != "static" {
+	if currentVersion.Type != models.Static.String() {
 		// Only want to generate downloads again if there is no public link available
 		if currentVersion.Downloads != nil && currentVersion.Downloads.CSV != nil && currentVersion.Downloads.CSV.Public == "" {
 			// Lookup the download generator using the version document type
