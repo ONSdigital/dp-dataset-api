@@ -87,8 +87,8 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 	}
 
 	if api.enableURLRewriting {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
-		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetCodeListAPIURL())
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
+		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetCodeListAPIURL())
 
 		list, err = utils.RewriteDimensions(ctx, list, datasetLinksBuilder, codeListLinksBuilder)
 		if err != nil {
@@ -224,8 +224,8 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	}
 
 	if api.enableURLRewriting {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
-		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetCodeListAPIURL())
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
+		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetCodeListAPIURL())
 
 		results, err = utils.RewritePublicDimensionOptions(ctx, results, datasetLinksBuilder, codeListLinksBuilder)
 		if err != nil {

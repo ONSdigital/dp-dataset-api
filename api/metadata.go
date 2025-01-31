@@ -111,9 +111,9 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if api.enableURLRewriting {
-			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
-			codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetCodeListAPIURL())
-			websiteLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetWebsiteURL())
+			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
+			codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetCodeListAPIURL())
+			websiteLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
 
 			err = utils.RewriteMetadataLinks(ctx, metaDataDoc.Links, datasetLinksBuilder, websiteLinksBuilder)
 			if err != nil {

@@ -24,7 +24,7 @@ var (
 func TestRewriteDatasetsWithAuth_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a list of dataset updates", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the dataset links need rewriting", func() {
 			results := []*models.DatasetUpdate{
 				{
@@ -302,7 +302,7 @@ func TestRewriteDatasetsWithAuth_Error(t *testing.T) {
 func TestRewriteDatasetsWithoutAuth_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a list of dataset updates", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the dataset links need rewriting", func() {
 			results := []*models.DatasetUpdate{
 				{
@@ -552,7 +552,7 @@ func TestRewriteDatasetsWithoutAuth_Error(t *testing.T) {
 func TestRewriteDatasetWithAuth_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a dataset update", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the dataset links need rewriting", func() {
 			result := &models.DatasetUpdate{
 				ID: "123",
@@ -732,7 +732,7 @@ func TestRewriteDatasetWithAuth_Success(t *testing.T) {
 func TestRewriteDatasetWithAuth_Error(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a dataset update", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the 'current' dataset links are unable to be parsed", func() {
 			result := &models.DatasetUpdate{
 				ID: "123",
@@ -828,7 +828,7 @@ func TestRewriteDatasetWithAuth_Error(t *testing.T) {
 func TestRewriteDatasetWithoutAuth_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a dataset update", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the dataset links need rewriting", func() {
 			result := &models.DatasetUpdate{
 				ID: "123",
@@ -996,7 +996,7 @@ func TestRewriteDatasetWithoutAuth_Success(t *testing.T) {
 func TestRewriteDatasetWithoutAuth_Error(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a dataset update", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the dataset links are unable to be parsed", func() {
 			result := &models.DatasetUpdate{
 				ID: "123",
@@ -1078,7 +1078,7 @@ func TestRewriteDatasetWithoutAuth_Error(t *testing.T) {
 func TestRewriteDatasetLinks_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a set of dataset links", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the dataset links need rewriting", func() {
 			links := &models.DatasetLinks{
 				AccessRights: &models.LinkObject{
@@ -1200,8 +1200,8 @@ func TestRewriteDatasetLinks_Error(t *testing.T) {
 func TestRewriteDimensions_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a list of dimensions", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
-		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, codeListAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		convey.Convey("When the dimension links need rewriting", func() {
 			results := []models.Dimension{
 				{
@@ -1502,8 +1502,8 @@ func TestRewriteDimensions_Error(t *testing.T) {
 func TestRewriteDimensionLinks_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a set of dimension links", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
-		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, codeListAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		convey.Convey("When the dimension links need rewriting", func() {
 			links := models.DimensionLink{
 				CodeList: models.LinkObject{
@@ -1578,8 +1578,8 @@ func TestRewriteDimensionLinks_Success(t *testing.T) {
 func TestRewriteDimensionLinks_Error(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a set of dimension links", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
-		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, codeListAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		convey.Convey("When the Code List link is unable to be parsed", func() {
 			links := models.DimensionLink{
 				CodeList: models.LinkObject{
@@ -1654,8 +1654,8 @@ func TestRewriteDimensionLinks_Error(t *testing.T) {
 func TestRewritePublicDimensionOptions_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a list of public dimension options", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
-		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, codeListAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		convey.Convey("When the public dimension options need rewriting", func() {
 			results := []*models.PublicDimensionOption{
 				{
@@ -1912,8 +1912,8 @@ func TestRewritePublicDimensionOptions_Error(t *testing.T) {
 func TestRewriteDimensionOptions_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a list of dimension options", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
-		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, codeListAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		convey.Convey("When the dimension options need rewriting", func() {
 			results := []*models.DimensionOption{
 				{
@@ -2203,8 +2203,8 @@ func TestRewriteDimensionOptions_Error(t *testing.T) {
 func TestRewriteDimensionOptionLinks_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a set of dimension option links", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
-		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, codeListAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		convey.Convey("When the dimension option links need rewriting", func() {
 			links := models.DimensionOptionLinks{
 				Code: models.LinkObject{
@@ -2279,8 +2279,8 @@ func TestRewriteDimensionOptionLinks_Success(t *testing.T) {
 func TestRewriteDimensionOptionLinks_Error(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a set of dimension option links", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
-		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, codeListAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		convey.Convey("When the Code link is unable to be parsed", func() {
 			links := models.DimensionOptionLinks{
 				Code: models.LinkObject{
@@ -2355,7 +2355,7 @@ func TestRewriteDimensionOptionLinks_Error(t *testing.T) {
 func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a list of edition updates", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the edition update links need rewriting", func() {
 			results := []*models.EditionUpdate{
 				{
@@ -2619,7 +2619,7 @@ func TestRewriteEditionsWithAuth_Error(t *testing.T) {
 func TestRewriteEditionsWithoutAuth_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a list of edition updates", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the edition update links need rewriting", func() {
 			results := []*models.EditionUpdate{
 				{
@@ -2853,7 +2853,7 @@ func TestRewriteEditionsWithoutAuth_Error(t *testing.T) {
 func TestRewriteEditionWithAuth_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given an edition update", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the edition update links need rewriting", func() {
 			result := &models.EditionUpdate{
 				ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
@@ -3041,7 +3041,7 @@ func TestRewriteEditionWithAuth_Success(t *testing.T) {
 func TestRewriteEditionWithAuth_Error(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given an edition update", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the 'current' edition update links are unable to be parsed", func() {
 			result := &models.EditionUpdate{
 				ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
@@ -3125,7 +3125,7 @@ func TestRewriteEditionWithAuth_Error(t *testing.T) {
 func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given an edition update", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the edition update links need rewriting", func() {
 			result := &models.EditionUpdate{
 				ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
@@ -3318,7 +3318,7 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 func TestRewriteEditionWithoutAuth_Error(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given an edition update", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the edition update links are unable to be parsed", func() {
 			result := &models.EditionUpdate{
 				ID: "66f7219d-6d53-402a-87b6-cb4014f7179f",
@@ -3388,7 +3388,7 @@ func TestRewriteEditionWithoutAuth_Error(t *testing.T) {
 func TestRewriteEditionLinks_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a set of edition update links", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the edition update links need rewriting", func() {
 			links := &models.EditionUpdateLinks{
 				Dataset: &models.LinkObject{
@@ -3502,8 +3502,8 @@ func TestRewriteEditionLinks_Error(t *testing.T) {
 func TestRewriteMetadataLinks_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a set of metadata links", t, func() {
-		websiteLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, websiteURL)
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		websiteLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, websiteURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the metadata links need rewriting", func() {
 			links := &models.MetadataLinks{
 				AccessRights: &models.LinkObject{
@@ -3594,8 +3594,8 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 func TestRewriteMetadataLinks_Error(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a set of metadata links", t, func() {
-		websiteLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, websiteURL)
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		websiteLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, websiteURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the Self link is unable to be parsed", func() {
 			links := &models.MetadataLinks{
 				Self: &models.LinkObject{
@@ -3667,8 +3667,8 @@ func TestRewriteMetadataLinks_Error(t *testing.T) {
 func TestRewriteVersions_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a list of versions", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
-		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, codeListAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		convey.Convey("When the version and dimension links need rewriting", func() {
 			results := []models.Version{
 				{
@@ -4065,8 +4065,8 @@ func TestRewriteVersions_Success(t *testing.T) {
 func TestRewriteVersions_Error(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a list of versions", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
-		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, codeListAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		convey.Convey("When the version links are unable to be parsed", func() {
 			results := []models.Version{
 				{
@@ -4161,7 +4161,7 @@ func TestRewriteVersions_Error(t *testing.T) {
 func TestRewriteVersionLinks_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a set of version links", t, func() {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the version links need rewriting", func() {
 			links := &models.VersionLinks{
 				Dataset: &models.LinkObject{
@@ -4302,9 +4302,9 @@ func TestRewriteVersionLinks_Error(t *testing.T) {
 func TestRewriteInstances_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a list of instances", t, func() {
-		importLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, importAPIURL)
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
-		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, codeListAPIURL)
+		importLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, importAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		convey.Convey("When the instance links need rewriting", func() {
 			results := []*models.Instance{
 				{
@@ -4715,9 +4715,9 @@ func TestRewriteInstances_Success(t *testing.T) {
 func TestRewriteInstances_Error(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a list of instances", t, func() {
-		importLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, importAPIURL)
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
-		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, codeListAPIURL)
+		importLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, importAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		convey.Convey("When the instance links are unable to be parsed", func() {
 			results := []*models.Instance{
 				{
@@ -4869,8 +4869,8 @@ func TestRewriteInstances_Error(t *testing.T) {
 func TestRewriteInstanceLinks_Success(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a set of instance links", t, func() {
-		importLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, importAPIURL)
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		importLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, importAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the instance links need rewriting", func() {
 			links := &models.InstanceLinks{
 				Dataset: &models.LinkObject{
@@ -4973,8 +4973,8 @@ func TestRewriteInstanceLinks_Success(t *testing.T) {
 func TestRewriteInstanceLinks_Error(t *testing.T) {
 	ctx := context.Background()
 	convey.Convey("Given a set of instance links", t, func() {
-		importLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, importAPIURL)
-		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, &http.Request{URL: &neturl.URL{Scheme: "http", Host: "example.com"}}, datasetAPIURL)
+		importLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, importAPIURL)
+		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		convey.Convey("When the instance links are unable to be parsed", func() {
 			links := &models.InstanceLinks{
 				Dataset: &models.LinkObject{

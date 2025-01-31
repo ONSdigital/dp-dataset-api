@@ -81,9 +81,9 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit, offset in
 		}
 
 		if s.EnableURLRewriting {
-			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetDatasetAPIURL())
-			codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetCodeListAPIURL())
-			importLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetImportAPIURL())
+			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.URLBuilder.GetDatasetAPIURL())
+			codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.URLBuilder.GetCodeListAPIURL())
+			importLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.URLBuilder.GetImportAPIURL())
 
 			err = utils.RewriteInstances(ctx, instancesResults, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
 			if err != nil {
@@ -134,9 +134,9 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if s.EnableURLRewriting {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetDatasetAPIURL())
-		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetCodeListAPIURL())
-		importLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetImportAPIURL())
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.URLBuilder.GetDatasetAPIURL())
+		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.URLBuilder.GetCodeListAPIURL())
+		importLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.URLBuilder.GetImportAPIURL())
 
 		err = utils.RewriteInstances(ctx, []*models.Instance{instance}, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
 		if err != nil {

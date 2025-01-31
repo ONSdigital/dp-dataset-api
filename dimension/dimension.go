@@ -80,8 +80,8 @@ func (s *Store) GetDimensionsHandler(w http.ResponseWriter, r *http.Request, lim
 	}
 
 	if s.EnableURLRewriting {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetDatasetAPIURL())
-		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, s.URLBuilder.GetCodeListAPIURL())
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.URLBuilder.GetDatasetAPIURL())
+		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.URLBuilder.GetCodeListAPIURL())
 
 		err = utils.RewriteDimensionOptions(ctx, dimensionOptions, datasetLinksBuilder, codeListLinksBuilder)
 		if err != nil {

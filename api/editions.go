@@ -52,7 +52,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 	if api.enableURLRewriting {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
 		if authorised {
 			editionsResponse, err := utils.RewriteEditionsWithAuth(ctx, results, datasetLinksBuilder)
@@ -116,7 +116,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 		var editionResponse interface{}
 
 		if api.enableURLRewriting {
-			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, r, api.urlBuilder.GetDatasetAPIURL())
+			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
 			if authorised {
 				editionResponse, err = utils.RewriteEditionWithAuth(ctx, edition, datasetLinksBuilder)
