@@ -90,7 +90,10 @@ Feature: Dataset API
 
     Scenario: GET /datasets/{id}/editions/{edition}/versions/{version}/dimensions in public mode
         And URL rewriting is enabled
-        When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions" without a request host
+        And I set the "X-Forwarded-Proto" header to "https"
+        And I set the "X-Forwarded-Host" header to "api.example.com"
+        And I set the "X-Forwarded-Path-Prefix" header to "v1"
+        When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions"
         Then I should receive the following JSON response with status "200":
             """
             {
@@ -101,11 +104,11 @@ Feature: Dataset API
                         "links": {
                             "code_list": {},
                             "options": {
-                                "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions/dimensions/geography/options",
+                                "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/dimensions/geography/options",
                                 "id": "geography"
                             },
                             "version": {
-                                "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions/"
+                                "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/"
                             }
                         }
                     }
@@ -163,7 +166,7 @@ Feature: Dataset API
             """
 
     Scenario: GET /datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options in public mode
-        When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions/geography/options" without a request host
+        When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions/geography/options"
         Then I should receive the following JSON response with status "200":
             """
             {

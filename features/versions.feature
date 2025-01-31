@@ -229,7 +229,10 @@ Feature: Dataset API
 
   Scenario: GET /datasets/{id}/editions/{edition}/versions in public mode returns published versions
     And URL rewriting is enabled
-    When I GET "/datasets/population-estimates/editions/hello/versions" without a request host
+    And I set the "X-Forwarded-Proto" header to "https"
+    And I set the "X-Forwarded-Host" header to "api.example.com"
+    And I set the "X-Forwarded-Path-Prefix" header to "v1"
+    When I GET "/datasets/population-estimates/editions/hello/versions"
     Then I should receive the following JSON response with status "200":
             """
             {
@@ -246,7 +249,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "http://localhost:22000/someurl"
+                                "href": "https://api.example.com/v1/someurl"
                             }
                         },
                         "lowest_geography": "ltla"
@@ -262,7 +265,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "http://localhost:22000/someurl"
+                                "href": "https://api.example.com/v1/someurl"
                             }
                         }
                     }
@@ -321,9 +324,12 @@ Feature: Dataset API
   Scenario: GET /datasets/{id}/editions/{edition}/versions in private mode returns all versions
     Given private endpoints are enabled
     And URL rewriting is enabled
+    And I set the "X-Forwarded-Proto" header to "https"
+    And I set the "X-Forwarded-Host" header to "api.example.com"
+    And I set the "X-Forwarded-Path-Prefix" header to "v1"
     And I am identified as "user@ons.gov.uk"
     And I am authorised
-    When I GET "/datasets/population-estimates/editions/hello/versions" without a request host
+    When I GET "/datasets/population-estimates/editions/hello/versions"
     Then I should receive the following JSON response with status "200":
             """
             {
@@ -339,7 +345,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "http://localhost:22000/someurl"
+                                "href": "https://api.example.com/v1/someurl"
                             }
                         },
                         "edition": "hello",
@@ -355,7 +361,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "http://localhost:22000/someurl"
+                                "href": "https://api.example.com/v1/someurl"
                             }
                         },
                         "edition": "hello"
@@ -370,7 +376,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "http://localhost:22000/someurl"
+                                "href": "https://api.example.com/v1/someurl"
                             }
                         },
                         "edition": "hello"
@@ -471,7 +477,10 @@ Feature: Dataset API
 
   Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in public mode returns the version
     And URL rewriting is enabled
-    When I GET "/datasets/population-estimates/editions/hello/versions/4" without a request host
+    And I set the "X-Forwarded-Proto" header to "https"
+    And I set the "X-Forwarded-Host" header to "api.example.com"
+    And I set the "X-Forwarded-Path-Prefix" header to "v1"
+    When I GET "/datasets/population-estimates/editions/hello/versions/4"
     Then I should receive the following JSON response with status "200":
         """
         {
@@ -483,7 +492,7 @@ Feature: Dataset API
                     "id": "population-estimates"
                 },
                 "self": {
-                    "href": "http://localhost:22000/someurl"
+                    "href": "https://api.example.com/v1/someurl"
                 }
             },
             "edition": "hello",
@@ -517,9 +526,12 @@ Feature: Dataset API
   Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in private mode returns the version
     Given private endpoints are enabled
     And URL rewriting is enabled
+    And I set the "X-Forwarded-Proto" header to "https"
+    And I set the "X-Forwarded-Host" header to "api.example.com"
+    And I set the "X-Forwarded-Path-Prefix" header to "v1"
     And I am identified as "user@ons.gov.uk"
     And I am authorised
-    When I GET "/datasets/population-estimates/editions/hello/versions/2" without a request host
+    When I GET "/datasets/population-estimates/editions/hello/versions/2"
     Then I should receive the following JSON response with status "200":
         """
         {
@@ -531,7 +543,7 @@ Feature: Dataset API
                     "id": "population-estimates"
                 },
                 "self": {
-                    "href": "http://localhost:22000/someurl"
+                    "href": "https://api.example.com/v1/someurl"
                 }
             },
             "edition": "hello"
