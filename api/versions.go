@@ -869,7 +869,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	newInstance, err = api.dataStore.Backend.AddInstance(ctx, newInstance)
 	if err != nil {
 		log.Error(ctx, "failed to add instance", err, logData)
-		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
+		handleDatasetAPIErr(ctx, errs.ErrInvalidBody, w, nil)
 		return
 	}
 

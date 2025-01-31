@@ -35,6 +35,7 @@ var (
 		errs.ErrTypeMismatch:               true,
 		errs.ErrDatasetTypeInvalid:         true,
 		errs.ErrInvalidQueryParameter:      true,
+		errs.ErrInvalidBody:                true,
 	}
 
 	// errors that should return a 404 status
