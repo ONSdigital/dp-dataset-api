@@ -849,7 +849,6 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	newInstance, err := instance.UnmarshalInstance(ctx, r.Body, true)
 	if err != nil {
 		log.Error(ctx, "failed to unmarshal instance", err, logData)
-		fmt.Print("Error is : ", err.Error())
 		handleVersionAPIErr(ctx, errs.ErrUnableToParseJSON, w, logData)
 		return
 	}
